@@ -1,0 +1,109 @@
+//
+// Copyright (C) 2014 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+// host + device static lib
+cc_library_static {
+    host_supported: true,
+    name: "libc++_static",
+    clang: true,
+    srcs: [
+        "src/algorithm.cpp",
+        "src/any.cpp",
+        "src/bind.cpp",
+        "src/chrono.cpp",
+        "src/condition_variable.cpp",
+        "src/debug.cpp",
+        "src/exception.cpp",
+        "src/future.cpp",
+        "src/hash.cpp",
+        "src/ios.cpp",
+        "src/iostream.cpp",
+        "src/locale.cpp",
+        "src/memory.cpp",
+        "src/mutex.cpp",
+        "src/new.cpp",
+        "src/optional.cpp",
+        "src/random.cpp",
+        "src/regex.cpp",
+        "src/shared_mutex.cpp",
+        "src/stdexcept.cpp",
+        "src/string.cpp",
+        "src/strstream.cpp",
+        "src/system_error.cpp",
+        "src/thread.cpp",
+        "src/typeinfo.cpp",
+        "src/utility.cpp",
+        "src/valarray.cpp",
+    ],
+    local_include_dirs: ["include"],
+    export_include_dirs: ["include"],
+    cppflags: [
+        "-std=c++14",
+        "-nostdinc++",
+        "-fexceptions",
+    ],
+    rtti: true,
+    whole_static_libs: [
+        "libc++abi",
+    ],
+    stl: "none",
+}
+
+// host + device dynamic lib
+cc_library_shared {
+    host_supported: true,
+    name: "libc++",
+    clang: true,
+    whole_static_libs: ["libc++_static"],
+    stl: "none",
+
+    target: {
+        android: {
+            shared_libs: ["libdl"],
+        },
+        android_arm: {
+            static_libs: ["libunwind_llvm"],
+            ldflags: ["-Wl,--exclude-libs,libunwind_llvm.a"],
+        },
+        host: {
+            ldflags: ["-nodefaultlibs"],
+        },
+        darwin: {
+            unexported_symbols_list: "lib/libc++unexp.exp",
+            force_symbols_not_weak_list: "lib/notweak.exp",
+            force_symbols_weak_list: "lib/weak.exp",
+        },
+
+        linux: {
+            host_ldlibs: [
+                "-lrt",
+                "-lpthread",
+                "-ldl",
+            ],
+        },
+    },
+}
+
+
+// ANDROIDMK TRANSLATION ERROR: unsupported conditional
+// ifdef LIBCXX_TESTING
+// ANDROIDMK TRANSLATION ERROR: unsupported include
+// include $(LOCAL_PATH)/buildcmds/Android.mk
+
+// ANDROIDMK TRANSLATION ERROR: endif from unsupported contitional
+// endif
+// TARGET_BUILD_APPS
+

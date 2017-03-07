@@ -1,0 +1,17 @@
+Any Android specific modifications to upstream libpng (1.6.22beta) should
+be listed here:
+
+(1) Android has added the following files.
+    pngusr.h
+    Android.mk
+    CleanSpec.mk
+    MODULE_LICENSE_BSD_LIKE
+    README.version
+
+(2) pnglibconf.h
+    This is copied from scripts/pnglibconf.h.prebuilt.
+    Android has undefined PNG_WARNINGS_SUPPORTED.
+
+(3) Removed contrib/testpngs/
+    There is no reason to check in all of these files if we won't
+    be using them.

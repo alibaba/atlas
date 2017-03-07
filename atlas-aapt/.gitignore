@@ -1,0 +1,6 @@
+.idea/
+.ccache/
+out/
+out-x86_64/
+out-x86/
+ShakaAaptBin/

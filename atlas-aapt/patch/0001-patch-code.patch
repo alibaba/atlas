@@ -1,0 +1,469 @@
+From 169d35c037957b9399a624657d4e3236002d08e8 Mon Sep 17 00:00:00 2001
+From: Rover12421 <rover12421@163.com>
+Date: Wed, 18 Nov 2015 16:59:29 +0800
+Subject: [PATCH] patch code
+
+---
+ development/build/tools/windows_sdk.mk           |  3 ++
+ external/expat/lib/xmltok.c                      | 12 +++++
+ frameworks/base/libs/androidfw/AssetManager.cpp  | 13 +++--
+ frameworks/base/libs/androidfw/ResourceTypes.cpp | 10 ++++
+ frameworks/base/tools/aapt/AaptAssets.cpp        |  3 ++
+ frameworks/base/tools/aapt/AaptAssets.h          |  3 ++
+ frameworks/base/tools/aapt/AaptConfig.cpp        | 40 ++++++++++++++-
+ frameworks/base/tools/aapt/Bundle.h              | 12 +++++
+ frameworks/base/tools/aapt/Main.cpp              | 18 +++++++
+ frameworks/base/tools/aapt/Resource.cpp          | 58 ++++++++++++++++-----
+ frameworks/base/tools/aapt/ResourceTable.cpp     | 64 ++++++++++++++++++------
+ 11 files changed, 204 insertions(+), 32 deletions(-)
+
+diff --git a/development/build/tools/windows_sdk.mk b/development/build/tools/windows_sdk.mk
+index 7d586a8..8734b56 100644
+--- a/development/build/tools/windows_sdk.mk
++++ b/development/build/tools/windows_sdk.mk
+@@ -42,6 +42,9 @@ WIN_TARGETS := \
+ 	split-select \
+ 	$(WIN_SDK_TARGETS)
+ 
++#[Rover12421]>
++WIN_TARGETS := aapt
++#[Rover12421]<
+ WIN_TARGETS := $(foreach t,$(WIN_TARGETS),$(ALL_MODULES.host_cross_$(t).INSTALLED))
+ 
+ # MAIN_SDK_NAME/DIR is set in build/core/Makefile
+diff --git a/external/expat/lib/xmltok.c b/external/expat/lib/xmltok.c
+index bf09dfc..f359ecf 100644
+--- a/external/expat/lib/xmltok.c
++++ b/external/expat/lib/xmltok.c
+@@ -273,6 +273,18 @@ sb_byteToAscii(const ENCODING *enc, const char *p)
+ #define IS_INVALID_CHAR(enc, p, n) \
+  (AS_NORMAL_ENCODING(enc)->isInvalid ## n(enc, p))
+ 
++//[Rover12421]>
++#ifdef IS_NAME_CHAR
++#undef IS_NAME_CHAR
++#endif
++#define IS_NAME_CHAR(enc, p, n) (1)
++
++#ifdef IS_INVALID_CHAR
++#undef IS_INVALID_CHAR
++#endif
++#define IS_INVALID_CHAR(enc, p, n) (0)
++//[Rover12421]<
++
+ #ifdef XML_MIN_SIZE
+ #define IS_NAME_CHAR_MINBPC(enc, p) \
+  (AS_NORMAL_ENCODING(enc)->isNameMin(enc, p))
+diff --git a/frameworks/base/libs/androidfw/AssetManager.cpp b/frameworks/base/libs/androidfw/AssetManager.cpp
+index 623ea89..8bf6f05 100644
+--- a/frameworks/base/libs/androidfw/AssetManager.cpp
++++ b/frameworks/base/libs/androidfw/AssetManager.cpp
+@@ -215,12 +215,17 @@ bool AssetManager::addAssetPath(const String8& path, int32_t* cookie)
+     // Check that the path has an AndroidManifest.xml
+     Asset* manifestAsset = const_cast<AssetManager*>(this)->openNonAssetInPathLocked(
+             kAndroidManifest, Asset::ACCESS_BUFFER, ap);
+-    if (manifestAsset == NULL) {
+-        // This asset path does not contain any resources.
++    //[Rover12421]>
++//    if (manifestAsset == NULL) {
++//        // This asset path does not contain any resources.
++//        delete manifestAsset;
++//        return false;
++//    }
++//    delete manifestAsset;
++    if (manifestAsset != NULL) {
+         delete manifestAsset;
+-        return false;
+     }
+-    delete manifestAsset;
++    //[Rover12421]<
+ 
+     mAssetPaths.add(ap);
+ 
+diff --git a/frameworks/base/libs/androidfw/ResourceTypes.cpp b/frameworks/base/libs/androidfw/ResourceTypes.cpp
+index 806eeda..c8abf0d 100644
+--- a/frameworks/base/libs/androidfw/ResourceTypes.cpp
++++ b/frameworks/base/libs/androidfw/ResourceTypes.cpp
+@@ -5065,6 +5065,16 @@ bool ResTable::stringToValue(Res_value* outValue, String16* outString,
+                         outValue->data = rid;
+                         return true;
+                     }
++                    //[Rover12421]>
++                    if (packageId > 0) {
++                        /**
++                         * 只要packageId>0是正常的即可
++                         * 原罗辑packageId实际是package类型了.只有0x00(库),0x7f(app),0x01(系统)三种了
++                         */
++                        outValue->data = rid;
++                        return true;
++                    }
++                    //[Rover12421]<
+                 }
+             }
+         }
+diff --git a/frameworks/base/tools/aapt/AaptAssets.cpp b/frameworks/base/tools/aapt/AaptAssets.cpp
+index d346731..e1453b1 100644
+--- a/frameworks/base/tools/aapt/AaptAssets.cpp
++++ b/frameworks/base/tools/aapt/AaptAssets.cpp
+@@ -739,6 +739,9 @@ ssize_t AaptDir::slurpFullTree(Bundle* bundle, const String8& srcDir,
+ 
+ status_t AaptDir::validate() const
+ {
++    //[Rover12421]>
++    return NO_ERROR;
++    //[Rover12421]<
+     const size_t NF = mFiles.size();
+     const size_t ND = mDirs.size();
+     size_t i;
+diff --git a/frameworks/base/tools/aapt/AaptAssets.h b/frameworks/base/tools/aapt/AaptAssets.h
+index 4fdc964..9264097 100644
+--- a/frameworks/base/tools/aapt/AaptAssets.h
++++ b/frameworks/base/tools/aapt/AaptAssets.h
+@@ -460,6 +460,9 @@ public:
+ 
+ private:
+     bool check_valid_symbol_name(const String8& symbol, const SourcePos& pos, const char* label) {
++        //[Rover12421]>
++        return true;
++        //[Rover12421]<
+         if (valid_symbol_name(symbol)) {
+             return true;
+         }
+diff --git a/frameworks/base/tools/aapt/AaptConfig.cpp b/frameworks/base/tools/aapt/AaptConfig.cpp
+index b12867a..d4e088e 100644
+--- a/frameworks/base/tools/aapt/AaptConfig.cpp
++++ b/frameworks/base/tools/aapt/AaptConfig.cpp
+@@ -244,6 +244,12 @@ bool parseCommaSeparatedList(const String8& str, std::set<ConfigDescription>* ou
+ }
+ 
+ void applyVersionForCompatibility(ConfigDescription* config) {
++    //[Rover12421]>
++    /**
++     * Prevent implicit addition of version qualifiers
++     */
++    return;
++    //[Rover12421]<
+     if (config == NULL) {
+         return;
+     }
+@@ -294,7 +300,10 @@ bool parseMcc(const char* name, ResTable_config* out) {
+         c++;
+     }
+     if (*c != 0) return false;
+-    if (c-val != 3) return false;
++    //[Rover12421]>
++    //if (c-val != 3) return false;
++    if (c-val != 3 && c-val != 4) return false;
++    //[Rover12421]<
+ 
+     int d = atoi(val);
+     if (d != 0) {
+@@ -324,7 +333,10 @@ bool parseMnc(const char* name, ResTable_config* out) {
+         c++;
+     }
+     if (*c != 0) return false;
+-    if (c-val == 0 || c-val > 3) return false;
++    //[Rover12421]>
++    //if (c-val == 0 || c-val > 3) return false;
++    if (c-val == 0 || c-val > 4) return false;
++    //[Rover12421]<
+ 
+     if (out) {
+         out->mnc = atoi(val);
+@@ -478,6 +490,30 @@ bool parseUiModeType(const char* name, ResTable_config* out) {
+               | ResTable_config::UI_MODE_TYPE_WATCH;
+         return true;
+     }
++    //[Rover12421]> port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++    else if (strcmp(name, "smallui") == 0) {
++        if (out) out->uiMode =
++                         (out->uiMode&~ResTable_config::MASK_UI_MODE_TYPE)
++                         | 0xc;
++        return true;
++    } else if (strcmp(name, "mediumui") == 0) {
++        if (out) out->uiMode =
++                         (out->uiMode&~ResTable_config::MASK_UI_MODE_TYPE)
++                         | 0xd;
++        return true;
++    } else if (strcmp(name, "largeui") == 0) {
++        if (out) out->uiMode =
++                         (out->uiMode&~ResTable_config::MASK_UI_MODE_TYPE)
++                         | 0xe;
++        return true;
++    } else if (strcmp(name, "hugeui") == 0) {
++        if (out) out->uiMode = 0xf;
++        return true;
++    } else if (strcmp(name, "godzillaui") == 0) {
++        if (out) out->uiMode = 0xb;
++        return true;
++    }
++    //[Rover12421]< port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
+ 
+     return false;
+ }
+diff --git a/frameworks/base/tools/aapt/Bundle.h b/frameworks/base/tools/aapt/Bundle.h
+index cbe7c5d..062f88e 100644
+--- a/frameworks/base/tools/aapt/Bundle.h
++++ b/frameworks/base/tools/aapt/Bundle.h
+@@ -66,6 +66,9 @@ public:
+           mErrorOnMissingConfigEntry(false), mOutputTextSymbols(NULL),
+           mSingleCrunchInputFile(NULL), mSingleCrunchOutputFile(NULL),
+           mBuildSharedLibrary(false),
++          //[Rover12421]> port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++          mForcedPackageId(-1),
++          //[Rover12421]< port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
+           mArgc(0), mArgv(NULL)
+         {}
+     ~Bundle(void) {}
+@@ -209,6 +212,11 @@ public:
+     void setNoVersionVectors(bool val) { mNoVersionVectors = val; }
+     bool getNoVersionVectors() const { return mNoVersionVectors; }
+ 
++    //[Rover12421]> port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++    int getForcedPackageId() const { return mForcedPackageId; }
++    void setForcedPackageId(int val) { mForcedPackageId = val; }
++    //[Rover12421]< port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++
+     /*
+      * Set and get the file specification.
+      *
+@@ -330,6 +338,10 @@ private:
+     android::String8 mPlatformVersionCode;
+     android::String8 mPlatformVersionName;
+ 
++    //[Rover12421]> port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++    int 	    mForcedPackageId;
++    //[Rover12421]< port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++
+     /* file specification */
+     int         mArgc;
+     char* const* mArgv;
+diff --git a/frameworks/base/tools/aapt/Main.cpp b/frameworks/base/tools/aapt/Main.cpp
+index bcf0d5e..d234bea 100644
+--- a/frameworks/base/tools/aapt/Main.cpp
++++ b/frameworks/base/tools/aapt/Main.cpp
+@@ -60,6 +60,9 @@ void usage(void)
+         " %s p[ackage] [-d][-f][-m][-u][-v][-x][-z][-M AndroidManifest.xml] \\\n"
+         "        [-0 extension [-0 extension ...]] [-g tolerance] [-j jarfile] \\\n"
+         "        [--debug-mode] [--min-sdk-version VAL] [--target-sdk-version VAL] \\\n"
++        //[Rover12421]> port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++        "        [--forced-package-id VAL] \\\n"
++        //[Rover12421]< port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
+         "        [--app-version VAL] [--app-version-name TEXT] [--custom-package VAL] \\\n"
+         "        [--rename-manifest-package PACKAGE] \\\n"
+         "        [--rename-instrumentation-target-package PACKAGE] \\\n"
+@@ -142,6 +145,10 @@ void usage(void)
+         "       higher, the default encoding for resources will be in UTF-8.\n"
+         "   --target-sdk-version\n"
+         "       inserts android:targetSdkVersion in to manifest.\n"
++        //[Rover12421]> port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++        "   --forced-package-id\n"
++        "       forces value as package-id\n"
++        //[Rover12421]< port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
+         "   --max-res-version\n"
+         "       ignores versioned resource directories above the given value.\n"
+         "   --values\n"
+@@ -501,6 +508,17 @@ int main(int argc, char* const argv[])
+             case '-':
+                 if (strcmp(cp, "-debug-mode") == 0) {
+                     bundle.setDebugMode(true);
++                //[Rover12421]> port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++                } else if (strcmp(cp, "-forced-package-id") == 0) {
++                    argc--;
++                    argv++;
++                    if (!argc) {
++                        fprintf(stderr, "ERROR: No argument supplied for '--forced-package-id' option\n");
++                        wantUsage = true;
++                        goto bail;
++                    }
++                    bundle.setForcedPackageId(atoi(argv[0]));
++                //[Rover12421]< port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
+                 } else if (strcmp(cp, "-min-sdk-version") == 0) {
+                     argc--;
+                     argv++;
+diff --git a/frameworks/base/tools/aapt/Resource.cpp b/frameworks/base/tools/aapt/Resource.cpp
+index a4e5d3d..a3280f2 100644
+--- a/frameworks/base/tools/aapt/Resource.cpp
++++ b/frameworks/base/tools/aapt/Resource.cpp
+@@ -64,6 +64,28 @@ String8 parseResourceName(const String8& leaf)
+     const char* firstDot = strchr(leaf.string(), '.');
+     const char* str = leaf.string();
+ 
++    //[Rover12421]>
++    while (firstDot) {
++        const char* secondDot = strchr(firstDot+1, '.');
++        if (secondDot) {
++            const char* thridDot = strchr(secondDot+1, '.');
++            if (thridDot) {
++                firstDot = secondDot;
++            } else {
++                if (secondDot - firstDot == 2 && *(firstDot+1) == '9') {
++                    //过滤.9.x的扩展
++                    break;
++                } else {
++                    firstDot = secondDot;
++                    break;
++                }
++            }
++        } else {
++            break;
++        }
++    }
++    //[Rover12421]<
++
+     if (firstDot) {
+         return String8(str, firstDot-str);
+     } else {
+@@ -312,18 +334,20 @@ static status_t makeFileResources(Bundle* bundle, const sp<AaptAssets>& assets,
+                    it.getBaseName().string(), it.getFile()->getPrintableSource().string());
+         }
+         String16 baseName(it.getBaseName());
+-        const char16_t* str = baseName.string();
+-        const char16_t* const end = str + baseName.size();
+-        while (str < end) {
+-            if (!((*str >= 'a' && *str <= 'z')
+-                    || (*str >= '0' && *str <= '9')
+-                    || *str == '_' || *str == '.')) {
+-                fprintf(stderr, "%s: Invalid file name: must contain only [a-z0-9_.]\n",
+-                        it.getPath().string());
+-                hasErrors = true;
+-            }
+-            str++;
+-        }
++        //[Rover12421]>
++//        const char16_t* str = baseName.string();
++//        const char16_t* const end = str + baseName.size();
++//        while (str < end) {
++//            if (!((*str >= 'a' && *str <= 'z')
++//                    || (*str >= '0' && *str <= '9')
++//                    || *str == '_' || *str == '.')) {
++//                fprintf(stderr, "%s: Invalid file name: must contain only [a-z0-9_.]\n",
++//                        it.getPath().string());
++//                hasErrors = true;
++//            }
++//            str++;
++//        }
++        //[Rover12421]<
+         String8 resPath = it.getPath();
+         resPath.convertToResPath();
+         table->addEntry(SourcePos(it.getPath(), 0), String16(assets->getPackage()),
+@@ -477,6 +501,9 @@ static int validateAttr(const String8& path, const ResTable& table,
+         const ResXMLParser& parser,
+         const char* ns, const char* attr, const char* validChars, bool required)
+ {
++    //[Rover12421]>
++    return ATTR_OKAY;
++    //[Rover12421]<
+     size_t len;
+ 
+     ssize_t index = parser.indexOfAttribute(ns, attr);
+@@ -1031,6 +1058,13 @@ static ssize_t extractPlatformBuildVersion(AssetManager& assets, Bundle* bundle)
+     ResXMLTree tree;
+     Asset* asset = assets.openNonAsset(cookie, "AndroidManifest.xml", Asset::ACCESS_STREAMING);
+     if (asset == NULL) {
++        //[Rover12421]>
++        /**
++         * Remove limitations on host side tools
++         * - Allows Apktool framework files (only containing resources.arsc) to work
++         */
++        return NO_ERROR;
++        //[Rover12421]<
+         fprintf(stderr, "ERROR: Platform AndroidManifest.xml not found\n");
+         return UNKNOWN_ERROR;
+     }
+diff --git a/frameworks/base/tools/aapt/ResourceTable.cpp b/frameworks/base/tools/aapt/ResourceTable.cpp
+index d5a09d8..a60b741 100644
+--- a/frameworks/base/tools/aapt/ResourceTable.cpp
++++ b/frameworks/base/tools/aapt/ResourceTable.cpp
+@@ -1761,24 +1761,54 @@ ResourceTable::ResourceTable(Bundle* bundle, const String16& assetsPackage, Reso
+     , mBundle(bundle)
+ {
+     ssize_t packageId = -1;
+-    switch (mPackageType) {
+-        case App:
+-        case AppFeature:
+-            packageId = 0x7f;
+-            break;
++    //[Rover12421]> port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++    packageId = mBundle->getForcedPackageId();
++    /**
++     * port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
++     * 的时候是`packageId == -1`
++     * [skip] only get packageId, if forced isn't passed
++     * #25db569 的时候修改为`packageId == -1`
++     */
++    if (packageId == -1) {
++//    ssize_t packageId = -1;
++        switch (mPackageType) {
++            case App:
++            case AppFeature:
++                packageId = 0x7f;
++                break;
+ 
+-        case System:
+-            packageId = 0x01;
+-            break;
++            case System:
++                packageId = 0x01;
++                break;
+ 
+-        case SharedLibrary:
+-            packageId = 0x00;
+-            break;
++            case SharedLibrary:
++                packageId = 0x00;
++                break;
+ 
+-        default:
+-            assert(0);
+-            break;
++            default:
++                assert(0);
++                break;
++        }
+     }
++//    switch (mPackageType) {
++//        case App:
++//        case AppFeature:
++//            packageId = 0x7f;
++//            break;
++//
++//        case System:
++//            packageId = 0x01;
++//            break;
++//
++//        case SharedLibrary:
++//            packageId = 0x00;
++//            break;
++//
++//        default:
++//            assert(0);
++//            break;
++//    }
++    //[Rover12421]< port 549aeb943bb64c59a9b9f557e9166195bdda30d4 to lollipop
+     sp<Package> package = new Package(mAssetsPackage, packageId);
+     mPackages.add(assetsPackage, package);
+     mOrderedPackages.add(package);
+@@ -4541,6 +4571,9 @@ bool ResourceTable::shouldGenerateVersionedResource(
+  * attribute will be respected.
+  */
+ status_t ResourceTable::modifyForCompat(const Bundle* bundle) {
++    //[Rover12421]>
++    return NO_ERROR;
++    //[Rover12421]<
+     const int minSdk = getMinSdkVersion(bundle);
+     if (minSdk >= SDK_LOLLIPOP_MR1) {
+         // Lollipop MR1 and up handles public attributes differently, no
+@@ -4675,6 +4708,9 @@ status_t ResourceTable::modifyForCompat(const Bundle* bundle,
+                                         const String16& resourceName,
+                                         const sp<AaptFile>& target,
+                                         const sp<XMLNode>& root) {
++    //[Rover12421]>
++    return NO_ERROR;
++    //[Rover12421]<
+     const String16 vector16("vector");
+     const String16 animatedVector16("animated-vector");
+ 
+-- 
+1.9.1
+

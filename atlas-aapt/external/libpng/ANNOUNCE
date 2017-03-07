@@ -1,0 +1,77 @@
+Libpng 1.6.22beta03 - February 19, 2016
+
+This is not intended to be a public release.  It will be replaced
+within a few weeks by a public version or by another test version.
+
+Files available for download:
+
+Source files with LF line endings (for Unix/Linux) and with a
+"configure" script
+
+   1.6.22beta03.tar.xz (LZMA-compressed, recommended)
+   1.6.22beta03.tar.gz
+
+Source files with CRLF line endings (for Windows), without the
+"configure" script
+
+   lp1622b03.7z  (LZMA-compressed, recommended)
+   lp1622b03.zip
+
+Other information:
+
+   1.6.22beta03-README.txt
+   1.6.22beta03-LICENSE.txt
+   libpng-1.6.22beta03-*.asc (armored detached GPG signatures)
+
+Changes since the last public release (1.6.21):
+
+Version 1.6.22beta01 [January 23, 2016]
+  Changed PNG_USE_MKSTEMP to __COVERITY__ to select alternate
+    "tmpfile()" implementation in contrib/libtests/pngstest.c
+  Fixed NO_STDIO build of pngunknown.c to skip calling png_init_io()
+    if there is no stdio.h support.
+  Added a png_image_write_to_memory() API and a number of assist macros
+    to allow an application that uses the simplified API write to bypass
+    stdio and write directly to memory.
+  Added some warnings (png.h) and some check code to detect *possible*
+    overflow in the ROW_STRIDE and simplified image SIZE macros.  This
+    disallows image width/height/format that *might* overflow.  This is
+    a quiet API change that limits in-memory image size (uncompressed) to
+    less than 4GByte and image row size (stride) to less than 2GByte.
+  Revised workaround for false-positive Coverity issue in pngvalid.c.
+
+Version 1.6.22beta02 [February 8, 2016]
+  Only use exit(77) in configure builds.
+  Corrected error in PNG_IMAGE_PNG_SIZE_MAX. This new macro underreported
+    the palette size because it failed to take into account that the memory
+    palette has to be expanded to full RGB when it is written to PNG.
+  Updated CMakeLists.txt, added supporting scripts/gen*.cmake.in
+    and test.cmake.in (Roger Leigh).
+  Relaxed limit checks on gamma values in pngrtran.c. As suggested in
+    the comments gamma values outside the range currently permitted
+    by png_set_alpha_mode are useful for HDR data encoding.  These values
+    are already permitted by png_set_gamma so it is reasonable caution to
+    extend the png_set_alpha_mode range as HDR imaging systems are starting
+    to emerge.
+
+Version 1.6.22beta03 [February 19, 2016]
+  Added a common-law trademark notice and export control information
+    to the LICENSE file, png.h, and the man page.
+  Restored "& 0xff" in png_save_uint_16() and png_save_uint_32() that
+    were accidentally removed from libpng-1.6.17. 
+  Changed PNG_INFO_cHNK and PNG_FREE_cHNK from 0xnnnn to 0xnnnnU in png.h
+    (Robert C. Seacord).
+  Removed dubious "#if INT_MAX" test from png.h that was added to
+    libpng-1.6.19beta02 (John Bowler).
+  Add ${INCLUDES} in scripts/genout.cmake.in (Bug report by Nixon Kwok).
+  Updated LICENSE to say files in the contrib directory are not
+    necessarily under the libpng license, and that some makefiles have
+    other copyright owners.
+
+Send comments/corrections/commendations to png-mng-implement at lists.sf.net
+(subscription required; visit
+https://lists.sourceforge.net/lists/listinfo/png-mng-implement
+to subscribe)
+or to glennrp at users.sourceforge.net
+
+Glenn R-P

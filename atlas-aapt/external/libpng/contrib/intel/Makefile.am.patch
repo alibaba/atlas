@@ -1,0 +1,17 @@
+
+#
+# Copyright (c) 2016 Google, Inc.
+#
+# This code is released under the libpng license.
+# For conditions of distribution and use, see the disclaimer
+# and license in png.h
+#
+
+# In order to compile Intel SSE optimizations for libpng, please add
+# the following code to Makefile.am directly beneath the
+# "if PNG_ARM_NEON ... endif" statement.
+
+if PNG_INTEL_SSE
+libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES += contrib/intel/intel_init.c\
+    contrib/intel/filter_sse2_intrinsics.c
+endif

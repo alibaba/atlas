@@ -1,0 +1,40 @@
+/*
+ * README.android describes in high-level the compiler-rt changes that we
+ * cannot push upstream to the llvm.org repository:
+ *  - Changes due to Android's build system.
+ *  - Changes due to Android's toolchain.
+ *  - Changes due to the limitations in Android-based consumer electronics.
+ *
+ * Some of them are to-dos. If and when they are done, there will no longer be
+ * merge conflicts with upstream on those parts.
+ *
+ * The file contains useful hints when we try to resolve future 3-way merge
+ * conflicts.
+ */
+
+* For JellyBean: Synced to upstream r155350
+* For JellyBean MR1: Synced to upstream r162279
+* For Jellybean MR2: Synced to upstream r177337
+* For Key Lime Pie: Synced to upstream r187889
+* For FUTURE: Synced to LLVM 3.4 r197381
+
+* Cherry-pick on 2014/2/11: https://llvm.org/svn/llvm-project/compiler-rt/trunk@201068 and https://llvm.org/svn/llvm-project/compiler-rt/trunk@201070
+* Recent downstreaming on 2013/2/11: Synced to r197381 (Contact srhines for merge questions.)
+* Recent downstreaming on 2013/8/8: Synced to r187889 (Contact srhines for merge questions.)
+* Recent downstreaming on 2013/6/13: Synced to r183849 (Contact srhines for merge questions.)
+* Recent downstreaming on 2013/5/3: Synced to r180792 (Contact srhines for merge questions.)
+* Recent downstreaming on 2013/3/18: Synced to r177337 (Contact srhines for merge questions.)
+* Recent downstreaming on 2013/3/5: Synced to r176091 (Contact srhines for merge questions.)
+* Recent downstreaming on 2013/1/8: Synced to r171802 (Contact srhines for merge questions.)
+* Recent downstreaming on 2012/08/23: Synced to r162279 (Contact srhines for merge questions.)
+* Recent downstreaming on 2012/08/15: Synced to r159129 (Contact sliao for merge questions.)
+* Cherry-pick on 2012/07/27: https://llvm.org/svn/llvm-project/compiler-rt/trunk@160853 for ASan (Contact srhines for merge questions.)
+* Cherry-pick on 2012/05/23: https://llvm.org/svn/llvm-project/compiler-rt/trunk@157318 for ASan (Contact srhines for merge questions.)
+* Recent downstreaming on 2012/04/25: Synced to r155350 (Contact sliao for merge questions.)
+* Recent downstreaming on 2012/03/08: Synced to r152058 (Contact srhines for merge questions.)
+
+TODO: This is still not building by default (no Android.mk files are present
+yet). Look at frameworks/compile/libbcc/runtime for potential starting points.
+
+TODO: Switch libbcc to use this version of compiler-rt instead of its own
+tweaked version.

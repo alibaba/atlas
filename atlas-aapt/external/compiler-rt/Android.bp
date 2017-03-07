@@ -1,0 +1,412 @@
+//
+// Copyright (C) 2012 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+//=====================================================================
+// Static Library: libcompiler_rt-extras
+//=====================================================================
+
+cc_library_static {
+    name: "libcompiler_rt-extras",
+    host_supported: true,
+    clang: true,
+    // The following list contains functions that are not available in libgcc.a, so
+    // we potentially need them when using a Clang-built component (e.g., -ftrapv
+    // with 64-bit integer multiplies. See http://llvm.org/bugs/show_bug.cgi?id=14469.)
+    srcs: ["lib/builtins/mulodi4.c"],
+    sanitize: ["never"],
+    stl: "none",
+
+    cflags: [
+        "-Wno-unused-parameter",
+        "-Werror",
+    ],
+
+    arch: {
+        mips: {
+            srcs: ["lib/builtins/clear_cache.c"],
+        },
+        mips64: {
+            srcs: ["lib/builtins/clear_cache.c"],
+        },
+    },
+
+    target: {
+        windows: {
+            enabled: true,
+        },
+    },
+}
+
+// Don't build compiler-rt without clang
+// ANDROIDMK TRANSLATION ERROR: unsupported directive
+// ifneq ($(WITHOUT_TARGET_CLANG), true)
+//=====================================================================
+// Device and Host Static Library: libcompiler_rt
+//=====================================================================
+
+cc_library {
+    name: "libcompiler_rt",
+    host_supported: true,
+    // The following list contains platform-independent functionalities.
+    //
+    // Skip apple_versioning.c since it is unused.
+    // Skip atomic.c since it needs to be built separately according to the docs.
+    srcs: [
+        "lib/builtins/absvdi2.c",
+        "lib/builtins/absvsi2.c",
+        "lib/builtins/absvti2.c",
+        "lib/builtins/adddf3.c",
+        "lib/builtins/addsf3.c",
+        "lib/builtins/addtf3.c",
+        "lib/builtins/addvdi3.c",
+        "lib/builtins/addvsi3.c",
+        "lib/builtins/addvti3.c",
+        "lib/builtins/ashldi3.c",
+        "lib/builtins/ashlti3.c",
+        "lib/builtins/ashrdi3.c",
+        "lib/builtins/ashrti3.c",
+        "lib/builtins/clear_cache.c",
+        "lib/builtins/clzdi2.c",
+        "lib/builtins/clzsi2.c",
+        "lib/builtins/clzti2.c",
+        "lib/builtins/cmpdi2.c",
+        "lib/builtins/cmpti2.c",
+        "lib/builtins/comparedf2.c",
+        "lib/builtins/comparesf2.c",
+        "lib/builtins/comparetf2.c",
+        "lib/builtins/ctzdi2.c",
+        "lib/builtins/ctzsi2.c",
+        "lib/builtins/ctzti2.c",
+        "lib/builtins/divdc3.c",
+        "lib/builtins/divdf3.c",
+        "lib/builtins/divdi3.c",
+        "lib/builtins/divmoddi4.c",
+        "lib/builtins/divmodsi4.c",
+        "lib/builtins/divsc3.c",
+        "lib/builtins/divsf3.c",
+        "lib/builtins/divsi3.c",
+        "lib/builtins/divtf3.c",
+        "lib/builtins/divti3.c",
+        "lib/builtins/divxc3.c",
+        "lib/builtins/eprintf.c",
+        "lib/builtins/extenddftf2.c",
+        "lib/builtins/extendhfsf2.c",
+        "lib/builtins/extendsfdf2.c",
+        "lib/builtins/extendsftf2.c",
+        "lib/builtins/ffsdi2.c",
+        "lib/builtins/ffsti2.c",
+        "lib/builtins/fixdfdi.c",
+        "lib/builtins/fixdfsi.c",
+        "lib/builtins/fixdfti.c",
+        "lib/builtins/fixsfdi.c",
+        "lib/builtins/fixsfsi.c",
+        "lib/builtins/fixsfti.c",
+        "lib/builtins/fixtfdi.c",
+        "lib/builtins/fixtfsi.c",
+        "lib/builtins/fixtfti.c",
+        "lib/builtins/fixunsdfdi.c",
+        "lib/builtins/fixunsdfsi.c",
+        "lib/builtins/fixunsdfti.c",
+        "lib/builtins/fixunssfdi.c",
+        "lib/builtins/fixunssfsi.c",
+        "lib/builtins/fixunssfti.c",
+        "lib/builtins/fixunstfdi.c",
+        "lib/builtins/fixunstfsi.c",
+        "lib/builtins/fixunstfti.c",
+        "lib/builtins/fixunsxfdi.c",
+        "lib/builtins/fixunsxfsi.c",
+        "lib/builtins/fixunsxfti.c",
+        "lib/builtins/fixxfdi.c",
+        "lib/builtins/fixxfti.c",
+        "lib/builtins/floatdidf.c",
+        "lib/builtins/floatdisf.c",
+        "lib/builtins/floatdixf.c",
+        "lib/builtins/floatsidf.c",
+        "lib/builtins/floatsisf.c",
+        "lib/builtins/floatsitf.c",
+        "lib/builtins/floattidf.c",
+        "lib/builtins/floattisf.c",
+        "lib/builtins/floattixf.c",
+        "lib/builtins/floatundidf.c",
+        "lib/builtins/floatundisf.c",
+        "lib/builtins/floatundixf.c",
+        "lib/builtins/floatunsidf.c",
+        "lib/builtins/floatunsisf.c",
+        "lib/builtins/floatunsitf.c",
+        "lib/builtins/floatuntidf.c",
+        "lib/builtins/floatuntisf.c",
+        "lib/builtins/floatuntixf.c",
+        "lib/builtins/gcc_personality_v0.c",
+        "lib/builtins/int_util.c",
+        "lib/builtins/lshrdi3.c",
+        "lib/builtins/lshrti3.c",
+        "lib/builtins/moddi3.c",
+        "lib/builtins/modsi3.c",
+        "lib/builtins/modti3.c",
+        "lib/builtins/muldc3.c",
+        "lib/builtins/muldf3.c",
+        "lib/builtins/muldi3.c",
+        "lib/builtins/mulodi4.c",
+        "lib/builtins/mulosi4.c",
+        "lib/builtins/muloti4.c",
+        "lib/builtins/mulsc3.c",
+        "lib/builtins/mulsf3.c",
+        "lib/builtins/multf3.c",
+        "lib/builtins/multi3.c",
+        "lib/builtins/mulvdi3.c",
+        "lib/builtins/mulvsi3.c",
+        "lib/builtins/mulvti3.c",
+        "lib/builtins/mulxc3.c",
+        "lib/builtins/negdf2.c",
+        "lib/builtins/negdi2.c",
+        "lib/builtins/negsf2.c",
+        "lib/builtins/negti2.c",
+        "lib/builtins/negvdi2.c",
+        "lib/builtins/negvsi2.c",
+        "lib/builtins/negvti2.c",
+        "lib/builtins/paritydi2.c",
+        "lib/builtins/paritysi2.c",
+        "lib/builtins/parityti2.c",
+        "lib/builtins/popcountdi2.c",
+        "lib/builtins/popcountsi2.c",
+        "lib/builtins/popcountti2.c",
+        "lib/builtins/powidf2.c",
+        "lib/builtins/powisf2.c",
+        "lib/builtins/powitf2.c",
+        "lib/builtins/powixf2.c",
+        "lib/builtins/subdf3.c",
+        "lib/builtins/subsf3.c",
+        "lib/builtins/subtf3.c",
+        "lib/builtins/subvdi3.c",
+        "lib/builtins/subvsi3.c",
+        "lib/builtins/subvti3.c",
+        "lib/builtins/trampoline_setup.c",
+        "lib/builtins/truncdfhf2.c",
+        "lib/builtins/truncdfsf2.c",
+        "lib/builtins/truncsfhf2.c",
+        "lib/builtins/trunctfdf2.c",
+        "lib/builtins/trunctfsf2.c",
+        "lib/builtins/ucmpdi2.c",
+        "lib/builtins/ucmpti2.c",
+        "lib/builtins/udivdi3.c",
+        "lib/builtins/udivmoddi4.c",
+        "lib/builtins/udivmodsi4.c",
+        "lib/builtins/udivmodti4.c",
+        "lib/builtins/udivsi3.c",
+        "lib/builtins/udivti3.c",
+        "lib/builtins/umoddi3.c",
+        "lib/builtins/umodsi3.c",
+        "lib/builtins/umodti3.c",
+    ],
+
+    cflags: [
+        "-Wno-unused-parameter",
+        "-Werror",
+    ],
+
+    arch: {
+        arm: {
+            cflags: ["-D__ARM_EABI__"],
+            srcs: [
+                "lib/builtins/arm/aeabi_dcmp.S",
+                "lib/builtins/arm/aeabi_div0.c",
+                "lib/builtins/arm/aeabi_fcmp.S",
+                "lib/builtins/arm/aeabi_idivmod.S",
+                "lib/builtins/arm/aeabi_ldivmod.S",
+                "lib/builtins/arm/aeabi_memcmp.S",
+                "lib/builtins/arm/aeabi_memcpy.S",
+                "lib/builtins/arm/aeabi_memmove.S",
+                "lib/builtins/arm/aeabi_memset.S",
+                "lib/builtins/arm/aeabi_uidivmod.S",
+                "lib/builtins/arm/aeabi_uldivmod.S",
+                "lib/builtins/arm/comparesf2.S",
+                "lib/builtins/arm/divmodsi4.S",
+                "lib/builtins/arm/divsi3.S",
+                "lib/builtins/arm/modsi3.S",
+                "lib/builtins/arm/udivmodsi4.S",
+                "lib/builtins/arm/udivsi3.S",
+                "lib/builtins/arm/umodsi3.S",
+                "lib/builtins/arm/adddf3vfp.S",
+                "lib/builtins/arm/addsf3vfp.S",
+                "lib/builtins/arm/divdf3vfp.S",
+                "lib/builtins/arm/divsf3vfp.S",
+                "lib/builtins/arm/eqdf2vfp.S",
+                "lib/builtins/arm/eqsf2vfp.S",
+                "lib/builtins/arm/extendsfdf2vfp.S",
+                "lib/builtins/arm/fixdfsivfp.S",
+                "lib/builtins/arm/fixsfsivfp.S",
+                "lib/builtins/arm/fixunsdfsivfp.S",
+                "lib/builtins/arm/fixunssfsivfp.S",
+                "lib/builtins/arm/floatsidfvfp.S",
+                "lib/builtins/arm/floatsisfvfp.S",
+                "lib/builtins/arm/floatunssidfvfp.S",
+                "lib/builtins/arm/floatunssisfvfp.S",
+                "lib/builtins/arm/gedf2vfp.S",
+                "lib/builtins/arm/gesf2vfp.S",
+                "lib/builtins/arm/gtdf2vfp.S",
+                "lib/builtins/arm/gtsf2vfp.S",
+                "lib/builtins/arm/ledf2vfp.S",
+                "lib/builtins/arm/lesf2vfp.S",
+                "lib/builtins/arm/ltdf2vfp.S",
+                "lib/builtins/arm/ltsf2vfp.S",
+                "lib/builtins/arm/muldf3vfp.S",
+                "lib/builtins/arm/mulsf3vfp.S",
+                "lib/builtins/arm/nedf2vfp.S",
+                "lib/builtins/arm/negdf2vfp.S",
+                "lib/builtins/arm/negsf2vfp.S",
+                "lib/builtins/arm/nesf2vfp.S",
+                "lib/builtins/arm/subdf3vfp.S",
+                "lib/builtins/arm/subsf3vfp.S",
+                "lib/builtins/arm/truncdfsf2vfp.S",
+                "lib/builtins/arm/unorddf2vfp.S",
+                "lib/builtins/arm/unordsf2vfp.S",
+            ],
+            exclude_srcs: [
+                "lib/builtins/comparesf2.c",
+                "lib/builtins/divmodsi4.c",
+                "lib/builtins/divsi3.c",
+                "lib/builtins/modsi3.c",
+                "lib/builtins/udivmodsi4.c",
+                "lib/builtins/udivsi3.c",
+                "lib/builtins/umodsi3.c",
+            ],
+        },
+        mips64: {
+            cflags: [
+                "-DCRT_HAS_128BIT",
+            ],
+        },
+        x86: {
+            srcs: [
+                "lib/builtins/i386/ashldi3.S",
+                "lib/builtins/i386/ashrdi3.S",
+                "lib/builtins/i386/divdi3.S",
+                "lib/builtins/i386/floatdidf.S",
+                "lib/builtins/i386/floatdisf.S",
+                "lib/builtins/i386/floatdixf.S",
+                "lib/builtins/i386/floatundidf.S",
+                "lib/builtins/i386/floatundisf.S",
+                "lib/builtins/i386/floatundixf.S",
+                "lib/builtins/i386/lshrdi3.S",
+                "lib/builtins/i386/moddi3.S",
+                "lib/builtins/i386/muldi3.S",
+                "lib/builtins/i386/udivdi3.S",
+                "lib/builtins/i386/umoddi3.S",
+            ],
+            exclude_srcs: [
+                "lib/builtins/ashldi3.c",
+                "lib/builtins/ashrdi3.c",
+                "lib/builtins/divdi3.c",
+                "lib/builtins/floatdidf.c",
+                "lib/builtins/floatdisf.c",
+                "lib/builtins/floatdixf.c",
+                "lib/builtins/floatundidf.c",
+                "lib/builtins/floatundisf.c",
+                "lib/builtins/floatundixf.c",
+                "lib/builtins/lshrdi3.c",
+                "lib/builtins/moddi3.c",
+                "lib/builtins/muldi3.c",
+                "lib/builtins/udivdi3.c",
+                "lib/builtins/umoddi3.c",
+            ],
+        },
+        x86_64: {
+            srcs: [
+                "lib/builtins/x86_64/floatundixf.S",
+                "lib/builtins/x86_64/floatdisf.c",
+                "lib/builtins/x86_64/floatdidf.c",
+                "lib/builtins/x86_64/floatdixf.c",
+                "lib/builtins/x86_64/floatundisf.S",
+                "lib/builtins/x86_64/floatundidf.S",
+            ],
+            exclude_srcs: [
+                "lib/builtins/floatundixf.c",
+                "lib/builtins/floatdisf.c",
+                "lib/builtins/floatdidf.c",
+                "lib/builtins/floatdixf.c",
+                "lib/builtins/floatundisf.c",
+                "lib/builtins/floatundidf.c",
+            ],
+        },
+    },
+
+    target: {
+        not_windows: {
+            // Only build enable_execute_stack.c on non-Windows hosts.
+            srcs: ["lib/builtins/enable_execute_stack.c"],
+            host_ldlibs: [
+                "-lpthread",
+                "-lc",
+                "-lm",
+            ],
+        },
+        android: {
+            srcs: ["lib/builtins/enable_execute_stack.c"],
+            shared_libs: ["libdl", "liblog"],
+            static_libs: ["liblzma"],
+        },
+        android_arm: {
+            static_libs: ["libunwind_llvm"],
+            ldflags: ["-Wl,--exclude-libs,libunwind_llvm.a"],
+        },
+        android_arm64: {
+            // b/26968262 liblzma needs to be after libunwindbacktrace
+            static_libs: ["libunwindbacktrace","liblzma"],
+            ldflags: ["-Wl,--exclude-libs,libunwindbacktrace.a"],
+        },
+        android_mips: {
+            // b/26968262 liblzma needs to be after libunwindbacktrace
+            static_libs: ["libunwindbacktrace","liblzma"],
+            ldflags: ["-Wl,--exclude-libs,libunwindbacktrace.a"],
+        },
+        android_mips64: {
+            // b/26968262 liblzma needs to be after libunwindbacktrace
+            static_libs: ["libunwindbacktrace","liblzma"],
+            ldflags: ["-Wl,--exclude-libs,libunwindbacktrace.a"],
+        },
+        android_x86: {
+            // b/26968262 liblzma needs to be after libunwindbacktrace
+            static_libs: ["libunwindbacktrace","liblzma"],
+            ldflags: ["-Wl,--exclude-libs,libunwindbacktrace.a"],
+        },
+        android_x86_64: {
+            srcs: ["lib/builtins/ppc/floatditf.c"],
+            // b/26968262 liblzma needs to be after libunwindbacktrace
+            static_libs: ["libunwindbacktrace","liblzma"],
+            ldflags: ["-Wl,--exclude-libs,libunwindbacktrace.a"],
+        },
+        linux: {
+            static_libs: ["libunwindbacktrace"],
+        },
+        windows: {
+            static_libs: ["libunwindbacktrace"],
+        },
+    },
+
+    asflags: ["-integrated-as"],
+    clang: true,
+    no_libgcc: true,
+
+    sanitize: ["never"],
+    stl: "none",
+}
+
+// Build asan, lsan, etc.
+// ANDROIDMK TRANSLATION ERROR: unsupported include
+// include $(call all-makefiles-under,$(LOCAL_PATH)/lib)
+// ANDROIDMK TRANSLATION ERROR: unsupported directive
+// endif

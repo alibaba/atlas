@@ -1,0 +1,46 @@
+#
+# Copyright (c) 2016 Google, Inc.
+#
+# This code is released under the libpng license.
+# For conditions of distribution and use, see the disclaimer
+# and license in png.h
+#
+
+# In order to compile Intel SSE optimizations for libpng, please add
+# the following code to configure.ac under HOST SPECIFIC OPTIONS
+# directly beneath the section for ARM.
+
+# INTEL
+# ===
+#
+# INTEL SSE (SIMD) support.
+
+AC_ARG_ENABLE([intel-sse],
+   AS_HELP_STRING([[[--enable-intel-sse]]],
+      [Enable Intel SSE optimizations: =no/off, yes/on:]
+      [no/off: disable the optimizations;]
+      [yes/on: enable the optimizations.]
+      [If not specified: determined by the compiler.]),
+   [case "$enableval" in
+      no|off)
+         # disable the default enabling:
+         AC_DEFINE([PNG_INTEL_SSE_OPT], [0],
+                   [Disable Intel SSE optimizations])
+         # Prevent inclusion of the assembler files below:
+         enable_intel_sse=no;;
+      yes|on)
+         AC_DEFINE([PNG_INTEL_SSE_OPT], [1],
+                   [Enable Intel SSE optimizations]);;
+      *)
+         AC_MSG_ERROR([--enable-intel-sse=${enable_intel_sse}: invalid value])
+   esac])
+
+# Add Intel specific files to all builds where the host_cpu is Intel ('x86*')
+# or where Intel optimizations were explicitly requested (this allows a
+# fallback if a future host CPU does not match 'x86*')
+AM_CONDITIONAL([PNG_INTEL_SSE],
+   [test "$enable_intel_sse" != 'no' &&
+    case "$host_cpu" in
+      i?86|x86_64) :;;
+      *)    test "$enable_intel_sse" != '';;
+    esac])

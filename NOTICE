@@ -1,0 +1,8 @@
+Atlas-Framework
+Copyright 2016 Alibaba Group
+
+This product includes software developed at Alibaba Group. (http://www.alibabagroup.com).
+
+This product modifed software aapt(https://android.googlesource.com/platform/frameworks/base/+/master/tools/aapt/) developed by The Android Open Source Project (http://source.android.com).
+
+This product modifed software Android Gradle Build System(https://android.googlesource.com/platform/tools/base/+/gradle-dev/build-system/) developed by The Android Open Source Project (http://source.android.com).

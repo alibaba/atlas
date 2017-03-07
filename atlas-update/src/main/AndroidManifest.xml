@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.taobao.atlas.update">
+
+    <uses-sdk
+        android:minSdkVersion="14"
+        android:targetSdkVersion="23" />
+
+    <application>
+        <service
+            android:name="com.taobao.atlas.dexmerge.DexMergeService"
+            android:process=":dexmerge">
+            <intent-filter>
+                <action android:name="com.taobao.atlas.dexmerge.DexMergeService"></action>
+            </intent-filter>
+        </service>
+        <receiver android:name="com.taobao.atlas.update.AwoPatchReceiver" >
+        <intent-filter>
+        <action android:name="com.taobao.atlas.intent.PATCH_APP"/>
+        </intent-filter>
+        <intent-filter>
+        <action android:name="com.taobao.atlas.intent.DEX_PATCH_APP"/>
+        </intent-filter>
+        <intent-filter>
+        <action android:name="com.taobao.atlas.intent.ROLLBACK_PATCH"/>
+        </intent-filter>
+        <intent-filter>
+        <action android:name="com.taobao.atlas.intent.ROLLBACK_DEX_PATCH"/>
+        </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

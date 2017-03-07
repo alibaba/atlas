@@ -1,0 +1,11 @@
+Support functions for Android's class libraries
+
+
+These are VM-agnostic native functions that implement methods for system
+class libraries.  All code here:
+
+ - MUST not be associated with an android.* class (that code lives in
+   frameworks/base/).
+ - SHOULD be written in C rather than C++ where possible.
+
+Some helper functions are defined in include/nativehelper/JNIHelp.h.

@@ -1,0 +1,22 @@
+## atlas-core
+
+Atlas-core 是Atlas框架端侧的运行库，构建产生的产物在应用安装后由core负责管理所有bundle的安装、运行、更新等内容，客户端启动后，入口为AtlasBridgeApplication（构建过程自动替换），负责atlas自身容器的运行，启动后开始执行业务代码具体的Application。
+
+### 主要功能
+
+Atlas-core启动后，所有的bundle安装基于运行时的情况按需加载，这个由容器自身完成；同时容器有两个工具类在运行时允许外部进行直接调用以完成特定的功能：
+
+1. RuntimeVariables.java:提供了常用的一些变量方便使用，比如application，currentprocess等.
+2. Atlas.java: 提供运行时外部可能需要用到的一些方法，使用时查阅Atlas里面 for public use区块的方法  
+
+### 关键类
+
+除了上述两个类以及关联用到的一些类外，其他的类容器内部运行使用，不建议在运行时直接调用或者修改里面的内容，下面基本介绍下主要几个关键类
+
+1.  AtlasBundleInfoManager : 通过解析打包生成的bundleinfo文件，管理整个apk内所有bundle的清单信息，component触发的bundle路由时通过清单类进行bundle查找
+2. BaselineInfoManager: 应用发生动态部署后，BaselinfInfoManager记录最新的版本以及所有发生变更的bundle的版本，在bundle加载时会通过BaselineInfoManager进行进一步校验，动态部署故障时也依托于manager触发版本回滚
+3. DelegateClassLoader： 替换原有PathClassloader，并以它为parent，负责对所有bundleclassloader的路由，本身不负责真正类的加载
+4. DelegateResource：运行期全局唯一的resource，每个bundle安装时更新DelegateResources对应的AssetsManager使自身资源生效
+5. BundleImpl BundleArchive  BundleArchiveRevision: 运行时每个Bundle对应一个BundleImpl的实例，同时Archive类用于仲裁选择匹配的bundle版本，currentRevision记录当前bundle在文件系统里面的内容
+6. KernalBundle & KernalBunleArchive ：模仿bundle的结构，host发生动态部署时以KernalBundle的方式去load 动态部署里面host部分的更新内容，保证运行时能够覆盖原有逻辑以满足host内容动态更新的能力
+7. InstrumetionHook、ActivityManagerHook 等其他工具类以hook或者替换的方式注入android framework，保障运行期能够正确的触发bundle的安装，运行的任务

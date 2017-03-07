@@ -1,0 +1,970 @@
+/*
+ *
+ *
+ *                                  Apache License
+ *                            Version 2.0, January 2004
+ *                         http://www.apache.org/licenses/
+ *
+ *    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+ *
+ *    1. Definitions.
+ *
+ *       "License" shall mean the terms and conditions for use, reproduction,
+ *       and distribution as defined by Sections 1 through 9 of this document.
+ *
+ *       "Licensor" shall mean the copyright owner or entity authorized by
+ *       the copyright owner that is granting the License.
+ *
+ *       "Legal Entity" shall mean the union of the acting entity and all
+ *       other entities that control, are controlled by, or are under common
+ *       control with that entity. For the purposes of this definition,
+ *       "control" means (i) the power, direct or indirect, to cause the
+ *       direction or management of such entity, whether by contract or
+ *       otherwise, or (ii) ownership of fifty percent (50%) or more of the
+ *       outstanding shares, or (iii) beneficial ownership of such entity.
+ *
+ *       "You" (or "Your") shall mean an individual or Legal Entity
+ *       exercising permissions granted by this License.
+ *
+ *       "Source" form shall mean the preferred form for making modifications,
+ *       including but not limited to software source code, documentation
+ *       source, and configuration files.
+ *
+ *       "Object" form shall mean any form resulting from mechanical
+ *       transformation or translation of a Source form, including but
+ *       not limited to compiled object code, generated documentation,
+ *       and conversions to other media types.
+ *
+ *       "Work" shall mean the work of authorship, whether in Source or
+ *       Object form, made available under the License, as indicated by a
+ *       copyright notice that is included in or attached to the work
+ *       (an example is provided in the Appendix below).
+ *
+ *       "Derivative Works" shall mean any work, whether in Source or Object
+ *       form, that is based on (or derived from) the Work and for which the
+ *       editorial revisions, annotations, elaborations, or other modifications
+ *       represent, as a whole, an original work of authorship. For the purposes
+ *       of this License, Derivative Works shall not include works that remain
+ *       separable from, or merely link (or bind by name) to the interfaces of,
+ *       the Work and Derivative Works thereof.
+ *
+ *       "Contribution" shall mean any work of authorship, including
+ *       the original version of the Work and any modifications or additions
+ *       to that Work or Derivative Works thereof, that is intentionally
+ *       submitted to Licensor for inclusion in the Work by the copyright owner
+ *       or by an individual or Legal Entity authorized to submit on behalf of
+ *       the copyright owner. For the purposes of this definition, "submitted"
+ *       means any form of electronic, verbal, or written communication sent
+ *       to the Licensor or its representatives, including but not limited to
+ *       communication on electronic mailing lists, source code control systems,
+ *       and issue tracking systems that are managed by, or on behalf of, the
+ *       Licensor for the purpose of discussing and improving the Work, but
+ *       excluding communication that is conspicuously marked or otherwise
+ *       designated in writing by the copyright owner as "Not a Contribution."
+ *
+ *       "Contributor" shall mean Licensor and any individual or Legal Entity
+ *       on behalf of whom a Contribution has been received by Licensor and
+ *       subsequently incorporated within the Work.
+ *
+ *    2. Grant of Copyright License. Subject to the terms and conditions of
+ *       this License, each Contributor hereby grants to You a perpetual,
+ *       worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+ *       copyright license to reproduce, prepare Derivative Works of,
+ *       publicly display, publicly perform, sublicense, and distribute the
+ *       Work and such Derivative Works in Source or Object form.
+ *
+ *    3. Grant of Patent License. Subject to the terms and conditions of
+ *       this License, each Contributor hereby grants to You a perpetual,
+ *       worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+ *       (except as stated in this section) patent license to make, have made,
+ *       use, offer to sell, sell, import, and otherwise transfer the Work,
+ *       where such license applies only to those patent claims licensable
+ *       by such Contributor that are necessarily infringed by their
+ *       Contribution(s) alone or by combination of their Contribution(s)
+ *       with the Work to which such Contribution(s) was submitted. If You
+ *       institute patent litigation against any entity (including a
+ *       cross-claim or counterclaim in a lawsuit) alleging that the Work
+ *       or a Contribution incorporated within the Work constitutes direct
+ *       or contributory patent infringement, then any patent licenses
+ *       granted to You under this License for that Work shall terminate
+ *       as of the date such litigation is filed.
+ *
+ *    4. Redistribution. You may reproduce and distribute copies of the
+ *       Work or Derivative Works thereof in any medium, with or without
+ *       modifications, and in Source or Object form, provided that You
+ *       meet the following conditions:
+ *
+ *       (a) You must give any other recipients of the Work or
+ *           Derivative Works a copy of this License; and
+ *
+ *       (b) You must cause any modified files to carry prominent notices
+ *           stating that You changed the files; and
+ *
+ *       (c) You must retain, in the Source form of any Derivative Works
+ *           that You distribute, all copyright, patent, trademark, and
+ *           attribution notices from the Source form of the Work,
+ *           excluding those notices that do not pertain to any part of
+ *           the Derivative Works; and
+ *
+ *       (d) If the Work includes a "NOTICE" text file as part of its
+ *           distribution, then any Derivative Works that You distribute must
+ *           include a readable copy of the attribution notices contained
+ *           within such NOTICE file, excluding those notices that do not
+ *           pertain to any part of the Derivative Works, in at least one
+ *           of the following places: within a NOTICE text file distributed
+ *           as part of the Derivative Works; within the Source form or
+ *           documentation, if provided along with the Derivative Works; or,
+ *           within a display generated by the Derivative Works, if and
+ *           wherever such third-party notices normally appear. The contents
+ *           of the NOTICE file are for informational purposes only and
+ *           do not modify the License. You may add Your own attribution
+ *           notices within Derivative Works that You distribute, alongside
+ *           or as an addendum to the NOTICE text from the Work, provided
+ *           that such additional attribution notices cannot be construed
+ *           as modifying the License.
+ *
+ *       You may add Your own copyright statement to Your modifications and
+ *       may provide additional or different license terms and conditions
+ *       for use, reproduction, or distribution of Your modifications, or
+ *       for any such Derivative Works as a whole, provided Your use,
+ *       reproduction, and distribution of the Work otherwise complies with
+ *       the conditions stated in this License.
+ *
+ *    5. Submission of Contributions. Unless You explicitly state otherwise,
+ *       any Contribution intentionally submitted for inclusion in the Work
+ *       by You to the Licensor shall be under the terms and conditions of
+ *       this License, without any additional terms or conditions.
+ *       Notwithstanding the above, nothing herein shall supersede or modify
+ *       the terms of any separate license agreement you may have executed
+ *       with Licensor regarding such Contributions.
+ *
+ *    6. Trademarks. This License does not grant permission to use the trade
+ *       names, trademarks, service marks, or product names of the Licensor,
+ *       except as required for reasonable and customary use in describing the
+ *       origin of the Work and reproducing the content of the NOTICE file.
+ *
+ *    7. Disclaimer of Warranty. Unless required by applicable law or
+ *       agreed to in writing, Licensor provides the Work (and each
+ *       Contributor provides its Contributions) on an "AS IS" BASIS,
+ *       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ *       implied, including, without limitation, any warranties or conditions
+ *       of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+ *       PARTICULAR PURPOSE. You are solely responsible for determining the
+ *       appropriateness of using or redistributing the Work and assume any
+ *       risks associated with Your exercise of permissions under this License.
+ *
+ *    8. Limitation of Liability. In no event and under no legal theory,
+ *       whether in tort (including negligence), contract, or otherwise,
+ *       unless required by applicable law (such as deliberate and grossly
+ *       negligent acts) or agreed to in writing, shall any Contributor be
+ *       liable to You for damages, including any direct, indirect, special,
+ *       incidental, or consequential damages of any character arising as a
+ *       result of this License or out of the use or inability to use the
+ *       Work (including but not limited to damages for loss of goodwill,
+ *       work stoppage, computer failure or malfunction, or any and all
+ *       other commercial damages or losses), even if such Contributor
+ *       has been advised of the possibility of such damages.
+ *
+ *    9. Accepting Warranty or Additional Liability. While redistributing
+ *       the Work or Derivative Works thereof, You may choose to offer,
+ *       and charge a fee for, acceptance of support, warranty, indemnity,
+ *       or other liability obligations and/or rights consistent with this
+ *       License. However, in accepting such obligations, You may act only
+ *       on Your own behalf and on Your sole responsibility, not on behalf
+ *       of any other Contributor, and only if You agree to indemnify,
+ *       defend, and hold each Contributor harmless for any liability
+ *       incurred by, or claims asserted against, such Contributor by reason
+ *       of your accepting any such warranty or additional liability.
+ *
+ *    END OF TERMS AND CONDITIONS
+ *
+ *    APPENDIX: How to apply the Apache License to your work.
+ *
+ *       To apply the Apache License to your work, attach the following
+ *       boilerplate notice, with the fields enclosed by brackets "[]"
+ *       replaced with your own identifying information. (Don't include
+ *       the brackets!)  The text should be enclosed in the appropriate
+ *       comment syntax for the file format. We also recommend that a
+ *       file or class name and description of purpose be included on the
+ *       same "printed page" as the copyright notice for easier
+ *       identification within third-party archives.
+ *
+ *    Copyright 2016 Alibaba Group
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ *
+ *
+ */
+
+package com.taobao.android.builder.tools.manifest;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
+import com.android.xml.AndroidXPathFactory;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
+import com.taobao.android.builder.extension.ManifestOptions;
+import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.dom4j.*;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.InputSource;
+
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import java.io.*;
+import java.util.*;
+
+/**
+ * Manifest文件的工具类 Created by shenghua.nish on 2015-04-22 上午10:58.
+ */
+public class ManifestFileUtils {
+
+    private static Logger logger = LoggerFactory.getLogger(ManifestFileUtils.class);
+
+    public static String[] SYSTEM_PERMISSION = new String[]{"android.permission", "com.android"};
+
+    /**
+     * 对manifest做后续处理
+     *
+     * @param mainManifest
+     * @param libManifestMap
+     * @param baseBunfleInfoFile
+     * @param manifestOptions
+     */
+    public static void postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
+                                            Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
+                                            ManifestOptions manifestOptions, boolean addMultiDex, Set<String> remoteBundles) throws IOException, DocumentException {
+        File backupFile = new File(mainManifest.getParentFile(), "AndroidManifest-backup.xml");
+        FileUtils.deleteQuietly(backupFile);
+        FileUtils.moveFile(mainManifest, backupFile);
+
+        XMLWriter writer = null;// 声明写XML的对象
+        SAXReader reader = new SAXReader();
+        OutputFormat format = OutputFormat.createPrettyPrint();
+        format.setEncoding("UTF-8");// 设置XML文件的编码格式
+        FileOutputStream fos = new FileOutputStream(mainManifest);
+        if (mainManifest.exists()) {
+            try {
+                Document document = reader.read(backupFile);// 读取XML文件
+                if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists()) {
+                    addApplicationMetaData(document, libManifestMap, baseBunfleInfoFile, manifestOptions, remoteBundles);
+                }
+                if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
+                    addBundleLocationToDestManifest(document, libManifestMap, libDependenciesMaps, manifestOptions);
+                }
+                if (null != manifestOptions && manifestOptions.isReplaceApplication()) {
+                    replaceManifestApplicationName(document);
+                }
+                if ((null != manifestOptions && manifestOptions.isAddMultiDexMetaData()) || addMultiDex) {
+                    addMultiDexMetaData(document);
+                }
+                removeCustomLaunches(document, manifestOptions);
+                updatePermission(document, manifestOptions);
+                removeComments(document);
+                writer = new XMLWriter(fos, format);
+                writer.write(document);
+            } finally {
+                if (null != writer) {
+                    writer.close();
+                }
+                IOUtils.closeQuietly(fos);
+            }
+        }
+
+    }
+
+    private static File getOrgManifestFile(File libManifestFile) {
+        File orgManifestFile = new File(libManifestFile.getParentFile(),
+                FilenameUtils.getBaseName(libManifestFile.getName()) + "-org.xml");
+        if (orgManifestFile.exists()) {
+            return orgManifestFile;
+        }
+        return libManifestFile;
+    }
+
+    /**
+     * 替换manifest中的原有application name为AtlasBridgeApplication
+     * 原有name已meta-data的方式写入
+     */
+    private static void replaceManifestApplicationName(Document document) {
+        // 写入meta-data信息
+        Element root = document.getRootElement();// 得到根节点
+        Element applicationElement = root.element("application");
+        String realApplicationClassName = applicationElement.attributeValue("name");
+        applicationElement.addAttribute("name", "android.taobao.atlas.startup.AtlasBridgeApplication");
+
+        Element metaData = applicationElement.addElement("meta-data");
+        metaData.addAttribute("android:name", "REAL_APPLICATION");
+        metaData.addAttribute("android:value", realApplicationClassName);
+
+    }
+
+    private static void addMultiDexMetaData(Document document) {
+        // 写入meta-data信息
+        Element root = document.getRootElement();// 得到根节点
+        Element applicationElement = root.element("application");
+
+        Element metaData = applicationElement.addElement("meta-data");
+        metaData.addAttribute("android:name", "multidex_enable");
+        metaData.addAttribute("android:value", "true");
+    }
+
+    /**
+     * 往主的manifest中添加metadata信息，作为atals的兜底方案
+     *
+     * @param document
+     * @param libManifestMap
+     * @param baseBunfleInfoFile
+     * @param manifestOptions
+     */
+    private static void addApplicationMetaData(Document document, Map<String, File> libManifestMap,
+                                               File baseBunfleInfoFile,
+                                               ManifestOptions manifestOptions, Set<String> remoteBundles) throws IOException, DocumentException {
+        Map<String, BundleInfo> bundleFileMap = Maps.newHashMap();
+        // 解析基础信息
+        if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists() && baseBunfleInfoFile.canRead()) {
+            String bundleBaseInfo = FileUtils.readFileToString(baseBunfleInfoFile, "utf-8");
+            bundleFileMap = JSON.parseObject(bundleBaseInfo, new TypeReference<Map<String, BundleInfo>>() {
+            });
+        }
+        Map<String, LibBundleInfo> awbManifestMap = Maps.newHashMap();
+        for (Map.Entry<String, File> entry : libManifestMap.entrySet()) {
+            String artifactId = entry.getKey();
+
+            String libName = artifactId.substring(artifactId.indexOf("-") + 1);
+
+            File libManifest = entry.getValue();
+            libManifest = getOrgManifestFile(libManifest);
+            if (libManifest.exists()) {
+                SAXReader reader = new SAXReader();
+                Document libDocument = reader.read(libManifest);// 读取XML文件
+                Element libRoot = libDocument.getRootElement();// 得到根节点
+                String packageName = libRoot.attributeValue("package");
+                Element applicationElement = libRoot.element("application");
+                String applicationName = null;
+                if (null != applicationElement) {
+                    applicationName = applicationElement.attributeValue("name");
+                }
+                LibBundleInfo libBundleInfo = new LibBundleInfo(artifactId, packageName, applicationName,
+                        bundleFileMap.get(libName), libName);
+                awbManifestMap.put(artifactId, libBundleInfo);
+            }
+        }
+
+        // 写入meta-data信息
+        Element root = document.getRootElement();// 得到根节点
+        List<? extends Node> nodes = root.selectNodes("//application");
+        for (Node node : nodes) {
+            Element element = (Element) node;
+            for (String artifactId : libManifestMap.keySet()) {
+                LibBundleInfo libBundleInfo = awbManifestMap.get(artifactId);
+                if (StringUtils.isNotBlank(libBundleInfo.applicationName)) {
+                    String bundlePackageName = libBundleInfo.packageName;
+                    BundleInfo bundleInfo = libBundleInfo.bundleInfo;
+                    Element metaData = element.addElement("meta-data");
+
+                    String bundleDepValue = "";
+                    if (null != bundleInfo && bundleInfo.getDependency() != null) {
+                        bundleDepValue = StringUtils.join(bundleInfo.getDependency(), "|");
+                    }
+                    String value = libBundleInfo.applicationName + "," + !remoteBundles.contains(libBundleInfo.libName) + "," + bundleDepValue;
+                    logger.info("[bundleInfo] add bundle value : " + value + " to manifest");
+                    metaData.addAttribute("android:name", "bundle_" + bundlePackageName);
+                    metaData.addAttribute("android:value", value);
+                }
+            }
+        }
+
+    }
+
+    static class LibBundleInfo {
+
+        String name;
+        String packageName;
+        String applicationName;
+        BundleInfo bundleInfo;
+
+        String libName;
+
+        public LibBundleInfo(String name, String packageName, String applicationName, BundleInfo bundleInfo, String libName) {
+            this.name = name;
+            this.packageName = packageName;
+            this.applicationName = applicationName;
+            this.bundleInfo = bundleInfo;
+            this.libName = libName;
+        }
+    }
+
+    /**
+     * 在manifest文件中增加bundleLocation
+     *
+     * @param document
+     * @param libManifestMap
+     * @param manifestOptions
+     * @throws DocumentException
+     */
+    private static void addBundleLocationToDestManifest(Document document, Map<String, File> libManifestMap,
+                                                        Multimap<String, File> libDependenciesMaps,
+                                                        ManifestOptions manifestOptions) throws DocumentException {
+        Table<String, String, String> bundleInfoTable = HashBasedTable.create();
+        Map<String, String> packageNameMap = new HashMap<String, String>();
+        for (Map.Entry<String, File> entry : libManifestMap.entrySet()) {
+            File libManifest = entry.getValue();
+            if (libManifest.exists()) {
+                SAXReader reader = new SAXReader();
+                Document libDocument = reader.read(libManifest);// 读取XML文件
+                Element libRoot = libDocument.getRootElement();// 得到根节点
+                String packageName = libRoot.attributeValue("package");
+                packageNameMap.put(entry.getKey(), packageName);
+                List<? extends Node> nodes = libRoot.selectNodes("//activity|//service|//receiver");
+                for (Node node : nodes) {
+                    Element e = (Element) node;
+                    String name = e.attributeValue("name");
+                    String type = e.getName();
+                    bundleInfoTable.put(type, name, packageName);
+                }
+            }
+        }
+
+        // 获取所有依赖的manifest信息
+        for (String key : libDependenciesMaps.keySet()) {
+            Collection<File> libManifests = libDependenciesMaps.get(key);
+            for (File libManifest : libManifests) {
+                if (libManifest.exists()) {
+                    SAXReader reader = new SAXReader();
+                    Document libDocument = reader.read(libManifest);// 读取XML文件
+                    Element libRoot = libDocument.getRootElement();// 得到根节点
+                    String packageName = packageNameMap.get(key);
+                    List<? extends Node> nodes = libRoot.selectNodes("//activity|//service|//receiver");
+                    for (Node node : nodes) {
+                        Element e = (Element) node;
+                        String name = e.attributeValue("name");
+                        String type = e.getName();
+                        bundleInfoTable.put(type, name, packageName);
+                    }
+                }
+            }
+        }
+
+        Element root = document.getRootElement();// 得到根节点
+        List<? extends Node> nodes = root.selectNodes("//activity|//service|//receiver");
+        for (Node node : nodes) {
+            Element e = (Element) node;
+            String name = e.attributeValue("name");
+            String type = e.getName();
+            String packageName = bundleInfoTable.get(type, name);
+            if (null != packageName) {
+                Element metaData = e.addElement("meta-data");
+                metaData.addAttribute("android:name", "bundleLocation");
+                metaData.addAttribute("android:value", packageName);
+            }
+        }
+    }
+
+    /**
+     * 删除自定义的launches
+     *
+     * @param document
+     * @param manifestOptions
+     */
+    private static void removeCustomLaunches(Document document, ManifestOptions manifestOptions) {
+        if (null == manifestOptions) return;
+        Element root = document.getRootElement();// 得到根节点
+        // 更新launch信息
+        if (manifestOptions.getRetainLaunches() != null && manifestOptions.getRetainLaunches().size() > 0) {
+            List<? extends Node> nodes = root.selectNodes("//activity/intent-filter/category|//activity-alias/intent-filter/category");
+            for (Node node : nodes) {
+                Element e = (Element) node;
+                if ("android.intent.category.LAUNCHER".equalsIgnoreCase(e.attributeValue("name"))) {
+                    Element activityElement = e.getParent().getParent();
+                    String activiyName = activityElement.attributeValue("name");
+                    if (!manifestOptions.getRetainLaunches().contains(activiyName)) {
+                        if (activityElement.getName().equalsIgnoreCase("activity-alias")) {
+                            activityElement.getParent().remove(activityElement);
+                        } else {
+                            e.getParent().remove(e);
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    /**
+     * 设置manifest的权限
+     *
+     * @param document
+     * @param manifestOptions
+     */
+    private static void updatePermission(Document document, ManifestOptions manifestOptions) {
+        if (null == manifestOptions) return;
+        Element root = document.getRootElement();// 得到根节点
+        // 更新自定义权限
+        if (manifestOptions.isRemoveCustomPermission()) {
+            List<? extends Node> nodes = root.selectNodes("//permission");
+            for (Node node : nodes) {
+                Element element = (Element) node;
+                String name = element.attributeValue("name");
+                boolean retain = false;
+                for (String systemPermission : SYSTEM_PERMISSION) {
+                    if (name.startsWith(systemPermission)) {
+                        retain = true;
+                        break;
+                    }
+                }
+                // 如果存在着自定义权限
+                if (null != manifestOptions.getRetainPermissions()
+                        && manifestOptions.getRetainPermissions().size() > 0) {
+                    for (String retainPermission : manifestOptions.getRetainPermissions()) {
+                        if (name.startsWith(retainPermission)) {
+                            retain = true;
+                            break;
+                        }
+                    }
+                }
+                if (!retain) {
+                    element.getParent().remove(element);
+                }
+            }
+        }
+
+        // 更新系统权限
+        if (null != manifestOptions.getRemoveSystemPermissions()
+                && manifestOptions.getRemoveSystemPermissions().size() > 0) {
+            List<? extends Node> nodes = root.selectNodes("//uses-permission");
+            for (Node node : nodes) {
+                Element element = (Element) node;
+                String name = element.attributeValue("name");
+                Set<String> removedPermissions = manifestOptions.getRemoveSystemPermissions();
+                if (removedPermissions.contains(name)) {
+                    element.getParent().remove(element);
+                }
+            }
+        }
+    }
+
+    /**
+     * 移除xml中的注释
+     *
+     * @param document
+     * @throws IOException
+     * @throws DocumentException
+     */
+    private static void removeComments(Document document) throws IOException, DocumentException {
+        Visitor visitor = new VisitorSupport() {
+
+            public void visit(Comment comment) {
+                comment.setText(" ");
+            }
+        };
+        document.accept(visitor);
+    }
+
+    /**
+     * 获取制定manifest文件的packageId
+     *
+     * @param manifestFile
+     * @return
+     */
+    public static String getApplicationId(File manifestFile) {
+        SAXReader reader = new SAXReader();
+        if (manifestFile.exists()) {
+            Document document = null;// 读取XML文件
+            try {
+                document = reader.read(manifestFile);
+                Element root = document.getRootElement();// 得到根节点
+                String packageName = root.attributeValue("package");
+                return packageName;
+            } catch (DocumentException e) {
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 预处理指定的manifest文件
+     *
+     * @param mainManifestFile
+     * @param libManifestFiles
+     * @param updateSdkVersion
+     */
+    public static void preProcessManifests(File mainManifestFile, List<File> libManifestFiles,
+                                           boolean updateSdkVersion) throws DocumentException, IOException {
+        ManifestFileObject mainManifestFileObject = getManifestFileObject(mainManifestFile);
+        for (File libManifestFile : libManifestFiles) {
+            // 写文件
+            updatePreProcessManifestFile(libManifestFile, mainManifestFileObject, updateSdkVersion);
+        }
+
+        //获取bundleInfo信息
+
+
+    }
+
+    /**
+     * 更新libManifest文件
+     *
+     * @param libManifestFile
+     * @param mainManifestFileObject param updateSdkVersion
+     */
+    private static void updatePreProcessManifestFile(File libManifestFile, ManifestFileObject mainManifestFileObject,
+                                                     boolean updateSdkVersion) throws IOException, DocumentException {
+        File modifyManifestFile = new File(libManifestFile.getParentFile(), "AndroidManifest-modify.xml");
+        File manifestWithUniformUsesSdk = new File(libManifestFile.getParentFile(), "AndroidManifest-nousesdk.xml");
+        File orgManifestFile = new File(libManifestFile.getParentFile(), "AndroidManifest-org.xml");
+
+        FileUtils.deleteQuietly(modifyManifestFile);
+        FileUtils.deleteQuietly(manifestWithUniformUsesSdk);
+
+        SAXReader reader = new SAXReader();
+        OutputFormat format = OutputFormat.createPrettyPrint();
+        format.setEncoding("UTF-8");// 设置XML文件的编码格式
+
+        if (libManifestFile.exists()) {
+            try {
+                Document document = reader.read(libManifestFile);// 读取XML文件
+                Element root = document.getRootElement();// 得到根节点
+                if (updateSdkVersion) {
+                    Element useSdkElement = root.element("uses-sdk");
+
+                    if (null == useSdkElement) {
+                        useSdkElement = root.addElement("uses-sdk");
+                    }
+
+                    if (null != useSdkElement) {
+                        updateElement(useSdkElement, mainManifestFileObject.getUseSdkProperties());
+                        saveFile(document, format, manifestWithUniformUsesSdk);
+                    }
+                }
+
+                // 先人工处理一下tools:remove和tools:replace规则，发现有些通过ManifestMerge不一定可以
+                Element applicationElement = root.element("application");
+                Map<String, String> replaceAttrs = mainManifestFileObject.getReplaceApplicationAttribute();
+                List<String> removeAttrs = mainManifestFileObject.getRemoveApplicationAttribute();
+
+                if (null != applicationElement) {
+                    // 去除lib项目里的tools属性
+                    List<Attribute> toRomoved = new ArrayList<Attribute>();
+                    for (Attribute attribute : applicationElement.attributes()) {
+                        if (attribute.getName().equals("replace") || attribute.getName().equals("remove")) {
+                            // applicationElement.remove(attribute);
+                            // applicationElement.attributes().remove(attribute);
+                            toRomoved.add(attribute);
+                        }
+                    }
+                    if (toRomoved.size() > 0) {
+                        for (Attribute attribute : toRomoved) {
+                            applicationElement.remove(attribute);
+                        }
+                    }
+
+                    updateApplicationElement(applicationElement, replaceAttrs, removeAttrs);
+                }
+
+
+                //处理packageName
+                String packageName = ManifestFileUtils.getPackage(libManifestFile);
+                List<? extends Node> serviceNodes = root.selectNodes("//service");
+                for (Node node : serviceNodes) {
+                    Element element = (Element) node;
+                    Attribute attribute = element.attribute("name");
+                    if (attribute.getValue().startsWith(".")) {
+                        attribute.setValue(packageName + attribute.getValue());
+                    }
+                }
+                List<? extends Node> receiverNodes = root.selectNodes("//receiver");
+                for (Node node : receiverNodes) {
+                    Element element = (Element) node;
+                    Attribute attribute = element.attribute("name");
+                    if (attribute.getValue().startsWith(".")) {
+                        attribute.setValue(packageName + attribute.getValue());
+                    }
+                }
+                List<? extends Node> providerNodes = root.selectNodes("//provider");
+                for (Node node : providerNodes) {
+                    Element element = (Element) node;
+                    Attribute attribute = element.attribute("name");
+                    if (attribute.getValue().startsWith(".")) {
+                        attribute.setValue(packageName + attribute.getValue());
+                    }
+                }
+                List<? extends Node> activityNodes = root.selectNodes("//activity");
+                for (Node node : activityNodes) {
+                    Element element = (Element) node;
+                    Attribute attribute = element.attribute("name");
+                    if (attribute.getValue().startsWith(".")) {
+                        attribute.setValue(packageName + attribute.getValue());
+                    }
+                }
+
+                List<? extends Node> applicatNodes = root.selectNodes("//application");
+                for (Node node : applicatNodes) {
+                    Element element = (Element) node;
+                    Attribute attribute = element.attribute("name");
+                    if (attribute != null) {
+                        if (!attribute.getValue().startsWith(packageName)) {
+                            attribute.setValue(packageName + attribute.getValue());
+                        }
+                    }
+                }
+
+                saveFile(document, format, modifyManifestFile);
+
+            } finally {
+                // when building channel packages, to avoid 'already exists' error
+                if (orgManifestFile.exists()) {
+                    orgManifestFile.delete();
+                }
+                //TODO
+                if (manifestWithUniformUsesSdk.exists()) {
+                    FileUtils.moveFile(manifestWithUniformUsesSdk, orgManifestFile);
+                    FileUtils.deleteQuietly(libManifestFile);
+                } else {
+                    FileUtils.moveFile(libManifestFile, orgManifestFile);
+                }
+                FileUtils.moveFile(modifyManifestFile, libManifestFile);
+                FileUtils.deleteQuietly(modifyManifestFile);
+            }
+        }
+    }
+
+    private static void saveFile(Document document, OutputFormat format, File file) throws IOException {
+
+        XMLWriter writer = null;// 声明写XML的对象
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(file);
+            writer = new XMLWriter(fos, format);
+            writer.write(document);
+        } finally {
+            if (null != writer) {
+                writer.close();
+            }
+            IOUtils.closeQuietly(fos);
+        }
+    }
+
+
+    /**
+     * 更新Application节点信息
+     *
+     * @param element
+     * @param replaceAttrs
+     * @param removeAttrs
+     */
+    private static void updateApplicationElement(Element element, Map<String, String> replaceAttrs,
+                                                 List<String> removeAttrs) {
+        for (Map.Entry<String, String> entry : replaceAttrs.entrySet()) {
+            String key = entry.getKey();
+            key = StringUtils.substringAfter(key, ":");
+            Attribute attribute = element.attribute(key);
+            if (null != attribute) {
+                element.remove(attribute);
+            }
+        }
+        for (String key : removeAttrs) {
+            key = StringUtils.substringAfter(key, ":");
+            Attribute attribute = element.attribute(key);
+            if (null != attribute) {
+                element.remove(attribute);
+            }
+        }
+    }
+
+    /**
+     * 更新element的属性
+     *
+     * @param element
+     * @param properties
+     */
+    private static void updateElement(Element element, Map<String, String> properties) {
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            String key = entry.getKey();
+            if (key.startsWith("tools:")) {
+                continue;
+            }
+            String keyNoPrefix = key;
+            String[] values = StringUtils.split(key, ":");
+            if (values.length > 1) {
+                keyNoPrefix = values[1];
+            }
+            if (null == entry.getValue()) {
+                continue;
+            } else {
+                Attribute attribute = element.attribute(keyNoPrefix);
+                if (null != attribute) {
+                    attribute.setValue(entry.getValue());
+                } else {
+                    element.addAttribute(key, entry.getValue());
+                }
+            }
+
+        }
+    }
+
+    /**
+     * 获取mainifest文件的内容
+     *
+     * @param manifestFile
+     * @return
+     */
+    public static ManifestFileObject getManifestFileObject(File manifestFile) throws DocumentException {
+        SAXReader reader = new SAXReader();
+        ManifestFileObject manifestFileObject = new ManifestFileObject();
+        manifestFileObject.setManifestFile(manifestFile);
+        if (manifestFile.exists()) {
+            Document document = reader.read(manifestFile);// 读取XML文件
+            Element root = document.getRootElement();// 得到根节点
+            for (Attribute attribute : root.attributes()) {
+                if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
+                    manifestFileObject.addManifestProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
+                            attribute.getValue());
+                } else {
+                    manifestFileObject.addManifestProperty(attribute.getName(), attribute.getValue());
+                }
+            }
+            Element useSdkElement = root.element("uses-sdk");
+            Element applicationElement = root.element("application");
+            if (null != useSdkElement) {
+                for (Attribute attribute : useSdkElement.attributes()) {
+                    if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
+                        manifestFileObject.addUseSdkProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
+                                attribute.getValue());
+                    } else {
+                        manifestFileObject.addUseSdkProperty(attribute.getName(), attribute.getValue());
+                    }
+                }
+            }
+            if (null != applicationElement) {
+                for (Attribute attribute : applicationElement.attributes()) {
+                    if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
+                        manifestFileObject.addApplicationProperty(attribute.getNamespacePrefix() + ":"
+                                + attribute.getName(), attribute.getValue());
+                    } else {
+                        manifestFileObject.addApplicationProperty(attribute.getName(), attribute.getValue());
+                    }
+                }
+            }
+        }
+        return manifestFileObject;
+    }
+
+
+    static Map<String, String> manifestMap = new HashMap<String, String>();
+
+    public static String getPackage(File manifestFile) {
+
+        String version = manifestMap.get(manifestFile.getAbsolutePath());
+        if (null != version) {
+            return version;
+        }
+
+
+        XPath xpath = AndroidXPathFactory.newXPath();
+
+        try {
+            version = xpath.evaluate("/manifest/@package", new InputSource(new FileInputStream(manifestFile)));
+            manifestMap.put(manifestFile.getAbsolutePath(), version);
+            return version;
+        } catch (XPathExpressionException e) {
+            // won't happen.
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
+    }
+
+    public static String getApplicationName(File manifestFile) {
+        XPath xpath = AndroidXPathFactory.newXPath();
+        try {
+            return xpath.evaluate("/manifest/application/@android:name",
+                    new InputSource(new FileInputStream(manifestFile)));
+        } catch (XPathExpressionException e) {
+            // won't happen.
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
+    }
+
+    /**
+     * 更新插件的minSdkVersion和targetSdkVersion
+     *
+     * @param androidManifestFile
+     * @throws IOException
+     * @throws DocumentException
+     */
+    public static String getVersionName(File androidManifestFile) throws IOException, DocumentException {
+        SAXReader reader = new SAXReader();
+        String versionName = "";
+        if (androidManifestFile.exists()) {
+            Document document = reader.read(androidManifestFile);// 读取XML文件
+            Element root = document.getRootElement();// 得到根节点
+            if ("manifest".equalsIgnoreCase(root.getName())) {
+                List<Attribute> attributes = root.attributes();
+                for (Attribute attr : attributes) {
+                    if (StringUtils.equalsIgnoreCase(attr.getName(), "versionName")) {
+                        versionName = attr.getValue();
+                    }
+                }
+            }
+        }
+        return versionName;
+    }
+
+
+    public static void minifyManifest(File mainManifest, File destManifest) throws IOException, DocumentException {
+
+        XMLWriter writer = null;// 声明写XML的对象
+        SAXReader reader = new SAXReader();
+        OutputFormat format = OutputFormat.createPrettyPrint();
+        format.setEncoding("UTF-8");// 设置XML文件的编码格式
+        FileOutputStream fos = new FileOutputStream(destManifest);
+        if (mainManifest.exists()) {
+            try {
+                Document document = reader.read(mainManifest);// 读取XML文件
+
+//                removeComments(document);
+
+                Element element = document.getRootElement();
+
+                element.clearContent();
+
+                writer = new XMLWriter(fos, format);
+                writer.write(document);
+
+            } finally {
+                if (null != writer) {
+                    writer.close();
+                }
+                IOUtils.closeQuietly(fos);
+            }
+        }
+
+    }
+
+
+}

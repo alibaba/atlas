@@ -1,0 +1,55 @@
+From 981e647c95e59a133c88da952142167d24aa0ccf Mon Sep 17 00:00:00 2001
+From: Rover12421 <rover12421@163.com>
+Date: Thu, 19 Nov 2015 13:07:56 +0800
+Subject: [PATCH] rewrite parseResourceName. support htc .r.9.png
+
+pass drawableXhdpiTest
+---
+ frameworks/base/tools/aapt/Resource.cpp | 29 ++++++++++++++---------------
+ 1 file changed, 14 insertions(+), 15 deletions(-)
+
+diff --git a/frameworks/base/tools/aapt/Resource.cpp b/frameworks/base/tools/aapt/Resource.cpp
+index a3280f2..9509bef 100644
+--- a/frameworks/base/tools/aapt/Resource.cpp
++++ b/frameworks/base/tools/aapt/Resource.cpp
+@@ -65,23 +65,22 @@ String8 parseResourceName(const String8& leaf)
+     const char* str = leaf.string();
+ 
+     //[Rover12421]>
+-    while (firstDot) {
+-        const char* secondDot = strchr(firstDot+1, '.');
+-        if (secondDot) {
+-            const char* thridDot = strchr(secondDot+1, '.');
+-            if (thridDot) {
+-                firstDot = secondDot;
+-            } else {
+-                if (secondDot - firstDot == 2 && *(firstDot+1) == '9') {
+-                    //过滤.9.x的扩展
+-                    break;
+-                } else {
+-                    firstDot = secondDot;
+-                    break;
++    //最后一个.作为分割
++    firstDot = strrchr(str, '.');
++    if (firstDot) {
++        size_t len = strlen(str);
++        size_t extLen = strlen(firstDot);
++        if (len > extLen+2) {
++            const char* end9 = str + (len-(extLen+2));
++            if (end9[0] == '.' && end9[1] == '9') {
++                firstDot = end9;
++                if (len > extLen+4) {
++                    const char* endr = str + (len-(extLen+4));
++                    if (endr[0] == '.' && endr[1] == 'r') {
++                        firstDot = endr;
++                    }
+                 }
+             }
+-        } else {
+-            break;
+         }
+     }
+     //[Rover12421]<
+-- 
+1.9.1
+

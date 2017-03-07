@@ -1,0 +1,52 @@
+buildscript {
+
+    repositories {
+
+        //本地库，local repository(${user.home}/.m2/repository)
+        mavenLocal()
+
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.3'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
+        //引入其他的插件
+    }
+
+}
+
+
+description = """atlas gradle plugin"""
+
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.12'
+    distributionUrl = 'http://services.gradle.org/distributions/gradle-2.12-all.zip'
+}
+
+subprojects{
+
+    if (!project.getBuildFile().exists()){
+        return ;
+    }
+
+    repositories {
+
+        //本地库，local repository(${user.home}/.m2/repository)
+        mavenLocal()
+
+        jcenter()
+
+    }
+
+    group = 'com.taobao.android'
+
+    version = '1.0.10.4'
+
+    tasks.withType(JavaCompile) {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+
+}

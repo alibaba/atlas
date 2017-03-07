@@ -1,0 +1,9 @@
+[submodule "atlas-aapt/build"]
+	path = atlas-aapt/build
+	url = https://android.googlesource.com/platform/build
+[submodule "atlas-aapt/prebuilts/clang/darwin-x86/host/3.6"]
+	path = atlas-aapt/prebuilts/clang/darwin-x86/host/3.6
+	url = https://android.googlesource.com/platform/prebuilts/clang/darwin-x86/host/3.6
+[submodule "atlas-aapt/prebuilts/clang/host/darwin-x86"]
+	path = atlas-aapt/prebuilts/clang/host/darwin-x86
+	url = https://android.googlesource.com/platform/prebuilts/clang/host/darwin-x86
