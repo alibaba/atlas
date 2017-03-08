@@ -7,4 +7,12 @@
         android:minSdkVersion="14"
         android:targetSdkVersion="23" />
 
+    <application>
+        <service
+            android:name="com.taobao.android.runtime.Dex2OatService"
+            android:process=":dex2oat" />
+    </application>
+
+
+
 </manifest>
