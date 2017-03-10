@@ -68,6 +68,9 @@ public class BundleEvent extends EventObject
      */
     public final static int UNINSTALLED = 0x00000010;
 
+    public final static int BEFORE_INSTALL = 10086;
+    public final static int BEFORE_STARTED = 10087;
+
     /**
      * Creates a bundle event of the specified type.
      *
