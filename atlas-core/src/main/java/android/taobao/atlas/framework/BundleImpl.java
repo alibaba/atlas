@@ -322,7 +322,7 @@ public final class BundleImpl implements Bundle {
         context.bundle = this;
         this.context = context;
         this.bundleDir = bundleDir;
-
+        Framework.notifyBundleListeners(BundleEvent.BEFORE_INSTALL, this);
         if (stream != null) {
             this.archive = new BundleArchive(location,bundleDir, stream,version, dexPatchVersion);
         } else if (file != null) {
@@ -363,6 +363,7 @@ public final class BundleImpl implements Bundle {
         this.location = in.readUTF();
         this.revisionNUM = in.readLong();
         in.close();
+        Framework.notifyBundleListeners(BundleEvent.BEFORE_INSTALL, this);
 
         bcontext.bundle = this;
         this.context = bcontext;
@@ -562,7 +563,7 @@ public final class BundleImpl implements Bundle {
         }
         state = STARTING;
         context.isValid = true;
-
+        Framework.notifyBundleListeners(BundleEvent.BEFORE_STARTED, this);
         Framework.notifyBundleListeners(BundleEvent.STARTED, this);
         if (Framework.DEBUG_BUNDLES) {
             Log.i("Framework","Bundle " + toString() + " started.");

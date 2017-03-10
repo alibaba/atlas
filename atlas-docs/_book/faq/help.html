@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>一些限制 · GitBook</title>
+        <title>故障排查 · GitBook</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.2">
@@ -57,8 +57,6 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    
-    <link rel="prev" href="principle.html" />
     
 
     </head>
@@ -216,9 +214,9 @@
             
         </li>
     
-        <li class="chapter " data-level="1.4" data-path="./">
+        <li class="chapter " data-level="1.4" data-path="../update/">
             
-                <a href="./">
+                <a href="../update/">
             
                     
                     动态部署
@@ -230,9 +228,9 @@
             <ul class="articles">
                 
     
-        <li class="chapter " data-level="1.4.1" data-path="principle.html">
+        <li class="chapter " data-level="1.4.1" data-path="../update/principle.html">
             
-                <a href="principle.html">
+                <a href="../update/principle.html">
             
                     
                     技术原理
@@ -243,9 +241,9 @@
             
         </li>
     
-        <li class="chapter active" data-level="1.4.2" data-path="guide.html">
+        <li class="chapter " data-level="1.4.2" data-path="../update/guide.html">
             
-                <a href="guide.html">
+                <a href="../update/guide.html">
             
                     
                     一些限制
@@ -275,9 +273,9 @@
             <ul class="articles">
                 
     
-        <li class="chapter " data-level="1.5.1" data-path="../faq/help.html">
+        <li class="chapter active" data-level="1.5.1" data-path="help.html">
             
-                <a href="../faq/help.html">
+                <a href="help.html">
             
                     
                     故障排查
@@ -323,7 +321,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >一些限制</a>
+        <a href=".." >故障排查</a>
     </h1>
 </div>
 
@@ -338,16 +336,33 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h4 id="&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x7684;&#x9650;&#x5236;">&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x7684;&#x9650;&#x5236;</h4>
+                                <h1 id="&#x5E38;&#x89C1;&#x95EE;&#x9898;">&#x5E38;&#x89C1;&#x95EE;&#x9898;</h1>
+<p><strong>&#x6709;&#x4EFB;&#x4F55;&#x7684;&#x5EFA;&#x8BAE;&#x548C;&#x95EE;&#x9898;&#x8BF7;&#x5728;github&#x4E0A;&#x63D0;issue&#x7ED9;&#x6211;&#x4EEC;&#xFF0C;&#x6211;&#x4EEC;&#x4F1A;&#x5C3D;&#x5FEB;&#x56DE;&#x590D;&#xFF0C;&#x540C;&#x65F6;&#x9AD8;&#x9891;&#x7684;&#x4F1A;&#x66F4;&#x65B0;&#x7684;FAQ&#x6587;&#x6863;&#x4E2D;</strong></p>
+<ul>
+<li><p><strong>&#x9700;&#x8981;&#x53BB;&#x9664;&#x7684;&#x539F;&#x751F;multidex&#x521D;&#x59CB;&#x5316;</strong></p>
+<p> Atlas&#x5BB9;&#x5668;&#x5185;&#x90E8;&#x96C6;&#x6210;&#x4E86;multidex&#x7684;dex&#x5B89;&#x88C5;&#x529F;&#x80FD;&#xFF0C;&#x6240;&#x4EE5;&#x539F;&#x5148;multidex&#x7684;&#x521D;&#x59CB;&#x5316;&#x4EE3;&#x7801;&#x53EF;&#x4EE5;&#x7701;&#x7565;&#xFF0C;&#x4E5F;&#x4E0D;&#x9700;&#x8981;&#x6DFB;&#x52A0;multidex&#x7684;&#x4E09;&#x65B9;&#x5E93;&#x4F9D;&#x8D56;&#xFF0C;&#x9700;&#x8981;&#x4F7F;&#x7528;multidex&#x7684;&#x53EA;&#x9700;&#x8981;build.gradle&#x5185;&#x90E8;&#x5C06;multidex&#x7F6E;&#x4E3A;enable&#x5373;&#x53EF;&#xFF08;Atlas&#x5185;&#x90E8;&#x96C6;&#x6210;&#x8BE5;&#x5185;&#x5BB9;&#x4E00;&#x65B9;&#x9762;&#x662F;&#x4FBF;&#x4E8E;&#x548C;&#x5BB9;&#x5668;&#x7684;&#x517C;&#x5BB9;&#xFF0C;&#x53E6;&#x4E00;&#x65B9;&#x9762;&#x540E;&#x7EED;&#x5BB9;&#x5668;&#x4F1A;&#x4F18;&#x5316;&#x539F;&#x751F;multidex&#x5728;dalvik&#x4E0A;&#x9762;&#x7684;&#x6027;&#x80FD;&#xFF09;</p>
+</li>
+</ul>
+<p>&gt;
+<img src="help_img/multidex.png" alt="MacDown Screenshot"></p>
+<ul>
+<li><p><strong>ClassNotFoundException</strong></p>
 <ol>
-<li><p><strong>AndroidManifest&#x4FDD;&#x6301;&#x4E0D;&#x53D8;</strong></p>
-<p>  &#x65B0;&#x589E;Activity&#x7684;&#x529F;&#x80FD;&#x6682;&#x65F6;&#x5173;&#x95ED;&#xFF08;&#x4E0B;&#x4E2A;&#x5927;&#x7248;&#x672C;&#x5F00;&#x653E;&#xFF09;
-  &#x6240;&#x4EE5;&#x65B0;&#x589E;Activity&#xFF0C;service&#x7B49;&#x5982;&#x679C;&#x6709;&#x9700;&#x6C42;&#x5728;&#x5927;&#x7248;&#x672C;&#x91CC;&#x9762;&#x5148;&#x9884;&#x7559;&#x89E3;&#x51B3;&#xFF0C;&#x5982;&#x679C;&#x8981;&#x4FEE;&#x6539;theme &#x901A;&#x8FC7;&#x4EE3;&#x7801;&#x8BBE;&#x7F6E;&#x6765;&#x89E3;&#x51B3;;receiver&#x53EF;&#x4EE5;&#x5148;&#x8003;&#x8651;&#x91C7;&#x7528;&#x52A8;&#x6001;&#x6CE8;&#x518C;&#x7684;&#x65B9;&#x5F0F;</p>
-</li>
-<li><p><strong>window&#x7EA7;&#x522B;&#x4F7F;&#x7528;&#x7684;&#x8D44;&#x6E90;&#x4FDD;&#x6301;&#x4E0D;&#x53D8;</strong>
- Activity&#x5207;&#x6362;&#x7684;&#x52A8;&#x753B;&#x6587;&#x4EF6;&#x3001;&#x901A;&#x77E5;&#x680F;&#x4F7F;&#x7528;&#x7684;logo&#x7B49;&#x5982;&#x679C;&#x4FEE;&#x6539;&#x4E86;&#x4E5F;&#x4E0D;&#x4F1A;&#x751F;&#x6548;&#xFF0C;&#x4E0D;&#x8FC7;&#x4E0D;&#x4F1A;&#x4EA7;&#x751F;&#x95EE;&#x9898;&#xFF0C;&#x4F7F;&#x7528;&#x7684;&#x8FD8;&#x662F;&#x539F;&#x6765;&#x7684;&#x6837;&#x5F0F;</p>
-</li>
+<li>Bundle&#x5982;&#x679C;&#x76F8;&#x4E92;&#x4F9D;&#x8D56;&#xFF0C;&#x5219;&#x6784;&#x5EFA;&#x8D77;&#x9700;&#x8981;&#x914D;&#x7F6E;dependency&#xFF0C;&#x5426;&#x5219;&#x8FD0;&#x884C;&#x671F;&#x4F1A;&#x65E0;&#x6CD5;&#x627E;&#x5230;&#x88AB;&#x4F9D;&#x8D56;bundle&#x5185;&#x7684;class&#xFF0C;&#x4E14;&#x4E0D;&#x652F;&#x6301;&#x4E3A;&#x4E86;&#x67E5;&#x627E;&#x6027;&#x80FD;&#xFF0C;&#x76EE;&#x524D;&#x4E0D;&#x652F;&#x6301;&#x4E8C;&#x7EA7;&#x4F9D;&#x8D56;&#xFF1A;&#x6BD4;&#x5982;A-&gt;B-&gt;C,&#x5982;&#x679C;A&#x6CA1;&#x6709;&#x663E;&#x5F0F;&#x58F0;&#x660E;&#x4F9D;&#x8D56;C&#xFF0C;&#x5219;A bundle&#x91CC;&#x9762;&#x65E0;&#x6CD5;&#x76F4;&#x63A5;&#x4F7F;&#x7528;bundle C&#x91CC;&#x9762;&#x7684;Class&#xFF0C;&#x68C0;&#x67E5;bundle&#x4F9D;&#x8D56;&#x662F;&#x5426;&#x6210;&#x529F;&#x914D;&#x7F6E;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x53CD;&#x7F16;&#x8BD1;Apk&#x7684;&#x4E3B;dex &#x67E5;&#x770B;<strong>android.taobao.atlas.framework.FrameworkProperties</strong>&#x7684;field bundleInfo&#x7684;&#x5185;&#x5BB9;&#xFF0C;&#x91CC;&#x9762;&#x8BB0;&#x5F55;&#x4E86;&#x6240;&#x6709;bundle&#x7684;&#x4F9D;&#x8D56;&#x5173;&#x7CFB;</li>
+<li>&#x901A;&#x8FC7;LayoutInflater &#x81A8;&#x5316;xml&#xFF0C;&#x5219;xml&#x91CC;&#x9762;&#x5982;&#x679C;&#x7531;richview&#xFF0C;&#x5219;&#x52A1;&#x5FC5;&#x786E;&#x4FDD;LayoutInflater&#x6301;&#x6709;&#x7684;context&#x7684;classloader&#x53EF;&#x4EE5;load&#x5230;&#x8BE5;richview&#xFF0C;&#x5047;&#x8BBE;context&#x6765;&#x81EA;&#x4E8E;A bundle&#x7684;Activity&#xFF0C;&#x800C;xml&#x6765;&#x81EA;&#x4E8E;B bundle&#xFF0C;&#x5982;&#x679C;A&#x548C;B&#x6CA1;&#x6709;&#x4F9D;&#x8D56;&#x5173;&#x7CFB;&#xFF0C;&#x90A3;&#x4E48;&#x52A0;&#x8F7D;&#x4E5F;&#x80AF;&#x5B9A;&#x5931;&#x8D25;</li>
 </ol>
+</li>
+<li><p><strong>NoClassDefFoundError</strong></p>
+<p>&#x9020;&#x6210;&#x8BE5;&#x95EE;&#x9898;&#x7684;&#x539F;&#x56E0;&#x6BD4;&#x8F83;&#x591A;&#xFF0C;&#x6392;&#x67E5;&#x6B65;&#x9AA4;&#x7B2C;&#x4E00;&#x4E2A;&#x5148;&#x68C0;&#x67E5;Exception&#x7684;&#x6E90;&#x5934;&#x662F;&#x4E0D;&#x662F;ClassNotFoundException&#xFF0C;&#x7136;&#x540E;&#x53CD;&#x7F16;&#x8BD1;&#x6392;&#x67E5;&#x7C7B;&#x786E;&#x5B9E;&#x662F;&#x5426;&#x5B58;&#x5728;&#xFF1B;</p>
+<p>&#x5982;&#x679C;&#x7C7B;&#x672C;&#x8EAB;&#x5B58;&#x5728;&#xFF0C;&#x9700;&#x8981;&#x5F80;&#x524D;&#x6392;&#x67E5;&#x7CFB;&#x7EDF;&#x7684;&#x8B66;&#x544A;&#x4FE1;&#x606F;&#xFF0C;&#x6BD4;&#x5982;&#x5728;Art&#x7684;&#x8BBE;&#x5907;&#x4E0A;&#x4F1A;&#x6709;class&#x88AB;reject&#x7684;warning&#x4FE1;&#x606F;&#xFF1A;
+  &gt;
+<img src="help_img/reject.png" alt="MacDown Screenshot"></p>
+<p> &#x5728;dalvik&#x7684;&#x7CFB;&#x7EDF;&#x4E0A;&#xFF0C;&#x5219;&#x4F1A;&#x5E26;&#x6709;VFY tag&#x7684;&#x8B66;&#x544A;&#x4FE1;&#x606F;&#xFF1A;</p>
+<pre><code> &gt;
+</code></pre><p><img src="help_img/vfy.png" alt="MacDown Screenshot"></p>
+<p>&#x4E00;&#x822C;&#x6765;&#x8BF4;&#xFF0C;&#x7531;&#x4E8E;ART&#x8BBE;&#x5907;&#x8B66;&#x544A;&#x7684;&#x4FE1;&#x606F;&#x62A5;&#x5728;dex2oat&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x6240;&#x4EE5;&#x5F80;&#x5F80;&#x4E0E;&#x53D1;&#x751F;crash&#x65F6;&#x7684;Exception&#x4FE1;&#x606F;&#x76F8;&#x9694;&#x6BD4;&#x8F83;&#x8FDC;&#xFF0C;&#x6240;&#x4EE5;&#x901A;&#x5E38;&#x9047;&#x5230;&#x8BE5;&#x7C7B;&#x95EE;&#x9898;&#xFF0C;dalivk&#x7684;&#x8BBE;&#x5907;&#x62FF;&#x6765;&#x6392;&#x67E5;&#x53EF;&#x80FD;&#x66F4;&#x80FD;&#x53D1;&#x73B0;&#x95EE;&#x9898;&#x7684;&#x539F;&#x56E0;&#x3002;&#x53E6;&#x5916;noclassdef&#x9020;&#x6210;&#x7684;&#x539F;&#x6709;&#x63A5;&#x53E3;&#x7C7B;&#x627E;&#x4E0D;&#x5230;&#xFF0C;&#x65B9;&#x6CD5;&#x4E22;&#x5931;&#xFF0C;&#x65B9;&#x6CD5;&#x53C2;&#x6570;&#x4E0D;&#x5339;&#x914D;&#xFF0C;&#x65B9;&#x6CD5;&#x5C5E;&#x6027;&#x53D8;&#x66F4;&#xFF0C;&#x6DF7;&#x6DC6;&#x7B49;&#xFF0C;&#x6240;&#x4EE5;&#x5177;&#x4F53;&#x539F;&#x56E0;&#x9700;&#x8981;&#x5229;&#x7528;&#x4E0A;&#x8FF0;warning&#x4FE1;&#x606F;&#x5E76;&#x5BF9;&#x7167;&#x53CD;&#x7F16;&#x8BD1;&#x7684;&#x4EE3;&#x7801;&#x53BB;&#x6392;&#x67E5;&#x6839;&#x672C;&#x7684;&#x539F;&#x56E0;   </p>
+</li>
+</ul>
 
                                 
                                 </section>
@@ -375,10 +390,6 @@
 
             
                 
-                <a href="principle.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page: 技术原理">
-                    <i class="fa fa-angle-left"></i>
-                </a>
-                
                 
             
         
@@ -387,7 +398,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"一些限制","level":"1.4.2","depth":2,"next":{"title":"FAQ","level":"1.5","depth":1,"ref":"","articles":[{"title":"故障排查","level":"1.5.1","depth":2,"path":"faq/help.md","ref":"faq/help.md","articles":[]}]},"previous":{"title":"技术原理","level":"1.4.1","depth":2,"path":"update/principle.md","ref":"update/principle.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"update/guide.md","mtime":"2017-03-06T04:59:33.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-03-08T08:38:45.939Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"故障排查","level":"1.5.1","depth":2,"previous":{"title":"FAQ","level":"1.5","depth":1,"ref":"","articles":[{"title":"故障排查","level":"1.5.1","depth":2,"path":"faq/help.md","ref":"faq/help.md","articles":[]}]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"faq/help.md","mtime":"2017-03-10T05:29:45.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-03-08T08:38:45.939Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
