@@ -210,18 +210,19 @@ package com.taobao.android.builder.tasks.awo;
 
 import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.internal.api.LibVariantContext;
-import com.android.build.gradle.internal.dependency.JarInfo;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.Sets;
-import com.taobao.android.builder.dependency.AwbBundle;
-import com.taobao.android.builder.dependency.DependencyJson;
-import com.taobao.android.builder.dependency.SoLibrary;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.output.DependencyJson;
+import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.tasks.InputFile;
@@ -278,8 +279,8 @@ public class DiffDependencyTask extends DefaultAndroidTask {
         apDependenciesFile = getApDependenciesFile();
         diffOutFile = getDiffOutFile();
 
-        DependencyJson apDependencyJson = JSON.parseObject(FileUtils.readFileToString(apDependenciesFile),
-                DependencyJson.class);
+        DependencyJson apDependencyJson = JSON.parseObject(FileUtils.readFileToString(
+                apDependenciesFile), DependencyJson.class);
         Set<String> apMainDependencies = Sets.newHashSet();
         for (String mainDep : apDependencyJson.getMainDex()) {
             String name = mainDep.substring(0, mainDep.lastIndexOf(":"));
@@ -287,14 +288,14 @@ public class DiffDependencyTask extends DefaultAndroidTask {
         }
         AwbBundle awbBundle = libVariantContext.getAwbBundle();
         //aars
-        if (null != awbBundle.getDependencies()) {
-            for (int index = 0; index < awbBundle.getDependencies().size(); index++) {
-                LibraryDependency libraryDependency = awbBundle.getDependencies().get(index);
+        if (null != awbBundle.getLibraryDependencies()) {
+            for (int index = 0; index < awbBundle.getLibraryDependencies().size(); index++) {
+                AndroidLibrary libraryDependency = awbBundle.getLibraryDependencies().get(index);
                 MavenCoordinates mavenCoordinates = libraryDependency.getResolvedCoordinates();
                 String name = getMavenName(mavenCoordinates);
                 if (apMainDependencies.contains(name)) {
                     getLogger().info("[Remove]" + name);
-                    awbBundle.getDependencies().remove(index);
+                    awbBundle.getLibraryDependencies().remove(index);
                 } else {
                     inAwbDependencies.add(name);
                 }
@@ -315,10 +316,10 @@ public class DiffDependencyTask extends DefaultAndroidTask {
             }
         }
         // jars
-        if (null != awbBundle.getJarDependencies()) {
-            Iterator<JarInfo> iterator = awbBundle.getJarDependencies().iterator();
+        if (null != awbBundle.getJavaDependencies()) {
+            Iterator<? extends JavaLibrary> iterator = awbBundle.getJavaDependencies().iterator();
             while (iterator.hasNext()) {
-                JarInfo jarInfo = iterator.next();
+                JavaLibrary jarInfo = iterator.next();
                 MavenCoordinates mavenCoordinates = jarInfo.getResolvedCoordinates();
                 String name = getMavenName(mavenCoordinates);
                 if (apMainDependencies.contains(name)) {
@@ -334,8 +335,11 @@ public class DiffDependencyTask extends DefaultAndroidTask {
 
     @NotNull
     private String getMavenName(MavenCoordinates mavenCoordinates) {
-        String name = mavenCoordinates.getGroupId() + ":"
-                + mavenCoordinates.getArtifactId() + ":" + mavenCoordinates.getPackaging();
+        String name = mavenCoordinates.getGroupId() +
+                ":" +
+                mavenCoordinates.getArtifactId() +
+                ":" +
+                mavenCoordinates.getPackaging();
         if (StringUtils.isNotBlank(mavenCoordinates.getClassifier())) {
             name = name + ":" + mavenCoordinates.getClassifier();
         }
@@ -345,14 +349,15 @@ public class DiffDependencyTask extends DefaultAndroidTask {
     public static class ConfigAction extends MtlBaseTaskAction<DiffDependencyTask> {
 
         private LibVariantContext libVariantContext;
+
         private VariantScope scope;
 
-        public ConfigAction(LibVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(LibVariantContext variantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
             super(variantContext, baseVariantOutputData);
             this.libVariantContext = variantContext;
             this.scope = libVariantContext.getScope();
         }
-
 
         @Override
         public String getName() {
@@ -372,7 +377,8 @@ public class DiffDependencyTask extends DefaultAndroidTask {
 
                 @Override
                 public File call() throws Exception {
-                    return new File(libVariantContext.apContext.getApExploredFolder(), "dependencies.txt");
+                    return new File(libVariantContext.apContext.getApExploredFolder(),
+                                    "dependencies.txt");
                 }
             });
             ConventionMappingHelper.map(task, "diffOutFile", new Callable<File>() {

@@ -206,7 +206,7 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.dependency.model;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -215,38 +215,23 @@ import com.android.builder.model.MavenCoordinates;
 import java.io.File;
 
 /**
- * Created by shenghua.nish on 2016-05-04 下午3:41.
+ * Created by shenghua.nish on 2016-05-06 上午11:10.
  */
-public class ApLibrary {
+public class ApkLibrary {
 
     @Nullable
     private final MavenCoordinates mResolvedCoordinates;
 
     @NonNull
-    private final File mApFile;
-    /**
-     * 解压的文件夹
-     */
-    private File mApFolder;
+    private final File apkFile;
 
-    @NonNull
-    public File getFolder() {
-        return mApFolder;
-    }
-
-    public ApLibrary(@Nullable MavenCoordinates mResolvedCoordinates, File mApFile, File mApFolder){
+    public ApkLibrary(@Nullable MavenCoordinates mResolvedCoordinates, File apkFile){
         this.mResolvedCoordinates = mResolvedCoordinates;
-        this.mApFile = mApFile;
-        this.mApFolder = mApFolder;
+        this.apkFile = apkFile;
+
     }
 
-    public File getApFile() {
-        return mApFile;
+    public File getApkFile() {
+        return apkFile;
     }
-
-    @Nullable
-    public MavenCoordinates getResolvedCoordinates() {
-        return mResolvedCoordinates;
-    }
-
 }

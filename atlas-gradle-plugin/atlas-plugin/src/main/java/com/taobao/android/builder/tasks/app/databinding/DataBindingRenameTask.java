@@ -217,7 +217,7 @@ import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
@@ -240,7 +240,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 public class DataBindingRenameTask extends BaseTask {
@@ -371,7 +370,7 @@ public class DataBindingRenameTask extends BaseTask {
             packageAwbsTask.androidConfig = appVariantContext.getAppExtension();
             packageAwbsTask.appVariantContext = appVariantContext;
             packageAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
-            packageAwbsTask.config = scope.getVariantConfiguration();
+            packageAwbsTask.config = scope.getVariantScope().getVariantConfiguration();
             packageAwbsTask.variantOutputData = (ApkVariantOutputData) scope.getVariantOutputData();
 
 

@@ -215,7 +215,7 @@ import com.android.manifmerger.ManifestMerger2;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.MtlParallelTask;
 import com.taobao.android.builder.tasks.app.bundle.TaskCreater;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;

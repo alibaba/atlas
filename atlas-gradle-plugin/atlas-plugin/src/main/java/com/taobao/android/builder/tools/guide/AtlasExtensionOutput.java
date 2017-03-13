@@ -238,7 +238,7 @@ public class AtlasExtensionOutput extends AtlasExtension {
 
         this.tBuildType = new TBuildType(name);
 
-        TBuildType mtlBuildTypeValue = (TBuildType) atlasExtension.getBuildTypes().getByName(name);
+        TBuildType mtlBuildTypeValue = (TBuildType) atlasExtension.getBuildTypes().findByName(name);
         if (null == mtlBuildTypeValue) {
             return;
         }
@@ -259,7 +259,7 @@ public class AtlasExtensionOutput extends AtlasExtension {
         try {
             BeanUtils.copyProperties(dest, orig);
         } catch (Throwable e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 }

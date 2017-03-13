@@ -219,7 +219,7 @@ import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.TBuildType;
 import org.gradle.api.Project;

@@ -218,14 +218,22 @@ import java.util.List;
 public class BasicBundleInfo {
 
     private String pkgName;
+
     private String applicationName;
+
     private String version;
+
     private List<String> dependency = Lists.newArrayList();
+
     private List<String> activities = Lists.newArrayList();
+
     private List<String> services = Lists.newArrayList();
+
     private List<String> receivers = Lists.newArrayList();
+
     private List<String> contentProviders = Lists.newArrayList();
-    private boolean isInternal = true;
+
+    private Boolean isInternal = true;
 
     public String getPkgName() {
         return pkgName;
@@ -298,12 +306,4 @@ public class BasicBundleInfo {
     public void setIsInternal(boolean internal) {
         isInternal = internal;
     }
-
-
-//    public void setIsInternal(boolean getIsInternal) {
-//        this.getIsInternal = getIsInternal;
-//    }
-//    public boolean getIsInternal() {
-//        return getIsInternal;
-//    }
 }

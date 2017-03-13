@@ -208,10 +208,15 @@
 package com.taobao.android.builder
 
 import android.databinding.tool.DataBindingBuilder
+import com.android.annotations.NonNull
 import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.internal.*
+import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.LibraryTaskManager
+import com.android.build.gradle.internal.SdkHandler
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.ndk.NdkHandler
 import com.android.build.gradle.internal.variant.LibraryVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.builder.core.AndroidBuilder
@@ -224,14 +229,12 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import javax.inject.Inject
 
 /**
- * Gradle plugin class for 'library' projects.
- */
+ * Gradle plugin class for 'library' projects.*/
 public class AtlasLibraryPlugin extends BasePlugin implements Plugin<Project> {
 
     /**
      * Default assemble task for the default-published artifact. this is needed for
-     * the prepare task on the consuming project.
-     */
+     * the prepare task on the consuming project.*/
     Task assembleDefault
 
     @Inject
@@ -246,10 +249,9 @@ public class AtlasLibraryPlugin extends BasePlugin implements Plugin<Project> {
 
     @Override
     protected VariantFactory createVariantFactory() {
-        return new LibraryVariantFactory(
-                instantiator,
-                androidBuilder,
-                (LibraryExtension) extension);
+        return new LibraryVariantFactory(instantiator,
+                                         androidBuilder,
+                                         (LibraryExtension) extension);
     }
 
     @Override
@@ -258,29 +260,23 @@ public class AtlasLibraryPlugin extends BasePlugin implements Plugin<Project> {
     }
 
     @Override
-    protected TaskManager createTaskManager(
-            Project project,
-            AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
-            AndroidConfig extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry) {
+    protected TaskManager createTaskManager(@NonNull Project project,
+                                            @NonNull AndroidBuilder androidBuilder,
+                                            @NonNull DataBindingBuilder dataBindingBuilder,
+                                            @NonNull AndroidConfig extension,
+                                            @NonNull SdkHandler sdkHandler,
+                                            @NonNull NdkHandler ndkHandler,
+                                            @NonNull DependencyManager dependencyManager,
+                                            @NonNull ToolingModelBuilderRegistry toolingRegistry) {
 
-        def ndkHandler = new NdkHandler(
-                project.getRootDir(),
-                null, /* compileSkdVersion, this will be set in afterEvaluate */
-                "gcc",
-                "" /*toolchainVersion*/);
-        return new LibraryTaskManager(
-                project,
-                androidBuilder,
-                dataBindingBuilder,
-                extension,
-                sdkHandler,
-                ndkHandler,
-                dependencyManager,
-                toolingRegistry)
+        return new LibraryTaskManager(project,
+                                      androidBuilder,
+                                      dataBindingBuilder,
+                                      extension,
+                                      sdkHandler,
+                                      ndkHandler,
+                                      dependencyManager,
+                                      toolingRegistry)
     }
 
     @Override
@@ -293,6 +289,4 @@ public class AtlasLibraryPlugin extends BasePlugin implements Plugin<Project> {
     void applyCusteomPlugin(Project project) {
         project.getPlugins().apply(AtlasPlugin.class)
     }
-
-
 }

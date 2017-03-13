@@ -213,7 +213,7 @@ import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;

@@ -213,12 +213,13 @@ import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.io.Files;
-import com.taobao.android.builder.dependency.AarBundle;
-import com.taobao.android.builder.dependency.AwbBundle;
-import com.taobao.android.builder.dependency.SoLibrary;
+import com.taobao.android.builder.dependency.model.AarBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.BufferedOutputStream;
@@ -241,22 +242,21 @@ public class PrepareAwoBundleTask extends BaseTask {
 
         AwbBundle awbBundle = libVariantContext.getAwbBundle();
 
-        prepare(awbBundle.getBundle(), awbBundle.getBundleFolder(), true);
+        prepare(awbBundle.getBundle(), awbBundle.getFolder(), true);
 
         List<SoLibrary> soLibraries = awbBundle.getSoLibraries();
         for (final SoLibrary soLibrary : soLibraries) {
             prepare(soLibrary.getSoLibFile(), soLibrary.getFolder(), false);
         }
 
-        List<LibraryDependency> aarBundles = awbBundle.getDependencies();
-        for (final LibraryDependency libraryDependency : aarBundles) {
+        List<? extends AndroidLibrary> aarBundles = awbBundle.getLibraryDependencies();
+        for (final AndroidLibrary libraryDependency : aarBundles) {
             if (libraryDependency instanceof AarBundle) {
                 AarBundle aarBundle = (AarBundle) libraryDependency;
-                prepare(aarBundle.getBundle(), aarBundle.getBundleFolder(), true);
+                prepare(aarBundle.getBundle(), aarBundle.getFolder(), true);
             }
         }
     }
-
 
     private void prepare(File bundleFile, File exploderDir, boolean hasInnerJar) {
         getLogger().info("prepare bundle " + bundleFile.getAbsolutePath());
@@ -274,22 +274,21 @@ public class PrepareAwoBundleTask extends BaseTask {
             }
             try {
                 Files.createParentDirs(classesJar);
-                JarOutputStream jarOutputStream = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(classesJar)),
-                        new Manifest());
+                JarOutputStream jarOutputStream = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(
+                        classesJar)), new Manifest());
                 jarOutputStream.close();
             } catch (IOException e) {
                 throw new RuntimeException("Cannot create missing classes.jar", e);
             }
         }
-
     }
-
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAwoBundleTask> {
 
         private final LibVariantContext libVariantContext;
 
-        public ConfigAction(LibVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(LibVariantContext variantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
             super(variantContext, baseVariantOutputData);
             this.libVariantContext = variantContext;
         }
@@ -306,17 +305,12 @@ public class PrepareAwoBundleTask extends BaseTask {
             return PrepareAwoBundleTask.class;
         }
 
-
         @Override
         public void execute(@NonNull PrepareAwoBundleTask prepareAwoBundleTask) {
 
             super.execute(prepareAwoBundleTask);
 
             prepareAwoBundleTask.libVariantContext = libVariantContext;
-
         }
-
     }
-
-
 }

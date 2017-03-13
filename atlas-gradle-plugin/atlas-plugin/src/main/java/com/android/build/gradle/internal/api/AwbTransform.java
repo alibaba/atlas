@@ -210,7 +210,7 @@ package com.android.build.gradle.internal.api;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 
 import java.io.File;
 import java.util.List;

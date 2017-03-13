@@ -226,11 +226,15 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tools.PluginTypeUtils;
-import groovy.lang.Closure;
+
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.UnknownProjectException;
-import org.gradle.api.artifacts.*;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.ProjectDependency;
+import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ComponentSelector;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
@@ -247,6 +251,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import groovy.lang.Closure;
+
 import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -257,16 +263,21 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 public class DependencyManager<T extends BaseExtension> {
 
     protected final T androidExtension;
+
     protected final Project project;
+
     protected final AtlasExtension atlasExtension;
+
     protected ExtraModelInfo extraModelInfo;
+
     protected ILogger logger;
 
     public DependencyManager(T androidExtension, Project project, AtlasExtension atlasExtension) {
         this.androidExtension = androidExtension;
         this.project = project;
         this.atlasExtension = atlasExtension;
-        this.extraModelInfo = new ExtraModelInfo(project, PluginTypeUtils.isLibraryProject(project));
+        this.extraModelInfo = new ExtraModelInfo(project,
+                                                 PluginTypeUtils.isLibraryProject(project));
         this.logger = new LoggerWrapper(Logging.getLogger(DependencyManager.class));
     }
 
@@ -280,39 +291,44 @@ public class DependencyManager<T extends BaseExtension> {
                 final AppExtension appExtension = (AppExtension) androidExtension;
                 appExtension.getApplicationVariants().all(new Closure<Object>(this, this) {
                     public void doCall(Object applicationVariant) {
-                        VariantContext variantContext = new VariantContext((ApplicationVariantImpl) applicationVariant, project, atlasExtension, appExtension);
+                        VariantContext variantContext = new VariantContext((ApplicationVariantImpl) applicationVariant,
+                                                                           project,
+                                                                           atlasExtension,
+                                                                           appExtension);
                         resolveDependencyForConfig(variantContext.getVariantDependency(), false);
-
                     }
-
                 });
             } else if (androidExtension instanceof LibraryExtension) {
                 final LibraryExtension libraryExtension = (LibraryExtension) androidExtension;
                 libraryExtension.getLibraryVariants().all(new Closure<Object>(this, this) {
                     public void doCall(Object libraryVariant) {
-                        VariantContext variantContext = new VariantContext((LibraryVariantImpl) libraryVariant, project, atlasExtension, libraryExtension);
+                        VariantContext variantContext = new VariantContext((LibraryVariantImpl) libraryVariant,
+                                                                           project,
+                                                                           atlasExtension,
+                                                                           libraryExtension);
                         resolveDependencyForConfig(variantContext.getVariantDependency(), true);
                     }
-
                 });
             }
-
         }
-
     }
 
-    public void resolveDependencyForConfig(@NonNull VariantDependencies variantDeps, boolean isLibrary) {
+    public void resolveDependencyForConfig(@NonNull VariantDependencies variantDeps,
+                                           boolean isLibrary) {
 
         AndroidDependencyTree androidDependencyTree = parseDependencyTree(variantDeps);
 
-        logger.info("[dependencyTree" + variantDeps.getName() + "]" + JSON.toJSONString(androidDependencyTree.getDependencyJson(), true));
+        logger.info("[dependencyTree" +
+                            variantDeps.getName() +
+                            "]" +
+                            JSON.toJSONString(androidDependencyTree.getDependencyJson(), true));
 
         if (isLibrary) {
             AtlasBuildContext.libDependencyTrees.put(variantDeps.getName(), androidDependencyTree);
         } else {
-            AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(), androidDependencyTree);
+            AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(),
+                                                         androidDependencyTree);
         }
-
     }
 
     protected AndroidDependencyTree parseDependencyTree(@NonNull VariantDependencies variantDeps) {
@@ -333,29 +349,39 @@ public class DependencyManager<T extends BaseExtension> {
         // 不使用官方的扁平化的依赖处理，改用自己处理树状的依赖关系;对于application的依赖，我们只取compile的依赖
         ResolvedDependencyContainer compileResolvedDependencyContainer = new ResolvedDependencyContainer();
         Set<ModuleVersionIdentifier> directDependencies = new HashSet<ModuleVersionIdentifier>();
-        Set<? extends DependencyResult> projectDependencies = compileClasspath.getIncoming().getResolutionResult().getRoot().getDependencies();
+        Set<? extends DependencyResult> projectDependencies = compileClasspath.getIncoming()
+                .getResolutionResult()
+                .getRoot()
+                .getDependencies();
         for (DependencyResult dependencyResult : projectDependencies) {
             if (dependencyResult instanceof ResolvedDependencyResult) {
-                ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult) dependencyResult).getSelected().getModuleVersion();
-                CircleDependencyCheck circleDependencyCheck = new CircleDependencyCheck(moduleVersion);
+                ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult) dependencyResult)
+                        .getSelected()
+                        .getModuleVersion();
+                CircleDependencyCheck circleDependencyCheck = new CircleDependencyCheck(
+                        moduleVersion);
 
                 if (!((HashSet<ModuleVersionIdentifier>) directDependencies).contains(moduleVersion)) {
                     ((HashSet<ModuleVersionIdentifier>) directDependencies).add(moduleVersion);
-                    resolveDependency(compileResolvedDependencyContainer, null, ((ResolvedDependencyResult) dependencyResult).getSelected(), artifacts, variantDeps, 0, circleDependencyCheck, circleDependencyCheck.getRootDependencyNode());
+                    resolveDependency(compileResolvedDependencyContainer,
+                                      null,
+                                      ((ResolvedDependencyResult) dependencyResult).getSelected(),
+                                      artifacts,
+                                      variantDeps,
+                                      0,
+                                      circleDependencyCheck,
+                                      circleDependencyCheck.getRootDependencyNode());
                 }
-
             } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                 ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
                 if (attempted != null) {
                     ((HashSet<String>) currentUnresolvedDependencies).add(attempted.toString());
                 }
-
             }
-
         }
 
-
-        AndroidDependencyTree androidDependencyTree = compileResolvedDependencyContainer.reslovedDependencies().toAndroidDependency();
+        AndroidDependencyTree androidDependencyTree = compileResolvedDependencyContainer.reslovedDependencies()
+                .toAndroidDependency();
 
         return androidDependencyTree;
     }
@@ -370,29 +396,45 @@ public class DependencyManager<T extends BaseExtension> {
      * @param configDependencies
      * @param indent
      */
-    private void resolveDependency(ResolvedDependencyContainer resolvedDependencyContainer, ResolvedDependencyInfo parent, ResolvedComponentResult resolvedComponentResult, Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts, VariantDependencies configDependencies, int indent, CircleDependencyCheck circleDependencyCheck, CircleDependencyCheck.DependencyNode node) {
+    private void resolveDependency(ResolvedDependencyContainer resolvedDependencyContainer,
+                                   ResolvedDependencyInfo parent,
+                                   ResolvedComponentResult resolvedComponentResult,
+                                   Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
+                                   VariantDependencies configDependencies,
+                                   int indent,
+                                   CircleDependencyCheck circleDependencyCheck,
+                                   CircleDependencyCheck.DependencyNode node) {
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
 
-        if (configDependencies.getChecker().excluded(moduleVersion)) {
+        if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
             return;
-
         }
 
-        if (moduleVersion.getName().equals("support-annotations") && moduleVersion.getGroup().equals("com.android.support")) {
+        if (moduleVersion.getName().equals("support-annotations") &&
+                moduleVersion.getGroup().equals("com.android.support")) {
             configDependencies.setAnnotationsPresent(true);
         }
-
 
         // now loop on all the artifact for this modules.
         List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
 
         ComponentIdentifier id = resolvedComponentResult.getId();
-        String gradlePath = (id instanceof ProjectComponentIdentifier) ? ((ProjectComponentIdentifier) id).getProjectPath() : null;
+        String gradlePath = (id instanceof ProjectComponentIdentifier) ? ((ProjectComponentIdentifier) id)
+                .getProjectPath() : null;
 
         // 如果同时找到多个依赖，暂时没法判断是那个真正有用
         for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
 
-            ResolvedDependencyInfo resolvedDependencyInfo = new ResolvedDependencyInfo(moduleVersion.getVersion(), moduleVersion.getGroup(), moduleVersion.getName(), resolvedArtifact.getType(), resolvedArtifact.getClassifier());
+            ResolvedDependencyInfo resolvedDependencyInfo = new ResolvedDependencyInfo(moduleVersion
+                                                                                               .getVersion(),
+                                                                                       moduleVersion
+                                                                                               .getGroup(),
+                                                                                       moduleVersion
+                                                                                               .getName(),
+                                                                                       resolvedArtifact
+                                                                                               .getType(),
+                                                                                       resolvedArtifact
+                                                                                               .getClassifier());
             resolvedDependencyInfo.setIndent(indent);
             resolvedDependencyInfo.setGradlePath(gradlePath);
             resolvedDependencyInfo.setResolvedArtifact(resolvedArtifact);
@@ -400,7 +442,13 @@ public class DependencyManager<T extends BaseExtension> {
             String path = computeArtifactPath(moduleVersion, resolvedArtifact);
             String name = computeArtifactName(moduleVersion, resolvedArtifact);
 
-            File explodedDir = project.file(project.getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES + "/exploded-" + resolvedArtifact.getType().toLowerCase() + "/" + path);
+            File explodedDir = project.file(project.getBuildDir().getAbsolutePath() +
+                                                    "/" +
+                                                    FD_INTERMEDIATES +
+                                                    "/exploded-" +
+                                                    resolvedArtifact.getType().toLowerCase() +
+                                                    "/" +
+                                                    path);
             resolvedDependencyInfo.setExplodedDir(explodedDir);
             resolvedDependencyInfo.setDependencyName(name);
 
@@ -414,35 +462,49 @@ public class DependencyManager<T extends BaseExtension> {
             Set<? extends DependencyResult> dependencies = resolvedComponentResult.getDependencies();
             for (DependencyResult dep : dependencies) {
                 if (dep instanceof ResolvedDependencyResult) {
-                    ResolvedComponentResult childResolvedComponentResult = ((ResolvedDependencyResult) dep).getSelected();
-                    CircleDependencyCheck.DependencyNode childNode = circleDependencyCheck.addDependency(childResolvedComponentResult.getModuleVersion(), node, indent + 1);
-                    CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(logger);
+                    ResolvedComponentResult childResolvedComponentResult = ((ResolvedDependencyResult) dep)
+                            .getSelected();
+                    CircleDependencyCheck.DependencyNode childNode = circleDependencyCheck.addDependency(
+                            childResolvedComponentResult.getModuleVersion(),
+                            node,
+                            indent + 1);
+                    CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(
+                            logger);
                     if (circleResult.hasCircle) {
-                        logger.warning("[CircleDependency]" + StringUtils.join(circleResult.detail, ";"));
+                        logger.warning("[CircleDependency]" +
+                                               StringUtils.join(circleResult.detail, ";"));
                     } else {
-                        resolveDependency(resolvedDependencyContainer, parent, ((ResolvedDependencyResult) dep).getSelected(), artifacts, configDependencies, indent + 1, circleDependencyCheck, childNode);
+                        resolveDependency(resolvedDependencyContainer,
+                                          parent,
+                                          ((ResolvedDependencyResult) dep).getSelected(),
+                                          artifacts,
+                                          configDependencies,
+                                          indent + 1,
+                                          circleDependencyCheck,
+                                          childNode);
                     }
-
                 }
-
             }
 
             resolvedDependencyContainer.addDependency(resolvedDependencyInfo);
         }
-
-
     }
 
     @NonNull
-    protected String computeArtifactPath(@NonNull ModuleVersionIdentifier moduleVersion, @NonNull ResolvedArtifact artifact) {
+    protected String computeArtifactPath(@NonNull ModuleVersionIdentifier moduleVersion,
+                                         @NonNull ResolvedArtifact artifact) {
         StringBuilder pathBuilder = new StringBuilder();
 
-        pathBuilder.append(normalize(logger, moduleVersion, moduleVersion.getGroup())).append("/").append(normalize(logger, moduleVersion, moduleVersion.getName())).append("/").append(normalize(logger, moduleVersion, moduleVersion.getVersion()));
+        pathBuilder.append(normalize(logger, moduleVersion, moduleVersion.getGroup()))
+                .append("/")
+                .append(normalize(logger, moduleVersion, moduleVersion.getName()))
+                .append("/")
+                .append(normalize(logger, moduleVersion, moduleVersion.getVersion()));
 
         if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
-            pathBuilder.append("/").append(normalize(logger, moduleVersion, artifact.getClassifier()));
+            pathBuilder.append("/")
+                    .append(normalize(logger, moduleVersion, artifact.getClassifier()));
         }
-
 
         return pathBuilder.toString();
     }
@@ -457,7 +519,11 @@ public class DependencyManager<T extends BaseExtension> {
      */
     public static String normalize(ILogger logger, ModuleVersionIdentifier id, String path) {
         if (path == null || path.isEmpty()) {
-            logger.info(String.format("When unzipping library '%s:%s:%s, either group, name or version is empty", id.getGroup(), id.getName(), id.getVersion()));
+            logger.info(String.format(
+                    "When unzipping library '%s:%s:%s, either group, name or version is empty",
+                    id.getGroup(),
+                    id.getName(),
+                    id.getVersion()));
             return path;
         }
 
@@ -465,7 +531,12 @@ public class DependencyManager<T extends BaseExtension> {
         String normalizedPath = path.replaceAll("[%<>:\"/?*\\\\]", "@");
         if (normalizedPath == null || normalizedPath.isEmpty()) {
             // if the path normalization failed, return the original path.
-            logger.info(String.format("When unzipping library '%s:%s:%s, the normalized '%s' is empty", id.getGroup(), id.getName(), id.getVersion(), path));
+            logger.info(String.format(
+                    "When unzipping library '%s:%s:%s, the normalized '%s' is empty",
+                    id.getGroup(),
+                    id.getName(),
+                    id.getVersion(),
+                    path));
             return path;
         }
 
@@ -473,33 +544,48 @@ public class DependencyManager<T extends BaseExtension> {
             int pathPointer = normalizedPath.length() - 1;
             // do not end your path with either a dot or a space.
             String suffix = "";
-            while (pathPointer >= 0 && (normalizedPath.charAt(pathPointer) == '.') || normalizedPath.charAt(pathPointer) == ' ') {
+            while (pathPointer >= 0 && (normalizedPath.charAt(pathPointer) == '.') ||
+                    normalizedPath.charAt(pathPointer) == ' ') {
                 pathPointer = pathPointer--;
                 suffix += "@";
             }
 
             if (pathPointer < 0) {
-                throw new RuntimeException(String.format("When unzipping library '%s:%s:%s, " + "the path '%s' cannot be transformed into a valid directory name", id.getGroup(), id.getName(), id.getVersion(), path));
+                throw new RuntimeException(String.format("When unzipping library '%s:%s:%s, " +
+                                                                 "the path '%s' cannot be transformed into a valid directory name",
+                                                         id.getGroup(),
+                                                         id.getName(),
+                                                         id.getVersion(),
+                                                         path));
             }
 
             return normalizedPath.substring(0, pathPointer + 1) + suffix;
         } catch (Exception e) {
-            logger.error(e, String.format("When unzipping library '%s:%s:%s', " + "Path normalization failed for input %s", id.getGroup(), id.getName(), id.getVersion(), path));
+            logger.error(e,
+                         String.format("When unzipping library '%s:%s:%s', " +
+                                               "Path normalization failed for input %s",
+                                       id.getGroup(),
+                                       id.getName(),
+                                       id.getVersion(),
+                                       path));
             return path;
         }
-
     }
 
     @NonNull
-    private static String computeArtifactName(@NonNull ModuleVersionIdentifier moduleVersion, @NonNull ResolvedArtifact artifact) {
+    private static String computeArtifactName(@NonNull ModuleVersionIdentifier moduleVersion,
+                                              @NonNull ResolvedArtifact artifact) {
         StringBuilder nameBuilder = new StringBuilder();
 
-        nameBuilder.append(moduleVersion.getGroup()).append(":").append(moduleVersion.getName()).append(":").append(moduleVersion.getVersion());
+        nameBuilder.append(moduleVersion.getGroup())
+                .append(":")
+                .append(moduleVersion.getName())
+                .append(":")
+                .append(moduleVersion.getVersion());
 
         if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
             nameBuilder.append(":").append(artifact.getClassifier());
         }
-
 
         return nameBuilder.toString();
     }
@@ -512,24 +598,25 @@ public class DependencyManager<T extends BaseExtension> {
                 try {
                     ensureConfigured(projectDependency.getProjectConfiguration());
                 } catch (Throwable e) {
-                    throw new UnknownProjectException(String.format("Cannot evaluate module %s : %s", projectDependency.getName(), e.getMessage()), e);
+                    throw new UnknownProjectException(String.format("Cannot evaluate module %s : %s",
+                                                                    projectDependency.getName(),
+                                                                    e.getMessage()), e);
                 }
-
             }
-
         }
-
     }
 
-    private void collectArtifacts(Configuration configuration, Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
+    private void collectArtifacts(Configuration configuration,
+                                  Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
 
         Set<ResolvedArtifact> allArtifacts;
         if (!extraModelInfo.getMode().equals(STANDARD)) {
-            allArtifacts = configuration.getResolvedConfiguration().getLenientConfiguration().getArtifacts(Specs.satisfyAll());
+            allArtifacts = configuration.getResolvedConfiguration()
+                    .getLenientConfiguration()
+                    .getArtifacts(Specs.satisfyAll());
         } else {
             allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
         }
-
 
         for (ResolvedArtifact artifact : allArtifacts) {
             ModuleVersionIdentifier id = artifact.getModuleVersion().getId();
@@ -540,14 +627,9 @@ public class DependencyManager<T extends BaseExtension> {
                 artifacts.put(id, moduleArtifacts);
             }
 
-
             if (!moduleArtifacts.contains(artifact)) {
                 moduleArtifacts.add(artifact);
             }
-
         }
-
     }
-
-
 }

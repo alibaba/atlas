@@ -206,32 +206,104 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.dependency.model;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.builder.dependency.JarDependency;
+import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.collect.Lists;
+import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * Created by shenghua.nish on 2016-05-06 上午11:10.
+ * Created by shenghua.nish on 2016-05-06 下午5:46.
  */
-public class ApkLibrary {
+public class AwbBundle extends AarBundle {
 
-    @Nullable
-    private final MavenCoordinates mResolvedCoordinates;
-
-    @NonNull
-    private final File apkFile;
-
-    public ApkLibrary(@Nullable MavenCoordinates mResolvedCoordinates, File apkFile){
-        this.mResolvedCoordinates = mResolvedCoordinates;
-        this.apkFile = apkFile;
-
+    public AwbBundle(File bundle,
+                     File explodedBundle,
+                     List<LibraryDependency> dependencies,
+                     Collection<JarDependency> jarDependencies,
+                     String name,
+                     String variantName,
+                     String projectPath,
+                     MavenCoordinates requestedCoordinates,
+                     MavenCoordinates resolvedCoordinates) {
+        super(bundle,
+              explodedBundle,
+              dependencies,
+              jarDependencies,
+              name,
+              variantName,
+              projectPath,
+              requestedCoordinates,
+              resolvedCoordinates);
     }
 
-    public File getApkFile() {
-        return apkFile;
+    public File outputBundleFile;
+
+    private String packageName;
+
+    public boolean isRemote;
+
+    private String soFileName;
+
+    public BundleInfo bundleInfo = new BundleInfo();
+
+    public String getPackageName() {
+
+        if (org.apache.commons.lang3.StringUtils.isEmpty(packageName)) {
+            packageName = ManifestFileUtils.getPackage(this.getOrgManifestFile());
+        }
+
+        return packageName;
+    }
+
+    public String getAwbSoName() {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(soFileName)) {
+            String packageName = getPackageName();
+            soFileName = "lib" + StringUtils.replace(packageName, ".", "_") + ".so";
+        }
+        return soFileName;
+    }
+
+    public List<File> getLibraryJars() {
+        List<File> jars = Lists.newArrayList();
+        File awbJar = this.getJarFile();
+        jars.add(awbJar);
+        List<? extends AndroidLibrary> aarBundles = this.getLibraryDependencies();
+        if (null != aarBundles) {
+            for (AndroidLibrary aarBundle : aarBundles) {
+                if (aarBundle.getJarFile().exists()) {
+                    jars.add(aarBundle.getJarFile());
+                }
+                //jars.addAll(aarBundle.getLocalJars());
+            }
+        }
+
+        Collection<? extends JavaLibrary> javaDependencies = this.getJavaDependencies();
+        if (null != javaDependencies) {
+            for (JavaLibrary javaLibrary : javaDependencies) {
+                if (javaLibrary.getJarFile().exists()) {
+                    jars.add(javaLibrary.getJarFile());
+                }
+            }
+        }
+
+
+
+        Collection<File> localJars = this.getLocalJars();
+        if (null != localJars) {
+            jars.addAll(localJars);
+        }
+        return jars;
     }
 }

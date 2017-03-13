@@ -210,12 +210,14 @@ package com.taobao.android.builder.tools.jarmerge;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.builder.signing.SignedJarBuilder;
+import com.android.builder.packaging.ZipAbortException;
+import com.android.builder.packaging.ZipEntryFilter;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Closer;
+
 import org.gradle.api.logging.Logging;
 
 import java.io.File;
@@ -239,10 +241,12 @@ public class JarMergerWithOverride {
 
     @NonNull
     private final File jarFile;
-    private Closer closer;
-    private JarOutputStream jarOutputStream;
 
-    private SignedJarBuilder.IZipEntryFilter filter;
+    private ZipEntryFilter filter;
+
+    private Closer closer;
+
+    private JarOutputStream jarOutputStream;
 
     private Multimap<String, String> duplicates = HashMultimap.create(10000, 3);
 
@@ -264,7 +268,7 @@ public class JarMergerWithOverride {
     /**
      * Sets a list of regex to exclude from the jar.
      */
-    public void setFilter(@NonNull SignedJarBuilder.IZipEntryFilter filter) {
+    public void setFilter(@NonNull ZipEntryFilter filter) {
         this.filter = filter;
     }
 
@@ -272,13 +276,13 @@ public class JarMergerWithOverride {
         init();
         try {
             addFolder(folder, "");
-        } catch (SignedJarBuilder.IZipEntryFilter.ZipAbortException e) {
+        } catch (ZipAbortException e) {
             throw new IOException(e);
         }
     }
 
-    private void addFolder(@NonNull File folder, @NonNull String path)
-            throws IOException, SignedJarBuilder.IZipEntryFilter.ZipAbortException {
+    private void addFolder(@NonNull File folder,
+                           @NonNull String path) throws IOException, ZipAbortException {
         logger.verbose("addFolder(%1$s, %2$s)", folder, path);
         File[] files = folder.listFiles();
         if (files != null) {
@@ -286,11 +290,19 @@ public class JarMergerWithOverride {
                 if (file.isFile()) {
                     String entryPath = path + file.getName();
                     if (filter == null || filter.checkEntry(entryPath)) {
-                        logger.verbose("addFolder(%1$s, %2$s): entry %3$s", folder, path, entryPath);
+                        logger.verbose("addFolder(%1$s, %2$s): entry %3$s",
+                                       folder,
+                                       path,
+                                       entryPath);
                         duplicates.put(path + file.getName(), folder.getAbsolutePath());
                         if (duplicates.get(path + file.getName()).size() > 1) {
-                            logger.info("[Duplicated]" + path + file.getName() + ":" + folder.getAbsolutePath()
-                                    + ":" + duplicates.get(path + file.getName()));
+                            logger.info("[Duplicated]" +
+                                                path +
+                                                file.getName() +
+                                                ":" +
+                                                folder.getAbsolutePath() +
+                                                ":" +
+                                                duplicates.get(path + file.getName()));
                             continue;
                         }
 
@@ -341,10 +353,6 @@ public class JarMergerWithOverride {
                 }
 
                 String name = entry.getName();
-                if (filter != null && !filter.checkEntry(name)) {
-                    continue;
-                }
-
                 JarEntry newEntry;
 
                 // Preserve the STORED method of the input entry.
@@ -362,8 +370,12 @@ public class JarMergerWithOverride {
                 logger.verbose("addJar(%1$s): entry %2$s", file, name);
                 duplicates.put(name, file.getAbsolutePath());
                 if (duplicates.get(name).size() > 1) {
-                    logger.info("[Duplicated]" + name + ":" + file.getAbsolutePath() + ":"
-                            + duplicates.get(name));
+                    logger.info("[Duplicated]" +
+                                        name +
+                                        ":" +
+                                        file.getAbsolutePath() +
+                                        ":" +
+                                        duplicates.get(name));
                     continue;
                 }
 
@@ -379,8 +391,6 @@ public class JarMergerWithOverride {
                 jarOutputStream.closeEntry();
                 zis.closeEntry();
             }
-        } catch (SignedJarBuilder.IZipEntryFilter.ZipAbortException e) {
-            throw new IOException(e);
         } finally {
             localCloser.close();
         }
@@ -400,7 +410,7 @@ public class JarMergerWithOverride {
         }
     }
 
-    public Multimap<String, String> getDuplicates(){
+    public Multimap<String, String> getDuplicates() {
         return duplicates;
     }
 }

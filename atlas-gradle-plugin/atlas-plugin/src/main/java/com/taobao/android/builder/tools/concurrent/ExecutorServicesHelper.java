@@ -208,9 +208,10 @@
 package com.taobao.android.builder.tools.concurrent;
 
 import org.gradle.api.GradleException;
-import org.gradle.api.logging.Logger;
+import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -225,6 +226,8 @@ public class ExecutorServicesHelper {
 
     private String name;
 
+    private int threadCount;
+
     public ExecutorServicesHelper(String name, Logger logger, int threadCount) {
 
         this.name = name;
@@ -234,12 +237,15 @@ public class ExecutorServicesHelper {
             threadCount = (Runtime.getRuntime().availableProcessors() / 2) + 1;
         }
 
+        this.threadCount = threadCount;
+
         this.executorService = Executors.newFixedThreadPool(threadCount);
     }
 
     public AtomicInteger index = new AtomicInteger(0);
 
-    private  boolean hasException;
+    private boolean hasException;
+
     private GradleException exception;
 
     public void execute(List<Runnable> runnables) throws InterruptedException {
@@ -258,8 +264,8 @@ public class ExecutorServicesHelper {
 
                     try {
 
-                        if (!hasException){
-                            logger.info("excute " +
+                        if (!hasException) {
+                            info("excute " +
                                                 name +
                                                 " task at " +
                                                 index.incrementAndGet() +
@@ -267,11 +273,10 @@ public class ExecutorServicesHelper {
                                                 size);
                             runnable.run();
                         }
-
-                    } catch (GradleException gradleException){
+                    } catch (GradleException gradleException) {
                         hasException = true;
                         exception = gradleException;
-                    }finally {
+                    } finally {
                         countDownLatch.countDown();
                     }
                 }
@@ -280,9 +285,64 @@ public class ExecutorServicesHelper {
 
         countDownLatch.await();
 
-        if (hasException){
-            throw new GradleException(exception.getMessage(),exception);
+        if (hasException) {
+            throw new GradleException(exception.getMessage(), exception);
+        }
+    }
+
+    public <T> void execute(BlockingQueue<T> blockingQueue,
+                            Handler<T> handler) throws InterruptedException {
+
+        if (blockingQueue.isEmpty()) {
+            return;
         }
 
+        final CountDownLatch countDownLatch = new CountDownLatch(this.threadCount);
+
+        for (int i = 0; i < this.threadCount; i++) {
+            this.executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+
+                    try {
+
+                        while (true) {
+
+                            T t = blockingQueue.poll();
+
+                            if (null == t) {
+                                break;
+                            }
+
+                            handler.handle(t);
+                        }
+                    } catch (GradleException gradleException) {
+                        hasException = true;
+                        exception = gradleException;
+                    } finally {
+                        countDownLatch.countDown();
+                    }
+                }
+            });
+        }
+
+        countDownLatch.await();
+
+        if (hasException) {
+            throw new GradleException(exception.getMessage(), exception);
+        }
+    }
+
+    private void info(String msg){
+        if (null != logger){
+            logger.info(msg);
+        }else {
+            System.out.println(msg);
+        }
+    }
+
+    public static interface Handler<T> {
+
+        public void handle(T t);
     }
 }

@@ -208,36 +208,76 @@
 
 package com.taobao.android.builder.dependency;
 
+import com.android.builder.dependency.DependencyContainer;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import com.taobao.android.builder.AtlasBuildContext;
 
+import org.gradle.api.GradleException;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * 所有依赖的仲裁,这个类不做版本号的仲裁,默认gradle已经做好了版本号的仲裁
  * Created by shenghua.nish on 2016-05-05 上午10:34.
  */
-public class ResolvedDependencyContainer {
+public class ResolvedDependencyContainer implements DependencyContainer {
 
-    private volatile boolean                         inited          = false;
+    Logger logger = LoggerFactory.getLogger(ResolvedDependencyContainer.class);
+
+    private volatile boolean inited = false;
+
     // 所有加入的一级依赖
-    private List<ResolvedDependencyInfo>             dependencies    = Lists.newArrayList();
+    private List<ResolvedDependencyInfo> dependencies = Lists.newArrayList();
+
     // 所有依赖的关系
     private Multimap<String, ResolvedDependencyInfo> dependenciesMap = LinkedHashMultimap.create();
 
     // 解析完的依赖关系
     private DependencyTree dependencyTree = new DependencyTree();
 
+    private Project project;
+
+    private Map forceMap;
+
+    public ResolvedDependencyContainer() {
+    }
+
+    public ResolvedDependencyContainer(Project project) {
+        this.project = project;
+        File file = new File(project.getProjectDir(), "awb_resolve_conflict.properties");
+        if (file.exists()) {
+            try {
+                Properties properties = new Properties();
+                properties.load(new FileInputStream(file));
+                forceMap = properties;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public void addDependency(List<ResolvedDependencyInfo> dependencies) {
         this.dependencies.addAll(dependencies);
         addDependencyInfos(dependencies);
-
     }
 
     public void addDependency(ResolvedDependencyInfo resolvedDependencyInfo) {
@@ -245,23 +285,77 @@ public class ResolvedDependencyContainer {
         addDependencyInfo(resolvedDependencyInfo, null);
     }
 
+    Set<String> conflictDependencies = new HashSet<>();
+
     /**
      * 增加dependency
+     *
      * @param resolvedDependencyInfo
-     * @param parent 这个parent为一级依赖
+     * @param parent                 这个parent为一级依赖
      */
-    private void addDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo, ResolvedDependencyInfo parent) {
+    private void addDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo,
+                                   ResolvedDependencyInfo parent) {
         inited = false;
         String name = resolvedDependencyInfo.toString();
+
+        Collection<ResolvedDependencyInfo> list = dependenciesMap.get(name);
+        if (null != list && list.size() > 0) {
+            ResolvedDependencyInfo lastResolvedDependencyInfo = list.iterator().next();
+            if (null != lastResolvedDependencyInfo.getParent() &&
+                    null != resolvedDependencyInfo.getParent() &&
+                    "awb".equals(lastResolvedDependencyInfo.getParent().getType()) &&
+                    "awb".equals(resolvedDependencyInfo.getParent().getType()) &&
+                    !lastResolvedDependencyInfo.getParent()
+                            .getName()
+                            .equals(resolvedDependencyInfo.getParent().getName())) {
+
+                conflictDependencies.add(lastResolvedDependencyInfo.getParent().toString() +
+                                                 " and " +
+                                                 resolvedDependencyInfo.getParent().toString() +
+                                                 " has same dependency " +
+                                                 resolvedDependencyInfo);
+
+                if (null != forceMap) {
+
+                    String forceParent = (String) forceMap.get(resolvedDependencyInfo.getName());
+
+                    if (null != forceParent) {
+
+                        String nowParent = resolvedDependencyInfo.getParent().getName();
+                        String lastParent = lastResolvedDependencyInfo.getParent().getName();
+
+                        if (!forceParent.equals(nowParent)) {
+                            return;
+                        }
+
+                        if (!lastParent.equals(forceParent)) {
+                            dependenciesMap.removeAll(name);
+                        }
+                    }
+                }
+            }
+        }
+
         dependenciesMap.put(name, resolvedDependencyInfo);
+
+        //if ("awb".equals(parent.getType()) &&
+        //        "awb".equals(resolvedDependencyInfo.getParent().getType()) && !parent.getName().equals(resolvedDependencyInfo.getParent().getName())) {
+        //
+        //    throw new GradleException(parent.toString() +
+        //                                      " and " +
+        //                                      resolvedDependencyInfo.getParent()
+        //                                              .toString() +
+        //                                      " has same dependency " +
+        //                                      resolvedDependencyInfo);
+        //}
+
+        //TODO
         if (null != parent) {
             resolvedDependencyInfo.setParent(parent);
         }
         List<ResolvedDependencyInfo> children = resolvedDependencyInfo.getChildren();
         if (null != children && children.size() > 0) {
-            if (null == parent) {
-                parent = resolvedDependencyInfo.getParent();
-            }
+
             for (ResolvedDependencyInfo child : children) {
                 addDependencyInfo(child, resolvedDependencyInfo);
             }
@@ -270,6 +364,7 @@ public class ResolvedDependencyContainer {
 
     /**
      * 增加dependency
+     *
      * @param resolvedDependencyInfos
      */
     private void addDependencyInfos(List<ResolvedDependencyInfo> resolvedDependencyInfos) {
@@ -287,8 +382,20 @@ public class ResolvedDependencyContainer {
             return dependencyTree;
         }
 
+        if (!conflictDependencies.isEmpty()) {
+            for (String str : conflictDependencies) {
+                logger.error(str);
+            }
+            if (null == forceMap) {
+                throw new GradleException("conflict dependencis");
+            } else {
+                AtlasBuildContext.conflictDependencies = conflictDependencies;
+            }
+        }
+
         // 仲裁后的依赖关系.结构为父类-子类
-        Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap = LinkedHashMultimap.create();
+        Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap = LinkedHashMultimap
+                .create();
         Map<ModuleVersionIdentifier, ResolvedDependencyInfo> directDependencies = new HashMap<ModuleVersionIdentifier, ResolvedDependencyInfo>();
         for (String key : dependenciesMap.keySet()) {
             Collection<ResolvedDependencyInfo> dependencyLevels = dependenciesMap.get(key);
@@ -303,10 +410,12 @@ public class ResolvedDependencyContainer {
                 resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo>newArrayList());
                 if (null != parent) {
                     //如果存在的父依赖,就把当前依赖加入到父依赖的子依赖中
-                    resolvedDependenciesMap.put(parent.getModuleVersionIdentifier(), resolvedDependencyInfo);
+                    resolvedDependenciesMap.put(parent.getModuleVersionIdentifier(),
+                                                resolvedDependencyInfo);
                 } else {
                     //如果没有父依赖,就是一级依赖
-                    directDependencies.put(resolvedDependencyInfo.getModuleVersionIdentifier(), resolvedDependencyInfo);
+                    directDependencies.put(resolvedDependencyInfo.getModuleVersionIdentifier(),
+                                           resolvedDependencyInfo);
                 }
             }
         }
@@ -317,8 +426,8 @@ public class ResolvedDependencyContainer {
         for (ModuleVersionIdentifier key : directDependencies.keySet()) {
             ResolvedDependencyInfo resolvedDependencyInfo = directDependencies.get(key);
             //清空children
-            resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo> newArrayList());
-            addResolvedDependencyInfo(resolvedDependencyInfo,resolvedDependenciesMap);
+            resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo>newArrayList());
+            addResolvedDependencyInfo(resolvedDependencyInfo, resolvedDependenciesMap);
             dependencyTree.addDependency(resolvedDependencyInfo);
         }
         inited = true;
@@ -327,23 +436,47 @@ public class ResolvedDependencyContainer {
 
     /**
      * 通过递归的方式进行依赖的解析
+     *
      * @param parentDependency
      * @param resolvedDependenciesMap
      */
-    private void addResolvedDependencyInfo(ResolvedDependencyInfo parentDependency,Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap ) {
+    private void addResolvedDependencyInfo(ResolvedDependencyInfo parentDependency,
+                                           Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap) {
         int indent = parentDependency.getIndent();
         ModuleVersionIdentifier identifier = parentDependency.getModuleVersionIdentifier();
-        Collection<ResolvedDependencyInfo> childDependencies = resolvedDependenciesMap.get(identifier);
+        Collection<ResolvedDependencyInfo> childDependencies = resolvedDependenciesMap.get(
+                identifier);
 
         //TODO here
-        for(ResolvedDependencyInfo childDependency: childDependencies){
-            if(childDependency.getIndent() > indent){
-//                System.out.println(parentDependency + " indent " + indent + "->" + childDependency +  " indent " + childDependency.getIndent());
+        for (ResolvedDependencyInfo childDependency : childDependencies) {
+            if (childDependency.getIndent() > indent) {
+                //                System.out.println(parentDependency + " indent " + indent + "->" + childDependency +  " indent " + childDependency.getIndent());
                 parentDependency.getChildren().add(childDependency);
-                if(childDependency.getIndent() <= 1) {
+                if (childDependency.getIndent() <= 1) {
                     addResolvedDependencyInfo(childDependency, resolvedDependenciesMap);
                 }
             }
         }
+    }
+
+    @Override
+    public ImmutableList<AndroidLibrary> getAndroidDependencies() {
+        return null;
+    }
+
+    @Override
+    public ImmutableList<JavaLibrary> getJarDependencies() {
+        return null;
+    }
+
+    @Override
+    public ImmutableList<JavaLibrary> getLocalDependencies() {
+        return null;
+    }
+
+    @Override
+    public DependencyContainer flatten(AndroidLibrary testedLibrary,
+                                       DependencyContainer testedDependencyContainer) {
+        return null;
     }
 }

@@ -317,7 +317,7 @@ public class TPatchTask extends BaseTask {
             tPatchTool.doPatch(outPatchFolder,
                                true,
                                new File(getOutPatchFolder(), "patchs.json"),
-                               true,
+                               StringUtils.isNotEmpty(patchContext.tpatchHistoryUrl),
                                patchContext.tpatchHistoryUrl,
                                patchContext.appSignName);
             getLogger().info("finish  do patch");

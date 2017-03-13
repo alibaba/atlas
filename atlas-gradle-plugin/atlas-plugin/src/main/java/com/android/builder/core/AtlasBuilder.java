@@ -210,23 +210,39 @@ package com.android.builder.core;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.dependency.SymbolFileProvider;
+import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.builder.internal.SymbolLoader;
 import com.android.builder.internal.SymbolWriter;
+import com.android.builder.internal.aapt.Aapt;
+import com.android.builder.internal.aapt.AaptPackageConfig.Builder;
+import com.android.builder.internal.aapt.v1.AaptV1;
+import com.android.builder.internal.aapt.v1.AaptV1.PngProcessMode;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.sdk.TargetInfo;
-import com.android.ide.common.process.*;
+import com.android.ide.common.process.JavaProcessExecutor;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessInfo;
+import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.ide.common.process.ProcessResult;
 import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.BuildToolInfo.PathId;
 import com.android.utils.ILogger;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.ZipUtils;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.StopExecutionException;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -256,12 +272,65 @@ public class AtlasBuilder extends AndroidBuilder {
      * @param logger              the Logger
      * @param verboseExec         whether external tools are launched in verbose mode
      */
-    public AtlasBuilder(@NonNull String projectId, @Nullable String createdBy,
-                        @NonNull ProcessExecutor processExecutor, @NonNull JavaProcessExecutor javaProcessExecutor,
-                        @NonNull ErrorReporter errorReporter, @NonNull ILogger logger, boolean verboseExec,
+    public AtlasBuilder(@NonNull String projectId,
+                        @Nullable String createdBy,
+                        @NonNull ProcessExecutor processExecutor,
+                        @NonNull JavaProcessExecutor javaProcessExecutor,
+                        @NonNull ErrorReporter errorReporter,
+                        @NonNull ILogger logger,
+                        boolean verboseExec,
                         boolean useCustomAapt) {
-        super(projectId, createdBy, processExecutor, javaProcessExecutor, errorReporter, logger, verboseExec);
+        super(projectId,
+              createdBy,
+              processExecutor,
+              javaProcessExecutor,
+              errorReporter,
+              logger,
+              verboseExec);
         this.useCustomAapt = useCustomAapt;
+    }
+
+    @Override
+    public void processResources(Aapt aapt,
+                                 Builder aaptConfigBuilder,
+                                 boolean enforceUniquePackageName) throws IOException, InterruptedException, ProcessException {
+
+        if (aapt instanceof AaptV1) {
+            try {
+
+                getTargetInfo();
+
+                AaptOptions aaptOptions = (AaptOptions) FieldUtils.readField(aaptConfigBuilder.build(),
+                                                                             "mAaptOptions",
+                                                                             true);
+
+                ProcessExecutor processExecutor = (ProcessExecutor) FieldUtils.readField(aapt,
+                                                                                         "mProcessExecutor",
+                                                                                         true);
+                ProcessOutputHandler processOutputHandler = (ProcessOutputHandler) FieldUtils.readField(
+                        aapt,
+                        "mProcessOutputHandler",
+                        true);
+                BuildToolInfo buildToolInfo = (BuildToolInfo) FieldUtils.readField(aapt,
+                                                                                   "mBuildToolInfo",
+                                                                                   true);
+                PngProcessMode processMode = (PngProcessMode) FieldUtils.readField(aapt,
+                                                                                   "mProcessMode",
+                                                                                   true);
+                int cruncherProcesses = aaptOptions.getCruncherProcesses();
+
+                aapt = new AtlasAapt(processExecutor,
+                                     processOutputHandler,
+                                     buildToolInfo,
+                                     getLogger(),
+                                     processMode,
+                                     cruncherProcesses);
+            } catch (Throwable e) {
+                throw new GradleException("aapt exception", e);
+            }
+        }
+
+        super.processResources(aapt, aaptConfigBuilder, enforceUniquePackageName);
     }
 
     /**
@@ -274,28 +343,26 @@ public class AtlasBuilder extends AndroidBuilder {
      * @throws InterruptedException
      * @throws ProcessException
      */
-    @Override
-    public void processResources(AaptPackageProcessBuilder aaptCommand, boolean enforceUniquePackageName,
-                                 ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException,
-            ProcessException {
-        checkState(getTargetInfo() != null, "Cannot call processResources() before setTargetInfo() is called.");
+    public void processResources(AaptPackageProcessBuilder aaptCommand,
+                                 boolean enforceUniquePackageName,
+                                 ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException, ProcessException {
+        checkState(getTargetInfo() != null,
+                   "Cannot call processResources() before setTargetInfo() is called.");
 
         BuildToolInfo buildToolInfo = getTargetInfo().getBuildTools();
-        if (useCustomAapt) {
-            buildToolInfo = getCustomBuildToolInfo(getTargetInfo());
-        }
         // launch aapt: create the command line
 
-        ProcessInfo processInfo = aaptCommand.build(buildToolInfo, getTargetInfo().getTarget(),
-                getLogger());
+        ProcessInfo processInfo = aaptCommand.build(buildToolInfo,
+                                                    getTargetInfo().getTarget(),
+                                                    getLogger());
 
         processInfo = new TProcessInfo(processInfo);
 
         // 打印日志
-//        if (null != getLogger()) {
-//            getLogger().info("[Aapt]" + processInfo.getExecutable() + " "
-//                    + StringUtils.join(processInfo.getArgs(), " "));
-//        }
+        //        if (null != getLogger()) {
+        //            getLogger().info("[Aapt]" + processInfo.getExecutable() + " "
+        //                    + StringUtils.join(processInfo.getArgs(), " "));
+        //        }
 
         ProcessResult result = getProcessExecutor().execute(processInfo, processOutputHandler);
         result.rethrowFailure().assertNormalExitValue();
@@ -309,24 +376,25 @@ public class AtlasBuilder extends AndroidBuilder {
             // (since that R class was already created).
             String appPackageName = aaptCommand.getPackageForR();
             if (appPackageName == null) {
-                appPackageName = VariantConfiguration.getManifestPackage(aaptCommand.getManifestFile());
+                appPackageName = ManifestFileUtils.getPackage(aaptCommand.getManifestFile());
             }
 
             // list of all the symbol loaders per package names.
             Multimap<String, SymbolLoader> libMap = ArrayListMultimap.create();
 
-            for (SymbolFileProvider lib : aaptCommand.getLibraries()) {
+            for (AndroidLibrary lib : aaptCommand.getLibraries()) {
                 if (lib.isOptional()) {
                     continue;
                 }
-                String packageName = VariantConfiguration.getManifestPackage(lib.getManifest());
+                String packageName = ManifestFileUtils.getPackage(lib.getManifest());
                 if (appPackageName == null) {
                     continue;
                 }
 
                 if (appPackageName.equals(packageName)) {
                     if (enforceUniquePackageName) {
-                        String msg = String.format("Error: A library uses the same package as this project: %s",
+                        String msg = String.format(
+                                "Error: A library uses the same package as this project: %s",
                                 packageName);
                         throw new RuntimeException(msg);
                     }
@@ -343,8 +411,8 @@ public class AtlasBuilder extends AndroidBuilder {
                     // Doing it lazily allow us to support the case where there's no
                     // resources anywhere.
                     if (fullSymbolValues == null) {
-                        fullSymbolValues = new SymbolLoader(new File(aaptCommand.getSymbolOutputDir(), "R.txt"),
-                                getLogger());
+                        fullSymbolValues = new SymbolLoader(new File(aaptCommand.getSymbolOutputDir(),
+                                                                     "R.txt"), getLogger());
                         fullSymbolValues.load();
                     }
 
@@ -361,18 +429,21 @@ public class AtlasBuilder extends AndroidBuilder {
                 Collection<SymbolLoader> symbols = libMap.get(packageName);
 
                 if (enforceUniquePackageName && symbols.size() > 1) {
-                    String msg = String.format("Error: more than one library with package name '%s'", packageName);
+                    String msg = String.format("Error: more than one library with package name '%s'",
+                                               packageName);
                     throw new RuntimeException(msg);
                 }
 
-                SymbolWriter writer = new SymbolWriter(aaptCommand.getSourceOutputDir(), packageName, fullSymbolValues);
+                SymbolWriter writer = new SymbolWriter(aaptCommand.getSourceOutputDir(),
+                                                       packageName,
+                                                       fullSymbolValues,
+                                                       false);
                 for (SymbolLoader symbolLoader : symbols) {
                     writer.addSymbolsToWrite(symbolLoader);
                 }
                 writer.write();
             }
         }
-
     }
 
     /**
@@ -383,34 +454,34 @@ public class AtlasBuilder extends AndroidBuilder {
      * @param processOutputHandler
      * @param mainSymbolFile
      */
-    public void processAwbResources(AaptPackageProcessBuilder aaptCommand, boolean enforceUniquePackageName,
+    public void processAwbResources(AaptPackageProcessBuilder aaptCommand,
+                                    boolean enforceUniquePackageName,
                                     ProcessOutputHandler processOutputHandler,
                                     File mainSymbolFile) throws IOException, InterruptedException, ProcessException {
         if (!useCustomAapt) {
             throw new StopExecutionException("Must set useCustomAapt value to true for awb build!");
         }
 
-        checkState(getTargetInfo() != null, "Cannot call processResources() before setTargetInfo() is called.");
+        checkState(getTargetInfo() != null,
+                   "Cannot call processResources() before setTargetInfo() is called.");
 
         // launch aapt: create the command line
-        ProcessInfo processInfo = aaptCommand.build(getCustomBuildToolInfo(getTargetInfo()),
-                getTargetInfo().getTarget(), getLogger());
-
+        ProcessInfo processInfo = aaptCommand.build(getTargetInfo().getBuildTools(),
+                                                    getTargetInfo().getTarget(),
+                                                    getLogger());
 
         processInfo = new TProcessInfo(processInfo, aaptCommand.getSymbolOutputDir());
 
         // 打印日志
-//        if (null != getLogger()) {
-//            getLogger().info("[Aapt]" + processInfo.getExecutable() + " "
-//                    + StringUtils.join(processInfo.getArgs(), " "));
-//        }
+        //        if (null != getLogger()) {
+        //            getLogger().info("[Aapt]" + processInfo.getExecutable() + " "
+        //                    + StringUtils.join(processInfo.getArgs(), " "));
+        //        }
 
         ProcessResult result = getProcessExecutor().execute(processInfo, processOutputHandler);
         result.rethrowFailure().assertNormalExitValue();
 
-
         processAwbSymbols(aaptCommand, mainSymbolFile, enforceUniquePackageName);
-
     }
 
     /**
@@ -419,7 +490,9 @@ public class AtlasBuilder extends AndroidBuilder {
      * @param aaptCommand
      * @throws IOException
      */
-    public void processAwbSymbols(AaptPackageProcessBuilder aaptCommand, File mainSymbolFile, boolean enforceUniquePackageName) throws IOException {
+    public void processAwbSymbols(AaptPackageProcessBuilder aaptCommand,
+                                  File mainSymbolFile,
+                                  boolean enforceUniquePackageName) throws IOException {
         //1. 首先将主的R.txt和awb生成的R.txt进行merge操作
         File awbSymbolFile = new File(aaptCommand.getSymbolOutputDir(), "R.txt");
         File mergedSymbolFile = new File(aaptCommand.getSymbolOutputDir(), "R-all.txt");
@@ -443,15 +516,20 @@ public class AtlasBuilder extends AndroidBuilder {
         // (since that R class was already created).
         String appPackageName = aaptCommand.getPackageForR();
         if (appPackageName == null) {
-            appPackageName = VariantConfiguration.getManifestPackage(aaptCommand.getManifestFile());
+            appPackageName = ManifestFileUtils.getPackage(aaptCommand.getManifestFile());
         }
         awbSymbols = new SymbolLoader(mergedSymbolFile, getLogger());
         awbSymbols.load();
 
-        SymbolWriter writer = new SymbolWriter(aaptCommand.getSourceOutputDir(), appPackageName,
-                awbSymbols);
+        SymbolWriter writer = new SymbolWriter(aaptCommand.getSourceOutputDir(),
+                                               appPackageName,
+                                               awbSymbols,
+                                               false);
         writer.addSymbolsToWrite(awbSymbols);
-        getLogger().info("SymbolWriter Package:" + appPackageName + " to dir:" + aaptCommand.getSourceOutputDir());
+        getLogger().info("SymbolWriter Package:" +
+                                 appPackageName +
+                                 " to dir:" +
+                                 aaptCommand.getSourceOutputDir());
         writer.write();
 
         //再写入各自awb依赖的aar的资源
@@ -460,13 +538,13 @@ public class AtlasBuilder extends AndroidBuilder {
             // list of all the symbol loaders per package names.
             Multimap<String, SymbolLoader> libMap = ArrayListMultimap.create();
 
-            for (SymbolFileProvider lib : aaptCommand.getLibraries()) {
+            for (AndroidLibrary lib : aaptCommand.getLibraries()) {
 
                 if (lib.isOptional()) {
                     continue;
                 }
 
-                String packageName = VariantConfiguration.getManifestPackage(lib.getManifest());
+                String packageName = ManifestFileUtils.getPackage(lib.getManifest());
                 if (appPackageName == null) {
                     continue;
                 }
@@ -492,7 +570,6 @@ public class AtlasBuilder extends AndroidBuilder {
                     SymbolLoader libSymbols = new SymbolLoader(rFile, getLogger());
                     libSymbols.load();
 
-
                     // store these symbols by associating them with the package name.
                     libMap.put(packageName, libSymbols);
                 }
@@ -506,20 +583,25 @@ public class AtlasBuilder extends AndroidBuilder {
                     String msg = String.format(
                             "Error: more than one library with package name '%s'\n" +
                                     "You can temporarily disable this error with android.enforceUniquePackageName=false\n" +
-                                    "However, this is temporary and will be enforced in 1.0", packageName);
+                                    "However, this is temporary and will be enforced in 1.0",
+                            packageName);
                     throw new RuntimeException(msg);
                 }
 
-                SymbolWriter libWriter = new SymbolWriter(aaptCommand.getSourceOutputDir(), packageName,
-                        awbSymbols);
+                SymbolWriter libWriter = new SymbolWriter(aaptCommand.getSourceOutputDir(),
+                                                          packageName,
+                                                          awbSymbols,
+                                                          false);
                 for (SymbolLoader symbolLoader : symbols) {
                     libWriter.addSymbolsToWrite(symbolLoader);
                 }
-                getLogger().info("SymbolWriter Package:" + packageName + " to dir:" + aaptCommand.getSourceOutputDir());
+                getLogger().info("SymbolWriter Package:" +
+                                         packageName +
+                                         " to dir:" +
+                                         aaptCommand.getSourceOutputDir());
                 libWriter.write();
             }
         }
-
     }
 
     /**
@@ -528,51 +610,36 @@ public class AtlasBuilder extends AndroidBuilder {
      * @param targetInfo
      * @return
      */
-    private BuildToolInfo getCustomBuildToolInfo(TargetInfo targetInfo) {
-        BuildToolInfo defaultBuildToolInfo = targetInfo.getBuildTools();
-        File customAaptFile = getAapt();
-        BuildToolInfo customBuildToolInfo = new BuildToolInfo(defaultBuildToolInfo.getRevision(),
-                defaultBuildToolInfo.getLocation(), customAaptFile,
-                getPath(defaultBuildToolInfo, BuildToolInfo.PathId.AIDL),
-                getPath(defaultBuildToolInfo, BuildToolInfo.PathId.DX),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.DX_JAR),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.LLVM_RS_CC),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.ANDROID_RS),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.ANDROID_RS_CLANG),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.BCC_COMPAT),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.LD_ARM),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.LD_ARM64),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.LD_X86),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.LD_MIPS),
-                getPath(defaultBuildToolInfo,
-                        BuildToolInfo.PathId.ZIP_ALIGN));
 
-
-        return customBuildToolInfo;
-    }
-
-    private File getPath(BuildToolInfo defaultBuildToolInfo, BuildToolInfo.PathId pathId) {
-        return new File(defaultBuildToolInfo.getPath(pathId));
-    }
-
+    private boolean updateAapt;
 
     @Override
     public TargetInfo getTargetInfo() {
+
+        if (!updateAapt && useCustomAapt) {
+
+            BuildToolInfo defaultBuildToolInfo = super.getTargetInfo().getBuildTools();
+            File customAaptFile = getAapt();
+
+            try {
+                Method method = defaultBuildToolInfo.getClass()
+                        .getDeclaredMethod("add", PathId.class, File.class);
+                method.setAccessible(true);
+                method.invoke(defaultBuildToolInfo, PathId.AAPT, customAaptFile);
+            } catch (Throwable e) {
+                throw new GradleException(e.getMessage());
+            }
+
+            updateAapt = true;
+        }
+
         return super.getTargetInfo();
     }
 
     static class TProcessInfo implements ProcessInfo {
 
         private ProcessInfo origin;
+
         private String sybolOutputDir;
 
         public TProcessInfo(ProcessInfo origin) {
@@ -610,10 +677,12 @@ public class AtlasBuilder extends AndroidBuilder {
         }
     }
 
-
     private File getAapt() {
 
-        String path = AtlasBuilder.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+        String path = AtlasBuilder.class.getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .getFile();
         File jarFile = new File(path);
 
         String osName = "mac";
@@ -627,16 +696,17 @@ public class AtlasBuilder extends AndroidBuilder {
             osName = "win";
             fileName = "aapt.exe";
         }
-        File jarFolder = new File(jarFile.getParentFile(), FilenameUtils.getBaseName(jarFile.getName()));
+        File jarFolder = new File(jarFile.getParentFile(),
+                                  FilenameUtils.getBaseName(jarFile.getName()));
         jarFolder.mkdirs();
         File aaptFile = new File(jarFolder, fileName);
 
         if (!aaptFile.exists()) {
-            aaptFile = ZipUtils.extractZipFileToFolder(jarFile, "aapt/" + osName + "/" + fileName,
-                    aaptFile.getParentFile());
+            aaptFile = ZipUtils.extractZipFileToFolder(jarFile,
+                                                       "aapt/" + osName + "/" + fileName,
+                                                       aaptFile.getParentFile());
             aaptFile.setExecutable(true);
         }
         return aaptFile;
     }
-
 }

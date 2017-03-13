@@ -211,13 +211,17 @@ package com.taobao.android.builder.tools.sign;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.signing.SigningException;
+
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
-import org.bouncycastle.cms.*;
+import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.CMSProcessableByteArray;
+import org.bouncycastle.cms.CMSSignedData;
+import org.bouncycastle.cms.CMSSignedDataGenerator;
+import org.bouncycastle.cms.CMSTypedData;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -225,13 +229,31 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.encoders.Base64;
 
-import java.io.*;
-import java.security.*;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.security.DigestOutputStream;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Signature;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.jar.*;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -241,11 +263,14 @@ import java.util.zip.ZipInputStream;
  */
 public class LocalSignedJarBuilder {
     private static final String DIGEST_ALGORITHM = "SHA1";
+
     private static final String DIGEST_ATTR = "SHA1-Digest";
+
     private static final String DIGEST_MANIFEST_ATTR = "SHA1-Digest-Manifest";
 
-    /** Write to another stream and track how many bytes have been
-     *  written.
+    /**
+     * Write to another stream and track how many bytes have been
+     * written.
      */
     private static class CountOutputStream extends FilterOutputStream {
         private int mCount = 0;
@@ -273,10 +298,15 @@ public class LocalSignedJarBuilder {
     }
 
     private JarOutputStream mOutputJar;
+
     private PrivateKey mKey;
+
     private X509Certificate mCertificate;
+
     private Manifest mManifest;
+
     private MessageDigest mMessageDigest;
+
     private String mSignFile;
 
     private byte[] mBuffer = new byte[4096];
@@ -312,9 +342,9 @@ public class LocalSignedJarBuilder {
             }
         }
 
-
         /**
          * Checks a file for inclusion in a Jar archive.
+         *
          * @param archivePath the archive file path of the entry
          * @return <code>true</code> if the file should be included.
          * @throws ZipAbortException if writing the file should be aborted.
@@ -326,10 +356,11 @@ public class LocalSignedJarBuilder {
      * Creates a {@link SignedJarBuilder} with a given output stream, and signing information.
      * <p/>If either <code>key</code> or <code>certificate</code> is <code>null</code> then
      * the archive will not be signed.
-     * @param out the {@link OutputStream} where to write the Jar archive.
-     * @param key the {@link PrivateKey} used to sign the archive, or <code>null</code>.
+     *
+     * @param out         the {@link OutputStream} where to write the Jar archive.
+     * @param key         the {@link PrivateKey} used to sign the archive, or <code>null</code>.
      * @param certificate the {@link X509Certificate} used to sign the archive, or
-     * <code>null</code>.
+     *                    <code>null</code>.
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
@@ -338,8 +369,7 @@ public class LocalSignedJarBuilder {
                                  @Nullable X509Certificate certificate,
                                  @Nullable String builtBy,
                                  @Nullable String createdBy,
-                                 @Nullable String signFile)
-            throws IOException, NoSuchAlgorithmException {
+                                 @Nullable String signFile) throws IOException, NoSuchAlgorithmException {
         mOutputJar = new JarOutputStream(new BufferedOutputStream(out));
         mOutputJar.setLevel(9);
         mKey = key;
@@ -363,8 +393,9 @@ public class LocalSignedJarBuilder {
 
     /**
      * Writes a new {@link File} into the archive.
+     *
      * @param inputFile the {@link File} to write.
-     * @param jarPath the filepath inside the archive.
+     * @param jarPath   the filepath inside the archive.
      * @throws IOException
      */
     public void writeFile(File inputFile, String jarPath) throws IOException {
@@ -382,21 +413,23 @@ public class LocalSignedJarBuilder {
             fis.close();
         }
     }
-   private final byte[] buffer = new byte[8192];
+
+    private final byte[] buffer = new byte[8192];
+
     /**
      * Copies the content of a Jar/Zip archive into the receiver archive.
      * <p/>An optional {@link IZipEntryFilter} allows to selectively choose which files
      * to copy over.
-     * @param input the {@link InputStream} for the Jar/Zip to copy.
+     *
+     * @param input  the {@link InputStream} for the Jar/Zip to copy.
      * @param filter the filter or <code>null</code>
      * @throws IOException
      * @throws SignedJarBuilder.IZipEntryFilter.ZipAbortException if the {@link IZipEntryFilter} filter indicated that the write
-     *                           must be aborted.
+     *                                                            must be aborted.
      */
-    public void writeZip(InputStream input, IZipEntryFilter filter)
-            throws IOException, IZipEntryFilter.ZipAbortException {
+    public void writeZip(InputStream input,
+                         IZipEntryFilter filter) throws IOException, IZipEntryFilter.ZipAbortException {
         ZipInputStream zis = new ZipInputStream(input);
-
 
         try {
             // loop on the entries of the intermediary package and put them in the final package.
@@ -417,7 +450,7 @@ public class LocalSignedJarBuilder {
                         int count;
                         ByteArrayOutputStream out = new ByteArrayOutputStream();
                         while ((count = zis.read(buffer)) != -1) {
-                           out.write(buffer, 0, count);
+                            out.write(buffer, 0, count);
                         }
                         ByteArrayInputStream swapStream = new ByteArrayInputStream(out.toByteArray());
                         Manifest manifest = new Manifest(swapStream);
@@ -430,12 +463,13 @@ public class LocalSignedJarBuilder {
                         continue;
                     }
 
-
                     // check for subfolder
                     int index = subName.indexOf('/');
                     if (index == -1) {
                         // no sub folder, ignores signature files.
-                        if (subName.endsWith(".SF") || name.endsWith(".RSA") || name.endsWith(".DSA")) {
+                        if (subName.endsWith(".SF") ||
+                                name.endsWith(".RSA") ||
+                                name.endsWith(".DSA")) {
                             continue;
                         }
                     }
@@ -467,6 +501,7 @@ public class LocalSignedJarBuilder {
 
     /**
      * Closes the Jar archive by creating the manifest, and signing the archive.
+     *
      * @throws IOException
      * @throws SigningException
      */
@@ -486,7 +521,6 @@ public class LocalSignedJarBuilder {
                     mOutputJar.putNextEntry(new JarEntry("META-INF/" + mSignFile + ".SF"));
                 }
 
-
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 writeSignatureFile(baos);
                 byte[] signedData = baos.toByteArray();
@@ -495,7 +529,10 @@ public class LocalSignedJarBuilder {
                 if (StringUtils.isBlank(mSignFile)) {
                     mOutputJar.putNextEntry(new JarEntry("META-INF/CERT." + mKey.getAlgorithm()));
                 } else {
-                    mOutputJar.putNextEntry(new JarEntry("META-INF/" + mSignFile + "." + mKey.getAlgorithm()));
+                    mOutputJar.putNextEntry(new JarEntry("META-INF/" +
+                                                                 mSignFile +
+                                                                 "." +
+                                                                 mKey.getAlgorithm()));
                 }
                 // CERT.*
                 writeSignatureBlock(new CMSProcessableByteArray(signedData), mCertificate, mKey);
@@ -524,6 +561,7 @@ public class LocalSignedJarBuilder {
 
     /**
      * Adds an entry to the output jar, and write its content from the {@link InputStream}
+     *
      * @param input The input stream from where to write the entry content.
      * @param entry the entry to write in the jar.
      * @throws IOException
@@ -553,23 +591,23 @@ public class LocalSignedJarBuilder {
                 attr = new Attributes();
                 mManifest.getEntries().put(entry.getName(), attr);
             }
-            attr.putValue(DIGEST_ATTR,
-                    new String(Base64.encode(mMessageDigest.digest()), "ASCII"));
+            attr.putValue(DIGEST_ATTR, new String(Base64.encode(mMessageDigest.digest()), "ASCII"));
         }
     }
 
-    /** Writes a .SF file with a digest to the manifest. */
-    private void writeSignatureFile(OutputStream out)
-            throws IOException, GeneralSecurityException {
+    /**
+     * Writes a .SF file with a digest to the manifest.
+     */
+    private void writeSignatureFile(OutputStream out) throws IOException, GeneralSecurityException {
         Manifest sf = new Manifest();
         Attributes main = sf.getMainAttributes();
         main.putValue("Signature-Version", "1.0");
         main.putValue("Created-By", "1.0 (Android)");
 
         MessageDigest md = MessageDigest.getInstance(DIGEST_ALGORITHM);
-        PrintStream print = new PrintStream(
-                new DigestOutputStream(new ByteArrayOutputStream(), md),
-                true, SdkConstants.UTF_8);
+        PrintStream print = new PrintStream(new DigestOutputStream(new ByteArrayOutputStream(), md),
+                                            true,
+                                            SdkConstants.UTF_8);
 
         // Digest of the entire manifest
         mManifest.write(print);
@@ -603,28 +641,24 @@ public class LocalSignedJarBuilder {
         }
     }
 
-    /** Write the certificate file with a digital signature. */
-    private void writeSignatureBlock(CMSTypedData data, X509Certificate publicKey,
-                                     PrivateKey privateKey)
-            throws IOException,
-            CertificateEncodingException,
-            OperatorCreationException,
-            CMSException {
+    /**
+     * Write the certificate file with a digital signature.
+     */
+    private void writeSignatureBlock(CMSTypedData data,
+                                     X509Certificate publicKey,
+                                     PrivateKey privateKey) throws IOException, CertificateEncodingException, OperatorCreationException, CMSException {
 
         ArrayList<X509Certificate> certList = new ArrayList<X509Certificate>();
         certList.add(publicKey);
         JcaCertStore certs = new JcaCertStore(certList);
 
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
-        ContentSigner sha1Signer = new JcaContentSignerBuilder(
-                "SHA1with" + privateKey.getAlgorithm())
-                .build(privateKey);
-        gen.addSignerInfoGenerator(
-                new JcaSignerInfoGeneratorBuilder(
-                        new JcaDigestCalculatorProviderBuilder()
-                                .build())
-                        .setDirectSignature(true)
-                        .build(sha1Signer, publicKey));
+        ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA1with" +
+                                                                       privateKey.getAlgorithm()).build(
+                privateKey);
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder()
+                                                                             .build()).setDirectSignature(
+                true).build(sha1Signer, publicKey));
         gen.addCertificates(certs);
         CMSSignedData sigData = gen.generate(data, false);
 

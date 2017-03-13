@@ -213,7 +213,7 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 
 /**
  * Created by shenghua.nish on 2016-08-11 下午2:11.

@@ -215,12 +215,13 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AarBundle;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
-import com.taobao.android.builder.dependency.SoLibrary;
+import com.taobao.android.builder.dependency.model.AarBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+
 import org.dom4j.DocumentException;
 import org.gradle.api.tasks.TaskAction;
 
@@ -228,7 +229,9 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -256,6 +259,7 @@ public class PrepareAwbTask extends BaseTask {
                                                                                    getLogger(),
                                                                                    0);
         List<Runnable> runnables = new ArrayList<>();
+        long startTime = System.currentTimeMillis();
         Set<SoLibrary> soLibraries = androidDependencyTree.getALLSoLibDependencies();
         for (final SoLibrary soLibrary : soLibraries) {
             runnables.add(new Runnable() {
@@ -266,16 +270,28 @@ public class PrepareAwbTask extends BaseTask {
             });
         }
 
+        executorServicesHelper.execute(runnables);
+        runnables.clear();
+        System.out.println("prepareAwbsxx" + (System.currentTimeMillis() - startTime) + " | " + soLibraries.size());
+        startTime = System.currentTimeMillis();
+
+
         List<AwbBundle> awbBundles = androidDependencyTree.getAwbBundles();
         for (final AwbBundle awbBundle : awbBundles) {
 
             runnables.add(new Runnable() {
                 @Override
                 public void run() {
-                    prepare(awbBundle.getBundle(), awbBundle.getBundleFolder(), true);
+                    prepare(awbBundle.getBundle(), awbBundle.getFolder(), true);
                 }
             });
         }
+
+        executorServicesHelper.execute(runnables);
+        runnables.clear();
+        System.out.println("prepareAwbsxx" + (System.currentTimeMillis() - startTime) + " | " + awbBundles.size());
+        startTime = System.currentTimeMillis();
+
 
         Set<AarBundle> aarBundles = androidDependencyTree.getALLAarDependencies();
         for (final AarBundle aarBundle : aarBundles) {
@@ -283,36 +299,24 @@ public class PrepareAwbTask extends BaseTask {
             runnables.add(new Runnable() {
                 @Override
                 public void run() {
-                    prepare(aarBundle.getBundle(), aarBundle.getBundleFolder(), true);
+                    prepare(aarBundle.getBundle(), aarBundle.getFolder(), true);
                 }
             });
         }
 
         executorServicesHelper.execute(runnables);
+        runnables.clear();
+        System.out.println("prepareAwbsxx" + (System.currentTimeMillis() - startTime) + " | " + aarBundles.size());
+        startTime = System.currentTimeMillis();
 
-        AtlasBuildContext.awbBundleMap = collectBundleInfo(appVariantOutputContext);
 
 
-    }
-
-    private Map<String, AwbBundle> collectBundleInfo(AppVariantOutputContext appVariantOutputContext) {
-
-        List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
-                appVariantOutputContext.getVariantData().getName()).getAwbBundles();
-
-        Map<String, AwbBundle> map = new HashMap<String, AwbBundle>();
-
-        for (AwbBundle awbBundle : awbBundles) {
-
-            map.put(awbBundle.getAwbSoName(), awbBundle);
-        }
-
-        return map;
     }
 
     private void prepare(File bundleFile, File exploderDir, boolean hasInnerJar) {
         getLogger().info("prepare bundle " + bundleFile.getAbsolutePath());
 
+        //TODO 要判断是不是SNAPSHOT,否则会导致snapshot无法更新
         if (exploderDir.exists()) {
             return;
         }
@@ -334,8 +338,6 @@ public class PrepareAwbTask extends BaseTask {
             }
         }
     }
-
-
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAwbTask> {
 

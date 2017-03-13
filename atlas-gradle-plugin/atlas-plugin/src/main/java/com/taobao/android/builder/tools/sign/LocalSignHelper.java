@@ -208,7 +208,6 @@
 
 package com.taobao.android.builder.tools.sign;
 
-import com.android.builder.internal.packaging.Packager;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.builder.signing.SigningException;
 import com.android.ide.common.signing.CertificateInfo;
@@ -233,8 +232,10 @@ public class LocalSignHelper {
      * @param signingConfig
      * @return
      */
-    public static boolean sign(File inputFile, File outputFile, DefaultSigningConfig signingConfig, String signName) throws IOException,
-            SigningException {
+    public static boolean sign(File inputFile,
+                               File outputFile,
+                               DefaultSigningConfig signingConfig,
+                               String signName) throws IOException, SigningException {
         if (!outputFile.exists()) {
             outputFile.getParentFile().mkdirs();
             outputFile.createNewFile();
@@ -244,21 +245,29 @@ public class LocalSignHelper {
             CertificateInfo certificateInfo = null;
             if (signingConfig != null && signingConfig.isSigningReady()) {
                 certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
-                        signingConfig.getStoreFile(), signingConfig.getStorePassword(),
-                        signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
+                                                                    signingConfig.getStoreFile(),
+                                                                    signingConfig.getStorePassword(),
+                                                                    signingConfig.getKeyPassword(),
+                                                                    signingConfig.getKeyAlias());
                 if (certificateInfo == null) {
                     throw new SigningException("Failed to read key from keystore");
                 }
             }
 
-            LocalSignedJarBuilder signedJarBuilder = new LocalSignedJarBuilder(new FileOutputStream(outputFile), certificateInfo != null ? certificateInfo.getKey() : null,
-                    certificateInfo != null ? certificateInfo.getCertificate() : null,
-                    Packager.getLocalVersion(), "Create By Android Gradle", signName);
-
+            LocalSignedJarBuilder signedJarBuilder = new LocalSignedJarBuilder(new FileOutputStream(
+                    outputFile),
+                                                                               certificateInfo !=
+                                                                                       null ? certificateInfo
+                                                                                       .getKey() : null,
+                                                                               certificateInfo !=
+                                                                                       null ? certificateInfo
+                                                                                       .getCertificate() : null,
+                                                                               null,
+                                                                               "Create By Android Gradle",
+                                                                               signName);
 
             signedJarBuilder.writeZip(new FileInputStream(inputFile), null);
             signedJarBuilder.close();
-
         } catch (LocalSignedJarBuilder.IZipEntryFilter.ZipAbortException e) {
             throw new SigningException(e.getMessage(), e);
         } catch (KeytoolException e) {

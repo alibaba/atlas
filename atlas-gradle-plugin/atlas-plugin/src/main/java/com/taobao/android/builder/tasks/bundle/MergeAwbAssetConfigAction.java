@@ -218,10 +218,10 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.android.ide.common.res2.AssetSet;
 import com.google.common.collect.Lists;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 
 import java.io.File;
@@ -273,10 +273,10 @@ public class MergeAwbAssetConfigAction extends MtlBaseTaskAction<MergeSourceSetF
             @Override
             public List<AssetSet> call() throws Exception {
                 List<AssetSet> assetSets = Lists.newArrayList();
-                List<LibraryDependency> bundleDeps = awbBundle.getDependencies();
+                List<? extends AndroidLibrary> bundleDeps = awbBundle.getLibraryDependencies();
                 // the list of dependency must be reversed to use the right overlay order.
                 for (int n = bundleDeps.size() - 1; n >= 0; n--) {
-                    LibraryDependency dependency = bundleDeps.get(n);
+                    AndroidLibrary dependency = bundleDeps.get(n);
 
                     File assetFolder = dependency.getAssetsFolder();
                     if (assetFolder.isDirectory()) {
