@@ -12,7 +12,7 @@
 * **ClassNotFoundException**
   
   1. Bundle如果相互依赖，则构建起需要配置dependency，否则运行期会无法找到被依赖bundle内的class，且不支持为了查找性能，目前不支持二级依赖：比如A->B->C,如果A没有显式声明依赖C，则A bundle里面无法直接使用bundle C里面的Class，检查bundle依赖是否成功配置可以通过反编译Apk的主dex 查看**android.taobao.atlas.framework.FrameworkProperties**的field bundleInfo的内容，里面记录了所有bundle的依赖关系
-  2. 通过LayoutInflater 膨化xml，则xml里面如果由richview，则务必确保LayoutInflater持有的context的classloader可以load到该richview，假设context来自于A bundle的Activity，而xml来自于B bundle，如果A和B没有依赖关系，那么加载也肯定失败
+  2. 通过LayoutInflater 膨化xml，则xml里面如果有richview，则务必确保LayoutInflater持有的context的classloader可以load到该richview，假设context来自于A bundle的Activity，而xml来自于B bundle，如果A和B没有依赖关系，那么加载也肯定失败
 
 * **NoClassDefFoundError**
   
