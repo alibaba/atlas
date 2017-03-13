@@ -272,7 +272,7 @@ class AtlasApplicationPlugin extends BasePlugin implements Plugin<Project> {
     void apply(Project project) {
         super.apply(project)
 
-        applyCusteomPlugin(project)
+        applyCustomPlugin(project)
 
         project.tasks.create(name: 'atlasConfigList') << {
 
@@ -300,7 +300,7 @@ class AtlasApplicationPlugin extends BasePlugin implements Plugin<Project> {
         }
     }
 
-    void applyCusteomPlugin(Project project) {
+    void applyCustomPlugin(Project project) {
         project.getPlugins().apply(AtlasPlugin.class)
     }
 
