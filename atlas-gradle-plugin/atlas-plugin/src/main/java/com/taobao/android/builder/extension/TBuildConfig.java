@@ -216,7 +216,11 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by shenghua.nish on 2016-05-17 上午10:15.
@@ -239,11 +243,11 @@ public class TBuildConfig {
     @JSONField(serialize = false)
     private Map<String, String> packageIdMap = new HashMap<String, String>();
 
-    @Config(message = "自动生成bundle的packageId" , order = 0)
+    @Config(message = "自动生成bundle的packageId", order = 0)
     private boolean autoPackageId = true;
 
     @Input
-    @Config(message = "预处理manifest， 如果开启atlas，必须为true" , order = 0)
+    @Config(message = "预处理manifest， 如果开启atlas，必须为true", order = 0)
     private Boolean preProcessManifest = true;
 
     @Input
@@ -251,11 +255,11 @@ public class TBuildConfig {
     private Boolean updateManifestSdkVersion = true;
 
     @Input
-    @Config(message = "使用自定义的aapt， 如果开启atlas，必须为true" , order = 0)
+    @Config(message = "使用自定义的aapt， 如果开启atlas，必须为true", order = 0)
     private Boolean useCustomAapt = false;
 
     @Input
-    @Config(message = "aapt输出的R为常量, 建议值设置为false， 可以减少动态部署的patch包大小" , order = 0)
+    @Config(message = "aapt输出的R为常量, 建议值设置为false， 可以减少动态部署的patch包大小", order = 0)
     private Boolean aaptConstantId = true;
 
     @Input
@@ -264,23 +268,32 @@ public class TBuildConfig {
     @Input
     private Boolean doPreverify = false;
 
-
     /**
      * 默认不做 jar 里资源的copy
      */
     @Input
-    @Config(message = "合并jar中的资源文件" , order = 0)
+    @Config(message = "合并jar中的资源文件", order = 0)
     private Boolean mergeJavaRes = false;
+
+    private Boolean resV4Enabled = true;
 
     @JSONField(serialize = false)
     private Boolean injectBeforeProguard = false;
 
     @Input
-    @Config(message = "构建基线包，建议开启，否则后面的patch包无法进行" , order = 0)
+    @Config(message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0)
     private Boolean createAP = true;
 
-    @Config(message = "合并bundle jar中的资源文件" , order = 0)
+    @Config(message = "合并bundle jar中的资源文件", order = 0)
     private Boolean mergeAwbJavaRes = false;
+
+    @Input
+    @Config(message = "是否依赖冲突终止打包", order = 0)
+    private boolean abortIfDependencyConflict = false;
+
+    @Input
+    @Config(message = "是否类冲突终止打包", order = 0)
+    private boolean abortIfClassConflict = false;
 
     public Boolean isCreateAP() {
         return createAP;
@@ -290,17 +303,16 @@ public class TBuildConfig {
         this.createAP = createAP;
     }
 
-
     @Optional
     private Set<String> outOfApkBundles = Sets.newHashSet();
 
     @Optional
     private Set<String> insideOfApkBundles = Sets.newHashSet();
 
-    @Config(message = "自启动的bundle列表， 值是 packageName" , order = 1 , advance = true)
+    @Config(message = "自启动的bundle列表， 值是 packageName", order = 1, advance = true)
     private List<String> autoStartBundles = new ArrayList<String>();
 
-    @Config(message = "提前执行的方法，格式是 className:methodName|className2:methodName2 ， 注意class和methodname都不能混淆，且方法实现是 class.method(Context)" , order = 2 , advance = true)
+    @Config(message = "提前执行的方法，格式是 className:methodName|className2:methodName2 ， 注意class和methodname都不能混淆，且方法实现是 class.method(Context)", order = 2, advance = true)
     private String preLaunch = "";
 
     public Set<String> getRemoveSoFiles() {
@@ -449,5 +461,29 @@ public class TBuildConfig {
 
     public void setDoPreverify(Boolean doPreverify) {
         this.doPreverify = doPreverify;
+    }
+
+    public Boolean getResV4Enabled() {
+        return resV4Enabled;
+    }
+
+    public void setResV4Enabled(Boolean resV4Enabled) {
+        this.resV4Enabled = resV4Enabled;
+    }
+
+    public boolean isAbortIfDependencyConflict() {
+        return abortIfDependencyConflict;
+    }
+
+    public void setAbortIfDependencyConflict(boolean abortIfDependencyConflict) {
+        this.abortIfDependencyConflict = abortIfDependencyConflict;
+    }
+
+    public boolean isAbortIfClassConflict() {
+        return abortIfClassConflict;
+    }
+
+    public void setAbortIfClassConflict(boolean abortIfClassConflict) {
+        this.abortIfClassConflict = abortIfClassConflict;
     }
 }

@@ -214,12 +214,16 @@ package com.taobao.android.builder.tools.bundleinfo.model;
 public class BundleInfo extends BasicBundleInfo {
 
     private String name;
+
     private Long size;
+
     private String desc;
+
     private String url;
+
+    private Boolean manifestUpdated;
+
     private String md5;
-    private String host;
-    private boolean hasSO;
 
     public String getName() {
         return name;
@@ -261,20 +265,11 @@ public class BundleInfo extends BasicBundleInfo {
         this.md5 = md5;
     }
 
-    public String getHost() {
-        return host;
+    public Boolean isManifestUpdated() {
+        return manifestUpdated;
     }
 
-    public void setHost(String host) {
-        this.host = host;
+    public void setManifestUpdated(Boolean manifestUpdated) {
+        this.manifestUpdated = manifestUpdated;
     }
-
-    public boolean isHasSO() {
-        return hasSO;
-    }
-
-    public void setHasSO(boolean hasSO) {
-        this.hasSO = hasSO;
-    }
-
 }

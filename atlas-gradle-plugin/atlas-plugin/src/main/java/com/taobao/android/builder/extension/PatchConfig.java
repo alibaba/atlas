@@ -213,6 +213,8 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.annotation.Config;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
@@ -421,6 +423,9 @@ public class PatchConfig {
     }
 
     public String getTpatchHistoryUrl() {
+        if (StringUtils.isEmpty(AtlasBuildContext.serverHost)){
+            return "";
+        }
         return "http://" + AtlasBuildContext.serverHost +  tpatchHistoryUrl;
     }
 

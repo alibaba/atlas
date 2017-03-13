@@ -212,12 +212,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.Transform;
-import com.android.build.gradle.internal.scope.BaseScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.builder.model.AndroidProject;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.collect.Lists;
+
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.StopExecutionException;
@@ -226,7 +227,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.SortedMap;
 
 import static com.android.utils.StringHelper.capitalize;
 
@@ -237,9 +243,13 @@ import static com.android.utils.StringHelper.capitalize;
 public class InjectTransformManager {
 
     private static final String FD_TRANSFORMS = "transforms";
+
     private List<Transform> transforms = Lists.newArrayList();
+
     private List<String> transformTaskList = Lists.newArrayList();
+
     private final Project project;
+
     private final String variantName;
 
     public InjectTransformManager(Project project, @NonNull String variantName) {
@@ -263,28 +273,31 @@ public class InjectTransformManager {
      */
     public <T extends InjectTransform> TransformTask addInjectTransformBeforeTransform(Class<? extends Transform> transformClazz,
                                                                                        T injectTransform,
-                                                                                       @NonNull BaseScope scope) {
-        TaskCollection<DefaultAndroidTask> androidTasks = project.getTasks().withType(DefaultAndroidTask.class);
+                                                                                       @NonNull VariantScope scope) {
+        TaskCollection<DefaultAndroidTask> androidTasks = project.getTasks()
+                .withType(DefaultAndroidTask.class);
         SortedMap<String, DefaultAndroidTask> androidTaskSortedMap = androidTasks.getAsMap();
         TransformTask oprTransformTask = null; // 要插入的任务
         for (String taskName : androidTaskSortedMap.keySet()) {
             DefaultAndroidTask androidTask = androidTaskSortedMap.get(taskName);
             if (variantName.equals(androidTask.getVariantName())) {
-                if (androidTask instanceof TransformTask && ((TransformTask) androidTask).getTransform().getClass().equals(transformClazz)) {
+                if (androidTask instanceof TransformTask &&
+                        ((TransformTask) androidTask).getTransform()
+                                .getClass()
+                                .equals(transformClazz)) {
                     oprTransformTask = (TransformTask) androidTask;
                     break;
                 }
             }
-
         }
         if (null == oprTransformTask) {
-            throw new StopExecutionException("TransformTask with transfrom type:" + transformClazz.getName()
-                    + " can not found!");
+            throw new StopExecutionException("TransformTask with transfrom type:" +
+                                                     transformClazz.getName() +
+                                                     " can not found!");
         }
         transforms.add(injectTransform);
         //判断2个Transform的依赖是否正确,即输出的type和下一个输入的type一致
         checkTransformConfig(oprTransformTask.getTransform(), injectTransform);
-
 
         String taskName = scope.getTaskName(getTaskNamePrefix(injectTransform));
 
@@ -293,14 +306,17 @@ public class InjectTransformManager {
 
             // 配置TransformTask
             TransformTaskParam transformTaskParam = getTransformParam(oprTransformTask);
-            TransformTask.ConfigAction<T> configAction = new TransformTask.ConfigAction<T>(variantName, taskName,
+            TransformTask.ConfigAction<T> configAction = new TransformTask.ConfigAction<T>(
+                    variantName,
+                    taskName,
                     injectTransform,
                     transformTaskParam.consumedInputStreams,
                     transformTaskParam.referencedInputStreams,
                     outputStream,
                     null);
 
-            TransformTask injectTransformTask = project.getTasks().create(configAction.getName(), configAction.getType());
+            TransformTask injectTransformTask = project.getTasks()
+                    .create(configAction.getName(), configAction.getType());
             oprTransformTask.dependsOn(injectTransformTask);
             for (TransformStream transformStream : transformTaskParam.consumedInputStreams) {
                 if (null != transformStream.getDependencies()) {
@@ -320,12 +336,14 @@ public class InjectTransformManager {
             transformTaskList.add(taskName);
             configAction.execute(injectTransformTask);
 
-
             //修改oprTransformTask的输入
             if (injectTransform.updateNextTransformInput()) {
                 Collection<TransformStream> newInputStream = Lists.newArrayList();
                 newInputStream.add(outputStream);
-                updateTransformTaskConfig(oprTransformTask, newInputStream, transformTaskParam.referencedInputStreams, transformTaskParam.outputStream);
+                updateTransformTaskConfig(oprTransformTask,
+                                          newInputStream,
+                                          transformTaskParam.referencedInputStreams,
+                                          transformTaskParam.outputStream);
             }
 
             return injectTransformTask;
@@ -344,12 +362,14 @@ public class InjectTransformManager {
      * @return
      */
     @NotNull
-    private <T extends Transform> IntermediateStream getOutputStream(T injectTransform, @NonNull BaseScope scope, String taskName) {
-        File outRootFolder = FileUtils.join(project.getBuildDir(), StringHelper.toStrings(
-                AndroidProject.FD_INTERMEDIATES,
-                FD_TRANSFORMS,
-                injectTransform.getName(),
-                scope.getDirectorySegments()));
+    private <T extends Transform> IntermediateStream getOutputStream(T injectTransform,
+                                                                     @NonNull VariantScope scope,
+                                                                     String taskName) {
+        File outRootFolder = FileUtils.join(project.getBuildDir(),
+                                            StringHelper.toStrings(AndroidProject.FD_INTERMEDIATES,
+                                                                   FD_TRANSFORMS,
+                                                                   injectTransform.getName(),
+                                                                   scope.getDirectorySegments()));
 
         Set<QualifiedContent.Scope> requestedScopes = injectTransform.getScopes();
 
@@ -368,7 +388,8 @@ public class InjectTransformManager {
      * @return
      */
     private SortedMap<String, TransformTask> getTransformTasks() {
-        TaskCollection<TransformTask> transformTasks = project.getTasks().withType(TransformTask.class);
+        TaskCollection<TransformTask> transformTasks = project.getTasks()
+                .withType(TransformTask.class);
         return transformTasks.getAsMap();
     }
 
@@ -384,14 +405,21 @@ public class InjectTransformManager {
                                            @NonNull Collection<TransformStream> consumedInputStreams,
                                            @NonNull Collection<TransformStream> referencedInputStreams,
                                            @Nullable IntermediateStream outputStream) throws IllegalAccessException {
-        Field consumedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class, "consumedInputStreams",
-                true);
-        Field referencedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class, "referencedInputStreams",
-                true);
-        Field outputStreamField = FieldUtils.getDeclaredField(StreamBasedTask.class, "outputStream", true);
+        Field consumedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class,
+                                                                      "consumedInputStreams",
+                                                                      true);
+        Field referencedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class,
+                                                                        "referencedInputStreams",
+                                                                        true);
+        Field outputStreamField = FieldUtils.getDeclaredField(StreamBasedTask.class,
+                                                              "outputStream",
+                                                              true);
 
-        if (null == consumedInputStreamsField || null == referencedInputStreamsField || null == outputStreamField) {
-            throw new StopExecutionException("The TransformTask does not has field with name: consumedInputStreams or referencedInputStreams or outputStream! Plugin version does not support!");
+        if (null == consumedInputStreamsField ||
+                null == referencedInputStreamsField ||
+                null == outputStreamField) {
+            throw new StopExecutionException(
+                    "The TransformTask does not has field with name: consumedInputStreams or referencedInputStreams or outputStream! Plugin version does not support!");
         }
         consumedInputStreamsField.set(transformTask, consumedInputStreams);
         referencedInputStreamsField.set(transformTask, referencedInputStreams);
@@ -407,20 +435,28 @@ public class InjectTransformManager {
      */
     private TransformTaskParam getTransformParam(TransformTask transformTask) throws IllegalAccessException {
         TransformTaskParam transformTaskParam = new TransformTaskParam();
-        Field consumedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class, "consumedInputStreams",
-                true);
-        Field referencedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class, "referencedInputStreams",
-                true);
-        Field outputStreamField = FieldUtils.getDeclaredField(StreamBasedTask.class, "outputStream", true);
+        Field consumedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class,
+                                                                      "consumedInputStreams",
+                                                                      true);
+        Field referencedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class,
+                                                                        "referencedInputStreams",
+                                                                        true);
+        Field outputStreamField = FieldUtils.getDeclaredField(StreamBasedTask.class,
+                                                              "outputStream",
+                                                              true);
 
-        if (null == consumedInputStreamsField || null == referencedInputStreamsField || null == outputStreamField) {
-            throw new StopExecutionException("The TransformTask does not has field with name: consumedInputStreams or referencedInputStreams or outputStream! Plugin version does not support!");
+        if (null == consumedInputStreamsField ||
+                null == referencedInputStreamsField ||
+                null == outputStreamField) {
+            throw new StopExecutionException(
+                    "The TransformTask does not has field with name: consumedInputStreams or referencedInputStreams or outputStream! Plugin version does not support!");
         }
-        transformTaskParam.consumedInputStreams = (Collection<TransformStream>) consumedInputStreamsField.get(transformTask);
-        transformTaskParam.referencedInputStreams = (Collection<TransformStream>) referencedInputStreamsField.get(transformTask);
+        transformTaskParam.consumedInputStreams = (Collection<TransformStream>) consumedInputStreamsField
+                .get(transformTask);
+        transformTaskParam.referencedInputStreams = (Collection<TransformStream>) referencedInputStreamsField
+                .get(transformTask);
         transformTaskParam.outputStream = (IntermediateStream) outputStreamField.get(transformTask);
         return transformTaskParam;
-
     }
 
     /**
@@ -433,14 +469,15 @@ public class InjectTransformManager {
         assert (oprTransform.getInputTypes().equals(injectTransform.getOutputTypes()));
     }
 
-
     /**
      * TransformTask的参数组合
      */
     static class TransformTaskParam {
 
         Collection<TransformStream> consumedInputStreams;
+
         Collection<TransformStream> referencedInputStreams;
+
         IntermediateStream outputStream;
     }
 
@@ -453,12 +490,12 @@ public class InjectTransformManager {
         // there's always at least one
         sb.append(capitalize(iterator.next().name().toLowerCase(Locale.getDefault())));
         while (iterator.hasNext()) {
-            sb.append("And").append(capitalize(iterator.next().name().toLowerCase(Locale.getDefault())));
+            sb.append("And")
+                    .append(capitalize(iterator.next().name().toLowerCase(Locale.getDefault())));
         }
 
         sb.append("With").append(capitalize(transform.getName())).append("For");
 
         return sb.toString();
     }
-
 }

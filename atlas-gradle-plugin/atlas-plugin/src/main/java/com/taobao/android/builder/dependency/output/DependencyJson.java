@@ -206,59 +206,67 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.dependency.output;
 
-import com.android.build.gradle.internal.dependency.JarInfo;
-import com.android.build.gradle.internal.dependency.LibInfo;
-import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.model.MavenCoordinates;
-import org.apache.commons.io.FilenameUtils;
-
-import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Created by shenghua.nish on 2016-05-06 上午11:00.
+ * Dependency的依赖关系
+ * @author shenghua.nish 2014年12月9日 下午3:14:05
  */
-public class AarBundle extends LibInfo {
+public class DependencyJson implements Serializable{
+    private List<String> mainDex = new LinkedList<String>();
+    private Map<String, ArrayList<String>> awbs    = new HashMap<String, ArrayList<String>>();
 
-    private List<SoLibrary> soLibraries = new ArrayList<SoLibrary>();
-
-    public AarBundle(File bundle, File explodedBundle, List<LibraryDependency> dependencies,
-                     Collection<JarInfo> jarDependencies, String name, String variantName, String projectPath,
-                     MavenCoordinates requestedCoordinates, MavenCoordinates resolvedCoordinates){
-        super(bundle, explodedBundle, dependencies, jarDependencies, name, variantName, projectPath,
-                requestedCoordinates, resolvedCoordinates);
+    /**
+     * @return the mainDex
+     */
+    public List<String> getMainDex() {
+        return mainDex;
     }
 
-    public List<SoLibrary> getSoLibraries() {
-        return soLibraries;
+    /**
+     * @param mainDex the mainDex to set
+     */
+    public void setMainDex(List<String> mainDex) {
+        this.mainDex = mainDex;
     }
 
-    public void setSoLibraries(List<SoLibrary> soLibraries) {
-        this.soLibraries = soLibraries;
+    /**
+     * @return the awbs
+     */
+    public Map<String, ArrayList<String>> getAwbs() {
+        return awbs;
     }
 
-
-    public File getOrgManifestFile(){
-        File manifestFile = getManifest();
-        File orgManifestFile = new File(manifestFile.getParentFile(), FilenameUtils.getBaseName(manifestFile.getName()) + "-org.xml");
-        if(orgManifestFile.exists()){
-            return orgManifestFile;
-        }else{
-            return manifestFile;
-        }
+    /**
+     * @param awbs the awbs to set
+     */
+    public void setAwbs(Map<String, ArrayList<String>> awbs) {
+        this.awbs = awbs;
     }
 
-    public File getModifyManifestFile(){
-        File manifestFile = getManifest();
-        File orgManifestFile = new File(manifestFile.getParentFile(), FilenameUtils.getBaseName(manifestFile.getName()) + "-modify.xml");
-        if(orgManifestFile.exists()){
-            return orgManifestFile;
-        }else{
-            return manifestFile;
-        }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DependencyJson that = (DependencyJson) o;
+
+        if (mainDex != null ? !mainDex.equals(that.mainDex) : that.mainDex != null) return false;
+        return awbs != null ? awbs.equals(that.awbs) : that.awbs == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mainDex != null ? mainDex.hashCode() : 0;
+        result = 31 * result + (awbs != null ? awbs.hashCode() : 0);
+        return result;
     }
 }

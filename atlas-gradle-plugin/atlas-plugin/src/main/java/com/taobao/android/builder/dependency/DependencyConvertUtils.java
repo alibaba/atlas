@@ -208,15 +208,16 @@
 
 package com.taobao.android.builder.dependency;
 
-import com.android.build.gradle.internal.dependency.JarInfo;
-import com.android.build.gradle.internal.model.MavenCoordinatesImpl;
+import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.google.common.collect.Lists;
-import com.taobao.android.builder.dependency.AarBundle;
-import com.taobao.android.builder.dependency.ApLibrary;
-import com.taobao.android.builder.dependency.ApkLibrary;
-import com.taobao.android.builder.dependency.AwbBundle;
-import com.taobao.android.builder.dependency.SoLibrary;
+import com.taobao.android.builder.dependency.model.AarBundle;
+import com.taobao.android.builder.dependency.model.ApLibrary;
+import com.taobao.android.builder.dependency.model.ApkLibrary;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
+
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.artifacts.ResolvedArtifact;
 
@@ -231,28 +232,37 @@ public class DependencyConvertUtils {
 
     /**
      * 将依赖类型转换为LibraryDependencyImpl
+     *
      * @param resolvedDependencyInfo
      * @return
      */
-    private static AarBundle toAarBundle(ResolvedDependencyInfo resolvedDependencyInfo, boolean containChild) {
+    private static AarBundle toAarBundle(ResolvedDependencyInfo resolvedDependencyInfo,
+                                         boolean containChild) {
         assertType(Type.AAR, resolvedDependencyInfo);
         List<LibraryDependency> dependencies = Lists.newArrayList();
-        Collection<JarInfo> jarDependencies = Lists.newArrayList();
+        Collection<JarDependency> jarDependencies = Lists.newArrayList();
         List<SoLibrary> soLibraries = Lists.newArrayList();
         if (containChild) {
             collectChildren(resolvedDependencyInfo, dependencies, jarDependencies, soLibraries);
         }
         AarBundle aarBundle = new AarBundle(resolvedDependencyInfo.getResolvedArtifact().getFile(),
-                                            resolvedDependencyInfo.getExplodedDir(), dependencies, jarDependencies,
-                                            resolvedDependencyInfo.getGroup()+"-" + resolvedDependencyInfo.getName(),resolvedDependencyInfo.getVariantName(),
-                                            resolvedDependencyInfo.getGradlePath(), null,
-                                            new MavenCoordinatesImpl(resolvedDependencyInfo.getResolvedArtifact()));
+                                            resolvedDependencyInfo.getExplodedDir(),
+                                            dependencies,
+                                            jarDependencies,
+                                            resolvedDependencyInfo.getGroup() +
+                                                    "-" +
+                                                    resolvedDependencyInfo.getName(),
+                                            resolvedDependencyInfo.getVariantName(),
+                                            resolvedDependencyInfo.getGradlePath(),
+                                            null,
+                                            convert(resolvedDependencyInfo.getResolvedArtifact()));
         aarBundle.setSoLibraries(soLibraries);
         return aarBundle;
     }
 
     /**
      * 将依赖类型转换为LibraryDependencyImpl
+     *
      * @param resolvedDependencyInfo
      * @return
      */
@@ -262,13 +272,16 @@ public class DependencyConvertUtils {
 
     /**
      * 收集子集合
+     *
      * @param dependencyInfo
      * @param dependencies
      * @param jarDependencies
      * @param soLibraries
      */
-    private static void collectChildren(ResolvedDependencyInfo dependencyInfo, List<LibraryDependency> dependencies,
-                                        Collection<JarInfo> jarDependencies, List<SoLibrary> soLibraries) {
+    private static void collectChildren(ResolvedDependencyInfo dependencyInfo,
+                                        List<LibraryDependency> dependencies,
+                                        Collection<JarDependency> jarDependencies,
+                                        List<SoLibrary> soLibraries) {
         List<ResolvedDependencyInfo> children = dependencyInfo.getChildren();
         for (ResolvedDependencyInfo child : children) {
             switch (Type.getType(child.getType())) {
@@ -278,7 +291,7 @@ public class DependencyConvertUtils {
                     collectChildren(child, dependencies, jarDependencies, soLibraries);
                     break;
                 case JAR:
-                    JarInfo jarInfo = toJarDependency(child, false);
+                    JarDependency jarInfo = toJarDependency(child, false);
                     jarDependencies.add(jarInfo);
                     collectChildren(child, dependencies, jarDependencies, soLibraries);
                     break;
@@ -289,63 +302,78 @@ public class DependencyConvertUtils {
                 default:
                     break;
             }
-
         }
-
     }
 
     /**
      * 转换为jar依赖
+     *
      * @param resolvedDependencyInfo
      * @return
      */
-    public static JarInfo toJarDependency(ResolvedDependencyInfo resolvedDependencyInfo) {
+    public static JarDependency toJarDependency(ResolvedDependencyInfo resolvedDependencyInfo) {
         assertType(Type.JAR, resolvedDependencyInfo);
         return toJarDependency(resolvedDependencyInfo, true);
     }
 
     /**
      * 转换为jar依赖
+     *
      * @param resolvedDependencyInfo
      * @return
      */
-    private static JarInfo toJarDependency(ResolvedDependencyInfo resolvedDependencyInfo, boolean containChild) {
+    private static JarDependency toJarDependency(ResolvedDependencyInfo resolvedDependencyInfo,
+                                                 boolean containChild) {
         assertType(Type.JAR, resolvedDependencyInfo);
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
-        List<JarInfo> dependencies = Lists.newArrayList();
+        List<JarDependency> dependencies = Lists.newArrayList();
         if (containChild) {
-            collectChildren(resolvedDependencyInfo, Lists.<LibraryDependency> newArrayList(), dependencies,
-                            Lists.<SoLibrary> newArrayList());
+            collectChildren(resolvedDependencyInfo,
+                            Lists.<LibraryDependency>newArrayList(),
+                            dependencies,
+                            Lists.<SoLibrary>newArrayList());
         }
-        JarInfo jarInfo = new JarInfo(artifact.getFile(), new MavenCoordinatesImpl(artifact),
-                                      resolvedDependencyInfo.getGradlePath(), dependencies);
+        JarDependency jarInfo = new JarDependency(artifact.getFile(),
+                                                  dependencies,
+                                                  convert(artifact),
+                                                  resolvedDependencyInfo.getGradlePath(),
+                                                  false);
         return jarInfo;
     }
 
     /**
      * 转换为solibrary依赖
+     *
      * @param resolvedDependencyInfo
      * @return
      */
     public static SoLibrary toSoLibrary(ResolvedDependencyInfo resolvedDependencyInfo) {
         assertType(Type.SOLIB, resolvedDependencyInfo);
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
-        SoLibrary soLibrary = new SoLibrary(new MavenCoordinatesImpl(artifact),artifact.getFile(),resolvedDependencyInfo.getExplodedDir());
+        SoLibrary soLibrary = new SoLibrary(convert(artifact),
+                                            artifact.getFile(),
+                                            resolvedDependencyInfo.getExplodedDir());
         return soLibrary;
     }
 
     public static AwbBundle toAwbBundle(ResolvedDependencyInfo resolvedDependencyInfo) {
         assertType(Type.AWB, resolvedDependencyInfo);
         List<LibraryDependency> dependencies = Lists.newArrayList();
-        Collection<JarInfo> jarDependencies = Lists.newArrayList();
+        Collection<JarDependency> jarDependencies = Lists.newArrayList();
         List<SoLibrary> soLibraries = Lists.newArrayList();
         collectChildren(resolvedDependencyInfo, dependencies, jarDependencies, soLibraries);
 
         AwbBundle awbBundle = new AwbBundle(resolvedDependencyInfo.getResolvedArtifact().getFile(),
-                                            resolvedDependencyInfo.getExplodedDir(), dependencies, jarDependencies,
-                                            resolvedDependencyInfo.getGroup()+"-" + resolvedDependencyInfo.getName(), resolvedDependencyInfo.getVariantName(),
-                                            resolvedDependencyInfo.getGradlePath(), null,
-                                            new MavenCoordinatesImpl(resolvedDependencyInfo.getResolvedArtifact()));
+                                            resolvedDependencyInfo.getExplodedDir(),
+                                            dependencies,
+                                            jarDependencies,
+                                            resolvedDependencyInfo.getGroup() +
+                                                    "-" +
+                                                    resolvedDependencyInfo.getName(),
+                                            resolvedDependencyInfo.getVariantName(),
+                                            resolvedDependencyInfo.getGradlePath(),
+                                            null,
+                                            convert(resolvedDependencyInfo.getResolvedArtifact()));
         awbBundle.setSoLibraries(soLibraries);
         return awbBundle;
     }
@@ -353,27 +381,30 @@ public class DependencyConvertUtils {
     public static ApLibrary toApLibrary(ResolvedDependencyInfo resolvedDependencyInfo) {
         assertType(Type.AP, resolvedDependencyInfo);
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
-        ApLibrary apLibrary = new ApLibrary(new MavenCoordinatesImpl(artifact),artifact.getFile(),resolvedDependencyInfo.getExplodedDir());
+        ApLibrary apLibrary = new ApLibrary(convert(artifact),
+                                            artifact.getFile(),
+                                            resolvedDependencyInfo.getExplodedDir());
         return apLibrary;
     }
 
     public static ApkLibrary toApkLibrary(ResolvedDependencyInfo resolvedDependencyInfo) {
         assertType(Type.APK, resolvedDependencyInfo);
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
-        ApkLibrary apkLibrary = new ApkLibrary(new MavenCoordinatesImpl(artifact),artifact.getFile());
+        ApkLibrary apkLibrary = new ApkLibrary(convert(artifact), artifact.getFile());
         return apkLibrary;
     }
 
-    private static void assertType(Type expectedType, ResolvedDependencyInfo resolvedDependencyInfo) {
+    private static void assertType(Type expectedType,
+                                   ResolvedDependencyInfo resolvedDependencyInfo) {
         assert expectedType.equals(Type.getType(resolvedDependencyInfo.getType()));
     }
 
-    public  enum Type {
-               AWB("awb"), AAR("aar"), JAR("jar"), SOLIB("solib"), AP("ap"), APK("apk"), OTHER("");
+    public enum Type {
+        AWB("awb"), AAR("aar"), JAR("jar"), SOLIB("solib"), AP("ap"), APK("apk"), OTHER("");
 
         private String type;
 
-        Type(String type){
+        Type(String type) {
             this.type = type.toLowerCase();
         }
 
@@ -387,4 +418,11 @@ public class DependencyConvertUtils {
         }
     }
 
+    private static MavenCoordinatesImpl convert(ResolvedArtifact artifact) {
+        return new MavenCoordinatesImpl(artifact.getModuleVersion().getId().getGroup(),
+                                        artifact.getModuleVersion().getId().getName(),
+                                        artifact.getModuleVersion().getId().getVersion(),
+                                        artifact.getExtension(),
+                                        artifact.getClassifier());
+    }
 }

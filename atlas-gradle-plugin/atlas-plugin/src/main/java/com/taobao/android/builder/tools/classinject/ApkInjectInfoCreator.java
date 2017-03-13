@@ -212,7 +212,7 @@ import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 
@@ -231,7 +231,9 @@ public class ApkInjectInfoCreator {
     public InjectParam creteInjectParam(AppVariantContext appVariantContext) throws IOException, DocumentException {
         InjectParam injectParam = new InjectParam();
 
-        injectParam.removePreverify = !appVariantContext.getAtlasExtension().getTBuildConfig().getDoPreverify();
+        injectParam.removePreverify = !appVariantContext.getAtlasExtension()
+                .getTBuildConfig()
+                .getDoPreverify();
 
         injectParam.version = appVariantContext.getVariantConfiguration().getVersionName();
 
@@ -249,13 +251,27 @@ public class ApkInjectInfoCreator {
 
             basicBundleInfo.setApplicationName(muppBundleInfo.getApplicationName());
             basicBundleInfo.setVersion(muppBundleInfo.getVersion());
-            basicBundleInfo.setIsInternal(muppBundleInfo.getIsInternal());
             basicBundleInfo.setPkgName(muppBundleInfo.getPkgName());
-            basicBundleInfo.setActivities(muppBundleInfo.getActivities());
-            basicBundleInfo.setContentProviders(muppBundleInfo.getContentProviders());
-            basicBundleInfo.setDependency(muppBundleInfo.getDependency());
-            basicBundleInfo.setReceivers(muppBundleInfo.getReceivers());
-            basicBundleInfo.setServices(muppBundleInfo.getServices());
+
+            if (!muppBundleInfo.getIsInternal()) {
+                basicBundleInfo.setIsInternal(false);
+            }
+            if (!muppBundleInfo.getActivities().isEmpty()) {
+                basicBundleInfo.setActivities(muppBundleInfo.getActivities());
+            }
+            if (!muppBundleInfo.getContentProviders().isEmpty()) {
+                basicBundleInfo.setContentProviders(muppBundleInfo.getContentProviders());
+            }
+            if (!muppBundleInfo.getDependency().isEmpty()) {
+                basicBundleInfo.setDependency(muppBundleInfo.getDependency());
+            }
+            if (!muppBundleInfo.getReceivers().isEmpty()) {
+                basicBundleInfo.setReceivers(muppBundleInfo.getReceivers());
+            }
+            if (!muppBundleInfo.getServices().isEmpty()) {
+                basicBundleInfo.setServices(muppBundleInfo.getServices());
+            }
+
             basicBundleInfos.add(basicBundleInfo);
         }
 

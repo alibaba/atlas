@@ -257,8 +257,8 @@ public class AtlasPlugin implements Plugin<Project> {
     protected String creator;
     private ExtraModelInfo extraModelInfo;
     protected SdkHandler sdkHandler;
-    public static final Pattern PLUGIN_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[1-9].*");
-    public static final String PLUGIN_MIN_VERSIONS = "2.1.0";
+    public static final Pattern PLUGIN_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*");
+    public static final String PLUGIN_MIN_VERSIONS = "2.2.0";
 
     @Inject
     public AtlasPlugin(Instantiator instantiator) {
@@ -279,11 +279,13 @@ public class AtlasPlugin implements Plugin<Project> {
 
                 if (atlasExtension.isAtlasEnabled()) {
                     TBuildConfig tBuildConfig = atlasExtension.getTBuildConfig();
-                    tBuildConfig.setAaptConstantId(false);
+                    //tBuildConfig.setAaptConstantId(false);
                     tBuildConfig.setClassInject(true);
                     tBuildConfig.setCreateAP(true);
                     tBuildConfig.setUseCustomAapt(true);
                     atlasExtension.getManifestOptions().setReplaceApplication(true);
+                }else {
+                    atlasExtension.getManifestOptions().setReplaceApplication(false);
                 }
 
                 if ("true".equals(System.getProperty("perfmonitor"))) {

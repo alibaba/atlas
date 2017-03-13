@@ -221,12 +221,13 @@ import com.android.builder.core.AndroidBuilder;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.Version;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.DependencyJson;
+import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.PathUtil;
 import com.taobao.android.builder.tools.guide.AtlasExtensionOutput;
 
 import org.apache.commons.io.FileUtils;
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -281,6 +282,10 @@ public class LogDependenciesTask extends BaseTask {
             Collections.sort(dependencyJson.getMainDex());
 
             FileUtils.write(treeFile, JSON.toJSONString(dependencyJson, true));
+
+            //add to ap
+            appBuildInfo.getOtherFilesMap().put("awo/dependencyTree.json", treeFile);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -320,6 +325,23 @@ public class LogDependenciesTask extends BaseTask {
                                                                        getVariantName()), true));
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        if (null != AtlasBuildContext.conflictDependencies &&
+                !AtlasBuildContext.conflictDependencies.isEmpty()) {
+            try {
+                FileUtils.writeLines(new File(getProject().getBuildDir(),
+                                              "outputs/warning-dependencyConflict.properties"),
+                                     AtlasBuildContext.conflictDependencies);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (appVariantContext.getAtlasExtension()
+                    .getTBuildConfig()
+                    .isAbortIfDependencyConflict()) {
+                throw new GradleException("依赖冲突，具体见warning-dependencyConflict.properties");
+            }
         }
     }
 
@@ -368,9 +390,7 @@ public class LogDependenciesTask extends BaseTask {
 
         @Override
         public void execute(LogDependenciesTask logDependenciesTask) {
-
             super.execute(logDependenciesTask);
-
             logDependenciesTask.appBuildInfo = getAppVariantOutputContext().appBuildInfo;
             logDependenciesTask.appVariantContext = appVariantContext;
         }

@@ -211,23 +211,25 @@ package com.taobao.android.builder.tasks.app.manifest;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.MergeManifests;
-import com.android.builder.dependency.ManifestDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.bundleinfo.BundleInfoUtils;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.manifest.ManifestDependencyUtil;
+import com.taobao.android.builder.tools.manifest.ManifestFileObject;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+
 import org.dom4j.DocumentException;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.StopExecutionException;
@@ -235,7 +237,11 @@ import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 对manifest文件进行预处理的任务
@@ -253,9 +259,13 @@ public class PreProcessManifestTask extends DefaultTask {
      * 要合并的主manifest文件
      */
     File mainManifestFile;
+
     List<File> libraryManifests;
+
     AppVariantOutputContext.AppBuildInfo appBuildInfo;
+
     AppVariantContext appVariantContext;
+
     AppVariantOutputContext appVariantOutputContext;
 
     @InputFile
@@ -276,23 +286,44 @@ public class PreProcessManifestTask extends DefaultTask {
         this.libraryManifests = libraryManifests;
     }
 
-
     @TaskAction
-    public void preProcess() throws IOException, DocumentException {
+    public void preProcess() throws IOException, DocumentException, InterruptedException {
 
-        getLogger().info("[MTLPlugin]Start PreProcess Lib manifest files,main manifestFile is:" + getMainManifestFile());
-        ManifestFileUtils.preProcessManifests(getMainManifestFile(), getLibraryManifests(), true);
+        getLogger().info("[MTLPlugin]Start PreProcess Lib manifest files,main manifestFile is:" +
+                                 getMainManifestFile());
 
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("preProcessDex",
+                                                                                   getLogger(),
+                                                                                   0);
+        List<Runnable> runnables = new ArrayList<>();
 
-        BundleInfoUtils.setupAwbBundleInfos(appVariantOutputContext.getVariantContext());
-        collectBundleInfo();
+        ManifestFileObject mainManifestFileObject = ManifestFileUtils.getManifestFileObject(
+                mainManifestFile);
+        mainManifestFileObject.init();
+
+        for (File file : getLibraryManifests()) {
+            runnables.add(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ManifestFileUtils.updatePreProcessManifestFile(file,
+                                                                       mainManifestFileObject,
+                                                                       true);
+                    } catch (Throwable e) {
+                        throw new GradleException("preprocess manifest", e);
+                    }
+                }
+            });
+        }
+        executorServicesHelper.execute(runnables);
+
+        //ManifestFileUtils.preProcessManifests(getMainManifestFile(), getLibraryManifests(), true);
+
+        //BundleInfoUtils.setupAwbBundleInfos(appVariantOutputContext.getVariantContext());
+        //collectBundleInfo();
 
         addAwbManifest2Merge();
-
     }
-
-
-
 
     private void addAwbManifest2Merge() {
         AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
@@ -303,8 +334,8 @@ public class PreProcessManifestTask extends DefaultTask {
 
             Set<String> notMergedArtifacts = Sets.newHashSet();
 
-
-            if (null != atlasExtension.getManifestOptions() && null != atlasExtension.getManifestOptions().getNotMergedBundles()) {
+            if (null != atlasExtension.getManifestOptions() &&
+                    null != atlasExtension.getManifestOptions().getNotMergedBundles()) {
                 notMergedArtifacts = atlasExtension.getManifestOptions().getNotMergedBundles();
             }
 
@@ -312,38 +343,39 @@ public class PreProcessManifestTask extends DefaultTask {
                 MergeManifests mergeManifests = (MergeManifests) manifestProcessorTask;
                 VariantScope variantScope = appVariantContext.getScope();
                 GradleVariantConfiguration config = variantScope.getVariantConfiguration();
-                AndroidDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
+                AndroidDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                        config.getFullName());
                 if (null == dependencyTree) {
                     throw new StopExecutionException("DependencyTree cannot be null!");
                 }
 
-                List<ManifestDependencyImpl> awbManifests = ManifestDependencyUtil.getManifestDependencies(dependencyTree.getAwbBundles(), notMergedArtifacts, getLogger());
-                for (ManifestDependencyImpl manifest : awbManifests) {
-                    getLogger().info("[MTLPlugin]Add manifest:" + manifest.getName() + ",path is:" + manifest.getManifest().getAbsolutePath());
+                List<? extends AndroidLibrary> awbManifests = ManifestDependencyUtil.getManifestDependencies(
+                        dependencyTree.getAwbBundles(),
+                        notMergedArtifacts,
+                        getLogger());
+                for (AndroidLibrary manifest : awbManifests) {
+                    getLogger().info("[MTLPlugin]Add manifest:" +
+                                             manifest.getName() +
+                                             ",path is:" +
+                                             manifest.getManifest().getAbsolutePath());
                 }
 
                 //FIXME 不加这一步,每次的getibraries 都会从mapping里去重新计算
                 mergeManifests.setLibraries(mergeManifests.getLibraries());
                 mergeManifests.getLibraries().addAll(awbManifests);
             }
-
         }
-    }
-
-    private void collectBundleInfo() throws IOException, DocumentException {
-
-        appBuildInfo.setBundleInfoFile(BundleInfoUtils.writeBundleInfo(appVariantContext));
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PreProcessManifestTask> {
 
         private final AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext variantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
             super(variantContext, baseVariantOutputData);
             this.appVariantContext = variantContext;
         }
-
 
         @Override
         public String getName() {
@@ -359,14 +391,15 @@ public class PreProcessManifestTask extends DefaultTask {
         public void execute(PreProcessManifestTask task) {
             VariantScope variantScope = appVariantContext.getScope();
             final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
-            AndroidDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
+            AndroidDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                    config.getFullName());
             if (null == dependencyTree) {
                 throw new StopExecutionException("DependencyTree cannot be null!");
             }
             task.setMainManifestFile(config.getMainManifest());
 
             Set<File> libManifests = new HashSet<File>();
-            for (ManifestDependencyImpl manifestDependency : dependencyTree.getMainApkManifestDependencies()) {
+            for (AndroidLibrary manifestDependency : dependencyTree.getMainApkManifestDependencies()) {
                 libManifests.add(manifestDependency.getManifest());
             }
             addManifest(dependencyTree.getAwbManifestDependencies().values(), libManifests);
@@ -380,19 +413,17 @@ public class PreProcessManifestTask extends DefaultTask {
             task.appBuildInfo = getAppVariantOutputContext().appBuildInfo;
             task.appVariantContext = appVariantContext;
             task.appVariantOutputContext = getAppVariantOutputContext();
-
         }
 
-        private void addManifest(Collection<? extends ManifestDependency> collection, Set<File> libManifests) {
-            for (ManifestDependency manifestDependency : collection) {
+        private void addManifest(Collection<? extends AndroidLibrary> collection,
+                                 Set<File> libManifests) {
+            for (AndroidLibrary manifestDependency : collection) {
                 libManifests.add(manifestDependency.getManifest());
-                if (null != manifestDependency.getManifestDependencies() && manifestDependency.getManifestDependencies().size() > 0) {
-                    addManifest(manifestDependency.getManifestDependencies(), libManifests);
+                if (null != manifestDependency.getLibraryDependencies() &&
+                        manifestDependency.getLibraryDependencies().size() > 0) {
+                    addManifest(manifestDependency.getLibraryDependencies(), libManifests);
                 }
-
             }
         }
-
     }
-
 }

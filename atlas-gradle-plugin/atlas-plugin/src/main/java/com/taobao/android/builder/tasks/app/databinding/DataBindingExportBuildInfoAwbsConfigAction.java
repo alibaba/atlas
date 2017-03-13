@@ -214,7 +214,7 @@ import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuil
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.MtlParallelTask;
 import com.taobao.android.builder.tasks.app.bundle.TaskCreater;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;

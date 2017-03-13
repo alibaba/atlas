@@ -213,7 +213,7 @@ import android.databinding.tool.LayoutXmlProcessor;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.ide.common.blame.MergingLog;
 import com.android.ide.common.blame.SourceFile;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 
 import java.io.File;
 

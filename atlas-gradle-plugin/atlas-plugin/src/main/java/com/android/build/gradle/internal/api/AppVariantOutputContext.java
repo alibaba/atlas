@@ -209,6 +209,7 @@
 package com.android.build.gradle.internal.api;
 
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
@@ -218,7 +219,7 @@ import com.android.build.gradle.tasks.PackageApplication;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
 import com.taobao.android.builder.tasks.app.merge.MergeAwbManifests;
 import com.taobao.android.object.ArtifactBundleInfo;
@@ -228,6 +229,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -376,7 +378,7 @@ public class AppVariantOutputContext {
         //        File soFolder = this.getVariantData().ndkCompileTask.getSoFolder();
         Set<File> jniFolders = outputScope.getVariantScope()
                 .getTransformManager()
-                .getPipelineOutput(PackageApplication.sNativeLibsFilter)
+                .getPipelineOutput(StreamFilter.NATIVE_LIBS)
                 .keySet();
         if (jniFolders.size() <= 0) {
             throw new StopExecutionException("No jniFolders found!");
@@ -422,7 +424,8 @@ public class AppVariantOutputContext {
                               ".apk");
 
         if (checkExist && !file.exists()) {
-            return outputScope.getPackageApk();
+            return outputScope.getFinalApk();
+            //return outputScope.getPackageApk();
         }
 
         return file;
@@ -463,6 +466,9 @@ public class AppVariantOutputContext {
     public static class AppBuildInfo {
 
         List<File> otherFiles = new ArrayList<File>();
+
+        //路径和文件名
+        Map<String,File> otherFilesMap = new HashMap<>();
 
         File dependencyTreeFile;
 
@@ -530,6 +536,14 @@ public class AppVariantOutputContext {
 
         public void setOtherFiles(List<File> otherFiles) {
             this.otherFiles = otherFiles;
+        }
+
+        public Map<String, File> getOtherFilesMap() {
+            return otherFilesMap;
+        }
+
+        public void setOtherFilesMap(Map<String, File> otherFilesMap) {
+            this.otherFilesMap = otherFilesMap;
         }
     }
 }

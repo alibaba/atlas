@@ -359,7 +359,9 @@ public class DiffResExtractor {
 
             //copy file
             File rawFile = new File(fullResDir, diffFile);
-            FileUtils.copyFile(rawFile, new File(destDir, diffFile));
+            if (rawFile.exists()) {
+                FileUtils.copyFile(rawFile, new File(destDir, diffFile));
+            }
 
         }
 

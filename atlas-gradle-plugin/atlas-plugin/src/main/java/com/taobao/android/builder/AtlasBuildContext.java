@@ -210,17 +210,17 @@ package com.taobao.android.builder;
 
 import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.AtlasBuilder;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
 import com.taobao.android.builder.tools.sign.AndroidSigner;
 import com.taobao.android.object.ApkFileList;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by shenghua.nish on 2016-05-09 下午3:50.
@@ -246,4 +246,6 @@ public class AtlasBuildContext {
     public static Map<String, AwbBundle> awbBundleMap = new HashMap<String, AwbBundle>();
 
     public static String serverHost = "";
+
+    public static Set<String> conflictDependencies;
 }

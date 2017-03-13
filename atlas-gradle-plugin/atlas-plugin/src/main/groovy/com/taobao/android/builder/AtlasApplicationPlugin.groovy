@@ -212,7 +212,11 @@ import android.databinding.tool.DataBindingBuilder
 import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.internal.*
+import com.android.build.gradle.internal.ApplicationTaskManager
+import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.SdkHandler
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.ndk.NdkHandler
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.builder.core.AndroidBuilder
@@ -247,16 +251,9 @@ class AtlasApplicationPlugin extends BasePlugin implements Plugin<Project> {
                                             DataBindingBuilder dataBindingBuilder,
                                             AndroidConfig extension,
                                             SdkHandler sdkHandler,
+                                            NdkHandler ndkHandler,
                                             DependencyManager dependencyManager,
                                             ToolingModelBuilderRegistry toolingRegistry) {
-
-        def ndkHandler = new NdkHandler(
-                project.getRootDir(),
-                null,
-                /* compileSkdVersion, this will be set in afterEvaluate */
-                "gcc",
-                ""
-                /*toolchainVersion*/);
 
         return new ApplicationTaskManager(project,
                                           androidBuilder,

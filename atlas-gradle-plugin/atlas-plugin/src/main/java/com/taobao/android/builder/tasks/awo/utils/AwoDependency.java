@@ -209,12 +209,13 @@
 package com.taobao.android.builder.tasks.awo.utils;
 
 import com.android.build.gradle.internal.api.LibVariantContext;
-import com.android.build.gradle.internal.dependency.JarInfo;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
-import com.taobao.android.builder.dependency.AarBundle;
+import com.taobao.android.builder.dependency.model.AarBundle;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
-import com.taobao.android.builder.dependency.SoLibrary;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
+
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
@@ -242,32 +243,25 @@ public class AwoDependency {
             if (isCompileDependency(soLibrary.getResolvedCoordinates())) {
                 soLibraries.add(soLibrary);
             }
-
         }
 
-
-        List<AarBundle> aarBundles = new ArrayList<AarBundle>();
+        List aarBundles = new ArrayList<>();
         for (AarBundle aarBundle : libDependencyTree.getAarBundles()) {
             if (isCompileDependency(aarBundle.getResolvedCoordinates())) {
                 aarBundles.add(aarBundle);
             }
-
         }
 
-
-        List<JarInfo> jarInfos = new ArrayList<JarInfo>();
-        for (JarInfo jarInfo : libDependencyTree.getJars()) {
+        List jarInfos = new ArrayList<JavaLibrary>();
+        for (JavaLibrary jarInfo : libDependencyTree.getJars()) {
             if (isCompileDependency(jarInfo.getResolvedCoordinates())) {
                 jarInfos.add(jarInfo);
             }
-
         }
 
-
         awbBundle.getSoLibraries().addAll(soLibraries);
-        awbBundle.getJarDependencies().addAll(jarInfos);
-        awbBundle.getDependencies().addAll(aarBundles);
-
+        awbBundle.getLibraryDependencies().addAll(aarBundles);
+        awbBundle.getJavaDependencies().addAll(jarInfos);
     }
 
     public List<File> getDependencyJar(AndroidDependencyTree libDependencyTree) {
@@ -278,28 +272,26 @@ public class AwoDependency {
             if (isCompileDependency(aarBundle.getResolvedCoordinates())) {
                 ((ArrayList<File>) jarList).add(aarBundle.getJarFile());
             }
-
         }
 
-
-        for (JarInfo jarInfo : libDependencyTree.getJars()) {
+        for (JavaLibrary jarInfo : libDependencyTree.getJars()) {
             if (isCompileDependency(jarInfo.getResolvedCoordinates())) {
                 ((ArrayList<File>) jarList).add(jarInfo.getJarFile());
             }
-
         }
 
-
         return jarList;
-
     }
 
     private void collectLibraryJars(LibVariantContext libVariantContext) {
 
         //TODO NPE protect
-        Set<DependencyResult> providedDependencySet = getDependencyResults(libVariantContext, "providedCompile");
-        Set<DependencyResult> compileDependencySet = getDependencyResults(libVariantContext, "compile");
-        Set<DependencyResult> debugCompileDependencySet = getDependencyResults(libVariantContext, "debugCompile");
+        Set<DependencyResult> providedDependencySet = getDependencyResults(libVariantContext,
+                                                                           "providedCompile");
+        Set<DependencyResult> compileDependencySet = getDependencyResults(libVariantContext,
+                                                                          "compile");
+        Set<DependencyResult> debugCompileDependencySet = getDependencyResults(libVariantContext,
+                                                                               "debugCompile");
 
         if (null == providedDependencySet) {
             providedDependencySet = new HashSet<DependencyResult>();
@@ -311,74 +303,80 @@ public class AwoDependency {
             compileDependencySet = new HashSet<DependencyResult>(compileDependencySet);
         }
 
-
         if (null != debugCompileDependencySet && !debugCompileDependencySet.isEmpty()) {
             try {
                 ((HashSet<DependencyResult>) compileDependencySet).addAll(debugCompileDependencySet);
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-
         }
-
 
         Set<ResolvedDependencyResult> compileOnlyDependencySet = new HashSet<ResolvedDependencyResult>();
         for (DependencyResult resolvedDependencyResult : compileDependencySet) {
 
             if (resolvedDependencyResult instanceof ResolvedDependencyResult) {
 
-                ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult) resolvedDependencyResult).getSelected().getModuleVersion();
+                ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult) resolvedDependencyResult)
+                        .getSelected()
+                        .getModuleVersion();
                 String key = moduleVersion.getGroup() + "-" + moduleVersion.getName();
                 boolean exclude = false;
                 for (DependencyResult resolvedDependencyResult2 : providedDependencySet) {
                     if (resolvedDependencyResult2 instanceof ResolvedDependencyResult) {
-                        ModuleVersionIdentifier moduleVersion2 = ((ResolvedDependencyResult) resolvedDependencyResult2).getSelected().getModuleVersion();
+                        ModuleVersionIdentifier moduleVersion2 = ((ResolvedDependencyResult) resolvedDependencyResult2)
+                                .getSelected()
+                                .getModuleVersion();
                         String key2 = moduleVersion2.getGroup() + "-" + moduleVersion2.getName();
                         if (key.equals(key2)) {
                             exclude = true;
                             break;
                         }
-
                     }
-
                 }
 
                 if (!exclude) {
                     compileOnlyDependencySet.add((ResolvedDependencyResult) resolvedDependencyResult);
                 }
-
             }
-
         }
-
 
         collectDependens(compileOnlyDependencySet);
     }
 
-    private Set<DependencyResult> getDependencyResults(LibVariantContext libVariantContext, String name) {
-        return (Set<DependencyResult>) libVariantContext.getProject().getConfigurations().getAt(name).getIncoming().getResolutionResult().getRoot().getDependencies();
+    private Set<DependencyResult> getDependencyResults(LibVariantContext libVariantContext,
+                                                       String name) {
+        return (Set<DependencyResult>) libVariantContext.getProject()
+                .getConfigurations()
+                .getAt(name)
+                .getIncoming()
+                .getResolutionResult()
+                .getRoot()
+                .getDependencies();
     }
 
     private void collectDependens(Set<ResolvedDependencyResult> compileOnlyDependencySet) {
         for (ResolvedDependencyResult resolvedDependencyResult : compileOnlyDependencySet) {
 
-            compileDependencies.add(resolvedDependencyResult.getSelected().getModuleVersion().getGroup() + "-" + resolvedDependencyResult.getSelected().getModuleVersion().getName());
+            compileDependencies.add(resolvedDependencyResult.getSelected()
+                                            .getModuleVersion()
+                                            .getGroup() +
+                                            "-" +
+                                            resolvedDependencyResult.getSelected()
+                                                    .getModuleVersion()
+                                                    .getName());
 
             Set<ResolvedDependencyResult> resolvedDependencyResults = new HashSet<ResolvedDependencyResult>();
             if (null != resolvedDependencyResult.getSelected().getDependencies()) {
-                for (DependencyResult sub : resolvedDependencyResult.getSelected().getDependencies()) {
+                for (DependencyResult sub : resolvedDependencyResult.getSelected()
+                        .getDependencies()) {
                     if (sub instanceof ResolvedDependencyResult) {
                         resolvedDependencyResults.add((ResolvedDependencyResult) sub);
                     }
-
                 }
-
             }
-
 
             collectDependens(resolvedDependencyResults);
         }
-
     }
 
     private boolean isCompileDependency(MavenCoordinates mavenCoordinates) {
@@ -395,5 +393,6 @@ public class AwoDependency {
     }
 
     private Set<String> compileDependencies = new HashSet<String>();
+
     private LibVariantContext libVariantContext;
 }

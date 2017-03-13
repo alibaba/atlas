@@ -219,14 +219,14 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AarBundle;
+import com.taobao.android.builder.dependency.model.AarBundle;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
-import com.taobao.android.builder.dependency.SoLibrary;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.solib.NativeSoUtils;
 import org.apache.commons.lang.StringUtils;
@@ -323,8 +323,8 @@ public class PrepareSoLibTask extends BaseTask {
                 NativeSoUtils.copyLocalNativeLibraries(libJniFolder, awbOutputFolder,
                         getSupportAbis(), getRemoveSoFiles(), getILogger());
             }
-            List<LibraryDependency> deps = awbLib.getDependencies();
-            for (LibraryDependency dep : deps) {
+            List<? extends AndroidLibrary> deps = awbLib.getLibraryDependencies();
+            for (AndroidLibrary dep : deps) {
                 File depJniFolder = dep.getJniFolder();
                 if (depJniFolder.exists() && depJniFolder.isDirectory()) {
                     NativeSoUtils.copyLocalNativeLibraries(depJniFolder, awbOutputFolder,
@@ -381,7 +381,7 @@ public class PrepareSoLibTask extends BaseTask {
             super(appVariantContext, baseVariantOutputData);
 
             this.appVariantContext = appVariantContext;
-            GradleVariantConfiguration config = scope.getVariantConfiguration();
+            GradleVariantConfiguration config = scope.getVariantScope().getVariantConfiguration();
             dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
         }
 
@@ -414,7 +414,7 @@ public class PrepareSoLibTask extends BaseTask {
             final AppVariantOutputContext appVariantOutputContext = getAppVariantOutputContext();
 
             final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) appVariantOutputContext.getOutputScope().getVariantOutputData();
-            final GradleVariantConfiguration config = scope.getVariantConfiguration();
+            final GradleVariantConfiguration config = scope.getVariantScope().getVariantConfiguration();
 
 
             ConventionMappingHelper.map(copySoLibTask, "jniFolders", new Callable<Set<File>>() {

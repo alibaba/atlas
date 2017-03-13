@@ -229,6 +229,7 @@ import com.taobao.android.builder.tools.PathUtil;
 import com.taobao.android.builder.tools.classinject.CodeInjectByJavassist;
 import com.taobao.android.builder.tools.classinject.InjectParam;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.dom4j.DocumentException;
 import org.gradle.api.logging.Logger;
@@ -336,9 +337,16 @@ public class ClassInjectTransform extends MtlInjectTransform {
                                                         getScopes(),
                                                         Format.JAR);
 
-            CodeInjectByJavassist.inject(classPool, jarInput.getFile(), to, injectParam);
+            //只对 atlas 做代码注入, 没有做多jarmerge
+            if (injectParam.removePreverify && !jarFileName.contains("atlas") && jarInputs.size() > 1) {
+                FileUtils.copyFile(jarInput.getFile(), to);
+            } else {
+                CodeInjectByJavassist.inject(classPool, jarInput.getFile(), to, injectParam);
+            }
         }
+
         // 注入目录中的代码
+
         for (DirectoryInput directoryInput : directoryInputs) {
             if (null != logger) {
                 logger.debug("[ClassInject]" + directoryInput.getFile().getAbsolutePath());
@@ -348,10 +356,16 @@ public class ClassInjectTransform extends MtlInjectTransform {
                                                         getOutputTypes(),
                                                         getScopes(),
                                                         Format.DIRECTORY);
-            CodeInjectByJavassist.injectFolder(classPool,
-                                               directoryInput.getFile(),
-                                               to,
-                                               injectParam);
+            if (!injectParam.removePreverify) {
+                CodeInjectByJavassist.injectFolder(classPool,
+                                                   directoryInput.getFile(),
+                                                   to,
+                                                   injectParam);
+            } else {
+
+                FileUtils.copyDirectory(directoryInput.getFile(), to);
+
+            }
         }
     }
 

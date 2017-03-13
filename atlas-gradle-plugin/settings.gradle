@@ -3,3 +3,4 @@ include 'dexpatch'
 include 'preverify'
 
 findProject(':atlas-plugin')?.name = 'atlasplugin'
+findProject(':dexpatch')?.name = 'dex_patch'

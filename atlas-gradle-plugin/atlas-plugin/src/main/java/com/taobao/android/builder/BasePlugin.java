@@ -208,49 +208,86 @@
 
 package com.taobao.android.builder;
 
-/**
- * Created by shenghua.nish on 2016-05-04 下午3:01.
- */
-
 import android.databinding.tool.DataBindingBuilder;
+
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.internal.*;
+import com.android.build.gradle.internal.ApiObjectFactory;
+import com.android.build.gradle.internal.BadPluginException;
+import com.android.build.gradle.internal.DependencyManager;
+import com.android.build.gradle.internal.ExecutionConfigurationUtil;
+import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.LibraryCache;
+import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.NativeLibraryFactoryImpl;
+import com.android.build.gradle.internal.SdkHandler;
+import com.android.build.gradle.internal.TDependencyManager;
+import com.android.build.gradle.internal.TaskContainerAdaptor;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.ToolingRegistryProvider;
+import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
-import com.android.build.gradle.internal.dsl.*;
+import com.android.build.gradle.internal.dependency.VariantDependencies;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.BuildTypeFactory;
+import com.android.build.gradle.internal.dsl.ProductFlavor;
+import com.android.build.gradle.internal.dsl.ProductFlavorFactory;
+import com.android.build.gradle.internal.dsl.SigningConfig;
+import com.android.build.gradle.internal.dsl.SigningConfigFactory;
 import com.android.build.gradle.internal.model.ModelBuilder;
+import com.android.build.gradle.internal.model.NativeModelBuilder;
+import com.android.build.gradle.internal.ndk.NdkHandler;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
-import com.android.build.gradle.internal.profile.RecordingBuildListener;
+import com.android.build.gradle.internal.profile.ProfilerInitializer;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
-import com.android.build.gradle.tasks.JillTask;
+import com.android.build.gradle.tasks.ExternalNativeBuildTaskUtils;
+import com.android.build.gradle.tasks.ExternalNativeJsonGenerator;
+import com.android.build.gradle.tasks.JackPreDexTransform;
+import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
-import com.android.builder.profile.ExecutionType;
-import com.android.builder.profile.ProcessRecorderFactory;
+import com.android.builder.profile.ProcessRecorder;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
+import com.android.builder.sdk.SdkLibData;
 import com.android.builder.sdk.TargetInfo;
+import com.android.dx.command.dexer.Main;
 import com.android.ide.common.internal.ExecutorSingleton;
+import com.android.ide.common.repository.GradleVersion;
+import com.android.repository.api.Channel;
+import com.android.repository.api.Downloader;
+import com.android.repository.api.SettingsController;
+import com.android.repository.impl.downloader.LocalFileAwareDownloader;
+import com.android.repository.io.FileOpUtils;
+import com.android.sdklib.repository.legacy.LegacyDownloader;
 import com.android.utils.ILogger;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableMap;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.GradleBuildProfileSpan.ExecutionType;
+
 import org.gradle.BuildListener;
 import org.gradle.BuildResult;
-import org.gradle.api.*;
-import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
+import org.gradle.api.Action;
+import org.gradle.api.GradleException;
+import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.execution.TaskExecutionGraph;
 import org.gradle.api.execution.TaskExecutionGraphListener;
 import org.gradle.api.initialization.Settings;
@@ -260,6 +297,7 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.tooling.UnsupportedVersionException;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
@@ -270,10 +308,14 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
-import java.util.regex.Pattern;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.google.common.base.Preconditions.checkState;
@@ -282,19 +324,14 @@ import static java.io.File.separator;
 /**
  * Base class for all Android plugins
  */
-public abstract class BasePlugin {
+public abstract class BasePlugin implements ToolingRegistryProvider {
 
-    private static final String GRADLE_MIN_VERSION = "2.10";
-    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.\\d{2,}.*");
-    private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
-            "com.android.build.gradle.overrideVersionCheck";
-    private static final String SKIP_PATH_CHECK_PROPERTY =
-            "com.android.build.gradle.overridePathCheck";
+    private static final GradleVersion GRADLE_MIN_VERSION = GradleVersion.parse("2.14.1");
+
     /**
      * default retirement age in days since its inception date for RC or beta versions.
      */
-    private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE_IN_DAYS = 400;
-
+    private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE_IN_DAYS = 40;
 
     protected BaseExtension extension;
 
@@ -326,12 +363,14 @@ public abstract class BasePlugin {
 
     private String creator;
 
+    private DependencyManager dependencyManager;
+
     private boolean hasCreatedTasks = false;
 
-    protected BasePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
+    BasePlugin(@NonNull Instantiator instantiator, @NonNull ToolingModelBuilderRegistry registry) {
         this.instantiator = instantiator;
         this.registry = registry;
-        creator = "Taobao Android Gradle " + Version.ANDROID_GRADLE_PLUGIN_VERSION;
+        creator = "Android Gradle " + Version.ANDROID_GRADLE_PLUGIN_VERSION;
         verifyRetirementAge();
 
         ModelBuilder.clearCaches();
@@ -351,8 +390,8 @@ public abstract class BasePlugin {
             return;
         }
 
-        int retirementAgeInDays =
-                getRetirementAgeInDays(manifest.getMainAttributes().getValue("Plugin-Version"));
+        int retirementAgeInDays = getRetirementAgeInDays(manifest.getMainAttributes()
+                                                                 .getValue("Plugin-Version"));
 
         // if this plugin version will never be outdated, return.
         if (retirementAgeInDays == -1) {
@@ -366,8 +405,8 @@ public abstract class BasePlugin {
         }
         List<String> items = ImmutableList.copyOf(Splitter.on(':').split(inceptionDateAttr));
         GregorianCalendar inceptionDate = new GregorianCalendar(Integer.parseInt(items.get(0)),
-                Integer.parseInt(items.get(1)), Integer.parseInt(items.get(2)));
-
+                                                                Integer.parseInt(items.get(1)),
+                                                                Integer.parseInt(items.get(2)));
 
         Calendar now = GregorianCalendar.getInstance();
         long nowTimestamp = now.getTimeInMillis();
@@ -386,22 +425,26 @@ public abstract class BasePlugin {
             // encode the day, not the current time.
             try {
                 crypt.update(String.format("%1$s:%2$s:%3$s",
-                        now.get(Calendar.YEAR),
-                        now.get(Calendar.MONTH),
-                        now.get(Calendar.DATE)).getBytes("utf8"));
+                                           now.get(Calendar.YEAR),
+                                           now.get(Calendar.MONTH),
+                                           now.get(Calendar.DATE)).getBytes("utf8"));
             } catch (UnsupportedEncodingException e) {
                 return;
             }
             String overrideValue = new BigInteger(1, crypt.digest()).toString(16);
             if (dailyOverride == null) {
                 String message = "Plugin is too old, please update to a more recent version, or " +
-                        "set ANDROID_DAILY_OVERRIDE environment variable to \"" + overrideValue + '"';
+                        "set ANDROID_DAILY_OVERRIDE environment variable to \"" +
+                        overrideValue +
+                        '"';
                 System.err.println(message);
                 throw new RuntimeException(message);
             } else {
                 if (!dailyOverride.equals(overrideValue)) {
                     String message = "Plugin is too old and ANDROID_DAILY_OVERRIDE value is " +
-                            "also outdated, please use new value :\"" + overrideValue + '"';
+                            "also outdated, please use new value :\"" +
+                            overrideValue +
+                            '"';
                     System.err.println(message);
                     throw new RuntimeException(message);
                 }
@@ -417,8 +460,11 @@ public abstract class BasePlugin {
      * @return the retirement age in days or -1 if no retirement
      */
     private static int getRetirementAgeInDays(@Nullable String version) {
-        if (version == null || version.contains("rc") || version.contains("beta")
-                || version.contains("alpha") || version.contains("preview")) {
+        if (version == null ||
+                version.contains("rc") ||
+                version.contains("beta") ||
+                version.contains("alpha") ||
+                version.contains("preview")) {
             return DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE_IN_DAYS;
         }
         return -1;
@@ -428,14 +474,14 @@ public abstract class BasePlugin {
 
     protected abstract VariantFactory createVariantFactory();
 
-    protected abstract TaskManager createTaskManager(
-            Project project,
-            AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
-            AndroidConfig extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry);
+    protected abstract TaskManager createTaskManager(@NonNull Project project,
+                                                     @NonNull AndroidBuilder androidBuilder,
+                                                     @NonNull DataBindingBuilder dataBindingBuilder,
+                                                     @NonNull AndroidConfig extension,
+                                                     @NonNull SdkHandler sdkHandler,
+                                                     @NonNull NdkHandler ndkHandler,
+                                                     @NonNull DependencyManager dependencyManager,
+                                                     @NonNull ToolingModelBuilderRegistry toolingRegistry);
 
     /**
      * Return whether this plugin creates Android library.  Should be overridden if true.
@@ -457,85 +503,114 @@ public abstract class BasePlugin {
         return loggerWrapper;
     }
 
+    protected void apply(@NonNull Project project) {
+        checkPluginVersion();
 
-    protected void apply(Project project) throws IOException {
         this.project = project;
-
         ExecutionConfigurationUtil.setThreadPoolSize(project);
         checkPathForErrors();
         checkModulesForErrors();
 
-        List<Recorder.Property> propertyList = Lists.newArrayList(
-                new Recorder.Property("plugin_version", Version.ANDROID_GRADLE_PLUGIN_VERSION),
-                new Recorder.Property("next_gen_plugin", "false"),
-                new Recorder.Property("gradle_version", project.getGradle().getGradleVersion())
-        );
+        ProfilerInitializer.init(project);
+
         String benchmarkName = AndroidGradleOptions.getBenchmarkName(project);
-        if (benchmarkName != null) {
-            propertyList.add(new Recorder.Property("benchmark_name", benchmarkName));
-        }
         String benchmarkMode = AndroidGradleOptions.getBenchmarkMode(project);
-        if (benchmarkMode != null) {
-            propertyList.add(new Recorder.Property("benchmark_mode", benchmarkMode));
+        if (benchmarkName != null && benchmarkMode != null) {
+            ProcessRecorder.setBenchmark(benchmarkName, benchmarkMode);
         }
 
-        ProcessRecorderFactory.initialize(
-                getLogger(),
-                project.getRootProject().file("profiler" + System.currentTimeMillis() + ".json"),
-                propertyList);
-        project.getGradle().addListener(new RecordingBuildListener(ThreadRecorder.get()));
+        AndroidStudioStats.GradleBuildProject.PluginType pluginType = AndroidStudioStats.GradleBuildProject.PluginType.UNKNOWN_PLUGIN_TYPE;
+        //TODO
+        //if (this instanceof AppPlugin) {
+        //    pluginType = AndroidStudioStats.GradleBuildProject.PluginType.APPLICATION;
+        //} else if (this instanceof LibraryPlugin) {
+        //    pluginType = AndroidStudioStats.GradleBuildProject.PluginType.LIBRARY;
+        //} else if (this instanceof TestPlugin) {
+        //    pluginType = AndroidStudioStats.GradleBuildProject.PluginType.TEST;
+        //}
 
+        ProcessRecorder.getProject(project.getPath())
+                .setAndroidPluginVersion(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+                .setAndroidPlugin(pluginType)
+                .setPluginGeneration(AndroidStudioStats.GradleBuildProject.PluginGeneration.FIRST);
 
-        ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        configureProject();
-                        return null;
-                    }
-                }, new Recorder.Property("project", project.getName()));
+        ThreadRecorder.get()
+                .record(ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE,
+                        project.getPath(),
+                        null /*variantName*/,
+                        new Recorder.Block<Void>() {
+                            @Override
+                            public Void call() throws Exception {
+                                configureProject();
+                                return null;
+                            }
+                        });
 
-        ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSION_CREATION,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        createExtension();
-                        return null;
-                    }
-                }, new Recorder.Property("project", project.getName()));
+        ThreadRecorder.get()
+                .record(ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSION_CREATION,
+                        project.getPath(),
+                        null /*variantName*/,
+                        new Recorder.Block<Void>() {
+                            @Override
+                            public Void call() throws Exception {
+                                createExtension();
+                                return null;
+                            }
+                        });
 
-        ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_TASKS_CREATION,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        createTasks();
-                        return null;
-                    }
-                }, new Recorder.Property("project", project.getName()));
+        ThreadRecorder.get()
+                .record(ExecutionType.BASE_PLUGIN_PROJECT_TASKS_CREATION,
+                        project.getPath(),
+                        null /*variantName*/,
+                        new Recorder.Block<Void>() {
+                            @Override
+                            public Void call() throws Exception {
+                                createTasks();
+                                return null;
+                            }
+                        });
+
+        // Apply additional plugins
+        for (String plugin : AndroidGradleOptions.getAdditionalPlugins(project)) {
+            project.apply(ImmutableMap.of("plugin", plugin));
+        }
     }
 
     protected void configureProject() {
         extraModelInfo = new ExtraModelInfo(project, isLibrary());
         checkGradleVersion();
         sdkHandler = new SdkHandler(project, getLogger());
-        androidBuilder = new AndroidBuilder(
-                project == project.getRootProject() ? project.getName() : project.getPath(),
-                creator,
-                new GradleProcessExecutor(project),
-                new GradleJavaProcessExecutor(project),
-                extraModelInfo,
-                getLogger(),
-                isVerbose());
+
+        project.afterEvaluate(p -> {
+            // TODO: Read flag from extension.
+            if (!p.getGradle().getStartParameter().isOffline() &&
+                    AndroidGradleOptions.getUseSdkDownload(p)) {
+                SdkLibData sdkLibData = SdkLibData.download(getDownloader(),
+                                                            getSettingsController());
+                dependencyManager.setSdkLibData(sdkLibData);
+                sdkHandler.setSdkLibData(sdkLibData);
+            }
+        });
+
+        androidBuilder = new AndroidBuilder(project ==
+                                                    project.getRootProject() ? project.getName() : project
+                .getPath(),
+                                            creator,
+                                            new GradleProcessExecutor(project),
+                                            new GradleJavaProcessExecutor(project),
+                                            extraModelInfo,
+                                            getLogger(),
+                                            isVerbose());
         dataBindingBuilder = new DataBindingBuilder();
-        dataBindingBuilder.setPrintMachineReadableOutput(
-                extraModelInfo.getErrorFormatMode() ==
-                        ExtraModelInfo.ErrorFormatMode.MACHINE_PARSABLE);
+        dataBindingBuilder.setPrintMachineReadableOutput(extraModelInfo.getErrorFormatMode() ==
+                                                                 ExtraModelInfo.ErrorFormatMode.MACHINE_PARSABLE);
         project.getPlugins().apply(JavaBasePlugin.class);
 
         jacocoPlugin = project.getPlugins().apply(JacocoPlugin.class);
 
-        project.getTasks().getByName("assemble").setDescription(
-                "Assembles all variants of all applications and secondary packages.");
+        project.getTasks()
+                .getByName("assemble")
+                .setDescription("Assembles all variants of all applications and secondary packages.");
 
         // call back on execution. This is called after the whole build is done (not
         // after the current project is done).
@@ -564,113 +639,135 @@ public abstract class BasePlugin {
             public void buildFinished(BuildResult buildResult) {
                 ExecutorSingleton.shutdown();
                 sdkHandler.unload();
-                ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_BUILD_FINISHED,
-                        new Recorder.Block() {
-                            @Override
-                            public Void call() throws Exception {
-                                PreDexCache.getCache().clear(
-                                        new File(project.getRootProject().getBuildDir(),
-                                                FD_INTERMEDIATES + "/dex-cache/cache.xml"),
-                                        getLogger());
-                                JackConversionCache.getCache().clear(
-                                        new File(project.getRootProject().getBuildDir(),
-                                                FD_INTERMEDIATES + "/jack-cache/cache.xml"),
-                                        getLogger());
-                                libraryCache.unload();
-                                return null;
-                            }
-                        }, new Recorder.Property("project", project.getName()));
-
-                try {
-                    ProcessRecorderFactory.shutdown();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                ThreadRecorder.get()
+                        .record(ExecutionType.BASE_PLUGIN_BUILD_FINISHED,
+                                project.getPath(),
+                                null,
+                                new Recorder.Block() {
+                                    @Override
+                                    public Void call() throws Exception {
+                                        PreDexCache.getCache()
+                                                .clear(new File(project.getRootProject()
+                                                                        .getBuildDir(),
+                                                                FD_INTERMEDIATES +
+                                                                        "/dex-cache/cache.xml"),
+                                                       getLogger());
+                                        JackConversionCache.getCache()
+                                                .clear(new File(project.getRootProject()
+                                                                        .getBuildDir(),
+                                                                FD_INTERMEDIATES +
+                                                                        "/jack-cache/cache.xml"),
+                                                       getLogger());
+                                        libraryCache.unload();
+                                        Main.clearInternTables();
+                                        return null;
+                                    }
+                                });
             }
         });
-        project.getGradle().getTaskGraph().addTaskExecutionGraphListener(
-                new TaskExecutionGraphListener() {
+        project.getGradle()
+                .getTaskGraph()
+                .addTaskExecutionGraphListener(new TaskExecutionGraphListener() {
                     @Override
                     public void graphPopulated(TaskExecutionGraph taskGraph) {
                         for (Task task : taskGraph.getAllTasks()) {
                             if (task instanceof TransformTask) {
-                                if (((TransformTask) task).getTransform() instanceof DexTransform) {
-                                    PreDexCache.getCache().load(
-                                            new File(project.getRootProject().getBuildDir(),
-                                                    FD_INTERMEDIATES + "/dex-cache/cache.xml"));
+                                Transform transform = ((TransformTask) task).getTransform();
+                                if (transform instanceof DexTransform) {
+                                    PreDexCache.getCache()
+                                            .load(new File(project.getRootProject().getBuildDir(),
+                                                           FD_INTERMEDIATES +
+                                                                   "/dex-cache/cache.xml"));
+                                    break;
+                                } else if (transform instanceof JackPreDexTransform) {
+                                    JackConversionCache.getCache()
+                                            .load(new File(project.getRootProject().getBuildDir(),
+                                                           FD_INTERMEDIATES +
+                                                                   "/jack-cache/cache.xml"));
                                     break;
                                 }
-                            } else if (task instanceof JillTask) {
-                                JackConversionCache.getCache().load(
-                                        new File(project.getRootProject().getBuildDir(),
-                                                FD_INTERMEDIATES + "/jack-cache/cache.xml"));
-                                break;
                             }
                         }
                     }
                 });
     }
 
-
     private void createExtension() {
-        final NamedDomainObjectContainer<BuildType> buildTypeContainer = project.container(
-                BuildType.class,
-                new BuildTypeFactory(instantiator, project, project.getLogger()));
+        final NamedDomainObjectContainer<BuildType> buildTypeContainer = project.container(BuildType.class,
+                                                                                           new BuildTypeFactory(
+                                                                                                   instantiator,
+                                                                                                   project,
+                                                                                                   project.getLogger()));
         final NamedDomainObjectContainer<ProductFlavor> productFlavorContainer = project.container(
                 ProductFlavor.class,
-                new ProductFlavorFactory(instantiator, project, project.getLogger(), extraModelInfo));
+                new ProductFlavorFactory(instantiator,
+                                         project,
+                                         project.getLogger(),
+                                         extraModelInfo));
         final NamedDomainObjectContainer<SigningConfig> signingConfigContainer = project.container(
                 SigningConfig.class,
                 new SigningConfigFactory(instantiator));
-        //TODO 应该要返回系统自己的extension
-        extension = project.getExtensions().create("android", getExtensionClass(),
-                project, instantiator, androidBuilder, sdkHandler,
-                buildTypeContainer, productFlavorContainer, signingConfigContainer,
-                extraModelInfo, isLibrary());
+
+        extension = project.getExtensions()
+                .create("android",
+                        getExtensionClass(),
+                        project,
+                        instantiator,
+                        androidBuilder,
+                        sdkHandler,
+                        buildTypeContainer,
+                        productFlavorContainer,
+                        signingConfigContainer,
+                        extraModelInfo,
+                        isLibrary());
 
         // create the default mapping configuration.
-        project.getConfigurations().create("default-mapping")
+        project.getConfigurations()
+                .create("default" + VariantDependencies.CONFIGURATION_MAPPING)
                 .setDescription("Configuration for default mapping artifacts.");
-        project.getConfigurations().create("default-metadata")
+        project.getConfigurations()
+                .create("default" + VariantDependencies.CONFIGURATION_METADATA)
                 .setDescription("Metadata for the produced APKs.");
 
-        DependencyManager dependencyManager = new TDependencyManager(project, extraModelInfo);
-        taskManager = createTaskManager(
-                project,
-                androidBuilder,
-                dataBindingBuilder,
-                extension,
-                sdkHandler,
-                dependencyManager,
-                registry);
+        dependencyManager = new TDependencyManager(project, extraModelInfo, sdkHandler);
+
+        ndkHandler = new NdkHandler(project.getRootDir(),
+                                    null, /* compileSkdVersion, this will be set in afterEvaluate */
+                                    "gcc",
+                                    "" /*toolchainVersion*/);
+
+        taskManager = createTaskManager(project,
+                                        androidBuilder,
+                                        dataBindingBuilder,
+                                        extension,
+                                        sdkHandler,
+                                        ndkHandler,
+                                        dependencyManager,
+                                        registry);
 
         variantFactory = createVariantFactory();
-        variantManager = new VariantManager(
-                project,
-                androidBuilder,
-                extension,
-                variantFactory,
-                taskManager,
-                instantiator);
-
-        ndkHandler = new NdkHandler(
-                project.getRootDir(),
-                null, /* compileSkdVersion, this will be set in afterEvaluate */
-                "gcc",
-                "" /*toolchainVersion*/);
+        variantManager = new VariantManager(project,
+                                            androidBuilder,
+                                            extension,
+                                            variantFactory,
+                                            taskManager,
+                                            instantiator);
 
         // Register a builder for the custom tooling model
-        ModelBuilder modelBuilder = new ModelBuilder(
-                androidBuilder,
-                variantManager,
-                taskManager,
-                extension,
-                extraModelInfo,
-                ndkHandler,
-                new NativeLibraryFactoryImpl(ndkHandler),
-                isLibrary(),
-                AndroidProject.GENERATION_ORIGINAL);
+        ModelBuilder modelBuilder = new ModelBuilder(androidBuilder,
+                                                     variantManager,
+                                                     taskManager,
+                                                     extension,
+                                                     extraModelInfo,
+                                                     ndkHandler,
+                                                     new NativeLibraryFactoryImpl(ndkHandler),
+                                                     isLibrary(),
+                                                     AndroidProject.GENERATION_ORIGINAL);
         registry.register(modelBuilder);
+
+        // Register a builder for the native tooling model
+        NativeModelBuilder nativeModelBuilder = new NativeModelBuilder(variantManager);
+        registry.register(nativeModelBuilder);
 
         // map the whenObjectAdded callbacks on the containers.
         signingConfigContainer.whenObjectAdded(new Action<SigningConfig>() {
@@ -679,7 +776,6 @@ public abstract class BasePlugin {
                 variantManager.addSigningConfig(signingConfig);
             }
         });
-
 
         buildTypeContainer.whenObjectAdded(new Action<BuildType>() {
             @Override
@@ -698,16 +794,17 @@ public abstract class BasePlugin {
         });
 
         // map whenObjectRemoved on the containers to throw an exception.
-        signingConfigContainer.whenObjectRemoved(
-                new BasePlugin.UnsupportedAction("Removing signingConfigs is not supported."));
-        buildTypeContainer.whenObjectRemoved(
-                new BasePlugin.UnsupportedAction("Removing build types is not supported."));
-        productFlavorContainer.whenObjectRemoved(
-                new BasePlugin.UnsupportedAction("Removing product flavors is not supported."));
+        signingConfigContainer.whenObjectRemoved(new UnsupportedAction(
+                "Removing signingConfigs is not supported."));
+        buildTypeContainer.whenObjectRemoved(new UnsupportedAction(
+                "Removing build types is not supported."));
+        productFlavorContainer.whenObjectRemoved(new UnsupportedAction(
+                "Removing product flavors is not supported."));
 
         // create default Objects, signingConfig first as its used by the BuildTypes.
-        variantFactory.createDefaultComponents(
-                buildTypeContainer, productFlavorContainer, signingConfigContainer);
+        variantFactory.createDefaultComponents(buildTypeContainer,
+                                               productFlavorContainer,
+                                               signingConfigContainer);
     }
 
     private static class UnsupportedAction implements Action<Object> {
@@ -725,51 +822,58 @@ public abstract class BasePlugin {
     }
 
     private void createTasks() {
-        ThreadRecorder.get().record(ExecutionType.TASK_MANAGER_CREATE_TASKS,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        taskManager.createTasksBeforeEvaluate(
-                                new TaskContainerAdaptor(project.getTasks()));
-                        return null;
-                    }
-                },
-                new Recorder.Property("project", project.getName()));
-
-        project.afterEvaluate(new Action<Project>() {
-            @Override
-            public void execute(Project project) {
-                ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_CREATE_ANDROID_TASKS,
+        ThreadRecorder.get()
+                .record(ExecutionType.TASK_MANAGER_CREATE_TASKS,
+                        project.getPath(),
+                        null,
                         new Recorder.Block<Void>() {
                             @Override
                             public Void call() throws Exception {
-                                createAndroidTasks(false);
+                                taskManager.createTasksBeforeEvaluate(new TaskContainerAdaptor(
+                                        project.getTasks()));
                                 return null;
                             }
-                        },
-                        new Recorder.Property("project", project.getName()));
-            }
+                        });
+
+        project.afterEvaluate(project -> {
+            ThreadRecorder.get()
+                    .record(ExecutionType.BASE_PLUGIN_CREATE_ANDROID_TASKS,
+                            project.getPath(),
+                            null,
+                            new Recorder.Block<Void>() {
+                                @Override
+                                public Void call() throws Exception {
+                                    createAndroidTasks(false);
+                                    return null;
+                                }
+                            });
         });
     }
 
     private void checkGradleVersion() {
-        if (!GRADLE_ACCEPTABLE_VERSIONS.matcher(project.getGradle().getGradleVersion()).matches()) {
-            boolean allowNonMatching = Boolean.getBoolean(GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
-            File file = new File("gradle" + separator + "wrapper" + separator +
-                    "gradle-wrapper.properties");
+        String currentVersion = project.getGradle().getGradleVersion();
+        if (GRADLE_MIN_VERSION.compareTo(currentVersion) > 0) {
+            File file = new File("gradle" +
+                                         separator +
+                                         "wrapper" +
+                                         separator +
+                                         "gradle-wrapper.properties");
             String errorMessage = String.format(
-                    "Gradle version %s is required. Current version is %s. " +
+                    "Minimum supported Gradle version is %s. Current version is %s. " +
                             "If using the gradle wrapper, try editing the distributionUrl in %s " +
                             "to gradle-%s-all.zip",
-                    GRADLE_MIN_VERSION, project.getGradle().getGradleVersion(), file.getAbsolutePath(),
+                    GRADLE_MIN_VERSION,
+                    currentVersion,
+                    file.getAbsolutePath(),
                     GRADLE_MIN_VERSION);
-            if (allowNonMatching) {
+            if (AndroidGradleOptions.overrideGradleVersionCheck(project)) {
                 getLogger().warning(errorMessage);
                 getLogger().warning("As %s is set, continuing anyways.",
-                        GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
+                                    AndroidGradleOptions.GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
             } else {
-                extraModelInfo.handleSyncError(
-                        GRADLE_MIN_VERSION, SyncIssue.TYPE_GRADLE_TOO_OLD, errorMessage);
+                extraModelInfo.handleSyncError(GRADLE_MIN_VERSION.toString(),
+                                               SyncIssue.TYPE_GRADLE_TOO_OLD,
+                                               errorMessage);
             }
         }
     }
@@ -777,10 +881,11 @@ public abstract class BasePlugin {
     @VisibleForTesting
     final void createAndroidTasks(boolean force) {
         // Make sure unit tests set the required fields.
-        checkState(extension.getBuildToolsRevision() != null, "buildToolsVersion is not specified.");
+        checkState(extension.getBuildToolsRevision() != null,
+                   "buildToolsVersion is not specified.");
         checkState(extension.getCompileSdkVersion() != null, "compileSdkVersion is not specified.");
 
-        ndkHandler.setPlatformVersion(extension.getCompileSdkVersion());
+        ndkHandler.setCompileSdkVersion(extension.getCompileSdkVersion());
 
         // get current plugins and look for the default Java plugin.
         if (project.getPlugins().hasPlugin(JavaPlugin.class)) {
@@ -794,9 +899,9 @@ public abstract class BasePlugin {
         // Unless TEST_SDK_DIR is set in which case this is unit tests and we don't return.
         // This is because project don't get evaluated in the unit test setup.
         // See AppPluginDslTest
-        if (!force
-                && (!project.getState().getExecuted() || project.getState().getFailure() != null)
-                && SdkHandler.sTestSdkFolder == null) {
+        if (!force &&
+                (!project.getState().getExecuted() || project.getState().getFailure() != null) &&
+                SdkHandler.sTestSdkFolder == null) {
             return;
         }
 
@@ -807,54 +912,89 @@ public abstract class BasePlugin {
 
         extension.disableWrite();
 
-        ThreadRecorder.get().record(
-                ExecutionType.GENERAL_CONFIG,
-                Recorder.EmptyBlock,
-                new Recorder.Property("build_tools_version",
-                        extension.getBuildToolsRevision().toString()));
+        ProcessRecorder.getProject(project.getPath())
+                .setBuildToolsVersion(extension.getBuildToolsRevision().toString());
 
         // setup SDK repositories.
-        for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
-            project.getRepositories().maven(new Action<MavenArtifactRepository>() {
-                @Override
-                public void execute(MavenArtifactRepository mavenArtifactRepository) {
-                    mavenArtifactRepository.setUrl(file.toURI());
-                }
-            });
-        }
+        sdkHandler.addLocalRepositories(project);
 
         taskManager.addDataBindingDependenciesIfNecessary(extension.getDataBinding());
 
         addDependencies(project);
 
-        //add update dependency
-        //FIXME
-//        UpdateConfig updateConfig = project.getExtensions().getByType(MtlExtension.class).getUpdateConfig();
-//        if (null != updateConfig && updateConfig.enabled && StringUtils.isNotBlank(updateConfig.getUpdateBundleDependency())) {
-//            try {
-//                Closure closure = ClosureFactory.buildClosure("transitive = true");
-//                project.getDependencies().add("compile", updateConfig.getUpdateBundleDependency(), closure);
-//            } catch (IOException e) {
-//                throw new GradleException("add update dependency error");
-//            }
-//        }
 
-        ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_CREATE_ANDROID_TASKS,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        variantManager.createAndroidTasks();
-                        ApiObjectFactory apiObjectFactory = new ApiObjectFactory(
-                                androidBuilder, extension, variantFactory, instantiator);
-                        for (BaseVariantData variantData : variantManager.getVariantDataList()) {
-                            apiObjectFactory.create(variantData);
-                        }
-                        return null;
-                    }
-                }, new Recorder.Property("project", project.getName()));
+        ThreadRecorder.get()
+                .record(ExecutionType.VARIANT_MANAGER_CREATE_ANDROID_TASKS,
+                        project.getPath(),
+                        null,
+                        new Recorder.Block<Void>() {
+                            @Override
+                            public Void call() throws Exception {
+                                variantManager.createAndroidTasks();
+                                ApiObjectFactory apiObjectFactory = new ApiObjectFactory(
+                                        androidBuilder,
+                                        extension,
+                                        variantFactory,
+                                        instantiator);
+                                for (BaseVariantData variantData : variantManager.getVariantDataList()) {
+                                    apiObjectFactory.create(variantData);
+                                }
+                                return null;
+                            }
+                        });
+
+        // Create and read external native build JSON files depending on what's happening right
+        // now.
+        //
+        // CREATE PHASE:
+        // Creates JSONs by shelling out to external build system when:
+        //   - Any one of AndroidProject.PROPERTY_INVOKED_FROM_IDE,
+        //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED,
+        //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY,
+        //      AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL are set.
+        //   - *and* AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL is set
+        //      or JSON files don't exist or are out-of-date.
+        // Create phase may cause ProcessException (from cmake.exe for example)
+        //
+        // READ PHASE:
+        // Reads and deserializes JSONs when:
+        //   - Any one of AndroidProject.PROPERTY_INVOKED_FROM_IDE,
+        //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED,
+        //      AndroidProject.PROPERTY_BUILD_MODEL_ONLY,
+        //      AndroidProject.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL are set.
+        // Read phase may produce IOException if the file can't be read for standard IO reasons.
+        // Read phase may produce JsonSyntaxException in the case that the content of the file is
+        // corrupt.
+        boolean forceRegeneration = AndroidGradleOptions.refreshExternalNativeModel(project);
+
+        if (ExternalNativeBuildTaskUtils.shouldRegenerateOutOfDateJsons(project)) {
+            ThreadRecorder.get()
+                    .record(ExecutionType.VARIANT_MANAGER_EXTERNAL_NATIVE_CONFIG_VALUES,
+                            project.getPath(),
+                            null,
+                            new Recorder.Block<Void>() {
+                                @Override
+                                public Void call() throws Exception {
+                                    for (BaseVariantData variantData : variantManager.getVariantDataList()) {
+                                        ExternalNativeJsonGenerator generator = variantData.getScope()
+                                                .getExternalNativeJsonGenerator();
+                                        if (generator != null) {
+                                            // This will generate any out-of-date or non-existent JSONs.
+                                            // When refreshExternalNativeModel() is true it will also
+                                            // force update all JSONs.
+                                            generator.build(forceRegeneration);
+
+                                            variantData.getScope()
+                                                    .addExternalNativeBuildConfigValues(generator.readExistingNativeBuildConfigurations());
+                                        }
+                                    }
+                                    return null;
+                                }
+                            });
+        }
     }
 
-    protected void  addDependencies(Project project){
+    protected void addDependencies(Project project){
 
     }
 
@@ -870,12 +1010,11 @@ public abstract class BasePlugin {
                 throw new GradleException("Calling getBootClasspath before compileSdkVersion");
             }
 
-            sdkHandler.initTarget(
-                    extension.getCompileSdkVersion(),
-                    extension.getBuildToolsRevision(),
-                    extension.getLibraryRequests(),
-                    androidBuilder,
-                    SdkHandler.useCachedSdk(project));
+            sdkHandler.initTarget(extension.getCompileSdkVersion(),
+                                  extension.getBuildToolsRevision(),
+                                  extension.getLibraryRequests(),
+                                  androidBuilder,
+                                  SdkHandler.useCachedSdk(project));
         }
     }
 
@@ -905,20 +1044,33 @@ public abstract class BasePlugin {
         }
     }
 
+    /**
+     * Verify the plugin version.  If a newer version of gradle-experimental plugin is applied, then
+     * builder.jar module will be resolved to a different version than the one this gradle plugin is
+     * compiled with.  Throw an error and suggest to update this plugin.
+     */
+    private static void checkPluginVersion() {
+        String actualGradlePluginVersion = Version.getAndroidGradlePluginVersion();
+        if (!actualGradlePluginVersion.equals(com.android.build.gradle.internal.Version.ANDROID_GRADLE_PLUGIN_VERSION)) {
+            throw new UnsupportedVersionException(String.format("Plugin version mismatch.  " +
+                                                                        "'com.android.tools.build:gradle-experimental:%s' was applied, and it " +
+                                                                        "requires 'com.android.tools.build:gradle:%s'.  Current version is '%s'.  " +
+                                                                        "Please update to version '%s'.",
+                                                                Version.getAndroidGradleComponentPluginVersion(),
+                                                                Version.getAndroidGradlePluginVersion(),
+                                                                com.android.build.gradle.internal.Version.ANDROID_GRADLE_PLUGIN_VERSION,
+                                                                Version.getAndroidGradlePluginVersion()));
+        }
+    }
+
     private void checkPathForErrors() {
-        // See if the user disabled the check:
-        if (Boolean.getBoolean(SKIP_PATH_CHECK_PROPERTY)) {
-            return;
-        }
-
-        if (project.hasProperty(SKIP_PATH_CHECK_PROPERTY)
-                && project.property(SKIP_PATH_CHECK_PROPERTY) instanceof String
-                && Boolean.valueOf((String) project.property(SKIP_PATH_CHECK_PROPERTY))) {
-            return;
-        }
-
         // See if we're on Windows:
-        if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
+        if (!System.getProperty("os.name").toLowerCase(Locale.US).contains("windows")) {
+            return;
+        }
+
+        // See if the user disabled the check:
+        if (AndroidGradleOptions.overridePathCheck(project)) {
             return;
         }
 
@@ -930,11 +1082,40 @@ public abstract class BasePlugin {
         String message = "Your project path contains non-ASCII characters. This will most likely " +
                 "cause the build to fail on Windows. Please move your project to a different " +
                 "directory. See http://b.android.com/95744 for details. " +
-                "This warning can be disabled by using the command line flag -D" +
-                SKIP_PATH_CHECK_PROPERTY + "=true, or adding the line " +
-                SKIP_PATH_CHECK_PROPERTY + "=true' to gradle.properties file " +
-                "in the project directory.";
+                "This warning can be disabled by adding the line '" +
+                AndroidGradleOptions.OVERRIDE_PATH_CHECK_PROPERTY +
+                "=true' to gradle.properties file in the project directory.";
 
         throw new StopExecutionException(message);
+    }
+
+    @NonNull
+    @Override
+    public ToolingModelBuilderRegistry getModelBuilderRegistry() {
+        return registry;
+    }
+
+    private static SettingsController getSettingsController() {
+        return new SettingsController() {
+            @Override
+            public boolean getForceHttp() {
+                return false;
+            }
+
+            @Override
+            public void setForceHttp(boolean force) {
+                // Default, doesn't allow to set force HTTP.
+            }
+
+            @Nullable
+            @Override
+            public Channel getChannel() {
+                return Channel.DEFAULT;
+            }
+        };
+    }
+
+    private static Downloader getDownloader() {
+        return new LocalFileAwareDownloader(new LegacyDownloader(FileOpUtils.create()));
     }
 }

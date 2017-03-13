@@ -236,8 +236,10 @@ import com.taobao.android.builder.tasks.app.manifest.PreProcessManifestTask;
 import com.taobao.android.builder.tasks.app.merge.MergeAssetAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeManifestAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeResAwbsConfigAction;
+import com.taobao.android.builder.tasks.app.merge.MergeResV4Dir;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAwbTask;
+import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareSoLibTask;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
@@ -250,6 +252,7 @@ import com.taobao.android.builder.tasks.tpatch.TPatchDiffResAPBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchTask;
 import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
 import com.taobao.android.builder.tasks.transform.hook.AwbProguradHook;
+
 import org.gradle.api.Project;
 
 import java.util.ArrayList;
@@ -278,7 +281,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             @Override
             public void accept(ApplicationVariant applicationVariant) {
 
-                AppVariantContext appVariantContext = AtlasBuildContext.appVariantContextMap.get(applicationVariant);
+                 AppVariantContext appVariantContext = AtlasBuildContext.appVariantContextMap.get(applicationVariant);
 
                 if (null == appVariantContext) {
                     appVariantContext = new AppVariantContext((ApplicationVariantImpl) applicationVariant, project, atlasExtension, appExtension);
@@ -297,6 +300,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAwbTask.ConfigAction.class, null));
 
+                mtlTaskContextList.add(new MtlTaskContext(PreProcessManifestTask.ConfigAction.class, null));
+
+                mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
+
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
@@ -308,8 +315,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(AidlCompile.class));
 
                 mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
-
-                mtlTaskContextList.add(new MtlTaskContext(PreProcessManifestTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(MergeResAwbsConfigAction.class, null));
 
@@ -325,6 +330,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(PostProcessManifestTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(MergeManifestAwbsConfigAction.class, null));
+
+                mtlTaskContextList.add(new MtlTaskContext(MergeResV4Dir.ConfigAction.class,null));
 
                 mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
 
@@ -361,7 +368,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 List<MtlTransformContext> mtlTransformContextList = new ArrayList<MtlTransformContext>();
 
                 if (atlasExtension.getTBuildConfig().getClassInject()) {
-                    mtlTransformContextList.add(new MtlTransformContext(ClassInjectTransform.class, DexTransform.class));
+                    mtlTransformContextList.add(new MtlTransformContext(ClassInjectTransform.class,
+                                                                        ProGuardTransform.class,  DexTransform.class));
                 }
 
                 if (!mtlTransformContextList.isEmpty()) {

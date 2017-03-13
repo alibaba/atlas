@@ -228,7 +228,7 @@ public class VersionUtils {
             versionName = variantOutputData.getVersionName();
         }
         if (null == versionName) {
-            versionName = variantOutputData.getScope().getVariantConfiguration().getVersionName();
+            versionName = variantOutputData.getScope().getVariantScope().getVariantConfiguration().getVersionName();
         }
         if (null == versionName) {
             try {
