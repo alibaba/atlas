@@ -20,7 +20,7 @@ dependencies {
     compile "commons-lang:commons-lang:2.6"
     compile "com.alibaba:fastjson:1.2.6"
     compile 'com.google.guava:guava:17.0'
-    compile 'dom4j:dom4j:2.0'
+    compile 'org.dom4j:dom4j:2.0.0'
     compile 'jaxen:jaxen:1.1.6'
     compile 'commons-beanutils:commons-beanutils:1.8.3'
     compile 'org.javassist:javassist:3.19.0-GA'
