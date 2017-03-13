@@ -783,8 +783,9 @@ public final class Framework {
                                         targetDir.mkdirs();
                                         result =  newRevDir.renameTo(targetDir);
                                         new File(walBundleDir,"meta").renameTo(meta);
-                                        if(!result || !targetDir.exists()){
+                                        if(!result || !targetDir.exists() || !meta.exists()){
                                             BaselineInfoManager.instance().rollbackHardly();
+                                            android.os.Process.killProcess(android.os.Process.myPid());
                                         }
                                     }else{
                                         //remove old bundles

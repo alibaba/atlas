@@ -210,19 +210,8 @@ package android.taobao.atlas.runtime;
 
 import android.content.Context;
 
-/**
- * Created by guanjie on 2016/12/1.
- *
- * preLaunch Class 内import的所有class以及他们关联的所有class将无法参与动态部署和热修复,
- * 请小心使用
- */
 
 public interface AtlasPreLauncher {
 
-    /**
-     * 请注意不要引用到自己需要初始化的SDK之外的class,一旦依赖进来,会导致被依赖的class
-     * 无法参与动态部署和热修复
-     * @param context
-     */
     void initBeforeAtlas(final Context context);
 }
