@@ -248,6 +248,8 @@ public class ManifestOptions {
     @JSONField(serialize = false)
     private boolean addMultiDexMetaData;
 
+    private boolean removeProvider = false;
+
 
     @Input
     private Set<String> notMergedBundles = Sets.newHashSet();
@@ -382,6 +384,13 @@ public class ManifestOptions {
         this.addMultiDexMetaData = addMultiDexMetaData;
     }
 
+    public boolean isRemoveProvider() {
+        return removeProvider;
+    }
+
+    public void setRemoveProvider(boolean removeProvider) {
+        this.removeProvider = removeProvider;
+    }
 
     public String toString() {
         return "ManifestOptionsImpl{" +

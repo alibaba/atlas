@@ -206,104 +206,47 @@
  *
  */
 
-package com.taobao.android.builder.extension;
+package com.taobao.android.builder.dependency.model;
 
-import org.apache.commons.lang.StringUtils;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.MavenCoordinates;
+
+import java.io.File;
 
 /**
- * Created by wuzhong on 2016/11/24.
+ * Created by shenghua.nish on 2016-05-04 下午3:41.
  */
-public class UpdateConfig {
+public class ApLibrary {
 
-    public boolean enabled = false;
+    @Nullable
+    private final MavenCoordinates mResolvedCoordinates;
 
+    @NonNull
+    private final File mApFile;
     /**
-     * 产品标识 , 如： taobao4android
+     * 解压的文件夹
      */
-    public String productName;
+    private File mApFolder;
 
-    private String updateBundleDependency;
-    public String sdkName = "com.taobao.tao.update:open-update";
-    public String sdkVersion = "2.8.2.9";
-    public String sdkType = "awb";
-    public String sdkPkgName = "com.android.update";
-
-    public int delayStartUp;
-
-    public boolean outApp = false;
-
-    public boolean isEnabled() {
-        return enabled;
+    @NonNull
+    public File getFolder() {
+        return mApFolder;
     }
 
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+    public ApLibrary(@Nullable MavenCoordinates mResolvedCoordinates, File mApFile, File mApFolder){
+        this.mResolvedCoordinates = mResolvedCoordinates;
+        this.mApFile = mApFile;
+        this.mApFolder = mApFolder;
     }
 
-    public String getProductName() {
-        return productName;
+    public File getApFile() {
+        return mApFile;
     }
 
-    public boolean isOutApp() {
-        return outApp;
+    @Nullable
+    public MavenCoordinates getResolvedCoordinates() {
+        return mResolvedCoordinates;
     }
 
-    public void setOutApp(boolean outApp) {
-        this.outApp = outApp;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public String getUpdateBundleDependency() {
-        if (StringUtils.isEmpty(updateBundleDependency)){
-            updateBundleDependency = sdkName + ":" + sdkVersion + "@" + sdkType;
-         }
-        return updateBundleDependency;
-    }
-
-    public void setUpdateBundleDependency(String updateBundleDependency) {
-        this.updateBundleDependency = updateBundleDependency;
-    }
-
-    public int getDelayStartUp() {
-        return delayStartUp;
-    }
-
-    public void setDelayStartUp(int delayStartUp) {
-        this.delayStartUp = delayStartUp;
-    }
-
-    public String getSdkName() {
-        return sdkName;
-    }
-
-    public void setSdkName(String sdkName) {
-        this.sdkName = sdkName;
-    }
-
-    public String getSdkVersion() {
-        return sdkVersion;
-    }
-
-    public void setSdkVersion(String sdkVersion) {
-        this.sdkVersion = sdkVersion;
-    }
-
-    public String getSdkType() {
-        return sdkType;
-    }
-
-    public void setSdkType(String sdkType) {
-        this.sdkType = sdkType;
-    }
-
-    public String getSdkPkgName() {
-        return sdkPkgName;
-    }
-
-    public void setSdkPkgName(String sdkPkgName) {
-        this.sdkPkgName = sdkPkgName;
-    }
 }

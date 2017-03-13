@@ -219,16 +219,18 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.VectorDrawablesOptions;
 import com.android.ide.common.res2.ResourceSet;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.gradle.api.GradleException;
+
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -272,7 +274,7 @@ public class MergeAwbResourceConfigAction extends MtlBaseTaskAction<MergeResourc
         VariantScope scope = variantContext.getScope();
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         final AndroidConfig extension = scope.getGlobalScope().getExtension();
-        final VariantConfiguration variantConfig = variantData.getVariantConfiguration();
+        //final VariantConfiguration variantConfig = variantData.getVariantConfiguration();
 
         mergeResourcesTask.setMinSdk(variantData.getVariantConfiguration().getMinSdkVersion().getApiLevel());
 
@@ -280,6 +282,12 @@ public class MergeAwbResourceConfigAction extends MtlBaseTaskAction<MergeResourc
         mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
         GlobalScope globalScope = scope.getGlobalScope();
         mergeResourcesTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
+
+        try {
+            FieldUtils.writeField(mergeResourcesTask,"variantScope", scope ,true);
+        } catch (IllegalAccessException e) {
+            throw new GradleException("exception",e);
+        }
 
         // Libraries use this task twice, once for compilation (with dependencies),
         // where blame is useful, and once for packaging where it is not.
@@ -303,7 +311,7 @@ public class MergeAwbResourceConfigAction extends MtlBaseTaskAction<MergeResourc
 
         mergeResourcesTask.setDisableVectorDrawables(vectorDrawablesOptions.getUseSupportLibrary()
                 || mergeResourcesTask.getGeneratedDensities().isEmpty());
-        mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
+        //mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
         final boolean validateEnabled = AndroidGradleOptions.isResourceValidationEnabled(scope.getGlobalScope().getProject());
         mergeResourcesTask.setValidateEnabled(validateEnabled);
         ConventionMappingHelper.map(mergeResourcesTask, "inputResourceSets", new Callable<List<ResourceSet>>() {
@@ -311,14 +319,14 @@ public class MergeAwbResourceConfigAction extends MtlBaseTaskAction<MergeResourc
             @Override
             public List<ResourceSet> call() throws Exception {
                 List<ResourceSet> resourceSets = Lists.newArrayList();
-                List<LibraryDependency> bundleDeps = awbBundle.getDependencies();
+                List<? extends AndroidLibrary> bundleDeps = awbBundle.getLibraryDependencies();
                 // the list of dependency must be reversed to use the right overlay order.
                 for (int n = bundleDeps.size() - 1; n >= 0; n--) {
-                    LibraryDependency dependency = bundleDeps.get(n);
+                    AndroidLibrary dependency = bundleDeps.get(n);
 
                     File resFolder = dependency.getResFolder();
                     if (resFolder.isDirectory()) {
-                        ResourceSet resourceSet = new ResourceSet(dependency.getFolder().getName());
+                        ResourceSet resourceSet = new ResourceSet(dependency.getFolder().getName(),true);
                         resourceSet.addSource(resFolder);
                         resourceSets.add(resourceSet);
                     }
@@ -326,7 +334,7 @@ public class MergeAwbResourceConfigAction extends MtlBaseTaskAction<MergeResourc
 
                 File awbResourceFolder = awbBundle.getResFolder();
                 if (awbResourceFolder.isDirectory()) {
-                    ResourceSet resourceSet = new ResourceSet(awbBundle.getFolder().getName());
+                    ResourceSet resourceSet = new ResourceSet(awbBundle.getFolder().getName(),true);
                     resourceSet.addSource(awbResourceFolder);
                     resourceSets.add(resourceSet);
                 }

@@ -209,7 +209,7 @@
 package com.taobao.android.builder.dependency.diff;
 
 import com.alibaba.fastjson.JSON;
-import com.taobao.android.builder.dependency.DependencyJson;
+import com.taobao.android.builder.dependency.output.DependencyJson;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;

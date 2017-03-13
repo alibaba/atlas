@@ -225,7 +225,17 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import org.gradle.api.tasks.*;
+
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.StopExecutionException;
+import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.io.IOException;
@@ -243,13 +253,21 @@ import java.util.concurrent.Callable;
 public class AwbDexTask extends BaseTask {
 
     private File outputFolder;
+
     private List<String> additionalParameters;
+
     private Boolean enableIncremental = false;
+
     private Collection<File> inputFiles;
+
     private File inputDir;
+
     private DexOptions dexOptions;
+
     private Boolean multiDexEnabled = false;
+
     private Boolean optimize = true;
+
     private File mainDexListFile;
 
     @OutputDirectory
@@ -346,12 +364,15 @@ public class AwbDexTask extends BaseTask {
         Collection<File> _inputFiles = getInputFiles();
         File _inputDir = getInputDir();
         if (_inputFiles == null && _inputDir == null) {
-            throw new StopExecutionException("Dex task " + getName() + ": inputDir and inputFiles cannot both be null");
+            throw new StopExecutionException("Dex task " +
+                                                     getName() +
+                                                     ": inputDir and inputFiles cannot both be null");
         }
         doTaskAction(_inputFiles, _inputDir, false);
     }
 
-    private void doTaskAction(@Nullable Collection<File> inputFiles, @Nullable File inputDir,
+    private void doTaskAction(@Nullable Collection<File> inputFiles,
+                              @Nullable File inputDir,
                               boolean incremental) throws InterruptedException, ProcessException, IOException {
 
         File outFolder = getOutputFolder();
@@ -368,20 +389,26 @@ public class AwbDexTask extends BaseTask {
         if (inputDir != null) {
             inputFiles = getProject().files(inputDir).getFiles();
         }
-        ProcessOutputHandler outputHandler = new ParsingProcessOutputHandler(new ToolOutputParser(new DexParser(),
+        ProcessOutputHandler outputHandler = new ParsingProcessOutputHandler(new ToolOutputParser(
+                new DexParser(),
                 Message.Kind.ERROR,
                 getILogger()),
-                new ToolOutputParser(new DexParser(),
-                        getILogger()),
-                getBuilder().getErrorReporter());
+                                                                             new ToolOutputParser(
+                                                                                     new DexParser(),
+                                                                                     getILogger()),
+                                                                             getBuilder().getErrorReporter());
 
-        getBuilder().convertByteCode(inputFiles, getOutputFolder(), getMultiDexEnabled(), getMainDexListFile(),
-                getDexOptions(), getAdditionalParameters(), getEnableIncremental(), getOptimize(),
-                outputHandler);
+        getBuilder().convertByteCode(inputFiles,
+                                     getOutputFolder(),
+                                     getMultiDexEnabled(),
+                                     getMainDexListFile(),
+                                     getDexOptions(),
+                                     getOptimize(),
+                                     outputHandler);
     }
 
     protected void emptyFolder(File folder) throws IOException {
-        FileUtils.deleteFolder(folder);
+        FileUtils.deletePath(folder);
         folder.mkdirs();
     }
 
@@ -391,11 +418,15 @@ public class AwbDexTask extends BaseTask {
     public static class ConfigAction extends MtlBaseTaskAction<AwbDexTask> {
 
         private final VariantScope scope;
+
         private final String awbName;
+
         private final AndroidConfig androidConfig;
+
         private final LibVariantContext variantContext;
 
-        public ConfigAction(LibVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(LibVariantContext variantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
             super(variantContext, baseVariantOutputData);
             this.scope = variantContext.getScope();
             this.awbName = variantContext.getAwbBundle().getName();
@@ -418,7 +449,7 @@ public class AwbDexTask extends BaseTask {
             final GradleVariantConfiguration config = variantContext.getVariantConfiguration();
 
             LibVariantContext libVariantContext = (LibVariantContext) variantContext;
-//                libVariantContext.setAwbDexTask(task);
+            //                libVariantContext.setAwbDexTask(task);
             task.setOutputFolder(libVariantContext.getDexFolder());
 
             task.setDexOptions(androidConfig.getDexOptions());
@@ -448,5 +479,4 @@ public class AwbDexTask extends BaseTask {
             task.setVariantName(scope.getVariantData().getName());
         }
     }
-
 }

@@ -267,7 +267,6 @@ public class ApBuildTask extends DefaultAndroidTask {
                           BaseVariantOutputData variantOutputData,
                           AppVariantContext appVariantContext) throws IOException {
 
-        //FIXME
         File jarshrinkLog = new File(variantOutputData.getOutputFile()
                                              .getParentFile()
                                              .getParentFile(), "jar-shrink.log");
@@ -277,6 +276,7 @@ public class ApBuildTask extends DefaultAndroidTask {
                                                            .getBuildDir()) +
                                             "/outputs/mapping/" +
                                             variantOutputData.getScope()
+                                                    .getVariantScope()
                                                     .getVariantConfiguration()
                                                     .getDirName());
 
@@ -300,10 +300,14 @@ public class ApBuildTask extends DefaultAndroidTask {
         addFile(jos, appBuildInfo.getDependenciesFile());
         addFile(jos, appBuildInfo.getBuildInfoFile());
         addFile(jos, appBuildInfo.getVersionPropertiesFile());
-        addFile(jos, appBuildInfo.getBundleInfoFile());
+        //addFile(jos, appBuildInfo.getBundleInfoFile());
 
         for (File file : appBuildInfo.getOtherFiles()) {
             addFile(jos, file);
+        }
+
+        for (String filePath : appBuildInfo.getOtherFilesMap().keySet()) {
+            addFile(jos, filePath, appBuildInfo.getOtherFilesMap().get(filePath));
         }
 
         addFile(jos, jarshrinkLog, jarshrinkLog.getName());
@@ -354,11 +358,15 @@ public class ApBuildTask extends DefaultAndroidTask {
     }
 
     private void addFile(JarOutputStream jos, File file) {
+        String entryName = file.getName();
+        addFile(jos, entryName, file);
+    }
+
+    private void addFile(JarOutputStream jos, String path, File file) {
         if (null == file || !file.exists()) {
             return;
         }
-        String entryName = file.getName();
-        addFile(jos, file, entryName);
+        addFile(jos, file, path);
     }
 
     /**

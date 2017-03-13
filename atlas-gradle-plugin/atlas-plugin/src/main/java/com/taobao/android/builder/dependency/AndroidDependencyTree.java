@@ -208,15 +208,24 @@
 
 package com.taobao.android.builder.dependency;
 
-import com.android.build.gradle.internal.dependency.JarInfo;
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.taobao.android.builder.dependency.*;
+import com.taobao.android.builder.dependency.model.AarBundle;
+import com.taobao.android.builder.dependency.model.ApLibrary;
+import com.taobao.android.builder.dependency.model.ApkLibrary;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
+import com.taobao.android.builder.dependency.output.DependencyJson;
+
 import org.apache.commons.lang.StringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Android的编译的依赖库
@@ -234,13 +243,19 @@ public class AndroidDependencyTree {
         this.mResolvedDependencies = mResolvedDependencies;
     }
 
-    private List<AarBundle>              aarBundles            = Lists.newArrayList();
-    private List<JarInfo>                jars                  = Lists.newArrayList();
-    private List<JarInfo>                localJars             = Lists.newArrayList();
-    private List<AwbBundle>              awbBundles            = Lists.newArrayList();
-    private List<SoLibrary>              soLibraries           = Lists.newArrayList();
-    private List<ApLibrary>              apLibraries           = Lists.newArrayList();
-    private List<ApkLibrary>             apkLibraries          = Lists.newArrayList();
+    private List<AarBundle> aarBundles = Lists.newArrayList();
+
+    private List<JavaLibrary> jars = Lists.newArrayList();
+
+    private List<JavaLibrary> localJars = Lists.newArrayList();
+
+    private List<AwbBundle> awbBundles = Lists.newArrayList();
+
+    private List<SoLibrary> soLibraries = Lists.newArrayList();
+
+    private List<ApLibrary> apLibraries = Lists.newArrayList();
+
+    private List<ApkLibrary> apkLibraries = Lists.newArrayList();
 
     public List<AarBundle> getAarBundles() {
         return aarBundles;
@@ -274,19 +289,19 @@ public class AndroidDependencyTree {
         this.apLibraries = apLibraries;
     }
 
-    public List<JarInfo> getJars() {
+    public List<JavaLibrary> getJars() {
         return jars;
     }
 
-    public void setJars(List<JarInfo> jars) {
+    public void setJars(List<JavaLibrary> jars) {
         this.jars = jars;
     }
 
-    public List<JarInfo> getLocalJars() {
+    public List<JavaLibrary> getLocalJars() {
         return localJars;
     }
 
-    public void setLocalJars(List<JarInfo> localJars) {
+    public void setLocalJars(List<JavaLibrary> localJars) {
         this.localJars = localJars;
     }
 
@@ -307,12 +322,11 @@ public class AndroidDependencyTree {
      *
      * @return
      */
-    public List<ManifestDependencyImpl> getMainApkManifestDependencies() {
-        List<ManifestDependencyImpl> manifestDependencies = Lists.newArrayListWithCapacity(aarBundles.size());
+    public List<AndroidLibrary> getMainApkManifestDependencies() {
+        List<AndroidLibrary> manifestDependencies = Lists.newArrayListWithCapacity(aarBundles.size());
         for (AarBundle aarBundle : aarBundles) {
             if (!aarBundle.isOptional()) {
-                manifestDependencies.add(new ManifestDependencyImpl(aarBundle.getName(), aarBundle.getManifest(),
-                        Collections.<ManifestDependencyImpl>emptyList()));
+                manifestDependencies.add(aarBundle);
             }
         }
         return manifestDependencies;
@@ -323,29 +337,23 @@ public class AndroidDependencyTree {
      *
      * @return
      */
-    public Map<String, ManifestDependencyImpl> getAwbManifestDependencies() {
-        Map<String, ManifestDependencyImpl> maps = Maps.newHashMap();
+    public Map<String, AndroidLibrary> getAwbManifestDependencies() {
+        Map<String, AndroidLibrary> maps = Maps.newHashMap();
         for (AwbBundle awbBundle : awbBundles) {
             if (!awbBundle.isOptional()) {
-                List<ManifestDependencyImpl> children = getManifestDependencies(awbBundle.getDependencies());
-                ManifestDependencyImpl awbManifestDependency = new ManifestDependencyImpl(awbBundle.getName(),
-                        awbBundle.getManifest(),
-                        children);
-                maps.put(awbBundle.getName(), awbManifestDependency);
+                maps.put(awbBundle.getName(), awbBundle);
             }
         }
         return maps;
     }
 
-    private List<ManifestDependencyImpl> getManifestDependencies(List<LibraryDependency> libraries) {
+    private List<AndroidLibrary> getManifestDependencies(List<? extends AndroidLibrary> libraries) {
 
-        List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
+        List<AndroidLibrary> list = Lists.newArrayListWithCapacity(libraries.size());
 
-        for (LibraryDependency lib : libraries) {
+        for (AndroidLibrary lib : libraries) {
             if (!lib.isOptional()) {
-                // get the dependencies
-                List<ManifestDependencyImpl> children = getManifestDependencies(lib.getDependencies());
-                list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
+                list.add(lib);
             }
         }
 
@@ -421,8 +429,8 @@ public class AndroidDependencyTree {
                 dependencies.addAll(aarBundle.getSoLibraries());
             }
             List<AarBundle> nextBundles = new ArrayList<AarBundle>();
-            if (null != aarBundle.getDependencies()) {
-                for (LibraryDependency libraryDependency : aarBundle.getDependencies()) {
+            if (null != aarBundle.getLibraryDependencies()) {
+                for (AndroidLibrary libraryDependency : aarBundle.getLibraryDependencies()) {
                     if (libraryDependency instanceof AarBundle) {
                         nextBundles.add((AarBundle) libraryDependency);
                     }
@@ -432,7 +440,6 @@ public class AndroidDependencyTree {
                 addSoLib(nextBundles, dependencies);
             }
         }
-
     }
 
     public Set<AarBundle> getALLAarDependencies() {
@@ -457,8 +464,8 @@ public class AndroidDependencyTree {
             }
 
             List<AarBundle> nextBundles = new ArrayList<AarBundle>();
-            if (null != aarBundle.getDependencies()) {
-                for (LibraryDependency libraryDependency : aarBundle.getDependencies()) {
+            if (null != aarBundle.getLibraryDependencies()) {
+                for (AndroidLibrary libraryDependency : aarBundle.getLibraryDependencies()) {
                     if (libraryDependency.getClass().equals(AarBundle.class)) {
                         nextBundles.add((AarBundle) libraryDependency);
                     }
@@ -469,9 +476,7 @@ public class AndroidDependencyTree {
                 addAarList(nextBundles, dependencies);
             }
         }
-
     }
-
 
     public Set<String> getFlatDependencies() {
 
@@ -488,5 +493,4 @@ public class AndroidDependencyTree {
         depenSets.addAll(dependencyJson.getMainDex());
         return depenSets;
     }
-
 }

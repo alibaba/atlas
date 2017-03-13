@@ -1,6 +1,6 @@
 ## atlasplugin
 
-支持 atlas 工程打包的gradle 插件， 基于 google 官方的 android builder （2.0.0~2.1.0）
+支持 atlas 工程打包的gradle 插件， 基于 google 官方的 android builder （2.2.3）
 
 ### 基本概念
 
@@ -25,18 +25,18 @@
 		        jcenter()
 		    }
 		    dependencies {
-		        classpath "com.taobao.android:atlasplugin:1.0.1"
+		        classpath "com.taobao.android:atlasplugin:2.2.3.rc4"
 		    }
 		}
-		
-	注意尽量不要指定 classpath "com.android.tools.build:gradle"的版本，默认使用的是 2.1
+
+	注意尽量不要指定 classpath "com.android.tools.build:gradle"的版本，默认使用的是 2.2.3
 
 2. 应用plugin
 
 		apply plugin: 'com.taobao.atlas.application'
-		
+
 	注意不能同时 apply com.android.application
-	
+
 3. 配置打包参数， 具体见 `配置`
 
 4. 执行构建 ./gradlew assembleDebug 或者 assembleRelease
@@ -50,7 +50,7 @@
 	5. build/outputs/packageIdFile.properties , 每个bundle对应的packageId 列表
 	6. build/outputs/tpatch-debug , debug 包 patch产物
 	7. build/outputs/tpatch-release , release 包 patch产物
-	
+
 
 ### 配置
 

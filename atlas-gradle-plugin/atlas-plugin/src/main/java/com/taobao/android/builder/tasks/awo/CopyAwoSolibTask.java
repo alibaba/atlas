@@ -216,11 +216,12 @@ import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.dependency.LibraryDependency;
-import com.taobao.android.builder.dependency.AwbBundle;
-import com.taobao.android.builder.dependency.SoLibrary;
+import com.android.builder.model.AndroidLibrary;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.solib.NativeSoUtils;
+
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
@@ -242,7 +243,6 @@ public class CopyAwoSolibTask extends BaseTask {
     @TaskAction
     public void doFullTaskAction() {
 
-
         if (!outputDir.exists()) {
             outputDir.mkdirs();
         }
@@ -253,31 +253,46 @@ public class CopyAwoSolibTask extends BaseTask {
         //为了兼容之前老的aar，awb格式
         File libJniFolder = new File(awbBundle.getFolder(), "libs");
         if (libJniFolder.exists() && libJniFolder.isDirectory()) {
-            NativeSoUtils.copyLocalNativeLibraries(libJniFolder, outputDir,
-                    supportAbis, removeSoFiles, getILogger());
+            NativeSoUtils.copyLocalNativeLibraries(libJniFolder,
+                                                   outputDir,
+                                                   supportAbis,
+                                                   removeSoFiles,
+                                                   getILogger());
         }
         File libJniFolder2 = new File(awbBundle.getFolder(), "jni");
         if (libJniFolder2.exists() && libJniFolder2.isDirectory()) {
-            NativeSoUtils.copyLocalNativeLibraries(libJniFolder2, outputDir,
-                    supportAbis, removeSoFiles, getILogger());
+            NativeSoUtils.copyLocalNativeLibraries(libJniFolder2,
+                                                   outputDir,
+                                                   supportAbis,
+                                                   removeSoFiles,
+                                                   getILogger());
         }
         File libJniFolder3 = new File(awbBundle.getFolder(), "jniLibs");
         if (libJniFolder3.exists() && libJniFolder3.isDirectory()) {
-            NativeSoUtils.copyLocalNativeLibraries(libJniFolder3, outputDir,
-                    supportAbis, removeSoFiles, getILogger());
+            NativeSoUtils.copyLocalNativeLibraries(libJniFolder3,
+                                                   outputDir,
+                                                   supportAbis,
+                                                   removeSoFiles,
+                                                   getILogger());
         }
-        List<LibraryDependency> deps = awbBundle.getDependencies();
-        for (LibraryDependency dep : deps) {
+        List<? extends AndroidLibrary> deps = awbBundle.getLibraryDependencies();
+        for (AndroidLibrary dep : deps) {
             File depJniFolder = dep.getJniFolder();
             if (depJniFolder.exists() && depJniFolder.isDirectory()) {
-                NativeSoUtils.copyLocalNativeLibraries(depJniFolder, outputDir,
-                        supportAbis, removeSoFiles, getILogger());
+                NativeSoUtils.copyLocalNativeLibraries(depJniFolder,
+                                                       outputDir,
+                                                       supportAbis,
+                                                       removeSoFiles,
+                                                       getILogger());
             }
             //为了兼容之前老的aar，awb格式
             File depLibsFolder = new File(dep.getFolder(), "libs");
             if (depLibsFolder.exists() && depLibsFolder.isDirectory()) {
-                NativeSoUtils.copyLocalNativeLibraries(depLibsFolder, outputDir,
-                        supportAbis, removeSoFiles, getILogger());
+                NativeSoUtils.copyLocalNativeLibraries(depLibsFolder,
+                                                       outputDir,
+                                                       supportAbis,
+                                                       removeSoFiles,
+                                                       getILogger());
             }
         }
 
@@ -291,21 +306,24 @@ public class CopyAwoSolibTask extends BaseTask {
                 }
 
                 if (explodeFolder.exists() && explodeFolder.isDirectory()) {
-                    NativeSoUtils.copyLocalNativeLibraries(explodeFolder, outputDir,
-                            supportAbis, removeSoFiles, getILogger());
+                    NativeSoUtils.copyLocalNativeLibraries(explodeFolder,
+                                                           outputDir,
+                                                           supportAbis,
+                                                           removeSoFiles,
+                                                           getILogger());
                 }
             }
         }
-
-
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<CopyAwoSolibTask> {
 
         private final AwbBundle awbBundle;
+
         private final LibVariantContext libVariantContext;
 
-        public ConfigAction(LibVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(LibVariantContext variantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
             super(variantContext, baseVariantOutputData);
             this.libVariantContext = variantContext;
             this.awbBundle = variantContext.getAwbBundle();
@@ -323,21 +341,17 @@ public class CopyAwoSolibTask extends BaseTask {
             return CopyAwoSolibTask.class;
         }
 
-
         @Override
         public void execute(@NonNull CopyAwoSolibTask copyAwoSolibTask) {
 
-
-//            final File mainJniOutputFolder = libVariantContext.getBaseVariantData().ndkCompileTask.getSoFolder();
+            //            final File mainJniOutputFolder = libVariantContext.getBaseVariantData().ndkCompileTask.getSoFolder();
             copyAwoSolibTask.outputDir = new File(awbBundle.getJniFolder(), "lib");
 
             copyAwoSolibTask.awbBundle = awbBundle;
 
-            final VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> config =
-                    libVariantContext.getVariantConfiguration();
+            final VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> config = libVariantContext
+                    .getVariantConfiguration();
             copyAwoSolibTask.setVariantName(config.getFullName());
-
         }
-
     }
 }

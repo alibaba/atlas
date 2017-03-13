@@ -555,7 +555,7 @@ public class ZipUtils {
             if (pattern.matcher(name).find()) {
                 continue;
             }
-            out.putNextEntry(new ZipEntry(name));
+            out.putNextEntry(zipEntry);
             inputStream = zipFile.getInputStream(zipEntry);
             write(inputStream, out, buffer);
             bo.flush();

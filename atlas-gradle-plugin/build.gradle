@@ -42,7 +42,7 @@ subprojects{
 
     group = 'com.taobao.android'
 
-    version = '1.0.10.4'
+    version = '2.2.3.rc4'
 
     tasks.withType(JavaCompile) {
         sourceCompatibility = 1.8

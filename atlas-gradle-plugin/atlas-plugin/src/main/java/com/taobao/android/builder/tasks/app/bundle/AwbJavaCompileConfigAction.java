@@ -212,8 +212,6 @@ import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.dependency.JarInfo;
-import com.android.build.gradle.internal.dependency.LibInfo;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -222,7 +220,8 @@ import com.android.build.gradle.tasks.factory.AbstractCompilesUtil;
 import com.android.builder.model.SyncIssue;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -238,11 +237,15 @@ import java.util.concurrent.Callable;
 public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
 
     private static final ILogger LOG = LoggerWrapper.getLogger(AwbJavaCompileConfigAction.class);
+
     private AwbBundle awbBundle;
+
     private AppVariantOutputContext appVariantOutputContext;
+
     private VariantOutputScope scope;
 
-    public AwbJavaCompileConfigAction(AwbBundle awbBundle, AppVariantOutputContext appVariantOutputContext) {
+    public AwbJavaCompileConfigAction(AwbBundle awbBundle,
+                                      AppVariantOutputContext appVariantOutputContext) {
         this.awbBundle = awbBundle;
         this.appVariantOutputContext = appVariantOutputContext;
         this.scope = appVariantOutputContext.getOutputScope();
@@ -266,13 +269,14 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
     @Override
     public void execute(JavaCompile javacTask) {
         appVariantOutputContext.getAwbJavacTasks().put(awbBundle.getName(), javacTask);
-        ProcessAwbAndroidResources processAwbAndroidResources = appVariantOutputContext.getAwbAndroidResourcesMap().get(awbBundle.getName());
+        ProcessAwbAndroidResources processAwbAndroidResources = appVariantOutputContext.getAwbAndroidResourcesMap()
+                .get(awbBundle.getName());
         assert null != processAwbAndroidResources;
 
         javacTask.source(processAwbAndroidResources.getSourceOutputDir());
         if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
-            javacTask.source(appVariantOutputContext.getVariantContext().getAwbClassOutputForDataBinding(awbBundle));
-
+            javacTask.source(appVariantOutputContext.getVariantContext()
+                                     .getAwbClassOutputForDataBinding(awbBundle));
         }
 
         ConventionMappingHelper.map(javacTask, "classpath", new Callable<FileCollection>() {
@@ -283,14 +287,12 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
                 Set<File> dependencies = new HashSet<File>();
                 dependencies.addAll(classpath.getFiles());
                 //增加awb的依赖
-                dependencies.add(awbBundle.getJarFile());
-                for (JarInfo jarInfo : awbBundle.getJarDependencies()) {
-                    dependencies.add(jarInfo.getJarFile());
-                }
-                for (LibInfo libInfo : awbBundle.getLibInfoDependencies()) {
-                    dependencies.add(libInfo.getJarFile());
-                }
-                FileCollection allClassPatch = appVariantOutputContext.getVariantContext().getProject().files(dependencies);
+
+                dependencies.addAll(awbBundle.getLibraryJars());
+
+                FileCollection allClassPatch = appVariantOutputContext.getVariantContext()
+                        .getProject()
+                        .files(dependencies);
                 return allClassPatch;
             }
         });
@@ -298,12 +300,19 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         javacTask.setDestinationDir(appVariantOutputContext.getJAwbavaOutputDir(awbBundle));
         javacTask.setDependencyCacheDir(appVariantOutputContext.getAwbJavaDependencyCache(awbBundle));
         CompileOptions compileOptions = scope.getGlobalScope().getExtension().getCompileOptions();
-        AbstractCompilesUtil.configureLanguageLevel(javacTask, compileOptions,
-                scope.getGlobalScope().getExtension().getCompileSdkVersion(),
-                false);
+        AbstractCompilesUtil.configureLanguageLevel(javacTask,
+                                                    compileOptions,
+                                                    scope.getGlobalScope()
+                                                            .getExtension()
+                                                            .getCompileSdkVersion(),
+                                                    false);
         javacTask.getOptions().setEncoding(compileOptions.getEncoding());
 
-        javacTask.getOptions().setBootClasspath(Joiner.on(File.pathSeparator).join(scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings(false)));
+        javacTask.getOptions()
+                .setBootClasspath(Joiner.on(File.pathSeparator)
+                                          .join(scope.getGlobalScope()
+                                                        .getAndroidBuilder()
+                                                        .getBootClasspathAsStrings(false)));
         GlobalScope globalScope = scope.getGlobalScope();
         Project project = globalScope.getProject();
 
@@ -322,13 +331,18 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
             // }
         }
         if (AndroidGradleOptions.isJavaCompileIncrementalPropertySet(project)) {
-            scope.getGlobalScope().getAndroidBuilder().getErrorReporter().handleSyncError(null, SyncIssue.TYPE_GENERIC,
-                    String.format("The %s property has been replaced by a DSL property. Please add the "
-                                    + "following to your build.gradle instead:\n"
-                                    + "android {\n"
-                                    + "  compileOptions.incremental = false\n"
-                                    + "}",
-                            AndroidGradleOptions.PROPERTY_INCREMENTAL_JAVA_COMPILE));
+            scope.getGlobalScope()
+                    .getAndroidBuilder()
+                    .getErrorReporter()
+                    .handleSyncError(null,
+                                     SyncIssue.TYPE_GENERIC,
+                                     String.format(
+                                             "The %s property has been replaced by a DSL property. Please add the " +
+                                                     "following to your build.gradle instead:\n" +
+                                                     "android {\n" +
+                                                     "  compileOptions.incremental = false\n" +
+                                                     "}",
+                                             AndroidGradleOptions.PROPERTY_INCREMENTAL_JAVA_COMPILE));
         }
 
         if (incremental) {

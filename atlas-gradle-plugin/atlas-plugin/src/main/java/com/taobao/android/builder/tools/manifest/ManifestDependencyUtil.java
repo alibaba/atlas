@@ -208,9 +208,9 @@
 
 package com.taobao.android.builder.tools.manifest;
 
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.Lists;
+
 import org.gradle.api.logging.Logger;
 
 import java.util.List;
@@ -221,19 +221,55 @@ import java.util.Set;
  */
 public class ManifestDependencyUtil {
 
-    public static List<ManifestDependencyImpl> getManifestDependencies(
-            List<? extends LibraryDependency> libraries, Set<String> notMergedArtifacts, Logger logger) {
+    //public static List<ManifestDependencyImpl> getManifestDependencies(List<? extends LibraryDependency> libraries,
+    //                                                                   Set<String> notMergedArtifacts,
+    //                                                                   Logger logger) {
+    //
+    //    List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
+    //
+    //    for (LibraryDependency lib : libraries) {
+    //        // get the dependencies
+    //        List<ManifestDependencyImpl> children = ManifestDependencyUtil.getManifestDependencies(
+    //                lib.getDependencies(),
+    //                notMergedArtifacts,
+    //                logger);
+    //
+    //        // [vliux] respect manifestOption.notMergedBundle
+    //        String cord = String.format("%s:%s",
+    //                                    lib.getResolvedCoordinates().getGroupId(),
+    //                                    lib.getResolvedCoordinates().getArtifactId());
+    //        if (null == notMergedArtifacts || !notMergedArtifacts.contains(cord)) {
+    //            list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
+    //        } else {
+    //            logger.info("[NotMergedManifest] " + cord);
+    //        }
+    //    }
+    //
+    //    return list;
+    //}
 
-        List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
+    public static List<? extends AndroidLibrary> getManifestDependencies(List<? extends AndroidLibrary> libraries,
+                                                                         Set<String> notMergedArtifacts,
+                                                                         Logger logger) {
 
-        for (LibraryDependency lib : libraries) {
+        List<AndroidLibrary> list = Lists.newArrayListWithCapacity(libraries.size());
+
+        for (AndroidLibrary lib : libraries) {
             // get the dependencies
-            List<ManifestDependencyImpl> children = ManifestDependencyUtil.getManifestDependencies(lib.getDependencies(), notMergedArtifacts, logger);
+            List<? extends AndroidLibrary> children = ManifestDependencyUtil.getManifestDependencies(
+                    lib.getLibraryDependencies(),
+                    notMergedArtifacts,
+                    logger);
 
             // [vliux] respect manifestOption.notMergedBundle
-            String cord = String.format("%s:%s", lib.getResolvedCoordinates().getGroupId(), lib.getResolvedCoordinates().getArtifactId());
+            String cord = String.format("%s:%s",
+                                        lib.getResolvedCoordinates().getGroupId(),
+                                        lib.getResolvedCoordinates().getArtifactId());
             if (null == notMergedArtifacts || !notMergedArtifacts.contains(cord)) {
-                list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
+                list.add(lib);
+                if (null != children) {
+                    list.addAll(children);
+                }
             } else {
                 logger.info("[NotMergedManifest] " + cord);
             }
@@ -241,5 +277,4 @@ public class ManifestDependencyUtil {
 
         return list;
     }
-
 }

@@ -208,14 +208,14 @@
 
 package com.taobao.android.builder.dependency;
 
-import com.android.build.gradle.internal.dependency.JarInfo;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.google.common.collect.Lists;
-import com.taobao.android.builder.dependency.AarBundle;
-import com.taobao.android.builder.dependency.ApLibrary;
-import com.taobao.android.builder.dependency.ApkLibrary;
-import com.taobao.android.builder.dependency.AwbBundle;
-import com.taobao.android.builder.dependency.SoLibrary;
+import com.taobao.android.builder.dependency.model.AarBundle;
+import com.taobao.android.builder.dependency.model.ApLibrary;
+import com.taobao.android.builder.dependency.model.ApkLibrary;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
 
 import java.util.List;
 
@@ -226,8 +226,10 @@ import java.util.List;
 public class DependencyTree {
 
     private List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
-    private final static String          SEQ                   = "+---";
-    private final static String          BLANK                 = "   ";
+
+    private final static String SEQ = "+---";
+
+    private final static String BLANK = "   ";
 
     public void clear() {
         mResolvedDependencies.clear();
@@ -253,7 +255,9 @@ public class DependencyTree {
         return sb.toString();
     }
 
-    private void toStr(StringBuilder sb, ResolvedDependencyInfo resolvedDependencyInfo, String tab) {
+    private void toStr(StringBuilder sb,
+                       ResolvedDependencyInfo resolvedDependencyInfo,
+                       String tab) {
         if (tab.length() > 0) {
             sb.append("|");
         }
@@ -262,26 +266,28 @@ public class DependencyTree {
         for (ResolvedDependencyInfo child : resolvedDependencyInfo.getChildren()) {
             toStr(sb, child, tab);
         }
-
     }
 
     /**
      * 转换为Android的依赖
+     *
      * @return
      */
     public AndroidDependencyTree toAndroidDependency() {
-        AndroidDependencyTree androidDependencyTree = new AndroidDependencyTree(mResolvedDependencies);
+        AndroidDependencyTree androidDependencyTree = new AndroidDependencyTree(
+                mResolvedDependencies);
         for (ResolvedDependencyInfo dependencyInfo : mResolvedDependencies) {
             switch (DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
                 case AAR:
                     AarBundle aarBundle = DependencyConvertUtils.toAarBundle(dependencyInfo);
                     androidDependencyTree.getAarBundles().add(aarBundle);
-                    for(LibraryDependency libraryDependency: aarBundle.getDependencies()){
-                        if(libraryDependency instanceof  AarBundle){
-                            androidDependencyTree.getAarBundles().add((AarBundle)libraryDependency);
+                    for (AndroidLibrary libraryDependency : aarBundle.getLibraryDependencies()) {
+                        if (libraryDependency instanceof AarBundle) {
+                            androidDependencyTree.getAarBundles()
+                                    .add((AarBundle) libraryDependency);
                         }
                     }
-                    androidDependencyTree.getJars().addAll(aarBundle.getJarDependencies());
+                    androidDependencyTree.getJars().addAll(aarBundle.getJavaDependencies());
                     androidDependencyTree.getSoLibraries().addAll(aarBundle.getSoLibraries());
                     break;
                 case AWB:
@@ -289,7 +295,7 @@ public class DependencyTree {
                     androidDependencyTree.getAwbBundles().add(awbBundle);
                     break;
                 case JAR:
-                    JarInfo jarInfo = DependencyConvertUtils.toJarDependency(dependencyInfo);
+                    JavaLibrary jarInfo = DependencyConvertUtils.toJarDependency(dependencyInfo);
                     androidDependencyTree.getJars().add(jarInfo);
                     androidDependencyTree.getJars().addAll(jarInfo.getDependencies());
                     break;

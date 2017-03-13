@@ -217,7 +217,6 @@ import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
 import com.google.common.base.Joiner;
-import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
@@ -231,6 +230,7 @@ import org.gradle.api.tasks.TaskCollection;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 

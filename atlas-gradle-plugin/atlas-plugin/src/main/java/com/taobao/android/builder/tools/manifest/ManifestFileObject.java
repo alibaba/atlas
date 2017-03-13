@@ -221,10 +221,14 @@ import java.util.Map;
  * Created by shenghua.nish on 2015-04-22 上午11:06.
  */
 public class ManifestFileObject {
+
     private Map<String,String> manifestProperties = new HashMap<String, String>();
     private Map<String,String> applicationProperties = new HashMap<String, String>();
     private Map<String,String> useSdkProperties = new HashMap<String, String>();
     private File manifestFile;
+
+    Map<String,String> replaceApplicationAttribute = new HashMap<>();
+    List<String> removeApplicationAttribute = new ArrayList<>();
 
     public File getManifestFile() {
         return manifestFile;
@@ -274,11 +278,16 @@ public class ManifestFileObject {
         this.useSdkProperties = useSdkProperties;
     }
 
+    public void init(){
+        this.replaceApplicationAttribute.putAll(_getReplaceApplicationAttribute());
+        this.removeApplicationAttribute.addAll(_getRemoveApplicationAttribute());
+    }
+
     /**
      * 获取需要替换的属性
      * @return
      */
-    public Map<String,String> getReplaceApplicationAttribute(){
+    public Map<String,String> _getReplaceApplicationAttribute(){
         Map<String,String> replaceAttrMap = new HashMap<String,String>();
         //首先判断有没有replace属性
         if(applicationProperties.containsKey("tools:replace")){
@@ -303,7 +312,7 @@ public class ManifestFileObject {
      * 获取需要删除的属性
      * @return
      */
-    public List<String> getRemoveApplicationAttribute(){
+    public List<String> _getRemoveApplicationAttribute(){
         List<String> removeAttrList = new ArrayList<String>();
         //首先判断有没有replace属性
         if(applicationProperties.containsKey("tools:remove")){
@@ -316,6 +325,14 @@ public class ManifestFileObject {
             }
         }
         return removeAttrList;
+    }
+
+    public Map<String, String> getReplaceApplicationAttribute() {
+        return replaceApplicationAttribute;
+    }
+
+    public List<String> getRemoveApplicationAttribute() {
+        return removeApplicationAttribute;
     }
 
     @Override

@@ -206,67 +206,60 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.dependency.model;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.MavenCoordinates;
+
+import java.io.File;
 
 /**
- * Dependency的依赖关系
- * @author shenghua.nish 2014年12月9日 下午3:14:05
+ * Solib的依赖
+ * Created by shenghua.nish on 2016-05-03 下午4:18.
  */
-public class DependencyJson implements Serializable{
-    private List<String> mainDex = new LinkedList<String>();
-    private Map<String, ArrayList<String>> awbs    = new HashMap<String, ArrayList<String>>();
+public class SoLibrary{
+
+    @Nullable
+    private final MavenCoordinates mResolvedCoordinates;
+
+    @NonNull
+    private final File mSoLibFile;
 
     /**
-     * @return the mainDex
+     * 解压的文件夹
      */
-    public List<String> getMainDex() {
-        return mainDex;
+    private File mSoLibFolder;
+
+    @NonNull
+    public File getFolder() {
+        return mSoLibFolder;
     }
 
-    /**
-     * @param mainDex the mainDex to set
-     */
-    public void setMainDex(List<String> mainDex) {
-        this.mainDex = mainDex;
+    public SoLibrary(@Nullable MavenCoordinates mResolvedCoordinates, File mSoLibFile, File mSoLibFolder){
+        this.mResolvedCoordinates = mResolvedCoordinates;
+        this.mSoLibFile = mSoLibFile;
+        this.mSoLibFolder = mSoLibFolder;
     }
 
-    /**
-     * @return the awbs
-     */
-    public Map<String, ArrayList<String>> getAwbs() {
-        return awbs;
+    public File getSoLibFile() {
+        return mSoLibFile;
     }
 
-    /**
-     * @param awbs the awbs to set
-     */
-    public void setAwbs(Map<String, ArrayList<String>> awbs) {
-        this.awbs = awbs;
+    public String getName(){
+        return mResolvedCoordinates.getArtifactId()+"@" + mResolvedCoordinates.getPackaging();
+    }
+
+    public MavenCoordinates getResolvedCoordinates() {
+        return mResolvedCoordinates;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        DependencyJson that = (DependencyJson) o;
-
-        if (mainDex != null ? !mainDex.equals(that.mainDex) : that.mainDex != null) return false;
-        return awbs != null ? awbs.equals(that.awbs) : that.awbs == null;
-
-    }
-
-    @Override
-    public int hashCode() {
-        int result = mainDex != null ? mainDex.hashCode() : 0;
-        result = 31 * result + (awbs != null ? awbs.hashCode() : 0);
-        return result;
+    public String toString() {
+        return "SoLib{" +
+                "mResolvedCoordinates=" + mResolvedCoordinates +
+                ", mSoLibFile=" + mSoLibFile +
+                ", mSoLibFolder=" + mSoLibFolder +
+                '}';
     }
 }
