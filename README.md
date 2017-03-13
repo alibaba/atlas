@@ -1,11 +1,3 @@
-# Atlas
-
- atlas-core[![Download](https://api.bintray.com/packages/alibabaatlas/maven/atlas/images/download.svg)](https://bintray.com/alibabaatlas/maven/atlas/_latestVersion)
- atlas-update[![Download](https://api.bintray.com/packages/alibabaatlas/maven/atlasupdate/images/download.svg)](https://bintray.com/alibabaatlas/maven/atlasupdate/_latestVersion)
- atlas-gradle-plugin[![Download](https://api.bintray.com/packages/alibabaatlas/maven/atlasplugin/images/download.svg)](https://bintray.com/alibabaatlas/maven/atlasplugin/_latestVersion)
-
-atlas_core 请先使用atlas-core http://jcenter.bintray.com/com/taobao/android/atlas_core/5.0.3-rc13
-bintray故障修复中
 > A powerful Android Dynamic Component Framework.
 
 Atlas is an Android client-side containerization framework. we call it android dynamic component framework.
