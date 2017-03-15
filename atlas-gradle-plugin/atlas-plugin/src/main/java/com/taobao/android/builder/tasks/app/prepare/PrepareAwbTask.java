@@ -259,7 +259,6 @@ public class PrepareAwbTask extends BaseTask {
                                                                                    getLogger(),
                                                                                    0);
         List<Runnable> runnables = new ArrayList<>();
-        long startTime = System.currentTimeMillis();
         Set<SoLibrary> soLibraries = androidDependencyTree.getALLSoLibDependencies();
         for (final SoLibrary soLibrary : soLibraries) {
             runnables.add(new Runnable() {
@@ -272,8 +271,6 @@ public class PrepareAwbTask extends BaseTask {
 
         executorServicesHelper.execute(runnables);
         runnables.clear();
-        System.out.println("prepareAwbsxx" + (System.currentTimeMillis() - startTime) + " | " + soLibraries.size());
-        startTime = System.currentTimeMillis();
 
 
         List<AwbBundle> awbBundles = androidDependencyTree.getAwbBundles();
@@ -289,8 +286,6 @@ public class PrepareAwbTask extends BaseTask {
 
         executorServicesHelper.execute(runnables);
         runnables.clear();
-        System.out.println("prepareAwbsxx" + (System.currentTimeMillis() - startTime) + " | " + awbBundles.size());
-        startTime = System.currentTimeMillis();
 
 
         Set<AarBundle> aarBundles = androidDependencyTree.getALLAarDependencies();
@@ -306,8 +301,6 @@ public class PrepareAwbTask extends BaseTask {
 
         executorServicesHelper.execute(runnables);
         runnables.clear();
-        System.out.println("prepareAwbsxx" + (System.currentTimeMillis() - startTime) + " | " + aarBundles.size());
-        startTime = System.currentTimeMillis();
 
 
 
