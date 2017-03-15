@@ -3,6 +3,7 @@ apply plugin: 'java'
 apply plugin: 'idea'
 
 archivesBaseName = 'atlasplugin'
+version = '2.2.3.rc5'
 
 sourceSets {
     main {
@@ -15,7 +16,7 @@ sourceSets {
 dependencies {
     compile localGroovy()
     compile gradleApi()
-    compile "com.android.tools.build:gradle:2.1.0"
+    compile "com.android.tools.build:gradle:2.2.3"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
     compile "com.alibaba:fastjson:1.2.6"
@@ -24,11 +25,9 @@ dependencies {
     compile 'jaxen:jaxen:1.1.6'
     compile 'commons-beanutils:commons-beanutils:1.8.3'
     compile 'org.javassist:javassist:3.19.0-GA'
-//    compile project(":preverify")
-    compile project(":dexpatch")
-
+    compile project(":preverify")
+    compile project(":dex_patch")
 }
-
 
 apply plugin: 'maven-publish'
 apply plugin: 'com.github.dcendents.android-maven'
@@ -38,63 +37,63 @@ def siteUrl = 'https://github.com/alibaba/atlas'
 def gitUrl = 'https://github.com/alibaba/atlas'
 // Git仓库的url
 install {
-    repositories.mavenInstaller {
-        // This generates POM.xml with proper parameters
-        pom {
-            project {
-                packaging 'jar'
-                // Add your description here
-                name 'atlasplugin' //项目描述
-                // Set your license
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id 'alibabaatlas' //填写的一些基本信息
-                        name 'atlasplugin'
-                        email 'alibabaatlasframework@gmail.com'
-                    }
-                }
-                scm {
-                    connection gitUrl
-                    developerConnection gitUrl
-                    url siteUrl
-                }
-            }
-        }
-    }
+   repositories.mavenInstaller {
+       // This generates POM.xml with proper parameters
+       pom {
+           project {
+               packaging 'jar'
+               // Add your description here
+               name 'atlasplugin' //项目描述
+               // Set your license
+               licenses {
+                   license {
+                       name 'The Apache Software License, Version 2.0'
+                       url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                   }
+               }
+               developers {
+                   developer {
+                       id 'alibabaatlas' //填写的一些基本信息
+                       name 'atlasplugin'
+                       email 'alibabaatlasframework@gmail.com'
+                   }
+               }
+               scm {
+                   connection gitUrl
+                   developerConnection gitUrl
+                   url siteUrl
+               }
+           }
+       }
+   }
 }
 
 Properties properties = new Properties()
 def file = project.rootProject.file('local.properties')
 if (file.exists()) {
-    properties.load(file.newDataInputStream())
+   properties.load(file.newDataInputStream())
 }
 bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-    configurations = ['archives']
-    pkg {
-        repo = "maven"
-        name = "atlasplugin"	//发布到JCenter上的项目名字
-        websiteUrl = "atlas.alibaba.net"
-        vcsUrl = gitUrl
-        licenses = ["Apache-2.0"]
-        publish = true
-    }
+   user = properties.getProperty("bintray.user")
+   key = properties.getProperty("bintray.apikey")
+   configurations = ['archives']
+   pkg {
+       repo = "maven"
+       name = "atlasplugin"	//发布到JCenter上的项目名字
+       websiteUrl = "atlas.alibaba.net"
+       vcsUrl = gitUrl
+       licenses = ["Apache-2.0"]
+       publish = true
+   }
 }
 
 task sourcesJar(type: Jar) {
-    from('src/main/java') {
-        include '**'
-    }
-    classifier = 'sources'
+   from('src/main/java') {
+       include '**'
+   }
+   classifier = 'sources'
 }
 
 artifacts {
-    archives sourcesJar
+   archives sourcesJar
 }

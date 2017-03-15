@@ -216,8 +216,8 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AtlasBuilder;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.dependency.AwbBundle;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 
 import org.gradle.api.tasks.TaskAction;
@@ -225,10 +225,7 @@ import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-
-import aQute.bnd.build.Run;
 
 /**
  * 打包 awb 的 resource
@@ -242,7 +239,8 @@ public class ProcessResAwbsTask extends BaseTask {
     @TaskAction
     void run() throws ExecutionException, InterruptedException {
 
-        AndroidDependencyTree androidDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
+        AndroidDependencyTree androidDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                getVariantName());
 
         if (null == androidDependencyTree) {
             return;
@@ -250,7 +248,9 @@ public class ProcessResAwbsTask extends BaseTask {
 
         final VariantOutputScope outputScope = appVariantOutputContext.getOutputScope();
 
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,getLogger(),0);
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
+                                                                                   getLogger(),
+                                                                                   0);
         List<Runnable> runnables = new ArrayList<>();
 
         for (final AwbBundle awbBundle : androidDependencyTree.getAwbBundles()) {
@@ -259,35 +259,51 @@ public class ProcessResAwbsTask extends BaseTask {
                 @Override
                 public void run() {
 
-                    File symbolLocation = new File(outputScope.getGlobalScope().getIntermediatesDir(), "awb-symbols/"
-                            + outputScope.getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+                    File symbolLocation = new File(outputScope.getGlobalScope()
+                                                           .getIntermediatesDir(),
+                                                   "awb-symbols/" +
+                                                           outputScope.getVariantScope()
+                                                                   .getVariantConfiguration()
+                                                                   .getDirName() +
+                                                           "/" +
+                                                           awbBundle.getName());
 
-                    ProcessAwbAndroidResources.ConfigAction configAction =
-                            new ProcessAwbAndroidResources.ConfigAction(outputScope, symbolLocation, true,
-                                    awbBundle, (AtlasBuilder) getBuilder(), appVariantOutputContext);
+                    //把资源写入ap中，给debug用
+                    if ("debug".equals(appVariantOutputContext.getVariantContext()
+                                               .getBaseVariantData()
+                                               .getName())) {
+                        appVariantOutputContext.appBuildInfo.getOtherFilesMap()
+                                .put("awo/" + awbBundle.getPackageName() + ".R.txt",
+                                     new File(symbolLocation, "R.txt"));
+                    }
 
-                    ProcessAwbAndroidResources processAwbAndroidResources = TaskCreater.create(getProject(), configAction.getName(), configAction.getType());
+                    ProcessAwbAndroidResources.ConfigAction configAction = new ProcessAwbAndroidResources.ConfigAction(
+                            outputScope,
+                            symbolLocation,
+                            true,
+                            awbBundle,
+                            (AtlasBuilder) getBuilder(),
+                            appVariantOutputContext);
+
+                    ProcessAwbAndroidResources processAwbAndroidResources = TaskCreater.create(
+                            getProject(),
+                            configAction.getName(),
+                            configAction.getType());
 
                     configAction.execute(processAwbAndroidResources);
 
                     processAwbAndroidResources.execute();
-
-
                 }
             });
-
-
         }
 
         executorServicesHelper.execute(runnables);
-
     }
-
 
     public static class ConfigAction extends MtlBaseTaskAction<ProcessResAwbsTask> {
 
-
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
         }
 
@@ -307,9 +323,6 @@ public class ProcessResAwbsTask extends BaseTask {
             super.execute(processResAwbsTask);
 
             processResAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
-
         }
     }
-
-
 }

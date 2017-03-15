@@ -205,84 +205,101 @@
  *
  *
  */
+package com.taobao.android.builder.tasks.app.merge;
 
-package com.taobao.android.builder.dependency;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AndroidDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 
-import com.android.build.gradle.internal.dependency.JarInfo;
-import com.android.builder.dependency.JarDependency;
-import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.model.MavenCoordinates;
-import com.google.common.collect.Lists;
-import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.io.FileUtils;
+import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
+import java.io.IOException;
 
-/**
- * Created by shenghua.nish on 2016-05-06 下午5:46.
- */
-public class AwbBundle extends AarBundle {
+public class MergeResV4Dir extends DefaultAndroidTask {
 
+    private VariantScope variantScope;
 
-    public AwbBundle(File bundle, File explodedBundle, List<LibraryDependency> dependencies, Collection<JarInfo> jarDependencies, String name, String variantName, String projectPath, MavenCoordinates requestedCoordinates, MavenCoordinates resolvedCoordinates) {
-        super(bundle, explodedBundle, dependencies, jarDependencies, name, variantName, projectPath, requestedCoordinates, resolvedCoordinates);
-    }
+    private VariantContext variantContext;
 
-    public File outputBundleFile;
+    @TaskAction
+    public void taskAction() throws IOException {
 
-    private String packageName;
+        File resDir = variantScope.getFinalResourcesDir();
 
-    public boolean isRemote;
+        moveFiles(resDir);
 
-    private String soFileName;
+        AndroidDependencyTree androidDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                getVariantName());
 
-    public BundleInfo bundleInfo = new BundleInfo();
+        if (null != androidDependencyTree) {
+            for (final AwbBundle awbBundle : androidDependencyTree.getAwbBundles()) {
 
-    public String getPackageName() {
+                File awbResDir = variantContext.getMergeResources(awbBundle);
 
-        if (org.apache.commons.lang3.StringUtils.isEmpty(packageName)) {
-            packageName = ManifestFileUtils.getPackage(this.getOrgManifestFile());
-        }
-
-        return packageName;
-    }
-
-    public String getAwbSoName() {
-        if (org.apache.commons.lang3.StringUtils.isEmpty(soFileName)) {
-            String packageName = getPackageName();
-            soFileName = "lib" + StringUtils.replace(packageName, ".", "_") + ".so";
-        }
-        return soFileName;
-    }
-
-
-    public List<File> getLibraryJars() {
-        List<File> jars = Lists.newArrayList();
-        File awbJar = this.getJarFile();
-        jars.add(awbJar);
-        List<LibraryDependency> aarBundles = this.getDependencies();
-        if (null != aarBundles) {
-            for (LibraryDependency aarBundle : aarBundles) {
-                jars.add(aarBundle.getJarFile());
+                moveFiles(awbResDir);
             }
         }
-
-        Collection<JarInfo> jarInfos = this.getJarDependencies();
-        if (null != jarInfos) {
-            for (JarInfo jarInfo : jarInfos) {
-                jars.add(jarInfo.getJarFile());
-            }
-        }
-        Collection<JarDependency> localJars = this.getLocalDependencies();
-        if (null != localJars) {
-            for (JarDependency localJar : localJars) {
-                jars.add(localJar.getJarFile());
-            }
-        }
-        return jars;
     }
 
+    private void moveFiles(File root) throws IOException {
+        if (null == root || !root.exists()) {
+            return;
+        }
+
+        File[] files = root.listFiles();
+        for (File tmp : files) {
+
+            if (tmp.isDirectory() &&
+                    tmp.getName().startsWith("drawable-") &&
+                    tmp.getName().endsWith("dpi")) {
+                File toDir = new File(root, tmp.getName() + "-v4");
+                toDir.mkdirs();
+
+                FileUtils.copyDirectory(tmp, toDir);
+                FileUtils.deleteDirectory(tmp);
+            }
+        }
+    }
+
+    public static class ConfigAction extends MtlBaseTaskAction<MergeResV4Dir> {
+
+        private AppVariantContext appVariantContext;
+
+        public ConfigAction(AppVariantContext appVariantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName("merge", "ResV4Dir");
+        }
+
+        @Override
+        public Class<MergeResV4Dir> getType() {
+            return MergeResV4Dir.class;
+        }
+
+        @Override
+        public void execute(MergeResV4Dir task) {
+            super.execute(task);
+
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getResV4Enabled()) {
+                task.setEnabled(false);
+                return;
+            }
+
+            task.variantScope = appVariantContext.getScope();
+            task.variantContext = appVariantContext;
+        }
+    }
 }

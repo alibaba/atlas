@@ -206,45 +206,77 @@
  *
  */
 
-package com.taobao.android.builder.dependency.diff;
+package com.taobao.android.builder.tasks.app.prepare;
 
-import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
-import com.android.builder.dependency.LibraryDependency;
-import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.bundleinfo.BundleInfoUtils;
 
+import org.dom4j.DocumentException;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
-/**
- * Created by shenghua.nish on 2016-05-20 下午3:22.
- */
-public class DependencyUtils {
+public class PrepareBundleInfoTask extends BaseTask {
 
-    private static Logger logger = LoggerFactory.getLogger(DependencyUtils.class);
+    AppVariantOutputContext appVariantOutputContext;
 
-    @NonNull
-    public static List<ManifestDependencyImpl> getManifestDependencies(
-            List<LibraryDependency> libraries, Set<String> notMergedArtifacts) {
+    @TaskAction
+    void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
 
-        List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
+        AtlasBuildContext.awbBundleMap = collectBundleInfo(appVariantOutputContext);
 
-        for (LibraryDependency lib : libraries) {
-            // get the dependencies
-            List<ManifestDependencyImpl> children = getManifestDependencies(lib.getDependencies(), notMergedArtifacts);
+        BundleInfoUtils.setupAwbBundleInfos(appVariantOutputContext.getVariantContext());
 
-            // [vliux] respect manifestOption.notMergedBundle
-            String cord = String.format("%s:%s", lib.getResolvedCoordinates().getGroupId(), lib.getResolvedCoordinates().getArtifactId());
-            if (null == notMergedArtifacts || !notMergedArtifacts.contains(cord)) {
-                list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
-            } else {
-                logger.info("[NotMergedManifest] " + cord);
-            }
+    }
+
+    private Map<String, AwbBundle> collectBundleInfo(AppVariantOutputContext appVariantOutputContext) {
+
+        List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
+                appVariantOutputContext.getVariantData().getName()).getAwbBundles();
+
+        Map<String, AwbBundle> map = new HashMap<String, AwbBundle>();
+
+        for (AwbBundle awbBundle : awbBundles) {
+
+            map.put(awbBundle.getAwbSoName(), awbBundle);
         }
 
-        return list;
+        return map;
+    }
+
+    public static class ConfigAction extends MtlBaseTaskAction<PrepareBundleInfoTask> {
+
+        public ConfigAction(AppVariantContext appVariantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName("prepareBundleInfo");
+        }
+
+        @Override
+        public Class<PrepareBundleInfoTask> getType() {
+            return PrepareBundleInfoTask.class;
+        }
+
+        @Override
+        public void execute(PrepareBundleInfoTask prepareBundleInfoTask) {
+
+            super.execute(prepareBundleInfoTask);
+
+            prepareBundleInfoTask.appVariantOutputContext = getAppVariantOutputContext();
+        }
     }
 }
-

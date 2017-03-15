@@ -217,21 +217,21 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.util.ArrayList;
 
-/**
- * 分配packageId
- */
 public class PrepareAaptTask extends BaseTask {
 
 
     AppVariantContext appVariantContext;
     ProcessAndroidResources processAndroidResources;
+    //MergeResources mergeResources;
 
 
     @TaskAction
@@ -262,6 +262,9 @@ public class PrepareAaptTask extends BaseTask {
             }
             //AndroidManifest文件不能有修改OR在patch的时候忽略,目前选择在patch的时候忽略
         }
+
+        //TODO update merge resource
+        //mergeResources.setAndroidBuilder(AtlasBuildContext.androidBuilder);
     }
 
 
@@ -289,8 +292,15 @@ public class PrepareAaptTask extends BaseTask {
 
             super.execute(prepareAaptTask);
 
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getUseCustomAapt() ){
+                prepareAaptTask.setEnabled(false);
+                return;
+            }
+
             prepareAaptTask.appVariantContext = appVariantContext;
             prepareAaptTask.processAndroidResources = baseVariantOutputData.processResourcesTask;
+
+            //prepareAaptTask.mergeResources = appVariantContext.getVariantData().mergeResourcesTask;
 
 
         }

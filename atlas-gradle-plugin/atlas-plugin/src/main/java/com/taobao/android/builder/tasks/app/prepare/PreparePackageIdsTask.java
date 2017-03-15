@@ -219,7 +219,7 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -347,7 +347,7 @@ public class PreparePackageIdsTask extends BaseTask {
             autoConfigMap2.remove(key);
         }
         if (autoConfigMap2.size() > 0){
-            File outPkgFile2 = new File(getProject().getBuildDir(), "outputs/unusedPackageIdFile.properties");
+            File outPkgFile2 = new File(getProject().getBuildDir(), "outputs/warning-unusedPackageIdFile.properties");
             writeProperties(autoConfigMap2, outPkgFile2);
         }
 

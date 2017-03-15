@@ -211,11 +211,12 @@ package com.android.build.gradle.internal.api;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
-import com.android.builder.core.VariantConfiguration;
 import com.android.builder.dependency.LibraryDependency;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.manager.TaskQueryHelper;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.bundling.Zip;
@@ -331,7 +332,7 @@ public class LibVariantContext extends VariantContext<LibraryVariantImpl, Librar
             return null;
         }
 
-        final String packageName = VariantConfiguration.getManifestPackage(manifest);
+        final String packageName = ManifestFileUtils.getPackage(manifest);;
         return getAwbPackageOutAppOutputFile(awbBundle, packageName);
     }
 

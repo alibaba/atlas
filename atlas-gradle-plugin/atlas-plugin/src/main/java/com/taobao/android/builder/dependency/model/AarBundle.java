@@ -206,60 +206,60 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.dependency.model;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.builder.dependency.JarDependency;
+import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.MavenCoordinates;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * Solib的依赖
- * Created by shenghua.nish on 2016-05-03 下午4:18.
+ * Created by shenghua.nish on 2016-05-06 上午11:00.
  */
-public class SoLibrary{
+public class AarBundle extends LibraryDependency {
 
-    @Nullable
-    private final MavenCoordinates mResolvedCoordinates;
+    private List<SoLibrary> soLibraries = new ArrayList<SoLibrary>();
 
-    @NonNull
-    private final File mSoLibFile;
+    public AarBundle(File bundle, File explodedBundle, List<LibraryDependency> dependencies,
+                     Collection<JarDependency> jarDependencies, String name, String variantName, String projectPath,
+                     MavenCoordinates requestedCoordinates, MavenCoordinates resolvedCoordinates){
 
-    /**
-     * 解压的文件夹
-     */
-    private File mSoLibFolder;
-
-    @NonNull
-    public File getFolder() {
-        return mSoLibFolder;
+        super(bundle, explodedBundle, dependencies, jarDependencies, name, variantName, projectPath,
+                requestedCoordinates, resolvedCoordinates , false);
     }
 
-    public SoLibrary(@Nullable MavenCoordinates mResolvedCoordinates, File mSoLibFile, File mSoLibFolder){
-        this.mResolvedCoordinates = mResolvedCoordinates;
-        this.mSoLibFile = mSoLibFile;
-        this.mSoLibFolder = mSoLibFolder;
+    public List<SoLibrary> getSoLibraries() {
+        return soLibraries;
     }
 
-    public File getSoLibFile() {
-        return mSoLibFile;
+    public void setSoLibraries(List<SoLibrary> soLibraries) {
+        this.soLibraries = soLibraries;
     }
 
-    public String getName(){
-        return mResolvedCoordinates.getArtifactId()+"@" + mResolvedCoordinates.getPackaging();
+
+    public File getOrgManifestFile(){
+        File manifestFile = getManifest();
+        File orgManifestFile = new File(manifestFile.getParentFile(), FilenameUtils.getBaseName(manifestFile.getName()) + "-org.xml");
+        if(orgManifestFile.exists()){
+            return orgManifestFile;
+        }else{
+            return manifestFile;
+        }
     }
 
-    public MavenCoordinates getResolvedCoordinates() {
-        return mResolvedCoordinates;
-    }
-
-    @Override
-    public String toString() {
-        return "SoLib{" +
-                "mResolvedCoordinates=" + mResolvedCoordinates +
-                ", mSoLibFile=" + mSoLibFile +
-                ", mSoLibFolder=" + mSoLibFolder +
-                '}';
+    public File getModifyManifestFile(){
+        File manifestFile = getManifest();
+        File orgManifestFile = new File(manifestFile.getParentFile(), FilenameUtils.getBaseName(manifestFile.getName()) + "-modify.xml");
+        if(orgManifestFile.exists()){
+            return orgManifestFile;
+        }else{
+            return manifestFile;
+        }
     }
 }

@@ -1,11 +1,10 @@
 buildscript {
     repositories {
-        mavenLocal()
+        //mavenLocal()
         jcenter()
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:2.1"
-        classpath "com.taobao.android:atlasplugin:1.0.0"
+        classpath "com.taobao.android:atlasplugin:2.2.3.rc4"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
     }

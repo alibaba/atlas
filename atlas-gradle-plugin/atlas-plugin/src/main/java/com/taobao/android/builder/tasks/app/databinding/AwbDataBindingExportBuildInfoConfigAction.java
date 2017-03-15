@@ -217,7 +217,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileCollection;
 

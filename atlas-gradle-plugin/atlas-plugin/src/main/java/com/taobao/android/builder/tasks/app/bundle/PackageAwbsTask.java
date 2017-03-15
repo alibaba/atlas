@@ -213,7 +213,6 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.dependency.JarInfo;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -223,11 +222,12 @@ import com.android.ide.common.blame.parser.DexParser;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 
@@ -244,6 +244,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.annotation.Nullable;
 
 public class PackageAwbsTask extends BaseTask {
 
@@ -316,11 +318,11 @@ public class PackageAwbsTask extends BaseTask {
 
                         AtlasBuildContext.androidBuilder.convertByteCode(inputFiles,
                                                                          dexOutputFile,
-                                                                         appVariantContext.getVariantData().getVariantConfiguration().isMultiDexEnabled(),
+                                                                         appVariantContext.getVariantData()
+                                                                                 .getVariantConfiguration()
+                                                                                 .isMultiDexEnabled(),
                                                                          null,
                                                                          androidConfig.getDexOptions(),
-                                                                         null,
-                                                                         false,
                                                                          true,
                                                                          outputHandler);
                         //create package
@@ -345,26 +347,26 @@ public class PackageAwbsTask extends BaseTask {
                         if (appVariantContext.getAtlasExtension()
                                 .getTBuildConfig()
                                 .getMergeAwbJavaRes()) {
-                            for (JarInfo jarInfo : awbBundle.getJarDependencies()) {
-                                getLogger().info("[AwbJarRes]" +
-                                                         jarInfo.getJarFile().getAbsolutePath());
-                                javaResourcesLocations.add(jarInfo.getJarFile());
-                            }
-                            for (File localJar : awbBundle.getLocalJars()) {
-                                getLogger().info("[LocalAwbJarRes]" + localJar.getAbsolutePath());
-                                javaResourcesLocations.add(localJar);
-                            }
+                            javaResourcesLocations.addAll(awbBundle.getLibraryJars());
                         }
 
-                        getBuilder().packageApk(resourceFile.getAbsolutePath(),
-                                                dexFolders,
-                                                javaResourcesLocations,
-                                                jniFolders,
-                                                getAbiFilters(),
-                                                config.getBuildType().isJniDebuggable(),
-                                                null,
-                                                getOutputFile(awbBundle).getAbsolutePath(),
-                                                config.getMinSdkVersion().getApiLevel());
+                        //getBuilder().packageCodeSplitApk();
+                        getBuilder().oldPackageApk(resourceFile.getAbsolutePath(),
+                                                   dexFolders,
+                                                   javaResourcesLocations,
+                                                   jniFolders,
+                                                   null,
+                                                   getAbiFilters(),
+                                                   config.getBuildType().isJniDebuggable(),
+                                                   null,
+                                                   getOutputFile(awbBundle),
+                                                   config.getMinSdkVersion().getApiLevel(),
+                                                   new Predicate<String>() {
+                                                       @Override
+                                                       public boolean apply(@Nullable String s) {
+                                                           return false;
+                                                       }
+                                                   });
 
                         long endPackage = System.currentTimeMillis();
 
@@ -374,7 +376,7 @@ public class PackageAwbsTask extends BaseTask {
                                      new Long[]{endDex - start, endPackage - endDex});
                     } catch (Throwable e) {
                         e.printStackTrace();
-                        throw new GradleException("package " + awbBundle.getName() +" failed");
+                        throw new GradleException("package " + awbBundle.getName() + " failed");
                     }
                 }
             });
@@ -422,7 +424,7 @@ public class PackageAwbsTask extends BaseTask {
     }
 
     protected void emptyFolder(File folder) throws IOException {
-        FileUtils.deleteFolder(folder);
+        FileUtils.deletePath(folder);
         folder.mkdirs();
     }
 
@@ -454,7 +456,7 @@ public class PackageAwbsTask extends BaseTask {
             packageAwbsTask.androidConfig = appVariantContext.getAppExtension();
             packageAwbsTask.appVariantContext = appVariantContext;
             packageAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
-            packageAwbsTask.config = scope.getVariantConfiguration();
+            packageAwbsTask.config = scope.getVariantScope().getVariantConfiguration();
             packageAwbsTask.variantOutputData = (ApkVariantOutputData) scope.getVariantOutputData();
         }
     }

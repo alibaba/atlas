@@ -208,47 +208,51 @@
 
 package com.taobao.android.builder;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.LibraryVariant;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.api.LibraryVariantImpl;
-import com.android.build.gradle.internal.dependency.JarInfo;
-import com.android.build.gradle.internal.model.SimpleMavenCoordinatesImpl;
-import com.android.build.gradle.tasks.MergeResources;
 import com.android.builder.core.AtlasBuilder;
+import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.PrepareAPTask;
-import com.taobao.android.builder.tasks.awo.*;
+import com.taobao.android.builder.tasks.awo.AwbDexTask;
+import com.taobao.android.builder.tasks.awo.AwoInstallTask;
+import com.taobao.android.builder.tasks.awo.AwoJavaCompileConfigAction;
+import com.taobao.android.builder.tasks.awo.AwoPackageConfigAction;
+import com.taobao.android.builder.tasks.awo.CopyAwoSolibTask;
+import com.taobao.android.builder.tasks.awo.DiffDependencyTask;
+import com.taobao.android.builder.tasks.awo.MergeAwoManifests;
+import com.taobao.android.builder.tasks.awo.PrepareAwoBundleTask;
+import com.taobao.android.builder.tasks.awo.ProcessAwoAndroidResources;
 import com.taobao.android.builder.tasks.awo.maindex.DexBuildTask;
 import com.taobao.android.builder.tasks.awo.maindex.DexInstallTask;
 import com.taobao.android.builder.tasks.awo.maindex.PrepareMainDexJarsTask;
 import com.taobao.android.builder.tasks.awo.utils.AwoDependency;
 import com.taobao.android.builder.tasks.bundle.MergeAwbAssetConfigAction;
 import com.taobao.android.builder.tasks.bundle.MergeAwbResourceConfigAction;
+import com.taobao.android.builder.tasks.library.AndroidComponetCreator;
+import com.taobao.android.builder.tasks.library.AwbGenerator;
+import com.taobao.android.builder.tasks.library.PublishHooker;
+import com.taobao.android.builder.tasks.library.ResMerger;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
-import com.taobao.android.builder.tasks.manager.TaskQueryHelper;
 import com.taobao.android.builder.tools.ideaplugin.AwoPropHandler;
-import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.internal.artifacts.publish.ArchivePublishArtifact;
 import org.gradle.api.tasks.bundling.Zip;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -258,7 +262,10 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
  */
 public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
-    public AtlasLibTaskManager(AtlasBuilder androidBuilder, LibraryExtension libraryExtension, Project project, AtlasExtension atlasExtension) {
+    public AtlasLibTaskManager(AtlasBuilder androidBuilder,
+                               LibraryExtension libraryExtension,
+                               Project project,
+                               AtlasExtension atlasExtension) {
         super(androidBuilder, libraryExtension, project, atlasExtension);
         this.libraryExtension = libraryExtension;
     }
@@ -266,35 +273,27 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
     @Override
     public void runTask() {
 
+        //不做资源的合并
         if (!atlasExtension.getBundleConfig().isMergeRes()) {
-            List<MergeResources> mergeResources = TaskQueryHelper.findTask(project, MergeResources.class);
-            for (MergeResources task : mergeResources) {
-                if (task.getName().equals("packageDebugResources") ||
-                        task.getName().equals("packageReleaseResources")) {
-                    task.doLast(new Action<Task>() {
-                        @Override
-                        public void execute(Task task) {
-                            try {
-                                MergeResources task2  = (MergeResources) task;
-                                FileUtils.deleteDirectory(task2.getOutputDir());
-                                File srcFile = task2.getInputResourceSets().get(0).getSourceFiles().get(0);
-                                FileUtils.copyDirectory(srcFile, task2.getOutputDir());
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-
-                        }
-                    });
-                }
-            }
+            new ResMerger(project).mergeRes();
         }
 
+        //对maven发布失败做异常翻译， 一目了然
+        new PublishHooker(project).hookPublish();
 
         libraryExtension.getLibraryVariants().forEach(new Consumer<LibraryVariant>() {
             @Override
             public void accept(LibraryVariant libraryVariant) {
 
-                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl) libraryVariant, project, atlasExtension, libraryExtension);
+                //if ("debug".equals(libraryVariant.getBaseName())) {
+                //    new ModuleInfoWriter(project,libraryVariant).write();
+                //}
+
+                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl) libraryVariant,
+                                                                            project,
+                                                                            atlasExtension,
+                                                                            libraryExtension);
+
                 List<Zip> zipTasks = libVariantContext.getZipTasks();
 
                 if (zipTasks.isEmpty()) {
@@ -303,10 +302,11 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
                 for (Zip zipTask : zipTasks) {
 
-                    createAndroidComponent(zipTask);
+                    new AndroidComponetCreator(atlasExtension, project).createAndroidComponent(
+                            zipTask);
 
-                    createAwbBaseTask(libVariantContext, zipTask);
-
+                    //生成 awb 和 jar
+                    new AwbGenerator(atlasExtension).generate(zipTask);
                 }
             }
         });
@@ -315,7 +315,10 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
             @Override
             public void accept(LibraryVariant libraryVariant) {
 
-                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl) libraryVariant, project, atlasExtension, libraryExtension);
+                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl) libraryVariant,
+                                                                            project,
+                                                                            atlasExtension,
+                                                                            libraryExtension);
                 List<Zip> zipTasks = libVariantContext.getZipTasks();
 
                 if (zipTasks.isEmpty()) {
@@ -327,19 +330,21 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                     TBuildType tBuildType = libVariantContext.getBuildType();
                     if (null != tBuildType) {
                         try {
-                            new AwoPropHandler().process(tBuildType, atlasExtension.getBundleConfig());
+                            new AwoPropHandler().process(tBuildType,
+                                                         atlasExtension.getBundleConfig());
                         } catch (Exception e) {
                             throw new GradleException("process awo exception", e);
                         }
                     }
 
-
                     //TODO DEBUG it
-                    if (atlasExtension.getBundleConfig().isAwoBuildEnabled() && libraryVariant.getName().equals("debug")) {
+                    if (atlasExtension.getBundleConfig().isAwoBuildEnabled() &&
+                            libraryVariant.getName().equals("debug")) {
 
                         libVariantContext.setBundleTask(zipTask);
                         try {
-                            libVariantContext.setAwbBundle(createAwbBundle(libVariantContext, libraryVariant.getName()));
+                            libVariantContext.setAwbBundle(createAwbBundle(libVariantContext,
+                                                                           libraryVariant.getName()));
                         } catch (IOException e) {
                             throw new GradleException("set awb bundle error");
                         }
@@ -349,64 +354,10 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                         } else {
                             createDexTask(libVariantContext, zipTask);
                         }
-
-                    }
-
-                }
-
-            }
-        });
-    }
-
-    private void createAndroidComponent(Zip bundleTask) {
-        //增加一个components.android
-        Configuration compileConfiguration = project.getConfigurations().getByName(COMPILE_CONFIGURATION_NAME);
-        ArchivePublishArtifact bundleArtifact = new ArchivePublishArtifact(bundleTask);
-        compileConfiguration.getArtifacts().add(bundleArtifact);
-    }
-
-    /**
-     * 创建基本的AWB任务
-     *
-     * @param libVariantContext
-     */
-    private void createAwbBaseTask(LibVariantContext libVariantContext, final Zip bundleTask) {
-
-        if (atlasExtension.getBundleConfig().isAwbBundle()) {
-            bundleTask.setArchiveName(FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".awb");
-            bundleTask.setDestinationDir(new File(bundleTask.getDestinationDir().getParentFile(), "awb"));
-        }
-
-
-        bundleTask.doLast(new Action<Task>() {
-            @Override
-            public void execute(Task task) {
-
-                File outputFile = new File(bundleTask.getDestinationDir(), bundleTask.getArchiveName());
-
-                if (!outputFile.exists()) {
-                    return;
-
-                }
-
-                File f = ZipUtils.extractZipFileToFolder(outputFile, "classes.jar", outputFile.getParentFile());
-                File jar = new File(new File(bundleTask.getDestinationDir().getParentFile(), "jar"), FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".jar");
-                jar.getParentFile().mkdirs();
-                f.renameTo(jar);
-
-                //todo 重新生成aar
-                if (atlasExtension.getBundleConfig().isAwbBundle()) {
-                    try {
-                        FileUtils.copyFile(outputFile, new File(new File(bundleTask.getDestinationDir().getParentFile(), "aar"), FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".aar"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
                 }
-
             }
-
         });
-
     }
 
     private void createAwoTask(LibVariantContext libVariantContext, Zip bundleTask) {
@@ -428,23 +379,21 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
         //MergeAssets
         mtlTaskContexts.add(new MtlTaskContext(MergeAwbAssetConfigAction.class, null));
 
-
         mtlTaskContexts.add(new MtlTaskContext(CopyAwoSolibTask.ConfigAction.class, null));
 
         //MergeRes
         mtlTaskContexts.add(new MtlTaskContext(MergeAwbResourceConfigAction.class, null));
 
         //Awb processRes
-        mtlTaskContexts.add(new MtlTaskContext(ProcessAwoAndroidResources.ConfigAction.class, null));
-
+        mtlTaskContexts.add(new MtlTaskContext(ProcessAwoAndroidResources.ConfigAction.class,
+                                               null));
 
         mtlTaskContexts.add(new MtlTaskContext(AwoJavaCompileConfigAction.class, null));
 
         //Dex
         mtlTaskContexts.add(new MtlTaskContext(AwbDexTask.ConfigAction.class, null));
 
-
-        mtlTaskContexts.add(new MtlTaskContext(PrePackageConfigAction.class, null));
+        //mtlTaskContexts.add(new MtlTaskContext(PrePackageConfigAction.class, null));
 
         //package
         mtlTaskContexts.add(new MtlTaskContext(AwoPackageConfigAction.class, null));
@@ -453,32 +402,12 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
         mtlTaskContexts.add(new MtlTaskContext(AwoInstallTask.ConfigAction.class, null));
 
         //签名&zipalign
-//        mtlTaskContexts.add(new MtlTaskContext(AwoFullApkBuildTask.ConfigAction.class, null));
+        //        mtlTaskContexts.add(new MtlTaskContext(AwoFullApkBuildTask.ConfigAction.class, null));
 
         mtlTaskContexts.add(new MtlTaskContext(libVariantContext.getBaseVariantData().assembleVariantTask));
 
         new MtlTaskInjector(libVariantContext).injectTasks(mtlTaskContexts, tAndroidBuilder);
-
-
-        //TODO SOLIB task
-        //设置任务的依赖顺序
-//        libVariantContext.getPrepareApTask().dependsOn(bundleTask);
-//        libVariantContext.getPrepareAwbTask().dependsOn(libVariantContext.getPrepareApTask());
-//        libVariantContext.getDiffDependencyTask().dependsOn(libVariantContext.getPrepareAwbTask());
-//        libVariantContext.getMergeAwoManifests().dependsOn(libVariantContext.getDiffDependencyTask());
-//        libVariantContext.getMergeAssetsTask().dependsOn(libVariantContext.getMergeAwoManifests());
-//        libVariantContext.getMergeResTask().dependsOn(libVariantContext.getMergeAssetsTask());
-//        libVariantContext.copyAwoSolibTask.dependsOn(libVariantContext.getMergeResTask());
-//        libVariantContext.getProcessAwoAndroidResources().dependsOn(libVariantContext.copyAwoSolibTask);
-//        libVariantContext.getJavacTask().dependsOn(libVariantContext.getProcessAwoAndroidResources());
-//        libVariantContext.getAwbDexTask().dependsOn(libVariantContext.getJavacTask());
-//        libVariantContext.getPrePackageApplication().dependsOn(libVariantContext.getAwbDexTask());
-//        libVariantContext.getPackageApplication().dependsOn(libVariantContext.getPrePackageApplication());
-//        libVariantContext.awoInstallTask.dependsOn(libVariantContext.getPackageApplication());
-//        libVariantContext.awoFullApkBuildTask.dependsOn(libVariantContext.awoInstallTask);
-//        libVariantContext.getBaseVariantData().assembleVariantTask.dependsOn(libVariantContext.awoFullApkBuildTask);
     }
-
 
     private void createDexTask(LibVariantContext libVariantContext, Zip bundleTask) {
 
@@ -497,16 +426,17 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
         mtlTaskContexts.add(new MtlTaskContext(libVariantContext.getBaseVariantData().assembleVariantTask));
 
         new MtlTaskInjector(libVariantContext).injectTasks(mtlTaskContexts, tAndroidBuilder);
-
-
     }
 
-    private AwbBundle createAwbBundle(LibVariantContext libVariantContext, String variantName) throws IOException {
+    private AwbBundle createAwbBundle(LibVariantContext libVariantContext,
+                                      String variantName) throws IOException {
 
-        AndroidDependencyTree libDependencyTree = AtlasBuildContext.libDependencyTrees.get(variantName);
+        AndroidDependencyTree libDependencyTree = AtlasBuildContext.libDependencyTrees.get(
+                variantName);
 
         if (null == libDependencyTree) {
-            dependencyManager.resolveDependencyForConfig(libVariantContext.getVariantDependency(), true);
+            dependencyManager.resolveDependencyForConfig(libVariantContext.getVariantDependency(),
+                                                         true);
             libDependencyTree = AtlasBuildContext.libDependencyTrees.get(variantName);
         }
 
@@ -519,14 +449,22 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
             name = project.getName();
         }
 
-
-        File explodedDir = project.file(project.getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES + "/exploded-awb/" + computeArtifactPath(groupName, name, version));
+        File explodedDir = project.file(project.getBuildDir().getAbsolutePath() +
+                                                "/" +
+                                                FD_INTERMEDIATES +
+                                                "/exploded-awb/" +
+                                                computeArtifactPath(groupName, name, version));
         FileUtils.deleteDirectory(explodedDir);
 
-        AwbBundle awbBundle = new AwbBundle(libVariantContext.getBundleTask().getArchivePath(), explodedDir,
-                new ArrayList<LibraryDependency>(), new ArrayList<JarInfo>(), groupName + ":" + name, libVariantContext.getVariantName(),
-                project.getPath(), null, new SimpleMavenCoordinatesImpl(groupName, name, version));
-
+        AwbBundle awbBundle = new AwbBundle(libVariantContext.getBundleTask().getArchivePath(),
+                                            explodedDir,
+                                            new ArrayList<LibraryDependency>(),
+                                            new ArrayList<JarDependency>(),
+                                            groupName + ":" + name,
+                                            libVariantContext.getVariantName(),
+                                            project.getPath(),
+                                            null,
+                                            new MavenCoordinatesImpl(groupName, name, version));
 
         new AwoDependency(libVariantContext).parseDependency(libDependencyTree, awbBundle);
 
@@ -540,9 +478,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
         return pathBuilder.toString();
     }
 
-
     public static final String COMPILE_CONFIGURATION_NAME = "compile";
+
     private LibraryExtension libraryExtension;
-
-
 }

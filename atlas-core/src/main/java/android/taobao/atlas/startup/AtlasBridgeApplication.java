@@ -389,7 +389,7 @@ public class AtlasBridgeApplication extends Application{
                     new Notification.Builder(this)
                             .setSmallIcon(this.getResources().getIdentifier("icon","drawable",getPackageName()))
                             .setContentTitle("提示").setAutoCancel(true)
-                            .setContentText("手机淘宝安装不完整,请您卸载重新安装!");
+                            .setContentText("应用安装不完整,请您卸载重新安装!");
 
             NotificationManager mNotificationManager =
                     (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

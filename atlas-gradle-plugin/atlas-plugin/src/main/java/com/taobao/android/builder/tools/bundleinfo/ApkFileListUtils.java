@@ -211,14 +211,13 @@ package com.taobao.android.builder.tools.bundleinfo;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AndroidDependencyTree;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.PathUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang.StringUtils;
-import org.codehaus.plexus.util.AbstractScanner;
 import org.gradle.api.tasks.StopExecutionException;
 
 import java.io.File;

@@ -215,6 +215,7 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.StopExecutionException;
@@ -227,11 +228,13 @@ import java.lang.reflect.Field;
 public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAction<T> {
 
     protected VariantOutputScope scope;
+
     protected VariantContext variantContext;
+
     protected BaseVariantOutputData baseVariantOutputData;
 
-
-    public MtlBaseTaskAction(VariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+    public MtlBaseTaskAction(VariantContext variantContext,
+                             BaseVariantOutputData baseVariantOutputData) {
         this.variantContext = variantContext;
         this.baseVariantOutputData = baseVariantOutputData;
         this.scope = baseVariantOutputData.getScope();
@@ -245,12 +248,17 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
 
         AppVariantContext appVariantContext = (AppVariantContext) variantContext;
 
-        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) appVariantContext.getOutputContextMap().get(baseVariantOutputData.getFullName());
+        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) appVariantContext
+                .getOutputContextMap()
+                .get(baseVariantOutputData.getFullName());
 
         if (null == appVariantOutputContext) {
-            appVariantOutputContext =
-                    new AppVariantOutputContext(baseVariantOutputData.getFullName(), appVariantContext, baseVariantOutputData.getScope(), baseVariantOutputData.variantData);
-            appVariantContext.getOutputContextMap().put(baseVariantOutputData.getFullName(), appVariantOutputContext);
+            appVariantOutputContext = new AppVariantOutputContext(baseVariantOutputData.getFullName(),
+                                                                  appVariantContext,
+                                                                  baseVariantOutputData.getScope(),
+                                                                  baseVariantOutputData.variantData);
+            appVariantContext.getOutputContextMap()
+                    .put(baseVariantOutputData.getFullName(), appVariantOutputContext);
         }
 
         return appVariantOutputContext;
@@ -261,31 +269,34 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
 
         if (task instanceof DefaultAndroidTask) {
             DefaultAndroidTask defaultAndroidTask = (DefaultAndroidTask) task;
-            defaultAndroidTask.setVariantName(scope.getVariantConfiguration().getFullName());
+            defaultAndroidTask.setVariantName(scope.getVariantScope()
+                                                      .getVariantConfiguration()
+                                                      .getFullName());
         }
 
-
-//        ConventionMappingHelper.map(task, "appVariantContext", new Callable<AppVariantContext>() {
-//            @Override
-//            public AppVariantContext call() throws Exception {
-//                return appVariantContext;
-//            }
-//        });
-//
-//        ConventionMappingHelper.map(task, "baseVariantOutputData", new Callable<BaseVariantOutputData>() {
-//            @Override
-//            public BaseVariantOutputData call() throws Exception {
-//                return baseVariantOutputData;
-//            }
-//        });
+        //        ConventionMappingHelper.map(task, "appVariantContext", new Callable<AppVariantContext>() {
+        //            @Override
+        //            public AppVariantContext call() throws Exception {
+        //                return appVariantContext;
+        //            }
+        //        });
+        //
+        //        ConventionMappingHelper.map(task, "baseVariantOutputData", new Callable<BaseVariantOutputData>() {
+        //            @Override
+        //            public BaseVariantOutputData call() throws Exception {
+        //                return baseVariantOutputData;
+        //            }
+        //        });
 
     }
 
     protected void setFieldValueByReflection(Task task, String fieldName, Object value) {
         Field field = FieldUtils.getField(task.getClass(), fieldName, true);
         if (null == field) {
-            throw new StopExecutionException("The field with name:" + fieldName + " does not existed in class:"
-                    + task.getClass().getName());
+            throw new StopExecutionException("The field with name:" +
+                                                     fieldName +
+                                                     " does not existed in class:" +
+                                                     task.getClass().getName());
         }
         try {
             FieldUtils.writeField(field, task, value, true);
@@ -293,5 +304,4 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
             throw new StopExecutionException(e.getMessage());
         }
     }
-
 }

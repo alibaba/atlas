@@ -213,19 +213,19 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
-import com.android.build.gradle.tasks.PrePackageApplication;
-import com.android.builder.core.VariantConfiguration;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.taobao.android.builder.dependency.AwbBundle;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.gradle.api.tasks.StopExecutionException;
@@ -242,19 +242,23 @@ import java.util.concurrent.Callable;
 public class AwoPackageConfigAction extends MtlBaseTaskAction<PackageApplication> {
 
     private static final ILogger LOG = LoggerWrapper.getLogger(AwoPackageConfigAction.class);
+
     private final AwbBundle awbBundle;
+
     private final LibVariantContext libVariantContext;
+
     private final VariantScope scope;
+
     private final AtlasExtension atlasExtension;
 
-    public AwoPackageConfigAction(LibVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+    public AwoPackageConfigAction(LibVariantContext variantContext,
+                                  BaseVariantOutputData baseVariantOutputData) {
         super(variantContext, baseVariantOutputData);
         this.awbBundle = variantContext.getAwbBundle();
         this.libVariantContext = variantContext;
         this.scope = variantContext.getScope();
         this.atlasExtension = variantContext.getAtlasExtension();
     }
-
 
     @Override
     public String getName() {
@@ -273,7 +277,7 @@ public class AwoPackageConfigAction extends MtlBaseTaskAction<PackageApplication
         packageApp.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
         packageApp.setVariantName(scope.getVariantConfiguration().getFullName());
         packageApp.setMinSdkVersion(config.getMinSdkVersion());
-        setFieldValueByReflection(packageApp, "dexPackagingPolicy", PackageApplication.DexPackagingPolicy.STANDARD);
+        setFieldValueByReflection(packageApp, "dexPackagingPolicy", DexPackagingPolicy.STANDARD);
         setFieldValueByReflection(packageApp, "instantRunContext", new InstantRunBuildContext());
 
         ConventionMappingHelper.map(packageApp, "resourceFile", new Callable<File>() {
@@ -334,13 +338,17 @@ public class AwoPackageConfigAction extends MtlBaseTaskAction<PackageApplication
             }
         });
 
-        ConventionMappingHelper.map(packageApp, "packagingOptions", new Callable<PackagingOptions>() {
+        ConventionMappingHelper.map(packageApp,
+                                    "packagingOptions",
+                                    new Callable<PackagingOptions>() {
 
-            @Override
-            public PackagingOptions call() throws Exception {
-                return scope.getGlobalScope().getExtension().getPackagingOptions();
-            }
-        });
+                                        @Override
+                                        public PackagingOptions call() throws Exception {
+                                            return scope.getGlobalScope()
+                                                    .getExtension()
+                                                    .getPackagingOptions();
+                                        }
+                                    });
         ConventionMappingHelper.map(packageApp, "outputFile", new Callable<File>() {
 
             @Override
@@ -349,12 +357,13 @@ public class AwoPackageConfigAction extends MtlBaseTaskAction<PackageApplication
             }
         });
 
-        setFieldValueByReflection(packageApp, "markerFile",
-                PrePackageApplication.ConfigAction.getMarkerFile(scope));
-        setFieldValueByReflection(packageApp, "useOldPackaging",
-                AndroidGradleOptions.useOldPackaging(scope.getGlobalScope().getProject()));
+        //setFieldValueByReflection(packageApp, "markerFile",
+        //        PrePackageApplication.ConfigAction.getMarkerFile(scope));
+        setFieldValueByReflection(packageApp,
+                                  "inOldMode",
+                                  AndroidGradleOptions.useOldPackaging(scope.getGlobalScope()
+                                                                               .getProject()));
     }
-
 
     private String getAwbSoName(String packageName) {
         String awbOutputName = "lib" + StringUtils.replace(packageName, ".", "_");
@@ -368,11 +377,15 @@ public class AwoPackageConfigAction extends MtlBaseTaskAction<PackageApplication
      * @param fieldName
      * @param value
      */
-    private void setFieldValueByReflection(PackageApplication packageApp, String fieldName, Object value) {
+    private void setFieldValueByReflection(PackageApplication packageApp,
+                                           String fieldName,
+                                           Object value) {
         Field field = FieldUtils.getField(packageApp.getClass(), fieldName, true);
         if (null == field) {
-            throw new StopExecutionException("The field with name:" + fieldName + " does not existed in class:"
-                    + packageApp.getClass().getName());
+            throw new StopExecutionException("The field with name:" +
+                                                     fieldName +
+                                                     " does not existed in class:" +
+                                                     packageApp.getClass().getName());
         }
         try {
             FieldUtils.writeField(field, packageApp, value, true);
