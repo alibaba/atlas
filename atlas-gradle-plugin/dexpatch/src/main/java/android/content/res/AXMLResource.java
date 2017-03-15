@@ -205,121 +205,180 @@
  *
  *
  */
-package com.taobao.android;
 
-import com.android.utils.ILogger;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.taobao.android.object.ArtifactBundleInfo;
-import com.taobao.android.object.DiffType;
+package android.content.res;
 
-import org.apache.commons.io.FilenameUtils;
+import android.content.res.chunk.ChunkType;
+import android.content.res.chunk.ChunkUtil;
+import android.content.res.chunk.sections.ResourceSection;
+import android.content.res.chunk.sections.StringSection;
+import android.content.res.chunk.types.AXMLHeader;
+import android.content.res.chunk.types.Attribute;
+import android.content.res.chunk.types.Chunk;
+import android.content.res.chunk.types.StartTag;
 
-import java.io.File;
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 /**
- * Created by shenghua.nish on 2016-03-19 下午9:51.
+ * Main AXMLResource object
+ *
+ * @author tstrazzere
  */
-public class BasePatchTool {
+public class AXMLResource {
 
-    protected static final String BASE_APK_UNZIP_NAME = "base.apk";
-    protected static final String NEW_APK_UNZIP_NAME = "new.apk";
-    protected static final String DEX_NAME = "classes.dex";
-    protected static final String DEX_SUFFIX = ".dex";
-    protected static final String CLASSES = "classes";
-    protected static final int DEFAULT_API_LEVEL = 19;
+    AXMLHeader header;
+    StringSection stringSection;
+    ResourceSection resourceSection;
+    LinkedHashSet<Chunk> chunks;
 
-    protected final File baseApk;
-    protected final File newApk;
-    protected final String baseApkVersion;
-    protected final String newApkVersion;
-
-    protected Set<ArtifactBundleInfo> artifactBundleInfos = Sets.newHashSet();
-
-    protected ILogger logger;
-    protected boolean onlyIncludeModifyBundle = true;
-
-    public BasePatchTool(File baseApk, File newApk, String baseApkVersion, String newApkVersion) {
-        this.baseApk = baseApk;
-        this.newApk = newApk;
-        this.baseApkVersion = baseApkVersion;
-        this.newApkVersion = newApkVersion;
+    public AXMLResource() {
+        chunks = new LinkedHashSet<Chunk>();
     }
 
-    public void setArtifactBundleInfos(Set<ArtifactBundleInfo> artifactBundleInfos) {
-        this.artifactBundleInfos = artifactBundleInfos;
+    public AXMLResource(InputStream stream) throws IOException {
+        chunks = new LinkedHashSet<Chunk>();
+        if (!read(stream)) {
+            throw new IOException();
+        }
     }
 
+    public void injectApplicationAttribute(Attribute attribute) {
+        StartTag tag = getApplicationTag();
 
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
+        tag.insertOrReplaceAttribute(attribute);
     }
 
-    public File getNextDexFile(File dexParentFolder, int dexNumber) {
-        return new File(dexParentFolder, CLASSES + dexNumber + DEX_SUFFIX);
-    }
-
-    public File getNextDexFile(File dexParentFolder, int dexNumber, String dexName) {
-        return new File(dexParentFolder, dexName + dexNumber + DEX_SUFFIX);
-    }
-
-    /**
-     * 设置是否只包含变化的bundle信息，对于主bundle，不管是否设置都会进行对比
-     *
-     * @param onlyIncludeModifyBundle
-     */
-    public void setOnlyIncludeModifyBundle(boolean onlyIncludeModifyBundle) {
-        this.onlyIncludeModifyBundle = onlyIncludeModifyBundle;
-    }
-
-    /**
-     * 判断当前bundle是否有变化
-     *
-     * @param bundleSoFileName
-     * @return
-     */
-    public boolean isModifyBundle(String bundleSoFileName) {
-        for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
-            String packageName = artifactBundleInfo.getPkgName();
-            if (null == packageName) {
-                return false;
-            }
-            String bundleName = "lib" + packageName.replace('.', '_') + ".so";
-            if (bundleName.equals(bundleSoFileName)) {
-                if (null != logger) {
-                    logger.info("[BundleDiffType]" + bundleSoFileName + ":" + artifactBundleInfo.getDiffType());
-                }
-                if (DiffType.ADD.equals(artifactBundleInfo.getDiffType()) || DiffType.MODIFY.equals(artifactBundleInfo.getDiffType())) {
-                    return true;
-                }
+    public StartTag getApplicationTag() {
+        Iterator<Chunk> iterator = chunks.iterator();
+        while (iterator.hasNext()) {
+            Chunk chunk = iterator.next();
+            if (chunk instanceof StartTag &&
+                    ((StartTag) chunk).getName(stringSection).equalsIgnoreCase("application")) {
+                return (StartTag) chunk;
             }
         }
+
+        return null;
+    }
+
+    public StringSection getStringSection() {
+        return stringSection;
+    }
+
+    public boolean read(InputStream stream) throws IOException {
+
+        IntReader reader = new IntReader(stream, false);
+
+        // Get an attempted size until we know the read size
+        int size = stream.available();
+
+        while ((size - reader.getBytesRead()) > 4) {
+            // This should just read all the chunks
+            Chunk chunk = ChunkUtil.createChunk(reader);
+
+            switch (chunk.getChunkType()) {
+                case AXML_HEADER:
+                    header = (AXMLHeader) chunk;
+                    // TODO : This should warn if true
+                    // This will cause breakages if the header is lying
+                    //size = header.getSize();
+                    break;
+                case STRING_SECTION:
+                    stringSection = (StringSection) chunk;
+                    break;
+                // operational = true;
+                case RESOURCE_SECTION:
+                    resourceSection = (ResourceSection) chunk;
+                    break;
+                case START_NAMESPACE:
+                case END_NAMESPACE:
+                case START_TAG:
+                case END_TAG:
+                case TEXT_TAG:
+                    chunks.add(chunk);
+                    break;
+                case BUFFER:
+                    // Do nothing right now, not even add it to the chunk stuff
+                    break;
+                default:
+                    throw new IOException("Hit an unknown chunk type!");
+            }
+        }
+
+        if ((header != null) && (stringSection != null) && (resourceSection != null)) {
+            if (header.getSize() != reader.getBytesRead()) {
+                System.out.println("Potential issue as the bytes read is not equal to the amount of bytes in the file");
+            }
+            return true;
+        }
+
         return false;
     }
 
-    public String getBundleName(String bundleSoFileName) {
-        return FilenameUtils.getBaseName(bundleSoFileName.replace("lib", ""));
+    public void write(OutputStream outputStream) throws IOException {
+
+        int chunkSizes = 0;
+        Iterator<Chunk> iterator = chunks.iterator();
+        while (iterator.hasNext()) {
+            Chunk chunk = iterator.next();
+            chunkSizes += chunk.getSize();
+        }
+
+
+        outputStream.write(ByteBuffer.allocate(8)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(ChunkType.AXML_HEADER.getIntType())
+                .putInt(((2 * 4) + stringSection.getSize() + resourceSection.getSize() + chunkSizes))
+                .array());
+        outputStream.write(stringSection.toBytes());
+        outputStream.write(resourceSection.toBytes());
+        iterator = chunks.iterator();
+        while (iterator.hasNext()) {
+            Chunk chunk = iterator.next();
+            outputStream.write(chunk.toBytes());
+        }
+
     }
 
+    public String toXmlString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(header.toXML(stringSection, resourceSection, 0)).append("\n");
+        Iterator<Chunk> iterator = chunks.iterator();
+        int indents = 0;
+        String nameSpace = null;
+        while (iterator.hasNext()) {
+            Chunk chunk = iterator.next();
+            if (chunk.getChunkType() == ChunkType.END_TAG) {
+                indents--;
+            }
+             if(chunk.getChunkType() == ChunkType.START_NAMESPACE){
+                 nameSpace = chunk.toXML(stringSection, resourceSection, indents);
+             }else {
+                 if(null!= nameSpace && chunk.getChunkType() == ChunkType.START_TAG){
+                     StartTag startTag = (StartTag) chunk;
+                     sb.append(startTag.toXMLWithNamespace(stringSection, resourceSection, indents,nameSpace)).append("\n");
+                 }else {
+                     sb.append(chunk.toXML(stringSection, resourceSection, indents)).append("\n");
+                 }
+             }
+//            sb.append(chunk.toXML(stringSection, resourceSection, indents)).append("\n");
 
-    public List<File> getFolderDexFiles(File folder) {
-        List<File> dexFiles = Lists.newArrayList();
-        File baseDex = new File(folder, DEX_NAME);
-        if (baseDex.exists()) {
-            dexFiles.add(baseDex);
-            // 比较是否存在着多dex
-            int dexIndex = 2;
-            File newIndexDex = getNextDexFile(folder, dexIndex);
-            while (null != newIndexDex && newIndexDex.exists()) {
-                dexFiles.add(newIndexDex);
-                dexIndex++;
-                newIndexDex = getNextDexFile(folder, dexIndex);
+            if (chunk.getChunkType() == ChunkType.START_TAG) {
+                nameSpace = null;
+                indents++;
             }
         }
-        return dexFiles;
+        return sb.toString();
     }
 
-
+    private static void log(String format, Object... arguments) {
+        System.out.printf(format, arguments);
+        System.out.println();
+    }
 }

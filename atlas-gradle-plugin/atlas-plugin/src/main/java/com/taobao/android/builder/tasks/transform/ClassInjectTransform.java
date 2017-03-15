@@ -393,8 +393,8 @@ public class ClassInjectTransform extends MtlInjectTransform {
         final ClassPool pool = ClassPool.getDefault();
 
         try {
-            File verifyFile = PathUtil.getJarFile(com.taobao.verify.Verifier.class);
-            pool.insertClassPath(verifyFile.getAbsolutePath());
+//            File verifyFile = PathUtil.getJarFile(com.taobao.verify.Verifier.class);
+//            pool.insertClassPath(verifyFile.getAbsolutePath());
             for (File file : appVariantContext.getScope().getJavaClasspath()) {
                 if (file.isFile()) {
                     pool.insertClassPath(file.getAbsolutePath());

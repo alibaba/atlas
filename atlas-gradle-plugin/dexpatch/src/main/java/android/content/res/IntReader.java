@@ -205,121 +205,125 @@
  *
  *
  */
-package com.taobao.android;
 
-import com.android.utils.ILogger;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.taobao.android.object.ArtifactBundleInfo;
-import com.taobao.android.object.DiffType;
+package android.content.res;
 
-import org.apache.commons.io.FilenameUtils;
-
-import java.io.File;
-import java.util.List;
-import java.util.Set;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
- * Created by shenghua.nish on 2016-03-19 下午9:51.
+ * Simple helper class that allows reading of integers.
+ * <p>
+ * TODO: implement buffering
+ *
+ * @author Dmitry Skiba
  */
-public class BasePatchTool {
+public class IntReader {
 
-    protected static final String BASE_APK_UNZIP_NAME = "base.apk";
-    protected static final String NEW_APK_UNZIP_NAME = "new.apk";
-    protected static final String DEX_NAME = "classes.dex";
-    protected static final String DEX_SUFFIX = ".dex";
-    protected static final String CLASSES = "classes";
-    protected static final int DEFAULT_API_LEVEL = 19;
+    private InputStream stream;
+    private boolean bigEndian;
+    private int bytesRead;
 
-    protected final File baseApk;
-    protected final File newApk;
-    protected final String baseApkVersion;
-    protected final String newApkVersion;
-
-    protected Set<ArtifactBundleInfo> artifactBundleInfos = Sets.newHashSet();
-
-    protected ILogger logger;
-    protected boolean onlyIncludeModifyBundle = true;
-
-    public BasePatchTool(File baseApk, File newApk, String baseApkVersion, String newApkVersion) {
-        this.baseApk = baseApk;
-        this.newApk = newApk;
-        this.baseApkVersion = baseApkVersion;
-        this.newApkVersion = newApkVersion;
-    }
-
-    public void setArtifactBundleInfos(Set<ArtifactBundleInfo> artifactBundleInfos) {
-        this.artifactBundleInfos = artifactBundleInfos;
-    }
-
-
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
-    }
-
-    public File getNextDexFile(File dexParentFolder, int dexNumber) {
-        return new File(dexParentFolder, CLASSES + dexNumber + DEX_SUFFIX);
-    }
-
-    public File getNextDexFile(File dexParentFolder, int dexNumber, String dexName) {
-        return new File(dexParentFolder, dexName + dexNumber + DEX_SUFFIX);
+    public IntReader(InputStream stream, boolean bigEndian) {
+        reset(stream, bigEndian);
     }
 
     /**
-     * 设置是否只包含变化的bundle信息，对于主bundle，不管是否设置都会进行对比
+     * Reset the POJO to use a new stream.
      *
-     * @param onlyIncludeModifyBundle
+     * @param newStream   the {@code InputStream} to use
+     * @param isBigEndian a boolean for whether or not the stream is in Big Endian format
      */
-    public void setOnlyIncludeModifyBundle(boolean onlyIncludeModifyBundle) {
-        this.onlyIncludeModifyBundle = onlyIncludeModifyBundle;
+    public void reset(InputStream newStream, boolean isBigEndian) {
+        stream = newStream;
+        bigEndian = isBigEndian;
+        bytesRead = 0;
     }
 
     /**
-     * 判断当前bundle是否有变化
+     * Close the current stream being used by the POJO.
+     */
+    public void close() {
+        if (stream != null) {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            reset(null, false);
+        }
+    }
+
+    public int readByte() throws IOException {
+        return readInt(1);
+    }
+
+    public int readShort() throws IOException {
+        return readInt(2);
+    }
+
+    public int readInt() throws IOException {
+        return readInt(4);
+    }
+
+    /**
+     * Read an integer of a certain length from the current stream.
      *
-     * @param bundleSoFileName
+     * @param length to read
      * @return
+     * @throws IOException
      */
-    public boolean isModifyBundle(String bundleSoFileName) {
-        for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
-            String packageName = artifactBundleInfo.getPkgName();
-            if (null == packageName) {
-                return false;
+    public int readInt(int length) throws IOException {
+        if ((length < 0) || (length > 4)) {
+            throw new IllegalArgumentException();
+        }
+        int result = 0;
+        int byteRead = 0;
+        if (bigEndian) {
+            for (int i = (length - 1) * 8; i >= 0; i -= 8) {
+                byteRead = stream.read();
+                bytesRead++;
+                if (byteRead == -1) {
+                    throw new EOFException();
+                }
+                result |= (byteRead << i);
             }
-            String bundleName = "lib" + packageName.replace('.', '_') + ".so";
-            if (bundleName.equals(bundleSoFileName)) {
-                if (null != logger) {
-                    logger.info("[BundleDiffType]" + bundleSoFileName + ":" + artifactBundleInfo.getDiffType());
+        } else {
+            length *= 8;
+            for (int i = 0; i != length; i += 8) {
+                byteRead = stream.read();
+                bytesRead++;
+                if (byteRead == -1) {
+                    throw new EOFException();
                 }
-                if (DiffType.ADD.equals(artifactBundleInfo.getDiffType()) || DiffType.MODIFY.equals(artifactBundleInfo.getDiffType())) {
-                    return true;
-                }
+                result |= (byteRead << i);
             }
         }
-        return false;
+
+        return result;
     }
 
-    public String getBundleName(String bundleSoFileName) {
-        return FilenameUtils.getBaseName(bundleSoFileName.replace("lib", ""));
-    }
-
-
-    public List<File> getFolderDexFiles(File folder) {
-        List<File> dexFiles = Lists.newArrayList();
-        File baseDex = new File(folder, DEX_NAME);
-        if (baseDex.exists()) {
-            dexFiles.add(baseDex);
-            // 比较是否存在着多dex
-            int dexIndex = 2;
-            File newIndexDex = getNextDexFile(folder, dexIndex);
-            while (null != newIndexDex && newIndexDex.exists()) {
-                dexFiles.add(newIndexDex);
-                dexIndex++;
-                newIndexDex = getNextDexFile(folder, dexIndex);
+    /**
+     * Skip a specific number of bytes in the stream.
+     *
+     * @param bytes
+     * @throws IOException
+     */
+    public void skip(int bytes) throws IOException {
+        if (bytes > 0) {
+            if (stream.skip(bytes) != bytes) {
+                throw new EOFException();
             }
+            bytesRead += bytes;
         }
-        return dexFiles;
     }
 
+    public void skipInt() throws IOException {
+        skip(4);
+    }
 
+    public int getBytesRead() {
+        return bytesRead;
+    }
 }
