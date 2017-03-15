@@ -31,6 +31,9 @@ public class AndroidManifestDiffFactory {
     }
 
     private void diff(Collection<? extends Manifest.AndroidBase> baseCollection, Collection<? extends Manifest.AndroidBase>newCollection){
+        if (newCollection == null||baseCollection == null){
+            return;
+        }
         for (Manifest.AndroidBase newAndroidBase:newCollection){
             String name = newAndroidBase.name;
             boolean find = false;
