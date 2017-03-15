@@ -3,7 +3,6 @@ apply plugin: 'java'
 apply plugin: 'idea'
 
 archivesBaseName = 'atlasplugin'
-version = '2.2.3.rc6'
 
 sourceSets {
     main {
@@ -16,7 +15,7 @@ sourceSets {
 dependencies {
     compile localGroovy()
     compile gradleApi()
-    compile "com.android.tools.build:gradle:2.2.3"
+    compile "com.android.tools.build:gradle:2.3.0"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
     compile "com.alibaba:fastjson:1.2.6"
@@ -26,74 +25,81 @@ dependencies {
     compile 'commons-beanutils:commons-beanutils:1.8.3'
     compile 'org.javassist:javassist:3.19.0-GA'
     compile "com.taobao.android:preverify:1.0.0"
-    compile "com.taobao.android:dex_patch:1.0.3+"
+    compile "com.taobao.android:dex_patch:1.0.3"
+    compile "org.codehaus.plexus:plexus-utils:3.0.24"
 }
 
-apply plugin: 'maven-publish'
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
-def siteUrl = 'https://github.com/alibaba/atlas'
-// 项目的主页
-def gitUrl = 'https://github.com/alibaba/atlas'
-// Git仓库的url
-install {
-   repositories.mavenInstaller {
-       // This generates POM.xml with proper parameters
-       pom {
-           project {
-               packaging 'jar'
-               // Add your description here
-               name 'atlasplugin' //项目描述
-               // Set your license
-               licenses {
-                   license {
-                       name 'The Apache Software License, Version 2.0'
-                       url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                   }
-               }
-               developers {
-                   developer {
-                       id 'alibabaatlas' //填写的一些基本信息
-                       name 'atlasplugin'
-                       email 'alibabaatlasframework@gmail.com'
-                   }
-               }
-               scm {
-                   connection gitUrl
-                   developerConnection gitUrl
-                   url siteUrl
-               }
-           }
-       }
-   }
-}
 
-Properties properties = new Properties()
-def file = project.rootProject.file('local.properties')
-if (file.exists()) {
-   properties.load(file.newDataInputStream())
-}
-bintray {
-   user = properties.getProperty("bintray.user")
-   key = properties.getProperty("bintray.apikey")
-   configurations = ['archives']
-   pkg {
-       repo = "maven"
-       name = "atlasplugin"	//发布到JCenter上的项目名字
-       websiteUrl = "atlas.alibaba.net"
-       vcsUrl = gitUrl
-       licenses = ["Apache-2.0"]
-       publish = true
-   }
-}
+version = '2.3.0.alpha1-SNAPSHOT'
+apply from: 'http://gitlab.alibaba-inc.com/android-build-system/buildscript/raw/master/mtl-publish.gradle'
+version = '2.2.3.rc5'
 
-task sourcesJar(type: Jar) {
-   from('src/main/java') {
-       include '**'
-   }
-   classifier = 'sources'
-}
-
-artifacts {
-   archives sourcesJar
-}
+//
+//apply plugin: 'maven-publish'
+//apply plugin: 'com.github.dcendents.android-maven'
+//apply plugin: 'com.jfrog.bintray'
+//def siteUrl = 'https://github.com/alibaba/atlas'
+//// 项目的主页
+//def gitUrl = 'https://github.com/alibaba/atlas'
+//// Git仓库的url
+//install {
+//   repositories.mavenInstaller {
+//       // This generates POM.xml with proper parameters
+//       pom {
+//           project {
+//               packaging 'jar'
+//               // Add your description here
+//               name 'atlasplugin' //项目描述
+//               // Set your license
+//               licenses {
+//                   license {
+//                       name 'The Apache Software License, Version 2.0'
+//                       url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//                   }
+//               }
+//               developers {
+//                   developer {
+//                       id 'alibabaatlas' //填写的一些基本信息
+//                       name 'atlasplugin'
+//                       email 'alibabaatlasframework@gmail.com'
+//                   }
+//               }
+//               scm {
+//                   connection gitUrl
+//                   developerConnection gitUrl
+//                   url siteUrl
+//               }
+//           }
+//       }
+//   }
+//}
+//
+//Properties properties = new Properties()
+//def file = project.rootProject.file('local.properties')
+//if (file.exists()) {
+//   properties.load(file.newDataInputStream())
+//}
+//bintray {
+//   user = properties.getProperty("bintray.user")
+//   key = properties.getProperty("bintray.apikey")
+//   configurations = ['archives']
+//   pkg {
+//       repo = "maven"
+//       name = "atlasplugin"	//发布到JCenter上的项目名字
+//       websiteUrl = "atlas.alibaba.net"
+//       vcsUrl = gitUrl
+//       licenses = ["Apache-2.0"]
+//       publish = true
+//   }
+//}
+//
+//task sourcesJar(type: Jar) {
+//   from('src/main/java') {
+//       include '**'
+//   }
+//   classifier = 'sources'
+//}
+//
+//artifacts {
+//   archives sourcesJar
+//}
