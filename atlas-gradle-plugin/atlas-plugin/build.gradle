@@ -3,7 +3,7 @@ apply plugin: 'java'
 apply plugin: 'idea'
 
 archivesBaseName = 'atlasplugin'
-version = '2.2.3.rc5'
+version = '2.2.3.rc6'
 
 sourceSets {
     main {
