@@ -1,7 +1,3 @@
-apply plugin: 'java'
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
-
 /*
  *
  *
@@ -209,104 +205,78 @@ apply plugin: 'com.jfrog.bintray'
  *
  *
  */
+package android.content.res.chunk.types;
 
-//buildscript {
-//
-//    repositories {
-//        mavenCentral()
-//        jcenter()
-//    }
-//    dependencies {
-////        classpath 'com.android.tools.build:gradle:2.2.0'
-//        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
-//        classpath "com.github.dcendents:android-maven-gradle-plugin:1.4.1"
-//    }
-//}
-repositories {
-//    flatDir {
-//        dirs 'libs'
-//    }
-    mavenCentral()
-    jcenter()
+import android.content.res.IntReader;
+import android.content.res.chunk.ChunkType;
+import android.content.res.chunk.sections.ResourceSection;
+import android.content.res.chunk.sections.StringSection;
 
-}
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
-sourceSets {
-    main {
-//        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
-    }
-}
+/**
+ * Specific chunk for ending sections and/or namespaces
+ *
+ * @author tstrazzere
+ */
+public class EndTag extends GenericChunk implements Chunk {
 
-def siteUrl = 'https://github.com/alibaba/atlas'
-// 项目的主页
-def gitUrl = 'https://github.com/alibaba/atlas'
-// Git仓库的url
-install {
-    repositories.mavenInstaller {
-        // This generates POM.xml with proper parameters
-        pom {
-            project {
-                packaging 'jar'
-                // Add your description here
-                name 'preverify' //项目描述
-                // Set your license
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id 'alibabaatlas' //填写的一些基本信息
-                        name 'preverify'
-                        email 'alibabaatlasframework@gmail.com'
-                    }
-                }
-                scm {
-                    connection gitUrl
-                    developerConnection gitUrl
-                    url siteUrl
-                }
-            }
-        }
-    }
-}
+    private int lineNumber;
+    private int commentIndex;
+    private int namespaceUri;
+    private int name;
 
-Properties properties = new Properties()
-def file = project.rootProject.file('local.properties')
-if (file.exists()) {
-    properties.load(file.newDataInputStream())
-}
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-    configurations = ['archives']
-    pkg {
-        repo = "maven"
-        name = "preverify"    //发布到JCenter上的项目名字
-        websiteUrl = "atlas.alibaba.net"
-        vcsUrl = gitUrl
-        licenses = ["Apache-2.0"]
-        publish = true
+    public EndTag(ChunkType chunkType, IntReader inputReader) {
+        super(chunkType, inputReader);
     }
 
-}
-
-task sourcesJar(type: Jar) {
-    from('src/main/java') {
-        include '**'
+    /*
+     * (non-Javadoc)
+     * 
+     * @see android.content.res.chunk.types.Chunk#readHeader(android.content.res.IntReader)
+     */
+    @Override
+    public void readHeader(IntReader inputReader) throws IOException {
+        lineNumber = inputReader.readInt();
+        commentIndex = inputReader.readInt();
+        namespaceUri = inputReader.readInt();
+        name = inputReader.readInt();
     }
-    classifier = 'sources'
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see android.content.res.chunk.types.Chunk#toXML(android.content.res.chunk.sections.StringSection,
+     * android.content.res.chunk.sections.ResourceSection, int)
+     */
+    @Override
+    public String toXML(StringSection stringSection, ResourceSection resourceSection, int indent) {
+        return indent(indent) + "</" + stringSection.getString(name) + ">";
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see android.content.res.chunk.types.Chunk#toBytes()
+     */
+    @Override
+    public byte[] toBytes() {
+        byte[] header = super.toBytes();
+
+        byte[] body = ByteBuffer.allocate(4 * 4)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(lineNumber)
+                .putInt(commentIndex)
+                .putInt(namespaceUri)
+                .putInt(name)
+                .array();
+
+        return ByteBuffer.allocate(header.length + body.length)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(header)
+                .put(body)
+                .array();
+    }
 }
-
-artifacts {
-    archives sourcesJar
-}
-
-archivesBaseName = 'preverify'
-group 'com.taobao.android'
-version "1.0.0"
-

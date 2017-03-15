@@ -4,7 +4,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:2.2.3.rc4"
+        classpath "com.taobao.android:atlasplugin:2.2.3.rc+"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
     }

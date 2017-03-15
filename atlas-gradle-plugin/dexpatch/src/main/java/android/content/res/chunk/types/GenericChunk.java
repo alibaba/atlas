@@ -205,121 +205,86 @@
  *
  *
  */
-package com.taobao.android;
+package android.content.res.chunk.types;
 
-import com.android.utils.ILogger;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.taobao.android.object.ArtifactBundleInfo;
-import com.taobao.android.object.DiffType;
+import android.content.res.IntReader;
+import android.content.res.chunk.ChunkType;
 
-import org.apache.commons.io.FilenameUtils;
-
-import java.io.File;
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
- * Created by shenghua.nish on 2016-03-19 下午9:51.
+ * Abstract class for the generic lifting required by all Chunks
+ *
+ * @author tstrazzere
  */
-public class BasePatchTool {
+public abstract class GenericChunk implements Chunk {
 
-    protected static final String BASE_APK_UNZIP_NAME = "base.apk";
-    protected static final String NEW_APK_UNZIP_NAME = "new.apk";
-    protected static final String DEX_NAME = "classes.dex";
-    protected static final String DEX_SUFFIX = ".dex";
-    protected static final String CLASSES = "classes";
-    protected static final int DEFAULT_API_LEVEL = 19;
+    private int startPosition;
 
-    protected final File baseApk;
-    protected final File newApk;
-    protected final String baseApkVersion;
-    protected final String newApkVersion;
+    private ChunkType type;
+    protected int size;
 
-    protected Set<ArtifactBundleInfo> artifactBundleInfos = Sets.newHashSet();
-
-    protected ILogger logger;
-    protected boolean onlyIncludeModifyBundle = true;
-
-    public BasePatchTool(File baseApk, File newApk, String baseApkVersion, String newApkVersion) {
-        this.baseApk = baseApk;
-        this.newApk = newApk;
-        this.baseApkVersion = baseApkVersion;
-        this.newApkVersion = newApkVersion;
+    public GenericChunk(ChunkType chunkType, IntReader reader) {
+        startPosition = reader.getBytesRead() - 4;
+        type = chunkType;
+        try {
+            size = reader.readInt();
+            readHeader(reader);
+        } catch (IOException exception) {
+            // TODO : Handle this better
+            exception.printStackTrace();
+        }
     }
 
-    public void setArtifactBundleInfos(Set<ArtifactBundleInfo> artifactBundleInfos) {
-        this.artifactBundleInfos = artifactBundleInfos;
+    /*
+     * (non-Javadoc)
+     * 
+     * @see android.content.res.chunk.types.Chunk#getChunkType()
+     */
+    public ChunkType getChunkType() {
+        return type;
     }
 
-
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
-    }
-
-    public File getNextDexFile(File dexParentFolder, int dexNumber) {
-        return new File(dexParentFolder, CLASSES + dexNumber + DEX_SUFFIX);
-    }
-
-    public File getNextDexFile(File dexParentFolder, int dexNumber, String dexName) {
-        return new File(dexParentFolder, dexName + dexNumber + DEX_SUFFIX);
+    /*
+     *` (non-Javadoc)
+     * 
+     * @see android.content.res.chunk.types.Chunk#getSize()
+     */
+    public int getSize() {
+        return size;
     }
 
     /**
-     * 设置是否只包含变化的bundle信息，对于主bundle，不管是否设置都会进行对比
-     *
-     * @param onlyIncludeModifyBundle
+     * @return the int position inside of the file where the Chunk starts
      */
-    public void setOnlyIncludeModifyBundle(boolean onlyIncludeModifyBundle) {
-        this.onlyIncludeModifyBundle = onlyIncludeModifyBundle;
+    public int getStartPosition() {
+        return startPosition;
     }
 
     /**
-     * 判断当前bundle是否有变化
-     *
-     * @param bundleSoFileName
-     * @return
+     * @param indents
+     * @return a number of indents needed for properly formatting XML
      */
-    public boolean isModifyBundle(String bundleSoFileName) {
-        for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
-            String packageName = artifactBundleInfo.getPkgName();
-            if (null == packageName) {
-                return false;
-            }
-            String bundleName = "lib" + packageName.replace('.', '_') + ".so";
-            if (bundleName.equals(bundleSoFileName)) {
-                if (null != logger) {
-                    logger.info("[BundleDiffType]" + bundleSoFileName + ":" + artifactBundleInfo.getDiffType());
-                }
-                if (DiffType.ADD.equals(artifactBundleInfo.getDiffType()) || DiffType.MODIFY.equals(artifactBundleInfo.getDiffType())) {
-                    return true;
-                }
-            }
+    protected String indent(int indents) {
+        StringBuffer buffer = new StringBuffer();
+        for (int i = 0; i < indents; i++) {
+            buffer.append("\t");
         }
-        return false;
+        return buffer.toString();
     }
 
-    public String getBundleName(String bundleSoFileName) {
-        return FilenameUtils.getBaseName(bundleSoFileName.replace("lib", ""));
+    /*
+     * (non-Javadoc)
+     *
+     * @see android.content.res.chunk.types.Chunk#toBytes()
+     */
+    @Override
+    public byte[] toBytes() {
+        return ByteBuffer.allocate(8)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(type.getIntType())
+                .putInt(getSize()).array();
     }
-
-
-    public List<File> getFolderDexFiles(File folder) {
-        List<File> dexFiles = Lists.newArrayList();
-        File baseDex = new File(folder, DEX_NAME);
-        if (baseDex.exists()) {
-            dexFiles.add(baseDex);
-            // 比较是否存在着多dex
-            int dexIndex = 2;
-            File newIndexDex = getNextDexFile(folder, dexIndex);
-            while (null != newIndexDex && newIndexDex.exists()) {
-                dexFiles.add(newIndexDex);
-                dexIndex++;
-                newIndexDex = getNextDexFile(folder, dexIndex);
-            }
-        }
-        return dexFiles;
-    }
-
-
 }

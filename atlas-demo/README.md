@@ -26,7 +26,7 @@ Specific reference `buildTpatch.sh`
 General steps are as follows:
 
 1. release bundle version2 to the repository
-2. The app dependency on bundle versin2,
+2. The app dependency on bundle version2,
 3. Modify the app project source and depend on the version of the component (optional)
 4. Modify the app versionCode, and release (required)
 5. ./gradlew clean assembleDebug -DapVersion=1.0 build patch

@@ -205,121 +205,289 @@
  *
  *
  */
-package com.taobao.android;
+package android.content.res.chunk.sections;
 
-import com.android.utils.ILogger;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.taobao.android.object.ArtifactBundleInfo;
-import com.taobao.android.object.DiffType;
+import android.content.res.IntReader;
+import android.content.res.chunk.ChunkType;
+import android.content.res.chunk.PoolItem;
+import android.content.res.chunk.types.Chunk;
 
-import org.apache.commons.io.FilenameUtils;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import java.io.File;
-import java.util.List;
-import java.util.Set;
+public class StringSection extends GenericChunkSection implements Chunk, ChunkSection {
 
-/**
- * Created by shenghua.nish on 2016-03-19 下午9:51.
- */
-public class BasePatchTool {
+    // This specific tag appears unused but might need to be implemented? or used as an unknown?
+    @SuppressWarnings("unused")
+    private final int SORTED_FLAG = 1 << 0;
+    private final int UTF8_FLAG = 1 << 8;
 
-    protected static final String BASE_APK_UNZIP_NAME = "base.apk";
-    protected static final String NEW_APK_UNZIP_NAME = "new.apk";
-    protected static final String DEX_NAME = "classes.dex";
-    protected static final String DEX_SUFFIX = ".dex";
-    protected static final String CLASSES = "classes";
-    protected static final int DEFAULT_API_LEVEL = 19;
+    private int stringChunkCount;
+    private int styleChunkCount;
+    private int stringChunkFlags;
+    private int stringChunkPoolOffset;
+    private int styleChunkPoolOffset;
 
-    protected final File baseApk;
-    protected final File newApk;
-    protected final String baseApkVersion;
-    protected final String newApkVersion;
+    // FIXME:
+    // This likely could just be an ordered array of Strings if the Integer is just ordered and the key..
+    private ArrayList<PoolItem> stringChunkPool;
+    private ArrayList<PoolItem> styleChunkPool;
 
-    protected Set<ArtifactBundleInfo> artifactBundleInfos = Sets.newHashSet();
-
-    protected ILogger logger;
-    protected boolean onlyIncludeModifyBundle = true;
-
-    public BasePatchTool(File baseApk, File newApk, String baseApkVersion, String newApkVersion) {
-        this.baseApk = baseApk;
-        this.newApk = newApk;
-        this.baseApkVersion = baseApkVersion;
-        this.newApkVersion = newApkVersion;
+    public StringSection(ChunkType chunkType, IntReader inputReader) {
+        super(chunkType, inputReader);
     }
 
-    public void setArtifactBundleInfos(Set<ArtifactBundleInfo> artifactBundleInfos) {
-        this.artifactBundleInfos = artifactBundleInfos;
+    @Override
+    public void readHeader(IntReader inputReader) throws IOException {
+        stringChunkCount = inputReader.readInt();
+        styleChunkCount = inputReader.readInt();
+        stringChunkFlags = inputReader.readInt();
+
+        stringChunkPoolOffset = inputReader.readInt();
+        stringChunkPool = new ArrayList<PoolItem>();
+
+        styleChunkPoolOffset = inputReader.readInt();
+        styleChunkPool = new ArrayList<PoolItem>();
     }
 
+    @Override
+    public void readSection(IntReader inputReader) throws IOException {
+        for (int i = 0; i < stringChunkCount; i++) {
+            stringChunkPool.add(new PoolItem(inputReader.readInt(), null));
+        }
 
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
+        if (!stringChunkPool.isEmpty()) {
+            readPool(stringChunkPool, stringChunkFlags, inputReader);
+        }
+
+        // TODO : Does this need the flags?
+        // FIXME: This is potentially wrong
+        for (int i = 0; i < styleChunkCount; i++) {
+            styleChunkPool.add(new PoolItem(inputReader.readInt(), null));
+        }
+
+        if (!styleChunkPool.isEmpty()) {
+            readPool(styleChunkPool, stringChunkFlags, inputReader);
+        }
     }
 
-    public File getNextDexFile(File dexParentFolder, int dexNumber) {
-        return new File(dexParentFolder, CLASSES + dexNumber + DEX_SUFFIX);
-    }
+    // TODO : Ensure we goto the proper offset in the case it isn't in proper order
+    private void readPool(ArrayList<PoolItem> pool, int flags, IntReader inputReader) throws IOException {
+        int offset = 0;
+        for (PoolItem item : pool) {
+            // TODO: This assumes that the pool is ordered...
+            inputReader.skip(item.getOffset() - offset);
+            offset = item.getOffset();
 
-    public File getNextDexFile(File dexParentFolder, int dexNumber, String dexName) {
-        return new File(dexParentFolder, dexName + dexNumber + DEX_SUFFIX);
-    }
-
-    /**
-     * 设置是否只包含变化的bundle信息，对于主bundle，不管是否设置都会进行对比
-     *
-     * @param onlyIncludeModifyBundle
-     */
-    public void setOnlyIncludeModifyBundle(boolean onlyIncludeModifyBundle) {
-        this.onlyIncludeModifyBundle = onlyIncludeModifyBundle;
-    }
-
-    /**
-     * 判断当前bundle是否有变化
-     *
-     * @param bundleSoFileName
-     * @return
-     */
-    public boolean isModifyBundle(String bundleSoFileName) {
-        for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
-            String packageName = artifactBundleInfo.getPkgName();
-            if (null == packageName) {
-                return false;
+            int length = 0;
+            if ((flags & UTF8_FLAG) != 0) {
+                length = inputReader.readByte();
+                offset += 1;
+            } else {
+                length = inputReader.readShort();
+                offset += 2;
             }
-            String bundleName = "lib" + packageName.replace('.', '_') + ".so";
-            if (bundleName.equals(bundleSoFileName)) {
-                if (null != logger) {
-                    logger.info("[BundleDiffType]" + bundleSoFileName + ":" + artifactBundleInfo.getDiffType());
+
+            StringBuilder result = new StringBuilder(length);
+            for (; length != 0; length -= 1) {
+                if ((flags & UTF8_FLAG) != 0) {
+                    result.append((char) inputReader.readByte());
+                    offset += 1;
+                } else {
+                    result.append((char) inputReader.readShort());
+                    offset += 2;
                 }
-                if (DiffType.ADD.equals(artifactBundleInfo.getDiffType()) || DiffType.MODIFY.equals(artifactBundleInfo.getDiffType())) {
-                    return true;
+            }
+
+            item.setString(result.toString());
+        }
+    }
+
+    public int getStringIndex(String string) {
+        if (string != null) {
+            for (PoolItem item : stringChunkPool) {
+                if (item.getString().equals(string)) {
+                    return stringChunkPool.indexOf(item);
                 }
             }
         }
-        return false;
+
+        return -1;
     }
 
-    public String getBundleName(String bundleSoFileName) {
-        return FilenameUtils.getBaseName(bundleSoFileName.replace("lib", ""));
+    public int putStringIndex(String string) {
+        int currentPosition = getStringIndex(string);
+        if (currentPosition != -1) {
+            return currentPosition;
+        }
+
+        stringChunkPool.add(new PoolItem(-1, string));
+
+        return getStringIndex(string);
     }
 
+    public String getString(int index) {
+        if ((index > -1) && (index < stringChunkPool.size())) {
+            return stringChunkPool.get(index).getString();
+        }
 
-    public List<File> getFolderDexFiles(File folder) {
-        List<File> dexFiles = Lists.newArrayList();
-        File baseDex = new File(folder, DEX_NAME);
-        if (baseDex.exists()) {
-            dexFiles.add(baseDex);
-            // 比较是否存在着多dex
-            int dexIndex = 2;
-            File newIndexDex = getNextDexFile(folder, dexIndex);
-            while (null != newIndexDex && newIndexDex.exists()) {
-                dexFiles.add(newIndexDex);
-                dexIndex++;
-                newIndexDex = getNextDexFile(folder, dexIndex);
+        return "";
+    }
+
+    public String getStyle(int index) {
+        return styleChunkPool.get(index).getString();
+    }
+
+    @Override
+    public String toXML(StringSection stringSection, ResourceSection resourceSection, int indent) {
+        return null;
+    }
+
+    @Override
+    public int getSize() {
+        int stringDataSize = 0;
+        int previousSize;
+        for (PoolItem item : stringChunkPool) {
+            previousSize = stringDataSize;
+            // TODO: This is potentially wrong
+            // length identifier
+            stringDataSize += ((stringChunkFlags & UTF8_FLAG) == 0) ? 2 : 1;
+            // actual string data
+            stringDataSize += item.getString().length() * (((stringChunkFlags & UTF8_FLAG) == 0) ? 2 : 1);
+            // buffer
+            int bufferSize = 4 - (stringDataSize - previousSize) % 4;
+            if (bufferSize > 0 && bufferSize < 4) {
+                stringDataSize += bufferSize;
             }
         }
-        return dexFiles;
+
+        int styleDataSize = 0;
+        for (PoolItem item : styleChunkPool) {
+            styleDataSize += item.getString().length() * (((stringChunkFlags & UTF8_FLAG) == 0) ? 2 : 1);
+        }
+
+        return (2 * 4) + // Header
+                (5 * 4) + // static sections
+                (stringChunkPool.size() * 4) + // string table offset size
+                stringDataSize +
+                (styleChunkPool.size() * 4) + // style table offset size
+                styleDataSize;
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see android.content.res.chunk.types.Chunk#toBytes()
+     */
+    @Override
+    public byte[] toBytes() {
+        byte[] header = super.toBytes();
 
+        // TODO : We need to ensure these are already "sorted"
+        ByteBuffer offsetBuffer = ByteBuffer.allocate(stringChunkPool.size() * 4)
+                .order(ByteOrder.LITTLE_ENDIAN);
+        int offset = 0;
+        int previousOffset;
+        ArrayList<byte[]> stringData = new ArrayList<>();
+        for (PoolItem item : stringChunkPool) {
+            offsetBuffer.putInt(offset);
+            previousOffset = offset;
+
+            // TODO : Ensure this is properly handled, potentially a ULEB128?
+            // Add string length bytes
+            if (item.getString().length() > 255) {
+                System.err.println("Error, string length is greater than the current expected lengths!");
+            }
+            offset += ((stringChunkFlags & UTF8_FLAG) == 0) ? 2 : 1;
+
+            // Add length of string based on if UTF-8 flag is enabled
+            offset += item.getString().length() * (((stringChunkFlags & UTF8_FLAG) == 0) ? 2 : 1);
+
+            // Add buffer
+            int bufferSize = 4 - ((offset - previousOffset) % 4);
+            if (bufferSize > 0 && bufferSize < 4) {
+                offset += bufferSize;
+            }
+
+            // Append actual length + data
+            ByteBuffer length;
+            if ((stringChunkFlags & UTF8_FLAG) == 0) {
+                length = ByteBuffer.allocate(2)
+                        .order(ByteOrder.LITTLE_ENDIAN)
+                        .putShort((short) item.getString().length());
+            } else {
+                length = ByteBuffer.allocate(1)
+                        .put((byte) item.getString().length());
+            }
+
+            ByteBuffer string = ByteBuffer.allocate(item.getString().length() * (((stringChunkFlags & UTF8_FLAG) == 0) ? 2 : 1))
+                    .order(ByteOrder.LITTLE_ENDIAN);
+            for (byte character : item.getString().getBytes()) {
+                if ((stringChunkFlags & UTF8_FLAG) == 0) {
+                    string.putShort(character);
+                } else {
+                    string.put(character);
+                }
+            }
+
+            ByteBuffer stringDataBuffer = ByteBuffer.allocate(offset - previousOffset)
+                    .order(ByteOrder.LITTLE_ENDIAN)
+                    .put(length.array())
+                    .put(string.array());
+
+            if (bufferSize > 0 && bufferSize < 4) {
+                // TODO : fix this
+                byte[] buffer = new byte[bufferSize];
+                Arrays.fill(buffer, (byte) 0x00);
+                stringDataBuffer.put(buffer);
+            }
+
+            stringData.add(stringDataBuffer.array());
+        }
+
+        // Combine strings into one buffer
+        ByteBuffer stringsBuffer = ByteBuffer.allocate(offsetBuffer.capacity() + offset)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(offsetBuffer.array());
+        for (byte[] data : stringData) {
+            stringsBuffer.put(data);
+        }
+        byte[] strings = stringsBuffer.array();
+
+//        byte[] styles = new byte[]{0x00};
+
+        int newStringChunkOffset = 0;
+        if (!stringChunkPool.isEmpty()) {
+            newStringChunkOffset = (5 * 4) /* header + 3 other ints above it */
+                    + stringChunkPool.size() * 4 /* index table size */
+                    + 8 /* (this space and the style chunk offset */;
+        }
+
+        int newStyleChunkOffset = 0;
+        if (!styleChunkPool.isEmpty()) {
+            newStyleChunkOffset = (6 * 4) /* header + 4 other ints above it */
+                    + styleChunkPool.size() * 4 /* index table size */
+                    + 8 /* (this space and the style chunk offset */;
+        }
+
+        byte[] body = ByteBuffer.allocate(5 * 4)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(stringChunkPool.size())
+                .putInt(styleChunkPool.size())
+                .putInt(stringChunkFlags)
+                .putInt(newStringChunkOffset)
+                .putInt(newStyleChunkOffset)
+                .array();
+
+        return ByteBuffer.allocate(header.length + body.length + strings.length /*+ styles.length*/)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(header)
+                .put(body)
+                .put(strings)
+//                .put(styles)
+                .array();
+    }
 }

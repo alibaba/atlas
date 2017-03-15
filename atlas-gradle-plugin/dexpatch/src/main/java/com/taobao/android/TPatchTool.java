@@ -219,6 +219,7 @@ import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.DiffType;
 import com.taobao.android.object.PatchBundleInfo;
 import com.taobao.android.object.PatchInfo;
+import com.taobao.android.tpatch.manifest.AndroidManifestDiffFactory;
 import com.taobao.android.task.ExecutorServicesHelper;
 import com.taobao.android.tpatch.builder.PatchFileBuilder;
 import com.taobao.android.tpatch.utils.DexBuilderUtils;
@@ -470,7 +471,7 @@ public class TPatchTool extends BasePatchTool {
 
         // 删除临时的目录
         FileUtils.deleteDirectory(patchTmpDir);
-        FileUtils.deleteDirectory(unzipFolder);
+//        FileUtils.deleteDirectory(unzipFolder);
         return patchFile;
     }
 
@@ -742,8 +743,9 @@ public class TPatchTool extends BasePatchTool {
 
         // 合并dex
         if (dexs.size() > 1) {
-            if (null != logger)
+            if (null != logger) {
                 logger.info("To merged dex is:" + StringUtils.join(dexs, ","));
+            }
             DexBuilderUtils.mergeDex(dexs, destDex, CollisionPolicy.FAIL);
         } else if (dexs.size() > 0) {
             FileUtils.copyFile(dexs.get(0), destDex);
@@ -923,9 +925,27 @@ public class TPatchTool extends BasePatchTool {
                                               baseFileMd5);
         if (StringUtils.equals(newFileMd5, baseFileMd5)) {
             return false;
-        } else {
+        } else if (newFile.getName().equals(ANDROID_MANIFEST)){
+            return isManifestModify(baseFile,newFile);
+
+        }else {
             return true;
         }
+    }
+
+    private boolean isManifestModify(File baseFile, File newFile) {
+        AndroidManifestDiffFactory androidManifestDiffFactory = new AndroidManifestDiffFactory();
+        try {
+            androidManifestDiffFactory.diff(baseFile,newFile);
+            for (AndroidManifestDiffFactory.DiffItem diffItem:androidManifestDiffFactory.diffResuit){
+                if (diffItem.Component instanceof com.taobao.android.tpatch.manifest.Manifest.Activity||diffItem.Component instanceof com.taobao.android.tpatch.manifest.Manifest.Service){
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     /**

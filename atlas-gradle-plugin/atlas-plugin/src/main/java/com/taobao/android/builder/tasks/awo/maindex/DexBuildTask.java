@@ -298,8 +298,8 @@ public class DexBuildTask extends DefaultAndroidTask {
     private ClassPool initClassPool(File jar) {
         final ClassPool pool = ClassPool.getDefault();
         try {
-            File verifyFile = PathUtil.getJarFile(com.taobao.verify.Verifier.class);
-            pool.insertClassPath(verifyFile.getAbsolutePath());
+//            File verifyFile = PathUtil.getJarFile(com.taobao.verify.Verifier.class);
+//            pool.insertClassPath(verifyFile.getAbsolutePath());
             pool.insertClassPath(jar.getAbsolutePath());
         } catch (NotFoundException e) {
             throw new StopExecutionException(e.getMessage());

@@ -205,121 +205,87 @@
  *
  *
  */
-package com.taobao.android;
+package android.content.res.chunk.types;
 
-import com.android.utils.ILogger;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.taobao.android.object.ArtifactBundleInfo;
-import com.taobao.android.object.DiffType;
+import android.content.res.IntReader;
+import android.content.res.chunk.ChunkType;
+import android.content.res.chunk.sections.ResourceSection;
+import android.content.res.chunk.sections.StringSection;
 
-import org.apache.commons.io.FilenameUtils;
-
-import java.io.File;
-import java.util.List;
-import java.util.Set;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
- * Created by shenghua.nish on 2016-03-19 下午9:51.
+ * Specific Chunk which contains a text key and value
+ *
+ * @author tstrazzere
  */
-public class BasePatchTool {
+public class TextTag extends GenericChunk implements Chunk {
 
-    protected static final String BASE_APK_UNZIP_NAME = "base.apk";
-    protected static final String NEW_APK_UNZIP_NAME = "new.apk";
-    protected static final String DEX_NAME = "classes.dex";
-    protected static final String DEX_SUFFIX = ".dex";
-    protected static final String CLASSES = "classes";
-    protected static final int DEFAULT_API_LEVEL = 19;
+    private int lineNumber;
+    private int commentIndex;
 
-    protected final File baseApk;
-    protected final File newApk;
-    protected final String baseApkVersion;
-    protected final String newApkVersion;
+    private int name;
+    private int rawValue;
+    private int typedValue;
 
-    protected Set<ArtifactBundleInfo> artifactBundleInfos = Sets.newHashSet();
-
-    protected ILogger logger;
-    protected boolean onlyIncludeModifyBundle = true;
-
-    public BasePatchTool(File baseApk, File newApk, String baseApkVersion, String newApkVersion) {
-        this.baseApk = baseApk;
-        this.newApk = newApk;
-        this.baseApkVersion = baseApkVersion;
-        this.newApkVersion = newApkVersion;
+    public TextTag(ChunkType chunkType, IntReader inputReader) {
+        super(chunkType, inputReader);
     }
 
-    public void setArtifactBundleInfos(Set<ArtifactBundleInfo> artifactBundleInfos) {
-        this.artifactBundleInfos = artifactBundleInfos;
-    }
-
-
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
-    }
-
-    public File getNextDexFile(File dexParentFolder, int dexNumber) {
-        return new File(dexParentFolder, CLASSES + dexNumber + DEX_SUFFIX);
-    }
-
-    public File getNextDexFile(File dexParentFolder, int dexNumber, String dexName) {
-        return new File(dexParentFolder, dexName + dexNumber + DEX_SUFFIX);
-    }
-
-    /**
-     * 设置是否只包含变化的bundle信息，对于主bundle，不管是否设置都会进行对比
-     *
-     * @param onlyIncludeModifyBundle
+    /*
+     * (non-Javadoc)
+     * 
+     * @see android.content.res.chunk.types.Chunk#readHeader(android.content.res.IntReader)
      */
-    public void setOnlyIncludeModifyBundle(boolean onlyIncludeModifyBundle) {
-        this.onlyIncludeModifyBundle = onlyIncludeModifyBundle;
+    @Override
+    public void readHeader(IntReader inputReader) throws IOException {
+        lineNumber = inputReader.readInt();
+        commentIndex = inputReader.readInt();
+        name = inputReader.readInt();
+        rawValue = inputReader.readInt();
+        typedValue = inputReader.readInt();
     }
 
-    /**
-     * 判断当前bundle是否有变化
-     *
-     * @param bundleSoFileName
-     * @return
+    /*
+     * (non-Javadoc)
+     * 
+     * @see android.content.res.chunk.types.Chunk#toXML(android.content.res.chunk.sections.StringSection,
+     * android.content.res.chunk.sections.ResourceSection, int)
      */
-    public boolean isModifyBundle(String bundleSoFileName) {
-        for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
-            String packageName = artifactBundleInfo.getPkgName();
-            if (null == packageName) {
-                return false;
-            }
-            String bundleName = "lib" + packageName.replace('.', '_') + ".so";
-            if (bundleName.equals(bundleSoFileName)) {
-                if (null != logger) {
-                    logger.info("[BundleDiffType]" + bundleSoFileName + ":" + artifactBundleInfo.getDiffType());
-                }
-                if (DiffType.ADD.equals(artifactBundleInfo.getDiffType()) || DiffType.MODIFY.equals(artifactBundleInfo.getDiffType())) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    @Override
+    public String toXML(StringSection stringSection, ResourceSection resourceSection, int indent) {
+        StringBuffer buffer = new StringBuffer();
+
+        buffer.append(indent(indent));
+        buffer.append(stringSection.getString(name));
+
+        return buffer.toString();
     }
 
-    public String getBundleName(String bundleSoFileName) {
-        return FilenameUtils.getBaseName(bundleSoFileName.replace("lib", ""));
+    /*
+     * (non-Javadoc)
+     *
+     * @see android.content.res.chunk.types.Chunk#toBytes()
+     */
+    @Override
+    public byte[] toBytes() {
+        byte[] header = super.toBytes();
+
+        byte[] body = ByteBuffer.allocate(5 * 4)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(lineNumber)
+                .putInt(commentIndex)
+                .putInt(name)
+                .putInt(rawValue)
+                .putInt(typedValue)
+                .array();
+
+        return ByteBuffer.allocate(header.length + body.length)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .put(header)
+                .put(body)
+                .array();
     }
-
-
-    public List<File> getFolderDexFiles(File folder) {
-        List<File> dexFiles = Lists.newArrayList();
-        File baseDex = new File(folder, DEX_NAME);
-        if (baseDex.exists()) {
-            dexFiles.add(baseDex);
-            // 比较是否存在着多dex
-            int dexIndex = 2;
-            File newIndexDex = getNextDexFile(folder, dexIndex);
-            while (null != newIndexDex && newIndexDex.exists()) {
-                dexFiles.add(newIndexDex);
-                dexIndex++;
-                newIndexDex = getNextDexFile(folder, dexIndex);
-            }
-        }
-        return dexFiles;
-    }
-
-
 }

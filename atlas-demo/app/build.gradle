@@ -4,7 +4,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:2.2.3.rc4"
+        classpath "com.taobao.android:atlasplugin:2.2.3.rc+"
     }
 }
 
@@ -30,13 +30,13 @@ dependencies {
 
     compile('com.android.support:appcompat-v7:23.1.0')
 
-    compile('com.taobao.android:atlas:1.0.2@aar') {
+    compile('com.taobao.android:atlas_core:5.0.6@aar') {
         transitive = true
     }
 
     compile("com.taobao.android:firstbundle:${version}@awb")
 
-    compile 'com.taobao.android:atlasupdate:1.0.0@aar'
+    compile 'com.taobao.android:atlasupdate:1.1.4@aar'
 
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
 
@@ -71,7 +71,7 @@ android {
     dexOptions {
         jumboMode = true
         preDexLibraries = true
-        javaMaxHeapSize = '2048m'
+        // javaMaxHeapSize = '2048m'
     }
 
     buildTypes {
