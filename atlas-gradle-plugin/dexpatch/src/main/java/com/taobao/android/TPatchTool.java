@@ -471,7 +471,7 @@ public class TPatchTool extends BasePatchTool {
 
         // 删除临时的目录
         FileUtils.deleteDirectory(patchTmpDir);
-        FileUtils.deleteDirectory(unzipFolder);
+//        FileUtils.deleteDirectory(unzipFolder);
         return patchFile;
     }
 
