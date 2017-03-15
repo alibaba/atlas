@@ -220,7 +220,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
-import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.patch.KernalBundle;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.text.TextUtils;

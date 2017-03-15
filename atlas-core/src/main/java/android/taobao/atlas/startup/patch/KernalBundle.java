@@ -258,7 +258,7 @@ public class KernalBundle{
                 return false;
             }
         }
-        return true;
+        return false;
     }
 
     public static boolean hasKernalPatch(){

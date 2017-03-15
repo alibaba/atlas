@@ -348,8 +348,13 @@ public class KernalVersionManager {
     }
 
     public void removeBaseLineInfo(){
-        deleteDirectory(BASELINEINFO_DIR);
-        deleteDirectory(new File(KernalConstants.baseContext.getFilesDir(),"bundleupdate"));
+        if(BASELINEINFO_DIR.exists()) {
+            deleteDirectory(BASELINEINFO_DIR);
+        }
+        File bundleupdate = new File(KernalConstants.baseContext.getFilesDir(),"bundleupdate");
+        if(bundleupdate.exists()) {
+            deleteDirectory(bundleupdate);
+        }
     }
 
     public void deleteDirectory(final File path) {
