@@ -1,7 +1,3 @@
-apply plugin: 'java'
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
-
 /*
  *
  *
@@ -209,104 +205,180 @@ apply plugin: 'com.jfrog.bintray'
  *
  *
  */
+ */
+package android.content.res;
 
-//buildscript {
-//
-//    repositories {
-//        mavenCentral()
-//        jcenter()
-//    }
-//    dependencies {
-////        classpath 'com.android.tools.build:gradle:2.2.0'
-//        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
-//        classpath "com.github.dcendents:android-maven-gradle-plugin:1.4.1"
-//    }
-//}
-repositories {
-//    flatDir {
-//        dirs 'libs'
-//    }
-    mavenCentral()
-    jcenter()
+import android.content.res.chunk.ChunkType;
+import android.content.res.chunk.ChunkUtil;
+import android.content.res.chunk.sections.ResourceSection;
+import android.content.res.chunk.sections.StringSection;
+import android.content.res.chunk.types.AXMLHeader;
+import android.content.res.chunk.types.Attribute;
+import android.content.res.chunk.types.Chunk;
+import android.content.res.chunk.types.StartTag;
 
-}
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 
-sourceSets {
-    main {
-//        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+/**
+ * Main AXMLResource object
+ *
+ * @author tstrazzere
+ */
+public class AXMLResource {
+
+    AXMLHeader header;
+    StringSection stringSection;
+    ResourceSection resourceSection;
+    LinkedHashSet<Chunk> chunks;
+
+    public AXMLResource() {
+        chunks = new LinkedHashSet<Chunk>();
     }
-}
 
-def siteUrl = 'https://github.com/alibaba/atlas'
-// 项目的主页
-def gitUrl = 'https://github.com/alibaba/atlas'
-// Git仓库的url
-install {
-    repositories.mavenInstaller {
-        // This generates POM.xml with proper parameters
-        pom {
-            project {
-                packaging 'jar'
-                // Add your description here
-                name 'preverify' //项目描述
-                // Set your license
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id 'alibabaatlas' //填写的一些基本信息
-                        name 'preverify'
-                        email 'alibabaatlasframework@gmail.com'
-                    }
-                }
-                scm {
-                    connection gitUrl
-                    developerConnection gitUrl
-                    url siteUrl
-                }
-            }
+    public AXMLResource(InputStream stream) throws IOException {
+        chunks = new LinkedHashSet<Chunk>();
+        if (!read(stream)) {
+            throw new IOException();
         }
     }
-}
 
-Properties properties = new Properties()
-def file = project.rootProject.file('local.properties')
-if (file.exists()) {
-    properties.load(file.newDataInputStream())
-}
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-    configurations = ['archives']
-    pkg {
-        repo = "maven"
-        name = "preverify"    //发布到JCenter上的项目名字
-        websiteUrl = "atlas.alibaba.net"
-        vcsUrl = gitUrl
-        licenses = ["Apache-2.0"]
-        publish = true
+    public void injectApplicationAttribute(Attribute attribute) {
+        StartTag tag = getApplicationTag();
+
+        tag.insertOrReplaceAttribute(attribute);
     }
 
-}
+    public StartTag getApplicationTag() {
+        Iterator<Chunk> iterator = chunks.iterator();
+        while (iterator.hasNext()) {
+            Chunk chunk = iterator.next();
+            if (chunk instanceof StartTag &&
+                    ((StartTag) chunk).getName(stringSection).equalsIgnoreCase("application")) {
+                return (StartTag) chunk;
+            }
+        }
 
-task sourcesJar(type: Jar) {
-    from('src/main/java') {
-        include '**'
+        return null;
     }
-    classifier = 'sources'
+
+    public StringSection getStringSection() {
+        return stringSection;
+    }
+
+    public boolean read(InputStream stream) throws IOException {
+
+        IntReader reader = new IntReader(stream, false);
+
+        // Get an attempted size until we know the read size
+        int size = stream.available();
+
+        while ((size - reader.getBytesRead()) > 4) {
+            // This should just read all the chunks
+            Chunk chunk = ChunkUtil.createChunk(reader);
+
+            switch (chunk.getChunkType()) {
+                case AXML_HEADER:
+                    header = (AXMLHeader) chunk;
+                    // TODO : This should warn if true
+                    // This will cause breakages if the header is lying
+                    //size = header.getSize();
+                    break;
+                case STRING_SECTION:
+                    stringSection = (StringSection) chunk;
+                    break;
+                // operational = true;
+                case RESOURCE_SECTION:
+                    resourceSection = (ResourceSection) chunk;
+                    break;
+                case START_NAMESPACE:
+                case END_NAMESPACE:
+                case START_TAG:
+                case END_TAG:
+                case TEXT_TAG:
+                    chunks.add(chunk);
+                    break;
+                case BUFFER:
+                    // Do nothing right now, not even add it to the chunk stuff
+                    break;
+                default:
+                    throw new IOException("Hit an unknown chunk type!");
+            }
+        }
+
+        if ((header != null) && (stringSection != null) && (resourceSection != null)) {
+            if (header.getSize() != reader.getBytesRead()) {
+                System.out.println("Potential issue as the bytes read is not equal to the amount of bytes in the file");
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    public void write(OutputStream outputStream) throws IOException {
+
+        int chunkSizes = 0;
+        Iterator<Chunk> iterator = chunks.iterator();
+        while (iterator.hasNext()) {
+            Chunk chunk = iterator.next();
+            chunkSizes += chunk.getSize();
+        }
+
+
+        outputStream.write(ByteBuffer.allocate(8)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(ChunkType.AXML_HEADER.getIntType())
+                .putInt(((2 * 4) + stringSection.getSize() + resourceSection.getSize() + chunkSizes))
+                .array());
+        outputStream.write(stringSection.toBytes());
+        outputStream.write(resourceSection.toBytes());
+        iterator = chunks.iterator();
+        while (iterator.hasNext()) {
+            Chunk chunk = iterator.next();
+            outputStream.write(chunk.toBytes());
+        }
+
+    }
+
+    public String toXmlString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(header.toXML(stringSection, resourceSection, 0)).append("\n");
+        Iterator<Chunk> iterator = chunks.iterator();
+        int indents = 0;
+        String nameSpace = null;
+        while (iterator.hasNext()) {
+            Chunk chunk = iterator.next();
+            if (chunk.getChunkType() == ChunkType.END_TAG) {
+                indents--;
+            }
+             if(chunk.getChunkType() == ChunkType.START_NAMESPACE){
+                 nameSpace = chunk.toXML(stringSection, resourceSection, indents);
+             }else {
+                 if(null!= nameSpace && chunk.getChunkType() == ChunkType.START_TAG){
+                     StartTag startTag = (StartTag) chunk;
+                     sb.append(startTag.toXMLWithNamespace(stringSection, resourceSection, indents,nameSpace)).append("\n");
+                 }else {
+                     sb.append(chunk.toXML(stringSection, resourceSection, indents)).append("\n");
+                 }
+             }
+//            sb.append(chunk.toXML(stringSection, resourceSection, indents)).append("\n");
+
+            if (chunk.getChunkType() == ChunkType.START_TAG) {
+                nameSpace = null;
+                indents++;
+            }
+        }
+        return sb.toString();
+    }
+
+    private static void log(String format, Object... arguments) {
+        System.out.printf(format, arguments);
+        System.out.println();
+    }
 }
-
-artifacts {
-    archives sourcesJar
-}
-
-archivesBaseName = 'preverify'
-group 'com.taobao.android'
-version "1.0.0"
-

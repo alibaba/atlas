@@ -219,6 +219,7 @@ import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.DiffType;
 import com.taobao.android.object.PatchBundleInfo;
 import com.taobao.android.object.PatchInfo;
+import com.taobao.android.tpatch.manifest.AndroidManifestDiffFactory;
 import com.taobao.android.tpatch.builder.PatchFileBuilder;
 import com.taobao.android.tpatch.utils.DexBuilderUtils;
 import com.taobao.android.tpatch.utils.HttpClientUtils;
@@ -815,10 +816,28 @@ public class TPatchTool extends BasePatchTool {
         baseFileMd5 = getBundleFileMappingMd5(getBaseApkFileList(), bundleFileName, filePath, baseFileMd5);
         if (StringUtils.equals(newFileMd5, baseFileMd5)) {
             return false;
-        } else {
+        } else if (newFile.getName().equals(ANDROID_MANIFEST)){
+            return isManifestModify(baseFile,newFile);
+
+        }else {
             return true;
         }
 
+    }
+
+    private boolean isManifestModify(File baseFile, File newFile) {
+        AndroidManifestDiffFactory androidManifestDiffFactory = new AndroidManifestDiffFactory();
+        try {
+            androidManifestDiffFactory.diff(baseFile,newFile);
+            for (AndroidManifestDiffFactory.DiffItem diffItem:androidManifestDiffFactory.diffResuit){
+                if (diffItem.Component instanceof com.taobao.android.tpatch.manifest.Manifest.Activity||diffItem.Component instanceof com.taobao.android.tpatch.manifest.Manifest.Service){
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     /**

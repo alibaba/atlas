@@ -24,7 +24,7 @@ dependencies {
     compile 'jaxen:jaxen:1.1.6'
     compile 'commons-beanutils:commons-beanutils:1.8.3'
     compile 'org.javassist:javassist:3.19.0-GA'
-    compile project(":preverify")
+//    compile project(":preverify")
     compile project(":dexpatch")
 
 }

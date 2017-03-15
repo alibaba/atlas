@@ -1,5 +1,3 @@
 include 'atlas-plugin'
 include 'dexpatch'
-include 'preverify'
-
 findProject(':atlas-plugin')?.name = 'atlasplugin'
