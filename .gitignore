@@ -7,3 +7,6 @@ build
 /captures
 !**/src/main/java/com/android/build/**
 zjutyujf@gmail.com
+publish_mvn.gradle
+publish_bintray.gradle
+**/publish_.*

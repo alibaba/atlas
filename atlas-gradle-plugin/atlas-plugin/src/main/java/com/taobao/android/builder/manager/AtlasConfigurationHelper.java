@@ -325,6 +325,8 @@ public class AtlasConfigurationHelper {
             tBuildConfig.setClassInject(true);
             tBuildConfig.setCreateAP(true);
             tBuildConfig.setUseCustomAapt(true);
+            atlasExtension.getManifestOptions().setAddMultiDexMetaData(true);
+            atlasExtension.getManifestOptions().setAddBundleLocation(true);
             atlasExtension.getManifestOptions().setReplaceApplication(true);
         } else {
             atlasExtension.getManifestOptions().setReplaceApplication(false);

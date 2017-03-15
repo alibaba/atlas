@@ -247,7 +247,7 @@ public class ManifestOptions {
     private boolean replaceApplication = true;
 
     @JSONField(serialize = false)
-    private boolean addMultiDexMetaData;
+    private boolean addMultiDexMetaData = false;
 
     private boolean removeProvider = false;
 

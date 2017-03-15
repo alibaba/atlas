@@ -13,7 +13,6 @@ buildscript {
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
         //引入其他的插件
     }
-
 }
 
 
@@ -25,19 +24,25 @@ task wrapper(type: Wrapper) {
     distributionUrl = 'http://services.gradle.org/distributions/gradle-2.12-all.zip'
 }
 
-subprojects{
+subprojects {
 
-    if (!project.getBuildFile().exists()){
-        return ;
+    if (!project.getBuildFile().exists()) {
+        return;
+    }
+
+    def command = project.getGradle().startParameter.toString()
+    def publishFile = new File(
+            project.getRootDir(),
+            "publish_" + (command.contains("bintray") ? "bintray" : "mvn") + ".gradle");
+
+    if (publishFile.exists()) {
+        apply from: publishFile.getAbsolutePath()
     }
 
     repositories {
-
         //本地库，local repository(${user.home}/.m2/repository)
         mavenLocal()
-
         jcenter()
-
     }
 
     group = 'com.taobao.android'
@@ -46,5 +51,4 @@ subprojects{
         sourceCompatibility = 1.8
         targetCompatibility = 1.8
     }
-
 }
