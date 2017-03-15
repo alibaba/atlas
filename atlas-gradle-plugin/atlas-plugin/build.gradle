@@ -30,10 +30,6 @@ dependencies {
 }
 
 
-version = '2.3.0.alpha1-SNAPSHOT'
-apply from: 'http://gitlab.alibaba-inc.com/android-build-system/buildscript/raw/master/mtl-publish.gradle'
-version = '2.2.3.rc5'
-
 //
 //apply plugin: 'maven-publish'
 //apply plugin: 'com.github.dcendents.android-maven'
