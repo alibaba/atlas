@@ -238,6 +238,9 @@ public class AtlasPlugin implements Plugin<Project> {
     public static final Pattern PLUGIN_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[3-9].*");
     public static final String PLUGIN_MIN_VERSIONS = "2.3.0";
 
+    public static final Pattern JDK_VERSIONS = Pattern.compile("1\\.[8-9].*");
+    public static final String JDK_MIN_VERSIONS = "1.8";
+
     private Instantiator instantiator;
     public static String creator = "AtlasPlugin" + Version.ANDROID_GRADLE_PLUGIN_VERSION;
 
@@ -309,6 +312,14 @@ public class AtlasPlugin implements Plugin<Project> {
         if (!PLUGIN_ACCEPTABLE_VERSIONS.matcher(androidVersion).matches()) {
             String errorMessage = String.format("Android Gradle plugin version %s is required. Current version is %s. ",
                                                 PLUGIN_MIN_VERSIONS, androidVersion);
+            throw new StopExecutionException(errorMessage);
+        }
+
+        //check jdk version
+        String jdkVersion = System.getProperty("java.version");
+        if (!JDK_VERSIONS.matcher(jdkVersion).matches()) {
+            String errorMessage = String.format("JDK version %s is required. Current version is %s. ",
+                                                JDK_MIN_VERSIONS, jdkVersion);
             throw new StopExecutionException(errorMessage);
         }
 
