@@ -578,13 +578,13 @@ public class PatchFileBuilder {
                 if (soFile.exists() || bundleInfo.getVersion().equals(ROLLBACK_VERSION)) {
                     continue;
                 }
-                zipBunldeSo(bundleFolder, soFile);
+                zipBundleSo(bundleFolder, soFile);
                 FileUtils.deleteDirectory(bundleFolder);
             }
         }
         File tPatchFile = new File(patchsFolder, newPatchInfo.getFileName());
         if (tPatchFile.exists()) FileUtils.deleteQuietly(tPatchFile);
-        zipBunldeSo(destTPathTmpFolder, tPatchFile);
+        zipBundleSo(destTPathTmpFolder, tPatchFile);
         if (null != logger) {
             logger.info("[TPatchFile]" + tPatchFile.getAbsolutePath());
         }
@@ -597,7 +597,7 @@ public class PatchFileBuilder {
      * @param bundleFolder
      * @param soOutputFile
      */
-    private void zipBunldeSo(File bundleFolder, File soOutputFile) throws PatchException {
+    private void zipBundleSo(File bundleFolder, File soOutputFile) throws PatchException {
         try {
             Manifest manifest = createManifest();
             FileOutputStream fileOutputStream = new FileOutputStream(soOutputFile);
