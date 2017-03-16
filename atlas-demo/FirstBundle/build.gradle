@@ -1,17 +1,21 @@
 buildscript {
     repositories {
-        //mavenLocal()
+        mavenLocal()
         jcenter()
     }
+    configurations.all {
+        resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:2.2.3.rc+"
+        classpath "com.taobao.android:atlasplugin:2.3.0.alpha1-SNAPSHOT"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
     }
 }
 
-
-apply plugin: 'com.taobao.atlas.library'
+apply plugin: 'com.android.library'
+apply plugin: 'com.taobao.atlas'
 apply plugin: 'maven-publish'
 
 
@@ -24,8 +28,8 @@ tasks.withType(JavaCompile) {
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 24
+    buildToolsVersion "25.0.2"
     lintOptions {
         checkReleaseBuilds false
         abortOnError false

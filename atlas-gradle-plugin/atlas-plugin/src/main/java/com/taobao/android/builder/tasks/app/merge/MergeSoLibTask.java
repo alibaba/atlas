@@ -207,136 +207,364 @@
  *
  */
 
-package com.taobao.android.builder.tasks.app.prepare;
+package com.taobao.android.builder.tasks.app.merge;
 
-import com.android.build.gradle.internal.LibraryCache;
+/**
+ * Created by wuzhong on 16/6/13.
+ */
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
-import com.google.common.io.Files;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import com.taobao.android.builder.tools.solib.NativeSoUtils;
 
-import org.dom4j.DocumentException;
+import org.apache.commons.lang.StringUtils;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
- * 并发准备awb和 solib， 展开到对应的build目录
+ * 处理各种so依赖的任务
+ * Created by shenghua.nish on 2015-08-25 下午2:24.
  */
-public class PrepareAwbTask extends BaseTask {
+public class MergeSoLibTask extends BaseTask {
 
-    static final String taskName = "prepareAwbs";
+    /**
+     * 主bundle有的jnifolders,包含主和依赖的aar的jni目录
+     */
+    Set<File> jniFolders;
+
+    /**
+     * 主bundle依赖的solib
+     */
+    List<SoLibrary> mainDexSoLibraries;
+
+    /**
+     * 依赖的awbs
+     */
+    List<AwbBundle> awbLibs;
+
+    @Input
+    Set<String> supportAbis;
+
+    @Input
+    Set<String> removeSoFiles;
+
+    @OutputDirectory
+    File mainBundleOutputFolder;
+
+    /**
+     * 当主dex和awb的so重复的时候是否报错
+     */
+    @Input
+    Boolean failOnDuplicateSo;
 
     AppVariantOutputContext appVariantOutputContext;
 
+    /**
+     * 生成so的目录
+     */
     @TaskAction
-    void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
-
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                getVariantName());
-
-        if (null == atlasDependencyTree) {
-            return;
+    void generate() {
+        List<File> scanDirs = new ArrayList<File>();
+        //先生成主bundle的jnifolder目录
+        if (!getMainBundleOutputFolder().exists()) {
+            getMainBundleOutputFolder().mkdirs();
         }
 
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
-                                                                                   getLogger(),
-                                                                                   0);
-        List<Runnable> runnables = new ArrayList<>();
-
-        List<SoLibrary> soLibraries = new ArrayList<>();
-        soLibraries.addAll(atlasDependencyTree.getMainBundle().getSoLibraries());
-        for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-            soLibraries.addAll(awbBundle.getSoLibraries());
-        }
-
-        for (final SoLibrary soLibrary : soLibraries) {
-            runnables.add(new Runnable() {
-                @Override
-                public void run() {
-                    prepare(soLibrary.getSoLibFile(), soLibrary.getFolder(), false);
-                }
-            });
-        }
-
-        List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
-        for (final AndroidLibrary aarBundle : androidLibraries) {
-            runnables.add(new Runnable() {
-                @Override
-                public void run() {
-                    prepare(aarBundle.getBundle(), aarBundle.getFolder(), true);
-                }
-            });
-        }
-
-        executorServicesHelper.execute(runnables);
-    }
-
-    private void prepare(File bundleFile, File exploderDir, boolean hasInnerJar) {
-        getLogger().info("prepare bundle " + bundleFile.getAbsolutePath());
-
-        //TODO 要判断是不是SNAPSHOT,否则会导致snapshot无法更新
-        if (exploderDir.exists()) {
-            return;
-        }
-
-        LibraryCache.unzipAar(bundleFile, exploderDir, getProject());
-        if (hasInnerJar) {
-            // verify the we have a classes.jar, if we don't just create an empty one.
-            File classesJar = new File(new File(exploderDir, "jars"), "classes.jar");
-            if (classesJar.exists()) {
-                return;
-            }
-            try {
-                Files.createParentDirs(classesJar);
-                JarOutputStream jarOutputStream = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(
-                        classesJar)), new Manifest());
-                jarOutputStream.close();
-            } catch (IOException e) {
-                throw new RuntimeException("Cannot create missing classes.jar", e);
+        for (File jniFolder : getJniFolders()) {
+            if (jniFolder.exists() && jniFolder.isDirectory()) {
+                NativeSoUtils.copyLocalNativeLibraries(jniFolder,
+                                                       getMainBundleOutputFolder(),
+                                                       getSupportAbis(),
+                                                       getRemoveSoFiles());
             }
         }
+
+        scanDirs.add(getMainBundleOutputFolder());
+
+        //增加主bundle依赖的solib的so
+        for (SoLibrary mainSoLib : getMainDexSoLibraries()) {
+            File explodeFolder = mainSoLib.getFolder();
+            if (explodeFolder.exists() && explodeFolder.isDirectory()) {
+                NativeSoUtils.copyLocalNativeLibraries(explodeFolder,
+                                                       getMainBundleOutputFolder(),
+                                                       getSupportAbis(),
+                                                       getRemoveSoFiles());
+            }
+        }
+
+        //处理awb bundle的so
+        for (AwbBundle awbLib : getAwbLibs()) {
+            File awbOutputFolder = new File(appVariantOutputContext.getAwbJniFolder(awbLib), "lib");
+            awbOutputFolder.mkdirs();
+            scanDirs.add(awbOutputFolder);
+            File awbJniFolder = awbLib.getAndroidLibrary().getJniFolder();
+            if (awbJniFolder.exists() && awbJniFolder.isDirectory()) {
+                NativeSoUtils.copyLocalNativeLibraries(awbJniFolder,
+                                                       awbOutputFolder,
+                                                       getSupportAbis(),
+                                                       getRemoveSoFiles());
+            }
+            //为了兼容之前老的aar，awb格式
+            File libJniFolder = new File(awbLib.getAndroidLibrary().getFolder(), "libs");
+            if (libJniFolder.exists() && libJniFolder.isDirectory()) {
+                NativeSoUtils.copyLocalNativeLibraries(libJniFolder,
+                                                       awbOutputFolder,
+                                                       getSupportAbis(),
+                                                       getRemoveSoFiles());
+            }
+            List<? extends AndroidLibrary> deps = awbLib.getAndroidLibraries();
+            for (AndroidLibrary dep : deps) {
+                File depJniFolder = dep.getJniFolder();
+                if (depJniFolder.exists() && depJniFolder.isDirectory()) {
+                    NativeSoUtils.copyLocalNativeLibraries(depJniFolder,
+                                                           awbOutputFolder,
+                                                           getSupportAbis(),
+                                                           getRemoveSoFiles());
+                }
+                //为了兼容之前老的aar，awb格式
+                File depLibsFolder = new File(dep.getFolder(), "libs");
+                if (depLibsFolder.exists() && depLibsFolder.isDirectory()) {
+                    NativeSoUtils.copyLocalNativeLibraries(depLibsFolder,
+                                                           awbOutputFolder,
+                                                           getSupportAbis(),
+                                                           getRemoveSoFiles());
+                }
+            }
+
+            List<SoLibrary> solibs = awbLib.getSoLibraries();
+            if (null != solibs) {
+                for (SoLibrary solib : solibs) {
+                    File explodeFolder = solib.getFolder();
+                    if (explodeFolder.exists() && explodeFolder.isDirectory()) {
+                        NativeSoUtils.copyLocalNativeLibraries(explodeFolder,
+                                                               awbOutputFolder,
+                                                               getSupportAbis(),
+                                                               getRemoveSoFiles());
+                    }
+                }
+            }
+        }
+        //判断是否有重复的so文件
+        // 进行重复文件的查询
+        Map<String, Multimap<String, File>> soMaps = NativeSoUtils.getAbiSoFiles(getSupportAbis(),
+                                                                                 getRemoveSoFiles(),
+                                                                                 scanDirs);
+        boolean hasDup = false;
+        for (Map.Entry<String, Multimap<String, File>> entry : soMaps.entrySet()) {
+            String abi = entry.getKey();
+            Multimap<String, File> soFiles = soMaps.get(abi);
+            for (String soKey : soFiles.keys()) {
+                if (soFiles.get(soKey).size() > 1) {
+                    getILogger().warning("[SO Duplicate][" +
+                                                 abi +
+                                                 "]:" +
+                                                 StringUtils.join(soFiles.get(soKey), ","));
+                    hasDup = true;
+                } else {
+                    getILogger().verbose("[SO][" +
+                                                 abi +
+                                                 "]:" +
+                                                 StringUtils.join(soFiles.get(soKey), ","));
+                }
+            }
+        }
+
+        //        if (hasDup && getFailOnDuplicateSo()) {
+        //            throw new RuntimeException("SO file has duplicate files!See detail info!");
+        //        }
     }
 
-    public static class ConfigAction extends MtlBaseTaskAction<PrepareAwbTask> {
+    public static class ConfigAction extends MtlBaseTaskAction<MergeSoLibTask> {
+
+        AtlasDependencyTree dependencyTree;
+
+        private AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext,
                             BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
+
+            this.appVariantContext = appVariantContext;
+            GradleVariantConfiguration config = scope.getVariantScope().getVariantConfiguration();
+            dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
         }
 
+        /**
+         * Return the name of the task to be configured.
+         */
         @Override
         public String getName() {
-            return scope.getTaskName(taskName);
+            return scope.getTaskName("merge", "SoLib");
         }
 
+        /**
+         * Return the class type of the task to be configured.
+         */
         @Override
-        public Class<PrepareAwbTask> getType() {
-            return PrepareAwbTask.class;
+        public Class<MergeSoLibTask> getType() {
+            return MergeSoLibTask.class;
         }
 
+        /**
+         * Performs this action against the given object.
+         *
+         * @param copySoLibTask The object to perform the action on.
+         */
         @Override
-        public void execute(PrepareAwbTask prepareAwbsTask) {
+        public void execute(MergeSoLibTask copySoLibTask) {
 
-            super.execute(prepareAwbsTask);
+            super.execute(copySoLibTask);
 
-            prepareAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
+            final AppVariantOutputContext appVariantOutputContext = getAppVariantOutputContext();
+
+            final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) appVariantOutputContext
+                    .getOutputScope()
+                    .getVariantOutputData();
+            final GradleVariantConfiguration config = scope.getVariantScope()
+                    .getVariantConfiguration();
+
+            ConventionMappingHelper.map(copySoLibTask, "jniFolders", new Callable<Set<File>>() {
+                @Override
+                public Set call() throws Exception {
+                    Set<File> set = new HashSet<File>();
+                    for (AndroidLibrary aarBundle : dependencyTree.getMainBundle().getAndroidLibraries()) {
+                        if (!aarBundle.isOptional()) {
+                            File jniFolder = new File(aarBundle.getFolder(), "libs");
+                            if (jniFolder.isDirectory()) {
+                                set.add(jniFolder);
+                            }
+                        }
+                    }
+                    return set;
+                }
+            });
+
+            ConventionMappingHelper.map(copySoLibTask, "awbLibs", new Callable<List>() {
+                @Override
+                public List call() throws Exception {
+                    return dependencyTree.getAwbBundles();
+                }
+            });
+
+            ConventionMappingHelper.map(copySoLibTask, "mainDexSoLibraries", new Callable<List>() {
+                @Override
+                public List call() throws Exception {
+                    return dependencyTree.getMainBundle().getSoLibraries();
+                }
+            });
+
+            ConventionMappingHelper.map(copySoLibTask, "supportAbis", new Callable<Set>() {
+                @Override
+                public Set call() throws Exception {
+
+                    if (variantOutputData.getMainOutputFile()
+                            .getFilter(com.android.build.OutputFile.ABI) != null) {
+                        return ImmutableSet.of(variantOutputData.getMainOutputFile()
+                                                       .getFilter(com.android.build.OutputFile.ABI));
+                    }
+                    Set<String> supportedAbis = config.getSupportedAbis();
+                    if (supportedAbis != null) {
+                        return supportedAbis;
+                    }
+
+                    return ImmutableSet.of();
+                }
+            });
+
+            ConventionMappingHelper.map(copySoLibTask, "removeSoFiles", new Callable<Set>() {
+                @Override
+                public Set call() throws Exception {
+                    return appVariantContext.getAtlasExtension()
+                            .getTBuildConfig()
+                            .getRemoveSoFiles();
+                }
+            });
+
+            //            File mainJniOutputFolder = new File(
+            //                    config.getGlobalScope().getBuildDir() , "/" + AndroidProject.FD_INTERMEDIATES + "/jniFolder/"
+            //                    + config.getVariantData().getVariantConfiguration().getDirName());
+
+            final File mainJniOutputFolder = appVariantContext.getBaseVariantData().ndkCompileTask.getSoFolder();
+            copySoLibTask.setMainBundleOutputFolder(mainJniOutputFolder);
+
+            copySoLibTask.appVariantOutputContext = appVariantOutputContext;
+            //            ConventionMappingHelper.map(processSolibTask, "awbBundleOutputFolder", new Callable<File>() {
+            //                @Override
+            //                public File call() throws Exception {
+            //                    return awbJniOutputFolder;
+            //                }
+            //            });
+            copySoLibTask.setVariantName(appVariantContext.getBaseVariantData().getName());
         }
+    }
+
+    public Set<File> getJniFolders() {
+        return jniFolders;
+    }
+
+    public void setJniFolders(Set<File> jniFolders) {
+        this.jniFolders = jniFolders;
+    }
+
+    public List<SoLibrary> getMainDexSoLibraries() {
+        return mainDexSoLibraries;
+    }
+
+    public void setMainDexSoLibraries(List<SoLibrary> mainDexSoLibraries) {
+        this.mainDexSoLibraries = mainDexSoLibraries;
+    }
+
+    public List<AwbBundle> getAwbLibs() {
+        return awbLibs;
+    }
+
+    public void setAwbLibs(List<AwbBundle> awbLibs) {
+        this.awbLibs = awbLibs;
+    }
+
+    public Set<String> getSupportAbis() {
+        return supportAbis;
+    }
+
+    public void setSupportAbis(Set<String> supportAbis) {
+        this.supportAbis = supportAbis;
+    }
+
+    public File getMainBundleOutputFolder() {
+        return mainBundleOutputFolder;
+    }
+
+    public void setMainBundleOutputFolder(File mainBundleOutputFolder) {
+        this.mainBundleOutputFolder = mainBundleOutputFolder;
+    }
+
+    public Set<String> getRemoveSoFiles() {
+        return removeSoFiles;
+    }
+
+    public void setRemoveSoFiles(Set<String> removeSoFiles) {
+        this.removeSoFiles = removeSoFiles;
     }
 }

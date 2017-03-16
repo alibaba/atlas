@@ -240,10 +240,10 @@ import com.taobao.android.builder.tasks.app.merge.MergeManifestAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeResAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeResV4Dir;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
-import com.taobao.android.builder.tasks.app.prepare.PrepareAwbTask;
+import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
-import com.taobao.android.builder.tasks.app.prepare.PrepareSoLibTask;
+import com.taobao.android.builder.tasks.app.merge.MergeSoLibTask;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tasks.manager.transform.MtlTransformContext;
@@ -300,7 +300,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareDependenciesTask.class));
 
-                mtlTaskContextList.add(new MtlTaskContext(PrepareAwbTask.ConfigAction.class, null));
+                mtlTaskContextList.add(new MtlTaskContext(PrepareAllDependenciesTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PreProcessManifestTask.ConfigAction.class, null));
 
@@ -310,7 +310,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
 
-                mtlTaskContextList.add(new MtlTaskContext(PrepareSoLibTask.ConfigAction.class, null));
+                mtlTaskContextList.add(new MtlTaskContext(MergeSoLibTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAaptTask.ConfigAction.class, null));
 

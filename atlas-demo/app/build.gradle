@@ -4,7 +4,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:2.2.3.rc+"
+        classpath "com.taobao.android:atlasplugin:2.3.0.alpha1-SNAPSHOT"
     }
 }
 
@@ -12,8 +12,34 @@ group = 'com.taobao.android.atlasdemo'
 version = getEnvValue("versionName","1.0.0");
 def apVersion = getEnvValue("apVersion","");
 
-apply plugin: 'com.taobao.atlas.application'
+apply plugin: 'com.android.application'
+apply plugin: 'com.taobao.atlas'
+atlas {
 
+    atlasEnabled true
+
+    tBuildConfig {
+        autoStartBundles = ['com.taobao.firstbundle'] //自启动bundle配置
+    }
+
+
+    patchConfigs{
+        debug {
+            createTPatch true
+        }
+    }
+
+
+    buildTypes {
+        debug {
+            if (apVersion){
+                baseApDependency   "com.taobao.android.atlasdemo:AP-debug:${apVersion}@ap"
+                patchConfig    patchConfigs.debug
+            }
+        }
+    }
+
+}
 
 //TODO do this in plugin
 configurations {
@@ -52,8 +78,8 @@ configurations.all {
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 24
+    buildToolsVersion "25.0.2"
 
     compileOptions.encoding = 'UTF-8'
 
@@ -74,6 +100,13 @@ android {
         // javaMaxHeapSize = '2048m'
     }
 
+    lintOptions {
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+
     buildTypes {
         debug {
             // debug模式
@@ -89,41 +122,19 @@ android {
         }
     }
 
-    lintOptions {
-        checkReleaseBuilds false
-        // Or, if you prefer, you can continue to check for errors in release builds,
-        // but continue the build even when errors are found:
-        abortOnError false
-    }
-
-}
-
-atlas {
-
-    atlasEnabled true
-
-    tBuildConfig {
-        autoStartBundles = ['com.taobao.firstbundle'] //自启动bundle配置
-    }
-
-
-    patchConfigs{
-        debug {
-            createTPatch true
+    productFlavors {
+        dev {
+            applicationId "com.taobao.atlas.devdemo"
+        }
+        beta {
+            applicationId "com.taobao.atlas.betademo"
         }
     }
 
 
-    buildTypes {
-        debug {
-            if (apVersion){
-                baseApDependency   "com.taobao.android.atlasdemo:AP-debug:${apVersion}@ap"
-                patchConfig    patchConfigs.debug
-            }
-        }
-    }
-
 }
+
+
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.12'
@@ -142,7 +153,7 @@ publishing {
 publishing {
     publications {
         maven(MavenPublication) {
-            artifact "${project.buildDir}/outputs/apk/${project.name}-debug.ap"
+            artifact "${project.buildDir}/outputs/apk/${project.name}-beta-debug.ap"
             artifactId "AP-debug"
         }
     }

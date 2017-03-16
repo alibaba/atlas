@@ -225,6 +225,7 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils.Type;
+import com.android.builder.model.MavenCoordinates;
 import com.android.utils.ILogger;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
@@ -256,7 +257,6 @@ import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
 import org.gradle.api.specs.Specs;
 
 import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
  * A manager to resolve configuration dependencies.
@@ -461,13 +461,20 @@ public class AtlasDepTreeParser {
             String path = AtlasDepHelper.computeArtifactPath(moduleVersion, resolvedArtifact);
             String name = AtlasDepHelper.computeArtifactName(moduleVersion, resolvedArtifact);
 
-            File explodedDir = project.file(project.getBuildDir().getAbsolutePath() +
-                                                "/" +
-                                                FD_INTERMEDIATES +
-                                                "/exploded-" +
-                                                resolvedArtifact.getType().toLowerCase() +
-                                                "/" +
-                                                path);
+            MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
+            File explodedDir = DependencyLocationManager.getExploreDir(project, mavenCoordinates,
+                                                                       resolvedArtifact.getFile(),
+                                                                       resolvedArtifact.getType().toLowerCase(),
+                                                                       path);
+
+            //File explodedDir = project.file(project.getBuildDir().getAbsolutePath() +
+            //                                    "/" +
+            //                                    FD_INTERMEDIATES +
+            //                                    "/exploded-" +
+            //                                    resolvedArtifact.getType().toLowerCase() +
+            //                                    "/" +
+            //                                    path);
+
             resolvedDependencyInfo.setExplodedDir(explodedDir);
             resolvedDependencyInfo.setDependencyName(name);
 

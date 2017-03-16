@@ -215,15 +215,20 @@ import com.taobao.android.builder.extension.ManifestOptions;
 import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.extension.TBuildType;
-
 import org.apache.commons.beanutils.BeanUtils;
-
-import java.lang.reflect.InvocationTargetException;
+import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.converters.FileConverter;
 
 /**
  * Created by wuzhong on 2017/1/11.
  */
 public class AtlasExtensionOutput extends AtlasExtension {
+
+    static {
+
+        ConvertUtils.register(new FileConverter(null), java.io.File.class);
+
+    }
 
     public TBuildType tBuildType;
 
@@ -239,7 +244,7 @@ public class AtlasExtensionOutput extends AtlasExtension {
 
         this.tBuildType = new TBuildType(name);
 
-        TBuildType mtlBuildTypeValue = (TBuildType) atlasExtension.getBuildTypes().findByName(name);
+        TBuildType mtlBuildTypeValue = (TBuildType)atlasExtension.getBuildTypes().findByName(name);
         if (null == mtlBuildTypeValue) {
             return;
         }
@@ -260,7 +265,7 @@ public class AtlasExtensionOutput extends AtlasExtension {
         try {
             BeanUtils.copyProperties(dest, orig);
         } catch (Throwable e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 }
