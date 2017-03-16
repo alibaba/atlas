@@ -243,11 +243,11 @@ public class ApkFileListUtils {
         }
         inited = true;
 
-        List<File> mainBunldeResFolders = new ArrayList<File>();
-        mainBunldeResFolders.add(appVariantContext.getScope().getVariantData().mergeResourcesTask.getOutputDir());
+        List<File> mainBundleResFolders = new ArrayList<File>();
+        mainBundleResFolders.add(appVariantContext.getScope().getVariantData().mergeResourcesTask.getOutputDir());
         prepareApkFileList(appVariantContext.getScope().getVariantData().mergeAssetsTask.getOutputDir(),
                 "assets");
-        for (File resFolder : mainBunldeResFolders) {
+        for (File resFolder : mainBundleResFolders) {
             prepareApkFileList(resFolder, "res");
         }
 
