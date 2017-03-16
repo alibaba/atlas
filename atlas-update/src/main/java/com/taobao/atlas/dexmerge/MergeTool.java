@@ -7,10 +7,7 @@ import com.taobao.atlas.dexmerge.dx.merge.CollisionPolicy;
 import com.taobao.atlas.dexmerge.dx.merge.DexMerger;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -165,10 +162,18 @@ public class MergeTool {
             if (!toBeDeleted) {
 
                 ZipEntry newEntry = new ZipEntry(name);
-                if (name.contains("raw/")||name.contains("assets/")){
-                    newEntry.setMethod(ZipEntry.STORED);
-                    newEntry.setCrc(zipEnt.getCrc());
-                    newEntry.setSize(zipEnt.getSize());
+                if (MergeExcutorServices.os == MergeExcutorServices.OS.mac) {
+                    if (name.contains("raw/") || name.contains("assets/")) {
+                        newEntry.setMethod(ZipEntry.STORED);
+                        newEntry.setCrc(zipEnt.getCrc());
+                        newEntry.setSize(zipEnt.getSize());
+                    }
+                }else {
+                    if (name.contains("raw\\") || name.contains("assets\\")) {
+                        newEntry.setMethod(ZipEntry.STORED);
+                        newEntry.setCrc(zipEnt.getCrc());
+                        newEntry.setSize(zipEnt.getSize());
+                    }
                 }
                 out.putNextEntry(newEntry);
                 in = source.getInputStream(zipEnt);
@@ -204,11 +209,21 @@ public class MergeTool {
                 MergeExcutorServices.needMergeCount.incrementAndGet();
                 continue;
             }
-            ZipEntry newEntry = new ZipEntry(entry.getName().substring(entry.getName().indexOf("/")+1));
-            if (newEntry.getName().contains("raw/")||newEntry.getName().contains("assets/")){
-                newEntry.setMethod(ZipEntry.STORED);
-                newEntry.setCrc(entry.getCrc());
-                newEntry.setSize(entry.getSize());
+            ZipEntry newEntry = null;
+            if (MergeExcutorServices.os == MergeExcutorServices.OS.mac) {
+                 newEntry = new ZipEntry(entry.getName().substring(entry.getName().indexOf("/") + 1));
+                if (newEntry.getName().contains("raw/") || newEntry.getName().contains("assets/")) {
+                    newEntry.setMethod(ZipEntry.STORED);
+                    newEntry.setCrc(entry.getCrc());
+                    newEntry.setSize(entry.getSize());
+                }
+            }else {
+                newEntry = new ZipEntry(entry.getName().substring(entry.getName().indexOf("\\") + 1));
+                if (newEntry.getName().contains("raw\\") || newEntry.getName().contains("assets\\")) {
+                    newEntry.setMethod(ZipEntry.STORED);
+                    newEntry.setCrc(entry.getCrc());
+                    newEntry.setSize(entry.getSize());
+                }
             }
             out.putNextEntry(newEntry);
             in = MergeExcutorServices.sZipPatch.getInputStream(entry);

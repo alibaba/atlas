@@ -2,11 +2,9 @@ package com.taobao.atlas.dexmerge;
 
 import android.os.RemoteException;
 import android.util.Log;
-
 import com.taobao.atlas.dex.Dex;
 import com.taobao.atlas.dexmerge.dx.merge.CollisionPolicy;
 import com.taobao.atlas.dexmerge.dx.merge.DexMerger;
-import com.taobao.common.dexpatcher.DexPatchApplier;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -31,6 +29,9 @@ public class MergeExcutorServices {
     List<Future<Boolean>> fList = new ArrayList<Future<Boolean>>();
     private static final String TAG = "mergeTask";
 
+    public static OS os = OS.mac;
+
+
     public MergeExcutorServices(IDexMergeCallback mCallback) {
         this.mCallback = mCallback;
         es = Executors.newFixedThreadPool(3);
@@ -45,12 +46,20 @@ public class MergeExcutorServices {
             sZipPatch = new ZipFile(patchFilePath);
             Enumeration<? extends ZipEntry> zes = sZipPatch.entries();
             ZipEntry entry = null;
-            String key;
+            String key = null;
+
             HashMap<String,List<ZipEntry>> bundleEntryGroup= new HashMap<String,List<ZipEntry>>();
             while (zes.hasMoreElements()) {
                 entry = zes.nextElement();
-                if(entry.getName().startsWith("lib")&&entry.getName().indexOf("/")!= -1){
-                    key = entry.getName().substring(3,entry.getName().indexOf("/"));
+                if(entry.getName().startsWith("lib")){
+                    if (entry.getName().indexOf("/")!= -1){
+                        key = entry.getName().substring(3,entry.getName().indexOf("/"));
+                        os = OS.mac;
+                    }else if (entry.getName().indexOf("\\")!= -1){
+                        key = entry.getName().substring(3,entry.getName().indexOf("\\"));
+                        os = OS.windows;
+
+                    }
                     List<ZipEntry> bundleEntry = null;
                     if((bundleEntry=bundleEntryGroup.get(key)) == null){
                         bundleEntry = new ArrayList<ZipEntry>();
@@ -224,6 +233,9 @@ public class MergeExcutorServices {
 
         void prepareMerge(String patchBundleName,ZipFile sourceFile, ZipEntry patchDex, OutputStream newDexStream) throws IOException;
 
+    }
+    enum OS{
+        mac,windows,linux
     }
 
 }
