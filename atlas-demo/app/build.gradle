@@ -12,8 +12,10 @@ group = 'com.taobao.android.atlasdemo'
 version = getEnvValue("versionName","1.0.0");
 def apVersion = getEnvValue("apVersion","");
 
-apply plugin: 'com.android.application'
-apply plugin: 'com.taobao.atlas'
+// apply plugin: 'com.android.application'
+// apply plugin: 'com.taobao.atlas'
+apply plugin: 'com.taobao.atlas.application'
+
 atlas {
 
     atlasEnabled true

@@ -256,7 +256,7 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
-                                                                                   0);
+                                                                                   1);
         List<Runnable> runnables = new ArrayList<>();
 
         List<SoLibrary> soLibraries = new ArrayList<>();
@@ -310,6 +310,8 @@ public class PrepareAllDependenciesTask extends BaseTask {
             library.getFolder(),
             AndroidGradleOptions.getBuildCache(getProject()),
             library.getResolvedCoordinates());
+
+        AtlasBuildContext.dependencyTraceMap.put(library.getFolder().getAbsolutePath(), library.getResolvedCoordinates());
 
         prepareLibraryTask.execute();
     }

@@ -209,6 +209,11 @@
 
 package com.taobao.android.builder.tasks.transform;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -223,28 +228,19 @@ import com.android.build.gradle.internal.scope.VariantScopeImpl;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.manager.transform.MtlInjectTransform;
 import com.taobao.android.builder.tools.PathUtil;
 import com.taobao.android.builder.tools.classinject.CodeInjectByJavassist;
 import com.taobao.android.builder.tools.classinject.InjectParam;
-
+import javassist.ClassPool;
+import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.dom4j.DocumentException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.StopExecutionException;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-
-import javassist.ClassPool;
-import javassist.NotFoundException;
-
-import static com.android.SdkConstants.DOT_JAR;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -287,7 +283,8 @@ public class ClassInjectTransform extends MtlInjectTransform {
     }
 
     @Override
-    public void transform(TransformInvocation transformInvocation) throws TransformException, IOException, InterruptedException {
+    public void transform(TransformInvocation transformInvocation)
+        throws TransformException, IOException, InterruptedException {
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
@@ -301,7 +298,6 @@ public class ClassInjectTransform extends MtlInjectTransform {
 
         outputProvider.deleteAll();
         ClassPool classPool = initClassPool(jarInputs, directoryInputs);
-        Set<String> outFileNames = Sets.newHashSet();
 
         InjectParam injectParam = null;
         try {
@@ -311,35 +307,11 @@ public class ClassInjectTransform extends MtlInjectTransform {
         }
 
         for (JarInput jarInput : jarInputs) {
-            if (null != logger) {
-                logger.debug("[ClassInject]" + jarInput.getFile().getAbsolutePath());
-            }
-            String jarFileName = jarInput.getFile().getName();
-            if (jarFileName.equalsIgnoreCase("classes.jar")) {
-                jarFileName = jarInput.getFile()
-                        .getParentFile()
-                        .getParentFile()
-                        .getParentFile()
-                        .getName() +
-                        "-" +
-                        jarInput.getFile().getParentFile().getParentFile().getName() +
-                        DOT_JAR;
-            }
-            String outFileName = jarFileName.substring(0, jarFileName.length() - DOT_JAR.length());
-            String fileName = outFileName;
-            int index = 1;
-            while (outFileNames.contains(fileName)) {
-                fileName = outFileName + "-" + index;
-                index++;
-            }
-            outFileNames.add(fileName);
-            File to = outputProvider.getContentLocation(fileName,
-                                                        jarInput.getContentTypes(),
-                                                        getScopes(),
-                                                        Format.JAR);
+
+            File to = getOutputFile(outputProvider, jarInput);
 
             //只对 atlas 做代码注入, 没有做多jarmerge
-            if (injectParam.removePreverify && !jarFileName.contains("atlas") && jarInputs.size() > 1) {
+            if (injectParam.removePreverify && !isAtlasDependency(jarInput.getFile()) && jarInputs.size() > 1) {
                 FileUtils.copyFile(jarInput.getFile(), to);
             } else {
                 CodeInjectByJavassist.inject(classPool, jarInput.getFile(), to, injectParam);
@@ -347,7 +319,6 @@ public class ClassInjectTransform extends MtlInjectTransform {
         }
 
         // 注入目录中的代码
-
         for (DirectoryInput directoryInput : directoryInputs) {
             if (null != logger) {
                 logger.debug("[ClassInject]" + directoryInput.getFile().getAbsolutePath());
@@ -370,6 +341,10 @@ public class ClassInjectTransform extends MtlInjectTransform {
         }
     }
 
+    private boolean isAtlasDependency(File jarFile) {
+        return jarFile.getAbsolutePath().contains("atlas");
+    }
+
     @Override
     public boolean updateNextTransformInput() {
         return true;
@@ -378,17 +353,17 @@ public class ClassInjectTransform extends MtlInjectTransform {
     private ClassPool initClassPool(List<JarInput> jarInputs,
                                     List<DirectoryInput> directoryInputs) {
 
-        if (((VariantScopeImpl) this.appVariantContext.getScope()).getVariantData()
-                .getName()
-                .toLowerCase()
-                .contains("debug")) {
+        if (((VariantScopeImpl)this.appVariantContext.getScope()).getVariantData()
+            .getName()
+            .toLowerCase()
+            .contains("debug")) {
             try {
                 FieldUtils.writeStaticField(ClassPool.class, "defaultPool", null, true);
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
         } else {
-            logger.warn(">>> 请勿开启daemon <<<<");
+            //logger.warn(">>> 请勿开启daemon <<<<");
         }
 
         final ClassPool pool = ClassPool.getDefault();
@@ -404,9 +379,9 @@ public class ClassInjectTransform extends MtlInjectTransform {
                 }
             }
             String path = Joiner.on(File.pathSeparator)
-                    .join(scope.getGlobalScope()
-                                  .getAndroidBuilder()
-                                  .getBootClasspathAsStrings(false));
+                .join(scope.getGlobalScope()
+                          .getAndroidBuilder()
+                          .getBootClasspathAsStrings(false));
             pool.appendPathList(path);
             for (JarInput jarInput : jarInputs) {
                 pool.insertClassPath(jarInput.getFile().getAbsolutePath());

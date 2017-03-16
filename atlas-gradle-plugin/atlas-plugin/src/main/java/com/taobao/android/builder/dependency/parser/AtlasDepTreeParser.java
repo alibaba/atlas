@@ -313,6 +313,8 @@ public class AtlasDepTreeParser {
         collectArtifacts(packageClasspath, artifacts);
         collectArtifacts(bundleClasspath, artifacts);
 
+
+
         //计算那些 bundle 和 provided 的依赖
         bundleClasspath.getDependencies().forEach(new Consumer<Dependency>() {
             @Override

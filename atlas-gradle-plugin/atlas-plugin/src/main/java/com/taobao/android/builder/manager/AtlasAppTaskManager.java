@@ -222,7 +222,9 @@ import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.builder.core.AtlasBuilder;
+import com.android.utils.StringHelper;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasProjectDependencyManager;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.PrepareAPTask;
 import com.taobao.android.builder.tasks.app.ApBuildTask;
@@ -289,6 +291,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                     appVariantContext = new AppVariantContext((ApplicationVariantImpl) applicationVariant, project, atlasExtension, appExtension);
                     AtlasBuildContext.appVariantContextMap.put(applicationVariant, appVariantContext);
                 }
+
+                AtlasProjectDependencyManager.addProjectDependency(project, StringHelper.capitalize(appVariantContext.getVariantName()));
 
                 new AwbProguradHook().hookProguardTask(appVariantContext);
 

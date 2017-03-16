@@ -229,38 +229,38 @@ public class CachedMergeResources extends MergeResources {
     private AwbBundle awbBundle;
 
     //根据依赖的坐标是否来cache
-    @Override
-    protected void doFullTaskAction() throws IOException {
-
-        String md5 = getDependencyMd5();
-
-        if (StringUtils.isEmpty(md5)) {
-            super.doFullTaskAction();
-            return;
-        }
-
-        md5 += ".zip";
-
-        //do some thing
-        //get chach
-        File zipCache = AtlasBuildContext.sFileCache.getCacheFile(md5, "awb-mergeres");
-
-        boolean success = false;
-        if (zipCache.exists()) {
-            success = BetterZip.unzipDirectory(zipCache, getOutputDir());
-        }
-
-        if (success) {
-            return;
-        }
-
-        super.doFullTaskAction();
-
-        zipCache.delete();
-        BetterZip.zipDirectory(getOutputDir(), zipCache);
-
-        //AtlasBuildContext.sFileCache.cacheFile(md5, getOutputDir(), "awb-mergeres");
-    }
+    //@Override
+    //protected void doFullTaskAction() throws IOException {
+    //
+    //    String md5 = getDependencyMd5();
+    //
+    //    if (StringUtils.isEmpty(md5)) {
+    //        super.doFullTaskAction();
+    //        return;
+    //    }
+    //
+    //    md5 += ".zip";
+    //
+    //    //do some thing
+    //    //get chach
+    //    File zipCache = AtlasBuildContext.sFileCache.getCacheFile(md5, "awb-mergeres");
+    //
+    //    boolean success = false;
+    //    if (zipCache.exists()) {
+    //        success = BetterZip.unzipDirectory(zipCache, getOutputDir());
+    //    }
+    //
+    //    if (success) {
+    //        return;
+    //    }
+    //
+    //    super.doFullTaskAction();
+    //
+    //    zipCache.delete();
+    //    BetterZip.zipDirectory(getOutputDir(), zipCache);
+    //
+    //    //AtlasBuildContext.sFileCache.cacheFile(md5, getOutputDir(), "awb-mergeres");
+    //}
 
     public void setAwbBundle(AwbBundle awbBundle) {
         this.awbBundle = awbBundle;

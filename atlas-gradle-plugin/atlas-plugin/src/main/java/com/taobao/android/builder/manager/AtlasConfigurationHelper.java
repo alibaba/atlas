@@ -263,12 +263,14 @@ public class AtlasConfigurationHelper {
             new AndroidComponent(compileConfiguration, compileConfiguration.getAllDependencies()));
 
         //add provided compile
-        project.getConfigurations().create(AtlasPlugin.PROVIDED_COMPILE, new Action<Configuration>() {
-            @Override
-            public void execute(Configuration config) {
-                compileConfiguration.extendsFrom(config);
-            }
-        });
+        if (null  == project.getConfigurations().findByName(AtlasPlugin.PROVIDED_COMPILE)) {
+            project.getConfigurations().create(AtlasPlugin.PROVIDED_COMPILE, new Action<Configuration>() {
+                @Override
+                public void execute(Configuration config) {
+                    compileConfiguration.extendsFrom(config);
+                }
+            });
+        }
 
         project.getConfigurations().create(AtlasPlugin.BUNDLE_COMPILE);
         //Configuration providedConfiguration = project.getConfigurations().getByName("provided");

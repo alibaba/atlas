@@ -299,7 +299,7 @@ public class AtlasPlugin implements Plugin<Project> {
     private void checkPluginSetup() {
 
         if (!PluginTypeUtils.usedGooglePlugin(project)) {
-            throw new StopExecutionException("Mtl Gradle plugin need android plugin to run!");
+            throw new StopExecutionException("Atlas plugin need android plugin to run!");
         }
         //
         ////淘宝的插件和google的官方插件不能混用

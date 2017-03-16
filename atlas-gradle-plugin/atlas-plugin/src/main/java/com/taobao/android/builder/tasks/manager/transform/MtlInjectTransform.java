@@ -209,15 +209,23 @@
 
 package com.taobao.android.builder.tasks.manager.transform;
 
+import java.io.File;
+import java.util.Set;
+
+import com.android.build.api.transform.Format;
+import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.pipeline.InjectTransform;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import com.android.builder.model.MavenCoordinates;
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.AtlasBuildContext;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.android.SdkConstants.DOT_JAR;
 
@@ -226,10 +234,9 @@ import static com.android.SdkConstants.DOT_JAR;
  */
 public abstract class MtlInjectTransform extends InjectTransform {
 
-    /**
-     * 修改后的文件 -> 原始文件
-     */
-    public static Map<String, String> jarTraceMap = new HashMap<String, String>();
+    private static Logger logger = LoggerFactory.getLogger(MtlInjectTransform.class);
+
+    private Set<String> outFileNames = Sets.newHashSet();
 
     protected VariantOutputScope scope;
     protected AppVariantContext appVariantContext;
@@ -246,27 +253,106 @@ public abstract class MtlInjectTransform extends InjectTransform {
         return true;
     }
 
-
     protected AppVariantOutputContext getAppVariantOutputContext() {
 
-        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) appVariantContext.getOutputContextMap().get(baseVariantOutputData.getFullName());
+        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)appVariantContext
+            .getOutputContextMap().get(baseVariantOutputData.getFullName());
 
         if (null == appVariantOutputContext) {
             appVariantOutputContext =
-                    new AppVariantOutputContext(baseVariantOutputData.getFullName(), appVariantContext, baseVariantOutputData.getScope(), baseVariantOutputData.variantData);
+                new AppVariantOutputContext(baseVariantOutputData.getFullName(), appVariantContext,
+                                            baseVariantOutputData.getScope(), baseVariantOutputData.variantData);
             appVariantContext.getOutputContextMap().put(baseVariantOutputData.getFullName(), appVariantOutputContext);
         }
 
         return appVariantOutputContext;
     }
 
+    protected File getOutputFile(TransformOutputProvider outputProvider, JarInput jarInput) {
 
-    protected String getUniqueJarName(File file) {
-        String jarFileName = file.getName();
-        if (jarFileName.equalsIgnoreCase("classes.jar")) {
-            jarFileName = file.getParentFile().getParentFile().getParentFile().getName() + "-" + file.getParentFile().getParentFile().getName() + DOT_JAR;
+        if (null != logger) {
+            logger.debug("[ClassInject]" + jarInput.getFile().getAbsolutePath());
         }
-        return jarFileName.substring(0, jarFileName.length() - DOT_JAR.length()) + "-" + getName();
+
+        return outputProvider.getContentLocation(getUniqueJarName(jarInput),
+                                                 jarInput.getContentTypes(),
+                                                 getScopes(),
+                                                 Format.JAR);
+
+    }
+
+    protected String getUniqueJarName(JarInput jarInput) {
+
+        File inputFile = jarInput.getFile();
+
+        String jarFileName = inputFile.getName();
+
+        String newFileName = "";
+
+        if (jarFileName.equalsIgnoreCase("classes.jar")) {
+
+            String inputPath = inputFile.getAbsolutePath();
+            String rootInputPath = "";
+
+            //计算最原始的jar路径
+            while (true) {
+                rootInputPath = AtlasBuildContext.jarTraceMap.get(inputPath);
+                if (null == rootInputPath) {
+                    rootInputPath = inputPath;
+                    break;
+                }
+            }
+
+            if (StringUtils.isNotEmpty(rootInputPath)) {
+                MavenCoordinates mavenCoordinates = getMavenCoordinate(rootInputPath);
+                if (null != mavenCoordinates) {
+                    newFileName = mavenCoordinates.getArtifactId();
+                }
+            }
+
+        } else {
+            newFileName = jarFileName;
+        }
+
+        if (StringUtils.isEmpty(newFileName)) {
+            newFileName = inputFile
+                .getParentFile()
+                .getParentFile()
+                .getParentFile()
+                .getName() +
+                "-" +
+                jarInput.getFile().getParentFile().getParentFile().getName() +
+                DOT_JAR;
+        }
+
+
+        String outFileName = newFileName;
+        if (newFileName.endsWith(DOT_JAR)){
+            outFileName = outFileName.substring(0, outFileName.length() - DOT_JAR.length());
+        }
+
+        int index = 1;
+        while (outFileNames.contains(outFileName)) {
+            outFileName = outFileName + "-" + index;
+            index++;
+        }
+
+        return outFileName;
+    }
+
+    protected MavenCoordinates getMavenCoordinate(String path) {
+        File file = new File(path);
+        File parentDir = file.getParentFile();
+        //查找3级
+        for (int i = 0; i < 3; i++) {
+            MavenCoordinates mavenCoordinates = AtlasBuildContext.dependencyTraceMap.get(parentDir.getAbsolutePath());
+            if (null != mavenCoordinates) {
+                return mavenCoordinates;
+            }
+            parentDir = parentDir.getParentFile();
+        }
+
+        return null;
     }
 
 }

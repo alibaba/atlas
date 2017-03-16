@@ -11,7 +11,6 @@ import com.android.builder.model.MavenCoordinates;
 import com.android.builder.utils.FileCache;
 import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
-import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
@@ -48,14 +47,14 @@ public class DependencyLocationManager {
                 "Improved dependency resolution must be used with "
                     + "build cache.");
 
-            explodedDir = FileUtils.join(
+            return FileUtils.join(
                 project.getBuildDir(),
                 FD_INTERMEDIATES,
-                type,
+                "exploded-" + type,
                 path);
         }
 
-        throw new GradleException("set explored dir exception");
+        //throw new GradleException("set explored dir exception");
 
     }
 

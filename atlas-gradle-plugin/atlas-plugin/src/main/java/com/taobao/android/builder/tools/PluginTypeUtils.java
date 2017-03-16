@@ -209,6 +209,8 @@
 
 package com.taobao.android.builder.tools;
 
+import com.android.build.gradle.AppPlugin;
+import com.android.build.gradle.LibraryPlugin;
 import org.gradle.api.Project;
 
 /**
@@ -278,7 +280,8 @@ public class PluginTypeUtils {
      * @return
      */
     public static boolean usedGooglePlugin(Project project) {
-        return hasPlugins(project, GOOGLE_ANDROID_PLUGINS);
+        return hasPlugins(project, GOOGLE_ANDROID_PLUGINS) || project.getPlugins().hasPlugin(AppPlugin.class)
+            || project.getPlugins().hasPlugin(LibraryPlugin.class);
     }
 
     private static boolean hasPlugins(Project project, String... plugins) {

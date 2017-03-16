@@ -209,9 +209,14 @@
 
 package com.taobao.android.builder;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.builder.core.AtlasBuilder;
+import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -220,10 +225,6 @@ import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
 import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
 import com.taobao.android.builder.tools.sign.AndroidSigner;
 import com.taobao.android.object.ApkFileList;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by shenghua.nish on 2016-05-09 下午3:50.
@@ -234,7 +235,8 @@ public class AtlasBuildContext {
 
     public static Map<String, AtlasDependencyTree> libDependencyTrees = Maps.newHashMap();
 
-    public static Map<ApplicationVariant, AppVariantContext> appVariantContextMap = new HashMap<ApplicationVariant, AppVariantContext>();
+    public static Map<ApplicationVariant, AppVariantContext> appVariantContextMap
+        = new HashMap<ApplicationVariant, AppVariantContext>();
 
     public static ApkFileList apkFileList = new ApkFileList();
 
@@ -255,4 +257,15 @@ public class AtlasBuildContext {
     public static Set<String> conflictDependencies;
 
     public static FileCache sFileCache = new SimpleFileCache();
+
+    /**
+     * 依赖对应原始的坐标地址， classInject 需要查找到atlas。
+     */
+    public static Map<String, MavenCoordinates> dependencyTraceMap = new HashMap<>();
+
+    /**
+     * 修改后的文件 -> 原始文件
+     */
+    public static Map<String, String> jarTraceMap = new HashMap<String, String>();
+
 }

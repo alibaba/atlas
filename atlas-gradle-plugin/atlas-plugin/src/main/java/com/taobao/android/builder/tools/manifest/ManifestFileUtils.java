@@ -346,6 +346,9 @@ public class ManifestFileUtils {
         Element root = document.getRootElement();// 得到根节点
         Element applicationElement = root.element("application");
         String realApplicationClassName = applicationElement.attributeValue("name");
+        if (null == realApplicationClassName){
+            realApplicationClassName = "";
+        }
         applicationElement.addAttribute("name",
                                         "android.taobao.atlas.startup.AtlasBridgeApplication");
 
@@ -630,6 +633,7 @@ public class ManifestFileUtils {
     private static void removeComments(Document document) throws IOException, DocumentException {
         Visitor visitor = new VisitorSupport() {
 
+            @Override
             public void visit(Comment comment) {
                 comment.setText(" ");
             }
