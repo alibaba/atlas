@@ -254,7 +254,7 @@ public class PostProcessManifestTask extends DefaultTask {
 
     @InputFile
     @Optional
-    private File bunldeBaseInfoFile;
+    private File bundleBaseInfoFile;
 
     public boolean addMultiDex;
 
@@ -311,7 +311,7 @@ public class PostProcessManifestTask extends DefaultTask {
             ManifestFileUtils.postProcessManifests(getMainManifestFile(),
                                                    getLibManifestMap(),
                                                    getLibManifestDepenendyMap(),
-                                                   bunldeBaseInfoFile,
+                                                   bundleBaseInfoFile,
                                                    manifestOptions,
                                                    addMultiDex,
                                                    remoteBundles);
@@ -382,7 +382,7 @@ public class PostProcessManifestTask extends DefaultTask {
                                             }
                                         });
 
-            postProcessManifestsTask.bunldeBaseInfoFile = new File(variantContext.getScope()
+            postProcessManifestsTask.bundleBaseInfoFile = new File(variantContext.getScope()
                                                                            .getGlobalScope()
                                                                            .getProject()
                                                                            .getProjectDir(),
