@@ -235,7 +235,6 @@ import com.google.common.collect.Table;
 import com.taobao.android.builder.extension.ManifestOptions;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Attribute;
@@ -327,16 +326,6 @@ public class ManifestFileUtils {
         }
     }
 
-    private static File getOrgManifestFile(File libManifestFile) {
-        File orgManifestFile = new File(libManifestFile.getParentFile(),
-                                        FilenameUtils.getBaseName(libManifestFile.getName()) +
-                                            "-org.xml");
-        if (orgManifestFile.exists()) {
-            return orgManifestFile;
-        }
-        return libManifestFile;
-    }
-
     /**
      * 替换manifest中的原有application name为AtlasBridgeApplication
      * 原有name已meta-data的方式写入
@@ -346,7 +335,7 @@ public class ManifestFileUtils {
         Element root = document.getRootElement();// 得到根节点
         Element applicationElement = root.element("application");
         String realApplicationClassName = applicationElement.attributeValue("name");
-        if (null == realApplicationClassName){
+        if (null == realApplicationClassName) {
             realApplicationClassName = "";
         }
         applicationElement.addAttribute("name",
@@ -397,7 +386,6 @@ public class ManifestFileUtils {
             String libName = artifactId.substring(artifactId.indexOf("-") + 1);
 
             File libManifest = entry.getValue();
-            libManifest = getOrgManifestFile(libManifest);
             if (libManifest.exists()) {
                 SAXReader reader = new SAXReader();
                 Document libDocument = reader.read(libManifest);// 读取XML文件
@@ -661,48 +649,39 @@ public class ManifestFileUtils {
         }
         return null;
     }
-
-    /**
-     * 预处理指定的manifest文件
-     *
-     * @param mainManifestFile
-     * @param libManifestFiles
-     * @param updateSdkVersion
-     */
-    @Deprecated
-    public static void preProcessManifests(File mainManifestFile,
-                                           List<File> libManifestFiles,
-                                           boolean updateSdkVersion) throws DocumentException, IOException {
-        ManifestFileObject mainManifestFileObject = getManifestFileObject(mainManifestFile);
-        for (File libManifestFile : libManifestFiles) {
-            // 写文件
-            updatePreProcessManifestFile(libManifestFile, mainManifestFileObject, updateSdkVersion);
-        }
-
-        //获取bundleInfo信息
-
-    }
+    //
+    ///**
+    // * 预处理指定的manifest文件
+    // *
+    // * @param mainManifestFile
+    // * @param libManifestFiles
+    // * @param updateSdkVersion
+    // */
+    //@Deprecated
+    //public static void preProcessManifests(File mainManifestFile,
+    //                                       List<File> libManifestFiles,
+    //                                       boolean updateSdkVersion) throws DocumentException, IOException {
+    //    ManifestFileObject mainManifestFileObject = getManifestFileObject(mainManifestFile);
+    //    for (File libManifestFile : libManifestFiles) {
+    //        // 写文件
+    //        updatePreProcessManifestFile(libManifestFile, mainManifestFileObject, updateSdkVersion);
+    //    }
+    //
+    //    //获取bundleInfo信息
+    //
+    //}
 
     /**
      * 更新libManifest文件
      *
-     * @param libManifestFile
+     * @param modifyManifest
      * @param mainManifestFileObject param updateSdkVersion
      */
-    public static void updatePreProcessManifestFile(File libManifestFile,
+    public static void updatePreProcessManifestFile(File modifyManifest, File orgManifestFile,
                                                     ManifestFileObject mainManifestFileObject,
-                                                    boolean updateSdkVersion) throws IOException, DocumentException {
+                                                    boolean updateSdkVersion, boolean isAwbLibrary) throws IOException, DocumentException {
 
-        if (!libManifestFile.exists()) {
-            return;
-        }
-
-        File orgManifestFile = new File(libManifestFile.getParentFile(), "AndroidManifest-org.xml");
-        if (orgManifestFile.exists()) {
-            return;
-        }
-
-        libManifestFile.renameTo(orgManifestFile);
+        modifyManifest.getParentFile().mkdirs();
 
         SAXReader reader = new SAXReader();
         OutputFormat format = OutputFormat.createPrettyPrint();
@@ -724,6 +703,15 @@ public class ManifestFileUtils {
 
         // 先人工处理一下tools:remove和tools:replace规则，发现有些通过ManifestMerge不一定可以
         Element applicationElement = root.element("application");
+
+        //判断是否有application，需要删除掉
+        if (isAwbLibrary){
+            Attribute attribute = applicationElement.attribute("name");
+            if (null != attribute){
+                applicationElement.remove(attribute);
+            }
+        }
+
         Map<String, String> replaceAttrs = mainManifestFileObject.getReplaceApplicationAttribute();
         List<String> removeAttrs = mainManifestFileObject.getRemoveApplicationAttribute();
 
@@ -768,7 +756,7 @@ public class ManifestFileUtils {
         fillFullClazzName(root, packageName, "receiver");
         fillFullClazzName(root, packageName, "service");
 
-        saveFile(document, format, libManifestFile);
+        saveFile(document, format, modifyManifest);
     }
 
     private static void fillFullClazzName(Element root, String packageName, String type) {

@@ -292,7 +292,7 @@ public class PrepareAwoBundleTask extends BaseTask {
         @NonNull
         @Override
         public String getName() {
-            return scope.getTaskName("prepare", "AwoBundle");
+            return scope.getTaskName("awoPrepare", "Bundle");
         }
 
         @NonNull

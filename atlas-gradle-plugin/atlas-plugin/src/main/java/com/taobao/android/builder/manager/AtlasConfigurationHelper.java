@@ -209,6 +209,11 @@
 
 package com.taobao.android.builder.manager;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.internal.AndroidComponent;
@@ -229,11 +234,15 @@ import com.taobao.android.builder.extension.factory.TBuildTypeFactory;
 import com.taobao.android.builder.hook.AppPluginHook;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.guide.AtlasConfigField;
+import com.taobao.android.builder.tools.guide.AtlasConfigHelper;
+import org.apache.commons.io.FileUtils;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.internal.reflect.Instantiator;
 

@@ -448,7 +448,7 @@ public class MergeAwoManifests extends ManifestProcessorTask {
         @NonNull
         @Override
         public String getName() {
-            return scope.getTaskName("process", "AwbManifest[" + awbBundle.getName() + "]");
+            return scope.getTaskName("awoProcess", "AwbManifest[" + awbBundle.getName() + "]");
         }
 
         @NonNull

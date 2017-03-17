@@ -251,7 +251,7 @@ public class AwoJavaCompileConfigAction extends MtlBaseTaskAction<JavaCompile> {
 
     @Override
     public String getName() {
-        return scope.getTaskName("compileAwo", "JavaWithJavac[" + awbBundle.getName() + "]");
+        return scope.getTaskName("awoCompile", "JavaWithJavac[" + awbBundle.getName() + "]");
     }
 
     @Override
@@ -280,9 +280,9 @@ public class AwoJavaCompileConfigAction extends MtlBaseTaskAction<JavaCompile> {
         });
 
         javacTask.setDestinationDir(libVariantContext.getJavaCDir());
-        javacTask.setDependencyCacheDir(new File(scope.getGlobalScope().getIntermediatesDir(),
-                "/awb-dependency-cache/" + scope.getVariantConfiguration().getFullName() + "/"
-                        + awbBundle.getName()));
+        //javacTask.setDependencyCacheDir(new File(scope.getGlobalScope().getIntermediatesDir(),
+        //        "/awb-dependency-cache/" + scope.getVariantConfiguration().getFullName() + "/"
+        //                + awbBundle.getName()));
         CompileOptions compileOptions = scope.getGlobalScope().getExtension().getCompileOptions();
         AbstractCompilesUtil.configureLanguageLevel(javacTask, compileOptions,
                 scope.getGlobalScope().getExtension().getCompileSdkVersion(),

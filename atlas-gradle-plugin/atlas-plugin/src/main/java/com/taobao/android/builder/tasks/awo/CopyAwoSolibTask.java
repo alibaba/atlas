@@ -327,7 +327,7 @@ public class CopyAwoSolibTask extends BaseTask {
         @NonNull
         @Override
         public String getName() {
-            return scope.getTaskName("copy", "Solib[" + awbBundle.getName() + "]");
+            return scope.getTaskName("awoCopy", "Solib[" + awbBundle.getName() + "]");
         }
 
         @NonNull

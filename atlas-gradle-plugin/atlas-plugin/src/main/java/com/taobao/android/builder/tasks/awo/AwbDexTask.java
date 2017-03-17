@@ -437,7 +437,7 @@ public class AwbDexTask extends BaseTask {
 
         @Override
         public String getName() {
-            return scope.getTaskName("dexAwb", "[" + awbName + "]");
+            return scope.getTaskName("awoDex", "[" + awbName + "]");
         }
 
         @Override

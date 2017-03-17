@@ -209,14 +209,12 @@
 
 package com.taobao.android.builder.tasks.manager;
 
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.LibVariantContext;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import org.gradle.api.Task;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created by wuzhong on 16/7/5.
@@ -224,7 +222,8 @@ import java.lang.reflect.InvocationTargetException;
 public class MtlTaskFactoryImpl implements MtlTaskFactory {
 
     @Override
-    public Task createTask(VariantContext variantContext, BaseVariantOutputData vod, Class<? extends MtlBaseTaskAction> baseTaskAction) {
+    public Task createTask(VariantContext variantContext, BaseVariantOutputData vod,
+                           Class<? extends MtlBaseTaskAction> baseTaskAction) {
 
         if (null == baseTaskAction) {
             return null;
@@ -232,14 +231,15 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
 
         try {
 
-            MtlBaseTaskAction mtlBaseTaskAction = getConstructor( baseTaskAction , variantContext.getClass()).newInstance(variantContext, vod);
+            MtlBaseTaskAction mtlBaseTaskAction = getConstructor(baseTaskAction, variantContext.getClass()).newInstance(
+                variantContext, vod);
 
-            Task task = variantContext.getProject().getTasks().create(mtlBaseTaskAction.getName(), mtlBaseTaskAction.getType());
+            Task task = variantContext.getProject().getTasks().create(mtlBaseTaskAction.getName(),
+                                                                      mtlBaseTaskAction.getType());
 
             mtlBaseTaskAction.execute(task);
 
             return task;
-
 
         } catch (InstantiationException e) {
             e.printStackTrace();
@@ -254,12 +254,8 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
         return null;
     }
 
-
-
-
-
-    private Constructor<? extends MtlBaseTaskAction> getConstructor(Class<? extends MtlBaseTaskAction> baseTaskAction, Class variantClazz) throws NoSuchMethodException {
-
+    private Constructor<? extends MtlBaseTaskAction> getConstructor(Class<? extends MtlBaseTaskAction> baseTaskAction,
+                                                                    Class variantClazz) throws NoSuchMethodException {
 
         try {
             return baseTaskAction.getConstructor(variantClazz, BaseVariantOutputData.class);
@@ -267,14 +263,14 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
 
             Class superClazz = variantClazz.getSuperclass();
 
-            if (null != superClazz){
+            if (null != superClazz) {
                 return getConstructor(baseTaskAction, superClazz);
-            }else {
+            } else {
                 throw ex1;
             }
-
 
         }
 
     }
+
 }

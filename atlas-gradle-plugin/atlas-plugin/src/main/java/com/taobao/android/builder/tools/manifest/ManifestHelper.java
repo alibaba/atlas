@@ -209,11 +209,10 @@
 
 package com.taobao.android.builder.tools.manifest;
 
-import com.android.builder.model.AndroidLibrary;
-
-import org.apache.commons.io.FilenameUtils;
-
 import java.io.File;
+
+import com.android.builder.model.AndroidLibrary;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * Created by wuzhong on 2017/3/6.
@@ -221,18 +220,21 @@ import java.io.File;
 public class ManifestHelper {
 
     public static File getOrgManifestFile(AndroidLibrary androidLibrary) {
-        File manifestFile = androidLibrary.getManifest();
-        File orgManifestFile = new File(manifestFile.getParentFile(),
-                                        FilenameUtils.getBaseName(manifestFile.getName()) +
-                                                "-org.xml");
-        return orgManifestFile.exists() ? orgManifestFile : manifestFile;
+
+        return androidLibrary.getManifest();
+
+        //File manifestFile = androidLibrary.getManifest();
+        //File orgManifestFile = new File(manifestFile.getParentFile(),
+        //                                FilenameUtils.getBaseName(manifestFile.getName()) +
+        //                                        "-org.xml");
+        //return orgManifestFile.exists() ? orgManifestFile : manifestFile;
     }
 
     public static File getModifyManifestFile(AndroidLibrary androidLibrary) {
         File manifestFile = androidLibrary.getManifest();
         File orgManifestFile = new File(manifestFile.getParentFile(),
                                         FilenameUtils.getBaseName(manifestFile.getName()) +
-                                                "-modify.xml");
+                                            "-modify.xml");
         return orgManifestFile.exists() ? orgManifestFile : manifestFile;
     }
 }

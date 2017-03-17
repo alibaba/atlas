@@ -207,205 +207,53 @@
  *
  */
 
-package com.taobao.android.builder.manager;
+package com.taobao.android.builder.tasks.awo;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
 
-import com.android.build.gradle.LibraryExtension;
-import com.android.build.gradle.api.LibraryVariant;
 import com.android.build.gradle.internal.api.LibVariantContext;
-import com.android.build.gradle.internal.api.LibraryVariantImpl;
-import com.android.build.gradle.internal.variant.LibVariantOutputData;
-import com.android.builder.core.AtlasBuilder;
-import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.extension.TBuildType;
-import com.taobao.android.builder.tasks.PrepareAPTask;
-import com.taobao.android.builder.tasks.awo.AssemblePatchTask;
-import com.taobao.android.builder.tasks.awo.AwbDexTask;
-import com.taobao.android.builder.tasks.awo.AwoInstallTask;
-import com.taobao.android.builder.tasks.awo.AwoJavaCompileConfigAction;
-import com.taobao.android.builder.tasks.awo.AwoPackageConfigAction;
-import com.taobao.android.builder.tasks.awo.CopyAwoSolibTask;
-import com.taobao.android.builder.tasks.awo.DiffDependencyTask;
-import com.taobao.android.builder.tasks.awo.MergeAwoManifests;
-import com.taobao.android.builder.tasks.awo.PrepareAwoBundleTask;
-import com.taobao.android.builder.tasks.awo.ProcessAwoAndroidResources;
-import com.taobao.android.builder.tasks.awo.maindex.DexBuildTask;
-import com.taobao.android.builder.tasks.awo.maindex.DexInstallTask;
-import com.taobao.android.builder.tasks.awo.maindex.PrepareMainDexJarsTask;
-import com.taobao.android.builder.tasks.bundle.MergeAwbAssetConfigAction;
-import com.taobao.android.builder.tasks.bundle.MergeAwbResourceConfigAction;
-import com.taobao.android.builder.tasks.library.AwbGenerator;
-import com.taobao.android.builder.tasks.library.publish.UpdatePomTaskInjector;
-import com.taobao.android.builder.tasks.manager.MtlTaskContext;
-import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
-import com.taobao.android.builder.tools.ideaplugin.AwoPropHandler;
-import org.apache.commons.lang.StringUtils;
-import org.gradle.api.GradleException;
-import org.gradle.api.Project;
-import org.gradle.api.tasks.bundling.Zip;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.signing.SigningException;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import org.gradle.api.tasks.TaskAction;
 
 /**
- * MTL插件编译lib库的任务管理
- * Created by shenghua.nish on 2016-05-09 下午3:55.
- *
- * @author shenghua.nish, wuzhong
+ * patch task
+ * @author wuzhong
  */
-public class AtlasLibTaskManager extends AtlasBaseTaskManager {
+public class AssemblePatchTask extends BaseTask {
 
-    public AtlasLibTaskManager(AtlasBuilder androidBuilder,
-                               LibraryExtension libraryExtension,
-                               Project project,
-                               AtlasExtension atlasExtension) {
-        super(androidBuilder, libraryExtension, project, atlasExtension);
-        this.libraryExtension = libraryExtension;
+    @TaskAction
+    public void doTask() throws IOException, SigningException {
+
     }
 
-    @Override
-    public void runTask() {
+    public static class ConfigAction extends MtlBaseTaskAction<AssemblePatchTask> {
 
-        new UpdatePomTaskInjector(project).updatePom();
+        private final LibVariantContext libVariantContext;
 
-        libraryExtension.getLibraryVariants().forEach(new Consumer<LibraryVariant>() {
+        public ConfigAction(LibVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+            super(variantContext, baseVariantOutputData);
+            this.libVariantContext = variantContext;
+        }
 
-            @Override
-            public void accept(LibraryVariant libraryVariant) {
+        @Override
+        public String getName() {
+            return libVariantContext.getScope().getTaskName("assemblePatch");
+        }
 
-                //if ("debug".equals(libraryVariant.getBaseName())) {
-                //    new ModuleInfoWriter(project, libraryVariant).write();
-                //}
+        @Override
+        public Class<AssemblePatchTask> getType() {
+            return AssemblePatchTask.class;
+        }
 
-                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant,
-                                                                            project,
-                                                                            atlasExtension,
-                                                                            libraryExtension);
+        @Override
+        public void execute(AssemblePatchTask task) {
 
-                TBuildType tBuildType = libVariantContext.getBuildType();
-                if (null != tBuildType) {
-                    try {
-                        new AwoPropHandler().process(tBuildType,
-                                                     atlasExtension.getBundleConfig());
-                    } catch (Exception e) {
-                        throw new GradleException("process awo exception", e);
-                    }
-                }
+            task.setVariantName(libVariantContext.getVariantName());
 
-                AwbGenerator awbGenerator = new AwbGenerator(atlasExtension);
-
-                List<LibVariantOutputData> list = libVariantContext.getVariantData().getOutputs();
-
-                if (null != list) {
-
-                    for (LibVariantOutputData libVariantOutputData : list) {
-
-                        Zip zipTask = libVariantOutputData.packageLibTask;
-
-                        //构建awb 和 extension
-                        if (atlasExtension.getBundleConfig().isAwbBundle()) {
-                            awbGenerator.generateAwbArtifict(zipTask);
-                        }
-
-                        if (null != tBuildType && (StringUtils.isNotEmpty(tBuildType.getBaseApDependency())
-                            || null != tBuildType.getBaseApFile()) &&
-
-                            libraryVariant.getName().equals("debug")) {
-
-                            libVariantContext.setBundleTask(zipTask);
-
-                            try {
-
-                                libVariantContext.setAwbBundle(awbGenerator.createAwbBundle(libVariantContext));
-                            } catch (IOException e) {
-                                throw new GradleException("set awb bundle error");
-                            }
-
-                            if (atlasExtension.getBundleConfig().isAwbBundle()) {
-                                createAwoTask(libVariantContext, zipTask);
-                            } else {
-                                createDexTask(libVariantContext, zipTask);
-                            }
-                        }
-
-                    }
-
-                }
-
-            }
-        });
+        }
     }
 
-    private void createAwoTask(LibVariantContext libVariantContext, Zip bundleTask) {
-
-        List<MtlTaskContext> mtlTaskContexts = new ArrayList<MtlTaskContext>();
-
-        mtlTaskContexts.add(new MtlTaskContext(bundleTask));
-
-        mtlTaskContexts.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
-
-        //判断依赖与AP中的冲突,减少打入到apk中的awb的依赖
-        mtlTaskContexts.add(new MtlTaskContext(DiffDependencyTask.ConfigAction.class, null));
-
-        mtlTaskContexts.add(new MtlTaskContext(PrepareAwoBundleTask.ConfigAction.class, null));
-
-        //mergeManifest
-        mtlTaskContexts.add(new MtlTaskContext(MergeAwoManifests.ConfigAction.class, null));
-
-        //MergeAssets
-        mtlTaskContexts.add(new MtlTaskContext(MergeAwbAssetConfigAction.class, null));
-
-        mtlTaskContexts.add(new MtlTaskContext(CopyAwoSolibTask.ConfigAction.class, null));
-
-        //MergeRes
-        mtlTaskContexts.add(new MtlTaskContext(MergeAwbResourceConfigAction.class, null));
-
-        //Awb processRes
-        mtlTaskContexts.add(new MtlTaskContext(ProcessAwoAndroidResources.ConfigAction.class,
-                                               null));
-
-        mtlTaskContexts.add(new MtlTaskContext(AwoJavaCompileConfigAction.class, null));
-
-        //Dex
-        mtlTaskContexts.add(new MtlTaskContext(AwbDexTask.ConfigAction.class, null));
-
-        //mtlTaskContexts.add(new MtlTaskContext(PrePackageConfigAction.class, null));
-
-        //package
-        mtlTaskContexts.add(new MtlTaskContext(AwoPackageConfigAction.class, null));
-
-        //安装到手机
-        mtlTaskContexts.add(new MtlTaskContext(AwoInstallTask.ConfigAction.class, null));
-
-        mtlTaskContexts.add(new MtlTaskContext(AssemblePatchTask.ConfigAction.class, null));
-
-        //签名&zipalign
-        //        mtlTaskContexts.add(new MtlTaskContext(AwoFullApkBuildTask.ConfigAction.class, null));
-
-        //mtlTaskContexts.add(new MtlTaskContext(libVariantContext.getBaseVariantData().assembleVariantTask));
-
-        new MtlTaskInjector(libVariantContext).injectTasks(mtlTaskContexts, tAndroidBuilder);
-    }
-
-    private void createDexTask(LibVariantContext libVariantContext, Zip bundleTask) {
-
-        List<MtlTaskContext> mtlTaskContexts = new ArrayList<MtlTaskContext>();
-
-        mtlTaskContexts.add(new MtlTaskContext(bundleTask));
-
-        mtlTaskContexts.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
-
-        mtlTaskContexts.add(new MtlTaskContext(PrepareMainDexJarsTask.ConfigAction.class, null));
-
-        mtlTaskContexts.add(new MtlTaskContext(DexBuildTask.ConfigAction.class, null));
-
-        mtlTaskContexts.add(new MtlTaskContext(DexInstallTask.ConfigAction.class, null));
-
-        mtlTaskContexts.add(new MtlTaskContext(AssemblePatchTask.ConfigAction.class, null));
-
-        new MtlTaskInjector(libVariantContext).injectTasks(mtlTaskContexts, tAndroidBuilder);
-    }
-
-    private LibraryExtension libraryExtension;
 }

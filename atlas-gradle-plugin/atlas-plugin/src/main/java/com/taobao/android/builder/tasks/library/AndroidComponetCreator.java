@@ -210,19 +210,18 @@
 package com.taobao.android.builder.tasks.library;
 
 import com.taobao.android.builder.extension.AtlasExtension;
-
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.internal.artifacts.publish.ArchivePublishArtifact;
 import org.gradle.api.tasks.bundling.Zip;
-
-import static com.taobao.android.builder.manager.AtlasLibTaskManager.COMPILE_CONFIGURATION_NAME;
 
 /**
  * Created by wuzhong on 2017/2/25.
  */
 @Deprecated
 public class AndroidComponetCreator {
+
+    public static final String COMPILE_CONFIGURATION_NAME = "compile";
 
     private AtlasExtension atlasExtension;
 
@@ -237,7 +236,7 @@ public class AndroidComponetCreator {
         //增加一个components.android
         if (atlasExtension.getBundleConfig().isAwbBundle()) {
             Configuration compileConfiguration = project.getConfigurations()
-                    .getByName(COMPILE_CONFIGURATION_NAME);
+                .getByName(COMPILE_CONFIGURATION_NAME);
             ArchivePublishArtifact bundleArtifact = new ArchivePublishArtifact(bundleTask);
             compileConfiguration.getArtifacts().add(bundleArtifact);
         }

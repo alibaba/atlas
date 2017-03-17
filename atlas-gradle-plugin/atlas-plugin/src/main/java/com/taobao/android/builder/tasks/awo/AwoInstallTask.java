@@ -274,7 +274,7 @@ public class AwoInstallTask extends BaseTask {
 
         @Override
         public String getName() {
-            return libVariantContext.getScope().getTaskName("installAwo");
+            return libVariantContext.getScope().getTaskName("awoInstall");
         }
 
         @Override

@@ -227,6 +227,7 @@ import java.util.Map;
 
 /**
  * Created by wuzhong on 2016/12/31.
+ * @author wuzhong
  */
 public class AtlasConfigHelper {
 
@@ -276,11 +277,11 @@ public class AtlasConfigHelper {
         BeanUtils.setProperty(last, fieldNames[fieldNames.length - 1], value);
     }
 
-    public static List<AtlasConfigField> readConfig(AtlasExtension atlasExtension) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    public static List<AtlasConfigField> readConfig(AtlasExtension atlasExtension , String prefix) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 
         List<AtlasConfigField> configFieldList = new ArrayList<AtlasConfigField>();
 
-        readConfig(atlasExtension, "mtl", configFieldList, 0, "");
+        readConfig(atlasExtension, prefix, configFieldList, 0, "");
 
         Collections.sort(configFieldList, new Comparator<AtlasConfigField>() {
             @Override

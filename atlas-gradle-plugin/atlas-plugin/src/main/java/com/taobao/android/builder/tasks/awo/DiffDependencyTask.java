@@ -362,7 +362,7 @@ public class DiffDependencyTask extends DefaultAndroidTask {
 
         @Override
         public String getName() {
-            return scope.getTaskName("DiffDependencies");
+            return scope.getTaskName("awoDiffDependencies");
         }
 
         @Override

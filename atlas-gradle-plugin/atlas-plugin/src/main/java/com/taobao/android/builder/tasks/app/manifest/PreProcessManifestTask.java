@@ -251,6 +251,8 @@ import org.gradle.api.tasks.TaskAction;
  * 4. 补全 className
  * <p>
  * Created by shenghua.nish on 2016-05-09 下午11:31.
+ *
+ * @author shenghua.nish, wuzhong
  */
 public class PreProcessManifestTask extends DefaultTask {
 
@@ -260,6 +262,8 @@ public class PreProcessManifestTask extends DefaultTask {
     File mainManifestFile;
 
     List<File> libraryManifests;
+
+    Set<File> awbManifest;
 
     AppVariantOutputContext.AppBuildInfo appBuildInfo;
 
@@ -302,20 +306,33 @@ public class PreProcessManifestTask extends DefaultTask {
         mainManifestFileObject.init();
 
         for (File file : getLibraryManifests()) {
+
+            if (!file.exists()) {
+                return;
+            }
+
             runnables.add(new Runnable() {
+
                 @Override
                 public void run() {
                     try {
 
-                        ManifestFileUtils.updatePreProcessManifestFile(file,
+                        File modifyManifest = appVariantContext.getModifyManifest(file);
+
+                        ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file,
                                                                        mainManifestFileObject,
-                                                                       true);
+                                                                       true, awbManifest.contains(file));
+
+                        AtlasBuildContext.manifestMap.put(file, modifyManifest);
+
                     } catch (Throwable e) {
                         throw new GradleException("preprocess manifest", e);
                     }
                 }
+
             });
         }
+
         executorServicesHelper.execute(runnables);
 
         //ManifestFileUtils.preProcessManifests(getMainManifestFile(), getLibraryManifests(), true);
@@ -327,6 +344,7 @@ public class PreProcessManifestTask extends DefaultTask {
     }
 
     private void addAwbManifest2Merge() {
+
         AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
 
         for (final BaseVariantOutputData vod : appVariantContext.getVariantData().getOutputs()) {
@@ -362,9 +380,36 @@ public class PreProcessManifestTask extends DefaultTask {
                     }
                 }
 
+                //TODO update manifestFiles
+                List<ManifestProvider> allManifest = new ArrayList<>();
+                allManifest.addAll(bundleProviders);
+                allManifest.addAll(mergeManifests.getProviders());
+
+                List<ManifestProvider> modifyManifests = new ArrayList<>();
+                for (ManifestProvider manifestProvider : allManifest) {
+
+                    File modifyManifest = AtlasBuildContext.manifestMap.get(manifestProvider.getManifest());
+                    if (null == modifyManifest) {
+                        modifyManifests.add(manifestProvider);
+                        break;
+                    }
+
+                    modifyManifests.add(new ManifestProvider() {
+                        @Override
+                        public File getManifest() {
+                            return modifyManifest;
+                        }
+
+                        @Override
+                        public String getName() {
+                            return manifestProvider.getName();
+                        }
+                    });
+                }
+
                 //FIXME 不加这一步,每次的getibraries 都会从mapping里去重新计算
-                mergeManifests.setProviders(mergeManifests.getProviders());
-                mergeManifests.getProviders().addAll(bundleProviders);
+                mergeManifests.setProviders(modifyManifests);
+
             }
         }
     }
@@ -407,9 +452,7 @@ public class PreProcessManifestTask extends DefaultTask {
 
             List<File> manifests = new ArrayList<File>(libManifests.size());
             for (File f : libManifests) {
-                if (f.exists()) {
-                    manifests.add(f);
-                }
+                manifests.add(f);
             }
 
             task.setLibraryManifests(manifests);
@@ -417,6 +460,13 @@ public class PreProcessManifestTask extends DefaultTask {
             task.appBuildInfo = getAppVariantOutputContext().appBuildInfo;
             task.appVariantContext = appVariantContext;
             task.appVariantOutputContext = getAppVariantOutputContext();
+
+            Set<File> awbManifests = new HashSet<File>();
+            for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
+                awbManifests.add(awbBundle.getAndroidLibrary().getManifest());
+            }
+            task.awbManifest = awbManifests;
+
         }
     }
 }

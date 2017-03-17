@@ -568,7 +568,7 @@ public class AtlasDepTreeParser {
         }
     }
 
-    public void addDependency(ResolvedDependencyInfo resolvedDependencyInfo) {
+    private void addDependency(ResolvedDependencyInfo resolvedDependencyInfo) {
         this.dependencies.add(resolvedDependencyInfo);
         addDependencyInfo(resolvedDependencyInfo, null);
     }
@@ -639,7 +639,7 @@ public class AtlasDepTreeParser {
     /**
      * 进行依赖仲裁
      */
-    protected synchronized void resolveAllDependencies() {
+    private synchronized void resolveAllDependencies() {
 
         if (!conflictDependencies.isEmpty()) {
             for (String str : conflictDependencies) {
@@ -719,7 +719,7 @@ public class AtlasDepTreeParser {
         }
     }
 
-    public AtlasDependencyTree toAtlasDependencyTree() {
+    private AtlasDependencyTree toAtlasDependencyTree() {
 
         AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies);
 

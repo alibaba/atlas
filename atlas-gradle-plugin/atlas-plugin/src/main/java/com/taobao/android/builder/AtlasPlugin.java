@@ -213,8 +213,10 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.android.build.gradle.AndroidGradleOptions;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
+import com.taobao.android.builder.tasks.helper.AtlasListTask;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
@@ -232,7 +234,6 @@ public class AtlasPlugin implements Plugin<Project> {
 
     public static final String BUNDLE_COMPILE = "bundleCompile";
     public static final String PROVIDED_COMPILE = "providedCompile";
-
 
     protected Project project;
     public static final Pattern PLUGIN_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[3-9].*");
@@ -283,6 +284,8 @@ public class AtlasPlugin implements Plugin<Project> {
 
                 //5. 配置任务
                 atlasConfigurationHelper.configTasksAfterEvaluate();
+
+                project.getTasks().create("atlasList", AtlasListTask.class);
             }
         });
     }
@@ -321,6 +324,13 @@ public class AtlasPlugin implements Plugin<Project> {
             String errorMessage = String.format("JDK version %s is required. Current version is %s. ",
                                                 JDK_MIN_VERSIONS, jdkVersion);
             throw new StopExecutionException(errorMessage);
+        }
+
+        if (AndroidGradleOptions.isBuildCacheEnabled(project)) {
+            //project.setProperty(AndroidGradleOptions.PROPERTY_ENABLE_BUILD_CACHE, false);
+            String errorMessage = "android.enableBuildCache is disabled by atlas, we will open it later, "
+                + "\r\n please `add android.enableBuildCache false` to gradle.properties";
+            //throw new StopExecutionException(errorMessage);
         }
 
     }

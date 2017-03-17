@@ -263,7 +263,7 @@ public class AwoPackageConfigAction extends MtlBaseTaskAction<PackageApplication
 
     @Override
     public String getName() {
-        return scope.getTaskName("packageAwo[" + awbBundle.getName() + "]");
+        return scope.getTaskName("awoPackage[" + awbBundle.getName() + "]");
     }
 
     @Override

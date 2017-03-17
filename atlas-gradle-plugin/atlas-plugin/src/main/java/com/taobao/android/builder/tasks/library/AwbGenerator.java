@@ -212,13 +212,26 @@ package com.taobao.android.builder.tasks.library;
 import java.io.File;
 import java.io.IOException;
 
+import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.api.LibVariantContext;
+import com.android.build.gradle.internal.ide.DependencyConvertUtils;
+import com.android.builder.dependency.MavenCoordinatesImpl;
+import com.android.builder.model.MavenCoordinates;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.parser.AtlasDepTreeParser;
+import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.gradle.api.Action;
+import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.bundling.Zip;
+
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
  * Created by wuzhong on 2017/2/25.
@@ -234,7 +247,7 @@ public class AwbGenerator {
     /**
      * 创建基本的AWB任务
      */
-    public void generate(final Zip bundleTask) {
+    public void generateAwbArtifict(final Zip bundleTask) {
 
         bundleTask.setExtension("awb");
 
@@ -284,4 +297,64 @@ public class AwbGenerator {
             }
         });
     }
+
+    public AwbBundle createAwbBundle(LibVariantContext libVariantContext) throws IOException {
+
+        String variantName = libVariantContext.getVariantName();
+
+        AtlasDependencyTree libDependencyTree = AtlasBuildContext.libDependencyTrees.get(
+            variantName);
+
+        //TODO 2.3
+        if (null == libDependencyTree) {
+
+            AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(libVariantContext.getProject(),
+                                                                             new ExtraModelInfo(
+                                                                                 libVariantContext.getProject()))
+                .parseDependencyTree(libVariantContext.getVariantDependency());
+            AtlasBuildContext.libDependencyTrees.put(variantName, atlasDependencyTree);
+        }
+
+        Project project = libVariantContext.getProject();
+
+        String groupName = (String)project.getGroup();
+        String name = "";
+        String version = (String)project.getVersion();
+        if (project.hasProperty("archivesBaseName")) {
+            name = (String)project.getProperties().get("archivesBaseName");
+        } else {
+            name = project.getName();
+        }
+
+        File explodedDir = project.file(project.getBuildDir().getAbsolutePath() +
+                                            "/" +
+                                            FD_INTERMEDIATES +
+                                            "/exploded-awb/" +
+                                            computeArtifactPath(groupName, name, version));
+        FileUtils.deleteDirectory(explodedDir);
+
+        MavenCoordinates mavenCoordinates = new MavenCoordinatesImpl(groupName,
+                                                                     name,
+                                                                     version,
+                                                                     "awb",
+                                                                     "");
+
+        ResolvedDependencyInfo resolvedDependencyInfo = new ResolvedDependencyInfo(groupName, name, version, "awb");
+        resolvedDependencyInfo.setVariantName(libVariantContext.getVariantName());
+
+        return new AwbBundle(resolvedDependencyInfo, DependencyConvertUtils.toAndroidLibrary(mavenCoordinates,
+                                                                                             libVariantContext
+                                                                                                 .getBundleTask()
+                                                                                                 .getArchivePath(),
+                                                                                             explodedDir));
+
+    }
+
+    private String computeArtifactPath(String groupName, String name, String version) {
+        StringBuilder pathBuilder = new StringBuilder();
+        pathBuilder.append(groupName).append("/").append(name).append("/").append(version);
+
+        return pathBuilder.toString();
+    }
+
 }
