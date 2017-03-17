@@ -236,14 +236,16 @@ public class AwbGenerator {
      */
     public void generate(final Zip bundleTask) {
 
-        if (atlasExtension.getBundleConfig().isAwbBundle()) {
-            bundleTask.setArchiveName(FilenameUtils.getBaseName(bundleTask.getArchiveName()) +
-                                          ".awb");
-            bundleTask.setDestinationDir(new File(bundleTask.getDestinationDir().getParentFile(),
-                                                  "awb"));
-        }
+        bundleTask.setExtension("awb");
+
+        bundleTask.setArchiveName(FilenameUtils.getBaseName(bundleTask.getArchiveName()) +
+                                      ".awb");
+
+        bundleTask.setDestinationDir(new File(bundleTask.getDestinationDir().getParentFile(),
+                                              "awb"));
 
         bundleTask.doLast(new Action<Task>() {
+
             @Override
             public void execute(Task task) {
 

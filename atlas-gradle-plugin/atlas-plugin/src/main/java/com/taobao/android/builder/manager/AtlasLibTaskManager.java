@@ -219,6 +219,7 @@ import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.LibraryVariant;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.api.LibraryVariantImpl;
+import com.android.build.gradle.internal.variant.LibVariantOutputData;
 import com.android.builder.core.AtlasBuilder;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -254,7 +255,8 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 /**
  * MTL插件编译lib库的任务管理
  * Created by shenghua.nish on 2016-05-09 下午3:55.
- * @author shenghua.nish,wuzhong
+ *
+ * @author shenghua.nish, wuzhong
  */
 public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
@@ -287,20 +289,24 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                                                                             atlasExtension,
                                                                             libraryExtension);
 
-                List<Zip> zipTasks = libVariantContext.getZipTasks();
+                if (atlasExtension.getBundleConfig().isAwbBundle()) {
 
-                if (zipTasks.isEmpty()) {
-                    return;
+                    AwbGenerator awbGenerator = new AwbGenerator(atlasExtension);
+
+                    List<LibVariantOutputData> list = libVariantContext.getVariantData().getOutputs();
+
+                    if (null != list) {
+
+                        for (LibVariantOutputData libVariantOutputData : list) {
+
+                            awbGenerator.generate(libVariantOutputData.packageLibTask);
+
+                        }
+
+                    }
+
                 }
 
-                for (Zip zipTask : zipTasks) {
-
-                    //new AndroidComponetCreator(atlasExtension, project).createAndroidComponent(
-                    //        zipTask);
-
-                    //生成 awb 和 jar
-                    new AwbGenerator(atlasExtension).generate(zipTask);
-                }
             }
         });
 
@@ -376,7 +382,6 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
         //MergeRes
         mtlTaskContexts.add(new MtlTaskContext(MergeAwbResourceConfigAction.class, null));
-
         //Awb processRes
         //mtlTaskContexts.add(new MtlTaskContext(ProcessAwoAndroidResources.ConfigAction.class,
         //                                       null));

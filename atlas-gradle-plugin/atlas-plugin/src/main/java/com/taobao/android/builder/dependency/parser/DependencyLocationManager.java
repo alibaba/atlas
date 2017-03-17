@@ -30,7 +30,7 @@ public class DependencyLocationManager {
             AndroidGradleOptions.getBuildCache(project);
         File explodedDir;
         if (PrepareLibraryTask.shouldUseBuildCache(
-            buildCache.isPresent(), mavenCoordinates)) {
+            buildCache.isPresent(), mavenCoordinates) ) { //&& !"awb".equals(type)
             try {
                 explodedDir = buildCache.get().getFileInCache(
                     PrepareLibraryTask.getBuildCacheInputs(bundle));

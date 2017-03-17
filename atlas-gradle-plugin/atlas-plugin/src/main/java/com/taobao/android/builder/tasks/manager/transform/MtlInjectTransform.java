@@ -336,6 +336,7 @@ public abstract class MtlInjectTransform extends InjectTransform {
             outFileName = outFileName + "-" + index;
             index++;
         }
+        outFileNames.add(outFileName);
 
         return outFileName;
     }

@@ -209,6 +209,13 @@
 
 package com.taobao.android.builder.tasks.app.manifest;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -224,11 +231,9 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.bundleinfo.BundleInfoUtils;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.manifest.ManifestFileObject;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-
 import org.dom4j.DocumentException;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -236,13 +241,6 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * 对manifest文件进行预处理的任务
@@ -291,16 +289,16 @@ public class PreProcessManifestTask extends DefaultTask {
     public void preProcess() throws IOException, DocumentException, InterruptedException {
 
         getLogger().info("[MTLPlugin]Start PreProcess Lib manifest files,main manifestFile is:" +
-                                 getMainManifestFile());
+                             getMainManifestFile());
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(
-                "preProcessManifest",
-                getLogger(),
-                0);
+            "preProcessManifest",
+            getLogger(),
+            0);
         List<Runnable> runnables = new ArrayList<>();
 
         ManifestFileObject mainManifestFileObject = ManifestFileUtils.getManifestFileObject(
-                mainManifestFile);
+            mainManifestFile);
         mainManifestFileObject.init();
 
         for (File file : getLibraryManifests()) {
@@ -308,6 +306,7 @@ public class PreProcessManifestTask extends DefaultTask {
                 @Override
                 public void run() {
                     try {
+
                         ManifestFileUtils.updatePreProcessManifestFile(file,
                                                                        mainManifestFileObject,
                                                                        true);
@@ -337,16 +336,16 @@ public class PreProcessManifestTask extends DefaultTask {
             Set<String> notMergedArtifacts = Sets.newHashSet();
 
             if (null != atlasExtension.getManifestOptions() &&
-                    null != atlasExtension.getManifestOptions().getNotMergedBundles()) {
+                null != atlasExtension.getManifestOptions().getNotMergedBundles()) {
                 notMergedArtifacts = atlasExtension.getManifestOptions().getNotMergedBundles();
             }
 
             if (manifestProcessorTask instanceof MergeManifests) {
-                MergeManifests mergeManifests = (MergeManifests) manifestProcessorTask;
+                MergeManifests mergeManifests = (MergeManifests)manifestProcessorTask;
                 VariantScope variantScope = appVariantContext.getScope();
                 GradleVariantConfiguration config = variantScope.getVariantConfiguration();
                 AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                        config.getFullName());
+                    config.getFullName());
                 if (null == dependencyTree) {
                     throw new StopExecutionException("DependencyTree cannot be null!");
                 }
@@ -395,7 +394,7 @@ public class PreProcessManifestTask extends DefaultTask {
             VariantScope variantScope = appVariantContext.getScope();
             final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
             AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                    config.getFullName());
+                config.getFullName());
             if (null == dependencyTree) {
                 throw new StopExecutionException("DependencyTree cannot be null!");
             }

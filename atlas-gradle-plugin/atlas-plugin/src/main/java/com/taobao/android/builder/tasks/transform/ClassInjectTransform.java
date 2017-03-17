@@ -311,7 +311,7 @@ public class ClassInjectTransform extends MtlInjectTransform {
             File to = getOutputFile(outputProvider, jarInput);
 
             //只对 atlas 做代码注入, 没有做多jarmerge
-            if (injectParam.removePreverify && !isAtlasDependency(jarInput.getFile()) && jarInputs.size() > 1) {
+            if (injectParam.removePreverify && !isAtlasDependency(jarInput.getFile(), to) && jarInputs.size() > 1) {
                 FileUtils.copyFile(jarInput.getFile(), to);
             } else {
                 CodeInjectByJavassist.inject(classPool, jarInput.getFile(), to, injectParam);
@@ -341,8 +341,8 @@ public class ClassInjectTransform extends MtlInjectTransform {
         }
     }
 
-    private boolean isAtlasDependency(File jarFile) {
-        return jarFile.getAbsolutePath().contains("atlas");
+    private boolean isAtlasDependency(File jarFile, File outputFile) {
+        return jarFile.getAbsolutePath().contains("atlas") || outputFile.getAbsolutePath().contains("atlas");
     }
 
     @Override

@@ -263,7 +263,7 @@ public class AtlasConfigurationHelper {
             new AndroidComponent(compileConfiguration, compileConfiguration.getAllDependencies()));
 
         //add provided compile
-        if (null  == project.getConfigurations().findByName(AtlasPlugin.PROVIDED_COMPILE)) {
+        if (null == project.getConfigurations().findByName(AtlasPlugin.PROVIDED_COMPILE)) {
             project.getConfigurations().create(AtlasPlugin.PROVIDED_COMPILE, new Action<Configuration>() {
                 @Override
                 public void execute(Configuration config) {
@@ -272,17 +272,14 @@ public class AtlasConfigurationHelper {
             });
         }
 
-        project.getConfigurations().create(AtlasPlugin.BUNDLE_COMPILE);
+        //project.getConfigurations().create(AtlasPlugin.BUNDLE_COMPILE);
         //Configuration providedConfiguration = project.getConfigurations().getByName("provided");
-        //project.getConfigurations().create("bundleCompile", new Action<Configuration>() {
-        //    @Override
-        //    public void execute(Configuration config) {
-        //
-        //        config.getResolvedConfiguration().
-        //
-        //        providedConfiguration.extendsFrom(config);
-        //    }
-        //});
+        project.getConfigurations().create(AtlasPlugin.BUNDLE_COMPILE, new Action<Configuration>() {
+            @Override
+            public void execute(Configuration config) {
+                compileConfiguration.extendsFrom(config);
+            }
+        });
 
     }
 
