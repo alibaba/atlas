@@ -249,6 +249,7 @@ public class AwbDataBindingProcessLayoutsConfigAction implements TaskConfigActio
         task.setLayoutInputFolder(appVariantContext.getAwbMergeResourcesOutputDir(awbBundle));
         task.setLayoutOutputFolder(appVariantContext.getAwbLayoutFolderOutputForDataBinding(awbBundle));
         task.setXmlInfoOutFolder(appVariantContext.getAwbLayoutInfoOutputForDataBinding(awbBundle));
+
     }
 
 

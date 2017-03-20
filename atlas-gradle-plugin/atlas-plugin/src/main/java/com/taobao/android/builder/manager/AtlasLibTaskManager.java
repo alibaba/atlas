@@ -227,7 +227,7 @@ import com.taobao.android.builder.tasks.awo.AssemblePatchTask;
 import com.taobao.android.builder.tasks.awo.AwbDexTask;
 import com.taobao.android.builder.tasks.awo.AwoInstallTask;
 import com.taobao.android.builder.tasks.awo.AwoJavaCompileConfigAction;
-import com.taobao.android.builder.tasks.awo.AwoPackageConfigAction;
+import com.taobao.android.builder.tasks.awo.AwoPackageTask;
 import com.taobao.android.builder.tasks.awo.CopyAwoSolibTask;
 import com.taobao.android.builder.tasks.awo.DiffDependencyTask;
 import com.taobao.android.builder.tasks.awo.MergeAwoManifests;
@@ -313,6 +313,8 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
                             libraryVariant.getName().equals("debug")) {
 
+                            atlasExtension.getTBuildConfig().setUseCustomAapt(true);
+
                             libVariantContext.setBundleTask(zipTask);
 
                             try {
@@ -373,7 +375,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
         //mtlTaskContexts.add(new MtlTaskContext(PrePackageConfigAction.class, null));
 
         //package
-        mtlTaskContexts.add(new MtlTaskContext(AwoPackageConfigAction.class, null));
+        mtlTaskContexts.add(new MtlTaskContext(AwoPackageTask.ConfigAction.class, null));
 
         //安装到手机
         mtlTaskContexts.add(new MtlTaskContext(AwoInstallTask.ConfigAction.class, null));

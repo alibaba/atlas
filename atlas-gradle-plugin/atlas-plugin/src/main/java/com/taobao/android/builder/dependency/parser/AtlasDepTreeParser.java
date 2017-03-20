@@ -286,6 +286,8 @@ public class AtlasDepTreeParser {
 
     Set<String> conflictDependencies = new HashSet<>();
 
+    private Set<String> projectDependences = new HashSet<>();
+
     private ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
 
     public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
@@ -312,8 +314,6 @@ public class AtlasDepTreeParser {
         collectArtifacts(compileClasspath, artifacts);
         collectArtifacts(packageClasspath, artifacts);
         collectArtifacts(bundleClasspath, artifacts);
-
-
 
         //计算那些 bundle 和 provided 的依赖
         bundleClasspath.getDependencies().forEach(new Consumer<Dependency>() {
@@ -464,20 +464,17 @@ public class AtlasDepTreeParser {
             String name = AtlasDepHelper.computeArtifactName(moduleVersion, resolvedArtifact);
 
             MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
+
+            boolean isProjDependency = projectDependences.contains(
+                mavenCoordinates.getGroupId() + ":" + mavenCoordinates.getArtifactId());
+
             File explodedDir = DependencyLocationManager.getExploreDir(project, mavenCoordinates,
                                                                        resolvedArtifact.getFile(),
                                                                        resolvedArtifact.getType().toLowerCase(),
-                                                                       path);
-
-            //File explodedDir = project.file(project.getBuildDir().getAbsolutePath() +
-            //                                    "/" +
-            //                                    FD_INTERMEDIATES +
-            //                                    "/exploded-" +
-            //                                    resolvedArtifact.getType().toLowerCase() +
-            //                                    "/" +
-            //                                    path);
+                                                                       path, !isProjDependency);
 
             resolvedDependencyInfo.setExplodedDir(explodedDir);
+
             resolvedDependencyInfo.setDependencyName(name);
 
             if (null == parent) {
@@ -530,6 +527,7 @@ public class AtlasDepTreeParser {
             if (dependency instanceof ProjectDependency) {
                 ProjectDependency projectDependency = (ProjectDependency)dependency;
                 project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
+                projectDependences.add(projectDependency.getGroup() + ":" + projectDependency.getName());
                 //try {
                 //    ensureConfigured( projectDependency.getProjectConfiguration());
                 //} catch (Throwable e) {
@@ -738,6 +736,8 @@ public class AtlasDepTreeParser {
                 collect(dependencyInfo, atlasDependencyTree.getMainBundle());
             }
         }
+
+        atlasDependencyTree.setProjectDependencies(projectDependences);
 
         return atlasDependencyTree;
     }

@@ -209,6 +209,13 @@
 
 package com.taobao.android.builder.tasks.awo;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.api.LibVariantContext;
@@ -226,7 +233,6 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
@@ -237,13 +243,6 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Android的awb的dex编译任务,为了简单起见,不走DexTransform任务,目前不支持predex等功能
@@ -366,8 +365,8 @@ public class AwbDexTask extends BaseTask {
         File _inputDir = getInputDir();
         if (_inputFiles == null && _inputDir == null) {
             throw new StopExecutionException("Dex task " +
-                                                     getName() +
-                                                     ": inputDir and inputFiles cannot both be null");
+                                                 getName() +
+                                                 ": inputDir and inputFiles cannot both be null");
         }
         doTaskAction(_inputFiles, _inputDir, false);
     }
@@ -391,21 +390,20 @@ public class AwbDexTask extends BaseTask {
             inputFiles = getProject().files(inputDir).getFiles();
         }
         ProcessOutputHandler outputHandler = new ParsingProcessOutputHandler(new ToolOutputParser(
-                new DexParser(),
-                Message.Kind.ERROR,
-                getILogger()),
+            new DexParser(),
+            Message.Kind.ERROR,
+            getILogger()),
                                                                              new ToolOutputParser(
-                                                                                     new DexParser(),
-                                                                                     getILogger()),
+                                                                                 new DexParser(),
+                                                                                 getILogger()),
                                                                              getBuilder().getErrorReporter());
 
-        //getBuilder().convertByteCode(inputFiles,
-        //                             getOutputFolder(),
-        //                             getMultiDexEnabled(),
-        //                             getMainDexListFile(),
-        //                             getDexOptions(),
-        //                             getOptimize(),
-        //                             outputHandler);
+        getBuilder().convertByteCode(inputFiles,
+                                     getOutputFolder(),
+                                     getMultiDexEnabled(),
+                                     getMainDexListFile(),
+                                     getDexOptions(),
+                                     outputHandler);
     }
 
     protected void emptyFolder(File folder) throws IOException {
@@ -449,7 +447,7 @@ public class AwbDexTask extends BaseTask {
         public void execute(AwbDexTask task) {
             final GradleVariantConfiguration config = variantContext.getVariantConfiguration();
 
-            LibVariantContext libVariantContext = (LibVariantContext) variantContext;
+            LibVariantContext libVariantContext = (LibVariantContext)variantContext;
             //                libVariantContext.setAwbDexTask(task);
             task.setOutputFolder(libVariantContext.getDexFolder());
 

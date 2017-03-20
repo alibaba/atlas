@@ -323,7 +323,7 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
             options.add("--customized-package-id");
             options.add(getCustomPackageId());
         } else {
-            throw new GradleException("bunle is not found in basic apk : " +
+            throw new GradleException("bundle is not found in basic apk : " +
                                           bundleLocation +
                                           ", \n you must config your project's group and projectName to bundle's "
                                           + "realName"
@@ -449,7 +449,7 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
         @NonNull
         @Override
         public String getName() {
-            return scope.getTaskName("process", "AwbResources[" + awbBundle.getName() + "]");
+            return scope.getTaskName("awoProcess", "Resources[" + awbBundle.getName() + "]");
         }
 
         @NonNull

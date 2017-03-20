@@ -274,6 +274,8 @@ public class MergeResAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask>
                                                                 mergeAwbResourceConfigAction.getName(),
                                                                 mergeAwbResourceConfigAction.getType());
 
+            mergeTask.setBlameLogFolder(appVariantContext.getAwbBlameLogFolder(awbBundle));
+
             mergeAwbResourceConfigAction.execute(mergeTask);
 
             tasks.add(mergeTask);

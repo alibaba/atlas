@@ -225,6 +225,7 @@ import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.AtlasBuilder;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
@@ -242,7 +243,6 @@ import com.taobao.android.builder.tasks.app.manifest.PreProcessManifestTask;
 import com.taobao.android.builder.tasks.app.merge.MergeAssetAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeManifestAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeResAwbsConfigAction;
-import com.taobao.android.builder.tasks.app.merge.MergeResV4Dir;
 import com.taobao.android.builder.tasks.app.merge.MergeSoLibTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
@@ -303,6 +303,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAllDependenciesTask.ConfigAction.class, null));
 
+                mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
+
                 mtlTaskContextList.add(new MtlTaskContext(PreProcessManifestTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
@@ -334,7 +336,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(MergeManifestAwbsConfigAction.class, null));
 
-                mtlTaskContextList.add(new MtlTaskContext(MergeResV4Dir.ConfigAction.class, null));
+                //mtlTaskContextList.add(new MtlTaskContext(MergeResV4Dir.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
 
@@ -383,139 +385,5 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
         });
     }
-
-    //    /**
-    //     * 注入MergeJavaResource过程
-    //     *
-    //     * @param appVariantContext
-    //     */
-    //    private void hookMergeJavaResourceTask(AppVariantContext appVariantContext) {
-    //
-    //        boolean mergeJavaRes = DefaultGroovyMethods.invokeMethod(appVariantContext.getAtlasExtension(),
-    // "getTBuildConfig", new Object[0]).invokeMethod("getMergeJavaRes", new Object[0]);
-    //        List<TransformTask> mergeJavaResourcesTasks = getTransformTaskByTransformType(appVariantContext,
-    // MergeJavaResourcesTransform.class);
-    //        for (TransformTask mergeJavaResourcesTask : mergeJavaResourcesTasks) {
-    //
-    //            if (!mergeJavaRes && mergeJavaResourcesTask.getName().startsWith
-    // ("transformResourcesWithMergeJavaResFor")) {
-    //                mergeJavaResourcesTask.setEnabled(false);
-    //                continue;
-    //            }
-    //
-    //
-    //            MergeJavaResourcesTransform transfrom = (MergeJavaResourcesTransform) mergeJavaResourcesTask
-    // .getTransform();
-    //            MergeJavaResTransform mergeTransform = new MergeJavaResTransform((PackagingOptions) FieldUtils
-    // .readField(transfrom, "packagingOptions", true), (Set<QualifiedContent.Scope>) FieldUtils.readField(transfrom,
-    // "mergeScopes", true), ((Set<QualifiedContent.ContentType>) FieldUtils.readField(transfrom, "mergedType", true)
-    // ).iterator().next(), (String) FieldUtils.readField(transfrom, "name", true));
-    //            Field transfromField = FieldUtils.getDeclaredField(TransformTask.class, "transform", true);
-    //            if (null != transfromField) {
-    //                transfromField.set(mergeJavaResourcesTask, mergeTransform);
-    //            }
-    //
-    //
-    //        }
-    //
-    //    }
-    //
-    //    /**
-    //     * 注入原生的package过程,不做签名,zipalign等过程
-    //     *
-    //     * @param appVariantContext
-    //     */
-    //    private void hookPackageTask(AppVariantContext appVariantContext) {
-    //        for (final BaseVariantOutputData vod : appVariantContext.getVariantData().getOutputs()) {
-    //            ApkVariantOutputData apkVariantOutputData = (ApkVariantOutputData) vod;
-    //            PackageApplication packageApplication = apkVariantOutputData.packageApplicationTask;
-    //            packageApplication.setSigningConfig(null);
-    //            //去掉签名验证过程
-    //            List<DefaultAndroidTask> validateSigningTaskList = findTask(project, ValidateSigningTask.class,
-    // appVariantContext.getVariantName());
-    //            if (null != validateSigningTaskList) {
-    //                for (Task validateSigningTask : validateSigningTaskList) {
-    //                    validateSigningTask.setEnabled(false);
-    //                }
-    //
-    //            }
-    //
-    ////
-    ////            //去掉zipalign过程
-    //            List<ZipAlign> zipAlignTasks = DefaultGroovyMethods.asList(project.getTasks().withType(ZipAlign
-    // .class));
-    //            if (null != zipAlignTasks) {
-    //                for (ZipAlign task : zipAlignTasks) {
-    //                    task.setEnabled(false);
-    //                }
-    //
-    //            }
-    //
-    //
-    //        }
-    //
-    //    }
-    //
-    //    /**
-    //     * 注入multiDex的配置操作
-    //     *
-    //     * @param appVariantContext
-    //     */
-    //    private void hookMultiDexTransform(AppVariantContext appVariantContext) {
-    //        logger.info("hookMultiDexTransform");
-    //        MultiDex multiDex = mtlExtension.getMultiDex();
-    //
-    //        //TODO mtlMainDex依赖于classInject
-    //        if (null != multiDex && multiDex.getMtlMainDex() && !mtlExtension.getTBuildConfig().getClassInject()) {
-    //            throw new GradleException("mtlMainDex dependes on tBuildConfig.classInject");
-    //        }
-    //
-    //
-    //        if (null != multiDex && (null != multiDex.getMainDexClassListFile() || multiDex.getMtlMainDex())) {
-    //            List<TransformTask> multiDexTransformTasks = getTransformTaskByTransformType(appVariantContext,
-    // MultiDexTransform.class);
-    //            for (TransformTask multiDexTransformTask : multiDexTransformTasks) {
-    //                MultiDexConfigTransform multiDexConfigTransform = new MultiDexConfigTransform(multiDex,
-    // appVariantContext);
-    //                Field transfromField = FieldUtils.getDeclaredField(TransformTask.class, "transform", true);
-    //                if (null != transfromField) {
-    //                    logger.info("hookMultiDexTransform replace transform");
-    //                    transfromField.set(multiDexTransformTask, multiDexConfigTransform);
-    //                }
-    //
-    //            }
-    //
-    //        }
-    //
-    //    }
-    //
-    //    /**
-    //     * 根据Transfrom的类型得到指定的TransformTask
-    //     *
-    //     * @param appVariantContext
-    //     * @param transformClass
-    //     * @return
-    //     */
-    //    public List<TransformTask> getTransformTaskByTransformType(AppVariantContext appVariantContext, Class<?>
-    // transformClass) {
-    //        List<TransformTask> transformTasksList = Lists.newArrayList();
-    //        VariantConfiguration config = appVariantContext.getVariantConfiguration();
-    //        TaskCollection<TransformTask> transformTasks = project.getTasks().withType(TransformTask.class);
-    //        SortedMap<String, TransformTask> transformTaskSortedMap = transformTasks.getAsMap();
-    //        String variantName = config.getFullName();
-    //        for (String taskName : transformTaskSortedMap.keySet()) {
-    //            TransformTask transformTask = transformTaskSortedMap.get(taskName);
-    //            if (variantName.equals(transformTask.getVariantName())) {
-    //                if (transformTask.getTransform().getClass().equals(transformClass)) {
-    //                    ((ArrayList<TransformTask>) transformTasksList).add(transformTask);
-    //                }
-    //
-    //            }
-    //
-    //        }
-    //
-    //        return transformTasksList;
-    //    }
-    //
 
 }

@@ -209,189 +209,127 @@
 
 package com.taobao.android.builder.tasks.awo;
 
-import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.internal.LoggerWrapper;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
-import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.PackageApplication;
-import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
-import org.gradle.api.tasks.StopExecutionException;
-
-import java.io.File;
-import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.Callable;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.TaskAction;
 
 /**
- * Created by shenghua.nish on 2016-06-16 上午10:42.
+ * @author wuzhong
  */
-public class AwoPackageConfigAction extends MtlBaseTaskAction<PackageApplication> {
+public class AwoPackageTask extends BaseTask {
 
-    private static final ILogger LOG = LoggerWrapper.getLogger(AwoPackageConfigAction.class);
+    private AwbBundle awbBundle;
+    private GradleVariantConfiguration config;
+    private LibVariantContext libVariantContext;
 
-    private final AwbBundle awbBundle;
+    @TaskAction
+    public void doFullTaskAction() throws IOException {
 
-    private final LibVariantContext libVariantContext;
+        libVariantContext.getPackageFile().delete();
+        libVariantContext.getPackageFile().getParentFile().mkdirs();
 
-    private final VariantScope scope;
-
-    private final AtlasExtension atlasExtension;
-
-    public AwoPackageConfigAction(LibVariantContext variantContext,
-                                  BaseVariantOutputData baseVariantOutputData) {
-        super(variantContext, baseVariantOutputData);
-        this.awbBundle = variantContext.getAwbBundle();
-        this.libVariantContext = variantContext;
-        this.scope = variantContext.getScope();
-        this.atlasExtension = variantContext.getAtlasExtension();
-    }
-
-    @Override
-    public String getName() {
-        return scope.getTaskName("awoPackage[" + awbBundle.getName() + "]");
-    }
-
-    @Override
-    public Class<PackageApplication> getType() {
-        return PackageApplication.class;
-    }
-
-    @Override
-    public void execute(PackageApplication packageApp) {
-
-        final GradleVariantConfiguration config = scope.getVariantConfiguration();
-        packageApp.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-        packageApp.setVariantName(scope.getVariantConfiguration().getFullName());
-        packageApp.setMinSdkVersion(config.getMinSdkVersion());
-        setFieldValueByReflection(packageApp, "dexPackagingPolicy", DexPackagingPolicy.STANDARD);
-        setFieldValueByReflection(packageApp, "instantRunContext", new InstantRunBuildContext());
-
-        ConventionMappingHelper.map(packageApp, "resourceFile", new Callable<File>() {
-
-            @Override
-            public File call() {
-                return libVariantContext.getOutputResouceAP();
-            }
-        });
-
-        ConventionMappingHelper.map(packageApp, "dexFolders", new Callable<Set<File>>() {
-
-            @Override
-            public Set<File> call() {
-                File outFolder = libVariantContext.getDexFolder();
-                Set<File> folders = Sets.newHashSet();
-                folders.add(outFolder);
-                return folders;
-            }
-        });
-        ConventionMappingHelper.map(packageApp, "javaResourceFiles", new Callable<Set<File>>() {
-
-            @Override
-            public Set<File> call() throws Exception {
-                return Collections.<File>emptySet();
-            }
-        });
-        // TODO: 增加abiFilter的支持
-        ConventionMappingHelper.map(packageApp, "jniFolders", new Callable<Set<File>>() {
-
-            @Override
-            public Set<File> call() {
-                File jniFolder = awbBundle.getAndroidLibrary().getJniFolder();
-                Set<File> folders = Sets.newHashSet();
-                folders.add(jniFolder);
-                return folders;
-            }
-        });
-
-        ConventionMappingHelper.map(packageApp, "abiFilters", new Callable<Set<String>>() {
-
-            @Override
-            public Set<String> call() throws Exception {
-                Set<String> supportedAbis = config.getSupportedAbis();
-                if (supportedAbis != null) {
-                    return supportedAbis;
-                }
-
-                return ImmutableSet.of("armeabi", "x86");
-            }
-        });
-
-        ConventionMappingHelper.map(packageApp, "jniDebugBuild", new Callable<Boolean>() {
-
-            @Override
-            public Boolean call() throws Exception {
-                return config.getBuildType().isJniDebuggable();
-            }
-        });
-
-        ConventionMappingHelper.map(packageApp,
-                                    "packagingOptions",
-                                    new Callable<PackagingOptions>() {
-
-                                        @Override
-                                        public PackagingOptions call() throws Exception {
-                                            return scope.getGlobalScope()
-                                                    .getExtension()
-                                                    .getPackagingOptions();
-                                        }
-                                    });
-        ConventionMappingHelper.map(packageApp, "outputFile", new Callable<File>() {
-
-            @Override
-            public File call() throws Exception {
-                return libVariantContext.getPackageFile();
-            }
-        });
-
-        //setFieldValueByReflection(packageApp, "markerFile",
-        //        PrePackageApplication.ConfigAction.getMarkerFile(scope));
-        //setFieldValueByReflection(packageApp,
-        //                          "inOldMode",
-        //                          AndroidGradleOptions.useOldPackaging(scope.getGlobalScope()
-        //                                                                       .getProject()));
-    }
-
-    private String getAwbSoName(String packageName) {
-        String awbOutputName = "lib" + StringUtils.replace(packageName, ".", "_");
-        return awbOutputName + ".so";
-    }
-
-    /**
-     * 通过反射给task进行赋值
-     *
-     * @param packageApp
-     * @param fieldName
-     * @param value
-     */
-    private void setFieldValueByReflection(PackageApplication packageApp,
-                                           String fieldName,
-                                           Object value) {
-        Field field = FieldUtils.getField(packageApp.getClass(), fieldName, true);
-        if (null == field) {
-            throw new StopExecutionException("The field with name:" +
-                                                     fieldName +
-                                                     " does not existed in class:" +
-                                                     packageApp.getClass().getName());
-        }
         try {
-            FieldUtils.writeField(field, packageApp, value, true);
-        } catch (IllegalAccessException e) {
-            throw new StopExecutionException(e.getMessage());
+            AtlasBuildContext.androidBuilder.oldPackageApk(libVariantContext.getOutputResouceAP().getAbsolutePath(),
+                                                           getDexFolders(),
+                                                           Collections.emptyList(),
+                                                           getJniFolders(),
+                                                           null,
+                                                           getAbiFilters(),
+                                                           false,
+                                                           null,
+                                                           libVariantContext.getPackageFile(),
+                                                           config.getMinSdkVersion().getApiLevel(),
+                                                           new com.google.common.base.Predicate<String>() {
+                                                               @Override
+                                                               public boolean apply(@Nullable String s) {
+                                                                   return false;
+                                                               }
+                                                           }
+            );
+        } catch (Throwable e) {
+            throw new GradleException(e.getMessage(), e);
         }
+
     }
+
+    public Set<String> getAbiFilters() {
+        Set<String> supportedAbis = config.getSupportedAbis();
+        if (supportedAbis != null) {
+            return supportedAbis;
+        }
+
+        return ImmutableSet.of("armeabi", "x86");
+    }
+
+    public Collection<File> getJniFolders() {
+        File jniFolder = awbBundle.getAndroidLibrary().getJniFolder();
+        Set<File> folders = Sets.newHashSet();
+        folders.add(jniFolder);
+        return folders;
+    }
+
+    public Set<File> getDexFolders() {
+        File outFolder = libVariantContext.getDexFolder();
+        Set<File> folders = Sets.newHashSet();
+        folders.add(outFolder);
+        return folders;
+    }
+
+    public static class ConfigAction extends MtlBaseTaskAction<AwoPackageTask> {
+
+        private final AwbBundle awbBundle;
+
+        private final LibVariantContext libVariantContext;
+
+        private final VariantScope scope;
+
+        private final AtlasExtension atlasExtension;
+
+        public ConfigAction(LibVariantContext variantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
+            super(variantContext, baseVariantOutputData);
+            this.awbBundle = variantContext.getAwbBundle();
+            this.libVariantContext = variantContext;
+            this.scope = variantContext.getScope();
+            this.atlasExtension = variantContext.getAtlasExtension();
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName("awoPackage[" + awbBundle.getName() + "]");
+        }
+
+        @Override
+        public Class<AwoPackageTask> getType() {
+            return AwoPackageTask.class;
+        }
+
+        @Override
+        public void execute(AwoPackageTask packageApp) {
+            super.execute(packageApp);
+            packageApp.awbBundle = awbBundle;
+            packageApp.config = scope.getVariantConfiguration();
+            packageApp.libVariantContext = libVariantContext;
+        }
+
+    }
+
 }

@@ -224,6 +224,7 @@ import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 import java.io.IOException;
 
+@Deprecated
 public class MergeResV4Dir extends DefaultAndroidTask {
 
     private VariantScope variantScope;

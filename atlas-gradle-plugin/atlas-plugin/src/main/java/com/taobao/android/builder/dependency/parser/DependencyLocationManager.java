@@ -24,14 +24,15 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 public class DependencyLocationManager {
 
     public static File getExploreDir(Project project, MavenCoordinates mavenCoordinates, File bundle, String type,
-                                     String path) {
+                                     String path, boolean useBuildCache) {
 
         Optional<FileCache> buildCache =
             AndroidGradleOptions.getBuildCache(project);
         File explodedDir;
         if (PrepareLibraryTask.shouldUseBuildCache(
-            buildCache.isPresent(), mavenCoordinates) ) { //&& !"awb".equals(type)
+            buildCache.isPresent(), mavenCoordinates) && useBuildCache) { //&& !"awb".equals(type)
             try {
+
                 explodedDir = buildCache.get().getFileInCache(
                     PrepareLibraryTask.getBuildCacheInputs(bundle));
 

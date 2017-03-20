@@ -35,11 +35,11 @@ subprojects {
                                "publish_" + (command.contains("bintray") ? "bintray" : "mvn") + ".gradle");
 
     if (publishFile.exists()) {
-        //        apply from: publishFile.getAbsolutePath()
+        apply from: publishFile.getAbsolutePath()
     }
 
-    apply from: new File(project.getRootDir(),
-                         "publish_local.gradle").getAbsolutePath()
+//    apply from: new File(project.getRootDir(),
+//                         "publish_local.gradle").getAbsolutePath()
 
     repositories {
         //本地库，local repository(${user.home}/.m2/repository)

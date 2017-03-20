@@ -391,20 +391,21 @@ public class PreProcessManifestTask extends DefaultTask {
                     File modifyManifest = AtlasBuildContext.manifestMap.get(manifestProvider.getManifest());
                     if (null == modifyManifest) {
                         modifyManifests.add(manifestProvider);
-                        break;
+                    }else {
+                        modifyManifests.add(new ManifestProvider() {
+                            @Override
+                            public File getManifest() {
+                                return modifyManifest;
+                            }
+
+                            @Override
+                            public String getName() {
+                                return manifestProvider.getName();
+                            }
+                        });
                     }
 
-                    modifyManifests.add(new ManifestProvider() {
-                        @Override
-                        public File getManifest() {
-                            return modifyManifest;
-                        }
 
-                        @Override
-                        public String getName() {
-                            return manifestProvider.getName();
-                        }
-                    });
                 }
 
                 //FIXME 不加这一步,每次的getibraries 都会从mapping里去重新计算

@@ -307,6 +307,8 @@ public class TBuildConfig {
     @Optional
     private Set<String> outOfApkBundles = Sets.newHashSet();
 
+    private boolean packageRemoteAwbInJni = false;
+
     @Optional
     private Set<String> insideOfApkBundles = Sets.newHashSet();
 
@@ -486,5 +488,13 @@ public class TBuildConfig {
 
     public void setAbortIfClassConflict(boolean abortIfClassConflict) {
         this.abortIfClassConflict = abortIfClassConflict;
+    }
+
+    public boolean isPackageRemoteAwbInJni() {
+        return packageRemoteAwbInJni;
+    }
+
+    public void setPackageRemoteAwbInJni(boolean packageRemoteAwbInJni) {
+        this.packageRemoteAwbInJni = packageRemoteAwbInJni;
     }
 }

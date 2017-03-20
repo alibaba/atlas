@@ -231,6 +231,8 @@ import java.util.Set;
  */
 public class AtlasDependencyTree {
 
+    private Set<String> projectDependencies = new HashSet<>();
+
     private List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
 
     /**
@@ -273,6 +275,14 @@ public class AtlasDependencyTree {
 
     public void setAwbBundles(List<AwbBundle> awbBundles) {
         this.awbBundles = awbBundles;
+    }
+
+    public Set<String> getProjectDependencies() {
+        return projectDependencies;
+    }
+
+    public void setProjectDependencies(Set<String> projectDependencies) {
+        this.projectDependencies = projectDependencies;
     }
 
     public List<AndroidLibrary> getAllAndroidLibrarys() {

@@ -237,10 +237,11 @@ public class AwbXmlProcessor {
         final MergingLog mergingLog = new MergingLog(resourceBlameLogDir);
         LayoutXmlProcessor layoutXmlProcessor = new LayoutXmlProcessor(
 
+                 awbBundle.getPackageName(),
                 //                ManifestFileUtils.getPackage(awbBundle.getOrgManifestFile()),
 
                 //                "com.taobao.demo2",
-                appVariantContext.getVariantConfiguration().getOriginalApplicationId(),
+                //appVariantContext.getVariantConfiguration().getOriginalApplicationId(),
 
                 dataBindingBuilder.createJavaFileWriter(appVariantContext.getAwbClassOutputForDataBinding(
                         awbBundle)),
@@ -254,7 +255,7 @@ public class AwbXmlProcessor {
                         SourceFile original = mergingLog.find(input);
                         // merged log api returns the file back if original cannot be found.
                         // it is not what we want so we alter the response.
-                        return original == input ? null : original.getSourceFile();
+                        return original == input ? input.getSourceFile() : original.getSourceFile();
                     }
                 });
 

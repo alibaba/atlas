@@ -228,6 +228,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import org.apache.commons.io.FileUtils;
 import org.dom4j.DocumentException;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
@@ -244,10 +245,12 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
     AppVariantOutputContext appVariantOutputContext;
 
+    AtlasDependencyTree atlasDependencyTree;
+
     @TaskAction
     void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
 
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+        atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
             getVariantName());
 
         if (null == atlasDependencyTree) {
@@ -281,7 +284,25 @@ public class PrepareAllDependenciesTask extends BaseTask {
             runnables.add(new Runnable() {
                 @Override
                 public void run() {
-                    prepareLibrary(aarBundle);
+
+                    if (atlasDependencyTree.getProjectDependencies().contains(
+                        aarBundle.getResolvedCoordinates().getGroupId() + ":" + aarBundle.getResolvedCoordinates()
+                            .getArtifactId())) {
+
+                        if (aarBundle.getFolder().exists()) {
+                            try {
+                                FileUtils.deleteDirectory(aarBundle.getFolder());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        PrepareLibraryTask.extract(aarBundle.getBundle(), aarBundle.getFolder(), getProject());
+                    } else {
+
+                        prepareLibrary(aarBundle);
+                    }
+
                 }
             });
         }
@@ -305,15 +326,18 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
         prepareLibraryTask.setDescription("Prepare " + library.getName());
         prepareLibraryTask.setVariantName("");
+
         prepareLibraryTask.init(
             library.getBundle(),
             library.getFolder(),
             AndroidGradleOptions.getBuildCache(getProject()),
             library.getResolvedCoordinates());
 
-        AtlasBuildContext.dependencyTraceMap.put(library.getFolder().getAbsolutePath(), library.getResolvedCoordinates());
+        AtlasBuildContext.dependencyTraceMap.put(library.getFolder().getAbsolutePath(),
+                                                 library.getResolvedCoordinates());
 
         prepareLibraryTask.execute();
+
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAllDependenciesTask> {

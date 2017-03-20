@@ -209,7 +209,15 @@
 
 package com.taobao.android.builder.tasks.awo;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import com.alibaba.fastjson.JSON;
+
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -220,22 +228,15 @@ import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.dependency.model.SoLibrary;
+import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.Callable;
 
 /**
  * 比较AWB的依赖和ap中的依赖的差别
@@ -281,69 +282,64 @@ public class DiffDependencyTask extends DefaultAndroidTask {
         diffOutFile = getDiffOutFile();
 
         DependencyJson apDependencyJson = JSON.parseObject(FileUtils.readFileToString(
-                apDependenciesFile), DependencyJson.class);
+            apDependenciesFile), DependencyJson.class);
         Set<String> apMainDependencies = Sets.newHashSet();
         for (String mainDep : apDependencyJson.getMainDex()) {
             String name = mainDep.substring(0, mainDep.lastIndexOf(":"));
             apMainDependencies.add(name);
         }
         AwbBundle awbBundle = libVariantContext.getAwbBundle();
-        ////aars
-        //if (null != awbBundle.getLibraryDependencies()) {
-        //    for (int index = 0; index < awbBundle.getLibraryDependencies().size(); index++) {
-        //        AndroidLibrary libraryDependency = awbBundle.getLibraryDependencies().get(index);
-        //        MavenCoordinates mavenCoordinates = libraryDependency.getResolvedCoordinates();
-        //        String name = getMavenName(mavenCoordinates);
-        //        if (apMainDependencies.contains(name)) {
-        //            getLogger().info("[Remove]" + name);
-        //            awbBundle.getLibraryDependencies().remove(index);
-        //        } else {
-        //            inAwbDependencies.add(name);
-        //        }
-        //    }
-        //}
-        ////solibs
-        //if (null != awbBundle.getSoLibraries()) {
-        //    for (int index = 0; index < awbBundle.getSoLibraries().size(); index++) {
-        //        SoLibrary soLibrary = awbBundle.getSoLibraries().get(index);
-        //        MavenCoordinates mavenCoordinates = soLibrary.getResolvedCoordinates();
-        //        String name = getMavenName(mavenCoordinates);
-        //        if (apMainDependencies.contains(name)) {
-        //            getLogger().info("[Remove]" + name);
-        //            awbBundle.getSoLibraries().remove(index);
-        //        } else {
-        //            inAwbDependencies.add(name);
-        //        }
-        //    }
-        //}
-        //// jars
-        //if (null != awbBundle.getJavaDependencies()) {
-        //    Iterator<? extends JavaLibrary> iterator = awbBundle.getJavaDependencies().iterator();
-        //    while (iterator.hasNext()) {
-        //        JavaLibrary jarInfo = iterator.next();
-        //        MavenCoordinates mavenCoordinates = jarInfo.getResolvedCoordinates();
-        //        String name = getMavenName(mavenCoordinates);
-        //        if (apMainDependencies.contains(name)) {
-        //            getLogger().info("[Remove]" + name);
-        //            iterator.remove();
-        //        } else {
-        //            inAwbDependencies.add(name);
-        //        }
-        //    }
-        //}
+        //aars
+        List<AndroidLibrary> removeLibrarys = new ArrayList<>();
+        for (AndroidLibrary libraryDependency : awbBundle.getAndroidLibraries()) {
+            MavenCoordinates mavenCoordinates = libraryDependency.getResolvedCoordinates();
+            String name = getMavenName(mavenCoordinates);
+            if (apMainDependencies.contains(name)) {
+                getLogger().info("[Remove]" + name);
+                removeLibrarys.add(libraryDependency);
+            } else {
+                inAwbDependencies.add(name);
+            }
+        }
+
+        awbBundle.getAndroidLibraries().removeAll(removeLibrarys);
+
+        //solibs
+        List<SoLibrary> removeSolibs = new ArrayList<>();
+        for (SoLibrary soLibrary : awbBundle.getSoLibraries()) {
+            MavenCoordinates mavenCoordinates = soLibrary.getResolvedCoordinates();
+            String name = getMavenName(mavenCoordinates);
+            if (apMainDependencies.contains(name)) {
+                getLogger().info("[Remove]" + name);
+                removeSolibs.add(soLibrary);
+            } else {
+                inAwbDependencies.add(name);
+            }
+        }
+        awbBundle.getSoLibraries().removeAll(removeSolibs);
+
+        List<JavaLibrary> removeJavas = new ArrayList<>();
+        for (JavaLibrary libraryDependency : awbBundle.getJavaLibraries()) {
+            MavenCoordinates mavenCoordinates = libraryDependency.getResolvedCoordinates();
+            String name = getMavenName(mavenCoordinates);
+            if (apMainDependencies.contains(name)) {
+                getLogger().info("[Remove]" + name);
+                removeJavas.add(libraryDependency);
+            } else {
+                inAwbDependencies.add(name);
+            }
+        }
+
+        awbBundle.getJavaLibraries().removeAll(removeJavas);
+
         FileUtils.writeStringToFile(diffOutFile, StringUtils.join(inAwbDependencies, "\n"));
     }
 
     @NotNull
     private String getMavenName(MavenCoordinates mavenCoordinates) {
         String name = mavenCoordinates.getGroupId() +
-                ":" +
-                mavenCoordinates.getArtifactId() +
-                ":" +
-                mavenCoordinates.getPackaging();
-        if (StringUtils.isNotBlank(mavenCoordinates.getClassifier())) {
-            name = name + ":" + mavenCoordinates.getClassifier();
-        }
+            ":" +
+            mavenCoordinates.getArtifactId();
         return name;
     }
 

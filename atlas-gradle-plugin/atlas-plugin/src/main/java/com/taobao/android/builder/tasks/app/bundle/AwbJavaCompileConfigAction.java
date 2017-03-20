@@ -209,31 +209,37 @@
 
 package com.taobao.android.builder.tasks.app.bundle;
 
-import com.android.build.gradle.AndroidGradleOptions;
+import java.io.File;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.dsl.CoreAnnotationProcessorOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.tasks.factory.AbstractCompilesUtil;
-import com.android.builder.model.SyncIssue;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.compile.JavaCompile;
 
-import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.Callable;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Configuration Action for a JavaCompile task.
+ * @author wuzhong
  */
 public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
 
@@ -271,13 +277,13 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
     public void execute(JavaCompile javacTask) {
         appVariantOutputContext.getAwbJavacTasks().put(awbBundle.getName(), javacTask);
         ProcessAwbAndroidResources processAwbAndroidResources = appVariantOutputContext.getAwbAndroidResourcesMap()
-                .get(awbBundle.getName());
+            .get(awbBundle.getName());
         assert null != processAwbAndroidResources;
 
         javacTask.source(processAwbAndroidResources.getSourceOutputDir());
         if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
             javacTask.source(appVariantOutputContext.getVariantContext()
-                                     .getAwbClassOutputForDataBinding(awbBundle));
+                                 .getAwbClassOutputForDataBinding(awbBundle));
         }
 
         ConventionMappingHelper.map(javacTask, "classpath", new Callable<FileCollection>() {
@@ -292,8 +298,8 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
                 dependencies.addAll(awbBundle.getLibraryJars());
 
                 FileCollection allClassPatch = appVariantOutputContext.getVariantContext()
-                        .getProject()
-                        .files(dependencies);
+                    .getProject()
+                    .files(dependencies);
                 return allClassPatch;
             }
         });
@@ -304,53 +310,61 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         AbstractCompilesUtil.configureLanguageLevel(javacTask,
                                                     compileOptions,
                                                     scope.getGlobalScope()
-                                                            .getExtension()
-                                                            .getCompileSdkVersion(),
+                                                        .getExtension()
+                                                        .getCompileSdkVersion(),
                                                     false);
         javacTask.getOptions().setEncoding(compileOptions.getEncoding());
 
         javacTask.getOptions()
-                .setBootClasspath(Joiner.on(File.pathSeparator)
-                                          .join(scope.getGlobalScope()
-                                                        .getAndroidBuilder()
-                                                        .getBootClasspathAsStrings(false)));
+            .setBootClasspath(Joiner.on(File.pathSeparator)
+                                  .join(scope.getGlobalScope()
+                                            .getAndroidBuilder()
+                                            .getBootClasspathAsStrings(false)));
         GlobalScope globalScope = scope.getGlobalScope();
         Project project = globalScope.getProject();
 
-        boolean incremental;
+        javacTask.getOptions().setIncremental(false);
 
-        if (compileOptions.getIncremental() != null) {
-            incremental = compileOptions.getIncremental();
-        } else {
-            // if (globalScope.getExtension().getDataBinding().isEnabled()
-            // || project.getPlugins().hasPlugin("com.neenbedankt.android-apt")
-            // || project.getPlugins().hasPlugin("me.tatarka.retrolambda")) {
-            // incremental = false;
-            // } else {
-            // For now, default to false, irrespective of Instant Run.
-            incremental = false;
-            // }
+        VariantScope variantScope = scope.getVariantScope();
+
+        CoreAnnotationProcessorOptions annotationProcessorOptions =
+            variantScope.getVariantConfiguration().getJavaCompileOptions()
+                .getAnnotationProcessorOptions();
+
+        checkNotNull(annotationProcessorOptions.getIncludeCompileClasspath());
+        Collection<File> processorPath =
+            Lists.newArrayList(
+                variantScope.getVariantData().getVariantDependency()
+                    .resolveAndGetAnnotationProcessorClassPath(
+                        annotationProcessorOptions.getIncludeCompileClasspath(),
+                        scope.getGlobalScope().getAndroidBuilder().getErrorReporter()));
+
+
+
+        if (!processorPath.isEmpty()) {
+            if (Boolean.TRUE.equals(annotationProcessorOptions.getIncludeCompileClasspath())) {
+                processorPath.addAll(javacTask.getClasspath().getFiles());
+            }
+            javacTask.getOptions().getCompilerArgs().add("-processorpath");
+            javacTask.getOptions().getCompilerArgs().add(FileUtils.joinFilePaths(processorPath));
         }
-        if (AndroidGradleOptions.isJavaCompileIncrementalPropertySet(project)) {
-            scope.getGlobalScope()
-                    .getAndroidBuilder()
-                    .getErrorReporter()
-                    .handleSyncError(null,
-                                     SyncIssue.TYPE_GENERIC,
-                                     String.format(
-                                             "The %s property has been replaced by a DSL property. Please add the " +
-                                                     "following to your build.gradle instead:\n" +
-                                                     "android {\n" +
-                                                     "  compileOptions.incremental = false\n" +
-                                                     "}",
-                                             AndroidGradleOptions.PROPERTY_INCREMENTAL_JAVA_COMPILE));
+        if (!annotationProcessorOptions.getClassNames().isEmpty()) {
+            javacTask.getOptions().getCompilerArgs().add("-processor");
+            javacTask.getOptions().getCompilerArgs().add(
+                Joiner.on(',').join(annotationProcessorOptions.getClassNames()));
         }
 
-        if (incremental) {
-            LOG.info("Using incremental javac compilation.");
-        } else {
-            LOG.info("Not using incremental javac compilation.");
+        if (!annotationProcessorOptions.getArguments().isEmpty()) {
+            for (Map.Entry<String, String> arg :
+                annotationProcessorOptions.getArguments().entrySet()) {
+                javacTask.getOptions().getCompilerArgs().add(
+                    "-A" + arg.getKey() + "=" + arg.getValue());
+            }
         }
-        javacTask.getOptions().setIncremental(incremental);
+
+        javacTask.getOptions().getCompilerArgs().add("-s");
+        javacTask.getOptions().getCompilerArgs().add(
+            variantScope.getAnnotationProcessorOutputDir().getAbsolutePath());
+
     }
 }

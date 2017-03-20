@@ -211,6 +211,7 @@ package com.taobao.android.builder.hook;
 
 import com.android.build.gradle.AppPlugin;
 import com.android.build.gradle.BasePlugin;
+import com.android.build.gradle.LibraryPlugin;
 import com.android.build.gradle.internal.AtlasDependencyManager;
 import com.android.build.gradle.internal.DependencyManager;
 import com.android.build.gradle.internal.ExtraModelInfo;
@@ -265,14 +266,18 @@ public class AppPluginHook {
 
     public AndroidBuilder getAndroidBuilder() throws Exception {
 
-        AppPlugin appPlugin = project.getPlugins().findPlugin(AppPlugin.class);
+        BasePlugin basePlugin = project.getPlugins().findPlugin(AppPlugin.class);
 
-        if (null == appPlugin) {
+        if (null == basePlugin) {
+            basePlugin = project.getPlugins().findPlugin(LibraryPlugin.class);
+        }
+
+        if (null == basePlugin){
             return null;
         }
 
         AndroidBuilder androidBuilder =
-            (AndroidBuilder)ReflectUtils.getField(BasePlugin.class, appPlugin, "androidBuilder");
+            (AndroidBuilder)ReflectUtils.getField(BasePlugin.class, basePlugin, "androidBuilder");
 
         return androidBuilder;
 

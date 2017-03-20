@@ -405,7 +405,10 @@ public class PackageAwbsTask extends BaseTask {
         if (null != awbBundle.outputBundleFile) {
             return awbBundle.outputBundleFile;
         }
-        //因为要做安全全混淆,所以远程bundle在最后再移出去。
+
+        if (!appVariantContext.getAtlasExtension().getTBuildConfig().isPackageRemoteAwbInJni() && awbBundle.isRemote){
+            return appVariantOutputContext.getAwbPackageOutAppOutputFile(awbBundle);
+        }
         return appVariantOutputContext.getAwbPackageOutputFile(awbBundle);
     }
 

@@ -235,6 +235,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
  * Created by wuzhong on 2017/2/25.
+ * @author wuzhong
  */
 public class AwbGenerator {
 
@@ -308,11 +309,11 @@ public class AwbGenerator {
         //TODO 2.3
         if (null == libDependencyTree) {
 
-            AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(libVariantContext.getProject(),
-                                                                             new ExtraModelInfo(
-                                                                                 libVariantContext.getProject()))
+            libDependencyTree = new AtlasDepTreeParser(libVariantContext.getProject(),
+                                                       new ExtraModelInfo(
+                                                           libVariantContext.getProject()))
                 .parseDependencyTree(libVariantContext.getVariantDependency());
-            AtlasBuildContext.libDependencyTrees.put(variantName, atlasDependencyTree);
+            AtlasBuildContext.libDependencyTrees.put(variantName, libDependencyTree);
         }
 
         Project project = libVariantContext.getProject();
@@ -342,11 +343,18 @@ public class AwbGenerator {
         ResolvedDependencyInfo resolvedDependencyInfo = new ResolvedDependencyInfo(groupName, name, version, "awb");
         resolvedDependencyInfo.setVariantName(libVariantContext.getVariantName());
 
-        return new AwbBundle(resolvedDependencyInfo, DependencyConvertUtils.toAndroidLibrary(mavenCoordinates,
-                                                                                             libVariantContext
-                                                                                                 .getBundleTask()
-                                                                                                 .getArchivePath(),
-                                                                                             explodedDir));
+        AwbBundle awbBundle = new AwbBundle(resolvedDependencyInfo,
+                                            DependencyConvertUtils.toAndroidLibrary(mavenCoordinates,
+                                                                                    libVariantContext
+                                                                                        .getBundleTask()
+                                                                                        .getArchivePath(),
+                                                                                    explodedDir));
+
+        awbBundle.getSoLibraries().addAll(libDependencyTree.getMainBundle().getSoLibraries());
+        awbBundle.getAndroidLibraries().addAll(libDependencyTree.getMainBundle().getAndroidLibraries());
+        awbBundle.getJavaLibraries().addAll(libDependencyTree.getMainBundle().getJavaLibraries());
+
+        return awbBundle;
 
     }
 

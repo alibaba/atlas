@@ -240,6 +240,7 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SigningException;
+import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
 import com.android.dex.Dex;
 import com.android.dx.command.dexer.DxContext;
@@ -1071,4 +1072,8 @@ public class AtlasBuilder extends AndroidBuilder {
 
     }
 
+    @Override
+    public SdkInfo getSdkInfo() {
+        return defaultBuilder.getSdkInfo();
+    }
 }

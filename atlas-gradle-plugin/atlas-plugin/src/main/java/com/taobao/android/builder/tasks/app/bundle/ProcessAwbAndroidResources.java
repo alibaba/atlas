@@ -215,6 +215,7 @@ import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
+import com.android.build.gradle.internal.dsl.DataBindingOptions;
 import com.android.build.gradle.internal.incremental.FileType;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -658,8 +659,18 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             ConventionMappingHelper.map(processResources, "resDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    File file = appVariantOutputContext.getVariantContext()
+
+                    DataBindingOptions dataBindingOptions = appVariantOutputContext.getVariantContext().getAppExtension().getDataBinding();
+
+                    File file = null;
+                    if(null != dataBindingOptions && dataBindingOptions.isEnabled()){
+                        file = appVariantOutputContext.getVariantContext()
+                            .getAwbLayoutFolderOutputForDataBinding(awbBundle);
+                    }else {
+                        file = appVariantOutputContext.getVariantContext()
                             .getMergeResources(awbBundle);
+                    }
+
                     if (!file.exists()) {
                         file.mkdirs();
                     }
