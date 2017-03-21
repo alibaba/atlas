@@ -51,7 +51,11 @@ public class MergeExcutorServices {
             HashMap<String,List<ZipEntry>> bundleEntryGroup= new HashMap<String,List<ZipEntry>>();
             while (zes.hasMoreElements()) {
                 entry = zes.nextElement();
-                if(entry.getName().startsWith("lib")){
+                if (entry.getName().equals("libcom_taobao_maindex.so")){
+                    List<ZipEntry>mainDex = new ArrayList<ZipEntry>();
+                    mainDex.add(entry);
+                    bundleEntryGroup.put("com_taobao_maindex",mainDex);
+                }else if(entry.getName().startsWith("lib")){
                     if (entry.getName().indexOf("/")!= -1){
                         key = entry.getName().substring(3,entry.getName().indexOf("/"));
                         os = OS.mac;
@@ -68,10 +72,6 @@ public class MergeExcutorServices {
                     }else {
                         bundleEntryGroup.get(key).add(entry);
                     }
-                }else if (entry.getName().equals("libcom_taobao_maindex.so")){
-                    List<ZipEntry>mainDex = new ArrayList<ZipEntry>();
-                    mainDex.add(entry);
-                    bundleEntryGroup.put("com_taobao_maindex",mainDex);
                 }
             }
 
