@@ -6,7 +6,7 @@ atlas {
     }
     buildTypes {
         debug {
-            baseApFile file('/Users/guanjie/HHHAtlasDemo/AtlasDemo/app/build/outputs/apk/app-debug.ap')
+            baseApFile project.rootProject.file('app/build/outputs/apk/app-debug.ap')
         }
     }
 }

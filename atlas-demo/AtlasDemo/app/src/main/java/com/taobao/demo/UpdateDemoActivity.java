@@ -34,6 +34,11 @@ public class UpdateDemoActivity extends AppCompatActivity {
                         Updater.update(getBaseContext());
                         return null;
                     }
+
+                    @Override
+                    protected void onPostExecute(Void aVoid) {
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                    }
                 }.execute();
             }
         });
