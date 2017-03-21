@@ -13,7 +13,7 @@ public class FirstBundleActivity extends AppCompatActivity implements BlankFragm
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_firstbundle);
-        Toast.makeText(this,"this is aaaaaaaaaa  newnewnenenwn bundle",Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this,"this is aaaaaaaaaa  newnewnenenwn bundle",Toast.LENGTH_SHORT).show();
     }
 
 //    @Override
