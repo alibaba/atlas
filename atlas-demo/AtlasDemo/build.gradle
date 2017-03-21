@@ -3,9 +3,6 @@
 buildscript {
     repositories {
         mavenLocal()
-        maven {
-            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
-        }
         jcenter()
     }
     configurations.all {
