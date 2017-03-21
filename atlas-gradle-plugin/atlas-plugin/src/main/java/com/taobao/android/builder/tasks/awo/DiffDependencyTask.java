@@ -233,8 +233,6 @@ import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.jetbrains.annotations.NotNull;
 
@@ -251,7 +249,6 @@ public class DiffDependencyTask extends DefaultAndroidTask {
 
     private Set<String> inAwbDependencies = Sets.newHashSet();
 
-    @InputFile
     public File getApDependenciesFile() {
         return apDependenciesFile;
     }
@@ -260,7 +257,6 @@ public class DiffDependencyTask extends DefaultAndroidTask {
         this.apDependenciesFile = apDependenciesFile;
     }
 
-    @OutputFile
     public File getDiffOutFile() {
         return diffOutFile;
     }
