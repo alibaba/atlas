@@ -1,0 +1,1 @@
+include ':middlewarelibrary', ':secondbundlelibrary', 'lottie', ':activitygroupcompat', ':firstbundle', ':secondbundle', ':publicbundle', ':remotebundle', ':splashscreen', ':app'

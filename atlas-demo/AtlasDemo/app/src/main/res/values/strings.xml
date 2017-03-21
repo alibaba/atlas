@@ -1,0 +1,68 @@
+<resources>
+    <string name="app_name">AtlasDemo</string>
+    <string name="title_home">goFirst</string>
+    <string name="title_dashboard">goSecond</string>
+    <string name="title_notifications">待定</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_welcome">WelcomeActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="title_activity_scrolling">动态部署模拟</string>
+    <string name="update_step">
+        "请根据工程根目录下的Tpatch.txt执行动态部署的过程"
+
+
+    </string>
+    <string name="awo_step">
+
+        "请根据下面步骤执行单模块替换（用于开发测试）.\n\n"
+
+        "1、设备上安装基线版本\n"
+        "看到这个界面表示你的设备上已经安装成功demo，成功的开始！\n\n"
+
+        "2、修改你的代码或者资源\n"
+        "可以通过明显样式的修改或者打log来标识你的修改是否成功，manifest不能修改，新增Component的机制我们后续会尽快支持\n\n"
+
+        "3、执行awo构建\n"
+
+        "Motion respects and reinforces the user as the prime mover. Primary user actions are \n\n"
+
+        "4、将patch产物push倒你的设备上\n"
+
+        "The material environment is a 3D space, which means all objects have x, y, and z \n\n"
+
+        "5、点击红色按钮执行动态部署\n"
+
+        "也可以尝试PC上执行adb shell am broadcast sdfsdfsdf -e pkg com.taobao.demo"
+
+
+    </string>
+
+    <string name="remote_bundle_step">
+
+        "请根据下面步骤执行: \n\n"
+
+        "1、添加远程bundle的依赖， 如 `bundleCompile project(':remotebundle')` ， 参考 app/build.gradle  \n\n"
+
+        "2、声明远程bundle列表， \n atlas { tBuildConfig { outOfApkBundles = ['remotebundle'] }  \n\n"
+
+        "3、构建完整包  assembleDebug \n"
+
+           apk 路径：app/build/outputs/apk/ \n"
+           远程bundle 路径：app/build/outputs/remote-bundles-debug \n\n"
+
+        "4、将远程sopush倒你的设备上\n"
+
+            "可以尝试PC上执行adb push app/build/outputs/remote-bundles-debug/libcom_taobao_remotebunle.so /sdcard/Android/data/com.taobao.demo/cache/libcom_taobao_remotebunle.so \n\n"
+
+        "5、点击下方按钮，加载远程bundle \n"
+
+    </string>
+
+
+    <string name="title_activity_update">UpdateActivity</string>
+</resources>

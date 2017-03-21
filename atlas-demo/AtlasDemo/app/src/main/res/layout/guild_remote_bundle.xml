@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/tv_guide"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="52dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/remote_bundle_step"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="8dp" />
+
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/load_remote_bundle"
+        android:text="加载远程bundle"/>
+
+
+
+
+</LinearLayout>
