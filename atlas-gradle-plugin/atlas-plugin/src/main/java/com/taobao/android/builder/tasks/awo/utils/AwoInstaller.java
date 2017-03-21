@@ -215,6 +215,8 @@ import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.IDevice;
 import com.taobao.android.builder.tools.command.CommandExecutor;
 import com.taobao.android.builder.tools.command.ExecutionException;
+import org.gradle.api.GradleException;
+import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 
 import java.io.File;
@@ -249,7 +251,7 @@ public class AwoInstaller {
             installPatchIfDeviceConnected( androidBuilder, awoSoFile, packageName, logger);
             notifyApppatching(androidBuilder, packageName, logger);
         } catch (Throwable e) {
-            logger.error("install awo error", e);
+            throw  new GradleException("install awo error", e);
         }
 
     }

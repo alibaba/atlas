@@ -313,7 +313,7 @@ public class TPatchTask extends BaseTask {
         try {
 
             tPatchTool.setDexcode(apkFileList.getMainBundle().get("classes.dex"));
-
+            tPatchTool.setCreateAll(StringUtils.isEmpty(patchContext.tpatchHistoryUrl));
             FileUtils.writeStringToFile(new File(getOutPatchFolder(), "tpatch-bundles.json"),
                                         JSON.toJSONString(patchContext.artifactBundleInfos));
 
