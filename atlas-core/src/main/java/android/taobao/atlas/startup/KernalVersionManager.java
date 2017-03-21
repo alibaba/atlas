@@ -344,7 +344,7 @@ public class KernalVersionManager {
         DEXPATCH_VERSION = dexpatchVersion;
         DEXPATCH_BUNDLES = dexPatchBundles;
 
-        parseUpdatedBunldes();
+        parseUpdatedBundles();
     }
 
     public void removeBaseLineInfo(){
@@ -421,7 +421,7 @@ public class KernalVersionManager {
         return DEXPATCH_VERSION;
     }
 
-    public synchronized void parseUpdatedBunldes(){
+    public synchronized void parseUpdatedBundles(){
         if(CURRENT_UPDATE_BUNDLES!=null){
             String[] bundles = CURRENT_UPDATE_BUNDLES.split(";");
             if(bundles!=null && bundles.length>0){

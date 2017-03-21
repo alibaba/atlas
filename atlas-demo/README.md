@@ -32,3 +32,12 @@ General steps are as follows:
 5. ./gradlew clean assembleDebug -DapVersion=1.0 build patch
 6. Push the patch files to the app cache directory
 7. Calls the update patch installation on the phone
+
+
+## Notice
+
+#### res path is necessary
+
+The bundle is obliged to own some resources in the `res` path, or it'll turn the `AssetManager` upside down when in Atlas runtime.
+
+#### for more...

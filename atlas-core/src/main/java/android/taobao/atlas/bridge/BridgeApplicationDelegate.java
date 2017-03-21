@@ -210,9 +210,13 @@ package android.taobao.atlas.bridge;
 
 import android.android.support.multidex.MultiDex;
 import android.app.Application;
+import android.content.ComponentCallbacks;
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AssertionArrayException;
@@ -226,7 +230,11 @@ import android.taobao.atlas.util.log.IMonitor;
 import android.taobao.atlas.util.log.impl.AtlasAlarmer;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
+
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 /**
  * Created by guanjie on 2017/1/26.
@@ -347,8 +355,35 @@ public class BridgeApplicationDelegate {
             }
             RuntimeVariables.androidApplication = mRealApplication;
 
-            AtlasHacks.Application_attach.invoke(mRealApplication,mRawApplication.getBaseContext());
+            /**
+             * configuration update
+             */
+            mRealApplication.registerComponentCallbacks(new ComponentCallbacks() {
+                @Override
+                public void onConfigurationChanged(Configuration newConfig) {
+                    DisplayMetrics newMetrics = new DisplayMetrics();
+                    if(RuntimeVariables.delegateResources!=null){
+                        ((WindowManager) RuntimeVariables.androidApplication
+                                .getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getMetrics(newMetrics);
+                        RuntimeVariables.delegateResources.updateConfiguration(newConfig,newMetrics);
+                        try {
+                            Method method = Resources.class.getDeclaredMethod("updateSystemConfiguration",
+                                    Configuration.class,DisplayMetrics.class,Class.forName("android.content.res.CompatibilityInfo"));
+                            method.setAccessible(true);
+                            method.invoke(RuntimeVariables.delegateResources,newConfig,newMetrics,null);
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
 
+                @Override
+                public void onLowMemory() {
+
+                }
+            });
+
+            AtlasHacks.Application_attach.invoke(mRealApplication,mRawApplication.getBaseContext());
             // install content providers
             if (mBoundApplication_provider != null && mBoundApplication_provider.size() > 0) {
                 Object mBoundApplication = AtlasHacks.ActivityThread_mBoundApplication.get(activityThread);

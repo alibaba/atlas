@@ -915,7 +915,7 @@ public final class Framework {
     }
 
     /**
-     * install a bundle from input file, the file will move to bunlde storage directory.
+     * install a bundle from input file, the file will move to bundle storage directory.
      *
      * @param location the bundle location.
      * @param file     the input file.

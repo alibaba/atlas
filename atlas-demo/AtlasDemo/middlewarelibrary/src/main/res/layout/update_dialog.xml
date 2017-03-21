@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/update_dialog_rootView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#55000000"
+    android:padding="42dp" >
+
+    <RelativeLayout
+        android:id="@+id/update_contentDialog"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:background="@drawable/dialog_background"
+        android:padding="32dp">
+
+        <TextView
+            android:id="@+id/update_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="提示"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#3e3e3e" />
+        <FrameLayout
+                android:id="@+id/update_dialog_content"
+                android:layout_below="@id/update_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="32dp">
+            <ScrollView
+                    android:id="@+id/message_scrollView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbarSize="2dp"
+                    android:scrollbarThumbVertical="@color/thumbColor">
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                    <TextView
+                            android:id="@+id/update_message"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="有更新内容"
+                            android:textColor="#3e3e3e"
+                            android:textSize="14dp"/>
+                </LinearLayout>
+            </ScrollView>
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/update_dialog_content"
+            android:layout_marginTop="12dp"
+            android:gravity="right"
+            android:orientation="horizontal" >
+
+            <com.middleware.dialog.ButtonFlat
+                android:id="@+id/update_button_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="取消"
+                android:background="#555555"
+                android:visibility="gone" />
+
+            <com.middleware.dialog.ButtonFlat
+                android:id="@+id/update_button_accept"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="确定"
+                android:background="#1E88E5"
+                android:visibility="gone" />
+        </LinearLayout>
+    </RelativeLayout>
+
+</FrameLayout>

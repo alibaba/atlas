@@ -64,7 +64,7 @@ dependencies {
 
     compile("com.taobao.android:firstbundle:${version}@awb")
 
-    compile 'com.taobao.android:atlasupdate:1.1.4@aar'
+    compile 'com.taobao.android:atlasupdate:1.1.4.3@aar'
 
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
 

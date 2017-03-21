@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="transparent">#00000000</color>
+    <color name="B_A">#F9F9F9</color>
+    <color name="F_black_light_4">#FF999999</color>
+    <color name="E_black_light_3">#FF666666</color>
+    <color name="C_white">#FFFFFFFF</color>
+    <color name="K_black_light_6">#FFE5E5E5</color>
+    <color name="thumbColor">#66aaaaaa</color>
+    <color name="orange">#ff3e00</color>
+    <color name="H_orange_light_1">#FFE55245</color>
+    <color name="T">#BBBBBB</color>
+    <color name="G_black_light_5">#CCCCCC</color>
+    <color name="G">#cccccc</color>
+
+</resources>

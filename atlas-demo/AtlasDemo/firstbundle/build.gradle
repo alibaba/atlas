@@ -1,0 +1,42 @@
+apply plugin: 'com.taobao.atlas.library'
+
+atlas {
+    bundleConfig{
+        awbBundle true
+    }
+    buildTypes {
+        debug {
+            baseApFile project.rootProject.file('app/build/outputs/apk/app-debug.ap')
+        }
+    }
+}
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion '25.0.0'
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+
+
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    providedCompile project(':middlewarelibrary')
+//    bundleCompile project(':publicbundle')
+
+    providedCompile 'com.android.support:support-v4:25.3.0'
+    providedCompile 'com.android.support:appcompat-v7:25.1.0'
+    providedCompile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
+}

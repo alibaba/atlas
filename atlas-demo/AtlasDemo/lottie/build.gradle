@@ -1,0 +1,24 @@
+apply plugin: 'com.android.library'
+
+android {
+  compileSdkVersion 25
+  buildToolsVersion "25.0.2"
+  resourcePrefix 'lottie_'
+
+  defaultConfig {
+    minSdkVersion 14
+    targetSdkVersion 25
+
+  }
+  lintOptions {
+    abortOnError true
+  }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_7
+    targetCompatibility JavaVersion.VERSION_1_7
+  }
+}
+
+dependencies {
+  compile 'com.android.support:appcompat-v7:25.2.0'
+}

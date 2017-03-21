@@ -1,0 +1,10 @@
+atlas {
+    bundleConfig{
+        awbBundle true
+    }
+    buildTypes {
+        debug {
+            baseApFile file('/Users/wuzhong/gitlab/AtlasDemo/AtlasDemo/app/build/outputs/apk/app-debug.ap')
+        }
+    }
+}

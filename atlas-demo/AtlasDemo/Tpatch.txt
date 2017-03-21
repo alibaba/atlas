@@ -1,0 +1,20 @@
+1、 app的build.gradle的语句"version = getEnvValue("versionName", "1.0.0");"中修改想要生成的app的versionName（默认为1.0.0）
+
+    app目录下执行../gradlew clean assembleDebug publish
+
+    (生成apk同时将跟apk同目录的ap文件发布到仓库)
+
+2、 手机上安装apk，同时进到动态部署界面（侧边栏里面划开点击进入),且手机连接电脑adb（确保adb devices可见）
+
+///////////////////////////////^^^^^^^准备工作^^^^^^^^^^////////////////////////
+
+3、 进行一些想要的修改（暂时不支持manifest的修改，会在近期上线）
+
+4、 app工程目录下执行../gradlew clean assembleDebug -DapVersion=apVersion -DversionName=newVersion,
+    其中apVersion为之前打的完整apk的版本，newVersion为此次动态部署要生成的新的版本号
+
+5、 检查build/output/tpatch-debug 目录下文件是否生成，然后执行下面的命令
+    adb push build/outputs/tpatch-debug/update.json sdcard/Android/data/com.taobao.demo/cache/update.json
+    adb push build/outputs/tpatch-debug/patch-*.tpatch sdcard/Android/data/com.taobao.demo/cache
+
+6、 点击动态部署页面红色按钮执行动态部署
