@@ -249,17 +249,14 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.sql.Date;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * 生成为atlas做动态部署的diff工具类
@@ -295,6 +292,12 @@ public class TPatchTool extends BasePatchTool {
     private String mainBundleName = "libcom_taobao_maindex";
 
     protected File baseApkFileList;
+
+    public void setCreateAll(boolean createAll) {
+        this.createAll = createAll;
+    }
+
+    private boolean createAll = false;
 
     public String getDexcode() {
         return dexcode;
@@ -453,7 +456,7 @@ public class TPatchTool extends BasePatchTool {
         // 压缩patch文件夹，得到tpatch文件
         File patchFile = createTPatchFile(outPatchDir, patchTmpDir);
 
-        PatchInfo curPatchInfo = createBasePatchInfo(patchFile.getName());
+        PatchInfo curPatchInfo = createBasePatchInfo(patchFile);
         BuildPatchInfos buildPatchInfos = null;
         // 生成多版本的tpatch文件
              buildPatchInfos = createIncrementPatchFiles(productName,
@@ -570,7 +573,7 @@ public class TPatchTool extends BasePatchTool {
                                     File diffTxtFile) throws IOException, RecognitionException, PatchException {
         String bundleName = FilenameUtils.getBaseName(newBundleFile.getName());
         File destPatchBundleDir = new File(patchTmpDir, bundleName);
-        if (!isModifyBundle(newBundleFile.getName())) {
+        if (!isModifyBundle(newBundleFile.getName())&&!createAll) {
             return;
         }
         final File newBundleUnzipFolder = new File(newBundleFile.getParentFile(), bundleName);
@@ -775,11 +778,28 @@ public class TPatchTool extends BasePatchTool {
      * @param fileName
      * @return
      */
-    public PatchInfo createBasePatchInfo(String fileName) {
+    public PatchInfo createBasePatchInfo(File file) {
         PatchInfo patchInfo = new PatchInfo();
         patchInfo.setPatchVersion(newApkVersion);
         patchInfo.setTargetVersion(baseApkVersion);
-        patchInfo.setFileName(fileName);
+        patchInfo.setFileName(file.getName());
+        Set<String>modifyBundles = new HashSet<>();
+        ZipFile zipFile = newZipFile(file);
+        Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
+        while (enumeration.hasMoreElements()){
+           ZipEntry zipEntry = enumeration.nextElement();
+           if (zipEntry.getName().startsWith("lib")&&zipEntry.getName().indexOf(File.separator)!= -1){
+                   modifyBundles.add(zipEntry.getName().substring(3,zipEntry.getName().indexOf(File.separator)).replace("_","."));
+               }else if (zipEntry.getName().endsWith(".so")&&zipEntry.getName().indexOf(File.separator)== -1){
+                   modifyBundles.add(zipEntry.getName().substring(3,zipEntry.getName().lastIndexOf(".")).replace("_","."));
+               }
+
+        }
+        try {
+            zipFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
             if (artifactBundleInfo.getMainBundle()) {
                 if (DiffType.MODIFY.equals(artifactBundleInfo.getDiffType()) || hasMainBundle) {
@@ -809,10 +829,33 @@ public class TPatchTool extends BasePatchTool {
                 patchBundleInfo.setDependency(artifactBundleInfo.getDependency());
                 //                patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                 patchInfo.getBundles().add(patchBundleInfo);
+            }else if (modifyBundles.contains(artifactBundleInfo.getPkgName())){
+                PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
+                patchBundleInfo.setNewBundle(false);
+                patchBundleInfo.setMainBundle(false);
+                patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
+                patchBundleInfo.setName(artifactBundleInfo.getName());
+                patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());
+                patchBundleInfo.setArtifactId(artifactBundleInfo.getArtifactId());
+                patchBundleInfo.setPkgName(artifactBundleInfo.getPkgName());
+                patchBundleInfo.setDependency(artifactBundleInfo.getDependency());
+                //                patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
+                patchInfo.getBundles().add(patchBundleInfo);
             }
         }
 
+
+
         return patchInfo;
+    }
+
+    private ZipFile newZipFile(File file) {
+        try {
+            return new ZipFile(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -1157,16 +1200,16 @@ public class TPatchTool extends BasePatchTool {
         //        URL url1 = new URL(aaa.substring(1,aaa.length()-1));
         ////        downloadTPath(aaa.substring(1,aaa.length()-1), new File("/Users/lilong/Downloads/1111.patch"));
         ////        PatchUtils.getTpatchClassDef(lastPatchFile, bundleClassMap)
-        Map<String, Map<String, ClassDef>> bundleClassMap = new ConcurrentHashMap<String, Map<String, ClassDef>>();
-        PatchUtils.getTpatchClassDef(new File("/Users/lilong/Downloads/temp/patch-6.1.1@6.1.0.zip"),
-                                     bundleClassMap);
-        System.out.println(bundleClassMap.size());
+//        Map<String, Map<String, ClassDef>> bundleClassMap = new ConcurrentHashMap<String, Map<String, ClassDef>>();
+//        PatchUtils.getTpatchClassDef(new File("/Users/lilong/Downloads/temp/patch-6.1.1@6.1.0.zip"),
+//                                     bundleClassMap);
+//        System.out.println(bundleClassMap.size());
         TPatchTool tPatchTool = new TPatchTool(new File("/Users/lilong/Downloads/taobao-android.apk"),
                                                new File("/Users/lilong/Downloads/tpatch-diff.apk"),
                                                "1.0.0",
                                                "2.0.0",
                                                true);
-        tPatchTool.bundleClassMap = bundleClassMap;
+//        tPatchTool.bundleClassMap = bundleClassMap;
         tPatchTool.doPatch(new File("/Users/lilong/Downloads/aaa"),
                            false,
                            null,
@@ -1187,4 +1230,5 @@ public class TPatchTool extends BasePatchTool {
         //        tPatchTool.doPatch(dexDiffFile,false,null,false,null,null);
 
     }
+
 }
