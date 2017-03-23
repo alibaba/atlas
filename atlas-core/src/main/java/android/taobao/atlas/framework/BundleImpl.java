@@ -216,6 +216,7 @@ import android.taobao.atlas.runtime.newcomponent.BundlePackageManager;
 import android.taobao.atlas.runtime.DelegateResources;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.FileUtils;
+import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.util.Log;
 
 import org.osgi.framework.Bundle;
@@ -391,6 +392,7 @@ public final class BundleImpl implements Bundle {
         } catch (Exception e) {
             if(e instanceof BundleArchive.MisMatchException){
                 this.archive = null;
+                BaselineInfoManager.instance().rollbackHardly();
                 throw e;
             }else {
                 throw new BundleException("Could not load bundle " + location, e.getCause());
