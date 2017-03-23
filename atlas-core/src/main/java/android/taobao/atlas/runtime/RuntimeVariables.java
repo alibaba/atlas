@@ -248,6 +248,11 @@ public class RuntimeVariables {
 
     public static boolean             sCachePreVersionBundles = false;
 
+    /**
+     * apilevel >=23
+     */
+    public static ClassLoader sRawClassLoader;
+
     public static Dialog alertDialogUntilBundleProcessed(Activity activity,String bundleName){
         if (activity != null) {
             if(sReminder!=null){
@@ -332,6 +337,14 @@ public class RuntimeVariables {
             return true;
         }else{
             return false;
+        }
+    }
+
+    public static ClassLoader getRawClassLoader(){
+        if(sRawClassLoader!=null){
+            return sRawClassLoader;
+        }else{
+            return RuntimeVariables.class.getClassLoader();
         }
     }
 

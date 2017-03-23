@@ -293,6 +293,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
 
 
     // Methods
+    public static HackedMethod                                  ActivityManagerNative_getDefault;
     public static HackedMethod                                  ActivityThread_currentActivityThread;
     public static HackedMethod                                  AssetManager_addAssetPath;
     public static HackedMethod                                  Application_attach;
@@ -417,7 +418,9 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         PackageParser$Package_applicationInfo = PackageParser$Package.field("applicationInfo").ofType(ApplicationInfo.class);
         PackageParser$Package_packageName = PackageParser$Package.field("packageName").ofGenericType(String.class);
         PackageParser$ActivityIntentInfo_activity = PackageParser$ActivityIntentInfo.field("activity").ofType(PackageParser$Activity.getmClass());
-        ActivityManagerNative_gDefault = ActivityManagerNative.staticField("gDefault");
+        if(Build.VERSION.SDK_INT<25) {
+            ActivityManagerNative_gDefault = ActivityManagerNative.staticField("gDefault");
+        }
         Singleton_mInstance = Singleton.field("mInstance");
         ActivityThread$AppBindData_providers = ActivityThread$AppBindData.field("providers").ofGenericType(List.class);
         ActivityThread_mBoundApplication = ActivityThread.field("mBoundApplication");
@@ -426,6 +429,9 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
 
     public static void allMethods() throws HackAssertionException {
 
+        if(Build.VERSION.SDK_INT>=25) {
+            ActivityManagerNative_getDefault = ActivityManagerNative.method("getDefault");
+        }
         ActivityThread_currentActivityThread = ActivityThread.method("currentActivityThread");
         AssetManager_addAssetPath = AssetManager.method("addAssetPath", String.class);
         Application_attach = Application.method("attach", Context.class);

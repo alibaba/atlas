@@ -226,7 +226,7 @@ import java.util.zip.ZipFile;
 /**
  * Created by guanjie on 15/6/4.
  */
-public class KernalBundleArchive {
+ class KernalBundleArchive {
 
     public static final String TAG = "KernalBundleArchive";
     public static final int RETRY_COUNT = 3;

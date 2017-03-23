@@ -511,6 +511,14 @@ public class KernalBundle{
     private static File findDexRawFile(Object element){
         Field field = null;
         File dexRawFile = null;
+        if(Build.VERSION.SDK_INT>=25) {
+            try {
+                field = element.getClass().getDeclaredField("path");
+                field.setAccessible(true);
+                dexRawFile =  (File)field.get(element);
+                return dexRawFile;
+            }catch(Throwable e){}
+        }
         try {
             field = element.getClass().getDeclaredField("file");
             field.setAccessible(true);
@@ -638,6 +646,10 @@ public class KernalBundle{
 
     public KernalBundleArchive getArchive() {
         return archive;
+    }
+
+    public File getRevisionDir(){
+        return getArchive().getRevisionDir();
     }
 
     public static boolean shouldSyncUpdateInThisProcess(String process){

@@ -66,7 +66,7 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 //    bundleCompile project()
 //    providedCompile
-    compile('com.taobao.android:atlas_core:5.0.6-rc3@aar') {
+    compile('com.taobao.android:atlas_core:5.0.6-rc8@aar') {
         transitive = true
     }
 

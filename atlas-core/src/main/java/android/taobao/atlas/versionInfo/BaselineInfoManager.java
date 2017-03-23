@@ -208,13 +208,9 @@
 
 package android.taobao.atlas.versionInfo;
 
-import android.app.PreVerifier;
 import android.content.pm.PackageInfo;
-import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
-import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.util.WrapperUtil;
 import android.text.TextUtils;
 import android.util.Pair;
