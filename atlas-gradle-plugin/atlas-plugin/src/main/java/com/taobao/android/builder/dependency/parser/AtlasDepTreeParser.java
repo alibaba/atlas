@@ -435,86 +435,91 @@ public class AtlasDepTreeParser {
             .getProjectPath() : null;
 
         // 如果同时找到多个依赖，暂时没法判断是那个真正有用
-        for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
+        if (null != moduleArtifacts){
+            for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
 
-            String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
+                String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
 
-            boolean isAwbBundle = bundleMap.containsKey(key);
-            Set<String> providedDirectDep = bundleMap.get(key);
+                boolean isAwbBundle = bundleMap.containsKey(key);
+                Set<String> providedDirectDep = bundleMap.get(key);
 
-            ResolvedDependencyInfo resolvedDependencyInfo =
-                new ResolvedDependencyInfo(moduleVersion.getVersion(),
-                                           moduleVersion
-                                               .getGroup(),
-                                           moduleVersion
-                                               .getName(),
-                                           isAwbBundle
-                                               ? "awb" :
+                ResolvedDependencyInfo resolvedDependencyInfo =
+                    new ResolvedDependencyInfo(moduleVersion.getVersion(),
+                                               moduleVersion
+                                                   .getGroup(),
+                                               moduleVersion
+                                                   .getName(),
+                                               isAwbBundle
+                                                   ? "awb" :
+                                                   resolvedArtifact
+                                                       .getType(),
                                                resolvedArtifact
-                                                   .getType(),
-                                           resolvedArtifact
-                                               .getClassifier());
-            resolvedDependencyInfo.setIndent(indent);
-            resolvedDependencyInfo.setGradlePath(gradlePath);
-            resolvedDependencyInfo.setResolvedArtifact(resolvedArtifact);
+                                                   .getClassifier());
+                resolvedDependencyInfo.setIndent(indent);
+                resolvedDependencyInfo.setGradlePath(gradlePath);
+                resolvedDependencyInfo.setResolvedArtifact(resolvedArtifact);
 
-            String path = AtlasDepHelper.computeArtifactPath(moduleVersion, resolvedArtifact);
-            String name = AtlasDepHelper.computeArtifactName(moduleVersion, resolvedArtifact);
+                String path = AtlasDepHelper.computeArtifactPath(moduleVersion, resolvedArtifact);
+                String name = AtlasDepHelper.computeArtifactName(moduleVersion, resolvedArtifact);
 
-            MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
+                MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
 
-            File explodedDir = DependencyLocationManager.getExploreDir(project, mavenCoordinates,
-                                                                       resolvedArtifact.getFile(),
-                                                                       resolvedArtifact.getType().toLowerCase(),
-                                                                       path);
+                File explodedDir = DependencyLocationManager.getExploreDir(project, mavenCoordinates,
+                                                                           resolvedArtifact.getFile(),
+                                                                           resolvedArtifact.getType().toLowerCase(),
+                                                                           path);
 
-            resolvedDependencyInfo.setExplodedDir(explodedDir);
+                resolvedDependencyInfo.setExplodedDir(explodedDir);
 
-            resolvedDependencyInfo.setDependencyName(name);
+                resolvedDependencyInfo.setDependencyName(name);
 
-            if (null == parent) {
-                parent = resolvedDependencyInfo;
-            } else {
-                resolvedDependencyInfo.setParent(parent);
-                parent.getChildren().add(resolvedDependencyInfo);
-            }
+                if (null == parent) {
+                    parent = resolvedDependencyInfo;
+                } else {
+                    resolvedDependencyInfo.setParent(parent);
+                    parent.getChildren().add(resolvedDependencyInfo);
+                }
 
-            Set<? extends DependencyResult> dependencies = resolvedComponentResult.getDependencies();
-            for (DependencyResult dep : dependencies) {
+                Set<? extends DependencyResult> dependencies = resolvedComponentResult.getDependencies();
+                if (null != dependencies){
+                    for (DependencyResult dep : dependencies) {
 
-                if (dep instanceof ResolvedDependencyResult) {
-                    ResolvedComponentResult childResolvedComponentResult = ((ResolvedDependencyResult)dep)
-                        .getSelected();
+                        if (dep instanceof ResolvedDependencyResult) {
+                            ResolvedComponentResult childResolvedComponentResult = ((ResolvedDependencyResult)dep)
+                                .getSelected();
 
-                    if (isAwbBundle && providedDirectDep.contains(
-                        childResolvedComponentResult.getModuleVersion().getGroup() + ":" + childResolvedComponentResult
-                            .getModuleVersion().getName())) {
-                        continue;
-                    }
+                            if (isAwbBundle && providedDirectDep.contains(
+                                childResolvedComponentResult.getModuleVersion().getGroup() + ":" + childResolvedComponentResult
+                                    .getModuleVersion().getName())) {
+                                continue;
+                            }
 
-                    CircleDependencyCheck.DependencyNode childNode = circleDependencyCheck.addDependency(
-                        childResolvedComponentResult.getModuleVersion(),
-                        node,
-                        indent + 1);
-                    CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(
-                        logger);
-                    if (circleResult.hasCircle) {
-                        logger.warning("[CircleDependency]" +
-                                           StringUtils.join(circleResult.detail, ";"));
-                    } else {
-                        resolveDependency(parent,
-                                          ((ResolvedDependencyResult)dep).getSelected(),
-                                          artifacts,
-                                          configDependencies,
-                                          indent + 1,
-                                          circleDependencyCheck,
-                                          childNode);
+                            CircleDependencyCheck.DependencyNode childNode = circleDependencyCheck.addDependency(
+                                childResolvedComponentResult.getModuleVersion(),
+                                node,
+                                indent + 1);
+                            CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(
+                                logger);
+                            if (circleResult.hasCircle) {
+                                logger.warning("[CircleDependency]" +
+                                                   StringUtils.join(circleResult.detail, ";"));
+                            } else {
+                                resolveDependency(parent,
+                                                  ((ResolvedDependencyResult)dep).getSelected(),
+                                                  artifacts,
+                                                  configDependencies,
+                                                  indent + 1,
+                                                  circleDependencyCheck,
+                                                  childNode);
+                            }
+                        }
                     }
                 }
-            }
 
-            addDependency(resolvedDependencyInfo);
+                addDependency(resolvedDependencyInfo);
+            }
         }
+
     }
 
     private void ensureConfigured(Configuration config) {
