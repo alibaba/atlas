@@ -206,7 +206,7 @@ public class FileOperation {
                 }
                 BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
 
-                File file = new File(filePath + File.separator + entry.getName());
+                File file = new File(filePath + "/" + entry.getName());
 
                 File parentFile = file.getParentFile();
                 if (parentFile != null && (!parentFile.exists())) {
@@ -258,7 +258,7 @@ public class FileOperation {
     }
 
     private static void zipFile(File resFile, ZipOutputStream zipout, String rootpath) throws IOException {
-        rootpath = rootpath + (rootpath.trim().length() == 0 ? "" : File.separator) + resFile.getName();
+        rootpath = rootpath + (rootpath.trim().length() == 0 ? "" : "/") + resFile.getName();
         if (resFile.isDirectory()) {
             File[] fileList = resFile.listFiles();
             for (File file : fileList) {
@@ -376,7 +376,7 @@ public class FileOperation {
 
     public static boolean sevenZipInputDir(File inputDir, File outputFile, Configuration config) {
         String outPath = inputDir.getAbsolutePath();
-        String path = outPath + File.separator + "*";
+        String path = outPath + "/" + "*";
         String cmd = config.mSevenZipPath;
 
         ProcessBuilder pb = new ProcessBuilder(cmd, "a", "-tzip", outputFile.getAbsolutePath(), path, "-mx9");

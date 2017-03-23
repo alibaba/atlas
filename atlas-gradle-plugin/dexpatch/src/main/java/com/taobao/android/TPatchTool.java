@@ -444,7 +444,7 @@ public class TPatchTool extends BasePatchTool {
                     if (PatchUtils.isBundleFile(soFile)) { // 如果是bundle文件
                         processBundleFiles(soFile, baseSoFile, patchTmpDir);
                     } else {
-                        File destFile = new File(patchTmpDir,mainBundleName+File.separator+
+                        File destFile = new File(patchTmpDir,mainBundleName+"/"+
                                                   relativePath);
                         if (isFileModify(soFile, baseSoFile)) {
                             FileUtils.copyFile(soFile, destFile);
@@ -791,9 +791,9 @@ public class TPatchTool extends BasePatchTool {
         Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
         while (enumeration.hasMoreElements()){
            ZipEntry zipEntry = enumeration.nextElement();
-           if (zipEntry.getName().startsWith("lib")&&zipEntry.getName().indexOf(File.separator)!= -1){
-                   modifyBundles.add(zipEntry.getName().substring(3,zipEntry.getName().indexOf(File.separator)).replace("_","."));
-               }else if (zipEntry.getName().endsWith(".so")&&zipEntry.getName().indexOf(File.separator)== -1){
+           if (zipEntry.getName().startsWith("lib")&&zipEntry.getName().indexOf("/")!= -1){
+                   modifyBundles.add(zipEntry.getName().substring(3,zipEntry.getName().indexOf("/")).replace("_","."));
+               }else if (zipEntry.getName().endsWith(".so")&&zipEntry.getName().indexOf("/")== -1){
                    modifyBundles.add(zipEntry.getName().substring(3,zipEntry.getName().lastIndexOf(".")).replace("_","."));
                }
 
@@ -887,9 +887,9 @@ public class TPatchTool extends BasePatchTool {
                     ".so";
             File bundleFile = new File(newApkUnzipFolder,
                                        "lib" +
-                                               File.separator +
+                                               "/" +
                                                "armeabi" +
-                                               File.separator +
+                                               "/" +
                                                bundleFileSoName);
             if (bundleFile.exists()) {
                 awbBundleMap.put(artifactBundleInfo.getArtifactId(), bundleFile);

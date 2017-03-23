@@ -276,7 +276,7 @@ public class Configuration {
     }
 
     private void createTempDirectory() throws TinkerPatchException {
-        mTempResultDir = new File(mOutFolder + File.separator + TypedValue.PATH_PATCH_FILES);
+        mTempResultDir = new File(mOutFolder + "/" + TypedValue.PATH_PATCH_FILES);
         FileOperation.deleteDir(mTempResultDir);
         if (!mTempResultDir.exists()) {
             mTempResultDir.mkdir();
