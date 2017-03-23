@@ -126,9 +126,9 @@ public final class Form12x extends InsnFormat {
                 bits.set(0, false);
                 bits.set(1, false);
             } else {
-                boolean dstRegComp = unsignedFitsInNibble(r1);
-                bits.set(0, dstRegComp);
-                bits.set(1, dstRegComp);
+                boolean compat = unsignedFitsInNibble(r1);
+                bits.set(0, compat);
+                bits.set(1, compat);
             }
 
             bits.set(2, unsignedFitsInNibble(regs.get(2).getReg()));
