@@ -596,13 +596,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             ConventionMappingHelper.map(processResources, "packageForR", new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    String packageName = ManifestFileUtils.getApplicationId(ManifestHelper.getOrgManifestFile(
-                            awbBundle.getAndroidLibrary()));
-                    if (null != packageName) {
-                        return packageName;
-                    } else {
-                        return config.getOriginalApplicationId();
-                    }
+                    return awbBundle.getPackageName();
                 }
             });
 

@@ -645,6 +645,7 @@ public class ManifestFileUtils {
                 String packageName = root.attributeValue("package");
                 return packageName;
             } catch (DocumentException e) {
+                e.printStackTrace();
             }
         }
         return null;

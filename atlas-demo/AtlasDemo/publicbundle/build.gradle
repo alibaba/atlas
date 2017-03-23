@@ -4,11 +4,6 @@ atlas {
     bundleConfig{
         awbBundle true
     }
-    buildTypes {
-        debug {
-            baseApFile project.rootProject.file('app/build/outputs/apk/app-debug.ap')
-        }
-    }
 }
 
 android {

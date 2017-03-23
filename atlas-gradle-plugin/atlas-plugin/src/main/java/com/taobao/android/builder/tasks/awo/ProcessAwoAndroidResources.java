@@ -554,10 +554,7 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
 
                 @Override
                 public String call() throws Exception {
-                    String packageName = ManifestFileUtils.getApplicationId(new File(
-                        libVariantContext.apContext.getApExploredFolder(),
-                        "AndroidManifest.xml"));
-                    return packageName;
+                    return awbBundle.getPackageName();
                 }
             });
 
