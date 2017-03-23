@@ -22,5 +22,5 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:25.1.0'
-    compile('com.taobao.android:atlas_core:5.0.6-rc8@aar')
+    compile('com.taobao.android:atlas_core:5.0.6-rc9@aar')
 }
