@@ -258,6 +258,7 @@ import com.taobao.android.builder.tasks.tpatch.TPatchDiffResAPBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchTask;
 import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
 import com.taobao.android.builder.tasks.transform.hook.AwbProguradHook;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 
 /**
@@ -289,6 +290,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                     appVariantContext = new AppVariantContext((ApplicationVariantImpl)applicationVariant, project,
                                                               atlasExtension, appExtension);
                     AtlasBuildContext.appVariantContextMap.put(applicationVariant, appVariantContext);
+                }
+
+                if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()){
+                    throw new GradleException("atlas plgin is not compatible with instant run， plese turn it off in your ide！");
                 }
 
                 new AwbProguradHook().hookProguardTask(appVariantContext);
