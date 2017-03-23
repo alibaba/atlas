@@ -421,6 +421,7 @@ import com.google.common.collect.Lists;
 import com.taobao.android.APatchTool;
 import com.taobao.android.apatch.Build;
 import com.taobao.android.apatch.utils.Formater;
+import com.taobao.android.differ.dex.BundleDiffResult;
 import com.taobao.android.differ.dex.PatchException;
 import org.apache.commons.io.FileUtils;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
@@ -600,23 +601,39 @@ public class DexDiffInfo {
     /**
      * 将变动的信息写入到一个文件
      *
-     * @param outFile
      * @param append
+     * @param outFile
      */
-    public void writeDiffToFile(File outFile, boolean append) throws IOException {
-        List<String> lines = Lists.newArrayList();
-//        lines.add(newDexFile.getAbsolutePath());
-        for (ClassDiffInfo classDiffInfo : classDiffInfoMap.values()) {
-            lines.add("[" + classDiffInfo.getType() + "]" + classDiffInfo.getName());
-            for (FieldDiffInfo fieldDiffInfo : classDiffInfo.getModifyFields()) {
-                lines.add("   [" + fieldDiffInfo.getType() + "]" + ReferenceUtil.getFieldDescriptor(fieldDiffInfo.getBackedField()));
+    public void save(BundleDiffResult bundleDiffResult) throws IOException {
+            List<BundleDiffResult.ClassDiff>classDiffs = new ArrayList<>();
+            for (ClassDiffInfo classDiffInfo:classDiffInfoMap.values()){
+                BundleDiffResult.ClassDiff classDiff = new BundleDiffResult.ClassDiff();
+                classDiff.setClassName(classDiffInfo.getName());
+                classDiff.setDiffType(classDiffInfo.getType());
+                classDiffs.add(classDiff);
+                if (classDiffInfo.getModifyFields().size() > 0){
+                    List<BundleDiffResult.FieldDiff>fieldDiffs = new ArrayList<>();
+                    for (FieldDiffInfo fieldDiffInfo:classDiffInfo.getModifyFields()) {
+                        BundleDiffResult.FieldDiff fieldDiff = new BundleDiffResult.FieldDiff();
+                        fieldDiffs.add(fieldDiff);
+                        fieldDiff.setDiffType(fieldDiffInfo.getType());
+                        fieldDiff.setFieldDesc(ReferenceUtil.getFieldDescriptor(fieldDiffInfo.getBackedField()));
+                    }
+                    classDiff.setFieldDiffs(fieldDiffs);
+                }
+                if (classDiffInfo.getModifyMethods().size() > 0){
+                    List<BundleDiffResult.MethodDiff>methodDiffs = new ArrayList<>();
+                    for (MethodDiffInfo methodDiffInfo:classDiffInfo.getModifyMethods()) {
+                        BundleDiffResult.MethodDiff methodDiff = new BundleDiffResult.MethodDiff();
+                        methodDiffs.add(methodDiff);
+                        methodDiff.setDiffType(methodDiffInfo.getType());
+                        methodDiff.setMethodDesc(ReferenceUtil.getMethodDescriptor(methodDiffInfo.getBackedMethod()));
+                    }
+                    classDiff.setMethodDiffs(methodDiffs);
+                }
             }
-            for (MethodDiffInfo methodDiffInfo : classDiffInfo.getModifyMethods()) {
-                lines.add("   [" + methodDiffInfo.getType() + "]" + ReferenceUtil.getMethodDescriptor(methodDiffInfo.getBackedMethod()));
-            }
-        }
-        FileUtils.writeLines(outFile, lines, append);
 
+        bundleDiffResult.setClassDiffs(classDiffs);
     }
 
     public void writeToFile(String bundleName, File diffFile, File diffJsonFile) throws IOException {
