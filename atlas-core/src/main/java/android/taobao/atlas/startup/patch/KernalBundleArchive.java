@@ -390,7 +390,7 @@ import java.util.zip.ZipFile;
 //
 //            }
 //        },bundleFile,true);
-        boolean success = new KernalBundleRelease(revisionDir).release(bundleFile,true);
+        boolean success = new KernalBundleRelease(revisionDir,true).release(bundleFile,true);
 
         if (!success||odexFile == null){
             throw new IOException("process patch failed!");
@@ -452,7 +452,7 @@ import java.util.zip.ZipFile;
 //            }
 //        },bundleFile,false);
 //        Looper.loop();
-        boolean success = new KernalBundleRelease(revisionDir).release(bundleFile,false);
+        boolean success = new KernalBundleRelease(revisionDir,false).release(bundleFile,false);
         if (!success||odexFile == null){
             throw new IOException("process mainDex failed!");
         }
@@ -664,8 +664,8 @@ import java.util.zip.ZipFile;
      */
     public class KernalBundleRelease{
         private BundleReleaser mBundlereleaser;
-        public KernalBundleRelease(File dir) {
-            mBundlereleaser = new BundleReleaser(dir);
+        public KernalBundleRelease(File dir,boolean hasReleasedBefore) {
+            mBundlereleaser = new BundleReleaser(dir,hasReleasedBefore);
         }
 
         public boolean release(final File bundleFile,final boolean start) throws IOException{
