@@ -286,6 +286,11 @@ public class AtlasDepTreeParser {
 
     Set<String> conflictDependencies = new HashSet<>();
 
+    /**
+     * 做保护，防止递归循环
+     */
+    private Set<String> resolvedDependencies = new HashSet<>();
+
     private ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
 
     public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
@@ -437,9 +442,11 @@ public class AtlasDepTreeParser {
         // 如果同时找到多个依赖，暂时没法判断是那个真正有用
         if (null != moduleArtifacts){
             for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
-
                 String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
-
+                if (resolvedDependencies.contains(key)){
+                    continue;
+                }
+                resolvedDependencies.add(key);
                 boolean isAwbBundle = bundleMap.containsKey(key);
                 Set<String> providedDirectDep = bundleMap.get(key);
 

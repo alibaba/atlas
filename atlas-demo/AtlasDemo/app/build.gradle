@@ -32,6 +32,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+//    productFlavors {
+//        dev {
+//            minSdkVersion 14
+//        }
+//
+//        beta {
+//            minSdkVersion 21
+//        }
+//    }
 }
 
 atlas {
