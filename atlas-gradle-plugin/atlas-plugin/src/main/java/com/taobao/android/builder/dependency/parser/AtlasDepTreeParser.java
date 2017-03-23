@@ -286,8 +286,6 @@ public class AtlasDepTreeParser {
 
     Set<String> conflictDependencies = new HashSet<>();
 
-    private Set<String> projectDependences = new HashSet<>();
-
     private ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
 
     public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
@@ -465,13 +463,10 @@ public class AtlasDepTreeParser {
 
             MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
 
-            boolean isProjDependency = projectDependences.contains(
-                mavenCoordinates.getGroupId() + ":" + mavenCoordinates.getArtifactId());
-
             File explodedDir = DependencyLocationManager.getExploreDir(project, mavenCoordinates,
                                                                        resolvedArtifact.getFile(),
                                                                        resolvedArtifact.getType().toLowerCase(),
-                                                                       path, !isProjDependency);
+                                                                       path);
 
             resolvedDependencyInfo.setExplodedDir(explodedDir);
 
@@ -527,7 +522,6 @@ public class AtlasDepTreeParser {
             if (dependency instanceof ProjectDependency) {
                 ProjectDependency projectDependency = (ProjectDependency)dependency;
                 project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
-                projectDependences.add(projectDependency.getGroup() + ":" + projectDependency.getName());
                 //try {
                 //    ensureConfigured( projectDependency.getProjectConfiguration());
                 //} catch (Throwable e) {
@@ -731,13 +725,12 @@ public class AtlasDepTreeParser {
                 atlasDependencyTree.getAwbBundles().add(bundle);
 
                 collect(dependencyInfo, bundle);
+
             } else {
 
                 collect(dependencyInfo, atlasDependencyTree.getMainBundle());
             }
         }
-
-        atlasDependencyTree.setProjectDependencies(projectDependences);
 
         return atlasDependencyTree;
     }

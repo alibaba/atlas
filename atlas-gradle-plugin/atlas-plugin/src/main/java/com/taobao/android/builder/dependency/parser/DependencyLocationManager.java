@@ -24,13 +24,19 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 public class DependencyLocationManager {
 
     public static File getExploreDir(Project project, MavenCoordinates mavenCoordinates, File bundle, String type,
-                                     String path, boolean useBuildCache) {
+                                     String path) {
+
+        if (!bundle.exists()) {
+            project.getLogger().info("missing " + mavenCoordinates.toString());
+        }
 
         Optional<FileCache> buildCache =
             AndroidGradleOptions.getBuildCache(project);
         File explodedDir;
         if (PrepareLibraryTask.shouldUseBuildCache(
-            buildCache.isPresent(), mavenCoordinates) && useBuildCache) { //&& !"awb".equals(type)
+            buildCache.isPresent(), mavenCoordinates) && bundle.exists() && !isProjectLibrary(project,
+                                                                                              bundle)) { //&& !"awb"
+            // .equals(type)
             try {
 
                 explodedDir = buildCache.get().getFileInCache(
@@ -56,6 +62,14 @@ public class DependencyLocationManager {
         }
 
         //throw new GradleException("set explored dir exception");
+
+    }
+
+    public static boolean isProjectLibrary(Project project, File bundle) {
+
+        String rootPath = project.getRootProject().getProjectDir().getAbsolutePath();
+
+        return bundle.getAbsolutePath().startsWith(rootPath);
 
     }
 

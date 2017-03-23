@@ -255,6 +255,9 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.StopExecutionException;
 
+/**
+ * @author wuzhong
+ */
 public class ProcessAwoAndroidResources extends IncrementalTask {
 
     private File manifestFile;
@@ -356,10 +359,8 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
         File resOutBaseNameFile = getPackageOutputFile();
 
         // If are in instant run mode and we have an instant run enabled manifest
-        File instantRunManifest = getInstantRunManifestFile();
-        File manifestFileToPackage = instantRunBuildContext.isInInstantRunMode() &&
-            instantRunManifest != null &&
-            instantRunManifest.exists() ? instantRunManifest : getManifestFile();
+
+        File manifestFileToPackage = getManifestFile();
 
         // 增加awb模块编译所需要的额外参数
         addAaptOptions();
@@ -576,7 +577,7 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
 
                 @Override
                 public File call() throws Exception {
-                    return libVariantContext.getAwbBundle().getAndroidLibrary().getManifest();
+                    return libVariantContext.getMergedManifest();
                 }
             });
 

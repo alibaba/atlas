@@ -226,6 +226,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
+import com.taobao.android.builder.dependency.parser.DependencyLocationManager;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.apache.commons.io.FileUtils;
@@ -259,7 +260,7 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
-                                                                                   1);
+                                                                                   0);
         List<Runnable> runnables = new ArrayList<>();
 
         List<SoLibrary> soLibraries = new ArrayList<>();
@@ -282,24 +283,30 @@ public class PrepareAllDependenciesTask extends BaseTask {
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
         for (final AndroidLibrary aarBundle : androidLibraries) {
             runnables.add(new Runnable() {
+
                 @Override
                 public void run() {
 
-                    if (atlasDependencyTree.getProjectDependencies().contains(
-                        aarBundle.getResolvedCoordinates().getGroupId() + ":" + aarBundle.getResolvedCoordinates()
-                            .getArtifactId())) {
+                    if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getBundle())) {
+
+                        getLogger().info(
+                            "prepare1 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
 
                         if (aarBundle.getFolder().exists()) {
                             try {
                                 FileUtils.deleteDirectory(aarBundle.getFolder());
+                                aarBundle.getFolder().mkdirs();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
                         }
 
                         PrepareLibraryTask.extract(aarBundle.getBundle(), aarBundle.getFolder(), getProject());
+
                     } else {
 
+                        getLogger().info(
+                            "prepare2 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
                         prepareLibrary(aarBundle);
                     }
 

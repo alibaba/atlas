@@ -209,8 +209,11 @@
 
 package com.taobao.android.builder.tasks.awo;
 
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.Callable;
+
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
@@ -223,23 +226,18 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.ApiVersion;
 import com.android.manifmerger.ManifestMerger2;
+import com.android.manifmerger.ManifestProvider;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
-
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputFile;
-
-import java.io.File;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Created by shenghua.nish on 2016-07-15 上午11:22.
@@ -258,7 +256,7 @@ public class MergeAwoManifests extends ManifestProcessorTask {
 
     private ApkVariantOutputData variantOutputData;
 
-    private List<? extends AndroidLibrary> libraries;
+    private List<ManifestProvider> libraries;
 
     private List<ManifestMerger2.Invoker.Feature> optionalFeatures;
 
@@ -266,23 +264,23 @@ public class MergeAwoManifests extends ManifestProcessorTask {
 
     @Override
     protected void doFullTaskAction() {
-        //getBuilder().mergeManifestsForApplication(getMainManifest(),
-        //                                          getManifestOverlays(),
-        //                                          getLibraries(),
-        //                                          getPackageOverride(),
-        //                                          getVersionCode(),
-        //                                          getVersionName(),
-        //                                          getMinSdkVersion(),
-        //                                          getTargetSdkVersion(),
-        //                                          getMaxSdkVersion(),
-        //                                          getManifestOutputFile().getAbsolutePath(),
-        //                                          // no aapt friendly merged manifest file necessary for applications.
-        //                                          null /* aaptFriendlyManifestOutputFile */,
-        //                                          getInstantRunManifestOutputFile().getAbsolutePath(),
-        //                                          ManifestMerger2.MergeType.APPLICATION,
-        //                                          variantConfiguration.getManifestPlaceholders(),
-        //                                          getOptionalFeatures(),
-        //                                          getReportFile());
+        getBuilder().mergeManifestsForApplication(getMainManifest(),
+                                                  getManifestOverlays(),
+                                                  getLibraries(),
+                                                  getPackageOverride(),
+                                                  getVersionCode(),
+                                                  getVersionName(),
+                                                  getMinSdkVersion(),
+                                                  getTargetSdkVersion(),
+                                                  getMaxSdkVersion(),
+                                                  getManifestOutputFile().getAbsolutePath(),
+                                                  // no aapt friendly merged manifest file necessary for applications.
+                                                  null /* aaptFriendlyManifestOutputFile */,
+                                                  getInstantRunManifestOutputFile().getAbsolutePath(),
+                                                  ManifestMerger2.MergeType.APPLICATION,
+                                                  variantConfiguration.getManifestPlaceholders(),
+                                                  getOptionalFeatures(),
+                                                  getReportFile());
     }
 
     @InputFile
@@ -335,28 +333,6 @@ public class MergeAwoManifests extends ManifestProcessorTask {
         return serializeMap(variantConfiguration.getManifestPlaceholders());
     }
 
-    /**
-     * A synthetic input to allow gradle up-to-date checks to work.
-     * <p>
-     * Since List<ManifestDependencyImpl> can't be used directly, as @Nested doesn't work on lists,
-     * this method gathers and returns the underlying manifest files.
-     */
-    @SuppressWarnings("unused")
-    @InputFiles
-    List<File> getLibraryManifests() {
-        List<? extends AndroidLibrary> libs = getLibraries();
-        if (libs == null || libs.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<File> files = Lists.newArrayListWithCapacity(libs.size() * 2);
-        for (AndroidLibrary mdi : libs) {
-            files.add(mdi.getManifest());
-        }
-
-        return files;
-    }
-
     @Input
     @Optional
     public String getMinSdkVersion() {
@@ -402,7 +378,8 @@ public class MergeAwoManifests extends ManifestProcessorTask {
         return optionalFeatures;
     }
 
-    public void setVariantConfiguration(VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> variantConfiguration) {
+    public void setVariantConfiguration(
+        VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> variantConfiguration) {
         this.variantConfiguration = variantConfiguration;
     }
 
@@ -414,12 +391,8 @@ public class MergeAwoManifests extends ManifestProcessorTask {
         this.variantOutputData = variantOutputData;
     }
 
-    public List<? extends AndroidLibrary> getLibraries() {
+    public List<ManifestProvider> getLibraries() {
         return libraries;
-    }
-
-    public void setLibraries(List<? extends AndroidLibrary> libraries) {
-        this.libraries = libraries;
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<MergeAwoManifests> {
@@ -460,7 +433,7 @@ public class MergeAwoManifests extends ManifestProcessorTask {
         @Override
         public void execute(@NonNull MergeAwoManifests processManifestTask) {
             final VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> config = libVariantContext
-                    .getVariantConfiguration();
+                .getVariantConfiguration();
             processManifestTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             processManifestTask.setVariantName(config.getFullName());
             processManifestTask.setVariantConfiguration(config);
@@ -473,12 +446,10 @@ public class MergeAwoManifests extends ManifestProcessorTask {
 
             ConventionMappingHelper.map(processManifestTask,
                                         "libraries",
-                                        new Callable<List<? extends AndroidLibrary>>() {
+                                        new Callable<List<ManifestProvider>>() {
                                             @Override
-                                            public List<? extends AndroidLibrary> call() throws Exception {
-                                                List<? extends AndroidLibrary> manifests = getManifestDependencies(
-                                                        awbBundle.getAndroidLibraries());
-                                                return manifests;
+                                            public List<ManifestProvider> call() throws Exception {
+                                                return awbBundle.getManifestProviders();
                                             }
                                         });
 
@@ -488,17 +459,17 @@ public class MergeAwoManifests extends ManifestProcessorTask {
                                             @Override
                                             public String call() throws Exception {
                                                 if (scope.getGlobalScope()
-                                                        .getAndroidBuilder()
-                                                        .isPreviewTarget()) {
+                                                    .getAndroidBuilder()
+                                                    .isPreviewTarget()) {
                                                     return scope.getGlobalScope()
-                                                            .getAndroidBuilder()
-                                                            .getTargetCodename();
+                                                        .getAndroidBuilder()
+                                                        .getTargetCodename();
                                                 }
 
                                                 ApiVersion minSdk = config.getMergedFlavor()
-                                                        .getMinSdkVersion();
+                                                    .getMinSdkVersion();
                                                 return minSdk ==
-                                                        null ? null : minSdk.getApiString();
+                                                    null ? null : minSdk.getApiString();
                                             }
                                         });
 
@@ -508,16 +479,16 @@ public class MergeAwoManifests extends ManifestProcessorTask {
                                             @Override
                                             public String call() throws Exception {
                                                 if (scope.getGlobalScope()
-                                                        .getAndroidBuilder()
-                                                        .isPreviewTarget()) {
+                                                    .getAndroidBuilder()
+                                                    .isPreviewTarget()) {
                                                     return scope.getGlobalScope()
-                                                            .getAndroidBuilder()
-                                                            .getTargetCodename();
+                                                        .getAndroidBuilder()
+                                                        .getTargetCodename();
                                                 }
                                                 ApiVersion targetSdk = config.getMergedFlavor()
-                                                        .getTargetSdkVersion();
+                                                    .getTargetSdkVersion();
                                                 return targetSdk ==
-                                                        null ? null : targetSdk.getApiString();
+                                                    null ? null : targetSdk.getApiString();
                                             }
                                         });
 
@@ -527,22 +498,18 @@ public class MergeAwoManifests extends ManifestProcessorTask {
                                             @Override
                                             public Integer call() throws Exception {
                                                 if (scope.getGlobalScope()
-                                                        .getAndroidBuilder()
-                                                        .isPreviewTarget()) {
+                                                    .getAndroidBuilder()
+                                                    .isPreviewTarget()) {
                                                     return null;
                                                 }
                                                 return config.getMergedFlavor().getMaxSdkVersion();
                                             }
                                         });
 
-            File manifestOutFile = new File(scope.getGlobalScope().getIntermediatesDir(),
-                                            TaskManager.DIR_BUNDLES +
-                                                    "/" +
-                                                    config.getDirName() +
-                                                    "/AndroidManifest.xml");
-            processManifestTask.setManifestOutputFile(manifestOutFile);
+            processManifestTask.setManifestOutputFile(libVariantContext.getMergedManifest());
+
             File instantRunManifestOutputFile = FileUtils.join(scope.getGlobalScope()
-                                                                       .getIntermediatesDir(),
+                                                                   .getIntermediatesDir(),
                                                                "bundles-awb",
                                                                config.getDirName(),
                                                                "instant-run",
@@ -552,16 +519,17 @@ public class MergeAwoManifests extends ManifestProcessorTask {
             File reportFile = FileUtils.join(scope.getGlobalScope().getOutputsDir(),
                                              "logs",
                                              "manifest-merger-" +
-                                                     config.getBaseName() +
-                                                     "-" +
-                                                     awbBundle.getName() +
-                                                     "-report.txt");
+                                                 config.getBaseName() +
+                                                 "-" +
+                                                 awbBundle.getName() +
+                                                 "-report.txt");
             processManifestTask.setReportFile(reportFile);
             processManifestTask.optionalFeatures = optionalFeatures;
         }
 
         @NonNull
-        private static List<? extends AndroidLibrary> getManifestDependencies(List<? extends AndroidLibrary> libraries) {
+        private static List<? extends AndroidLibrary> getManifestDependencies(
+            List<? extends AndroidLibrary> libraries) {
 
             List<AndroidLibrary> list = Lists.newArrayListWithCapacity(libraries.size());
 

@@ -209,6 +209,10 @@
 
 package com.android.build.gradle.internal.api;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
@@ -216,14 +220,9 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.manager.TaskQueryHelper;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.bundling.Zip;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by shenghua.nish on 2016-07-15 上午9:06.
@@ -240,7 +239,7 @@ public class LibVariantContext extends VariantContext<LibraryVariantImpl, Librar
     public LibVariantContext(LibraryVariantImpl libraryVariant, Project project, @NonNull AtlasExtension atlasExtension,
                              LibraryExtension libraryExtension) {
         super(libraryVariant, project, atlasExtension, libraryExtension);
-        this.variantData = (LibraryVariantData) baseVariantData;
+        this.variantData = (LibraryVariantData)baseVariantData;
     }
 
     public Zip getBundleTask() {
@@ -267,7 +266,6 @@ public class LibVariantContext extends VariantContext<LibraryVariantImpl, Librar
         this.jarDexList = jarDexList;
     }
 
-
     public AwbBundle getAwbBundle() {
         return awbBundle;
     }
@@ -289,15 +287,16 @@ public class LibVariantContext extends VariantContext<LibraryVariantImpl, Librar
         return result;
     }
 
-    public File getSourceOutputDir(){
-       return new File(scope.getGlobalScope().getGeneratedDir(),
-                "source/awb-r/" + variantData.getVariantConfiguration().getFullName() + "/" + awbBundle.getName());
+    public File getSourceOutputDir() {
+        return new File(scope.getGlobalScope().getGeneratedDir(),
+                        "source/awb-r/" + variantData.getVariantConfiguration().getFullName() + "/" + awbBundle
+                            .getName());
     }
-
 
     public File getJavaCDir() {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
-                "/awb-classes/" + variantData.getVariantConfiguration().getFullName() + "/" + awbBundle.getName());
+                        "/awb-classes/" + variantData.getVariantConfiguration().getFullName() + "/" + awbBundle
+                            .getName());
     }
 
     public File getDex() {
@@ -306,7 +305,7 @@ public class LibVariantContext extends VariantContext<LibraryVariantImpl, Librar
 
     public File getDexFolder() {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
-                "/awb-dex/" + variantData.getVariantConfiguration().getFullName() + "/" + awbBundle.getName());
+                        "/awb-dex/" + variantData.getVariantConfiguration().getFullName() + "/" + awbBundle.getName());
     }
 
     public File getOutputResouceAP() {
@@ -318,13 +317,14 @@ public class LibVariantContext extends VariantContext<LibraryVariantImpl, Librar
             return awbBundle.outputBundleFile;
         }
         File manifest = this.getVariantConfiguration().getDefaultSourceSet().getManifestFile();
-//                Set<String> outOfApkBundles = atlasExtension.getTBuildConfig().getOutOfApkBundles();
-//                File manifest = libVariantContext.getMergeAwoManifests().getManifestOutputFile();
+        //                Set<String> outOfApkBundles = atlasExtension.getTBuildConfig().getOutOfApkBundles();
+        //                File manifest = libVariantContext.getMergeAwoManifests().getManifestOutputFile();
         if (null == manifest) {
             return null;
         }
 
-        final String packageName = ManifestFileUtils.getPackage(manifest);;
+        final String packageName = ManifestFileUtils.getPackage(manifest);
+        ;
         return getAwbPackageOutAppOutputFile(awbBundle, packageName);
     }
 
@@ -342,7 +342,12 @@ public class LibVariantContext extends VariantContext<LibraryVariantImpl, Librar
         return awbOutputName + ".so";
     }
 
-
-
+    public File getMergedManifest() {
+        File manifestOutFile = new File(scope.getGlobalScope().getIntermediatesDir(),
+                                        "awb-manifest/" + variantData.getVariantConfiguration().getFullName() +
+                                            "/" +
+                                            "AndroidManifest.xml");
+        return manifestOutFile;
+    }
 
 }
