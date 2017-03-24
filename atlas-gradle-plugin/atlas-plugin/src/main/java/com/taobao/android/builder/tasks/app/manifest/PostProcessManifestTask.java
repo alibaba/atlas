@@ -213,6 +213,7 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.HashMultimap;
@@ -227,7 +228,6 @@ import com.taobao.android.builder.tools.manifest.ManifestDependencyUtil;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 
 import org.dom4j.DocumentException;
-import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
@@ -247,7 +247,7 @@ import java.util.concurrent.Callable;
  * 处理合并后的manifest
  * Created by shenghua.nish on 2015-04-14 下午1:41.
  */
-public class PostProcessManifestTask extends DefaultTask {
+public class PostProcessManifestTask extends IncrementalTask {
 
     @Nested
     @org.gradle.api.tasks.Optional
@@ -274,6 +274,8 @@ public class PostProcessManifestTask extends DefaultTask {
         return mainManifestFile;
     }
 
+    @InputFile
+    @Optional
     public File getInstantRunMainManifestFile() {
         return instantRunMainManifestFile;
     }
@@ -313,26 +315,31 @@ public class PostProcessManifestTask extends DefaultTask {
     }
 
     @TaskAction
-    public void postProcess() throws IOException, DocumentException {
+    public void doFullTaskAction() throws IOException {
         postProcessManifests(getMainManifestFile());
         postProcessManifests(getInstantRunMainManifestFile());
     }
 
-    private void postProcessManifests(File mainManifestFile) throws IOException, DocumentException {
+    private void postProcessManifests(File mainManifestFile) throws IOException {
         if (mainManifestFile != null && mainManifestFile.exists()) {
             getLogger().info("[MTLPlugin]Start post Process  manifest files,main manifestFile is:" +
                                      mainManifestFile);
-            ManifestFileUtils.postProcessManifests(mainManifestFile,
-                                                   getLibManifestMap(),
-                                                   getLibManifestDepenendyMap(),
-                                                   bunldeBaseInfoFile,
-                                                   manifestOptions,
-                                                   addMultiDex,
-                                                   remoteBundles);
-            //TODO aapt 命令不支持，手工生成
-            AtlasBuildContext.androidBuilder.generateKeepList(mainManifestFile,
-                                                              appVariantContext.getScope()
-                                                                      .getManifestKeepListProguardFile());
+            try {
+                ManifestFileUtils.postProcessManifests(mainManifestFile,
+                                                       getLibManifestMap(),
+                                                       getLibManifestDepenendyMap(),
+                                                       bunldeBaseInfoFile,
+                                                       manifestOptions,
+                                                       addMultiDex,
+                                                       remoteBundles);
+                //TODO aapt 命令不支持，手工生成
+                AtlasBuildContext.androidBuilder.generateKeepList(mainManifestFile,
+                                                                  appVariantContext.getScope()
+                                                                          .getManifestKeepListProguardFile());
+            } catch (DocumentException e) {
+                // TODO: unacceptable.
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -420,6 +427,10 @@ public class PostProcessManifestTask extends DefaultTask {
                     .getOutOfApkBundles();
             postProcessManifestsTask.manifestOptions = atlasExtension.getManifestOptions();
             postProcessManifestsTask.addMultiDex = isMultiDexEnabled();
+            postProcessManifestsTask.setVariantName(scope.getVariantScope()
+                                                            .getVariantData()
+                                                            .getVariantConfiguration()
+                                                            .getFullName());
         }
 
         private boolean isMultiDexEnabled() {
