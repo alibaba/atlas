@@ -316,11 +316,12 @@ public class PostProcessManifestTask extends IncrementalTask {
 
     @TaskAction
     public void doFullTaskAction() throws IOException {
-        postProcessManifests(getMainManifestFile());
-        postProcessManifests(getInstantRunMainManifestFile());
+        postProcessManifests(getMainManifestFile(), false);
+        postProcessManifests(getInstantRunMainManifestFile(), true);
     }
 
-    private void postProcessManifests(File mainManifestFile) throws IOException {
+    private void postProcessManifests(File mainManifestFile,
+                                      boolean isInstantRun) throws IOException {
         if (mainManifestFile != null && mainManifestFile.exists()) {
             getLogger().info("[MTLPlugin]Start post Process  manifest files,main manifestFile is:" +
                                      mainManifestFile);
@@ -331,6 +332,7 @@ public class PostProcessManifestTask extends IncrementalTask {
                                                        bunldeBaseInfoFile,
                                                        manifestOptions,
                                                        addMultiDex,
+                                                       isInstantRun,
                                                        remoteBundles);
                 //TODO aapt 命令不支持，手工生成
                 AtlasBuildContext.androidBuilder.generateKeepList(mainManifestFile,
