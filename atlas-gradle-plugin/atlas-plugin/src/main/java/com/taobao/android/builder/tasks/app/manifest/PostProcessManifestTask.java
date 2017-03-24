@@ -261,21 +261,29 @@ public class PostProcessManifestTask extends IncrementalTask {
 
     private Set<String> remoteBundles;
 
+    @InputFile
     private File mainManifestFile;
 
+    @InputFile
+    @Optional
     private File instantRunMainManifestFile;
 
     private AppVariantContext appVariantContext;
 
     private List<? extends AndroidLibrary> awbLibraries;
 
-    @InputFile
+    public void setMainManifestFile(File mainManifestFile) {
+        this.mainManifestFile = mainManifestFile;
+    }
+
     public File getMainManifestFile() {
         return mainManifestFile;
     }
 
-    @InputFile
-    @Optional
+    public void setInstantRunMainManifestFile(File instantRunMainManifestFile) {
+        this.instantRunMainManifestFile = instantRunMainManifestFile;
+    }
+
     public File getInstantRunMainManifestFile() {
         return instantRunMainManifestFile;
     }
@@ -404,8 +412,9 @@ public class PostProcessManifestTask extends IncrementalTask {
                                         "instantRunMainManifestFile",
                                         new Callable<File>() {
                                             public File call() {
-                                                return scope.getVariantScope()
+                                                File file = scope.getVariantScope()
                                                         .getInstantRunManifestOutputFile();
+                                                return file.exists() ? file : null;
                                             }
                                         });
 
