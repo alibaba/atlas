@@ -1,30 +1,6 @@
+
+
 apply plugin: 'java'
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
-
-//buildscript {
-//
-//    repositories {
-//        mavenCentral()
-//        jcenter()
-//    }
-//    dependencies {
-////        classpath 'com.android.tools.build:gradle:2.2.0'
-//        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
-//        classpath "com.github.dcendents:android-maven-gradle-plugin:1.4.1"
-//    }
-//}
-repositories {
-//    flatDir {
-//        dirs 'libs'
-//    }
-    mavenCentral()
-    jcenter()
-
-}
-
-archivesBaseName = 'dex_patch'
-
 sourceSets {
     main {
 //        groovy.srcDirs = ['src/main/groovy']
@@ -53,72 +29,6 @@ dependencies {
 
 }
 
-def siteUrl = 'https://github.com/alibaba/atlas'
-// 项目的主页
-def gitUrl = 'https://github.com/alibaba/atlas'
-// Git仓库的url
-install {
-    repositories.mavenInstaller {
-        // This generates POM.xml with proper parameters
-        pom {
-            project {
-                packaging 'jar'
-                // Add your description here
-                name 'dex_patch' //项目描述
-                // Set your license
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id 'alibabaatlas' //填写的一些基本信息
-                        name 'dex_patch'
-                        email 'alibabaatlasframework@gmail.com'
-                    }
-                }
-                scm {
-                    connection gitUrl
-                    developerConnection gitUrl
-                    url siteUrl
-                }
-            }
-        }
-    }
-}
-
-Properties properties = new Properties()
-def file = project.rootProject.file('local.properties')
-if (file.exists()) {
-    properties.load(file.newDataInputStream())
-}
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-    configurations = ['archives']
-    pkg {
-        repo = "maven"
-        name = "dex_patch"    //发布到JCenter上的项目名字
-        websiteUrl = "atlas.alibaba.net"
-        vcsUrl = gitUrl
-        licenses = ["Apache-2.0"]
-        publish = true
-    }
-
-}
-
-task sourcesJar(type: Jar) {
-    from('src/main/java') {
-        include '**'
-    }
-    classifier = 'sources'
-}
-
-artifacts {
-    archives sourcesJar
-}
 
 group 'com.taobao.android'
-version "1.0.3.1"
+version "1.1.0.2"

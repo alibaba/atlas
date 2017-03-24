@@ -224,8 +224,8 @@ import java.util.Set;
  */
 public class BasePatchTool {
 
-    protected static final String BASE_APK_UNZIP_NAME = "base.apk";
-    protected static final String NEW_APK_UNZIP_NAME = "new.apk";
+    public static final String BASE_APK_UNZIP_NAME = "base.apk";
+    public static final String NEW_APK_UNZIP_NAME = "new.apk";
     protected static final String DEX_NAME = "classes.dex";
     protected static final String DEX_SUFFIX = ".dex";
     protected static final String CLASSES = "classes";

@@ -267,8 +267,8 @@ public class ZipUtils {
     public static List<String> unzip(final File zipFile, final String destination, String encoding) {
         List<String> fileNames = new ArrayList<String>();
         String dest = destination;
-        if (!destination.endsWith(File.separator)) {
-            dest = destination + File.separator;
+        if (!destination.endsWith("/")) {
+            dest = destination + "/";
         }
         ZipFile file;
         try {

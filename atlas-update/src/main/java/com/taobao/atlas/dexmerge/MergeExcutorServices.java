@@ -2,9 +2,7 @@ package com.taobao.atlas.dexmerge;
 
 import android.os.RemoteException;
 import android.util.Log;
-import com.taobao.atlas.dex.Dex;
-import com.taobao.atlas.dexmerge.dx.merge.CollisionPolicy;
-import com.taobao.atlas.dexmerge.dx.merge.DexMerger;
+import com.taobao.common.dexpatcher.DexPatchApplier;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -195,19 +193,19 @@ public class MergeExcutorServices {
         try {
 
             //方式一
-//            DexPatchApplier dexPatchApplier = new DexPatchApplier(inputStreams[0],inputStreams[1]);
-//            dexPatchApplier.executeAndSaveTo(newDexStream);
+            DexPatchApplier dexPatchApplier = new DexPatchApplier(inputStreams[0],inputStreams[1]);
+            dexPatchApplier.executeAndSaveTo(newDexStream);
             //方式二
-            Dex dex1 = new Dex(inputStreams[1]);
-            Dex dex2 = new Dex(inputStreams[0]);
-            List<Dex> dexs = new ArrayList<Dex>();
-            dexs.add(dex1);
-            dexs.add(dex2);
-            DexMerger mDexMerge = new DexMerger(new Dex[]{dex1, dex2}, CollisionPolicy.KEEP_FIRST);
-            mDexMerge.setCompactWasteThreshold(1);
-            Dex outDex = mDexMerge.merge();
-            outDex.writeTo(newDexStream);
-            newDexStream.flush();
+//            Dex dex1 = new Dex(inputStreams[1]);
+//            Dex dex2 = new Dex(inputStreams[0]);
+//            List<Dex> dexs = new ArrayList<Dex>();
+//            dexs.add(dex1);
+//            dexs.add(dex2);
+//            DexMerger mDexMerge = new DexMerger(new Dex[]{dex1, dex2}, CollisionPolicy.KEEP_FIRST);
+//            mDexMerge.setCompactWasteThreshold(1);
+//            Dex outDex = mDexMerge.merge();
+//            outDex.writeTo(newDexStream);
+//            newDexStream.flush();
             mCallback.onMergeFinish(bundleName, true, "Success");
             successCount.incrementAndGet();
         } catch (Throwable e) {
