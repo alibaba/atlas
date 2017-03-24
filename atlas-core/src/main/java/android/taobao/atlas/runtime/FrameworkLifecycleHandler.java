@@ -307,7 +307,7 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
                 String[] bundles = autoStartBundle.split(",");
                 if (bundles.length > 0) {
                     for (int x = 0; x < bundles.length; x++) {
-                        final String bundleName = bundles[0];
+                        final String bundleName = bundles[x];
                         BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
                         if (impl == null) {
                             BundleInstaller.startDelayInstall(bundleName, new BundleInstaller.InstallListener() {
