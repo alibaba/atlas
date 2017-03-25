@@ -213,7 +213,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
@@ -224,18 +223,13 @@ import android.os.Build;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
-import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.hack.Hack;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
 import android.taobao.atlas.runtime.AtlasFakeActivity;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.util.FileUtils;
 import android.text.TextUtils;
-
 import org.osgi.framework.Bundle;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -248,59 +242,37 @@ import java.util.Queue;
  */
 public class BundlePackageManager {
 
-    private String                  mApkPath;
-    private Object                  mPackage;
-    private String                  mPackageName;
-    /**
-     * 预留,暂不解析
-     */
-    private PackageInfo mPackageInfo;
-    private List<String> mComponents;
     private ExternalComponentIntentResolver mExternalActivity;
     private ExternalComponentIntentResolver mExternalServices;
-    public String  bundleName;
     public static Queue<android.os.Bundle> sTargetBundleStorage = new LinkedList<android.os.Bundle>();
+    private static BundlePackageManager sBundlePackagemanager;
 
+    public static synchronized BundlePackageManager getInstance(){
+        if(sBundlePackagemanager == null){
+
+        }
+    }
 
     /**
-     * 解析bundle Manifest
+     * 解析变化 Manifest
      * @param context
-     * @param bundle
+     * @param zipPath
      * @return
      * @throws InvocationTargetException
      */
-    public static BundlePackageManager parseBundle(Context context, Bundle bundle) throws InvocationTargetException{
-        if (android.os.Build.MODEL.contains("H30")||android.os.Build.MODEL.contains("G750")){
-            return null;
-        }
-        String new_activity_bundle = Atlas.getInstance().getConfig(Atlas.ATLAS_NEW_ACTIVITY_BUNDLE);
+    public static BundlePackageManager parseBundle(Context context, String zipPath) throws InvocationTargetException{
 
-        if(!Framework.isDeubgMode()) {
-            if (Atlas.getInstance().getConfig(Atlas.ATLAS_NEW_ACTIVITY_SUPPORT).equals("0") || TextUtils.isEmpty(new_activity_bundle)) {
-                return null;
-            }
-
-            if (!TextUtils.isEmpty(new_activity_bundle) && !new_activity_bundle.contains(bundle.getLocation())) {
-                return null;
-            }
-        }
-        String apkPath = ((BundleImpl)bundle).getArchive().getArchiveFile().getAbsolutePath();
-        if (apkPath == null || apkPath.length() == 0 || context == null) {
-            return null;
-        }
-        // 解析apk，获取packageName
-        Class<?> pkgParserCls = AtlasHacks.PackageParser.getmClass();
         Object packageObj = null;
         Object pkgParser  = null;
         if(Build.VERSION.SDK_INT<=20) {
-            pkgParser = AtlasHacks.PackageParser_constructor.getInstance(apkPath);
+            pkgParser = AtlasHacks.PackageParser_constructor.getInstance(zipPath);
         }else{
             pkgParser = AtlasHacks.PackageParser_constructor.getInstance();
         }
         try {
             AssetManager assmgr = AssetManager.class.newInstance();
             AtlasHacks.AssetManager_addAssetPath.invoke(assmgr, RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
-            int cookie = (Integer) AtlasHacks.AssetManager_addAssetPath.invoke(assmgr,apkPath);
+            int cookie = (Integer) AtlasHacks.AssetManager_addAssetPath.invoke(assmgr,zipPath);
             Resources res = new Resources(assmgr,RuntimeVariables.delegateResources.getDisplayMetrics(),RuntimeVariables.delegateResources.getConfiguration());
             XmlResourceParser parser = assmgr.openXmlResourceParser(cookie, "AndroidManifest.xml");
             packageObj = parsePackage(pkgParser,res,parser);
@@ -312,10 +284,6 @@ public class BundlePackageManager {
             return null;
         }
         BundlePackageManager packageManager= new BundlePackageManager();
-        packageManager.setPackage(packageObj);
-        packageManager.bundleName = bundle.getLocation();
-        String packageName = (String) AtlasHacks.PackageParser$Package_packageName.get(packageObj);
-        packageManager.setPackageName(packageName);
         AtlasHacks.PackageParser$Package_packageName.set(packageObj,RuntimeVariables.androidApplication.getPackageName());
         ApplicationInfo info = AtlasHacks.PackageParser$Package_applicationInfo.get(packageObj);
         info.name = RuntimeVariables.androidApplication.getApplicationInfo().name;
@@ -339,69 +307,44 @@ public class BundlePackageManager {
         ExternalComponentIntentResolver activityResolver = new ExternalComponentIntentResolver();
         ExternalComponentIntentResolver serviceResolver  = new ExternalComponentIntentResolver();
 
-        List<String> components = new ArrayList<String>();
         ArrayList<Object> activityList = (ArrayList<Object>) AtlasHacks.PackageParser$Package_activities.get(packageObj);
-//        ArrayList<Object> serviceList = (ArrayList<Object>)  AtlasHacks.PackageParser$Package_services.get(packageObj);
-//        ArrayList<Object> receiverList = (ArrayList<Object>) AtlasHacks.PackageParser$Package_receivers.get(packageObj);
+        ArrayList<Object> serviceList = (ArrayList<Object>)  AtlasHacks.PackageParser$Package_services.get(packageObj);
 
-        Intent testIntent = new Intent();
-        testIntent.putExtra("RawQuery",true);
         /**
          * 新增Activity
          */
         if (activityList != null) {
             for (Object activity : activityList) {
-                ComponentName componentName = (ComponentName) AtlasHacks.PackageParser$Component_getComponentName.invoke(activity);
-                if(componentName!=null) {
-                    if(componentName.getClassName()!=null && componentName.getClassName().endsWith("Alias")||componentName.getClassName().endsWith("Alice")){
-                        continue;
+                try {
+                    ActivityInfo activityInfo = (ActivityInfo) activity.getClass().getField("info").get(activity);
+                    if(activityInfo.targetActivity!=null) {
+                        activityInfo.taskAffinity = RuntimeVariables.androidApplication.getApplicationInfo().taskAffinity;
                     }
-                    componentName = new ComponentName(RuntimeVariables.androidApplication.getPackageName(),componentName.getClassName());
-                    components.add(componentName.getClassName());
+                    activityInfo.packageName = RuntimeVariables.androidApplication.getApplicationInfo().packageName;
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                testIntent.setComponent(componentName);
-                if(RuntimeVariables.androidApplication.getPackageManager().resolveActivity(testIntent, 0)==null &&
-                        !AtlasBundleInfoManager.instance().getBundleInfo(bundle.getLocation()).getActivities().containsKey(componentName.getClassName())) {
-                    try {
-                        ActivityInfo activityInfo = (ActivityInfo) activity.getClass().getField("info").get(activity);
-                        if(activityInfo.targetActivity!=null) {
-                            activityInfo.taskAffinity = RuntimeVariables.androidApplication.getApplicationInfo().taskAffinity;
-                        }
-                        activityInfo.packageName = RuntimeVariables.androidApplication.getApplicationInfo().packageName;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    activityResolver.addComponent(activity);
-                }
+                activityResolver.addComponent(activity);
             }
             if(activityResolver!=null && activityResolver.mComponents.size()>0) {
                 packageManager.setNewActivityResolver(activityResolver);
-                AtlasMonitor.getInstance().trace(AtlasMonitor.NEW_ACTIVITY_BUNDLE, bundle.getLocation(), AtlasMonitor.NEW_ACTIVITY_BUNDLE,
-                        FileUtils.getDataAvailableSpace());            }
+            }
         }
         /**
          * 新增Service
          */
-//        if (serviceList != null) {
-//            for (Object service : serviceList) {
-//                ComponentName componentName = (ComponentName) AtlasHacks.PackageParser$Component_getComponentName.invoke(service);
-//                if(componentName!=null) {
-//                    components.add(componentName.getClassName());
-//                }
-//                testIntent.setComponent(componentName);
-//                if(RuntimeVariables.androidApplication.getPackageManager().resolveService(testIntent, 0)==null) {
-//                    try {
-//                        ServiceInfo serviceInfo = (ServiceInfo) service.getClass().getField("info").get(service);
-//                        serviceInfo.packageName = RuntimeVariables.androidApplication.getApplicationInfo().packageName;
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                    }
-//                    serviceResolver.addComponent(service);
-//                }
-//            }
-//            packageManager.setNewServiceResolver(serviceResolver);
-//        }
-        packageManager.setComponents(components);
+        if (serviceList != null) {
+            for (Object service : serviceList) {
+                try {
+                    ServiceInfo serviceInfo = (ServiceInfo) service.getClass().getField("info").get(service);
+                    serviceInfo.packageName = RuntimeVariables.androidApplication.getApplicationInfo().packageName;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                serviceResolver.addComponent(service);
+            }
+            packageManager.setNewServiceResolver(serviceResolver);
+        }
         return packageManager;
     }
 
@@ -430,38 +373,12 @@ public class BundlePackageManager {
         }
     }
 
-    void setPackage(Object p){
-        mPackage = p;
-    }
-
-    void setPackageName(String name){
-        mPackageName = name;
-    }
-
-    void setComponents(List<String> components){
-        mComponents = components;
-    }
-
     void setNewActivityResolver(ExternalComponentIntentResolver resolver){
         mExternalActivity = resolver;
     }
 
     void setNewServiceResolver(ExternalComponentIntentResolver resolver){
         mExternalServices = resolver;
-    }
-
-    /**
-     *
-     * 返回Bundle的Application类名
-     * @return
-     */
-    @Deprecated
-    public String getApplicationName(){
-        if(mPackage!=null) {
-            ApplicationInfo info = AtlasHacks.PackageParser$Package_applicationInfo.get(mPackage);
-            return info.className;
-        }
-        return null;
     }
 
     /**
@@ -477,12 +394,14 @@ public class BundlePackageManager {
         if(mExternalActivity!=null) {
             ComponentName comp = intent.getComponent();
             if (comp == null) {
-                if (intent.getSelector() != null) {
-                    intent = intent.getSelector();
-                    comp = intent.getComponent();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                    if (intent.getSelector() != null) {
+                        intent = intent.getSelector();
+                        comp = intent.getComponent();
+                    }
                 }
             }
-            if (comp != null&& null == AtlasBundleInfoManager.instance().getBundleForComponet(comp.getClassName())) {
+            if (comp != null) {
                 Object activityObj = mExternalActivity.mComponents.get(comp);
                 if (activityObj!=null){
                     try {
@@ -523,21 +442,34 @@ public class BundlePackageManager {
         intent.putExtra("atlas_rawData",rawData);
         intent.setData(null);
         intent.putExtra("atlas_rawComponent",info.name);
-        intent.putExtra("atlas_activity_location", bundleName);
-        BundleImpl bundle = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
-        if(!bundle.getArchive().isDexOpted()){
-            bundle.getArchive().optDexFile();
-        }
+        intent.putExtra("atlas_bundle_location", AtlasBundleInfoManager.instance().getBundleForComponet(info.name));
         intent.setClassName(RuntimeVariables.androidApplication.getPackageName(),AtlasFakeActivity.class.getName());
         ActivityTaskMgr.getInstance().handleActivityStack(info.name,intent,intent.getFlags(),info.launchMode);
     }
 
-    /**
-     * Service 和 Activity支持动态部署的逻辑存在不同：
-     * 动态部署新增的Activity是通过外壳欺骗PackageManagerService，并运用其创建的Binder生成完整的Activity
-     * 动态部署新增的Service不同于正常使用的service，目前只支持LocalAIDLService,只是通过代理查找到Service的resolveInfo，并直接通过
-     * Class创建Object，然后进程内管理其生命周期，并未通过IPC和PackageManagerService进行通信，不同于android原生的Service
-     */
+    public static List<ResolveInfo> queryIntentActivities(Intent intent, String resolvedType, int flags, int userId){
+        List<Bundle>  bundles = Atlas.getInstance().getBundles();
+        for(Bundle bundle : bundles){
+            BundleImpl impl = (BundleImpl)bundle;
+            if(impl.isUpdated() && impl.getPackageManager()!=null){
+                ResolveInfo info =  impl.getPackageManager().wrapperActivityIntentIfNeed(intent);
+                if(info!=null){
+                    List<ResolveInfo> rf = new ArrayList<ResolveInfo>(1);
+                    rf.add(info);
+                    return rf;
+                }
+            }
+        }
+        return null;
+    }
+
+
+
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     public ResolveInfo wrapperServiceIntentIfNeed(Intent intent){
         if(intent==null){
             return null;
@@ -546,21 +478,19 @@ public class BundlePackageManager {
         if(mExternalServices!=null) {
             ComponentName comp = intent.getComponent();
             if (comp == null) {
-                if (intent.getSelector() != null) {
-                    intent = intent.getSelector();
-                    comp = intent.getComponent();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                    if (intent.getSelector() != null) {
+                        intent = intent.getSelector();
+                        comp = intent.getComponent();
+                    }
                 }
             }
-            if (comp != null&&null == AtlasBundleInfoManager.instance().getBundleForComponet(comp.getClassName())) {
+            if (comp != null) {
                 Object serviceObj = mExternalServices.mComponents.get(comp);
                 if (serviceObj!=null){
                     try {
                         final ResolveInfo ri = new ResolveInfo();
                         ri.serviceInfo = (ServiceInfo) serviceObj.getClass().getField("info").get(serviceObj);
-                        BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
-                        if(!impl.getArchive().isDexOpted()){
-                            impl.getArchive().optDexFile();
-                        }
                         return ri;
                     }catch(Exception e){
                         return null;
@@ -576,10 +506,6 @@ public class BundlePackageManager {
                 List<ResolveInfo> serviceList = mExternalServices.queryIntent(intent,
                         intent.resolveTypeIfNeeded(RuntimeVariables.androidApplication.getContentResolver()), false);
                 if(serviceList!=null && serviceList.size()>0){
-                    BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
-                    if(!impl.getArchive().isDexOpted()){
-                        impl.getArchive().optDexFile();
-                    }
                     return serviceList.get(0);
                 }else{
                     return null;
@@ -588,23 +514,6 @@ public class BundlePackageManager {
         }else{
             return null;
         }
-    }
-
-    public static boolean isNeedCheck(Intent intent){
-        if(intent==null){
-            return false;
-        }
-        if(intent.getBooleanExtra("atlas_checked",false)){
-            if(intent.getStringExtra("atlas_activity_location")!=null){
-                /**
-                 * 避免外面resolve以后直接设置componentname的情况
-                 */
-                intent.setClassName(RuntimeVariables.androidApplication.getPackageName(),AtlasFakeActivity.class.getName());
-            }
-
-            return false;
-        }
-        return true;
     }
 
     /**
@@ -621,22 +530,6 @@ public class BundlePackageManager {
             BundleImpl impl = (BundleImpl)bundle;
             if(impl.isUpdated() && impl.getPackageManager()!=null ){
                 ResolveInfo info =  impl.getPackageManager().wrapperServiceIntentIfNeed(intent);
-                if(info!=null){
-                    List<ResolveInfo> rf = new ArrayList<ResolveInfo>(1);
-                    rf.add(info);
-                    return rf;
-                }
-            }
-        }
-        return null;
-    }
-
-    public static List<ResolveInfo> queryIntentActivities(Intent intent, String resolvedType, int flags, int userId){
-        List<Bundle>  bundles = Atlas.getInstance().getBundles();
-        for(Bundle bundle : bundles){
-            BundleImpl impl = (BundleImpl)bundle;
-            if(impl.isUpdated() && impl.getPackageManager()!=null){
-                ResolveInfo info =  impl.getPackageManager().wrapperActivityIntentIfNeed(intent);
                 if(info!=null){
                     List<ResolveInfo> rf = new ArrayList<ResolveInfo>(1);
                     rf.add(info);
