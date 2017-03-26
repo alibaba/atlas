@@ -604,7 +604,7 @@ public class KernalVersionManager {
         }
     }
 
-    private void killChildProcesses(Context context) {
+    public void killChildProcesses(Context context) {
         try {
             long uid = context.getApplicationInfo().uid;
             ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
