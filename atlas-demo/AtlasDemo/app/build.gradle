@@ -22,9 +22,9 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
-//    dataBinding{
-//        enabled=true
-//    }
+    dataBinding{
+        enabled=true
+    }
 
     buildTypes {
         release {

@@ -1,4 +1,5 @@
-apply plugin: 'com.taobao.atlas.library'
+apply plugin: 'com.android.library'
+apply plugin: 'com.taobao.atlas'
 
 atlas {
     bundleConfig{
@@ -28,6 +29,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    dataBinding{
+        enabled=true
     }
 }
 
