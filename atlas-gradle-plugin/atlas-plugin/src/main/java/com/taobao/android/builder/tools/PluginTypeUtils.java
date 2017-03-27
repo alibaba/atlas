@@ -229,7 +229,7 @@ public class PluginTypeUtils {
     private static final String[] LIBRARY_SUPPORT_PLUGINS = new String[] {"com.taobao.android.library",
         "com.android.library", "com.taobao.atlas.library"};
     private static final String[] MTL_ANDROID_PLUGINS = new String[] {"com.taobao.android.application",
-        "com.taobao.android.library", "com.taobao.atlas.library"};
+        "com.taobao.android.library", "com.taobao.atlas.library", "com.taobao.atlas.application"};
     private static final String[] GOOGLE_ANDROID_PLUGINS = new String[] {"com.android.application",
         "com.android.library"};
 
@@ -284,6 +284,10 @@ public class PluginTypeUtils {
             || project.getPlugins().hasPlugin(LibraryPlugin.class);
     }
 
+    public static boolean hasApplyGooglePlugin(Project project) {
+        return hasPlugins(project, GOOGLE_ANDROID_PLUGINS);
+    }
+
     private static boolean hasPlugins(Project project, String... plugins) {
         for (String plugin : plugins) {
             if (project.getPlugins().hasPlugin(plugin)) {
@@ -292,4 +296,5 @@ public class PluginTypeUtils {
         }
         return false;
     }
+
 }

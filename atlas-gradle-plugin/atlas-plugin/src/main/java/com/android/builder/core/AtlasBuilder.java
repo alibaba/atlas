@@ -674,7 +674,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
         if (!updateAapt && atlasExtension.getTBuildConfig().getUseCustomAapt()) {
 
-            this.setTargetInfo(defaultBuilder.getTargetInfo());
+            super.setTargetInfo(defaultBuilder.getTargetInfo());
 
             BuildToolInfo defaultBuildToolInfo = defaultBuilder.getTargetInfo().getBuildTools();
             File customAaptFile = getAapt();
@@ -1076,4 +1076,6 @@ public class AtlasBuilder extends AndroidBuilder {
     public SdkInfo getSdkInfo() {
         return defaultBuilder.getSdkInfo();
     }
+
+
 }

@@ -315,7 +315,7 @@ public class PackageAwbsTask extends BaseTask {
                             inputFiles.add(awbTransform.getInputDir());
                         }
 
-                        AtlasBuildContext.androidBuilder.convertByteCode(inputFiles,
+                        AtlasBuildContext.androidBuilderMap.get(getProject()).convertByteCode(inputFiles,
                                                                          dexOutputFile,
                                                                          appVariantContext.getVariantData()
                                                                              .getVariantConfiguration()
@@ -349,7 +349,7 @@ public class PackageAwbsTask extends BaseTask {
                         }
 
                         //TODO 2.3
-                        AtlasBuildContext.androidBuilder.oldPackageApk(resourceFile.getAbsolutePath(),
+                        AtlasBuildContext.androidBuilderMap.get(getProject()).oldPackageApk(resourceFile.getAbsolutePath(),
                                                                        dexFolders,
                                                                        javaResourcesLocations,
                                                                        jniFolders,

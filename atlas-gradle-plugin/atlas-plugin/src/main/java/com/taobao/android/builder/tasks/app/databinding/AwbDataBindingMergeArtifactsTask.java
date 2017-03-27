@@ -207,116 +207,222 @@
  *
  */
 
-package com.android.build.gradle;
+package com.taobao.android.builder.tasks.app.databinding;
 
-import javax.inject.Inject;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import android.databinding.tool.DataBindingBuilder;
-import com.android.build.gradle.internal.AtlasDependencyManager;
-import com.android.build.gradle.internal.DependencyManager;
-import com.android.build.gradle.internal.ExtraModelInfo;
-import com.android.build.gradle.internal.SdkHandler;
-import com.android.build.gradle.internal.TaskManager;
-import com.android.build.gradle.internal.ndk.NdkHandler;
-import com.android.builder.core.AndroidBuilder;
-import com.android.builder.profile.Recorder;
-import com.taobao.android.builder.manager.AtlasConfigurationHelper;
-import com.taobao.android.builder.manager.Version;
-import com.taobao.android.builder.tools.ReflectUtils;
-import groovy.lang.Closure;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import com.android.annotations.NonNull;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.model.AndroidLibrary;
+import com.google.common.base.Charsets;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Closer;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
-import org.gradle.api.Project;
-import org.gradle.internal.reflect.Instantiator;
-import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+import org.gradle.api.tasks.TaskAction;
 
-/**
- * atlas application , replace com.android.build.gradle.AppPlugin
- *
- * 1. replace dependencyManager
- * 2. add custom extension
- * 3. add custom task
- * 4. add custom androidLibraries
- *
- * @author wuzhong
- *
- **/
-public class AtlasAppPlugin extends AppPlugin {
-    @Inject
-    public AtlasAppPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
-        super(instantiator, registry);
+public class AwbDataBindingMergeArtifactsTask extends BaseTask {
 
-        this.creator = "AtlasPlugin" + Version.ANDROID_GRADLE_PLUGIN_VERSION;
-        try {
-            ReflectUtils.updateField(BasePlugin.class, this, "creator", creator);
-        } catch (Exception e) {
-            throw new GradleException(e.getMessage(), e);
+    static final String taskName = "DataBindingMergeAwbsArtifactsTask";
+
+    private AndroidConfig androidConfig;
+    private AppVariantContext appVariantContext;
+    private AppVariantOutputContext appVariantOutputContext;
+    private GradleVariantConfiguration config;
+    private ApkVariantOutputData variantOutputData;
+
+    /**
+     * 生成so的目录
+     */
+    @TaskAction
+    void createAwbPackages() throws ExecutionException, InterruptedException {
+
+        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
+
+        if (null == atlasDependencyTree) {
+            return;
         }
 
-        this.instantiator = instantiator;
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName, getLogger(), 0);
+        List<Runnable> runnables = new ArrayList<>();
+
+        for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+
+            runnables.add(new Runnable() {
+                @Override
+                public void run() {
+
+                    try {
+
+                        fullCopy(new File(appVariantContext.getAwbDataBindingMergeArtifacts(awbBundle),
+                                          DataBindingBuilder.ARTIFACT_FILES_DIR_FROM_LIBS),
+                                 awbBundle);
+
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        throw new GradleException("merge awb artifact failed");
+                    }
+
+                }
+            });
+
+        }
+
+        executorServicesHelper.execute(runnables);
+
     }
 
-    @Override
-    public void apply(Project project) {
+    private void fullCopy(File outFolder, AwbBundle awbBundle) throws IOException {
+        FileUtils.deleteQuietly(outFolder);
+        FileUtils.forceMkdir(outFolder);
 
-        //1. apply default google plugin ,
-        super.apply(project);
+        for (AndroidLibrary androidLibrary : awbBundle.getAllLibraryAars()) {
+            File dataBindingDir = new File(androidLibrary.getFolder(),"data-binding");
+            if (!dataBindingDir.exists()) {
+                continue;
+            }
+            File artifactFolder = new File(dataBindingDir,
+                                           DataBindingBuilder.INCREMENTAL_BIN_AAR_DIR);
+            if (!artifactFolder.exists()) {
+                continue;
+            }
+            //noinspection ConstantConditions
+            for (String artifactName : artifactFolder.list()) {
+                if (isResource(artifactName)) {
+                    FileUtils.copyFile(new File(artifactFolder, artifactName),
+                                       new File(outFolder, artifactName));
+                }
+            }
+        }
 
-        atlasConfigurationHelper = getConfigurationHelper(project);
 
-        atlasConfigurationHelper.createLibCompenents();
+        for (File jarFile : awbBundle.getLibraryJars()) {
+            extractBinFilesFromJar(outFolder, jarFile);
+        }
 
-        atlasConfigurationHelper.createExtendsion();
+    }
 
-        project.afterEvaluate(new Closure<Object>(this, this) {
-            public void doCall(Project it) {
+    private static boolean isResource(String fileName) {
+        for (String ext : DataBindingBuilder.RESOURCE_FILE_EXTENSIONS) {
+            if (fileName.endsWith(ext)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-                //3. update extension
-                atlasConfigurationHelper.updateExtensionAfterEvaluate();
+    private void extractBinFilesFromJar(File outFolder, File jarFile) throws IOException {
+        File jarOutFolder = getOutFolderForJarFile(outFolder, jarFile);
+        FileUtils.deleteQuietly(jarOutFolder);
+        FileUtils.forceMkdir(jarOutFolder);
 
-                //4. 设置android builder
-                try {
-                    atlasConfigurationHelper.createBuilderAfterEvaluate();
-                } catch (Exception e) {
-                    throw new GradleException(e.getMessage(), e);
+        try (Closer localCloser = Closer.create()) {
+            FileInputStream fis = localCloser.register(new FileInputStream(jarFile));
+            ZipInputStream zis = localCloser.register(new ZipInputStream(fis));
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    continue;
                 }
 
-                //5. 配置任务
-                atlasConfigurationHelper.configTasksAfterEvaluate();
-            }
+                String name = entry.getName();
 
-            public void doCall() {
-                doCall(null);
+                if (!isResource(name)) {
+                    continue;
+                }
+                // get rid of the path. We don't need it since the file name includes the domain
+                name = new File(name).getName();
+                File out = new File(jarOutFolder, name);
+                //noinspection ResultOfMethodCallIgnored
+                FileOutputStream fos = localCloser.register(new FileOutputStream(out));
+                ByteStreams.copy(zis, fos);
+                zis.closeEntry();
             }
-
-        });
+        }
     }
 
-    @Override
-    protected TaskManager createTaskManager(Project project, AndroidBuilder androidBuilder,
-                                            DataBindingBuilder dataBindingBuilder, AndroidConfig androidConfig,
-                                            SdkHandler sdkHandler, NdkHandler ndkHandler,
-                                            DependencyManager dependencyManager,
-                                            ToolingModelBuilderRegistry toolingRegistry, Recorder recorder) {
+    @NonNull
+    private File getOutFolderForJarFile(File outFolder, File jarFile) {
+        return new File(outFolder, getJarFilePrefix(jarFile));
+    }
 
-        AtlasDependencyManager atlasDependencyManager = null;
-        try {
-            atlasDependencyManager = new AtlasDependencyManager(project, DefaultGroovyMethods
-                .asType(ReflectUtils.getField(dependencyManager, "extraModelInfo"), ExtraModelInfo.class), sdkHandler);
-            ReflectUtils.updateField(BasePlugin.class, this, "dependencyManager", atlasDependencyManager);
-        } catch (Exception e) {
-            throw new GradleException(e.getMessage(), e);
+    /**
+     * Files exported from jars are exported into a certain folder so that we can rebuild them
+     * when the related jar file changes.
+     */
+    @NonNull
+    private static String getJarFilePrefix(@NonNull File inputFile) {
+        // get the filename
+        String name = inputFile.getName();
+        // remove the extension
+        int pos = name.lastIndexOf('.');
+        if (pos != -1) {
+            name = name.substring(0, pos);
         }
 
-        return super.createTaskManager(project, androidBuilder, dataBindingBuilder, androidConfig, sdkHandler,
-                                       ndkHandler, atlasDependencyManager, toolingRegistry, recorder);
+        // add a hash of the original file path.
+        String input = inputFile.getAbsolutePath();
+        HashFunction hashFunction = Hashing.sha1();
+        HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE);
+
+        return name + "-" + hashCode.toString();
     }
 
-    protected AtlasConfigurationHelper getConfigurationHelper(Project project) {
-        return new AtlasConfigurationHelper(project, instantiator, creator);
+    public static class ConfigAction extends MtlBaseTaskAction<AwbDataBindingMergeArtifactsTask> {
+
+        private AppVariantContext appVariantContext;
+
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName(taskName);
+        }
+
+        @Override
+        public Class<AwbDataBindingMergeArtifactsTask> getType() {
+            return AwbDataBindingMergeArtifactsTask.class;
+        }
+
+        @Override
+        public void execute(AwbDataBindingMergeArtifactsTask packageAwbsTask) {
+
+            super.execute(packageAwbsTask);
+
+            packageAwbsTask.androidConfig = appVariantContext.getAppExtension();
+            packageAwbsTask.appVariantContext = appVariantContext;
+            packageAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
+            packageAwbsTask.config = scope.getVariantScope().getVariantConfiguration();
+            packageAwbsTask.variantOutputData = (ApkVariantOutputData)scope.getVariantOutputData();
+
+        }
     }
 
-    private Instantiator instantiator;
-    private String creator;
-    private AtlasConfigurationHelper atlasConfigurationHelper;
 }

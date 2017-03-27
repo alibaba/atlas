@@ -1,6 +1,8 @@
-### 2.3.0.alpha5
+### 2.3.0.alpha7
 1. 修复某些场景下buildcache导致的构建失败
 2. 修复 awo 快速调试
+3. 升级 dex_patch ,兼容windows ，版本 1.1+
+4. 依赖解析优化，避免递归循环
 
 ### 2.3.0.alpha4
 1. 支持google的最新插件，builder ： 2.3.0 ， gradle ： 3.3  ， buildTools ：25.0.0+

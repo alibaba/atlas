@@ -247,7 +247,7 @@ public class AwoPackageTask extends BaseTask {
         libVariantContext.getPackageFile().getParentFile().mkdirs();
 
         try {
-            AtlasBuildContext.androidBuilder.oldPackageApk(libVariantContext.getOutputResouceAP().getAbsolutePath(),
+            AtlasBuildContext.androidBuilderMap.get(getProject()).oldPackageApk(libVariantContext.getOutputResouceAP().getAbsolutePath(),
                                                            getDexFolders(),
                                                            Collections.emptyList(),
                                                            getJniFolders(),

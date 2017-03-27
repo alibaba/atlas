@@ -209,29 +209,6 @@
 
 package com.taobao.android.builder.tasks.app.databinding;
 
-import com.android.build.gradle.AndroidConfig;
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import com.taobao.android.builder.tools.manifest.ManifestHelper;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.gradle.api.GradleException;
-import org.gradle.api.tasks.TaskAction;
-import org.objectweb.asm.*;
-import org.objectweb.asm.commons.RemappingClassAdapter;
-import org.objectweb.asm.commons.SimpleRemapper;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -245,7 +222,31 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-public class DataBindingRenameTask extends BaseTask {
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.TaskAction;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.commons.RemappingClassAdapter;
+import org.objectweb.asm.commons.SimpleRemapper;
+
+public class AwbDataBindingRenameTask extends BaseTask {
 
     static final String taskName = "DataBindingRenameTask";
 
@@ -267,23 +268,26 @@ public class DataBindingRenameTask extends BaseTask {
             return;
         }
 
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,getLogger(),0);
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName, getLogger(), 0);
         List<Runnable> runnables = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
             runnables.add(new Runnable() {
+
                 @Override
                 public void run() {
 
                     try {
 
-                        File dataBindingClazzFolder = appVariantOutputContext.getVariantContext().getJAwbavaOutputDir(awbBundle);
-                        String packageName = ManifestFileUtils.getPackage(ManifestHelper.getOrgManifestFile(awbBundle.getAndroidLibrary()));
-                        String appName = appVariantContext.getVariantConfiguration().getOriginalApplicationId();
+                        File dataBindingClazzFolder = appVariantOutputContext.getVariantContext().getJAwbavaOutputDir(
+                            awbBundle);
+                        String packageName = awbBundle.getPackageName();
+                        String appName = awbBundle.getPackageName() + "._bundleapp_";
 
                         //删除那些已经存在的类
-                        File dataMapperClazz = new File(dataBindingClazzFolder, "android/databinding/DataBinderMapper.class");
+                        File dataMapperClazz = new File(dataBindingClazzFolder,
+                                                        "android/databinding/DataBinderMapper.class");
                         if (!dataMapperClazz.exists()) {
                             throw new GradleException("missing datamapper class");
                         }
@@ -294,16 +298,19 @@ public class DataBindingRenameTask extends BaseTask {
 
                         Map<String, String> reMapping = new HashMap();
                         reMapping.put(appName.replace(".", "/") + "/BR", packageName.replace(".", "/") + "/BR");
-                        RemappingClassAdapter remappingClassAdapter = new RemappingClassAdapter(cw, new SimpleRemapper(reMapping));
+                        RemappingClassAdapter remappingClassAdapter = new RemappingClassAdapter(cw, new
+                            SimpleRemapper(reMapping));
                         in1.accept(remappingClassAdapter, 8);
 
                         ClassReader in2 = new ClassReader(cw.toByteArray());
                         ClassWriter cw2 = new ClassWriter(0);
                         Set<String> renames = new HashSet<String>();
                         renames.add("android/databinding/DataBinderMapper");
-                        in2.accept(new ClassRenamer(cw2, renames, packageName.replace(".", "/") + "/DataBinderMapper"), 8);
+                        in2.accept(new ClassRenamer(cw2, renames, packageName.replace(".", "/") +
+                         "/DataBinderMapper"), 8);
 
-                        File destClass = new File(dataBindingClazzFolder, packageName.replace(".", "/") + "/DataBinderMapper.class");
+                        File destClass = new File(dataBindingClazzFolder, packageName.replace(".", "/") +
+                         "/DataBinderMapper.class");
                         destClass.getParentFile().mkdirs();
                         FileOutputStream fileOutputStream = new FileOutputStream(destClass);
                         fileOutputStream.write(cw2.toByteArray());
@@ -312,6 +319,8 @@ public class DataBindingRenameTask extends BaseTask {
 
                         FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "android/databinding"));
                         FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "com/android/databinding"));
+                        //FileUtils.deleteDirectory(new File(dataBindingClazzFolder, packageName.replace(".", "/") +
+                        // "/_bundleapp_" ));
 
                         File appDir = new File(dataBindingClazzFolder, appName.replace(".", "/"));
                         if (appDir.exists()) {
@@ -329,8 +338,6 @@ public class DataBindingRenameTask extends BaseTask {
 
                         }
 
-
-
                     } catch (Throwable e) {
                         e.printStackTrace();
                         throw new GradleException("package awb failed");
@@ -345,8 +352,7 @@ public class DataBindingRenameTask extends BaseTask {
 
     }
 
-
-    public static class ConfigAction extends MtlBaseTaskAction<DataBindingRenameTask> {
+    public static class ConfigAction extends MtlBaseTaskAction<AwbDataBindingRenameTask> {
 
         private AppVariantContext appVariantContext;
 
@@ -361,12 +367,12 @@ public class DataBindingRenameTask extends BaseTask {
         }
 
         @Override
-        public Class<DataBindingRenameTask> getType() {
-            return DataBindingRenameTask.class;
+        public Class<AwbDataBindingRenameTask> getType() {
+            return AwbDataBindingRenameTask.class;
         }
 
         @Override
-        public void execute(DataBindingRenameTask packageAwbsTask) {
+        public void execute(AwbDataBindingRenameTask packageAwbsTask) {
 
             super.execute(packageAwbsTask);
 
@@ -374,12 +380,10 @@ public class DataBindingRenameTask extends BaseTask {
             packageAwbsTask.appVariantContext = appVariantContext;
             packageAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
             packageAwbsTask.config = scope.getVariantScope().getVariantConfiguration();
-            packageAwbsTask.variantOutputData = (ApkVariantOutputData) scope.getVariantOutputData();
-
+            packageAwbsTask.variantOutputData = (ApkVariantOutputData)scope.getVariantOutputData();
 
         }
     }
-
 
     class ClassRenamer extends ClassVisitor implements Opcodes {
 
@@ -393,7 +397,8 @@ public class DataBindingRenameTask extends BaseTask {
         }
 
         @Override
-        public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+        public void visit(int version, int access, String name, String signature, String superName,
+                          String[] interfaces) {
             oldNames.add(name);
             cv.visit(version, ACC_PUBLIC, newName, signature, superName, interfaces);
         }
@@ -430,6 +435,7 @@ public class DataBindingRenameTask extends BaseTask {
                 }
             }
 
+            @Override
             public void visitMethodInsn(int opcode, String owner, String name, String desc) {
                 if (oldNames.contains(owner)) {
                     mv.visitMethodInsn(opcode, newName, name, fix(desc));
@@ -444,7 +450,7 @@ public class DataBindingRenameTask extends BaseTask {
                 Iterator it = oldNames.iterator();
                 String name;
                 while (it.hasNext()) {
-                    name = (String) it.next();
+                    name = (String)it.next();
                     if (s.indexOf(name) != -1) {
                         s = s.replaceAll(name, newName);
                     }

@@ -343,7 +343,7 @@ public class PostProcessManifestTask extends IncrementalTask {
                                                        isInstantRun,
                                                        remoteBundles);
                 //TODO aapt 命令不支持，手工生成
-                AtlasBuildContext.androidBuilder.generateKeepList(mainManifestFile,
+                AtlasBuildContext.androidBuilderMap.get(getProject()).generateKeepList(mainManifestFile,
                                                                   appVariantContext.getScope()
                                                                           .getManifestKeepListProguardFile());
             } catch (DocumentException e) {

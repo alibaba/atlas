@@ -282,12 +282,13 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
         for (final AndroidLibrary aarBundle : androidLibraries) {
-            runnables.add(new Runnable() {
 
-                @Override
-                public void run() {
+            if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getBundle())) {
 
-                    if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getBundle())) {
+                runnables.add(new Runnable() {
+
+                    @Override
+                    public void run() {
 
                         getLogger().info(
                             "prepare1 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
@@ -303,15 +304,15 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
                         PrepareLibraryTask.extract(aarBundle.getBundle(), aarBundle.getFolder(), getProject());
 
-                    } else {
-
-                        getLogger().info(
-                            "prepare2 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
-                        prepareLibrary(aarBundle);
                     }
+                });
 
-                }
-            });
+            } else {
+                getLogger().info(
+                    "prepare2 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
+                prepareLibrary(aarBundle);
+            }
+
         }
 
         executorServicesHelper.execute(runnables);

@@ -334,7 +334,7 @@ public class AtlasDepTreeParser {
                             new Consumer<Dependency>() {
                                 @Override
                                 public void accept(Dependency dependency) {
-                                    if ("com.android.support".equals(dependency.getGroup())) {
+                                    if ("com.android.support".equals(dependency.getGroup()) || "com.android.databinding".equals(dependency.getGroup())) {
                                         providedSets.add(dependency.getGroup() + ":" + dependency.getName());
                                     }
 

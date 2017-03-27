@@ -226,6 +226,7 @@ import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
 import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
 import com.taobao.android.builder.tools.sign.AndroidSigner;
 import com.taobao.android.object.ApkFileList;
+import org.gradle.api.Project;
 
 /**
  * Created by shenghua.nish on 2016-05-09 下午3:50.
@@ -245,7 +246,10 @@ public class AtlasBuildContext {
 
     public static Map<String, String> customPackageIdMaps = new HashMap<String, String>();
 
-    public static AtlasBuilder androidBuilder;
+    //@Deprecated
+    //public static AtlasBuilder androidBuilder;
+
+    public static Map<Project, AtlasBuilder> androidBuilderMap = new HashMap<>();
 
     public static AndroidSigner androidSigner = new AndroidSigner();
 

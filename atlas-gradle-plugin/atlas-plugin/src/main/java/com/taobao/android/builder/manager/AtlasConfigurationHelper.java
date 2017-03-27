@@ -359,7 +359,7 @@ public class AtlasConfigurationHelper {
 
         ((AtlasBuilder)atlasBuilder).setDefaultBuilder(androidBuilder);
         ((AtlasBuilder)atlasBuilder).setAtlasExtension(atlasExtension);
-        AtlasBuildContext.androidBuilder = ((AtlasBuilder)(atlasBuilder));
+        AtlasBuildContext.androidBuilderMap.put(project, (AtlasBuilder)(atlasBuilder));
     }
 
     public void configTasksAfterEvaluate() {
@@ -367,11 +367,11 @@ public class AtlasConfigurationHelper {
         if (PluginTypeUtils.isAppProject(project)) {
             AppExtension appExtension = DefaultGroovyMethods.asType(
                 DefaultGroovyMethods.getAt(project.getExtensions(), "android"), AppExtension.class);
-            new AtlasAppTaskManager(AtlasBuildContext.androidBuilder, appExtension, project, atlasExtension).run();
+            new AtlasAppTaskManager(AtlasBuildContext.androidBuilderMap.get(project), appExtension, project, atlasExtension).run();
         } else if (PluginTypeUtils.isLibraryProject(project)) {
             LibraryExtension libExtension = DefaultGroovyMethods.asType(
                 DefaultGroovyMethods.getAt(project.getExtensions(), "android"), LibraryExtension.class);
-            new AtlasLibTaskManager(AtlasBuildContext.androidBuilder, libExtension, project, atlasExtension).run();
+            new AtlasLibTaskManager(AtlasBuildContext.androidBuilderMap.get(project), libExtension, project, atlasExtension).run();
         }
 
     }

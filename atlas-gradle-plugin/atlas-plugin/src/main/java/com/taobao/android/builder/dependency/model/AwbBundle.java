@@ -340,6 +340,10 @@ public class AwbBundle {
         return soFileName;
     }
 
+    /**
+     * 获取所有的相关jar
+     * @return
+     */
     public List<File> getLibraryJars() {
         List<File> jars = Lists.newArrayList();
         jars.add(androidLibrary.getJarFile());
@@ -366,4 +370,18 @@ public class AwbBundle {
         }
         return jars;
     }
+
+    /**
+     * 获取所有的相关aars
+     * @return
+     */
+    public List<AndroidLibrary> getAllLibraryAars() {
+        List<AndroidLibrary> libraries = Lists.newArrayList();
+
+        libraries.add(androidLibrary);
+        libraries.addAll(androidLibraries);
+
+        return libraries;
+    }
+
 }

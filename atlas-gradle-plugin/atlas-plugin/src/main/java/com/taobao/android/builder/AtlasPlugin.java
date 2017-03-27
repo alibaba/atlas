@@ -272,6 +272,7 @@ public class AtlasPlugin implements Plugin<Project> {
         project.afterEvaluate(new Action<Project>() {
             @Override
             public void execute(Project project) {
+
                 //3. update extension
                 atlasConfigurationHelper.updateExtensionAfterEvaluate();
 
@@ -304,14 +305,9 @@ public class AtlasPlugin implements Plugin<Project> {
         if (!PluginTypeUtils.usedGooglePlugin(project)) {
             throw new StopExecutionException("Atlas plugin need android plugin to run!");
         }
-        //
-        ////淘宝的插件和google的官方插件不能混用
-        //if (PluginTypeUtils.usedGooglePlugin(project) && PluginTypeUtils.usedMtlPlugin(project)) {
-        //    throw new StopExecutionException("Cannot run Mtl and Google android plugin  at the same time!");
-        //}
 
-        //判断Android plugin的version
         String androidVersion = com.android.builder.Version.ANDROID_GRADLE_PLUGIN_VERSION;
+        //判断Android plugin的version
         if (!PLUGIN_ACCEPTABLE_VERSIONS.matcher(androidVersion).matches()) {
             String errorMessage = String.format("Android Gradle plugin version %s is required. Current version is %s. ",
                                                 PLUGIN_MIN_VERSIONS, androidVersion);

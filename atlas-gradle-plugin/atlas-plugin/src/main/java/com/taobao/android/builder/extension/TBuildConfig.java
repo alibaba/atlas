@@ -209,19 +209,20 @@
 
 package com.taobao.android.builder.extension;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
-
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Optional;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.alibaba.fastjson.annotation.JSONField;
+
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.extension.annotation.Config;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 
 /**
  * Created by shenghua.nish on 2016-05-17 上午10:15.
@@ -296,6 +297,10 @@ public class TBuildConfig {
     @Config(message = "是否类冲突终止打包", order = 0)
     private boolean abortIfClassConflict = false;
 
+    @Input
+    @Config(message = "需要进行databinding的bundle， 值为 packageName ", order = 0)
+    private Set<String> dataBindingBundles = new HashSet<>();
+
     public Boolean isCreateAP() {
         return createAP;
     }
@@ -315,7 +320,10 @@ public class TBuildConfig {
     @Config(message = "自启动的bundle列表， 值是 packageName", order = 1, advance = true)
     private List<String> autoStartBundles = new ArrayList<String>();
 
-    @Config(message = "提前执行的方法，格式是 className:methodName|className2:methodName2 ， 注意class和methodname都不能混淆，且方法实现是 class.method(Context)", order = 2, advance = true)
+    @Config(
+        message = "提前执行的方法，格式是 className:methodName|className2:methodName2 ， 注意class和methodname都不能混淆，且方法实现是 class"
+            + ".method(Context)",
+        order = 2, advance = true)
     private String preLaunch = "";
 
     public Set<String> getRemoveSoFiles() {
@@ -496,5 +504,13 @@ public class TBuildConfig {
 
     public void setPackageRemoteAwbInJni(boolean packageRemoteAwbInJni) {
         this.packageRemoteAwbInJni = packageRemoteAwbInJni;
+    }
+
+    public Set<String> getDataBindingBundles() {
+        return dataBindingBundles;
+    }
+
+    public void setDataBindingBundles(Set<String> dataBindingBundles) {
+        this.dataBindingBundles = dataBindingBundles;
     }
 }

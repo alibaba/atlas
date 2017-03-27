@@ -304,6 +304,16 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                             getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
     }
 
+    public File getAwbDataBindingMergeArtifacts(AwbBundle awbBundle) {
+
+        return new File(scope.getGlobalScope().getIntermediatesDir() + "/data-binding-compiler-awbs/" +
+                            getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+
+        //return new File(scope.getBuildFolderForDataBindingCompiler() +  "-" + awbBundle.getName(),
+        //                     DataBindingBuilder.ARTIFACT_FILES_DIR_FROM_LIBS);
+
+    }
+
     public File getAwbMergeResourcesOutputDir(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
                         "/awb-res/merged/" + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());

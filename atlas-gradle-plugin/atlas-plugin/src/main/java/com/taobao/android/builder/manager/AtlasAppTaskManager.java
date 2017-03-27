@@ -235,9 +235,10 @@ import com.taobao.android.builder.tasks.app.LogDependenciesTask;
 import com.taobao.android.builder.tasks.app.bundle.JavacAwbsTask;
 import com.taobao.android.builder.tasks.app.bundle.PackageAwbsTask;
 import com.taobao.android.builder.tasks.app.bundle.ProcessResAwbsTask;
-import com.taobao.android.builder.tasks.app.databinding.DataBindingExportBuildInfoAwbsConfigAction;
-import com.taobao.android.builder.tasks.app.databinding.DataBindingProcessLayoutAwbsConfigAction;
-import com.taobao.android.builder.tasks.app.databinding.DataBindingRenameTask;
+import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingExportBuildInfoTask;
+import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingMergeArtifactsTask;
+import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingProcessLayoutTask;
+import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingRenameTask;
 import com.taobao.android.builder.tasks.app.manifest.PostProcessManifestTask;
 import com.taobao.android.builder.tasks.app.manifest.PreProcessManifestTask;
 import com.taobao.android.builder.tasks.app.merge.MergeAssetAwbsConfigAction;
@@ -292,8 +293,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                     AtlasBuildContext.appVariantContextMap.put(applicationVariant, appVariantContext);
                 }
 
-                if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()){
-                    throw new GradleException("atlas plgin is not compatible with instant run， plese turn it off in your ide！");
+                if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()) {
+                    throw new GradleException(
+                        "atlas plgin is not compatible with instant run， plese turn it off in your ide！");
                 }
 
                 new AwbProguradHook().hookProguardTask(appVariantContext);
@@ -331,8 +333,12 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(MergeAssetAwbsConfigAction.class, null));
 
                 if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled()) {
-                    mtlTaskContextList.add(new MtlTaskContext(DataBindingProcessLayoutAwbsConfigAction.class, null));
-                    mtlTaskContextList.add(new MtlTaskContext(DataBindingExportBuildInfoAwbsConfigAction.class, null));
+                    mtlTaskContextList.add(
+                        new MtlTaskContext(AwbDataBindingProcessLayoutTask.ConfigAction.class, null));
+                    mtlTaskContextList.add(
+                        new MtlTaskContext(AwbDataBindingExportBuildInfoTask.ConfigAction.class, null));
+                    mtlTaskContextList.add(
+                        new MtlTaskContext(AwbDataBindingMergeArtifactsTask.ConfigAction.class, null));
                 }
 
                 mtlTaskContextList.add(new MtlTaskContext(MergeManifests.class));
@@ -350,7 +356,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(JavacAwbsTask.ConfigAction.class, null));
 
                 if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled()) {
-                    mtlTaskContextList.add(new MtlTaskContext(DataBindingRenameTask.ConfigAction.class, null));
+                    mtlTaskContextList.add(new MtlTaskContext(AwbDataBindingRenameTask.ConfigAction.class, null));
                 }
 
                 mtlTaskContextList.add(new MtlTaskContext(TransformTask.class));
