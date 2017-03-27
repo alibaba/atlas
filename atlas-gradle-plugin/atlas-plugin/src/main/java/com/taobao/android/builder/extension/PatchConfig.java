@@ -424,10 +424,10 @@ public class PatchConfig {
     }
 
     public String getTpatchHistoryUrl() {
-        if (StringUtils.isEmpty(AtlasBuildContext.serverHost)){
+        if (StringUtils.isEmpty(AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl)){
             return "";
         }
-        return "http://" + AtlasBuildContext.serverHost +  tpatchHistoryUrl;
+        return "http://" + AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl +  tpatchHistoryUrl;
     }
 
     public void setTpatchHistoryUrl(String tpatchHistoryUrl) {

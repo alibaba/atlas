@@ -207,54 +207,60 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.tools.asm;
 
-import java.util.function.Consumer;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
 
-import com.taobao.android.builder.AtlasPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import com.taobao.android.builder.tools.asm.method.MethodReplaceClazzVisitor;
+import com.taobao.android.builder.tools.asm.method.MethodStore;
+import org.apache.commons.io.IOUtils;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 
 /**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
+ * Created by wuzhong on 2016/12/13.
  */
-public class AtlasProjectDependencyManager {
+public class MethodReplacer extends ClazzBasicHandler {
 
-    public static void addProjectDependency(Project project, String variantName) {
+    private MethodStore methodStore;
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
+    public MethodReplacer(File jar, File outJar, Map<String, String> reMapping) {
+        super(jar, outJar, reMapping);
+        this.methodStore = new MethodStore(reMapping);
+    }
 
-        if (null == task){
-            return;
+    @Override
+    protected void handleClazz(JarFile jarFile, JarOutputStream jos, JarEntry ze, String pathName) {
+
+        try {
+            InputStream jarFileInputStream = jarFile.getInputStream(ze);
+
+            ClassReader classReader = new ClassReader(jarFileInputStream);
+
+            ClassWriter classWriter = new ClassWriter(0);
+
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(jar.getAbsolutePath()).append(".").append(pathName);
+
+            classReader.accept(new MethodReplaceClazzVisitor(Opcodes.ASM4, classWriter, methodStore, stringBuilder),
+                               ClassReader.EXPAND_FRAMES);
+
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(classWriter.toByteArray());
+            copyStreamToJar(inputStream, jos, pathName, ze.getTime());
+            IOUtils.closeQuietly(inputStream);
+
+        } catch (Throwable e) {
+
+            System.err.println("[MethodReplacer] rewrite error > " + pathName);
+            justCopy(jarFile, jos, ze, pathName);
         }
-
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
-
-        if (null == dependencies){
-            return;
-        }
-
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
-
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
-
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
-                }
-            }
-        });
 
     }
 

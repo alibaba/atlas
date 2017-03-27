@@ -285,13 +285,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             @Override
             public void accept(ApplicationVariant applicationVariant) {
 
-                AppVariantContext appVariantContext = AtlasBuildContext.appVariantContextMap.get(applicationVariant);
-
-                if (null == appVariantContext) {
-                    appVariantContext = new AppVariantContext((ApplicationVariantImpl)applicationVariant, project,
-                                                              atlasExtension, appExtension);
-                    AtlasBuildContext.appVariantContextMap.put(applicationVariant, appVariantContext);
-                }
+                AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory.getAppVariantContext(project,applicationVariant);
 
                 if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()) {
                     throw new GradleException(

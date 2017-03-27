@@ -209,12 +209,22 @@
 
 package com.taobao.android.builder.tasks.app.manifest;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -226,22 +236,15 @@ import com.taobao.android.builder.extension.ManifestOptions;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestDependencyUtil;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-
 import org.dom4j.DocumentException;
+import org.gradle.api.Action;
+import org.gradle.api.GradleException;
+import org.gradle.api.Task;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.StopExecutionException;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
 
 /**
  * 处理合并后的manifest
@@ -249,79 +252,29 @@ import java.util.concurrent.Callable;
  */
 public class PostProcessManifestTask extends IncrementalTask {
 
+    private AppVariantContext appVariantContext;
+
+    private ManifestProcessorTask manifestProcessorTask;
+
     @Nested
     @org.gradle.api.tasks.Optional
     private ManifestOptions manifestOptions;
 
-    @InputFile
-    @Optional
     private File bunldeBaseInfoFile;
 
     public boolean addMultiDex;
 
     private Set<String> remoteBundles;
 
-    @InputFile
     private File mainManifestFile;
 
-    @InputFile
-    @Optional
-    private File instantRunMainManifestFile;
+    private File mainManifestOutputFile;
 
-    private AppVariantContext appVariantContext;
+    private File instantRunMainManifestFile;
 
     private List<? extends AndroidLibrary> awbLibraries;
 
-    public void setMainManifestFile(File mainManifestFile) {
-        this.mainManifestFile = mainManifestFile;
-    }
-
-    public File getMainManifestFile() {
-        return mainManifestFile;
-    }
-
-    public void setInstantRunMainManifestFile(File instantRunMainManifestFile) {
-        this.instantRunMainManifestFile = instantRunMainManifestFile;
-    }
-
-    public File getInstantRunMainManifestFile() {
-        return instantRunMainManifestFile;
-    }
-
-    public List<? extends AndroidLibrary> getAwbLibraries() {
-        return awbLibraries;
-    }
-
-    public Map<String, File> getLibManifestMap() {
-        Map<String, File> maps = Maps.newHashMap();
-        List<? extends AndroidLibrary> libs = getAwbLibraries();
-        if (libs == null || libs.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        for (AndroidLibrary mdi : libs) {
-            ((HashMap<String, File>) maps).put(mdi.getName(), mdi.getManifest());
-        }
-
-        return maps;
-    }
-
-    public Multimap<String, File> getLibManifestDepenendyMap() {
-        Multimap<String, File> maps = HashMultimap.create();
-        List<? extends AndroidLibrary> libs = getAwbLibraries();
-        if (libs == null || libs.isEmpty()) {
-            return maps;
-        }
-
-        for (AndroidLibrary mdi : libs) {
-            for (AndroidLibrary childLib : mdi.getLibraryDependencies()) {
-                ((HashMultimap<String, File>) maps).put(mdi.getName(), childLib.getManifest());
-            }
-        }
-
-        return maps;
-    }
-
+    @Override
     @TaskAction
     public void doFullTaskAction() throws IOException {
         postProcessManifests(getMainManifestFile(), false);
@@ -332,25 +285,101 @@ public class PostProcessManifestTask extends IncrementalTask {
                                       boolean isInstantRun) throws IOException {
         if (mainManifestFile != null && mainManifestFile.exists()) {
             getLogger().info("[MTLPlugin]Start post Process  manifest files,main manifestFile is:" +
-                                     mainManifestFile);
+                                 mainManifestFile);
             try {
-                ManifestFileUtils.postProcessManifests(mainManifestFile,
-                                                       getLibManifestMap(),
-                                                       getLibManifestDepenendyMap(),
-                                                       bunldeBaseInfoFile,
-                                                       manifestOptions,
-                                                       addMultiDex,
-                                                       isInstantRun,
-                                                       remoteBundles);
+
+                if (isInstantRun) {
+
+                    ManifestFileUtils.postProcessManifests(mainManifestFile,
+                                                           getLibManifestMap(),
+                                                           getLibManifestDepenendyMap(),
+                                                           getBunldeBaseInfoFile(),
+                                                           manifestOptions,
+                                                           addMultiDex,
+                                                           isInstantRun,
+                                                           remoteBundles);
+
+                } else {
+
+                    ManifestFileUtils.postProcessManifests(mainManifestFile, getMainManifestOutputFile(),
+                                                           getLibManifestMap(),
+                                                           getLibManifestDepenendyMap(),
+                                                           getBunldeBaseInfoFile(),
+                                                           manifestOptions,
+                                                           addMultiDex,
+                                                           isInstantRun,
+                                                           remoteBundles);
+
+                    manifestProcessorTask
+                        .setManifestOutputFile(getMainManifestOutputFile());
+
+                }
+
                 //TODO aapt 命令不支持，手工生成
                 AtlasBuildContext.androidBuilderMap.get(getProject()).generateKeepList(mainManifestFile,
-                                                                  appVariantContext.getScope()
-                                                                          .getManifestKeepListProguardFile());
+                                                                                       appVariantContext.getScope()
+                                                                                           .getManifestKeepListProguardFile());
             } catch (DocumentException e) {
                 // TODO: unacceptable.
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private Map<String, File> getLibManifestMap() {
+        Map<String, File> maps = Maps.newHashMap();
+        List<? extends AndroidLibrary> libs = getAwbLibraries();
+        if (libs == null || libs.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        for (AndroidLibrary mdi : libs) {
+            ((HashMap<String, File>)maps).put(mdi.getName(), mdi.getManifest());
+        }
+
+        return maps;
+    }
+
+    private Multimap<String, File> getLibManifestDepenendyMap() {
+        Multimap<String, File> maps = HashMultimap.create();
+        List<? extends AndroidLibrary> libs = getAwbLibraries();
+        if (libs == null || libs.isEmpty()) {
+            return maps;
+        }
+
+        for (AndroidLibrary mdi : libs) {
+            for (AndroidLibrary childLib : mdi.getLibraryDependencies()) {
+                ((HashMultimap<String, File>)maps).put(mdi.getName(), childLib.getManifest());
+            }
+        }
+
+        return maps;
+    }
+
+    //@InputFile
+    //@Optional
+    public File getBunldeBaseInfoFile() {
+        return bunldeBaseInfoFile;
+    }
+
+    @InputFile
+    public File getMainManifestFile() {
+        return mainManifestFile;
+    }
+
+    @OutputFile
+    public File getMainManifestOutputFile() {
+        return mainManifestOutputFile;
+    }
+
+    @InputFile
+    @Optional
+    public File getInstantRunMainManifestFile() {
+        return instantRunMainManifestFile;
+    }
+
+    public List<? extends AndroidLibrary> getAwbLibraries() {
+        return awbLibraries;
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PostProcessManifestTask> {
@@ -392,16 +421,36 @@ public class PostProcessManifestTask extends IncrementalTask {
             GradleVariantConfiguration config = scope.getVariantScope().getVariantConfiguration();
 
             final AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                    config.getFullName());
+                config.getFullName());
 
             if (null == dependencyTree) {
-                throw new StopExecutionException("DependencyTree cannot be null!");
+                throw new GradleException("DependencyTree cannot be null!");
             }
 
+            ManifestProcessorTask manifestProcessorTask = getAppVariantOutputContext().getOutputScope()
+                .getVariantOutputData().manifestProcessorTask;
+
+            manifestProcessorTask.doFirst(
+                new Action<Task>() {
+                    @Override
+                    public void execute(Task task) {
+                        manifestProcessorTask.setManifestOutputFile(getAppVariantOutputContext().getMergedManifest());
+                    }
+                });
+
             postProcessManifestsTask.appVariantContext = appVariantContext;
+            postProcessManifestsTask.manifestProcessorTask = manifestProcessorTask;
 
             ConventionMappingHelper.map(postProcessManifestsTask,
                                         "mainManifestFile",
+                                        new Callable<File>() {
+                                            public File call() {
+                                                return getAppVariantOutputContext().getMergedManifest();
+                                            }
+                                        });
+
+            ConventionMappingHelper.map(postProcessManifestsTask,
+                                        "mainManifestOutputFile",
                                         new Callable<File>() {
                                             public File call() {
                                                 return scope.getManifestOutputFile();
@@ -413,7 +462,7 @@ public class PostProcessManifestTask extends IncrementalTask {
                                         new Callable<File>() {
                                             public File call() {
                                                 File file = scope.getVariantScope()
-                                                        .getInstantRunManifestOutputFile();
+                                                    .getInstantRunManifestOutputFile();
                                                 return file.exists() ? file : null;
                                             }
                                         });
@@ -423,25 +472,33 @@ public class PostProcessManifestTask extends IncrementalTask {
                                         new Callable<List<? extends AndroidLibrary>>() {
                                             public List<? extends AndroidLibrary> call() {
                                                 return ManifestDependencyUtil.getManifestDependencies(
-                                                        dependencyTree.getAwbBundles(),
-                                                        atlasExtension.manifestOptions.getNotMergedBundles(),
-                                                        appVariantContext.getProject().getLogger());
+                                                    dependencyTree.getAwbBundles(),
+                                                    atlasExtension.manifestOptions.getNotMergedBundles(),
+                                                    appVariantContext.getProject().getLogger());
                                             }
                                         });
 
-            postProcessManifestsTask.bunldeBaseInfoFile = new File(variantContext.getScope()
-                                                                           .getGlobalScope()
-                                                                           .getProject()
-                                                                           .getProjectDir(),
-                                                                   "bundleBaseInfoFile.json");
+            ConventionMappingHelper.map(postProcessManifestsTask,
+                                        "bunldeBaseInfoFile",
+                                        new Callable<File>() {
+                                            public File call() {
+                                                return new File(variantContext.getScope()
+                                                                    .getGlobalScope()
+                                                                    .getProject()
+                                                                    .getProjectDir(),
+                                                                "bundleBaseInfoFile.json");
+                                            }
+                                        });
+
             postProcessManifestsTask.remoteBundles = atlasExtension.getTBuildConfig()
-                    .getOutOfApkBundles();
+                .getOutOfApkBundles();
             postProcessManifestsTask.manifestOptions = atlasExtension.getManifestOptions();
             postProcessManifestsTask.addMultiDex = isMultiDexEnabled();
             postProcessManifestsTask.setVariantName(scope.getVariantScope()
-                                                            .getVariantData()
-                                                            .getVariantConfiguration()
-                                                            .getFullName());
+                                                        .getVariantData()
+                                                        .getVariantConfiguration()
+                                                        .getFullName());
+
         }
 
         private boolean isMultiDexEnabled() {
@@ -449,11 +506,12 @@ public class PostProcessManifestTask extends IncrementalTask {
             for (BuildType buildType : appVariantContext.getAppExtension().getBuildTypes()) {
                 if (buildType.getName().equals(baseVariantOutputData.variantData.getName())) {
                     isMultiDex = (null !=
-                            buildType.getMultiDexEnabled()) ? buildType.getMultiDexEnabled() : false;
+                        buildType.getMultiDexEnabled()) ? buildType.getMultiDexEnabled() : false;
                     break;
                 }
             }
             return isMultiDex;
         }
     }
+
 }

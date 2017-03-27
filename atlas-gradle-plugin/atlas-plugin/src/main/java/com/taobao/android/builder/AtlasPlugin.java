@@ -242,7 +242,7 @@ public class AtlasPlugin implements Plugin<Project> {
     public static final Pattern JDK_VERSIONS = Pattern.compile("1\\.[8-9].*");
     public static final String JDK_MIN_VERSIONS = "1.8";
 
-    private Instantiator instantiator;
+    protected Instantiator instantiator;
     public static String creator = "AtlasPlugin" + Version.ANDROID_GRADLE_PLUGIN_VERSION;
 
     private AtlasConfigurationHelper atlasConfigurationHelper;

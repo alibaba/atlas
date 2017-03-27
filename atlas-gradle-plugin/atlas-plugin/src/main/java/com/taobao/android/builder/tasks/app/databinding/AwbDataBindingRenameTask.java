@@ -211,20 +211,17 @@ package com.taobao.android.builder.tasks.app.databinding;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
@@ -233,18 +230,13 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.FileNameUtils;
+import com.taobao.android.builder.tools.asm.ClassNameRenamer;
+import com.taobao.android.builder.tools.asm.ClazzReplacer;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.commons.RemappingClassAdapter;
-import org.objectweb.asm.commons.SimpleRemapper;
 
 public class AwbDataBindingRenameTask extends BaseTask {
 
@@ -273,6 +265,10 @@ public class AwbDataBindingRenameTask extends BaseTask {
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
+            if (!awbBundle.isDataBindEnabled()) {
+                continue;
+            }
+
             runnables.add(new Runnable() {
 
                 @Override
@@ -292,55 +288,53 @@ public class AwbDataBindingRenameTask extends BaseTask {
                             throw new GradleException("missing datamapper class");
                         }
 
-                        FileInputStream fileInputStream = new FileInputStream(dataMapperClazz);
-                        ClassReader in1 = new ClassReader(fileInputStream);
-                        ClassWriter cw = new ClassWriter(0);
-
-                        Map<String, String> reMapping = new HashMap();
-                        reMapping.put(appName.replace(".", "/") + "/BR", packageName.replace(".", "/") + "/BR");
-                        RemappingClassAdapter remappingClassAdapter = new RemappingClassAdapter(cw, new
-                            SimpleRemapper(reMapping));
-                        in1.accept(remappingClassAdapter, 8);
-
-                        ClassReader in2 = new ClassReader(cw.toByteArray());
-                        ClassWriter cw2 = new ClassWriter(0);
-                        Set<String> renames = new HashSet<String>();
-                        renames.add("android/databinding/DataBinderMapper");
-                        in2.accept(new ClassRenamer(cw2, renames, packageName.replace(".", "/") +
-                         "/DataBinderMapper"), 8);
-
-                        File destClass = new File(dataBindingClazzFolder, packageName.replace(".", "/") +
-                         "/DataBinderMapper.class");
-                        destClass.getParentFile().mkdirs();
-                        FileOutputStream fileOutputStream = new FileOutputStream(destClass);
-                        fileOutputStream.write(cw2.toByteArray());
-                        IOUtils.closeQuietly(fileOutputStream);
-                        IOUtils.closeQuietly(fileInputStream);
-
-                        FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "android/databinding"));
-                        FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "com/android/databinding"));
+                        rewriteDataBinderMapper(dataBindingClazzFolder, packageName, dataMapperClazz);
                         //FileUtils.deleteDirectory(new File(dataBindingClazzFolder, packageName.replace(".", "/") +
                         // "/_bundleapp_" ));
 
                         File appDir = new File(dataBindingClazzFolder, appName.replace(".", "/"));
                         if (appDir.exists()) {
-
                             File[] files = appDir.listFiles(new FileFilter() {
                                 @Override
                                 public boolean accept(File pathname) {
                                     return pathname.isFile() && !pathname.isDirectory();
                                 }
                             });
-
                             for (File tmp : files) {
                                 FileUtils.forceDelete(tmp);
                             }
-
                         }
+
+                        //rename DataBindUtils
+                        AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(
+                            awbBundle.getName());
+
+                        List<File> files = awbTransform.getInputLibraries();
+
+                        Map<String, String> replaceMap = new HashMap<>();
+                        replaceMap.put("android/databinding/DataBindingUtil",
+                                       "android/databinding/AtlasDataBindingUtil");
+
+                        List<File> newLibrarys = new ArrayList<>();
+
+                        for (File inputJar : files) {
+
+                            File outputJar = new File(appVariantContext.getAwbLibraryDirForDataBinding(awbBundle),
+                                                      FileNameUtils.getUniqueJarName(inputJar) + ".jar");
+
+                            outputJar.delete();
+                            outputJar.getParentFile().mkdirs();
+                            outputJar.createNewFile();
+
+                            new ClazzReplacer(inputJar, outputJar, replaceMap).execute();
+                            newLibrarys.add(outputJar);
+                        }
+
+                        awbTransform.setInputLibraries(newLibrarys);
 
                     } catch (Throwable e) {
                         e.printStackTrace();
-                        throw new GradleException("package awb failed");
+                        throw new GradleException("databinding awb failed", e);
                     }
 
                 }
@@ -385,79 +379,15 @@ public class AwbDataBindingRenameTask extends BaseTask {
         }
     }
 
-    class ClassRenamer extends ClassVisitor implements Opcodes {
+    private void rewriteDataBinderMapper(File dataBindingClazzFolder, String packageName,
+                                         File dataMapperClazz) throws IOException {
 
-        private Set oldNames;
-        private final String newName;
+        ClassNameRenamer.rewriteDataBinderMapper(dataBindingClazzFolder, "android/databinding/DataBinderMapper",
+                                                 packageName.replace(".", "/") +
+                                                     "/DataBinderMapper", dataMapperClazz);
 
-        public ClassRenamer(ClassVisitor cv, Set oldNames, String newName) {
-            super(ASM4, cv);
-            this.oldNames = oldNames;
-            this.newName = newName;
-        }
-
-        @Override
-        public void visit(int version, int access, String name, String signature, String superName,
-                          String[] interfaces) {
-            oldNames.add(name);
-            cv.visit(version, ACC_PUBLIC, newName, signature, superName, interfaces);
-        }
-
-        @Override
-        public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-            MethodVisitor mv = cv.visitMethod(access, name, desc, fix(signature), exceptions);
-            if (mv != null && (access & ACC_ABSTRACT) == 0) {
-                mv = new MethodRenamer(mv);
-            }
-            return mv;
-        }
-
-        class MethodRenamer extends MethodVisitor {
-
-            public MethodRenamer(final MethodVisitor mv) {
-                super(ASM4, mv);
-            }
-
-            @Override
-            public void visitTypeInsn(int i, String s) {
-                if (oldNames.contains(s)) {
-                    s = newName;
-                }
-                mv.visitTypeInsn(i, s);
-            }
-
-            @Override
-            public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-                if (oldNames.contains(owner)) {
-                    mv.visitFieldInsn(opcode, newName, name, fix(desc));
-                } else {
-                    mv.visitFieldInsn(opcode, owner, name, fix(desc));
-                }
-            }
-
-            @Override
-            public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-                if (oldNames.contains(owner)) {
-                    mv.visitMethodInsn(opcode, newName, name, fix(desc));
-                } else {
-                    mv.visitMethodInsn(opcode, owner, name, fix(desc));
-                }
-            }
-        }
-
-        private String fix(String s) {
-            if (s != null) {
-                Iterator it = oldNames.iterator();
-                String name;
-                while (it.hasNext()) {
-                    name = (String)it.next();
-                    if (s.indexOf(name) != -1) {
-                        s = s.replaceAll(name, newName);
-                    }
-                }
-            }
-            return s;
-        }
+        FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "android/databinding"));
+        FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "com/android/databinding"));
     }
 
 }

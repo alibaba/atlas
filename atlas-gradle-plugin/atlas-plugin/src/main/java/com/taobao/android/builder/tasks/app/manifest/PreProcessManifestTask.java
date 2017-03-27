@@ -360,6 +360,9 @@ public class PreProcessManifestTask extends DefaultTask {
 
             if (manifestProcessorTask instanceof MergeManifests) {
                 MergeManifests mergeManifests = (MergeManifests)manifestProcessorTask;
+
+                //mergeManifests.setManifestOutputFile(appVariantOutputContext.getMergedManifest());
+
                 VariantScope variantScope = appVariantContext.getScope();
                 GradleVariantConfiguration config = variantScope.getVariantConfiguration();
                 AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
@@ -391,7 +394,7 @@ public class PreProcessManifestTask extends DefaultTask {
                     File modifyManifest = AtlasBuildContext.manifestMap.get(manifestProvider.getManifest());
                     if (null == modifyManifest) {
                         modifyManifests.add(manifestProvider);
-                    }else {
+                    } else {
                         modifyManifests.add(new ManifestProvider() {
                             @Override
                             public File getManifest() {
@@ -404,7 +407,6 @@ public class PreProcessManifestTask extends DefaultTask {
                             }
                         });
                     }
-
 
                 }
 

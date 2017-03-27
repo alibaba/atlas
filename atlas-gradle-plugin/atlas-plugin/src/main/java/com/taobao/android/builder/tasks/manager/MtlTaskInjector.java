@@ -209,6 +209,9 @@
 
 package com.taobao.android.builder.tasks.manager;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
@@ -218,14 +221,10 @@ import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Created by wuzhong on 16/6/24.
  */
 public class MtlTaskInjector {
-
 
     private Project project;
     private VariantContext variantContext;
@@ -236,7 +235,6 @@ public class MtlTaskInjector {
         this.project = variantContext.getProject();
         this.mtlTaskFactory = new MtlTaskFactoryImpl();
     }
-
 
     public void injectTasks(List<MtlTaskContext> mtlTaskContexts, AndroidBuilder androidBuilder) {
 
@@ -258,7 +256,8 @@ public class MtlTaskInjector {
                         Class taskClazz = mtlTaskContext.getSysTaskClazz();
                         tasks.addAll(findTask(taskClazz, vod.variantData.getName()));
                     } else {
-                        Task task = project.getTasks().findByName(vod.getScope().getTaskName(mtlTaskContext.getTaskName()));
+                        Task task = project.getTasks().findByName(
+                            vod.getScope().getTaskName(mtlTaskContext.getTaskName()));
                         if (null != task) {
                             tasks.add(task);
                         }
@@ -269,7 +268,7 @@ public class MtlTaskInjector {
                     if (null != task) {
 
                         if (null != androidBuilder && task instanceof BaseTask) {
-                            ((BaseTask) task).setAndroidBuilder(androidBuilder);
+                            ((BaseTask)task).setAndroidBuilder(androidBuilder);
                         }
 
                         tasks.add(task);
@@ -277,14 +276,18 @@ public class MtlTaskInjector {
                 }
 
                 if (tasks.isEmpty()) {
-//                    throw new RuntimeException("task is not found " + mtlTaskContext);
+                    //                    throw new RuntimeException("task is not found " + mtlTaskContext);
                     project.getLogger().info("task is not found " + vod.getFullName() + mtlTaskContext);
                 } else {
                     if (!beforeTasks.isEmpty()) {
                         for (Task task : tasks) {
-                            project.getLogger().debug("[MtlTaskInjector]" + vod.getFullName() + ":" + task + "->" + StringUtils.join(beforeTasks.toArray()));
+                            project.getLogger().debug(
+                                "[MtlTaskInjector]" + vod.getFullName() + ":" + task + "->" + StringUtils
+                                    .join(beforeTasks.toArray()));
                             for (Task before : beforeTasks) {
-                                project.getLogger().info("[tasks] set task " + task.getProject().getName() + ":" + task.getName() + "->" + before.getProject().getName() + ":" + before.getName());
+                                project.getLogger().info(
+                                    "[tasks] set task " + task.getProject().getName() + ":" + task.getName() + "->"
+                                        + before.getProject().getName() + ":" + before.getName());
                                 task.dependsOn(before);
                             }
                         }
@@ -295,9 +298,13 @@ public class MtlTaskInjector {
                     if (null != mtlTaskContext.getTaskFilter()) {
                         List<Task> beforeTasks2 = mtlTaskContext.getTaskFilter().getBeforeTasks(project, vod);
                         for (Task task : tasks) {
-                            project.getLogger().debug("[MtlTaskInjector]" + vod.getFullName() + ":" + task + "->" + StringUtils.join(beforeTasks2.toArray()));
+                            project.getLogger().debug(
+                                "[MtlTaskInjector]" + vod.getFullName() + ":" + task + "->" + StringUtils
+                                    .join(beforeTasks2.toArray()));
                             for (Task before : beforeTasks2) {
-                                project.getLogger().info("[tasks] set task " + task.getProject().getName() + ":" + task.getName() + "->" + before.getProject().getName() + ":" + before.getName());
+                                project.getLogger().info(
+                                    "[tasks] set task " + task.getProject().getName() + ":" + task.getName() + "->"
+                                        + before.getProject().getName() + ":" + before.getName());
                                 task.dependsOn(before);
                             }
                         }
@@ -305,13 +312,8 @@ public class MtlTaskInjector {
                 }
 
             }
-
-
         }
-
-
     }
-
 
     protected List<Task> findTask(Class<Task> clazz, String variantName) {
         Task[] androidTasks = project.getTasks().withType(clazz).toArray(new Task[0]);
@@ -319,7 +321,7 @@ public class MtlTaskInjector {
         List<Task> taskList = new ArrayList();
         for (Task task : androidTasks) {
             if (task instanceof DefaultAndroidTask) {
-                if (variantName.equals(((DefaultAndroidTask) task).getVariantName())) {
+                if (variantName.equals(((DefaultAndroidTask)task).getVariantName())) {
                     taskList.add(task);
                 }
             } else {
@@ -333,6 +335,5 @@ public class MtlTaskInjector {
         }
         return taskList;
     }
-
 
 }

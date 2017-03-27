@@ -210,16 +210,20 @@
 package com.taobao.android.builder.tasks.manager;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import org.gradle.api.GradleException;
 import org.gradle.api.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by wuzhong on 16/7/5.
  */
 public class MtlTaskFactoryImpl implements MtlTaskFactory {
+
+    private static Logger sLogger = LoggerFactory.getLogger(MtlTaskFactory.class);
 
     @Override
     public Task createTask(VariantContext variantContext, BaseVariantOutputData vod,
@@ -234,24 +238,24 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
             MtlBaseTaskAction mtlBaseTaskAction = getConstructor(baseTaskAction, variantContext.getClass()).newInstance(
                 variantContext, vod);
 
-            Task task = variantContext.getProject().getTasks().create(mtlBaseTaskAction.getName(),
-                                                                      mtlBaseTaskAction.getType());
+            Task task = variantContext.getProject().getTasks().findByName(mtlBaseTaskAction.getName());
 
-            mtlBaseTaskAction.execute(task);
+            if (null == task) {
+                task = variantContext.getProject().getTasks().create(mtlBaseTaskAction.getName(),
+                                                                     mtlBaseTaskAction.getType());
+                mtlBaseTaskAction.execute(task);
+            } else {
+                sLogger.info(mtlBaseTaskAction.getName() + " is already added");
+            }
 
             return task;
 
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            //sLogger.error("add task exception", e);
+            throw new GradleException(e.getMessage(),e);
         }
 
-        return null;
+        //return null;
     }
 
     private Constructor<? extends MtlBaseTaskAction> getConstructor(Class<? extends MtlBaseTaskAction> baseTaskAction,

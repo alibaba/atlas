@@ -221,7 +221,6 @@ import java.util.zip.ZipInputStream;
 
 import android.databinding.tool.DataBindingBuilder;
 import com.android.annotations.NonNull;
-import com.android.build.api.transform.DirectoryInput;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -301,7 +300,7 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
         FileUtils.forceMkdir(outFolder);
 
         for (AndroidLibrary androidLibrary : awbBundle.getAllLibraryAars()) {
-            File dataBindingDir = new File(androidLibrary.getFolder(),"data-binding");
+            File dataBindingDir = new File(androidLibrary.getFolder(), "data-binding");
             if (!dataBindingDir.exists()) {
                 continue;
             }
@@ -319,9 +318,16 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
             }
         }
 
-
         for (File jarFile : awbBundle.getLibraryJars()) {
             extractBinFilesFromJar(outFolder, jarFile);
+        }
+
+        for (String fileName : outFolder.list()) {
+            if (fileName.endsWith("br.bin") || fileName.endsWith("layout.bin") || fileName.endsWith(
+                "setter_store.bin")) {
+                awbBundle.setDataBindEnabled(true);
+                break;
+            }
         }
 
     }

@@ -207,55 +207,57 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.tools.asm.method;
 
-import java.util.function.Consumer;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.taobao.android.builder.AtlasPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+public final class MethodReplaceMethodVisitor extends MethodVisitor {
 
-/**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
- */
-public class AtlasProjectDependencyManager {
+    private static Logger logger = LoggerFactory.getLogger(MethodReplaceMethodVisitor.class);
 
-    public static void addProjectDependency(Project project, String variantName) {
+    private MethodStore methodStore;
+    private StringBuilder stringBuilder;
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
+    public MethodReplaceMethodVisitor(int asm4, MethodVisitor methodVisitor, MethodStore methodStore,StringBuilder stringBuilder ) {
+        super(asm4, methodVisitor);
+        this.methodStore = methodStore;
+        this.stringBuilder = stringBuilder;
+    }
 
-        if (null == task){
+
+    @Override
+    public void visitMethodInsn(
+            int opcode, String owner, String name, String desc, boolean itf) {
+
+        Method method = methodStore.findMethod(owner, name, desc);
+
+        if (null == method) {
+            super.visitMethodInsn(opcode, owner, name, desc, itf);
             return;
         }
 
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
+        stringBuilder.append(">>").append(owner).append(name).append(desc).append(">>").append(method);
 
-        if (null == dependencies){
-            return;
-        }
+        logger.info(stringBuilder.toString());
 
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
+        super.visitMethodInsn(opcode, method.owner,
+                method.name, null == method.desc ? desc : method.desc, false);
 
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
-
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
-                }
-            }
-        });
 
     }
 
+    @Override
+    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
+        super.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
+    }
+
+    //visitInvokeDynamicInsn
+
+    @Override
+    public void visitParameter(String name, int access) {
+        super.visitParameter(name, access);
+    }
 }

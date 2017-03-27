@@ -782,7 +782,7 @@ public class AtlasBuilder extends AndroidBuilder {
                                 ProcessOutputHandler processOutputHandler)
         throws IOException, InterruptedException, ProcessException {
 
-        if (AtlasBuildContext.sFileCache.isCacheEnabled() && inputs.size() > 1) {
+        if (AtlasBuildContext.sBuilderAdapter.fileCache.isCacheEnabled() && inputs.size() > 1) {
 
             List<Dex> dexs = new ArrayList<>();
             //做dexMerge
@@ -853,7 +853,7 @@ public class AtlasBuilder extends AndroidBuilder {
             }
 
             if (StringUtils.isNotEmpty(md5)) {
-                AtlasBuildContext.sFileCache.fetchFile(md5, dexFile, "pre-dex");
+                AtlasBuildContext.sBuilderAdapter.fileCache.fetchFile(md5, dexFile, "pre-dex");
 
                 if (dexFile.exists() && dexFile.length() > 0) {
                     sLogger.info("[mtldex] cache dex for {} , {}",
@@ -886,7 +886,7 @@ public class AtlasBuilder extends AndroidBuilder {
         super.preDexLibrary(inputFile, outFile, multiDex, defaultDexOptions, processOutputHandler);
 
         if (StringUtils.isNotEmpty(md5)) {
-            AtlasBuildContext.sFileCache.cacheFile(md5, dexFile, "pre-dex");
+            AtlasBuildContext.sBuilderAdapter.fileCache.cacheFile(md5, dexFile, "pre-dex");
         }
     }
 

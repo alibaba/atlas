@@ -301,7 +301,7 @@ public class ClassInjectTransform extends MtlInjectTransform {
 
         InjectParam injectParam = null;
         try {
-            injectParam = AtlasBuildContext.sApkInjectInfoCreator.creteInjectParam(appVariantContext);
+            injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
         } catch (DocumentException e) {
             throw new TransformException(e);
         }

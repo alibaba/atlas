@@ -283,6 +283,11 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
         return sourceSets.build();
     }
 
+    public File getAwbLibraryDirForDataBinding(AwbBundle awbBundle) {
+        return new File(scope.getGlobalScope().getIntermediatesDir() + "/transforms-awbs/databinding/" +
+                            getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+    }
+
     public File getAwbLayoutInfoOutputForDataBinding(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir() + "/data-binding-info-awbs/" +
                             getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
@@ -329,6 +334,7 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                         "/manifest-modify/" + getVariantConfiguration().getDirName() + "/" + ManifestFileUtils
                             .getPackage(manifest) + ".xml");
     }
+
 
     //public String getBuildType(){
     //    String fullName = variantData.getVariantConfiguration().getBaseName();

@@ -207,55 +207,120 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.tools.asm;
 
-import java.util.function.Consumer;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
-import com.taobao.android.builder.AtlasPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import org.apache.commons.io.IOUtils;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 /**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
+ * Created by wuzhong on 2017/3/30.
  */
-public class AtlasProjectDependencyManager {
+public class ClassNameRenamer {
 
-    public static void addProjectDependency(Project project, String variantName) {
+    public static void rewriteDataBinderMapper(File dir, String fromName, String toName,
+                                               File Clazz) throws IOException {
+        FileInputStream fileInputStream = new FileInputStream(Clazz);
+        ClassReader in1 = new ClassReader(fileInputStream);
+        ClassWriter cw = new ClassWriter(0);
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
+        Set<String> renames = new HashSet<String>();
+        renames.add(fromName);
+        in1.accept(new ClassRenamer(cw, renames, toName), 8);
 
-        if (null == task){
-            return;
+        File destClass = new File(dir, toName + ".class");
+        destClass.getParentFile().mkdirs();
+        FileOutputStream fileOutputStream = new FileOutputStream(destClass);
+        fileOutputStream.write(cw.toByteArray());
+        IOUtils.closeQuietly(fileOutputStream);
+        IOUtils.closeQuietly(fileInputStream);
+
+    }
+
+    static class ClassRenamer extends ClassVisitor implements Opcodes {
+
+        private Set oldNames;
+        private final String newName;
+
+        public ClassRenamer(ClassVisitor cv, Set oldNames, String newName) {
+            super(ASM4, cv);
+            this.oldNames = oldNames;
+            this.newName = newName;
         }
 
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
-
-        if (null == dependencies){
-            return;
+        @Override
+        public void visit(int version, int access, String name, String signature, String superName,
+                          String[] interfaces) {
+            oldNames.add(name);
+            cv.visit(version, ACC_PUBLIC, newName, signature, superName, interfaces);
         }
 
-        dependencies.forEach(new Consumer<Dependency>() {
+        @Override
+        public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+            MethodVisitor mv = cv.visitMethod(access, name, desc, fix(signature), exceptions);
+            if (mv != null && (access & ACC_ABSTRACT) == 0) {
+                mv = new ClassRenamer.MethodRenamer(mv);
+            }
+            return mv;
+        }
+
+        class MethodRenamer extends MethodVisitor {
+
+            public MethodRenamer(final MethodVisitor mv) {
+                super(ASM4, mv);
+            }
+
             @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
+            public void visitTypeInsn(int i, String s) {
+                if (oldNames.contains(s)) {
+                    s = newName;
+                }
+                mv.visitTypeInsn(i, s);
+            }
 
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
-
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
+            @Override
+            public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+                if (oldNames.contains(owner)) {
+                    mv.visitFieldInsn(opcode, newName, name, fix(desc));
+                } else {
+                    mv.visitFieldInsn(opcode, owner, name, fix(desc));
                 }
             }
-        });
 
+            @Override
+            public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+                if (oldNames.contains(owner)) {
+                    mv.visitMethodInsn(opcode, newName, name, fix(desc));
+                } else {
+                    mv.visitMethodInsn(opcode, owner, name, fix(desc));
+                }
+            }
+        }
+
+        private String fix(String s) {
+            if (s != null) {
+                Iterator it = oldNames.iterator();
+                String name;
+                while (it.hasNext()) {
+                    name = (String)it.next();
+                    if (s.indexOf(name) != -1) {
+                        s = s.replaceAll(name, newName);
+                    }
+                }
+            }
+            return s;
+        }
     }
 
 }

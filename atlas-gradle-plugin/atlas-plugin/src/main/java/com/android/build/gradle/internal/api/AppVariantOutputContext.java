@@ -216,6 +216,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
+import com.android.build.api.transform.Format;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -224,6 +227,7 @@ import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLay
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -377,14 +381,27 @@ public class AppVariantOutputContext {
 
     public File getAwbPackageOutputFile(AwbBundle awbBundle) {
         //        File soFolder = this.getVariantData().ndkCompileTask.getSoFolder();
-        Set<File> jniFolders = outputScope.getVariantScope()
+        Map<File, Format> jniFoldersMap = outputScope.getVariantScope()
             .getTransformManager()
-            .getPipelineOutput(StreamFilter.NATIVE_LIBS)
-            .keySet();
+            .getPipelineOutput(StreamFilter.NATIVE_LIBS);
+
+        Set<File> jniFolders = Maps.filterValues(jniFoldersMap, new Predicate<Format>() {
+            @Override
+            public boolean apply(@Nullable Format format) {
+                return format == Format.DIRECTORY;
+            }
+        }).keySet();
+
         if (jniFolders.size() <= 0) {
             throw new StopExecutionException("No jniFolders found!");
         }
         File jniFolder = jniFolders.iterator().next();
+
+        if (!jniFolder.isDirectory()) {
+            throw new StopExecutionException("No jniFolders found! ,"
+                                                 + " you should compile atlas first");
+        }
+
         String awbOutputName = awbBundle.getAwbSoName();
         File file = new File(jniFolder, "lib/armeabi" + File.separator + awbOutputName);
 
@@ -465,6 +482,11 @@ public class AppVariantOutputContext {
 
     public File getDiffApk() {
         return new File(getTPatchFolder(), "tpatch-diff.apk");
+    }
+
+    public File getMergedManifest() {
+        return new File(getOutputScope().getManifestOutputFile().getParentFile(),
+                        "AndroidManifest-merged.xml");
     }
 
     public static class AppBuildInfo {

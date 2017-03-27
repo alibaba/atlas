@@ -207,55 +207,54 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.adapter;
 
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.taobao.android.builder.AtlasPlugin;
+import com.android.build.gradle.AppExtension;
+import com.android.build.gradle.api.ApplicationVariant;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.ApplicationVariantImpl;
+import com.taobao.android.builder.extension.AtlasExtension;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
+ * Created by wuzhong on 2017/3/28.
  */
-public class AtlasProjectDependencyManager {
+public class AppVariantContextFactory {
 
-    public static void addProjectDependency(Project project, String variantName) {
+    protected static Map<ApplicationVariant, AppVariantContext> appVariantContextMap
+        = new HashMap<ApplicationVariant, AppVariantContext>();
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
+    public AppVariantContext getAppVariantContext(Project project, ApplicationVariant applicationVariant) {
 
-        if (null == task){
-            return;
+        AppVariantContext appVariantContext = appVariantContextMap.get(applicationVariant);
+
+        if (null == appVariantContext) {
+
+            appVariantContext = create(project, (ApplicationVariantImpl)applicationVariant);
+
+            appVariantContextMap.put(applicationVariant, appVariantContext);
+
         }
 
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
+        return appVariantContext;
 
-        if (null == dependencies){
-            return;
-        }
+    }
 
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
+    @NotNull
+    public AppVariantContext create(Project project, ApplicationVariantImpl applicationVariant) {
 
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
+        AppVariantContext appVariantContext;
+        AppExtension appExtension = project.getExtensions().getByType(AppExtension.class);
 
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
+        AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
 
-                    task.dependsOn(assembleTask);
-
-                }
-            }
-        });
-
+        appVariantContext = new AppVariantContext(applicationVariant, project,
+                                                  atlasExtension, appExtension);
+        return appVariantContext;
     }
 
 }

@@ -207,55 +207,97 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.tools.asm;
 
-import java.util.function.Consumer;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.taobao.android.builder.AtlasPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import java.io.*;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
+ * Created by wuzhong on 2016/12/13.
  */
-public class AtlasProjectDependencyManager {
+public abstract class ClazzBasicHandler {
 
-    public static void addProjectDependency(Project project, String variantName) {
+    public static Logger logger = LoggerFactory.getLogger(ClazzBasicHandler.class);
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
 
-        if (null == task){
-            return;
-        }
+    protected File jar;
+    protected File outJar;
+    protected Map<String, String> reMapping;
 
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
-
-        if (null == dependencies){
-            return;
-        }
-
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
-
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
-
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
-                }
-            }
-        });
-
+    public ClazzBasicHandler(File jar, File outJar, Map<String, String> reMapping) {
+        this.jar = jar;
+        this.outJar = outJar;
+        this.reMapping = reMapping;
     }
 
+    public void execute() throws IOException {
+
+        logger.info("[ClazzReplacer] rewriteJar from " + jar.getAbsolutePath() + " to " + outJar.getAbsolutePath());
+
+        JarFile jarFile = new JarFile(jar);
+
+        JarOutputStream jos = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(outJar)));
+
+        Enumeration<JarEntry> jarFileEntries = jarFile.entries();
+
+        while (jarFileEntries.hasMoreElements()) {
+
+            JarEntry ze = jarFileEntries.nextElement();
+
+            String pathName = ze.getName();
+
+            logger.info(jar.getAbsolutePath() + "->" + pathName);
+
+            if (!pathName.endsWith(".class")) {
+                justCopy(jarFile, jos, ze, pathName);
+                continue;
+            }
+
+            handleClazz(jarFile, jos, ze, pathName);
+
+        }
+
+        jarFile.close();
+//        IOUtils.closeQuietly(fileOutputStream);
+        IOUtils.closeQuietly(jos);
+    }
+
+    protected void justCopy(JarFile jarFile, JarOutputStream jos, JarEntry ze, String pathName) {
+        try {
+            InputStream inputStream = jarFile.getInputStream(ze);
+            copyStreamToJar(inputStream, jos, pathName, ze.getTime());
+        } catch (Exception e) {
+            logger.error("justCopy exception", e);
+        }
+    }
+
+
+    protected abstract void handleClazz(JarFile jarFile, JarOutputStream jos, JarEntry ze, String pathName);
+
+
+    protected void copyStreamToJar(InputStream zin, ZipOutputStream out, String currentName, long fileTime) throws IOException {
+        // Create new entry for zip file.
+
+        ZipEntry newEntry = new ZipEntry(currentName);
+        // Make sure there is date and time set.
+        if (fileTime != -1) {
+            newEntry.setTime(fileTime); // If found set it into output file.
+        }
+        out.putNextEntry(newEntry);
+        if (zin != null) {
+            IOUtils.copy(zin, out);
+        }
+        IOUtils.closeQuietly(zin);
+
+    }
 }

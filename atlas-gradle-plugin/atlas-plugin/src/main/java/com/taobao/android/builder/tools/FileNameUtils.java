@@ -207,55 +207,96 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.tools;
 
-import java.util.function.Consumer;
+import java.io.File;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import com.taobao.android.builder.AtlasPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import com.android.builder.model.MavenCoordinates;
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.AtlasBuildContext;
+import org.apache.commons.lang.StringUtils;
+
+import static com.android.SdkConstants.DOT_JAR;
 
 /**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
+ * Created by wuzhong on 2017/3/30.
  */
-public class AtlasProjectDependencyManager {
+public class FileNameUtils {
 
-    public static void addProjectDependency(Project project, String variantName) {
+    private static Set<String> outFileNames = Sets.newHashSet();
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
+    private static AtomicInteger index = new AtomicInteger(0);
 
-        if (null == task){
-            return;
-        }
+    public static String getUniqueJarName(File inputFile) {
 
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
+        String jarFileName = inputFile.getName();
 
-        if (null == dependencies){
-            return;
-        }
+        String newFileName = "";
 
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
+        if (jarFileName.equalsIgnoreCase("classes.jar")) {
 
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
+            String inputPath = inputFile.getAbsolutePath();
+            String rootInputPath = "";
 
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
+            //计算最原始的jar路径
+            while (true) {
+                rootInputPath = AtlasBuildContext.jarTraceMap.get(inputPath);
+                if (null == rootInputPath) {
+                    rootInputPath = inputPath;
+                    break;
                 }
             }
-        });
 
+            if (StringUtils.isNotEmpty(rootInputPath)) {
+                MavenCoordinates mavenCoordinates = getMavenCoordinate(rootInputPath);
+                if (null != mavenCoordinates) {
+                    newFileName = mavenCoordinates.getArtifactId();
+                }
+            }
+
+        } else {
+            newFileName = jarFileName;
+        }
+
+        if (StringUtils.isEmpty(newFileName)) {
+            newFileName = inputFile
+                .getParentFile()
+                .getParentFile()
+                .getParentFile()
+                .getName() +
+                "-" +
+                inputFile.getParentFile().getParentFile().getName() +
+                DOT_JAR;
+        }
+
+        String outFileName = newFileName;
+        if (newFileName.endsWith(DOT_JAR)) {
+            outFileName = outFileName.substring(0, outFileName.length() - DOT_JAR.length());
+        }
+
+        if (outFileNames.contains(outFileName)) {
+            outFileName = outFileName + "-" + index.incrementAndGet();
+        }
+        outFileNames.add(outFileName);
+
+        return outFileName;
+    }
+
+    private static MavenCoordinates getMavenCoordinate(String path) {
+        File file = new File(path);
+        File parentDir = file.getParentFile();
+        //查找3级
+        for (int i = 0; i < 3; i++) {
+            MavenCoordinates mavenCoordinates = AtlasBuildContext.dependencyTraceMap.get(parentDir.getAbsolutePath());
+            if (null != mavenCoordinates) {
+                return mavenCoordinates;
+            }
+            parentDir = parentDir.getParentFile();
+        }
+
+        return null;
     }
 
 }

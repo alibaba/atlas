@@ -239,7 +239,7 @@ public class ApDownloader {
         }
 
         String apiUrl = "http://" +
-                AtlasBuildContext.serverHost + "/rpc/androidPlugin/getAp.json?buildConfigId=" + configId;
+                AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl + "/rpc/androidPlugin/getAp.json?buildConfigId=" + configId;
 
         URL api = new URL(apiUrl);
         BufferedReader in = new BufferedReader(

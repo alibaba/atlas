@@ -207,54 +207,48 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.adapter;
 
-import java.util.function.Consumer;
-
-import com.taobao.android.builder.AtlasPlugin;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.extension.PatchConfig;
+import com.taobao.android.builder.extension.TBuildType;
+import com.taobao.android.builder.extension.factory.PatchConfigFactory;
+import com.taobao.android.builder.extension.factory.TBuildTypeFactory;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import org.gradle.internal.reflect.Instantiator;
 
 /**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
+ * Created by wuzhong on 2017/3/29.
  */
-public class AtlasProjectDependencyManager {
+public class AtlasExtensionFactory {
 
-    public static void addProjectDependency(Project project, String variantName) {
+    public AtlasExtension createExtendsion(Project project, Instantiator instantiator) {
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
+        AtlasExtension atlasExtension = getExtendsion(project);
 
-        if (null == task){
-            return;
+        if (null != atlasExtension) {
+            return atlasExtension;
         }
 
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
+        final NamedDomainObjectContainer<TBuildType> buildTypeContainer = project.container(TBuildType.class,
+                                                                                            new TBuildTypeFactory(
+                                                                                                instantiator, project,
+                                                                                                project.getLogger()));
+        final NamedDomainObjectContainer<PatchConfig> patchConfigContainer = project.container(PatchConfig.class,
+                                                                                               new PatchConfigFactory(
+                                                                                                   instantiator,
+                                                                                                   project, project
+                                                                                                       .getLogger()));
 
-        if (null == dependencies){
-            return;
-        }
+        return project.getExtensions().create("atlas", AtlasExtension.class, project, instantiator,
+                                              buildTypeContainer, patchConfigContainer);
 
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
+    }
 
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
+    public AtlasExtension getExtendsion(Project project) {
 
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
-                }
-            }
-        });
+        return project.getExtensions().findByType(AtlasExtension.class);
 
     }
 

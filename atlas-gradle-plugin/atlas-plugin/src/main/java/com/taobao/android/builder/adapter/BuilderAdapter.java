@@ -207,55 +207,28 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.adapter;
 
-import java.util.function.Consumer;
-
-import com.taobao.android.builder.AtlasPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import com.taobao.android.builder.tools.cache.FileCache;
+import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
+import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
+import com.taobao.android.builder.tools.sign.AndroidSigner;
 
 /**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
+ * Created by wuzhong on 2017/3/29.
  */
-public class AtlasProjectDependencyManager {
+public class BuilderAdapter {
 
-    public static void addProjectDependency(Project project, String variantName) {
+    public AtlasExtensionFactory extensionFactory = new AtlasExtensionFactory();
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
+    public AppVariantContextFactory appVariantContextFactory = new AppVariantContextFactory();
 
-        if (null == task){
-            return;
-        }
+    public AndroidSigner androidSigner = new AndroidSigner();
 
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
+    public ApkInjectInfoCreator apkInjectInfoCreator = new ApkInjectInfoCreator();
 
-        if (null == dependencies){
-            return;
-        }
+    public FileCache fileCache = new SimpleFileCache();
 
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
-
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
-
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
-                }
-            }
-        });
-
-    }
+    public String tpatchHistoryUrl = "";
 
 }

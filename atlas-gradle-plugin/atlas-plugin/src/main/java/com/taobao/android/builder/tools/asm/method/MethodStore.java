@@ -207,55 +207,51 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.tools.asm.method;
 
-import java.util.function.Consumer;
-
-import com.taobao.android.builder.AtlasPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
+ * Created by wuzhong on 2016/12/13.
  */
-public class AtlasProjectDependencyManager {
+public class MethodStore {
 
-    public static void addProjectDependency(Project project, String variantName) {
+    private Map<String, Method> methodMap = new HashMap<>();
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
+    public MethodStore(Map<String, String> map) {
 
-        if (null == task){
-            return;
-        }
+        for (String key : map.keySet()) {
 
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
+            String value = map.get(key);
 
-        if (null == dependencies){
-            return;
-        }
+            String[] values = value.split("\\|");
 
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
-
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
-
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
-                }
+            Method method = new Method();
+            method.owner = values[0];
+            method.name = values[1];
+            if (values.length == 3) {
+                method.desc = values[3];
             }
-        });
+
+            methodMap.put(key, method);
+
+        }
+
 
     }
+
+
+    public Method findMethod(String owner, String name, String desc) {
+
+        Method method = methodMap.get(owner + "|" + name);
+        if (null != method) {
+            return method;
+        }
+
+        return methodMap.get(owner + "|" + name + "|" + desc);
+
+    }
+
 
 }

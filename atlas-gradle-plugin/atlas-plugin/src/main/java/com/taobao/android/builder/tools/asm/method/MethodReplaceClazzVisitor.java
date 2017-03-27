@@ -207,55 +207,27 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.tools.asm.method;
 
-import java.util.function.Consumer;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
-import com.taobao.android.builder.AtlasPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+public final class MethodReplaceClazzVisitor extends ClassVisitor {
 
-/**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
- */
-public class AtlasProjectDependencyManager {
+    private MethodStore methodStore;
+    private StringBuilder stringBuilder;
 
-    public static void addProjectDependency(Project project, String variantName) {
-
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
-
-        if (null == task){
-            return;
-        }
-
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
-
-        if (null == dependencies){
-            return;
-        }
-
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
-
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
-
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
-                }
-            }
-        });
-
+    public MethodReplaceClazzVisitor(int api, ClassWriter cw, MethodStore methodStore,StringBuilder stringBuilder ) {
+        super(api, cw);
+        this.methodStore = methodStore;
+        this.stringBuilder = stringBuilder;
     }
 
+    @Override
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        MethodVisitor methodVisitor = super.visitMethod(access, name, desc, signature, exceptions);
+        return new MethodReplaceMethodVisitor(Opcodes.ASM4, methodVisitor, methodStore,stringBuilder);
+    }
 }

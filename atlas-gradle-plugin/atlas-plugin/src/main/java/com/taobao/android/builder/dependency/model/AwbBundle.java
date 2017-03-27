@@ -238,6 +238,8 @@ public class AwbBundle {
 
     private String variantName;
 
+    private boolean dataBindEnabled;
+
     //当前模块本身, 主bundle为空， 否则为awb本身
     private AndroidLibrary androidLibrary;
 
@@ -384,4 +386,11 @@ public class AwbBundle {
         return libraries;
     }
 
+    public boolean isDataBindEnabled() {
+        return dataBindEnabled;
+    }
+
+    public void setDataBindEnabled(boolean dataBindEnabled) {
+        this.dataBindEnabled = dataBindEnabled;
+    }
 }

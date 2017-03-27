@@ -207,54 +207,54 @@
  *
  */
 
-package com.taobao.android.builder.dependency;
+package com.taobao.android.builder.tools.asm;
 
-import java.util.function.Consumer;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.commons.RemappingClassAdapter;
+import org.objectweb.asm.commons.SimpleRemapper;
 
-import com.taobao.android.builder.AtlasPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
 
 /**
- * Created by wuzhong on 2017/3/16.
- *
- * @author wuzhong
- * @date 2017/03/16
+ * Created by wuzhong on 2016/12/13.
  */
-public class AtlasProjectDependencyManager {
+public class ClazzReplacer extends ClazzBasicHandler {
 
-    public static void addProjectDependency(Project project, String variantName) {
+    public ClazzReplacer(File jar, File outJar, Map<String, String> reMapping) {
+        super(jar, outJar, reMapping);
+    }
 
-        Task task = project.getTasks().findByName("prepare" + variantName + "Dependencies");
+    @Override
+    protected void handleClazz(JarFile jarFile, JarOutputStream jos, JarEntry ze, String pathName) {
 
-        if (null == task){
+        //            logger.log(pathName);
+        if (reMapping.containsKey(pathName.substring(0, pathName.length() - 6))) {
+            logger.info("[ClazzReplacer] remove class  " + pathName + " form " + jarFile);
             return;
         }
 
-        DependencySet dependencies = project.getConfigurations().getByName(
-            AtlasPlugin.BUNDLE_COMPILE).getDependencies();
+        try {
+            InputStream in = jarFile.getInputStream(ze);
+            ClassReader cr = new ClassReader(in);
+            ClassWriter cw = new ClassWriter(0);
+            RemappingClassAdapter remappingClassAdapter = new RemappingClassAdapter(cw, new SimpleRemapper(reMapping));
+            cr.accept(remappingClassAdapter, ClassReader.EXPAND_FRAMES);
 
-        if (null == dependencies){
-            return;
+            InputStream inputStream = new ByteArrayInputStream(cw.toByteArray());
+            copyStreamToJar(inputStream, jos, pathName, ze.getTime());
+
+        } catch (Throwable e) {
+
+            System.err.println("[ClazzReplacer] rewrite error > " + pathName);
+            justCopy(jarFile, jos, ze, pathName);
         }
-
-        dependencies.forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof  DefaultProjectDependency){
-
-                    Project subProject = ((DefaultProjectDependency)dependency).getDependencyProject();
-
-                    Task assembleTask = subProject.getTasks().findByName("assembleRelease");
-
-                    task.dependsOn(assembleTask);
-
-                }
-            }
-        });
 
     }
 
