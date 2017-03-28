@@ -41,6 +41,7 @@ atlas {
     tBuildConfig {
         autoStartBundles = ['com.taobao.firstbundle'] //自启动bundle配置
         outOfApkBundles = ['remotebundle']
+        preLaunch = 'com.taobao.demo.DemoPreLaunch'
     }
 
 
