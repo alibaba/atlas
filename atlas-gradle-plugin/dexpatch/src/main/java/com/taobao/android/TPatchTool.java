@@ -233,6 +233,8 @@ import com.taobao.android.tpatch.utils.PathUtils;
 import com.taobao.android.utils.PathMatcher;
 import com.taobao.android.utils.ZipUtils;
 
+import com.taobao.common.dexpatcher.DexPatchApplier;
+import com.taobao.common.dexpatcher.DexPatchGenerator;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -314,11 +316,11 @@ public class TPatchTool extends BasePatchTool {
 
     private boolean hasMainBundle;
 
-    private List<BundleBO> noPatchBundles = Lists.newArrayList();
+    private List<String> noPatchBundles = Lists.newArrayList();
 
     private Map<String, Map<String, ClassDef>> bundleClassMap = new ConcurrentHashMap<String, Map<String, ClassDef>>();
 
-    public void setNoPatchBundles(List<BundleBO>noPatchBundles) {
+    public void setNoPatchBundles(List<String>noPatchBundles) {
         if (!noPatchBundles.isEmpty()) {
             this.noPatchBundles.addAll(noPatchBundles);
         }
@@ -1145,6 +1147,11 @@ public class TPatchTool extends BasePatchTool {
     }
 
     public static void main(String[] args) throws Exception {
+        File baseDexFile = new File("/Users/lilong/Downloads/taobao-android-release-6.4.5.36/lib/armeabi/libcom_taobao_taobao_home/classes.dex");
+        File newDexFile = new File("/Users/lilong/Downloads/1.dex");
+        File patchFile = new File("/Users/lilong/Downloads/2.dex");
+        DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(baseDexFile,newDexFile);
+        dexPatchGenerator.executeAndSaveTo(new File("/Users/lilong/Downloads/2.dex"));
 //
 //        TPatchTool tPatchTool = new TPatchTool(new File("/Users/lilong/Downloads/taobao-android.apk"),
 //                                               new File("/Users/lilong/Downloads/tpatch-diff.apk"),

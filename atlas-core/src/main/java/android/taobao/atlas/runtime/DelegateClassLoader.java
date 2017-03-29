@@ -256,8 +256,11 @@ public class DelegateClassLoader extends ClassLoader {
                 if (clazz != null)
                     return clazz;
 
-                if (clazz == null && className.contains("MsgProvider")) {
+                ComponentName comp = new ComponentName(RuntimeVariables.androidApplication.getPackageName(),className);
+                if (isProvider(comp)){
                     return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeProvider");
+                }else if(isReceiver(comp)){
+                    return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeReceiver");
                 }
 
                 throw new ClassNotFoundException("Can't find class " + className + printExceptionInfo());
