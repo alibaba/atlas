@@ -337,9 +337,9 @@ public class Atlas {
 
             Object gDefault = null;
             if(Build.VERSION.SDK_INT<25) {
-                gDefault = AtlasHacks.ActivityManagerNative_gDefault.get(AtlasHacks.ActivityManagerNative.getmClass());
+                gDefault=AtlasHacks.ActivityManagerNative_gDefault.get(AtlasHacks.ActivityManagerNative.getmClass());
             }else{
-                gDefault = AtlasHacks.ActivityManagerNative_getDefault.invoke(AtlasHacks.ActivityManagerNative.getmClass());
+                gDefault=AtlasHacks.ActivityManagerNative_getDefault.invoke(AtlasHacks.ActivityManagerNative.getmClass());
             }
             AtlasHacks.Singleton_mInstance.hijack(gDefault, activityManagerProxy);
         }catch(Throwable e){}
