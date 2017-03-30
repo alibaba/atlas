@@ -22,6 +22,7 @@ import com.taobao.common.dexpatcher.struct.PatchOperation;
 import com.taobao.dex.*;
 import com.taobao.dex.io.DexDataBuffer;
 import com.taobao.dx.util.IndexMap;
+import org.apache.commons.io.FileUtils;
 
 import java.io.*;
 import java.util.*;
@@ -219,6 +220,9 @@ public class DexPatchGenerator {
         try {
             os = new BufferedOutputStream(new FileOutputStream(file));
             executeAndSaveTo(os);
+            if (file.exists() &&file.length() == 0){
+                FileUtils.deleteQuietly(file);
+            }
         } finally {
             if (os != null) {
                 try {
