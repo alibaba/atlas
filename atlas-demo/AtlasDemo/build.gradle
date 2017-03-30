@@ -10,6 +10,7 @@ buildscript {
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
     dependencies {
+        classpath "com.taobao.android:dex_patch:1.1.3.7"
         classpath "com.taobao.android:atlasplugin:2.3.0.alpha+"
     }
 }
