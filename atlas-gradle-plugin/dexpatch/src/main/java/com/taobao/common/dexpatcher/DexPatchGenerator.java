@@ -24,10 +24,7 @@ import com.taobao.dex.io.DexDataBuffer;
 import com.taobao.dx.util.IndexMap;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 
@@ -462,6 +459,22 @@ public class DexPatchGenerator {
     }
 
     private void writeResultToStream(OutputStream os) throws IOException {
+        if (stringDataSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                typeIdSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                typeListSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                protoIdSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                fieldIdSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                methodIdSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                annotationSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                annotationSetSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                classDefSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                encodedArraySectionDiffAlg.getPatchOperationList().isEmpty()&&
+                codeSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                annotationSetRefListSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                classDataSectionDiffAlg.getPatchOperationList().isEmpty()&&
+                annotationsDirectorySectionDiffAlg.getPatchOperationList().isEmpty()){
+            return;
+        }
         DexDataBuffer buffer = new DexDataBuffer();
         buffer.write(DexPatchFile.MAGIC);
         buffer.writeShort(DexPatchFile.CURRENT_VERSION);
