@@ -1,3 +1,8 @@
+### 2.3.0.alpha9
+
+1. 修复postprocessmanifest
+2. data-bind支持
+
 ### 2.3.0.alpha7
 1. 修复某些场景下buildcache导致的构建失败
 2. 修复 awo 快速调试

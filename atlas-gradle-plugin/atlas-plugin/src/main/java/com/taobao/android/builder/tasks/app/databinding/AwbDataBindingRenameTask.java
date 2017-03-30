@@ -240,7 +240,7 @@ import org.gradle.api.tasks.TaskAction;
 
 public class AwbDataBindingRenameTask extends BaseTask {
 
-    static final String taskName = "DataBindingRenameTask";
+    static final String taskName = "dataBindingRename";
 
     private AndroidConfig androidConfig;
     private AppVariantContext appVariantContext;

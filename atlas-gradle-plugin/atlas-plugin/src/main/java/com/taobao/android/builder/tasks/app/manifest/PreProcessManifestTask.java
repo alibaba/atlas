@@ -501,6 +501,21 @@ public class PreProcessManifestTask extends DefaultTask {
                             false,
                             atlasExtension.getTBuildConfig()
                                 .getOutOfApkBundles());
+                        
+                        File file = scope.getVariantScope()
+                            .getInstantRunManifestOutputFile();
+                        if (null != file && file.exists()) {
+                            ManifestFileUtils.postProcessManifests(
+                                baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
+                                getLibManifestMap(),
+                                getLibManifestDepenendyMap(),
+                                bundleBaseLineInfo,
+                                atlasExtension.manifestOptions,
+                                isMultiDexEnabled(),
+                                true,
+                                atlasExtension.getTBuildConfig()
+                                    .getOutOfApkBundles());
+                        }
 
                         AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).generateKeepList(
                             baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),

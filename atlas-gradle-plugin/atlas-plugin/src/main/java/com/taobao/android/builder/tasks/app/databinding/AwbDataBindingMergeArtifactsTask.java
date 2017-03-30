@@ -246,7 +246,7 @@ import org.gradle.api.tasks.TaskAction;
 
 public class AwbDataBindingMergeArtifactsTask extends BaseTask {
 
-    static final String taskName = "DataBindingMergeAwbsArtifactsTask";
+    static final String taskName = "dataBindingMergeAwbsArtifacts";
 
     private AndroidConfig androidConfig;
     private AppVariantContext appVariantContext;
