@@ -25,7 +25,7 @@ repositories {
 
 group = 'com.taobao.android'
 description = """atlas_core"""
-version '5.0.6-rc19'
+version '5.0.6-rc21'
 
 
 sourceCompatibility = 1.7
@@ -48,13 +48,27 @@ tasks.whenTaskAdded {task ->
             File instrumentation = new File(task.getDestinationDir(),
                                             "android/app/Instrumentation.class");
             if (instrumentation.exists()) {
-                new File(task.getDestinationDir(), "android/app/Instrumentation.class").delete();
+                instrumentation.delete();
+//                new File(task.getDestinationDir(),
+//                        "android/app/Instrumentation.class").delete();
+//                new File(task.getDestinationDir(),
+//                        "android/app/Instrumentation.class").delete()
                 println("delete instrumentation success!");
             }
             File preVerifier = new File(task.getDestinationDir(),"android/app/PreVerifier.class");
             if(preVerifier.exists()){
-                new File(task.getDestinationDir(),"android/app/PreVerifier.class").delete();
+                preVerifier.delete();
                 println("delete preVerifier success!");
+            }
+            File DataBindingComponent = new File(task.getDestinationDir(),"android/databinding/DataBindingComponent.class");
+            if(DataBindingComponent.exists()){
+                DataBindingComponent.delete();
+                println("delete DataBindComponent success!");
+            }
+            File ViewDataBinding = new File(task.getDestinationDir(),"android/databinding/ViewDataBinding.class");
+            if(ViewDataBinding.exists()){
+                ViewDataBinding.delete();
+                println("delete ViewDataBinding success!");
             }
         }
     }
