@@ -237,9 +237,7 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestDependencyUtil;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.dom4j.DocumentException;
-import org.gradle.api.Action;
 import org.gradle.api.GradleException;
-import org.gradle.api.Task;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
@@ -250,6 +248,7 @@ import org.gradle.api.tasks.TaskAction;
  * 处理合并后的manifest
  * Created by shenghua.nish on 2015-04-14 下午1:41.
  */
+@Deprecated
 public class PostProcessManifestTask extends IncrementalTask {
 
     private AppVariantContext appVariantContext;
@@ -430,13 +429,13 @@ public class PostProcessManifestTask extends IncrementalTask {
             ManifestProcessorTask manifestProcessorTask = getAppVariantOutputContext().getOutputScope()
                 .getVariantOutputData().manifestProcessorTask;
 
-            manifestProcessorTask.doFirst(
-                new Action<Task>() {
-                    @Override
-                    public void execute(Task task) {
-                        manifestProcessorTask.setManifestOutputFile(getAppVariantOutputContext().getMergedManifest());
-                    }
-                });
+            //manifestProcessorTask.doFirst(
+            //    new Action<Task>() {
+            //        @Override
+            //        public void execute(Task task) {
+            //            manifestProcessorTask.setManifestOutputFile(getAppVariantOutputContext().getMergedManifest());
+            //        }
+            //    });
 
             postProcessManifestsTask.appVariantContext = appVariantContext;
             postProcessManifestsTask.manifestProcessorTask = manifestProcessorTask;

@@ -216,7 +216,6 @@ import java.util.function.Consumer;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.transforms.DexTransform;
@@ -239,7 +238,6 @@ import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingExportBuil
 import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingMergeArtifactsTask;
 import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingProcessLayoutTask;
 import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingRenameTask;
-import com.taobao.android.builder.tasks.app.manifest.PostProcessManifestTask;
 import com.taobao.android.builder.tasks.app.manifest.PreProcessManifestTask;
 import com.taobao.android.builder.tasks.app.merge.MergeAssetAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeManifestAwbsConfigAction;
@@ -285,7 +283,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             @Override
             public void accept(ApplicationVariant applicationVariant) {
 
-                AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory.getAppVariantContext(project,applicationVariant);
+                AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
+                    .getAppVariantContext(project, applicationVariant);
 
                 if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()) {
                     throw new GradleException(
@@ -337,7 +336,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(MergeManifests.class));
 
-                mtlTaskContextList.add(new MtlTaskContext(PostProcessManifestTask.ConfigAction.class, null));
+                //mtlTaskContextList.add(new MtlTaskContext(PostProcessManifestTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(MergeManifestAwbsConfigAction.class, null));
 
