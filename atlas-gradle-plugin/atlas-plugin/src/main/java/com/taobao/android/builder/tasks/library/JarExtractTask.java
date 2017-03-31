@@ -207,82 +207,55 @@
  *
  */
 
-package com.taobao.android.builder.tasks.library.publish;
+package com.taobao.android.builder.tasks.library;
 
+import java.io.File;
+
+import com.taobao.android.builder.tools.zip.ZipUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.gradle.api.Action;
-import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.publish.maven.tasks.GenerateMavenPom;
-import org.gradle.api.publish.plugins.PublishingPlugin;
-import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.bundling.Zip;
 
 /**
- * Created by wuzhong on 2017/2/9.
- *
- * 更新pom里依赖的 type 和 scope
+ * Created by wuzhong on 2017/2/25.
  *
  * @author wuzhong
  */
-public class UpdatePomTaskInjector {
+public class JarExtractTask {
 
-    private Project project;
+    /**
+     * 创建基本的AWB任务
+     */
+    public void generateJarArtifict(final Zip bundleTask) {
 
-    UpdatePomTask updatePomTask;
+        bundleTask.doLast(new Action<Task>() {
 
-    GenerateMavenPom generateMavenPom;
-
-    public UpdatePomTaskInjector(Project project) {
-        this.project = project;
-    }
-
-    public void updatePom() {
-
-        project.getTasks().whenTaskAdded(new Action<Task>() {
             @Override
             public void execute(Task task) {
 
-                if ("generatePomFileForMavenPublication".equals(task.getName())) {
+                File outputFile = new File(bundleTask.getDestinationDir(),
+                                           bundleTask.getArchiveName());
 
-                    generateMavenPom = (GenerateMavenPom)task;
+                if (!outputFile.exists()) {
+                    return;
+                }
 
-                    updatePomTask.xml = generateMavenPom.getDestination();
+                File f = ZipUtils.extractZipFileToFolder(outputFile,
+                                                         "classes.jar",
+                                                         outputFile.getParentFile());
 
-                    updatePomTask.dependsOn(generateMavenPom);
-
-                } else if (task.getName().startsWith("publishMavenPublicationToMaven")) {
-
-                    task.dependsOn(updatePomTask);
+                if (null != f && f.exists()) {
+                    File jar = new File(new File(bundleTask.getDestinationDir().getParentFile(), "jar"),
+                                        FilenameUtils.getBaseName(bundleTask.getArchiveName()) +
+                                            ".jar");
+                    jar.getParentFile().mkdirs();
+                    f.renameTo(jar);
 
                 }
 
             }
         });
-
-        final TaskContainer tasks = project.getTasks();
-        Task publishLifecycleTask = tasks.findByName(PublishingPlugin.PUBLISH_LIFECYCLE_TASK_NAME);
-
-        if (null == publishLifecycleTask) {
-            return;
-        }
-
-        String taskName = "updatePomBeforePublish";
-
-        updatePomTask = tasks.create(taskName,
-                                     UpdatePomTask.class,
-                                     new Action<UpdatePomTask>() {
-                                         @Override
-                                         public void execute(UpdatePomTask publishTask) {
-                                             publishTask.setGroup(PublishingPlugin.PUBLISH_TASK_GROUP);
-                                         }
-                                     });
-
-        publishLifecycleTask.dependsOn(taskName);
-
-        //after bundle task
-        updatePomTask.mustRunAfter(tasks.withType(Zip.class));
-        //updatePomTask.dependsOn(tasks.withType(Zip.class));
-
     }
 
 }

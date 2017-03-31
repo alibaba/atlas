@@ -270,19 +270,6 @@ public class AwbGenerator {
                     return;
                 }
 
-                File f = ZipUtils.extractZipFileToFolder(outputFile,
-                                                         "classes.jar",
-                                                         outputFile.getParentFile());
-
-                if (null != f && f.exists()) {
-                    File jar = new File(new File(bundleTask.getDestinationDir().getParentFile(), "jar"),
-                                        FilenameUtils.getBaseName(bundleTask.getArchiveName()) +
-                                            ".jar");
-                    jar.getParentFile().mkdirs();
-                    f.renameTo(jar);
-
-                }
-
                 //重新生成aar
                 if (atlasExtension.getBundleConfig().isAwbBundle()) {
                     try {
