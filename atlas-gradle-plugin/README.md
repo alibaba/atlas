@@ -2,7 +2,7 @@
 
 ## changelog
 
-### 2.3.0.alpha10(未发布)
+### 2.3.0.alpha10
 
 1. 修复postprocessmanifest
 2. data-bind支持
