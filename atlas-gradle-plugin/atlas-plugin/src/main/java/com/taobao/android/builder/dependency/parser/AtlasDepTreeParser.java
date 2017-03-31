@@ -210,6 +210,7 @@
 package com.taobao.android.builder.dependency.parser;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -255,6 +256,7 @@ import org.gradle.api.artifacts.result.ResolvedDependencyResult;
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult;
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
 import org.gradle.api.specs.Specs;
+import org.jetbrains.annotations.NotNull;
 
 import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 
@@ -360,19 +362,7 @@ public class AtlasDepTreeParser {
         // 不使用官方的扁平化的依赖处理，改用自己处理树状的依赖关系;对于application的依赖，我们只取compile的依赖
         Set<ModuleVersionIdentifier> directDependencies = new HashSet<ModuleVersionIdentifier>();
 
-        Set<? extends DependencyResult> projectDependencies = compileClasspath.getIncoming()
-            .getResolutionResult()
-            .getRoot()
-            .getDependencies();
-
-        Set<? extends DependencyResult> projectDependencies2 = bundleClasspath.getIncoming()
-            .getResolutionResult()
-            .getRoot()
-            .getDependencies();
-
-        Set<DependencyResult> dependencyResults = new HashSet<>();
-        dependencyResults.addAll(projectDependencies);
-        dependencyResults.addAll(projectDependencies2);
+        List<DependencyResult> dependencyResults = getSortedDependencyList(compileClasspath, bundleClasspath);
 
         for (DependencyResult dependencyResult : dependencyResults) {
             if (dependencyResult instanceof ResolvedDependencyResult) {
@@ -403,6 +393,38 @@ public class AtlasDepTreeParser {
         resolveAllDependencies();
 
         return toAtlasDependencyTree();
+    }
+
+    @NotNull
+    private List<DependencyResult> getSortedDependencyList(Configuration compileClasspath,
+                                                           Configuration bundleClasspath) {
+        Set<? extends DependencyResult> projectDependencies = compileClasspath.getIncoming()
+            .getResolutionResult()
+            .getRoot()
+            .getDependencies();
+
+        Set<? extends DependencyResult> bundleDependencies = bundleClasspath.getIncoming()
+            .getResolutionResult()
+            .getRoot()
+            .getDependencies();
+
+        //先做排序，优先处理主dex的依赖关系
+        List<DependencyResult> dependencyResults = new ArrayList<>();
+        dependencyResults.addAll(projectDependencies);
+
+        Set<String> bundleSets = new HashSet<>();
+        for (DependencyResult dependencyResult : bundleDependencies){
+            bundleSets.add(dependencyResult.toString());
+        }
+        List<DependencyResult> bundleToDel = new ArrayList<>();
+        for (DependencyResult dependencyResult : dependencyResults){
+            if (bundleSets.contains(dependencyResult.toString())){
+                bundleToDel.add(dependencyResult);
+            }
+        }
+        dependencyResults.removeAll(bundleToDel);
+        dependencyResults.addAll(bundleDependencies);
+        return dependencyResults;
     }
 
     /**
