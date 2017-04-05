@@ -22,6 +22,7 @@ import com.taobao.common.dexpatcher.struct.PatchOperation;
 import com.taobao.dex.*;
 import com.taobao.dex.io.DexDataBuffer;
 import com.taobao.dx.util.IndexMap;
+import org.apache.commons.io.FileUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -222,6 +223,9 @@ public class DexPatchGenerator {
         try {
             os = new BufferedOutputStream(new FileOutputStream(file));
             executeAndSaveTo(os);
+            if (file.exists() && file.length() == 0L){
+                FileUtils.deleteQuietly(file);
+            }
         } finally {
             if (os != null) {
                 try {
@@ -462,6 +466,23 @@ public class DexPatchGenerator {
     }
 
     private void writeResultToStream(OutputStream os) throws IOException {
+        if (stringDataSectionDiffAlg.getPatchOperationList().size() == 0 &&
+        typeIdSectionDiffAlg.getPatchOperationList().size() == 0 &&
+                typeListSectionDiffAlg.getPatchOperationList().size() == 0&&
+                protoIdSectionDiffAlg.getPatchOperationList().size() == 0 &&
+        fieldIdSectionDiffAlg.getPatchOperationList().size() == 0&&
+        methodIdSectionDiffAlg.getPatchOperationList().size() == 0&&
+        annotationSectionDiffAlg.getPatchOperationList().size() == 0&&
+        annotationSetSectionDiffAlg.getPatchOperationList().size() == 0&&
+        annotationSetRefListSectionDiffAlg.getPatchOperationList().size() == 0&&
+        annotationsDirectorySectionDiffAlg.getPatchOperationList().size() == 0&&
+        debugInfoSectionDiffAlg.getPatchOperationList().size() == 0&&
+        codeSectionDiffAlg.getPatchOperationList().size() == 0&&
+        classDataSectionDiffAlg.getPatchOperationList().size() == 0&&
+        encodedArraySectionDiffAlg.getPatchOperationList().size() == 0&&
+        classDefSectionDiffAlg.getPatchOperationList().size() == 0){
+            return;
+        }
         DexDataBuffer buffer = new DexDataBuffer();
         buffer.write(DexPatchFile.MAGIC);
         buffer.writeShort(DexPatchFile.CURRENT_VERSION);

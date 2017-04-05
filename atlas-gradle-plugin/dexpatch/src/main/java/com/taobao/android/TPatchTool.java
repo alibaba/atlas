@@ -494,7 +494,8 @@ public class TPatchTool extends BasePatchTool {
         apkPatchInfos.setNewApkMd5(MD5Util.getFileMD5String(patchFile));
         FileUtils.writeStringToFile(diffTxtFile,JSON.toJSONString(apkDiff));
         FileUtils.writeStringToFile(patchInfoFile,JSON.toJSONString(apkPatchInfos));
-
+        FileUtils.moveFileToDirectory(diffTxtFile,outPatchDir.getParentFile(),true);
+        FileUtils.moveFileToDirectory(newApkBO.getApkFile(),outPatchDir.getParentFile(),true);
 //        FileUtils.deleteDirectory(unzipFolder);
         return patchFile;
     }
