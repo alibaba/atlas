@@ -355,10 +355,12 @@ public class ManifestFileUtils {
         Element root = document.getRootElement();// 得到根节点
         Element applicationElement = root.element("application");
         String realApplicationClassName = applicationElement.attributeValue("name");
+
         if (null == realApplicationClassName) {
             realApplicationClassName = "";
         }
-        applicationElement.addAttribute("name",
+
+        applicationElement.addAttribute( StringUtils.isEmpty(realApplicationClassName) ? "android:name" : "name",
                                         "android.taobao.atlas.startup.AtlasBridgeApplication");
 
         Element metaData = applicationElement.addElement("meta-data");

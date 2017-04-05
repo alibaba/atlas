@@ -2,6 +2,7 @@
 
 buildscript {
     repositories {
+        mavenLocal()
         jcenter()
     }
     configurations.all {
@@ -9,7 +10,7 @@ buildscript {
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:2.3.0+"
+        classpath "com.taobao.android:atlasplugin:2.3.0.alpha+"
     }
 }
 
