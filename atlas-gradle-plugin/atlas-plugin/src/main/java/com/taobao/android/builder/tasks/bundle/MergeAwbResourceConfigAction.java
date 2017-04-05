@@ -310,6 +310,7 @@ public class MergeAwbResourceConfigAction extends MtlBaseTaskAction<CachedMergeR
 
         //mergeResourcesTask.setProcess9Patch(process9Patch);
         mergeResourcesTask.setCrunchPng(extension.getAaptOptions().getCruncherEnabled());
+        mergeResourcesTask.setProcessResources(true);
 
         VectorDrawablesOptions vectorDrawablesOptions = variantData.getVariantConfiguration()
                 .getMergedFlavor()
