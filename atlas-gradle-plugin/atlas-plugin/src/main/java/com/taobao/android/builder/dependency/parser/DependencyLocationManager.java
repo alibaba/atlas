@@ -220,6 +220,7 @@ import com.android.builder.model.MavenCoordinates;
 import com.android.builder.utils.FileCache;
 import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
+import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
@@ -242,9 +243,7 @@ public class DependencyLocationManager {
         Optional<FileCache> buildCache =
             AndroidGradleOptions.getBuildCache(project);
         File explodedDir;
-        if (PrepareLibraryTask.shouldUseBuildCache(
-            buildCache.isPresent(), mavenCoordinates) && bundle.exists() && !isProjectLibrary(project,
-                                                                                              bundle)) { //&& !"awb"
+        if (shouldUseBuildCache(project, mavenCoordinates, bundle, buildCache)) { //&& !"awb"
             // .equals(type)
             try {
 
@@ -272,6 +271,24 @@ public class DependencyLocationManager {
 
         //throw new GradleException("set explored dir exception");
 
+    }
+
+    private static boolean shouldUseBuildCache(Project project, MavenCoordinates mavenCoordinates, File bundle,
+                                               Optional<FileCache> buildCache) {
+        if (!PrepareLibraryTask.shouldUseBuildCache(
+            buildCache.isPresent(), mavenCoordinates)) {
+            return false;
+        }
+
+        if (!bundle.exists()) {
+            return false;
+        }
+
+        if (StringUtils.isEmpty(mavenCoordinates.getGroupId())) {
+            return true;
+        }
+
+        return !isProjectLibrary(project, bundle);
     }
 
     public static boolean isProjectLibrary(Project project, File bundle) {

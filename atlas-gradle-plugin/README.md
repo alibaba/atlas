@@ -2,6 +2,13 @@
 
 ## changelog
 
+### 2.3.0.alpha11
+
+1. processManifest 修复 无 application ， 替换的不对
+2. awb 增加 process resource 逻辑
+3. butterknife 支持 
+
+
 ### 2.3.0.alpha10
 
 1. 修复postprocessmanifest

@@ -283,7 +283,7 @@ public class PrepareAllDependenciesTask extends BaseTask {
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
         for (final AndroidLibrary aarBundle : androidLibraries) {
 
-            if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getBundle())) {
+            if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getFolder())) {
 
                 runnables.add(new Runnable() {
 
