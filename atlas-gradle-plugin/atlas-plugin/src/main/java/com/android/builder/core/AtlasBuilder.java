@@ -209,18 +209,6 @@
 
 package com.android.builder.core;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -269,6 +257,7 @@ import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.ZipUtils;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
@@ -281,6 +270,18 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.StopExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -742,12 +743,6 @@ public class AtlasBuilder extends AndroidBuilder {
 
     private File getAapt() {
 
-        String path = AtlasBuilder.class.getProtectionDomain()
-            .getCodeSource()
-            .getLocation()
-            .getFile();
-        File jarFile = new File(path);
-
         String osName = "mac";
         String fileName = "aapt";
 
@@ -759,14 +754,24 @@ public class AtlasBuilder extends AndroidBuilder {
             osName = "win";
             fileName = "aapt.exe";
         }
+        String aaptPath = "aapt/" + osName + "/" + fileName;
+        File aaptFile = new File(AtlasBuilder.class.getClassLoader().getResource(aaptPath).getFile());
+        if (aaptFile.isFile()) {
+            return aaptFile;
+        }
+
+        String path = AtlasBuilder.class.getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .getFile();
+        File jarFile = new File(path);
         File jarFolder = new File(jarFile.getParentFile(),
                                   FilenameUtils.getBaseName(jarFile.getName()));
         jarFolder.mkdirs();
-        File aaptFile = new File(jarFolder, fileName);
+        aaptFile = new File(jarFolder, fileName);
 
         if (!aaptFile.exists()) {
-            aaptFile = ZipUtils.extractZipFileToFolder(jarFile,
-                                                       "aapt/" + osName + "/" + fileName,
+            aaptFile = ZipUtils.extractZipFileToFolder(jarFile, aaptPath,
                                                        aaptFile.getParentFile());
             aaptFile.setExecutable(true);
         }
