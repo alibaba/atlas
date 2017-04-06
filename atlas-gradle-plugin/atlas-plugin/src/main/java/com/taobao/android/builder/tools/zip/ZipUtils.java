@@ -219,6 +219,7 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.plexus.util.StringUtils;
+import org.gradle.api.GradleException;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -375,6 +376,7 @@ public class ZipUtils {
             }
             if (null != zip) ZipFile.closeQuietly(zip);
         } catch (IOException e) {
+            throw new GradleException(e.getMessage(), e);
         }
         return destFile;
     }
