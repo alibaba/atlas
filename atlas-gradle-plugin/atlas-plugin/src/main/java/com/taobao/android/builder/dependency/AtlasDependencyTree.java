@@ -333,4 +333,9 @@ public class AtlasDependencyTree {
         }
         return dependencyJson;
     }
+
+    public List<ResolvedDependencyInfo> getResolvedDependencies() {
+        return mResolvedDependencies;
+    }
+
 }

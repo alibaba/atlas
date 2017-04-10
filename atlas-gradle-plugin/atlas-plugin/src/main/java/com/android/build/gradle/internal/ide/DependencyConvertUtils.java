@@ -210,6 +210,7 @@
 package com.android.build.gradle.internal.ide;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.dependency.level2.AndroidDependency;
@@ -217,11 +218,13 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.ImmutableList;
+import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.ApLibrary;
 import com.taobao.android.builder.dependency.model.ApkLibrary;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import org.apache.commons.lang.StringUtils;
+import org.gradle.api.Project;
 import org.gradle.api.artifacts.ResolvedArtifact;
 
 /**
@@ -256,7 +259,7 @@ public class DependencyConvertUtils {
      * @param resolvedDependencyInfo
      * @return
      */
-    public static AndroidLibrary toAndroidLibrary(ResolvedDependencyInfo resolvedDependencyInfo) {
+    public static AndroidLibrary toAndroidLibrary(ResolvedDependencyInfo resolvedDependencyInfo, Project project) {
 
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
 
@@ -268,12 +271,17 @@ public class DependencyConvertUtils {
                                                                                          resolvedDependencyInfo
                                                                                              .getExplodedDir());
 
+        boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
+        if (project.hasProperty("localJarEnabled")) {
+            localJarEnabled = "true".equals(project.property("localJarEnabled"));
+        }
+
         return new AndroidLibraryImpl(androidDependency,
                                       false,
                                       false,
                                       ImmutableList.<AndroidLibrary>of(),
                                       ImmutableList.<JavaLibrary>of(),
-                                      androidDependency.getLocalJars());
+                                      localJarEnabled ? androidDependency.getLocalJars() : new ArrayList<>(0));
     }
 
     public static AndroidLibrary toAndroidLibrary(MavenCoordinates mavenCoordinates, File artifact, File dir) {
@@ -292,9 +300,9 @@ public class DependencyConvertUtils {
                                       androidDependency.getLocalJars());
     }
 
-    public static AwbBundle toBundle(ResolvedDependencyInfo resolvedDependencyInfo) {
+    public static AwbBundle toBundle(ResolvedDependencyInfo resolvedDependencyInfo, Project project) {
 
-        AndroidLibrary androidLibrary = toAndroidLibrary(resolvedDependencyInfo);
+        AndroidLibrary androidLibrary = toAndroidLibrary(resolvedDependencyInfo, project);
 
         return new AwbBundle(resolvedDependencyInfo, androidLibrary);
     }

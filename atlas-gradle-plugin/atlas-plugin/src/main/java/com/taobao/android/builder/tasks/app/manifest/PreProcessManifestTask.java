@@ -336,7 +336,7 @@ public class PreProcessManifestTask extends DefaultTask {
                         AtlasBuildContext.manifestMap.put(file, modifyManifest);
 
                     } catch (Throwable e) {
-                        throw new GradleException("preprocess manifest", e);
+                        throw new GradleException("preprocess manifest failed " + file.getAbsolutePath(), e);
                     }
                 }
 

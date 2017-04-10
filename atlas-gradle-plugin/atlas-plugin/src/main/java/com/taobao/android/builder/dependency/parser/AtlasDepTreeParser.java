@@ -254,6 +254,7 @@ import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.ResolvedComponentResult;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult;
+import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
 import org.gradle.api.specs.Specs;
 import org.jetbrains.annotations.NotNull;
@@ -336,7 +337,8 @@ public class AtlasDepTreeParser {
                             new Consumer<Dependency>() {
                                 @Override
                                 public void accept(Dependency dependency) {
-                                    if ("com.android.support".equals(dependency.getGroup()) || "com.android.databinding".equals(dependency.getGroup())) {
+                                    if ("com.android.support".equals(dependency.getGroup()) || "com.android.databinding"
+                                        .equals(dependency.getGroup())) {
                                         providedSets.add(dependency.getGroup() + ":" + dependency.getName());
                                     }
 
@@ -395,36 +397,72 @@ public class AtlasDepTreeParser {
         return toAtlasDependencyTree();
     }
 
+    /**
+     * 依赖的顺序，优先主bundle的依赖，避免bundle解析过早，导致依赖解析递归失败
+     *
+     * @param compileClasspath
+     * @param bundleClasspath
+     * @return
+     */
     @NotNull
     private List<DependencyResult> getSortedDependencyList(Configuration compileClasspath,
                                                            Configuration bundleClasspath) {
-        Set<? extends DependencyResult> projectDependencies = compileClasspath.getIncoming()
+
+        Set<? extends DependencyResult> compileDependencies = compileClasspath.getIncoming()
             .getResolutionResult()
             .getRoot()
             .getDependencies();
 
-        Set<? extends DependencyResult> bundleDependencies = bundleClasspath.getIncoming()
+        Set<? extends DependencyResult> bundleCompileDependencies = bundleClasspath.getIncoming()
             .getResolutionResult()
             .getRoot()
             .getDependencies();
+
+        Set<String> bundleSets = getBundleDependencies(compileClasspath, bundleCompileDependencies);
 
         //先做排序，优先处理主dex的依赖关系
         List<DependencyResult> dependencyResults = new ArrayList<>();
-        dependencyResults.addAll(projectDependencies);
+        List<DependencyResult> bundleDependencyResults = new ArrayList<>();
 
-        Set<String> bundleSets = new HashSet<>();
-        for (DependencyResult dependencyResult : bundleDependencies){
-            bundleSets.add(dependencyResult.toString());
-        }
-        List<DependencyResult> bundleToDel = new ArrayList<>();
-        for (DependencyResult dependencyResult : dependencyResults){
-            if (bundleSets.contains(dependencyResult.toString())){
-                bundleToDel.add(dependencyResult);
+        Set<String> bundleAddedSets = new HashSet<>();
+        for (DependencyResult dependencyResult : compileDependencies) {
+            if (!bundleSets.contains(dependencyResult.toString())) {
+                dependencyResults.add(dependencyResult);
+            } else {
+                bundleAddedSets.add(dependencyResult.toString());
+                bundleDependencyResults.add(dependencyResult);
             }
         }
-        dependencyResults.removeAll(bundleToDel);
-        dependencyResults.addAll(bundleDependencies);
+        for (DependencyResult dependencyResult : bundleCompileDependencies) {
+            if (!bundleAddedSets.contains(dependencyResult.toString())) {
+                bundleDependencyResults.add(dependencyResult);
+            }
+        }
+
+        dependencyResults.addAll(bundleDependencyResults);
         return dependencyResults;
+    }
+
+    @NotNull
+    private Set<String> getBundleDependencies(Configuration compileClasspath,
+                                              Set<? extends DependencyResult> bundleDependencies) {
+        Set<String> bundleSets = new HashSet<>();
+        for (DependencyResult dependencyResult : bundleDependencies) {
+            bundleSets.add(dependencyResult.toString());
+        }
+        for (Dependency dependency : compileClasspath.getAllDependencies()) {
+            if (dependency instanceof DefaultExternalModuleDependency) {
+                DefaultExternalModuleDependency externalModuleDependency = (DefaultExternalModuleDependency)dependency;
+                if (!((DefaultExternalModuleDependency)dependency).getArtifacts().isEmpty()) {
+                    if (StringUtils.equalsIgnoreCase("awb", ((DefaultExternalModuleDependency)dependency).getArtifacts()
+                        .iterator().next().getType())) {
+                        bundleSets.add(
+                            dependency.getGroup() + ":" + dependency.getName() + ":" + dependency.getVersion());
+                    }
+                }
+            }
+        }
+        return bundleSets;
     }
 
     /**
@@ -462,10 +500,10 @@ public class AtlasDepTreeParser {
             .getProjectPath() : null;
 
         // 如果同时找到多个依赖，暂时没法判断是那个真正有用
-        if (null != moduleArtifacts){
+        if (null != moduleArtifacts) {
             for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
                 String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
-                if (resolvedDependencies.contains(key)){
+                if (resolvedDependencies.contains(key)) {
                     continue;
                 }
                 resolvedDependencies.add(key);
@@ -510,7 +548,7 @@ public class AtlasDepTreeParser {
                 }
 
                 Set<? extends DependencyResult> dependencies = resolvedComponentResult.getDependencies();
-                if (null != dependencies){
+                if (null != dependencies) {
                     for (DependencyResult dep : dependencies) {
 
                         if (dep instanceof ResolvedDependencyResult) {
@@ -518,7 +556,8 @@ public class AtlasDepTreeParser {
                                 .getSelected();
 
                             if (isAwbBundle && providedDirectDep.contains(
-                                childResolvedComponentResult.getModuleVersion().getGroup() + ":" + childResolvedComponentResult
+                                childResolvedComponentResult.getModuleVersion().getGroup() + ":"
+                                    + childResolvedComponentResult
                                     .getModuleVersion().getName())) {
                                 continue;
                             }
@@ -754,7 +793,7 @@ public class AtlasDepTreeParser {
 
             if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
 
-                AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo);
+                AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo, project);
 
                 atlasDependencyTree.getAwbBundles().add(bundle);
 
@@ -775,7 +814,7 @@ public class AtlasDepTreeParser {
             case AAR:
                 //添加到主dex中去
                 awbBundle.getAndroidLibraries()
-                    .add(DependencyConvertUtils.toAndroidLibrary(dependencyInfo));
+                    .add(DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project));
                 break;
             case JAR:
                 awbBundle.getJavaLibraries().add(DependencyConvertUtils.toJavaLib(dependencyInfo));

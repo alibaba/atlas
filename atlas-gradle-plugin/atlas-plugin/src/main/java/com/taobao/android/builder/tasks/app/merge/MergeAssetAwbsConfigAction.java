@@ -215,9 +215,9 @@ import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tasks.app.MtlParallelTask;
-import com.taobao.android.builder.tasks.app.bundle.TaskCreater;
-import com.taobao.android.builder.tasks.bundle.MergeAwbAssetConfigAction;
+import com.taobao.android.builder.tasks.manager.MtlParallelTask;
+import com.taobao.android.builder.tasks.manager.TaskCreater;
+import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbAssetConfigAction;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.DefaultTask;
 

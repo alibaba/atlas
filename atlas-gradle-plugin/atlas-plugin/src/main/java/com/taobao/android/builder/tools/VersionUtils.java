@@ -209,12 +209,13 @@
 
 package com.taobao.android.builder.tools;
 
+import java.io.File;
+import java.io.IOException;
+
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.dom4j.DocumentException;
-
-import java.io.File;
-import java.io.IOException;
 
 /**
  * Created by wuzhong on 16/7/6.
@@ -243,5 +244,14 @@ public class VersionUtils {
         return versionName;
     }
 
+    public static int getVersionCode(AppVariantOutputContext appVariantOutputContext) {
+
+        try {
+            return appVariantOutputContext.getOutputScope().getVariantOutputData().getVersionCode();
+        } catch (Throwable e) {
+            return appVariantOutputContext.getVariantData().getVariantConfiguration().getVersionCode();
+        }
+
+    }
 
 }

@@ -227,7 +227,7 @@ sourceSets {
 dependencies {
     compile localGroovy()
     compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.0"
+    compile "com.android.tools.build:gradle:2.3.1"
     //    compile 'com.android.databinding:compiler:2.3.0'
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
@@ -244,4 +244,4 @@ dependencies {
 }
 
 
-version = '2.3.0.alpha12'
+version = '2.3.0.alpha13-SNAPSHOT'

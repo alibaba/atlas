@@ -209,197 +209,25 @@
 
 package com.taobao.android.builder.tasks.awo;
 
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.Callable;
-
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.ApiVersion;
-import com.android.manifmerger.ManifestMerger2;
-import com.android.manifmerger.ManifestProvider;
-import com.android.utils.FileUtils;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.app.merge.MergeManifestAwbsConfigAction.MergeAwbManifests;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.manifest.ManifestHelper;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputFile;
 
 /**
  * Created by shenghua.nish on 2016-07-15 上午11:22.
  */
-public class MergeAwoManifests extends ManifestProcessorTask {
-
-    private String minSdkVersion;
-
-    private String targetSdkVersion;
-
-    private Integer maxSdkVersion;
-
-    private File reportFile;
-
-    private VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> variantConfiguration;
-
-    private ApkVariantOutputData variantOutputData;
-
-    private List<ManifestProvider> libraries;
-
-    private List<ManifestMerger2.Invoker.Feature> optionalFeatures;
-
-    private File mainManifest;
-
-    @Override
-    protected void doFullTaskAction() {
-        getBuilder().mergeManifestsForApplication(getMainManifest(),
-                                                  getManifestOverlays(),
-                                                  getLibraries(),
-                                                  getPackageOverride(),
-                                                  getVersionCode(),
-                                                  getVersionName(),
-                                                  getMinSdkVersion(),
-                                                  getTargetSdkVersion(),
-                                                  getMaxSdkVersion(),
-                                                  getManifestOutputFile().getAbsolutePath(),
-                                                  // no aapt friendly merged manifest file necessary for applications.
-                                                  null /* aaptFriendlyManifestOutputFile */,
-                                                  getInstantRunManifestOutputFile().getAbsolutePath(),
-                                                  ManifestMerger2.MergeType.APPLICATION,
-                                                  variantConfiguration.getManifestPlaceholders(),
-                                                  getOptionalFeatures(),
-                                                  getReportFile());
-    }
-
-    @InputFile
-    public File getMainManifest() {
-        return mainManifest;
-    }
-
-    public void setMainManifest(File mainManifest) {
-        this.mainManifest = mainManifest;
-    }
-
-    @InputFiles
-    public List<File> getManifestOverlays() {
-        return variantConfiguration.getManifestOverlays();
-    }
-
-    @Input
-    @Optional
-    public String getPackageOverride() {
-        return variantConfiguration.getIdOverride();
-    }
-
-    @Input
-    public int getVersionCode() {
-        if (variantOutputData != null) {
-            return variantOutputData.getVersionCode();
-        }
-        return variantConfiguration.getVersionCode();
-    }
-
-    @Input
-    @Optional
-    public String getVersionName() {
-        if (variantOutputData != null) {
-            return variantOutputData.getVersionName();
-        }
-        return variantConfiguration.getVersionName();
-    }
-
-    /**
-     * Returns a serialized version of our map of key value pairs for placeholder substitution.
-     * <p>
-     * This serialized form is only used by gradle to compare past and present tasks to determine
-     * whether a task need to be re-run or not.
-     */
-    @SuppressWarnings("unused")
-    @Input
-    @Optional
-    public String getManifestPlaceholders() {
-        return serializeMap(variantConfiguration.getManifestPlaceholders());
-    }
-
-    @Input
-    @Optional
-    public String getMinSdkVersion() {
-        return minSdkVersion;
-    }
-
-    public void setMinSdkVersion(String minSdkVersion) {
-        this.minSdkVersion = minSdkVersion;
-    }
-
-    @Input
-    @Optional
-    public String getTargetSdkVersion() {
-        return targetSdkVersion;
-    }
-
-    public void setTargetSdkVersion(String targetSdkVersion) {
-        this.targetSdkVersion = targetSdkVersion;
-    }
-
-    @Input
-    @Optional
-    public Integer getMaxSdkVersion() {
-        return maxSdkVersion;
-    }
-
-    public void setMaxSdkVersion(Integer maxSdkVersion) {
-        this.maxSdkVersion = maxSdkVersion;
-    }
-
-    @OutputFile
-    @Optional
-    public File getReportFile() {
-        return reportFile;
-    }
-
-    public void setReportFile(File reportFile) {
-        this.reportFile = reportFile;
-    }
-
-    @Input
-    public List<ManifestMerger2.Invoker.Feature> getOptionalFeatures() {
-        return optionalFeatures;
-    }
-
-    public void setVariantConfiguration(
-        VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> variantConfiguration) {
-        this.variantConfiguration = variantConfiguration;
-    }
-
-    public ApkVariantOutputData getVariantOutputData() {
-        return variantOutputData;
-    }
-
-    public void setVariantOutputData(ApkVariantOutputData variantOutputData) {
-        this.variantOutputData = variantOutputData;
-    }
-
-    public List<ManifestProvider> getLibraries() {
-        return libraries;
-    }
+public class MergeAwoManifests extends MergeAwbManifests {
 
     public static class ConfigAction extends MtlBaseTaskAction<MergeAwoManifests> {
 
         private final VariantScope scope;
-
-        private final List<ManifestMerger2.Invoker.Feature> optionalFeatures;
 
         private final AwbBundle awbBundle;
 
@@ -413,8 +241,6 @@ public class MergeAwoManifests extends ManifestProcessorTask {
             this.scope = variantContext.getScope();
             this.awbBundle = variantContext.getAwbBundle();
 
-            List<ManifestMerger2.Invoker.Feature> optionalFeatures = ImmutableList.of();
-            this.optionalFeatures = optionalFeatures;
             this.libVariantContext = variantContext;
         }
 
@@ -436,111 +262,13 @@ public class MergeAwoManifests extends ManifestProcessorTask {
                 .getVariantConfiguration();
             processManifestTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             processManifestTask.setVariantName(config.getFullName());
-            processManifestTask.setVariantConfiguration(config);
-            ConventionMappingHelper.map(processManifestTask, "mainManifest", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return ManifestHelper.getOrgManifestFile(awbBundle.getAndroidLibrary());
-                }
-            });
 
-            ConventionMappingHelper.map(processManifestTask,
-                                        "libraries",
-                                        new Callable<List<ManifestProvider>>() {
-                                            @Override
-                                            public List<ManifestProvider> call() throws Exception {
-                                                return awbBundle.getManifestProviders();
-                                            }
-                                        });
+            processManifestTask.awbBundle = awbBundle;
+            processManifestTask.versionCode = String.valueOf(config.getVersionCode());
 
-            ConventionMappingHelper.map(processManifestTask,
-                                        "minSdkVersion",
-                                        new Callable<String>() {
-                                            @Override
-                                            public String call() throws Exception {
-                                                if (scope.getGlobalScope()
-                                                    .getAndroidBuilder()
-                                                    .isPreviewTarget()) {
-                                                    return scope.getGlobalScope()
-                                                        .getAndroidBuilder()
-                                                        .getTargetCodename();
-                                                }
+            awbBundle.setMergedManifest(libVariantContext.getMergedManifest());
 
-                                                ApiVersion minSdk = config.getMergedFlavor()
-                                                    .getMinSdkVersion();
-                                                return minSdk ==
-                                                    null ? null : minSdk.getApiString();
-                                            }
-                                        });
-
-            ConventionMappingHelper.map(processManifestTask,
-                                        "targetSdkVersion",
-                                        new Callable<String>() {
-                                            @Override
-                                            public String call() throws Exception {
-                                                if (scope.getGlobalScope()
-                                                    .getAndroidBuilder()
-                                                    .isPreviewTarget()) {
-                                                    return scope.getGlobalScope()
-                                                        .getAndroidBuilder()
-                                                        .getTargetCodename();
-                                                }
-                                                ApiVersion targetSdk = config.getMergedFlavor()
-                                                    .getTargetSdkVersion();
-                                                return targetSdk ==
-                                                    null ? null : targetSdk.getApiString();
-                                            }
-                                        });
-
-            ConventionMappingHelper.map(processManifestTask,
-                                        "maxSdkVersion",
-                                        new Callable<Integer>() {
-                                            @Override
-                                            public Integer call() throws Exception {
-                                                if (scope.getGlobalScope()
-                                                    .getAndroidBuilder()
-                                                    .isPreviewTarget()) {
-                                                    return null;
-                                                }
-                                                return config.getMergedFlavor().getMaxSdkVersion();
-                                            }
-                                        });
-
-            processManifestTask.setManifestOutputFile(libVariantContext.getMergedManifest());
-
-            File instantRunManifestOutputFile = FileUtils.join(scope.getGlobalScope()
-                                                                   .getIntermediatesDir(),
-                                                               "bundles-awb",
-                                                               config.getDirName(),
-                                                               "instant-run",
-                                                               awbBundle.getName(),
-                                                               "AndroidManifest.xml");
-            processManifestTask.setInstantRunManifestOutputFile(instantRunManifestOutputFile);
-            File reportFile = FileUtils.join(scope.getGlobalScope().getOutputsDir(),
-                                             "logs",
-                                             "manifest-merger-" +
-                                                 config.getBaseName() +
-                                                 "-" +
-                                                 awbBundle.getName() +
-                                                 "-report.txt");
-            processManifestTask.setReportFile(reportFile);
-            processManifestTask.optionalFeatures = optionalFeatures;
         }
 
-        @NonNull
-        private static List<? extends AndroidLibrary> getManifestDependencies(
-            List<? extends AndroidLibrary> libraries) {
-
-            List<AndroidLibrary> list = Lists.newArrayListWithCapacity(libraries.size());
-
-            for (AndroidLibrary lib : libraries) {
-                if (!lib.isOptional()) {
-                    // get the dependencies
-                    list.add(lib);
-                }
-            }
-
-            return list;
-        }
     }
 }

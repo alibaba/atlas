@@ -282,8 +282,10 @@ public class AtlasPlugin implements Plugin<Project> {
                 }
             });
 
-            project.getDependencies().add("compile", "com.taobao.android:atlasupdate:1.1.4.5");
-            project.getDependencies().add("compile", "com.taobao.android:atlas_core:5.0.6-rc21@aar");
+            if (AtlasBuildContext.sBuilderAdapter.addAtlasDependency){
+                project.getDependencies().add("compile", "com.taobao.android:atlasupdate:1.1.4.5");
+                project.getDependencies().add("compile", "com.taobao.android:atlas_core:5.0.6-rc21@aar");
+            }
 
             atlasConfigurationHelper.hookAtlasDependencyManager();
 

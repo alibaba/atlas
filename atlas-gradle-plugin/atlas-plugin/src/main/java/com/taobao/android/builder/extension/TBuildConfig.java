@@ -270,13 +270,6 @@ public class TBuildConfig {
     @Input
     private Boolean doPreverify = false;
 
-    /**
-     * 默认不做 jar 里资源的copy
-     */
-    @Input
-    @Config(message = "合并jar中的资源文件", order = 0)
-    private Boolean mergeJavaRes = false;
-
     private Boolean resV4Enabled = true;
 
     @JSONField(serialize = false)
@@ -311,8 +304,6 @@ public class TBuildConfig {
 
     @Optional
     private Set<String> outOfApkBundles = Sets.newHashSet();
-
-    private boolean packageRemoteAwbInJni = false;
 
     @Optional
     private Set<String> insideOfApkBundles = Sets.newHashSet();
@@ -406,14 +397,6 @@ public class TBuildConfig {
         this.classInject = classInject;
     }
 
-    public Boolean getMergeJavaRes() {
-        return mergeJavaRes;
-    }
-
-    public void setMergeJavaRes(Boolean mergeJavaRes) {
-        this.mergeJavaRes = mergeJavaRes;
-    }
-
     public Boolean getInjectBeforeProguard() {
         return injectBeforeProguard;
     }
@@ -496,14 +479,6 @@ public class TBuildConfig {
 
     public void setAbortIfClassConflict(boolean abortIfClassConflict) {
         this.abortIfClassConflict = abortIfClassConflict;
-    }
-
-    public boolean isPackageRemoteAwbInJni() {
-        return packageRemoteAwbInJni;
-    }
-
-    public void setPackageRemoteAwbInJni(boolean packageRemoteAwbInJni) {
-        this.packageRemoteAwbInJni = packageRemoteAwbInJni;
     }
 
     public Set<String> getDataBindingBundles() {

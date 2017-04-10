@@ -207,106 +207,68 @@
  *
  */
 
-package com.taobao.android.builder.tasks.bundle;
+package com.taobao.android.builder.tasks.manager;
 
-//import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.LibVariantContext;
-import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.MergeSourceSetFolders;
-import com.android.builder.core.VariantConfiguration;
-import com.android.builder.model.AndroidLibrary;
-import com.android.ide.common.res2.AssetSet;
-import com.google.common.collect.Lists;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-
-import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
+
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import org.apache.commons.lang3.StringUtils;
+import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.TaskAction;
 
 /**
- * 配置Merge awb asset的任务
- * Created by shenghua.nish on 2016-05-20 下午4:04.
+ * Created by wuzhong on 2016/10/13.
  */
-public class MergeAwbAssetConfigAction extends MtlBaseTaskAction<MergeSourceSetFolders> {
+public class MtlParallelTask extends BaseTask {
 
-    private VariantContext variantContext;
-    private AwbBundle awbBundle;
+    public String uniqueTaskName;
 
-    public MergeAwbAssetConfigAction(VariantContext variantContext, BaseVariantOutputData baseVariantOutputData, AwbBundle awbBundle) {
-        super(variantContext, baseVariantOutputData);
-        this.variantContext = variantContext;
-        this.awbBundle = awbBundle;
-    }
+    public List<DefaultTask> parallelTask;
 
-    public MergeAwbAssetConfigAction(LibVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
-        super(variantContext, baseVariantOutputData);
-        this.variantContext = variantContext;
-        this.awbBundle = variantContext.getAwbBundle();
-    }
+    public boolean concurrent = true;
 
-    @Override
-    public String getName() {
-        return variantContext.getScope().getTaskName("merge", "Assets[" + awbBundle.getName() + "]");
-    }
+    @TaskAction
+    void run() {
 
-    @Override
-    public Class<MergeSourceSetFolders> getType() {
-        return MergeSourceSetFolders.class;
-    }
+        if (null == parallelTask || parallelTask.isEmpty()) {
+            return;
+        }
 
-    @Override
-    public void execute(MergeSourceSetFolders task) {
-        final VariantScope scope = variantContext.getScope();
-        BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-        final VariantConfiguration variantConfig = variantData.getVariantConfiguration();
+        if (concurrent) {
 
-        task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-        task.setVariantName(variantConfig.getFullName());
-        task.setIncrementalFolder(scope.getIncrementalDir(getName()));
-        ConventionMappingHelper.map(task, "inputDirectorySets", new Callable<List<AssetSet>>() {
+            String taskName = uniqueTaskName;
+            if (StringUtils.isEmpty(taskName)) {
+                taskName = parallelTask.get(0).getClass().getSimpleName();
+            }
 
-            @Override
-            public List<AssetSet> call() throws Exception {
-                List<AssetSet> assetSets = Lists.newArrayList();
-                List<? extends AndroidLibrary> bundleDeps = awbBundle.getAndroidLibraries();
-                // the list of dependency must be reversed to use the right overlay order.
-                for (int n = bundleDeps.size() - 1; n >= 0; n--) {
-                    AndroidLibrary dependency = bundleDeps.get(n);
+            ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
+                                                                                       getLogger(),
+                                                                                       0);
+            List<Runnable> runnables = new ArrayList<>();
 
-                    File assetFolder = dependency.getAssetsFolder();
-                    if (assetFolder.isDirectory()) {
-                        AssetSet assetSet = new AssetSet(dependency.getFolder().getName());
-                        assetSet.addSource(assetFolder);
-                        assetSets.add(assetSet);
+            for (final DefaultTask task : parallelTask) {
+                runnables.add(new Runnable() {
+                    @Override
+                    public void run() {
+                        task.execute();
                     }
-                }
-
-                File awbAssetFolder = awbBundle.getAndroidLibrary().getAssetsFolder();
-                if (awbAssetFolder.isDirectory()) {
-                    AssetSet awbAssetSet = new AssetSet(awbBundle.getAndroidLibrary().getFolder().getName());
-                    awbAssetSet.addSource(awbAssetFolder);
-                    assetSets.add(awbAssetSet);
-                }
-                return assetSets;
+                });
             }
-        });
-        ConventionMappingHelper.map(task, "outputDir", new Callable<File>() {
 
-            @Override
-            public File call() throws Exception {
-                GlobalScope globalScope = scope.getGlobalScope();
-                return variantContext.getMergeAssets(awbBundle);
+            try {
+                executorServicesHelper.execute(runnables);
+            } catch (InterruptedException e) {
+                throw new GradleException(e.getMessage(), e);
             }
-        });
-//        if (variantContext instanceof AppVariantContext) {
-//            AppVariantContext appVariantContext = (AppVariantContext) variantContext;
-//            appVariantContext.getAwbMergeAssetTasks().put(awbBundle.getName(), task);
-//        }
+
+        } else {
+            for (final DefaultTask task : parallelTask) {
+                task.execute();
+            }
+        }
+
     }
 }

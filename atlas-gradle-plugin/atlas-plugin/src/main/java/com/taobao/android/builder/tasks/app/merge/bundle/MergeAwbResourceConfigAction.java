@@ -207,165 +207,169 @@
  *
  */
 
-package com.taobao.android.builder.tasks.app.merge;
+package com.taobao.android.builder.tasks.app.merge.bundle;
+
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.internal.api.LibVariantContext;
+import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.VectorDrawablesOptions;
+import com.android.ide.common.res2.ResourceSet;
+import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.app.merge.CachedMergeResources;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.gradle.api.GradleException;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
-import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantOutputScope;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.core.AtlasBuilder;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tasks.manager.AbstractBundleTask;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tasks.manager.MtlParallelTask;
-import com.taobao.android.builder.tasks.manager.TaskCreater;
-import com.taobao.android.builder.tools.VersionUtils;
-import org.gradle.api.DefaultTask;
-import org.gradle.api.GradleException;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.OutputFile;
+/**
+ * Merge Awb的resource的配置类
+ * Created by shenghua.nish on 2016-05-20 下午4:25.
+ */
+public class MergeAwbResourceConfigAction extends MtlBaseTaskAction<CachedMergeResources> {
 
-public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask> {
+    private final VariantContext variantContext;
 
-    private AppVariantContext appVariantContext;
+    private final AwbBundle awbBundle;
 
-    public MergeManifestAwbsConfigAction(AppVariantContext appVariantContext,
-                                         BaseVariantOutputData baseVariantOutputData) {
-        super(appVariantContext, baseVariantOutputData);
-        this.appVariantContext = appVariantContext;
+    private final boolean includeDependencies = false;
+
+    private final boolean process9Patch = true;
+
+    public MergeAwbResourceConfigAction(VariantContext variantContext,
+                                        BaseVariantOutputData baseVariantOutputData,
+                                        AwbBundle awbBundle) {
+        super(variantContext, baseVariantOutputData);
+        this.variantContext = variantContext;
+        this.awbBundle = awbBundle;
+    }
+
+    public MergeAwbResourceConfigAction(LibVariantContext variantContext,
+                                        BaseVariantOutputData baseVariantOutputData) {
+        super(variantContext, baseVariantOutputData);
+        this.variantContext = variantContext;
+        this.awbBundle = variantContext.getAwbBundle();
     }
 
     @Override
     public String getName() {
-        return scope.getTaskName("mergeManifest", "Awbs");
+        return variantContext.getScope()
+                .getTaskName("merge", "Resource[" + awbBundle.getName() + "]");
     }
 
     @Override
-    public Class<MtlParallelTask> getType() {
-        return MtlParallelTask.class;
+    public Class<CachedMergeResources> getType() {
+        return CachedMergeResources.class;
     }
 
     @Override
-    public void execute(MtlParallelTask parallelTask) {
+    public void execute(CachedMergeResources mergeResourcesTask) {
+        VariantScope scope = variantContext.getScope();
+        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+        final AndroidConfig extension = scope.getGlobalScope().getExtension();
+        //final VariantConfiguration variantConfig = variantData.getVariantConfiguration();
 
-        super.execute(parallelTask);
+        mergeResourcesTask.setMinSdk(variantData.getVariantConfiguration()
+                                             .getMinSdkVersion()
+                                             .getApiLevel());
 
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-            parallelTask.getVariantName());
+        mergeResourcesTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+        mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
+        GlobalScope globalScope = scope.getGlobalScope();
+        mergeResourcesTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
 
-        if (null == atlasDependencyTree) {
-            return;
+        try {
+            FieldUtils.writeField(mergeResourcesTask, "variantScope", scope, true);
+        } catch (IllegalAccessException e) {
+            throw new GradleException("exception", e);
         }
 
-        List<DefaultTask> tasks = new ArrayList<DefaultTask>();
-
-        AppVariantOutputContext appVariantOutputContext = getAppVariantOutputContext();
-
-        for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-
-            MergeAwbManifests.ConfigAction configAction = new MergeAwbManifests.ConfigAction(
-                appVariantOutputContext.getOutputScope(),
-                awbBundle, appVariantOutputContext);
-            MergeAwbManifests mergeAwbManifests = TaskCreater.create(appVariantContext.getProject(),
-                                                                     configAction.getName(), configAction.getType());
-
-            configAction.execute(mergeAwbManifests);
-
-            tasks.add(mergeAwbManifests);
-
+        // Libraries use this task twice, once for compilation (with dependencies),
+        // where blame is useful, and once for packaging where it is not.
+        if (includeDependencies) {
+            mergeResourcesTask.setBlameLogFolder(scope.getResourceBlameLogDir());
+        } else {
+            //            if (variantContext instanceof AppVariantContext) {
+            //                mergeResourcesTask.setBlameLogFolder(((AppVariantContext) variantContext).getAwbBlameLogFolder(awbBundle));
+            //            }
         }
 
-        parallelTask.parallelTask = tasks;
-        parallelTask.uniqueTaskName = getName();
+        //mergeResourcesTask.setProcess9Patch(process9Patch);
+        mergeResourcesTask.setCrunchPng(extension.getAaptOptions().getCruncherEnabled());
+        mergeResourcesTask.setProcessResources(true);
 
-    }
+        VectorDrawablesOptions vectorDrawablesOptions = variantData.getVariantConfiguration()
+                .getMergedFlavor()
+                .getVectorDrawables();
 
-    public static class MergeAwbManifests extends AbstractBundleTask {
+        Set<String> generatedDensities = vectorDrawablesOptions.getGeneratedDensities();
 
-        @Input
-        protected String versionCode;
+        mergeResourcesTask.setGeneratedDensities(Objects.firstNonNull(generatedDensities,
+                                                                      Collections.<String>emptySet()));
 
-        @Override
-        protected void doFullTaskAction() {
+        mergeResourcesTask.setDisableVectorDrawables(vectorDrawablesOptions.getUseSupportLibrary() ||
+                                                             mergeResourcesTask.getGeneratedDensities()
+                                                                     .isEmpty());
+        //mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
+        final boolean validateEnabled = AndroidGradleOptions.isResourceValidationEnabled(scope.getGlobalScope()
+                                                                                                 .getProject());
+        mergeResourcesTask.setValidateEnabled(validateEnabled);
+        ConventionMappingHelper.map(mergeResourcesTask,
+                                    "inputResourceSets",
+                                    new Callable<List<ResourceSet>>() {
 
-            AtlasBuilder atlasBuilder = AtlasBuildContext.androidBuilderMap.get(getProject());
+                                        @Override
+                                        public List<ResourceSet> call() throws Exception {
+                                            List<ResourceSet> resourceSets = Lists.newArrayList();
+                                            List<? extends AndroidLibrary> bundleDeps = awbBundle.getAndroidLibraries();
+                                            // the list of dependency must be reversed to use the right overlay order.
+                                            for (int n = bundleDeps.size() - 1; n >= 0; n--) {
+                                                AndroidLibrary dependency = bundleDeps.get(n);
 
-            String versionName = awbBundle.getResolvedCoordinates().getVersion();
+                                                File resFolder = dependency.getResFolder();
+                                                if (resFolder.isDirectory()) {
+                                                    ResourceSet resourceSet = new ResourceSet(
+                                                            dependency.getFolder().getName(),
+                                                            true);
+                                                    resourceSet.addSource(resFolder);
+                                                    resourceSets.add(resourceSet);
+                                                }
+                                            }
 
-            try {
-                atlasBuilder.mergeManifestsForBunlde(getManifestOutputFile(), awbBundle.getPackageName(),
-                                                     getBundleVersion(), versionCode);
-            } catch (IOException e) {
-                throw new GradleException(e.getMessage(), e);
-            }
+                                            File awbResourceFolder = awbBundle.getAndroidLibrary().getResFolder();
+                                            if (awbResourceFolder.isDirectory()) {
+                                                ResourceSet resourceSet = new ResourceSet(awbBundle.getAndroidLibrary().getFolder()
+                                                                                                  .getName(),
+                                                                                          true);
+                                                resourceSet.addSource(awbResourceFolder);
+                                                resourceSets.add(resourceSet);
+                                            }
 
-        }
+                                            return resourceSets;
+                                        }
+                                    });
 
-        @OutputFile
-        protected File getManifestOutputFile() {
-            return awbBundle.getMergedManifest();
-        }
+        mergeResourcesTask.setOutputDir(variantContext.getMergeResources(awbBundle));
+        mergeResourcesTask.setGeneratedPngsOutputDir(variantContext.getPngsOutputDir(awbBundle));
 
-        public static class ConfigAction implements TaskConfigAction<MergeAwbManifests> {
-
-            private final VariantOutputScope scope;
-
-            private final AwbBundle awbBundle;
-
-            private AppVariantOutputContext appVariantOutputContext;
-
-            public ConfigAction(VariantOutputScope scope,
-                                AwbBundle awbBundle,
-                                AppVariantOutputContext appVariantOutputContext) {
-                this.scope = scope;
-                this.awbBundle = awbBundle;
-                this.appVariantOutputContext = appVariantOutputContext;
-            }
-
-            @NonNull
-            @Override
-            public String getName() {
-                return scope.getTaskName("process", "AwbManifest[" + awbBundle.getName() + "]");
-            }
-
-            @NonNull
-            @Override
-            public Class<MergeAwbManifests> getType() {
-                return MergeAwbManifests.class;
-            }
-
-            @Override
-            public void execute(@NonNull MergeAwbManifests processManifestTask) {
-
-                String variantName = scope.getVariantScope()
-                    .getVariantConfiguration()
-                    .getFullName();
-
-                processManifestTask.setVariantName(variantName);
-
-                processManifestTask.awbBundle = awbBundle;
-
-                processManifestTask.versionCode = String.valueOf(VersionUtils.getVersionCode(appVariantOutputContext));
-
-                File manifestOutFile = new File(scope.getGlobalScope().getIntermediatesDir(),
-                                                "/manifests-awb/full/" +
-                                                    variantName +
-                                                    "/" +
-                                                    awbBundle.getName() +
-                                                    "/AndroidManifest.xml");
-
-                awbBundle.setMergedManifest(manifestOutFile);
-            }
-
-        }
+        mergeResourcesTask.setAwbBundle(awbBundle);
+        //        if (variantContext instanceof AppVariantContext) {
+        //            AppVariantContext appVariantContext = (AppVariantContext) variantContext;
+        //            appVariantContext.getAwbMergeResourceTasks().put(awbBundle.getName(), mergeResourcesTask);
+        //        }
     }
 }

@@ -207,169 +207,18 @@
  *
  */
 
-package com.taobao.android.builder.tasks.bundle;
+package com.taobao.android.builder.tasks.manager;
 
-import com.android.build.gradle.AndroidConfig;
-import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.internal.api.LibVariantContext;
-import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.VectorDrawablesOptions;
-import com.android.ide.common.res2.ResourceSet;
-import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tasks.app.merge.CachedMergeResources;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-
-import org.apache.commons.lang3.reflect.FieldUtils;
-import org.gradle.api.GradleException;
-
-import java.io.File;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
+import org.gradle.api.Project;
+import org.gradle.api.Task;
 
 /**
- * Merge Awb的resource的配置类
- * Created by shenghua.nish on 2016-05-20 下午4:25.
+ * Created by wuzhong on 2016/10/20.
  */
-public class MergeAwbResourceConfigAction extends MtlBaseTaskAction<CachedMergeResources> {
+public class TaskCreater {
 
-    private final VariantContext variantContext;
-
-    private final AwbBundle awbBundle;
-
-    private final boolean includeDependencies = false;
-
-    private final boolean process9Patch = true;
-
-    public MergeAwbResourceConfigAction(VariantContext variantContext,
-                                        BaseVariantOutputData baseVariantOutputData,
-                                        AwbBundle awbBundle) {
-        super(variantContext, baseVariantOutputData);
-        this.variantContext = variantContext;
-        this.awbBundle = awbBundle;
+    public static synchronized <T extends Task> T create(Project project, String name, Class<T> type) {
+        return project.getTasks().create(name, type);
     }
 
-    public MergeAwbResourceConfigAction(LibVariantContext variantContext,
-                                        BaseVariantOutputData baseVariantOutputData) {
-        super(variantContext, baseVariantOutputData);
-        this.variantContext = variantContext;
-        this.awbBundle = variantContext.getAwbBundle();
-    }
-
-    @Override
-    public String getName() {
-        return variantContext.getScope()
-                .getTaskName("merge", "Resource[" + awbBundle.getName() + "]");
-    }
-
-    @Override
-    public Class<CachedMergeResources> getType() {
-        return CachedMergeResources.class;
-    }
-
-    @Override
-    public void execute(CachedMergeResources mergeResourcesTask) {
-        VariantScope scope = variantContext.getScope();
-        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-        final AndroidConfig extension = scope.getGlobalScope().getExtension();
-        //final VariantConfiguration variantConfig = variantData.getVariantConfiguration();
-
-        mergeResourcesTask.setMinSdk(variantData.getVariantConfiguration()
-                                             .getMinSdkVersion()
-                                             .getApiLevel());
-
-        mergeResourcesTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-        mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
-        GlobalScope globalScope = scope.getGlobalScope();
-        mergeResourcesTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
-
-        try {
-            FieldUtils.writeField(mergeResourcesTask, "variantScope", scope, true);
-        } catch (IllegalAccessException e) {
-            throw new GradleException("exception", e);
-        }
-
-        // Libraries use this task twice, once for compilation (with dependencies),
-        // where blame is useful, and once for packaging where it is not.
-        if (includeDependencies) {
-            mergeResourcesTask.setBlameLogFolder(scope.getResourceBlameLogDir());
-        } else {
-            //            if (variantContext instanceof AppVariantContext) {
-            //                mergeResourcesTask.setBlameLogFolder(((AppVariantContext) variantContext).getAwbBlameLogFolder(awbBundle));
-            //            }
-        }
-
-        //mergeResourcesTask.setProcess9Patch(process9Patch);
-        mergeResourcesTask.setCrunchPng(extension.getAaptOptions().getCruncherEnabled());
-        mergeResourcesTask.setProcessResources(true);
-
-        VectorDrawablesOptions vectorDrawablesOptions = variantData.getVariantConfiguration()
-                .getMergedFlavor()
-                .getVectorDrawables();
-
-        Set<String> generatedDensities = vectorDrawablesOptions.getGeneratedDensities();
-
-        mergeResourcesTask.setGeneratedDensities(Objects.firstNonNull(generatedDensities,
-                                                                      Collections.<String>emptySet()));
-
-        mergeResourcesTask.setDisableVectorDrawables(vectorDrawablesOptions.getUseSupportLibrary() ||
-                                                             mergeResourcesTask.getGeneratedDensities()
-                                                                     .isEmpty());
-        //mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
-        final boolean validateEnabled = AndroidGradleOptions.isResourceValidationEnabled(scope.getGlobalScope()
-                                                                                                 .getProject());
-        mergeResourcesTask.setValidateEnabled(validateEnabled);
-        ConventionMappingHelper.map(mergeResourcesTask,
-                                    "inputResourceSets",
-                                    new Callable<List<ResourceSet>>() {
-
-                                        @Override
-                                        public List<ResourceSet> call() throws Exception {
-                                            List<ResourceSet> resourceSets = Lists.newArrayList();
-                                            List<? extends AndroidLibrary> bundleDeps = awbBundle.getAndroidLibraries();
-                                            // the list of dependency must be reversed to use the right overlay order.
-                                            for (int n = bundleDeps.size() - 1; n >= 0; n--) {
-                                                AndroidLibrary dependency = bundleDeps.get(n);
-
-                                                File resFolder = dependency.getResFolder();
-                                                if (resFolder.isDirectory()) {
-                                                    ResourceSet resourceSet = new ResourceSet(
-                                                            dependency.getFolder().getName(),
-                                                            true);
-                                                    resourceSet.addSource(resFolder);
-                                                    resourceSets.add(resourceSet);
-                                                }
-                                            }
-
-                                            File awbResourceFolder = awbBundle.getAndroidLibrary().getResFolder();
-                                            if (awbResourceFolder.isDirectory()) {
-                                                ResourceSet resourceSet = new ResourceSet(awbBundle.getAndroidLibrary().getFolder()
-                                                                                                  .getName(),
-                                                                                          true);
-                                                resourceSet.addSource(awbResourceFolder);
-                                                resourceSets.add(resourceSet);
-                                            }
-
-                                            return resourceSets;
-                                        }
-                                    });
-
-        mergeResourcesTask.setOutputDir(variantContext.getMergeResources(awbBundle));
-        mergeResourcesTask.setGeneratedPngsOutputDir(variantContext.getPngsOutputDir(awbBundle));
-
-        mergeResourcesTask.setAwbBundle(awbBundle);
-        //        if (variantContext instanceof AppVariantContext) {
-        //            AppVariantContext appVariantContext = (AppVariantContext) variantContext;
-        //            appVariantContext.getAwbMergeResourceTasks().put(awbBundle.getName(), mergeResourcesTask);
-        //        }
-    }
 }

@@ -233,7 +233,6 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
-import com.taobao.android.builder.tasks.app.merge.MergeAwbManifests;
 import com.taobao.android.object.ArtifactBundleInfo;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -252,8 +251,6 @@ public class AppVariantOutputContext {
     private VariantOutputScope outputScope;
 
     private BaseVariantData<? extends BaseVariantOutputData> variantData;
-
-    private Map<String, MergeAwbManifests> mergeAwbManifestsMap = Maps.newHashMap();
 
     private Map<String, JavaCompile> awbJavacTasks = Maps.newHashMap();
 
@@ -295,10 +292,6 @@ public class AppVariantOutputContext {
 
     public BaseVariantData<? extends BaseVariantOutputData> getVariantData() {
         return variantData;
-    }
-
-    public Map<String, MergeAwbManifests> getMergeAwbManifestsMap() {
-        return mergeAwbManifestsMap;
     }
 
     public File getAwbRClassSourceOutputDir(GradleVariantConfiguration config,

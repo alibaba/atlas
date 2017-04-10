@@ -347,9 +347,19 @@ public class DependencyCompareUtils {
         Map<String, AwbDependency> maps = new HashMap<String, AwbDependency>();
         for (Map.Entry<String, ArrayList<String>> entry : awbs.entrySet()) {
             String key = entry.getKey();
-            String name = key.substring(0, key.lastIndexOf(":"));
-            name = name.substring(0, name.lastIndexOf(":"));
-            String version = key.substring(key.lastIndexOf(":") + 1);
+
+            String version = "";
+            String name = "";
+
+            if (key.contains("@")){
+                String[] arr = key.split("[@|:]");
+                name = arr[0]+":"+arr[1];
+                version = arr[2];
+            }else {
+                version = key.substring(key.lastIndexOf(":") + 1);
+                name = key.substring(0, key.lastIndexOf(":"));
+                name = name.substring(0, name.lastIndexOf(":"));
+            }
             AwbDependency awbDependency = new AwbDependency(version, name, entry.getValue());
             maps.put(name, awbDependency);
         }

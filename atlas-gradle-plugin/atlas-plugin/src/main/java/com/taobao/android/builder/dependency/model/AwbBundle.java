@@ -234,6 +234,8 @@ import java.util.List;
  */
 public class AwbBundle {
 
+    private boolean mainBundle;
+
     private String name;
 
     private String variantName;
@@ -250,7 +252,12 @@ public class AwbBundle {
     //兼容老的模式，逐步废弃到 androidLibrary
     private List<SoLibrary> soLibraries = new ArrayList<>();
 
+    private File mergedManifest;
+
     public AwbBundle() {
+
+        mainBundle = true;
+
     }
 
     public AwbBundle(ResolvedDependencyInfo resolvedDependencyInfo, AndroidLibrary androidLibrary) {
@@ -359,7 +366,7 @@ public class AwbBundle {
                 if (aarBundle.getJarFile().exists()) {
                     jars.add(aarBundle.getJarFile());
                 }
-                //jars.addAll(aarBundle.getLocalJars());
+                jars.addAll(aarBundle.getLocalJars());
             }
         }
 
@@ -392,5 +399,13 @@ public class AwbBundle {
 
     public void setDataBindEnabled(boolean dataBindEnabled) {
         this.dataBindEnabled = dataBindEnabled;
+    }
+
+    public File getMergedManifest() {
+        return mergedManifest;
+    }
+
+    public void setMergedManifest(File mergedManifest) {
+        this.mergedManifest = mergedManifest;
     }
 }

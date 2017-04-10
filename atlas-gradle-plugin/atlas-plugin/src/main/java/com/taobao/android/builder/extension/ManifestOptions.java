@@ -236,7 +236,7 @@ public class ManifestOptions {
 
     @JSONField(serialize = false)
     @Input
-    private boolean removeCustomPermission = true;
+    private boolean removeCustomPermission = false;
 
     @JSONField(serialize = false)
     @Input
@@ -247,7 +247,7 @@ public class ManifestOptions {
     private boolean replaceApplication = true;
 
     @JSONField(serialize = false)
-    private boolean addMultiDexMetaData = false;
+    private boolean addMultiDexMetaData = true;
 
     private boolean removeProvider = false;
 

@@ -290,6 +290,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
  *
  *  1. not warning awb & solib
  *  2. public apis
+ *  3. jar 依赖aar 的检查
  *
  */
 public class DependencyManager {
@@ -1105,16 +1106,16 @@ public class DependencyManager {
                                 // of the app (which can be aars).
                                 // we know we're in that case if testedProjectPath is non null, so we
                                 // can detect this an accept it.
-                                if (!isRootOfSeparateTestedApp) {
-                                    configDependencies.getChecker()
-                                            .handleIssue(
-                                                    createMavenCoordinates(artifact).toString(),
-                                                    SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
-                                                    SyncIssue.SEVERITY_ERROR,
-                                                    String.format(
-                                                            "Module '%s' depends on one or more Android Libraries but is a jar",
-                                                            moduleVersion));
-                                }
+                                //if (!isRootOfSeparateTestedApp) {
+                                //    configDependencies.getChecker()
+                                //            .handleIssue(
+                                //                    createMavenCoordinates(artifact).toString(),
+                                //                    SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
+                                //                    SyncIssue.SEVERITY_ERROR,
+                                //                    String.format(
+                                //                            "Module '%s' depends on one or more Android Libraries but is a jar",
+                                //                            moduleVersion));
+                                //}
                             }
 
                             // check this jar does not have a dependency on an atom, as this would not work.

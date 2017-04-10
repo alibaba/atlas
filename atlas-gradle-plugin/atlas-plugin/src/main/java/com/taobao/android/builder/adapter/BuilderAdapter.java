@@ -231,4 +231,21 @@ public class BuilderAdapter {
 
     public String tpatchHistoryUrl = "";
 
+    public boolean packageRemoteAwbInJni = true;
+
+    /**
+     * 添加atlas和atlasupdate的依赖到主dex
+     */
+    public boolean addAtlasDependency = true;
+
+    /**
+     * bundle中允许使用本地jar，默认打开， 淘宝不打开
+     */
+    public boolean localJarEnabled = true;
+
+    /**
+     * 标准格式的依赖
+     */
+    public boolean prettyDependencyFormat = true;
+
 }

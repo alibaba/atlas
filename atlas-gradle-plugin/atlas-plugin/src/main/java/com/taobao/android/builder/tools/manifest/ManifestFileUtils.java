@@ -734,7 +734,7 @@ public class ManifestFileUtils {
         Element applicationElement = root.element("application");
 
         //判断是否有application，需要删除掉
-        if (isAwbLibrary) {
+        if (isAwbLibrary && null != applicationElement) {
             Attribute attribute = applicationElement.attribute("name");
             if (null != attribute) {
                 applicationElement.remove(attribute);

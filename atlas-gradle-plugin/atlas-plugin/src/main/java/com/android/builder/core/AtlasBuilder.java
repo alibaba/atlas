@@ -581,9 +581,9 @@ public class AtlasBuilder extends AndroidBuilder {
                                                awbSymbols);
         writer.addSymbolsToWrite(awbSymbols);
         sLogger.info("SymbolWriter Package:" +
-                             appPackageName +
-                             " to dir:" +
-                             aaptCommand.getSourceOutputDir());
+                         appPackageName +
+                         " to dir:" +
+                         aaptCommand.getSourceOutputDir());
         writer.write();
 
         //再写入各自awb依赖的aar的资源
@@ -649,9 +649,9 @@ public class AtlasBuilder extends AndroidBuilder {
                     libWriter.addSymbolsToWrite(symbolLoader);
                 }
                 sLogger.info("SymbolWriter Package:" +
-                                     packageName +
-                                     " to dir:" +
-                                     aaptCommand.getSourceOutputDir());
+                                 packageName +
+                                 " to dir:" +
+                                 aaptCommand.getSourceOutputDir());
                 libWriter.write();
             }
         }
@@ -1082,5 +1082,25 @@ public class AtlasBuilder extends AndroidBuilder {
         return defaultBuilder.getSdkInfo();
     }
 
+    private static final String MANIFEST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+        + "          package=\"${packageName}\"\n"
+        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+        + "          android:versionCode=\"${versionCode}\"\n"
+        + "          android:versionName=\"${versionName}\">\n"
+        + "    <application></application>\n"
+        + "</manifest>\n";
 
+    public void mergeManifestsForBunlde(File outputFile, String packageName, String versionName, String versionCode)
+        throws IOException {
+
+        String xml = MANIFEST_TEMPLATE.replace("${packageName}", packageName)
+            .replace("${versionCode}", versionCode).replace("${versionName}", versionName);
+
+        outputFile.getParentFile().mkdirs();
+        outputFile.delete();
+
+        FileUtils.write(outputFile, xml);
+
+    }
 }

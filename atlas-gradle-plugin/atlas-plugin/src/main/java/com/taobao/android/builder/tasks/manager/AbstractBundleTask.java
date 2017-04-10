@@ -207,18 +207,32 @@
  *
  */
 
-package com.taobao.android.builder.tasks.app.bundle;
+package com.taobao.android.builder.tasks.manager;
 
-import org.gradle.api.Project;
-import org.gradle.api.Task;
+import java.io.File;
+
+import com.android.build.gradle.internal.tasks.IncrementalTask;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
 
 /**
- * Created by wuzhong on 2016/10/20.
+ * Created by wuzhong on 2017/4/9.
  */
-public class TaskCreater {
+public abstract class AbstractBundleTask extends IncrementalTask {
 
-    public static synchronized <T extends Task> T create(Project project, String name, Class<T> type) {
-        return project.getTasks().create(name, type);
+    protected AwbBundle awbBundle;
+
+    @Input
+    @Optional
+    protected String getBundleVersion() {
+        return awbBundle.getResolvedCoordinates().getVersion();
+    }
+
+    @InputFile
+    protected File getManifest() {
+        return awbBundle.getAndroidLibrary().getManifest();
     }
 
 }

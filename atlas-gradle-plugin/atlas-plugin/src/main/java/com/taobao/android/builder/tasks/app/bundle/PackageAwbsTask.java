@@ -409,7 +409,7 @@ public class PackageAwbsTask extends BaseTask {
             return awbBundle.outputBundleFile;
         }
 
-        if (!appVariantContext.getAtlasExtension().getTBuildConfig().isPackageRemoteAwbInJni() && awbBundle.isRemote) {
+        if (AtlasBuildContext.sBuilderAdapter.packageRemoteAwbInJni && awbBundle.isRemote) {
             File file = appVariantOutputContext.getAwbPackageOutAppOutputFile(awbBundle);
             appVariantOutputContext.appBuildInfo.getOtherFilesMap().put("remotebundles/" + file.getName(), file);
             return file;
