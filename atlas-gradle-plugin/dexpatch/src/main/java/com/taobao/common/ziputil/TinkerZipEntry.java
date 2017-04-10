@@ -27,16 +27,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.zip.ZipException;
 
-/**
- * modify by zhangshaowen on 16/6/7.
- * remove zip64
- *
- * An entry within a zip file.
- * An entry has attributes such as its name (which is actually a path) and the uncompressed size
- * of the corresponding data. An entry does not contain the data itself, but can be used as a key
- * with {@link TinkerZipFile#getInputStream}. The class documentation for {@code ZipInputStream} and
- * {@link TinkerZipOutputStream} shows how {@code ZipEntry} is used in conjunction with those two classes.
- */
+
 public class TinkerZipEntry implements ZipConstants, Cloneable {
     /**
      * Zip entry state: Deflated.

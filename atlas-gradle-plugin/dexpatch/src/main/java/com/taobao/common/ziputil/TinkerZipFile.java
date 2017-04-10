@@ -35,7 +35,6 @@ import java.util.zip.ZipOutputStream;
 // import libcore.io.IoUtils;
 
 /**
- * modify by zhangshaowen on 16/6/7.
  *
  * This class provides random read access to a zip file. You pay more to read
  * the zip file's central directory up front (from the constructor), but if you're using
