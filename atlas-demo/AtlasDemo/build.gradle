@@ -28,3 +28,7 @@ subprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+ext {
+    baseSupportVersion = "25.2.0"
+}
