@@ -2,6 +2,7 @@ package com.taobao.android.tpatch.builder;
 
 import com.android.utils.ILogger;
 import com.taobao.android.BasePatchTool;
+import com.taobao.android.TPatchDexTool;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.object.PatchBundleInfo;

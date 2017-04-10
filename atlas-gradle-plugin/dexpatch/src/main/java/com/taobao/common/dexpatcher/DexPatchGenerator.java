@@ -223,9 +223,6 @@ public class DexPatchGenerator {
         try {
             os = new BufferedOutputStream(new FileOutputStream(file));
             executeAndSaveTo(os);
-            if (file.exists() && file.length() == 0L){
-                FileUtils.deleteQuietly(file);
-            }
         } finally {
             if (os != null) {
                 try {
@@ -234,6 +231,9 @@ public class DexPatchGenerator {
                     // ignored.
                 }
             }
+        }
+        if (file.exists() && file.length() == 0L){
+            FileUtils.deleteQuietly(file);
         }
     }
 
