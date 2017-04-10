@@ -21,8 +21,8 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.1.0'
-    compile 'com.android.support:support-v4:25.1.0'
-    compile 'com.android.support:recyclerview-v7:25.3.0'
-    compile 'com.android.support:design:25.3.0'
+    compile 'com.android.support:appcompat-v7:' + rootProject.ext.baseSupportVersion
+    compile 'com.android.support:support-v4:' + rootProject.ext.baseSupportVersion
+    compile 'com.android.support:recyclerview-v7:' + rootProject.ext.baseSupportVersion
+    compile 'com.android.support:design:' + rootProject.ext.baseSupportVersion
 }
