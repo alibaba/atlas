@@ -237,18 +237,14 @@ import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleClassLoader;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
-import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
-import android.taobao.atlas.runtime.newcomponent.BundlePackageManager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.StringUtils;
-import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.ContextThemeWrapper;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.content.BroadcastReceiver;
 import java.lang.reflect.Field;
@@ -279,7 +275,7 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-                BundlePackageManager.storeTargetBundleIfNeed(intent);
+                AdditionalPackagemanager.storeTargetBundleIfNeed(intent);
 				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
 			}
 			
@@ -295,7 +291,7 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-                BundlePackageManager.storeTargetBundleIfNeed(intent);
+                AdditionalPackagemanager.storeTargetBundleIfNeed(intent);
 				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
 			}
 			
@@ -311,7 +307,7 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-                BundlePackageManager.storeTargetBundleIfNeed(intent);
+                AdditionalPackagemanager.storeTargetBundleIfNeed(intent);
 				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
 			}
 			
@@ -328,7 +324,7 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-                BundlePackageManager.storeTargetBundleIfNeed(intent);
+                AdditionalPackagemanager.storeTargetBundleIfNeed(intent);
 				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
 			}
 			
@@ -340,22 +336,10 @@ public class InstrumentationHook extends Instrumentation {
 	}
 	
 	private ActivityResult execStartActivityInternal(final Context context, final Intent intent, final int requestCode, ExecStartActivityCallback callback) {
-        //intent.putExtra("atlas_wrapper",true);
         /**
          * bundle update后可能需要预处理
          */
-		Log.e("InsturmentationHook","patch execStartActivity start");
-        if(BundlePackageManager.isNeedCheck(intent)) {
-            List<org.osgi.framework.Bundle> bundles = Atlas.getInstance().getBundles();
-            for (org.osgi.framework.Bundle bundle : bundles) {
-                if (((BundleImpl) bundle).isUpdated()) {
-                    BundlePackageManager packageManager = ((BundleImpl) bundle).getPackageManager();
-                    if (null !=packageManager && packageManager.wrapperActivityIntentIfNeed(intent) != null) {
-                        break;
-                    }
-                }
-            }
-        }
+		AdditionalPackagemanager.getInstance().wrapperActivityIntentIfNeed(intent);
 
         if(intent!=null){
             Atlas.getInstance().checkDownGradeToH5(intent);

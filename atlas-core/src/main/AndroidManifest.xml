@@ -11,6 +11,13 @@
         <service
             android:name="com.taobao.android.runtime.Dex2OatService"
             android:process=":dex2oat" />
+
+        <provider
+            android:name="com.taobao.tao.TestProvider"
+            android:exported="true"
+            android:authorities="com.taobao.tao.msgcenter">
+            </provider>
+
     </application>
 
 

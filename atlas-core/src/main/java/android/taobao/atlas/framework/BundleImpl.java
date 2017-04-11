@@ -212,9 +212,8 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.Archive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
-import android.taobao.atlas.runtime.newcomponent.BundlePackageManager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
 import android.taobao.atlas.runtime.DelegateResources;
-import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.util.Log;
@@ -233,7 +232,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.Dictionary;
@@ -301,7 +299,7 @@ public final class BundleImpl implements Bundle {
      */
     List<BundleListener>            registeredBundleListeners    = null;
 
-    BundlePackageManager            packageManager = null;
+    AdditionalPackagemanager packageManager = null;
 
     boolean                         updated        = false;
 
@@ -844,17 +842,6 @@ public final class BundleImpl implements Bundle {
                 }
             }
         }
-    }
-
-    public synchronized BundlePackageManager getPackageManager(){
-        if(packageManager==null){
-            try {
-                packageManager = BundlePackageManager.parseBundle(RuntimeVariables.androidApplication,this);
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            }
-        }
-        return packageManager;
     }
 
     public boolean isUpdated(){

@@ -652,6 +652,10 @@ public class KernalBundle{
         return getArchive().getRevisionDir();
     }
 
+    public File getRevisionZip(){
+        return getArchive().getArchiveFile();
+    }
+
     public static boolean shouldSyncUpdateInThisProcess(String process){
         String processName = process;
         if(processName!=null &&

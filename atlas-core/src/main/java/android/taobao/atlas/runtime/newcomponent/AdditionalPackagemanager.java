@@ -209,10 +209,11 @@
 package android.taobao.atlas.runtime.newcomponent;
 
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.ComponentInfo;
+import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
@@ -220,19 +221,19 @@ import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
 import android.net.Uri;
 import android.os.Build;
-import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
-import android.taobao.atlas.framework.Atlas;
-import android.taobao.atlas.framework.BundleImpl;
+import android.os.Bundle;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.hack.Hack;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
 import android.taobao.atlas.runtime.AtlasFakeActivity;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.text.TextUtils;
-import org.osgi.framework.Bundle;
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -240,27 +241,48 @@ import java.util.Queue;
 /**
  * Created by guanjie on 15/3/5.
  */
-public class BundlePackageManager {
+public class AdditionalPackagemanager {
 
-    private ExternalComponentIntentResolver mExternalActivity;
-    private ExternalComponentIntentResolver mExternalServices;
+    private AdditionComponentIntentResolver mExternalActivity;
+    private AdditionComponentIntentResolver mExternalServices;
+    final HashMap<String, Object> mProvidersByAuthority = new HashMap<String, Object>();
+
     public static Queue<android.os.Bundle> sTargetBundleStorage = new LinkedList<android.os.Bundle>();
-    private static BundlePackageManager sBundlePackagemanager;
 
-    public static synchronized BundlePackageManager getInstance(){
+    private static AdditionalPackagemanager sBundlePackagemanager;
+
+    public static synchronized AdditionalPackagemanager getInstance(){
         if(sBundlePackagemanager == null){
-
+            sBundlePackagemanager = new AdditionalPackagemanager();
         }
+        return sBundlePackagemanager;
+    }
+
+    public AdditionalPackagemanager(){
+        try {
+            Class KernalBundleClass = RuntimeVariables.getRawClassLoader().loadClass("android.taobao.atlas.startup.patch.KernalBundle");
+            Object object = KernalBundleClass.getDeclaredField("kernalBundle");
+            if(object!=null){
+                Method method = object.getClass().getDeclaredMethod("getRevisionZip");
+                method.setAccessible(true);
+                File file = (File) method.invoke(object);
+                if(file!=null){
+                    parseBundle(file.getAbsolutePath());
+                }
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**
      * 解析变化 Manifest
-     * @param context
      * @param zipPath
      * @return
      * @throws InvocationTargetException
      */
-    public static BundlePackageManager parseBundle(Context context, String zipPath) throws InvocationTargetException{
+    private void parseBundle(String zipPath) throws InvocationTargetException{
 
         Object packageObj = null;
         Object pkgParser  = null;
@@ -278,12 +300,12 @@ public class BundlePackageManager {
             packageObj = parsePackage(pkgParser,res,parser);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return;
         }
         if (packageObj == null) {
-            return null;
+            return ;
         }
-        BundlePackageManager packageManager= new BundlePackageManager();
+        AdditionalPackagemanager packageManager= new AdditionalPackagemanager();
         AtlasHacks.PackageParser$Package_packageName.set(packageObj,RuntimeVariables.androidApplication.getPackageName());
         ApplicationInfo info = AtlasHacks.PackageParser$Package_applicationInfo.get(packageObj);
         info.name = RuntimeVariables.androidApplication.getApplicationInfo().name;
@@ -304,11 +326,12 @@ public class BundlePackageManager {
         info.requiresSmallestWidthDp = RuntimeVariables.androidApplication.getApplicationInfo().requiresSmallestWidthDp;
         info.packageName = RuntimeVariables.androidApplication.getApplicationInfo().packageName;
 
-        ExternalComponentIntentResolver activityResolver = new ExternalComponentIntentResolver();
-        ExternalComponentIntentResolver serviceResolver  = new ExternalComponentIntentResolver();
+        AdditionComponentIntentResolver activityResolver = new AdditionComponentIntentResolver(AdditionComponentIntentResolver.TYPE_ACTIVITY);
+        AdditionComponentIntentResolver serviceResolver  = new AdditionComponentIntentResolver(AdditionComponentIntentResolver.TYPE_SERVICE);
 
         ArrayList<Object> activityList = (ArrayList<Object>) AtlasHacks.PackageParser$Package_activities.get(packageObj);
         ArrayList<Object> serviceList = (ArrayList<Object>)  AtlasHacks.PackageParser$Package_services.get(packageObj);
+        ArrayList<Object> providerList = (ArrayList<Object>) AtlasHacks.PackageParser$Package_providers.get(packageObj);
 
         /**
          * 新增Activity
@@ -345,7 +368,31 @@ public class BundlePackageManager {
             }
             packageManager.setNewServiceResolver(serviceResolver);
         }
-        return packageManager;
+
+        if(providerList!=null){
+            for(Object provider : providerList){
+                provider = providerList.get(0);
+                try {
+                    ProviderInfo providerInfo = AtlasHacks.PackageParser$Provider_info.get(provider);
+                    if (providerInfo.authority != null) {
+                        String names[] = providerInfo.authority.split(";");
+                        providerInfo.authority = null;
+                        for (int j = 0; j < names.length; j++) {
+                            if (!mProvidersByAuthority.containsKey(names[j])) {
+                                mProvidersByAuthority.put(names[j], provider);
+                                if (providerInfo.authority == null) {
+                                    providerInfo.authority = names[j];
+                                } else {
+                                    providerInfo.authority = providerInfo.authority + ";" + names[j];
+                                }
+                            }
+                        }
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     private static Object parsePackage(Object packageParserObj,Resources resources,XmlResourceParser parser){
@@ -373,25 +420,25 @@ public class BundlePackageManager {
         }
     }
 
-    void setNewActivityResolver(ExternalComponentIntentResolver resolver){
+    void setNewActivityResolver(AdditionComponentIntentResolver resolver){
         mExternalActivity = resolver;
     }
 
-    void setNewServiceResolver(ExternalComponentIntentResolver resolver){
+    void setNewServiceResolver(AdditionComponentIntentResolver resolver){
         mExternalServices = resolver;
     }
 
-    /**
-     * 检测是否要对Intent进行封装
-     * @param intent
-     * @return
-     */
-    public ResolveInfo wrapperActivityIntentIfNeed(Intent intent){
+    private <T extends ComponentInfo> ResolveInfo queryIntentResolveInfo(Intent intent,Class<T> infoClass ){
         if(intent==null){
             return null;
         }
-        intent.putExtra("atlas_checked",true);
-        if(mExternalActivity!=null) {
+        AdditionComponentIntentResolver resolver = null;
+        if(infoClass == ActivityInfo.class){
+            resolver = mExternalActivity;
+        }else{
+            resolver = mExternalServices;
+        }
+        if(resolver!=null) {
             ComponentName comp = intent.getComponent();
             if (comp == null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
@@ -402,12 +449,15 @@ public class BundlePackageManager {
                 }
             }
             if (comp != null) {
-                Object activityObj = mExternalActivity.mComponents.get(comp);
-                if (activityObj!=null){
+                Object obj = resolver.mComponents.get(comp);
+                if (obj!=null){
                     try {
-                        final ResolveInfo ri = new ResolveInfo();
-                        ri.activityInfo = (ActivityInfo) activityObj.getClass().getField("info").get(activityObj);
-                        wrapperActivityIntent(intent,ri.activityInfo);
+                        final ResolveInfo ri = new ExternalResolverInfo();
+                        if(resolver == mExternalActivity) {
+                            ri.activityInfo = (ActivityInfo) obj.getClass().getField("info").get(obj);
+                        }else{
+                            ri.serviceInfo = (ServiceInfo) obj.getClass().getField("info").get(obj);
+                        }
                         return ri;
                     }catch(Exception e){
                         return null;
@@ -420,14 +470,10 @@ public class BundlePackageManager {
                 if (!TextUtils.isEmpty(intent.getPackage()) && !TextUtils.equals(intent.getPackage(), RuntimeVariables.androidApplication.getPackageName())) {
                     return null;
                 }
-                List<ResolveInfo> activityList = mExternalActivity.queryIntent(intent,
+                List<ResolveInfo> list = resolver.queryIntent(intent,
                         intent.resolveTypeIfNeeded(RuntimeVariables.androidApplication.getContentResolver()), false);
-                if(activityList!=null && activityList.size()>0){
-                    /**
-                     * 暂时先不增加chooseBestActivity的逻辑
-                     */
-                    wrapperActivityIntent(intent,activityList.get(0).activityInfo);
-                    return activityList.get(0);
+                if(list!=null && list.size()>0){
+                    return new ExternalResolverInfo(list.get(0));
                 }else{
                     return null;
                 }
@@ -437,169 +483,71 @@ public class BundlePackageManager {
         }
     }
 
-    private void wrapperActivityIntent(Intent intent,ActivityInfo info){
-        String rawData = intent.getDataString();
-        intent.putExtra("atlas_rawData",rawData);
-        intent.setData(null);
-        intent.putExtra("atlas_rawComponent",info.name);
-        intent.putExtra("atlas_bundle_location", AtlasBundleInfoManager.instance().getBundleForComponet(info.name));
-        intent.setClassName(RuntimeVariables.androidApplication.getPackageName(),AtlasFakeActivity.class.getName());
-        ActivityTaskMgr.getInstance().handleActivityStack(info.name,intent,intent.getFlags(),info.launchMode);
+    public ProviderInfo resolveContentProvider(String name){
+        final Object provider = mProvidersByAuthority.get(name);
+        if(provider!=null){
+            ProviderInfo pi = new ProviderInfo(AtlasHacks.PackageParser$Provider_info.get(provider));
+            try {
+                Field metaDataField = provider.getClass().getSuperclass().getDeclaredField("metaData");
+                pi.metaData = (Bundle)metaDataField.get(pi);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+            return pi;
+        }
+        return null;
+
     }
 
-    public static List<ResolveInfo> queryIntentActivities(Intent intent, String resolvedType, int flags, int userId){
-        List<Bundle>  bundles = Atlas.getInstance().getBundles();
-        for(Bundle bundle : bundles){
-            BundleImpl impl = (BundleImpl)bundle;
-            if(impl.isUpdated() && impl.getPackageManager()!=null){
-                ResolveInfo info =  impl.getPackageManager().wrapperActivityIntentIfNeed(intent);
-                if(info!=null){
-                    List<ResolveInfo> rf = new ArrayList<ResolveInfo>(1);
-                    rf.add(info);
-                    return rf;
-                }
-            }
+    public void wrapperActivityIntentIfNeed(Intent intent){
+        ResolveInfo info =  AdditionalPackagemanager.getInstance().queryIntentResolveInfo(intent,ActivityInfo.class);
+        if(info!=null && info.activityInfo!=null) {
+            String rawData = intent.getDataString();
+            intent.putExtra("atlas_rawData", rawData);
+            intent.setData(null);
+            intent.putExtra("atlas_rawComponent", info.activityInfo.name);
+            intent.setClassName(RuntimeVariables.androidApplication.getPackageName(), AtlasFakeActivity.class.getName());
+            ActivityTaskMgr.getInstance().handleActivityStack(info.activityInfo.name, intent, intent.getFlags(), info.activityInfo.launchMode);
+        }
+    }
+
+    public List<ResolveInfo> queryIntentActivities(Intent intent){
+        ResolveInfo info =  AdditionalPackagemanager.getInstance().queryIntentResolveInfo(intent,ActivityInfo.class);
+        if(info!=null){
+            List<ResolveInfo> rf = new ArrayList<ResolveInfo>(1);
+            rf.add(info);
+            return rf;
         }
         return null;
     }
 
-
-
-
-
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    public ResolveInfo wrapperServiceIntentIfNeed(Intent intent){
-        if(intent==null){
-            return null;
+    public List<ResolveInfo> queryIntentService(Intent intent){
+        ResolveInfo info =  AdditionalPackagemanager.getInstance().queryIntentResolveInfo(intent,ServiceInfo.class);
+        if(info!=null){
+            List<ResolveInfo> rf = new ArrayList<ResolveInfo>(1);
+            rf.add(info);
+            return rf;
         }
-        intent.putExtra("atlas_checked",true);
-        if(mExternalServices!=null) {
-            ComponentName comp = intent.getComponent();
-            if (comp == null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
-                    if (intent.getSelector() != null) {
-                        intent = intent.getSelector();
-                        comp = intent.getComponent();
-                    }
-                }
-            }
-            if (comp != null) {
-                Object serviceObj = mExternalServices.mComponents.get(comp);
-                if (serviceObj!=null){
-                    try {
-                        final ResolveInfo ri = new ResolveInfo();
-                        ri.serviceInfo = (ServiceInfo) serviceObj.getClass().getField("info").get(serviceObj);
-                        return ri;
-                    }catch(Exception e){
-                        return null;
-                    }
-                }else{
-                    return null;
-                }
-            }else{
-                // 先检测包名
-                if (!TextUtils.isEmpty(intent.getPackage()) && !TextUtils.equals(intent.getPackage(), RuntimeVariables.androidApplication.getPackageName())) {
-                    return null;
-                }
-                List<ResolveInfo> serviceList = mExternalServices.queryIntent(intent,
-                        intent.resolveTypeIfNeeded(RuntimeVariables.androidApplication.getContentResolver()), false);
-                if(serviceList!=null && serviceList.size()>0){
-                    return serviceList.get(0);
-                }else{
-                    return null;
-                }
-            }
+        return null;
+    }
+
+    public <T extends ComponentInfo> T  getNewComponentInfo(ComponentName comonent,int flag,Class<T> ComponentInfoClass){
+        AdditionComponentIntentResolver resolver = null;
+        if(ComponentInfoClass == ActivityInfo.class){
+            resolver = AdditionalPackagemanager.getInstance().mExternalActivity;
         }else{
-            return null;
+            resolver = AdditionalPackagemanager.getInstance().mExternalServices;
         }
-    }
-
-    /**
-     * 新增service中进行优先filter
-     * @param intent
-     * @param resolvedType
-     * @param flags
-     * @param userId
-     * @return
-     */
-    public static List<ResolveInfo> queryIntentService(Intent intent, String resolvedType, int flags, int userId){
-        List<Bundle>  bundles = Atlas.getInstance().getBundles();
-        for(Bundle bundle : bundles){
-            BundleImpl impl = (BundleImpl)bundle;
-            if(impl.isUpdated() && impl.getPackageManager()!=null ){
-                ResolveInfo info =  impl.getPackageManager().wrapperServiceIntentIfNeed(intent);
-                if(info!=null){
-                    List<ResolveInfo> rf = new ArrayList<ResolveInfo>(1);
-                    rf.add(info);
-                    return rf;
-                }
-            }
-        }
-        return null;
-    }
-
-    public static ActivityInfo getNewActivityInfo(ComponentName componentName,int flag){
-        List<Bundle>  bundles = Atlas.getInstance().getBundles();
-        for(Bundle bundle : bundles){
-            BundleImpl impl = (BundleImpl)bundle;
-            if(impl.isUpdated() && impl.getPackageManager()!=null){
-                BundlePackageManager bpm =  impl.getPackageManager();
-                if(bpm!=null && bpm.mExternalActivity!=null && bpm.mExternalActivity.mComponents!=null){
-                    Object activityObj = bpm.mExternalActivity.mComponents.get(componentName);
-                    if(activityObj!=null){
-                        try {
-                            ActivityInfo info = (ActivityInfo) activityObj.getClass().getField("info").get(activityObj);
-                            return info;
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        } catch (NoSuchFieldException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-            }
-        }
-        return null;
-    }
-
-    public static ServiceInfo getNewServiceInfo(ComponentName componentName,int flag){
-        List<Bundle>  bundles = Atlas.getInstance().getBundles();
-        for(Bundle bundle : bundles){
-            BundleImpl impl = (BundleImpl)bundle;
-            if(impl.isUpdated() && impl.getPackageManager()!=null){
-                BundlePackageManager bpm =  impl.getPackageManager();
-                if(bpm!=null && bpm.mExternalServices!=null && bpm.mExternalServices.mComponents!=null){
-                    Object serviceObj = bpm.mExternalServices.mComponents.get(componentName);
-                    if(serviceObj!=null){
-                        try {
-                            ServiceInfo info = (ServiceInfo) serviceObj.getClass().getField("info").get(serviceObj);
-                            return info;
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        } catch (NoSuchFieldException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-            }
-        }
-        return null;
-    }
-
-    public static List<ResolveInfo>  queryIntenServices(Intent intent,String resolvedType,int flags,int userId){
-        List<Bundle>  bundles = Atlas.getInstance().getBundles();
-        for(Bundle bundle : bundles){
-            BundleImpl impl = (BundleImpl)bundle;
-            if(impl.isUpdated() && impl.getPackageManager()!=null){
-                ResolveInfo info =  impl.getPackageManager().wrapperActivityIntentIfNeed(intent);
-                if(info!=null){
-                    List<ResolveInfo> rf = new ArrayList<ResolveInfo>(1);
-                    rf.add(info);
-                    return rf;
+        if(resolver != null && resolver.mComponents!=null){
+            Object obj = resolver.mComponents.get(comonent);
+            if(obj!=null){
+                try {
+                    ComponentInfo info = (ComponentInfo) obj.getClass().getField("info").get(obj);
+                    return (T)info;
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (NoSuchFieldException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -622,9 +570,7 @@ public class BundlePackageManager {
                     intent.setData(Uri.parse(dataString != null ? dataString : null));
                 }
                 intent.setClassName(RuntimeVariables.androidApplication.getPackageName(),targetBundle.getString("atlas_rawComponent"));
-
-                BundleImpl  bundle = (BundleImpl)Atlas.getInstance().getBundle(targetBundle.getString("atlas_activity_location"));
-                Object activity = bundle.getPackageManager().mExternalActivity.mComponents.get(intent.getComponent());
+                Object activity = AdditionalPackagemanager.getInstance().mExternalActivity.mComponents.get(intent.getComponent());
                 Object activityInfo = Class.forName("android.content.pm.PackageParser$Activity").getField("info").get(activity);
                 activityInfo_Field.set(activityclientrecord, activityInfo);
             }
@@ -642,9 +588,24 @@ public class BundlePackageManager {
                 sTargetBundleStorage.offer(bundle);
                 intent.removeExtra("atlas_rawData");
                 intent.removeExtra("atlas_rawComponent");
-                intent.removeExtra("atlas_activity_location");
             }
         }
     }
+
+    public static class ExternalResolverInfo extends ResolveInfo{
+        public ExternalResolverInfo(){
+        }
+
+        public ExternalResolverInfo(ResolveInfo info){
+            super(info);
+        }
+    }
+
+
+
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }

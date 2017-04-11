@@ -226,7 +226,7 @@ import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
-import android.taobao.atlas.runtime.newcomponent.BundlePackageManager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
 import android.text.TextUtils;
 
 /**
@@ -257,7 +257,7 @@ public class ActivityThreadHook implements Handler.Callback{
         try {
             ensureLoadedApk();
             if(msg.what == 100){
-                BundlePackageManager.processActivityIntentIfNeed(msg.obj);
+                AdditionalPackagemanager.processActivityIntentIfNeed(msg.obj);
             }
 //            if(msg.what==113){
 //                handleReceiver(msg);

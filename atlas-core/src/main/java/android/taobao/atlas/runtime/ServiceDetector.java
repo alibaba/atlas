@@ -217,6 +217,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
 import android.taobao.atlas.util.StringUtils;
 import android.text.TextUtils;
 
@@ -227,6 +228,7 @@ import java.util.List;
  */
 public class ServiceDetector {
 
+    public static final String ADDITIONAL_SERVICE = "atlas_external_service";
     public static class DetectResult {
 
         public static final int BUNDLE_PREPARED = 1;
@@ -370,6 +372,9 @@ public class ServiceDetector {
             ResolveInfo resolveInfo = RuntimeVariables.androidApplication.getPackageManager().resolveService(intent, 0);
             if (resolveInfo != null && resolveInfo.serviceInfo != null) {
                 packageName = resolveInfo.serviceInfo.packageName;
+                if(resolveInfo instanceof AdditionalPackagemanager.ExternalResolverInfo){
+                    intent.putExtra(ADDITIONAL_SERVICE,true);
+                }
                 componentName = resolveInfo.serviceInfo.name;
             }
         }
@@ -381,4 +386,5 @@ public class ServiceDetector {
         }
         return componentName;
     }
+
 }

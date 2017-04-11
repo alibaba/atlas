@@ -253,206 +253,62 @@ public class ContextImplHook extends ContextWrapper {
     }
 
 //    @Override
-//    public void startActivity(Intent intent) {
-//        if(BundlePackageManager.isNeedCheck(intent)) {
-//            List<Bundle> bundles = Atlas.getInstance().getBundles();
-//            for (org.osgi.framework.Bundle bundle : bundles) {
-//                if (((BundleImpl) bundle).isUpdated()) {
-//                    BundlePackageManager packageManager = ((BundleImpl) bundle).getPackageManager();
-//                    if (packageManager.wrapperActivityIntentIfNeed(intent) != null) {
-//                        break;
+//    public boolean bindService(final Intent intent, final ServiceConnection conn, final int flags) {
+//        final Intent explicitIntent = ServiceDetector.createExplicitFromImplicitIntent(getBaseContext(),intent);
+//        ServiceDetector.DetectResult result = ServiceDetector.prepareServiceBundle(explicitIntent,1);
+//        if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_PREPARED){
+//            ActivityManagerHook.sIntentHaveProessed.add(explicitIntent);
+//            return super.bindService(explicitIntent,conn,flags);
+//        }else if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_UNPREPARED){
+//            return false;
+//        }else{
+//            result.setResultListener(new ServiceDetector.DetectResult.ResultListener() {
+//                @Override
+//                public void onPrepared(int resultCode) {
+//                    if(resultCode== ServiceDetector.DetectResult.BUNDLE_PREPARED){
+//                        if(getBaseContext()!=null) {
+//                            ActivityManagerHook.sIntentHaveProessed.add(explicitIntent);
+//                            getBaseContext().bindService(explicitIntent, conn, flags);
+//                        }
 //                    }
 //                }
-//            }
+//            });
+//            return true;
 //        }
-//		// Get package name and component name
-//        if(intent!=null){
-//            Atlas.getInstance().checkDownGradeToH5(intent);
-//        }
-//		String packageName = null;
-//		String componentName = null;
-//		if (intent.getComponent() != null) {
-//			packageName = intent.getComponent().getPackageName();
-//			componentName = intent.getComponent().getClassName();
-//		} else {
-//			ResolveInfo resolveInfo = getBaseContext().getPackageManager().resolveActivity(intent, 0);
-//			if (resolveInfo != null && resolveInfo.activityInfo != null) {
-//				packageName = resolveInfo.activityInfo.packageName;
-//				componentName = resolveInfo.activityInfo.name;
-//			}
-//		}
-//
-//		// Make sure to install the bundle holds component
-//        try {
-//            ClassLoadFromBundle.checkInstallBundleIfNeed(componentName);
-//        }catch(Exception e){
-//            InstrumentationHook.fallBackToClassNotFoundCallback(this, intent, componentName);
-//        }
-//
-//		// Taobao may start a component not exist in com.taobao.taobao package.
-//		if (!StringUtils.equals(getBaseContext().getPackageName(), packageName)) {
-//			super.startActivity(intent);
-//			return;
-//		}
-//
-//		// Check whether exist in the bundles already installed.
-//		String pkg = DelegateComponent.locateComponent(componentName);
-//		if (pkg != null) {
-//			super.startActivity(intent);
-//			return;
-//		}
-//
-//		// Try to get class from system Classloader
-//		try {
-//			Class<?> clazz = null;
-//			clazz = Framework.getSystemClassLoader().loadClass(componentName);
-//			if (clazz != null) {
-//            	super.startActivity(intent);
-//            	return;
-//			}
-//		} catch (ClassNotFoundException e) {
-//			log.error("Can't find class " + componentName);
-//			if(Framework.getClassNotFoundCallback() !=null){
-//				if(intent.getComponent() == null && !TextUtils.isEmpty(componentName)){
-//					intent.setClassName(this,componentName);
-//				}
-//                if(intent.getComponent()!=null) {
-//                    Framework.getClassNotFoundCallback().returnIntent(intent);
-//                }
-//			}
-//		}
-//
-//		return;
 //    }
-
-    @Override
-    public boolean bindService(final Intent intent, final ServiceConnection conn, final int flags) {
-//        Intent explicitIntent = createExplicitFromImplicitIntent(RuntimeVariables.androidApplication,intent);
-//        if(explicitIntent!=null){
-//            intent = explicitIntent;
-//        }
-//        final Intent service = intent;
-//        if(service!=null) {
-//            String componentName = findComponent(service);
-//            if(TextUtils.isEmpty(componentName)){
-//                return super.bindService(service, conn, flags);
+//
+//    @Override
+//    public ComponentName startService(final Intent intent) {
+//        final Intent explicitIntent = ServiceDetector.createExplicitFromImplicitIntent(getBaseContext(),intent);
+//        ServiceDetector.DetectResult result = ServiceDetector.prepareServiceBundle(explicitIntent,1);
+//        if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_PREPARED){
+//            ActivityManagerHook.sIntentHaveProessed.add(explicitIntent);
+//            try {
+//                return super.startService(explicitIntent);
+//            }catch (Throwable throwable){
+//                return null;
 //            }
-//            String bundleName = AtlasBundleInfoManager.instance().getBundleForComponet(componentName);
-//            if(TextUtils.isEmpty(bundleName)){
-//                if(isClassExistInMaindex(componentName)){
-//                    return super.bindService(service, conn, flags);
-//                }else{
-//                    return false;
+//        }else if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_UNPREPARED){
+//            return null;
+//        }else{
+//            result.setResultListener(new ServiceDetector.DetectResult.ResultListener() {
+//                @Override
+//                public void onPrepared(int resultCode) {
+//                    if(resultCode== ServiceDetector.DetectResult.BUNDLE_PREPARED){
+//                        if(getBaseContext()!=null) {
+//                            ActivityManagerHook.sIntentHaveProessed.add(explicitIntent);
+//                            try {
+//                                getBaseContext().startService(explicitIntent);
+//
+//                            }catch (Throwable e){
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    }
 //                }
-//            }else{
-//                BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
-//                if(impl!=null && impl.checkValidate()){
-//                    return super.bindService(service, conn, flags);
-//                }else {
-//                    BundleUtil.checkBundleStateAsync(bundleName,
-//                            new Runnable() {
-//                                @Override
-//                                public void run() {
-//                                    bindService(service, conn, flags);
-//                                }
-//                            }, null);
-//                    return true;
-//                }
-//            }
+//            });
+//            return null;
 //        }
-//        return false;
-        final Intent explicitIntent = ServiceDetector.createExplicitFromImplicitIntent(getBaseContext(),intent);
-        ServiceDetector.DetectResult result = ServiceDetector.prepareServiceBundle(explicitIntent,1);
-        if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_PREPARED){
-            ActivityManagrHook.sIntentHaveProessed.add(explicitIntent);
-            return super.bindService(explicitIntent,conn,flags);
-        }else if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_UNPREPARED){
-            return false;
-        }else{
-            result.setResultListener(new ServiceDetector.DetectResult.ResultListener() {
-                @Override
-                public void onPrepared(int resultCode) {
-                    if(resultCode== ServiceDetector.DetectResult.BUNDLE_PREPARED){
-                        if(getBaseContext()!=null) {
-                            ActivityManagrHook.sIntentHaveProessed.add(explicitIntent);
-                            getBaseContext().bindService(explicitIntent, conn, flags);
-                        }
-                    }
-                }
-            });
-            return true;
-        }
-    }
-
-    @Override
-    public ComponentName startService(final Intent intent) {
-//        Intent explicitIntent = createExplicitFromImplicitIntent(RuntimeVariables.androidApplication,intent);
-//        if(explicitIntent!=null){
-//            intent = explicitIntent;
-//        }
-//        final Intent service = intent;
-//        if(service!=null) {
-//            String componentName = findComponent(service);
-//            if(TextUtils.isEmpty(componentName)){
-//                return super.startService(service);
-//            }
-//            String bundleName = AtlasBundleInfoManager.instance().getBundleForComponet(componentName);
-//            if(TextUtils.isEmpty(bundleName)){
-//                if(isClassExistInMaindex(componentName)){
-//                    return super.startService(service);
-//                }else {
-//                    return null;
-//                }
-//            }else{
-//                BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
-//                if(impl!=null) {
-//                    impl.checkValidate();
-//                }
-//                if(impl!=null && impl.checkValidate()){
-//                    return super.startService(service);
-//                }else {
-//                    BundleUtil.checkBundleStateAsync(bundleName,
-//                            new Runnable() {
-//                                @Override
-//                                public void run() {
-//                                    startService(service);
-//                                }
-//                            }, null);
-//                    return null;
-//                }
-//            }
-//        }
-//        return null;
-        final Intent explicitIntent = ServiceDetector.createExplicitFromImplicitIntent(getBaseContext(),intent);
-        ServiceDetector.DetectResult result = ServiceDetector.prepareServiceBundle(explicitIntent,1);
-        if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_PREPARED){
-            ActivityManagrHook.sIntentHaveProessed.add(explicitIntent);
-            try {
-                return super.startService(explicitIntent);
-            }catch (Throwable throwable){
-                return null;
-            }
-        }else if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_UNPREPARED){
-            return null;
-        }else{
-            result.setResultListener(new ServiceDetector.DetectResult.ResultListener() {
-                @Override
-                public void onPrepared(int resultCode) {
-                    if(resultCode== ServiceDetector.DetectResult.BUNDLE_PREPARED){
-                        if(getBaseContext()!=null) {
-                            ActivityManagrHook.sIntentHaveProessed.add(explicitIntent);
-                            try {
-                                getBaseContext().startService(explicitIntent);
-
-                            }catch (Throwable e){
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            });
-            return null;
-        }
-    }
+//    }
 
 }

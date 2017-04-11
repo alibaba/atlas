@@ -215,6 +215,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.pm.ServiceInfo;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
@@ -270,7 +271,6 @@ public class PackageManagerDelegater {
                 object = method.invoke(mPm, args);
             }catch(InvocationTargetException e){
                 throw e.getTargetException();
-//                return null;
             }
             if(method.getName().equals("getPackageInfo") && args[0]!=null && args[0].equals(mBaseContext.getPackageName())){
                 PackageInfo info = (PackageInfo)object;
@@ -285,11 +285,9 @@ public class PackageManagerDelegater {
                 return object;
             }else if(method.getName().equals("queryIntentActivities")){
                 Intent intent = (Intent)args[0];
-                if(!intent.getBooleanExtra("RawQuery",false)) {
-                    List<ResolveInfo> info = Atlas.getInstance().queryNewIntentActivities(intent,(String) args[1], ((Integer) args[2]).intValue(), mBaseContext.getApplicationInfo().uid);
-                    if (info != null) {
-                        return info;
-                    }
+                List<ResolveInfo> info = Atlas.getInstance().queryNewIntentActivities(intent);
+                if (info != null) {
+                    return info;
                 }
                 return object;
             }else if(method.getName().equals("getActivityInfo")){
@@ -300,34 +298,27 @@ public class PackageManagerDelegater {
                 return object;
             }else if(method.getName().equals("resolveIntent")) {
                 Intent intent = (Intent) args[0];
-                if (!intent.getBooleanExtra("RawQuery", false)) {
-                    List<ResolveInfo> info = Atlas.getInstance().queryNewIntentActivities(intent, (String) args[1], ((Integer) args[2]).intValue(), mBaseContext.getApplicationInfo().uid);
-                    if (info != null) {
-                        return info.get(0);
-                    }
+                List<ResolveInfo> info = Atlas.getInstance().queryNewIntentActivities(intent);
+                if (info != null) {
+                    return info.get(0);
+                }
+                return object;
+            }else if(method.getName().equals("queryIntentServices")) {
+                Intent intent = (Intent) args[0];
+                List<ResolveInfo> info = Atlas.getInstance().queryNewIntentServices(intent);
+                if (info != null) {
+                    return info.get(0);
+                }
+                return object;
+            }else if(method.getName().equals("getServiceInfo")){
+                ServiceInfo info = Atlas.getInstance().getNewServiceInfo((ComponentName) args[0], (Integer) args[1]);
+                if(info!=null){
+                    return info;
                 }
                 return object;
             }else{
                 return object;
             }
-//            else if(method.getName().equals("queryIntentServices")) {
-//                Intent intent = (Intent) args[0];
-//                if (!intent.getBooleanExtra("RawQuery", false)) {
-//                    List<ResolveInfo> info = Atlas.getInstance().queryNewIntentServices(intent, (String) args[1], ((Integer) args[2]).intValue(), mBaseContext.getApplicationInfo().uid);
-//                    if (info != null) {
-//                        return info.get(0);
-//                    }
-//                }
-//                return object;
-//            }else if(method.getName().equals("getServiceInfo")){
-//                ServiceInfo info = Atlas.getInstance().getNewServiceInfo((ComponentName) args[0], (Integer) args[1]);
-//                if(info!=null){
-//                    return info;
-//                }
-//                return object;
-//            }else{
-//                return object;
-//            }
         }
     }
 }

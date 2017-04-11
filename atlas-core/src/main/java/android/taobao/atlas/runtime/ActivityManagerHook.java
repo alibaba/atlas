@@ -206,125 +206,195 @@
  *
  */
 
-package android.taobao.atlas.runtime.newcomponent;
+package android.taobao.atlas.runtime;
 
-import android.content.ComponentName;
+import android.app.IServiceConnection;
+import android.app.Instrumentation;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
-import android.taobao.atlas.hack.AtlasHacks;
+import android.os.IBinder;
+import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.framework.Atlas;
+import android.taobao.atlas.hack.AndroidHack;
+import android.taobao.atlas.hack.Interception;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
+import android.text.TextUtils;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.lang.reflect.Method;
+import java.util.*;
 
 /**
- * Created by guanjie on 15/3/5.
+ * Created by guanjie on 15/3/30.
  */
-public class ExternalComponentIntentResolver extends IntentResolver<IntentFilter,ResolveInfo>{
+public class ActivityManagerHook extends Interception.InterceptionHandler {
 
-    protected final HashMap<ComponentName, Object> mComponents = new HashMap<ComponentName, Object>();
-    private int mFlags;
-
+    public static final String TAG = "ActivityManagrHook";
+    public static List sIntentHaveProessed = new ArrayList<Intent>();
     @Override
-    protected boolean isPackageForFilter(String packageName, IntentFilter filter) {
-        return true;
-    }
-
-    @Override
-    protected IntentFilter[] newArray(int size) {
-        return new IntentFilter[size];
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public List queryIntent(Intent intent, String resolvedType,
-                            boolean defaultOnly,int userId) {
-        mFlags = defaultOnly ? PackageManager.MATCH_DEFAULT_ONLY : 0;
-        return super.queryIntent(intent, resolvedType, defaultOnly);
-    }
-
-    public List<?> queryIntent(Intent intent, String resolvedType, int flags,int userId) {
-        //mFlags = flags;
-        return super.queryIntent(intent, resolvedType,
-                (flags & PackageManager.MATCH_DEFAULT_ONLY) != 0);
-    }
-
-    /**
-     * 将Activity信息添加入索引表
-     * @param activityObj	android.content.pm.PackageParser.Activity信息
-     */
-    public final void addComponent(Object activityObj) {
-        //反射获取component变量
-        ComponentName component = null;
-        try {
-            component = (ComponentName) AtlasHacks.PackageParser$Component_getComponentName.invoke(activityObj);
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        //加入componnt表
-        if(component != null){
-            mComponents.put(component, activityObj);
-        }
-        ArrayList<?> intents = (ArrayList<?>) AtlasHacks.PackageParser$Activity_intents.get(activityObj);
-        int NI = intents.size();
-        for (int j = 0; j < NI; j++) {
-            addFilter((IntentFilter) intents.get(j));
-        }
-
-
-    }
-    /**
-     * 移除Activity信息
-     * @param activityObj  android.content.pm.PackageParser.Activity信息
-     */
-    public final void removeComponent(Object activityObj) {
-        ComponentName component = null;
-        if(android.os.Build.VERSION.SDK_INT >= 8){//大于等于2.2版本
+    public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
+        String name = method.getName();
+        if(method.getName().equals("startService")){
+            try{
+                final Intent intent = (Intent)args[1];
+                if(sIntentHaveProessed.contains(intent)){
+                    sIntentHaveProessed.remove(intent);
+                    return super.invoke(proxy, method, args);
+                }
+                ServiceDetector.DetectResult result = ServiceDetector.prepareServiceBundle(intent,1);
+                if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_PREPARED){
+                    if(intent.getBooleanExtra(ServiceDetector.ADDITIONAL_SERVICE,false)){
+                        AdditionalActivityManagerProxy.get().startService(intent);
+                    }else {
+                        return super.invoke(proxy, method, args);
+                    }
+                }else if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_UNPREPARED){
+                    return null;
+                }else{
+                    result.setResultListener(new ServiceDetector.DetectResult.ResultListener() {
+                        @Override
+                        public void onPrepared(int resultCode) {
+                            if(resultCode== ServiceDetector.DetectResult.BUNDLE_PREPARED){
+                                try {
+                                    if(intent.getBooleanExtra(ServiceDetector.ADDITIONAL_SERVICE,false)){
+                                        AdditionalActivityManagerProxy.get().startService(intent);
+                                    }else {
+                                        method.invoke(delegatee(), args);
+                                    }
+                                } catch (Throwable e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    return null;
+                }
+            }catch (Throwable e){}
+        }else if(method.getName().equals("bindService")){
+            try{
+                final Intent intent = (Intent)args[2];
+                if(sIntentHaveProessed.contains(intent)){
+                    sIntentHaveProessed.remove(intent);
+                    return super.invoke(proxy, method, args);
+                }
+                ServiceDetector.DetectResult result = ServiceDetector.prepareServiceBundle(intent,1);
+                if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_PREPARED){
+                    if(intent.getBooleanExtra(ServiceDetector.ADDITIONAL_SERVICE,false)){
+                        return AdditionalActivityManagerProxy.get().bindService((IBinder)args[1],intent,(String)args[3],(IServiceConnection) args[4]);
+                    }else {
+                        return super.invoke(proxy, method, args);
+                    }
+                }else if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_UNPREPARED){
+                    return 0;
+                }else{
+                    result.setResultListener(new ServiceDetector.DetectResult.ResultListener() {
+                        @Override
+                        public void onPrepared(int resultCode) {
+                            if(resultCode== ServiceDetector.DetectResult.BUNDLE_PREPARED){
+                                try {
+                                    if(intent.getBooleanExtra(ServiceDetector.ADDITIONAL_SERVICE,false)){
+                                        AdditionalActivityManagerProxy.get().bindService((IBinder)args[1],intent,(String)args[3],(IServiceConnection) args[4]);
+                                    }else {
+                                        method.invoke(delegatee(), args);
+                                    }
+                                } catch (Throwable e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    return 1;
+                }
+            }catch (Throwable e){}
+        }else if(method.getName().equals("stopService")){
+//            Intent intent = (Intent) args[1];
+//            if(BundlePackageManager.getInstance().queryIntentService(intent)!=null){
+//                return AdditionalServiceManagerProxy.get().stopService(intent);
+//            }
+        }else if(method.getName().equals("unbindService")){
+            IServiceConnection sd = (IServiceConnection) args[0];
+            if(AdditionalActivityManagerProxy.get().unbindService(sd)){
+                return true;
+            }
+        }else if(method.getName().equals("broadcastIntent")){
             try {
-                component = (ComponentName) AtlasHacks.PackageParser$Component_getComponentName.invoke(activityObj);
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
+                Intent intent = (Intent) args[1];
+                long time = System.currentTimeMillis();
+                List<ResolveInfo> infos = RuntimeVariables.androidApplication.getPackageManager().queryBroadcastReceivers(intent, 0);
+                if (infos != null && infos.size() > 0) {
+                    List<String> bundlesToInstall = new ArrayList<String>();
+                    for (ResolveInfo info : infos) {
+                        if (info.activityInfo.packageName.equals(RuntimeVariables.androidApplication.getPackageName()) && isstaticReceiver(info.activityInfo.name)) {
+                            String bundlename = AtlasBundleInfoManager.instance().getBundleForComponet(info.activityInfo.name);
+                            if (!TextUtils.isEmpty(bundlename) && Atlas.getInstance().getBundle(bundlename) == null) {
+                                bundlesToInstall.add(bundlename);
+                            }
+                        }
+                    }
+                    if (bundlesToInstall.size() > 0) {
+                        final Runnable finishTask = new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    method.invoke(delegatee(), args);
+                                } catch (Throwable e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        };
+                        BundleUtil.checkBundleArrayStateAsync(bundlesToInstall.toArray(new String[bundlesToInstall.size()]), finishTask, finishTask);
+                        return 0;
+                    } else {
+                        method.invoke(delegatee(), args);
+                        return 0;
+                    }
+//                Log.e(TAG,intent.getAction()+"  |  "+(System.currentTimeMillis()-time));
+                }
+            }catch(Throwable e){}
+        }else if(name.equals("startActivity")){
+            // 解决某些自带LBE机制系统hook Instrumentation, 导致atlas本身hook Instrumentation不正常，如不会回调execstartactivity
+            Instrumentation hookInstrumentation = AndroidHack.getInstrumentation();
+            if(hookInstrumentation != null && hookInstrumentation.getClass().getName().contains("com.lbe.security.service")) {
+                AndroidHack.injectInstrumentationHook(
+                        new InstrumentationHook(AndroidHack.getInstrumentation(), RuntimeVariables.androidApplication.getBaseContext()));
+            }
+        }else if(name.equals("getContentProvider")){
+            String auth = (String)args[1];
+            ProviderInfo info = AdditionalPackagemanager.getInstance().resolveContentProvider(auth);
+            if(info!=null){
+                return AdditionalActivityManagerProxy.get().getContentProvider(info);
             }
         }
-        mComponents.remove(component);
-
-        ArrayList<?> intents = (ArrayList<?>) AtlasHacks.PackageParser$Activity_intents.get(activityObj);
-
-        int NI = intents.size();
-        for (int j = 0; j < NI; j++) {
-            removeFilter((IntentFilter) intents.get(j));
-        }
-
+        return super.invoke(proxy, method, args);
     }
 
-    @Override
-    protected ResolveInfo newResult(IntentFilter info,int match) {
+
+    static ActivityInfo[] receiverInfos;
+    private boolean isstaticReceiver(String name){
         try {
-            Object activity = AtlasHacks.PackageParser$ActivityIntentInfo_activity.get(info);
-            ActivityInfo ai = (ActivityInfo) activity.getClass().getField("info").get(activity);
-            if (ai == null) {
-                return null;
+            if(receiverInfos==null) {
+                PackageInfo info = RuntimeVariables.androidApplication.getPackageManager().getPackageInfo(RuntimeVariables.androidApplication.getPackageName(),
+                        PackageManager.GET_RECEIVERS);
+                if(info!=null && info.receivers!=null && info.receivers.length>0){
+                    receiverInfos = info.receivers;
+                }
             }
-            final ResolveInfo res = new ResolveInfo();
-            res.activityInfo = ai;
-            if ((mFlags & PackageManager.GET_RESOLVED_FILTER) != 0) {
-                res.filter = (IntentFilter)info;
+            if (receiverInfos != null) {
+                for (ActivityInfo info : receiverInfos) {
+                    if (info != null && info.name != null && info.name.equals(name)) {
+                        return true;
+                    }
+                }
             }
-            res.priority = ((IntentFilter)info).getPriority();
-            res.preferredOrder = 0;
-            //System.out.println("Result: " + res.activityInfo.className +
-            //                   " = " + res.priority);
-            res.match = match;
-            res.isDefault = true;
-            res.labelRes = 0;
-            res.nonLocalizedLabel = null;
-            res.icon = 0;
-            return res;
-        }catch(Exception e){
-            return null;
+            return false;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return true;
         }
+
     }
 }

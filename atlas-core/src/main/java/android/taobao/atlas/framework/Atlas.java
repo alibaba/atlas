@@ -209,7 +209,6 @@
 package android.taobao.atlas.framework;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Properties;
@@ -225,7 +224,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
@@ -234,9 +232,7 @@ import android.os.Build;
 import android.os.Looper;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
-import android.taobao.atlas.patch.PatchReceiver;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
-import android.taobao.atlas.runtime.PackageManagerDelegater;
 import android.taobao.atlas.runtime.SecurityHandler;
 import android.taobao.atlas.util.ApkUtils;
 import android.taobao.atlas.util.DexLoadBooster;
@@ -246,13 +242,13 @@ import android.util.Log;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
-import org.osgi.framework.FrameworkListener;
+
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AssertionArrayException;
 import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.runtime.ActivityManagrHook;
+import android.taobao.atlas.runtime.ActivityManagerHook;
 import android.taobao.atlas.runtime.BundleLifecycleHandler;
-import android.taobao.atlas.runtime.newcomponent.BundlePackageManager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
 import android.taobao.atlas.runtime.ClassNotFoundInterceptorCallback;
 import android.taobao.atlas.runtime.DelegateClassLoader;
 import android.taobao.atlas.runtime.FrameworkLifecycleHandler;
@@ -333,7 +329,7 @@ public class Atlas {
          * 解决某些自带LBE机制无法hook execstartactivity以及service start service的hook
          */
         try {
-            ActivityManagrHook activityManagerProxy = new ActivityManagrHook();
+            ActivityManagerHook activityManagerProxy = new ActivityManagerHook();
 
             Object gDefault = null;
             if(Build.VERSION.SDK_INT<25) {
@@ -399,30 +395,20 @@ public class Atlas {
         Framework.installOrUpdate(locations, files,newVersion,123);
     }
 
-//    private Resources getResources(Application application) throws Exception{
-//    	Resources res = null;
-//
-//    	res = application.getResources();
-//    	if (res != null){
-//    		return res;
-//    	}
-//
-//		PackageManager pm = application.getPackageManager();
-//		res = pm.getResourcesForApplication(application.getApplicationInfo());
-//
-//		return res;
-//    }
-
-    public List<ResolveInfo> queryNewIntentActivities(Intent intent,String resolvedType, int flags, int userId){
-        return BundlePackageManager.queryIntentActivities(intent,resolvedType,flags,userId);
+    public List<ResolveInfo> queryNewIntentActivities(Intent intent){
+        return AdditionalPackagemanager.getInstance().queryIntentActivities(intent);
     }
 
-//    public List<ResolveInfo> queryNewIntentServices(Intent intent,String resolveType,int flags,int userId){
-//        return BundlePackageManager.queryIntentService(intent,resolveType,flags,userId);
-//    }
+    public List<ResolveInfo> queryNewIntentServices(Intent intent){
+        return AdditionalPackagemanager.getInstance().queryIntentService(intent);
+    }
 
     public ActivityInfo getNewActivityInfo(ComponentName componentName, int flags){
-        return BundlePackageManager.getNewActivityInfo(componentName,flags);
+        return AdditionalPackagemanager.getInstance().getNewComponentInfo(componentName,flags,ActivityInfo.class);
+    }
+
+    public ServiceInfo getNewServiceInfo(ComponentName componentName, int flags){
+        return AdditionalPackagemanager.getInstance().getNewComponentInfo(componentName,flags,ServiceInfo.class);
     }
 
     public void checkDownGradeToH5(Intent intent) {
@@ -743,8 +729,8 @@ public class Atlas {
         RuntimeVariables.sBundleVerifier = checker;
     }
 
-    public void cacheOldBundles(){
-
+    public void forceStopSelf(){
+//        setPackageStoppedState
     }
 
     /*************************************************↑↑↑↑↑↑for public use↑↑↑↑↑↑*************************************************************

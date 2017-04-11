@@ -567,8 +567,8 @@ public class BundleArchiveRevision {
             }
 
             if (dexFile == null){
-                dexFile = com.taobao.android.runtime.RuntimeUtils.loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
-//                dexFile = DexFile.loadDex(bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+//                dexFile = com.taobao.android.runtime.RuntimeUtils.loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+                dexFile = DexFile.loadDex(bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
             }
             //9月份版本明天发布先不集成
 //            isDexOptDone = checkDexValid(dexFile);

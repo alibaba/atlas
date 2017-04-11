@@ -277,11 +277,15 @@ public class AndroidHack {
     }
 
     public static Object getLoadedApk(Application application,Object activityThread, String packageName) {
-        Map<String, Object> mPackages = (Map<String, Object>) AtlasHacks.ActivityThread_mPackages.get(activityThread);
-        WeakReference<?> rf = (WeakReference<?>) mPackages.get(packageName);
-        if (rf != null && rf.get()!=null) {
-        	_mLoadedApk = rf.get();
-            return rf.get();
+        if(_mLoadedApk!=null){
+            return _mLoadedApk;
+        }else {
+            Map<String, Object> mPackages = (Map<String, Object>) AtlasHacks.ActivityThread_mPackages.get(activityThread);
+            WeakReference<?> rf = (WeakReference<?>) mPackages.get(packageName);
+            if (rf != null && rf.get() != null) {
+                _mLoadedApk = rf.get();
+                return rf.get();
+            }
         }
         return null;
     }
