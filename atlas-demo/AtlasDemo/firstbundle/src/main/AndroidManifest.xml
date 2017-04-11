@@ -14,16 +14,6 @@
             android:enabled="true"
             android:exported="true"></service>
 
-
-        <activity
-            android:name=".databind.DataBundleSampleActivity"
-            android:theme="@style/AppTheme.NoActionBar"
-            >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
     </application>
 
 </manifest>

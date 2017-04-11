@@ -1,4 +1,4 @@
-package com.taobao.firstbundle.databind;
+package com.taobao.databindbundle.databind;
 
 import android.app.Activity;
 import android.databinding.DataBindingUtil;
@@ -8,8 +8,8 @@ import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.taobao.firstbundle.R;
-import com.taobao.firstbundle.databinding.BundleDatabindMainBinding;
+import com.taobao.databindbundle.R;
+import com.taobao.databindbundle.databinding.BundleDatabindMainBinding;
 
 
 public class DataBundleSampleActivity extends Activity {

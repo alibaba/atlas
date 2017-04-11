@@ -327,7 +327,8 @@ public class PreProcessManifestTask extends DefaultTask {
             File file = androidLibrary.getManifest();
 
             if (!file.exists()) {
-                getLogger().error( androidLibrary.getResolvedCoordinates().toString() + " not has manifest : " + file.getAbsolutePath() );
+                getLogger().error(androidLibrary.getResolvedCoordinates().toString() + " not has manifest : " + file
+                    .getAbsolutePath());
                 return;
             }
 
@@ -355,6 +356,7 @@ public class PreProcessManifestTask extends DefaultTask {
                         AtlasBuildContext.manifestMap.put(file, modifyManifest);
 
                     } catch (Throwable e) {
+                        e.printStackTrace();
                         throw new GradleException("preprocess manifest failed " + file.getAbsolutePath(), e);
                     }
                 }
@@ -409,16 +411,11 @@ public class PreProcessManifestTask extends DefaultTask {
                 allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders()));
                 allManifest.addAll(bundleProviders);
 
-                //for (ManifestProvider manifestProvider : allManifest) {
-                    //getLogger().warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());
-                    //if (manifestProvider.getManifest().getAbsolutePath().contains("com.taobao.login4android")) {
-                    //    try {
-                    //        getLogger().warn(FileUtils.readFileToString(manifestProvider.getManifest()));
-                    //    } catch (IOException e) {
-                    //        e.printStackTrace();
-                    //    }
-                    //}
-                //}
+                if (!getLogger().isInfoEnabled()) {
+                    for (ManifestProvider manifestProvider : allManifest) {
+                        getLogger().warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());
+                    }
+                }
 
                 //FIXME 不加这一步,每次的getLibraries 都会从mapping里去重新计算
                 mergeManifests.setProviders(allManifest);

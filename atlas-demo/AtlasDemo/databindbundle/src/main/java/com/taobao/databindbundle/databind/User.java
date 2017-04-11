@@ -1,9 +1,9 @@
-package com.taobao.firstbundle.databind;
+package com.taobao.databindbundle.databind;
 
 import android.databinding.BaseObservable;
 import android.databinding.Bindable;
 
-import com.taobao.firstbundle.BR;
+import com.taobao.databindbundle.BR;
 
 /**
  * Created by wuzhong on 2016/10/19.
