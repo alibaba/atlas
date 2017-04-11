@@ -320,6 +320,11 @@ public class PreProcessManifestTask extends DefaultTask {
             mainManifestFile);
         mainManifestFileObject.init();
 
+        String minSdkVersion = String.valueOf(
+            appVariantContext.getVariantConfiguration().getMinSdkVersion().getApiLevel());
+        mainManifestFileObject.addUseSdkProperty("android:minSdkVersion", minSdkVersion);
+
+
         Map<String, List<String>> packageNameMap = new HashMap<>();
 
         for (AndroidLibrary androidLibrary : androidLibraries) {
