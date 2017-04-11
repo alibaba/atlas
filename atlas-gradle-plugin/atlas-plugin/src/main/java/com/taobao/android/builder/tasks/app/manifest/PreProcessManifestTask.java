@@ -242,6 +242,9 @@ import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.manifest.ManifestDependencyUtil;
 import com.taobao.android.builder.tools.manifest.ManifestFileObject;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.builder.tools.manifest.ManifestHelper;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.dom4j.DocumentException;
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
@@ -272,6 +275,8 @@ public class PreProcessManifestTask extends DefaultTask {
     File mainManifestFile;
 
     List<File> libraryManifests;
+
+    List<AndroidLibrary> androidLibraries;
 
     Set<File> awbManifest;
 
@@ -315,11 +320,25 @@ public class PreProcessManifestTask extends DefaultTask {
             mainManifestFile);
         mainManifestFileObject.init();
 
-        for (File file : getLibraryManifests()) {
+        Map<String, List<String>> packageNameMap = new HashMap<>();
+
+        for (AndroidLibrary androidLibrary : androidLibraries) {
+
+            File file = androidLibrary.getManifest();
 
             if (!file.exists()) {
+                getLogger().error( androidLibrary.getResolvedCoordinates().toString() + " not has manifest : " + file.getAbsolutePath() );
                 return;
             }
+
+            //TODO packageName 检查
+            String packageName = ManifestFileUtils.getPackage(file);
+            List<String> files = packageNameMap.get(packageName);
+            if (files == null) {
+                files = new ArrayList<>();
+                packageNameMap.put(packageName, files);
+            }
+            files.add(androidLibrary.getResolvedCoordinates().toString());
 
             runnables.add(new Runnable() {
 
@@ -327,7 +346,7 @@ public class PreProcessManifestTask extends DefaultTask {
                 public void run() {
                     try {
 
-                        File modifyManifest = appVariantContext.getModifyManifest(file);
+                        File modifyManifest = appVariantContext.getModifyManifest(androidLibrary);
 
                         ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file,
                                                                        mainManifestFileObject,
@@ -345,10 +364,17 @@ public class PreProcessManifestTask extends DefaultTask {
 
         executorServicesHelper.execute(runnables);
 
-        //ManifestFileUtils.preProcessManifests(getMainManifestFile(), getLibraryManifests(), true);
-
-        //BundleInfoUtils.setupAwbBundleInfos(appVariantOutputContext.getVariantContext());
-        //collectBundleInfo();
+        List<String> warnings = new ArrayList<>();
+        for (String packageName : packageNameMap.keySet()) {
+            List<String> values = packageNameMap.get(packageName);
+            if (values.size() > 1) {
+                StringBuilder stringBuilder = new StringBuilder(packageName + ":");
+                warnings.add(packageName + ":" + StringUtils.join(values, ","));
+            }
+        }
+        if (warnings.size() > 0) {
+            FileUtils.writeLines(new File(getProject().getBuildDir(), "outputs/warning-duppackagename.txt"), warnings);
+        }
 
         addAwbManifest2Merge();
     }
@@ -375,51 +401,27 @@ public class PreProcessManifestTask extends DefaultTask {
                 GradleVariantConfiguration config = variantScope.getVariantConfiguration();
                 AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                     config.getFullName());
-                if (null == dependencyTree) {
-                    throw new StopExecutionException("DependencyTree cannot be null!");
-                }
 
-                List<ManifestProvider> bundleProviders = new ArrayList<>();
+                List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(dependencyTree,
+                                                                                          atlasExtension);
 
-                for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
-                    String cord = String.format("%s:%s",
-                                                awbBundle.getResolvedCoordinates().getGroupId(),
-                                                awbBundle.getResolvedCoordinates().getArtifactId());
-                    if (null == notMergedArtifacts || !notMergedArtifacts.contains(cord)) {
-
-                        bundleProviders.addAll(awbBundle.getManifestProviders());
-                    }
-                }
-
-                //TODO update manifestFiles
                 List<ManifestProvider> allManifest = new ArrayList<>();
+                allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders()));
                 allManifest.addAll(bundleProviders);
-                allManifest.addAll(mergeManifests.getProviders());
 
-                List<ManifestProvider> modifyManifests = new ArrayList<>();
-                for (ManifestProvider manifestProvider : allManifest) {
+                //for (ManifestProvider manifestProvider : allManifest) {
+                    //getLogger().warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());
+                    //if (manifestProvider.getManifest().getAbsolutePath().contains("com.taobao.login4android")) {
+                    //    try {
+                    //        getLogger().warn(FileUtils.readFileToString(manifestProvider.getManifest()));
+                    //    } catch (IOException e) {
+                    //        e.printStackTrace();
+                    //    }
+                    //}
+                //}
 
-                    File modifyManifest = AtlasBuildContext.manifestMap.get(manifestProvider.getManifest());
-                    if (null == modifyManifest) {
-                        modifyManifests.add(manifestProvider);
-                    } else {
-                        modifyManifests.add(new ManifestProvider() {
-                            @Override
-                            public File getManifest() {
-                                return modifyManifest;
-                            }
-
-                            @Override
-                            public String getName() {
-                                return manifestProvider.getName();
-                            }
-                        });
-                    }
-
-                }
-
-                //FIXME 不加这一步,每次的getibraries 都会从mapping里去重新计算
-                mergeManifests.setProviders(modifyManifests);
+                //FIXME 不加这一步,每次的getLibraries 都会从mapping里去重新计算
+                mergeManifests.setProviders(allManifest);
 
             }
         }
@@ -449,6 +451,7 @@ public class PreProcessManifestTask extends DefaultTask {
         public void execute(PreProcessManifestTask task) {
             VariantScope variantScope = appVariantContext.getScope();
             final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
+
             AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 config.getFullName());
             if (null == dependencyTree) {
@@ -467,6 +470,7 @@ public class PreProcessManifestTask extends DefaultTask {
             }
 
             task.setLibraryManifests(manifests);
+            task.androidLibraries = dependencyTree.getAllAndroidLibrarys();
 
             task.appBuildInfo = getAppVariantOutputContext().appBuildInfo;
             task.appVariantContext = appVariantContext;
@@ -501,12 +505,12 @@ public class PreProcessManifestTask extends DefaultTask {
                             false,
                             atlasExtension.getTBuildConfig()
                                 .getOutOfApkBundles());
-                        
+
                         File file = scope.getVariantScope()
                             .getInstantRunManifestOutputFile();
                         if (null != file && file.exists()) {
                             ManifestFileUtils.postProcessManifests(
-                                baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
+                                baseVariantOutputData.manifestProcessorTask.getInstantRunManifestOutputFile(),
                                 getLibManifestMap(),
                                 getLibManifestDepenendyMap(),
                                 bundleBaseLineInfo,
@@ -517,10 +521,16 @@ public class PreProcessManifestTask extends DefaultTask {
                                     .getOutOfApkBundles());
                         }
 
+                        //TODO manifest 清单
+                        ManifestHelper.checkManifest(
+                            baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(), dependencyTree,
+                            atlasExtension);
+
                         AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).generateKeepList(
                             baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
                             appVariantContext.getScope()
                                 .getManifestKeepListProguardFile());
+
                     } catch (Throwable e) {
                         throw new GradleException(e.getMessage(), e);
                     }

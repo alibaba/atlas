@@ -334,8 +334,7 @@ public class AwbBundle {
     public String getPackageName() {
 
         if (StringUtils.isEmpty(packageName)) {
-            packageName = ManifestFileUtils.getPackage(ManifestHelper.getOrgManifestFile(
-                    androidLibrary));
+            packageName = ManifestFileUtils.getPackage(androidLibrary.getManifest());
         }
 
         return packageName;

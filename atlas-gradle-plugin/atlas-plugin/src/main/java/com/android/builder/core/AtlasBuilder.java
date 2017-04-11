@@ -836,13 +836,18 @@ public class AtlasBuilder extends AndroidBuilder {
         }
     }
 
+    @Override
     public void preDexLibrary(@NonNull File inputFile,
                               @NonNull File outFile,
                               boolean multiDex,
                               @NonNull DexOptions dexOptions,
-                              boolean optimize,
                               @NonNull ProcessOutputHandler processOutputHandler)
         throws IOException, InterruptedException, ProcessException {
+
+        if (!AtlasBuildContext.sBuilderAdapter.dexCacheEnabled){
+            super.preDexLibrary(inputFile,outFile,multiDex,dexOptions,processOutputHandler);
+            return;
+        }
 
         String md5 = "";
         File dexFile = new File(outFile, "classes.dex");
@@ -853,13 +858,12 @@ public class AtlasBuilder extends AndroidBuilder {
                 md5 = MD5Util.getFileMD5(inputFile);
             } else if (inputFile.isDirectory()) {
                 md5 = MD5Util.getFileMd5(FileUtils.listFiles(inputFile,
-                                                             new String[] {".class"},
+                                                             new String[] {"class"},
                                                              true));
             }
 
             if (StringUtils.isNotEmpty(md5)) {
                 AtlasBuildContext.sBuilderAdapter.fileCache.fetchFile(md5, dexFile, "pre-dex");
-
                 if (dexFile.exists() && dexFile.length() > 0) {
                     sLogger.info("[mtldex] cache dex for {} , {}",
                                  inputFile.getAbsolutePath(),

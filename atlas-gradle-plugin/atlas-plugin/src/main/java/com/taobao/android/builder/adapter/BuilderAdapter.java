@@ -248,4 +248,6 @@ public class BuilderAdapter {
      */
     public boolean prettyDependencyFormat = true;
 
+    public boolean dexCacheEnabled = false;
+
 }

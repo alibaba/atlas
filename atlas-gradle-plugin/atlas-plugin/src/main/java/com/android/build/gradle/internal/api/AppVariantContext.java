@@ -216,6 +216,7 @@ import java.util.Map;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -329,12 +330,12 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                         "/awb-blame/" + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
     }
 
-    public File getModifyManifest(File manifest) {
+    public File getModifyManifest(AndroidLibrary androidLibrary) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/manifest-modify/" + getVariantConfiguration().getDirName() + "/" + ManifestFileUtils
-                            .getPackage(manifest) + ".xml");
+                        "/manifest-modify/" + getVariantConfiguration().getDirName() + "/" +
+                            androidLibrary.getResolvedCoordinates().getGroupId() + "." + androidLibrary
+                            .getResolvedCoordinates().getArtifactId() + ".xml");
     }
-
 
     //public String getBuildType(){
     //    String fullName = variantData.getVariantConfiguration().getBaseName();

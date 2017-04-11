@@ -234,7 +234,6 @@ public class ManifestOptions {
     @Input
     private Set<String> removeSystemPermissions = Sets.newHashSet();
 
-    @JSONField(serialize = false)
     @Input
     private boolean removeCustomPermission = false;
 

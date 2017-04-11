@@ -686,7 +686,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             processResources.setDebuggable(config.getBuildType().isDebuggable());
 
             AaptOptions aaptOptions = scope.getGlobalScope().getExtension().getAaptOptions();
-            AaptOptions cloneAaptOptions = new AaptOptions();
+            AaptOptions cloneAaptOptions = new MyAaptOptions();
             try {
                 BeanUtils.copyProperties(cloneAaptOptions, aaptOptions);
             } catch (Throwable e) {
@@ -1013,5 +1013,19 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
     @Optional
     public File getRtxtFile() {
         return rtxtFile;
+    }
+
+
+    public static class MyAaptOptions extends AaptOptions {
+
+        @Override
+        public void useNewCruncher(boolean value) {
+
+        }
+
+        @Override
+        public void setUseNewCruncher(boolean value) {
+
+        }
     }
 }
