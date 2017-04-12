@@ -719,7 +719,7 @@ public class AtlasBuilder extends AndroidBuilder {
         public List<String> getArgs() {
             List<String> args = new ArrayList<String>();
             args.addAll(origin.getArgs());
-            args.remove("--no-version-vectors");
+            //args.remove("--no-version-vectors");
 
             //加入R.txt文件的生成
             if (!args.contains("--output-text-symbols") && null != sybolOutputDir) {

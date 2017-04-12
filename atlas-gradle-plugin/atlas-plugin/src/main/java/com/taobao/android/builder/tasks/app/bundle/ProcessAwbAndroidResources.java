@@ -423,7 +423,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         String customPackageId = getCustomPackageId();
         if (StringUtils.isNotBlank(customPackageId)) {
             String[] split = customPackageId.split("\\.");
-            options.add("--customized-package-id");
+            options.add("--forced-package-id");
             options.add(split[0]);
             if (split.length > 1) { // 使用小数点的后一位代表type id的偏移位置
                 options.add("--type-id-offset");
@@ -431,7 +431,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             }
         }
         if (StringUtils.isNotBlank(getSktPackageName())) {
-            options.add("--use-skt-package-name");
+            options.add("--main-package");
             options.add(getSktPackageName());
         }
         if (null != getShareResourceFile() && getShareResourceFile().exists()) {

@@ -269,14 +269,14 @@ public class AtlasAapt extends AaptV1 {
             throw new GradleException("getargs exception", e);
         }
 
-        args.remove("--no-version-vectors");
-
-        //不生成 manifest_keep.txt 文件
-        int indexD = args.indexOf("-D");
-        if (indexD > 0){
-            args.remove(indexD);
-            args.remove(indexD);
-        }
+        //args.remove("--no-version-vectors");
+        //
+        ////不生成 manifest_keep.txt 文件
+        //int indexD = args.indexOf("-D");
+        //if (indexD > 0){
+        //    args.remove(indexD);
+        //    args.remove(indexD);
+        //}
 
         //加入R.txt文件的生成
         String sybolOutputDir = config.getSymbolOutputDir().getAbsolutePath();
