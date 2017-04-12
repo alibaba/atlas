@@ -217,7 +217,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.util.StringUtils;
 import android.text.TextUtils;
 
@@ -372,8 +372,10 @@ public class ServiceDetector {
             ResolveInfo resolveInfo = RuntimeVariables.androidApplication.getPackageManager().resolveService(intent, 0);
             if (resolveInfo != null && resolveInfo.serviceInfo != null) {
                 packageName = resolveInfo.serviceInfo.packageName;
-                if(resolveInfo instanceof AdditionalPackagemanager.ExternalResolverInfo){
+                if(resolveInfo instanceof AdditionalPackageManager.ExternalResolverInfo){
+                    //set explicit component
                     intent.putExtra(ADDITIONAL_SERVICE,true);
+                    intent.setClassName(RuntimeVariables.androidApplication.getPackageName(),resolveInfo.serviceInfo.name);
                 }
                 componentName = resolveInfo.serviceInfo.name;
             }

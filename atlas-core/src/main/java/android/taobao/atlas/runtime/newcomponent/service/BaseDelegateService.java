@@ -6,6 +6,7 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
@@ -16,6 +17,7 @@ import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.ContextImplHook;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.runtime.newcomponent.receiver.ReceiverBridge;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -27,7 +29,7 @@ import java.util.Map;
  * Created by guanjie on 2017/4/2.
  */
 
-public class AdditionActivityManagerService extends Service{
+public class BaseDelegateService extends Service{
 
     private ServiceDispatcherImpl dispatcher = new ServiceDispatcherImpl();
 
@@ -112,16 +114,8 @@ public class AdditionActivityManagerService extends Service{
         }
 
         @Override
-        public IActivityManager.ContentProviderHolder getContentProvider(ProviderInfo cpi) throws RemoteException {
-            try {
-                Object activityThread = AndroidHack.getActivityThread();
-                Method installProvider = activityThread.getClass().getDeclaredMethod("installProvider",
-                        Context.class,IActivityManager.ContentProviderHolder.class,ProviderInfo.class,boolean.class,boolean.class,boolean.class);
-                return (IActivityManager.ContentProviderHolder)installProvider.invoke(activityThread,RuntimeVariables.androidApplication,null,cpi,false,true,true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
+        public void handleReceiver(Intent intent, ActivityInfo info) throws RemoteException {
+            ReceiverBridge.postOnReceived(intent,info);
         }
 
         private AdditionalServiceRecord handleCreateService(ComponentName componentName){

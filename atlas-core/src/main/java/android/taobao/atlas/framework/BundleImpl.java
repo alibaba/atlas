@@ -212,7 +212,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.Archive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.runtime.DelegateResources;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
@@ -299,7 +299,7 @@ public final class BundleImpl implements Bundle {
      */
     List<BundleListener>            registeredBundleListeners    = null;
 
-    AdditionalPackagemanager packageManager = null;
+    AdditionalPackageManager packageManager = null;
 
     boolean                         updated        = false;
 

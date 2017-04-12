@@ -214,9 +214,11 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.taobao.atlas.framework.Atlas;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 
@@ -285,33 +287,60 @@ public class PackageManagerDelegater {
                 return object;
             }else if(method.getName().equals("queryIntentActivities")){
                 Intent intent = (Intent)args[0];
-                List<ResolveInfo> info = Atlas.getInstance().queryNewIntentActivities(intent);
+                List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentActivities(intent);
                 if (info != null) {
                     return info;
                 }
                 return object;
             }else if(method.getName().equals("getActivityInfo")){
-                ActivityInfo info = Atlas.getInstance().getNewActivityInfo((ComponentName)args[0],(Integer)args[1]);
+                ActivityInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo((ComponentName)args[0],ActivityInfo.class);
                 if(info!=null){
                     return info;
                 }
                 return object;
             }else if(method.getName().equals("resolveIntent")) {
                 Intent intent = (Intent) args[0];
-                List<ResolveInfo> info = Atlas.getInstance().queryNewIntentActivities(intent);
+                List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentActivities(intent);
                 if (info != null) {
                     return info.get(0);
                 }
                 return object;
             }else if(method.getName().equals("queryIntentServices")) {
                 Intent intent = (Intent) args[0];
-                List<ResolveInfo> info = Atlas.getInstance().queryNewIntentServices(intent);
+                List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentService(intent);
                 if (info != null) {
                     return info.get(0);
                 }
                 return object;
             }else if(method.getName().equals("getServiceInfo")){
-                ServiceInfo info = Atlas.getInstance().getNewServiceInfo((ComponentName) args[0], (Integer) args[1]);
+                ServiceInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo((ComponentName)args[0],ServiceInfo.class);
+                if(info!=null){
+                    return info;
+                }
+                return object;
+            }else if(method.getName().equals("getReceiverInfo")){
+                ActivityInfo info = AdditionalPackageManager.getInstance().getReceiverInfo((ComponentName)args[0]);
+                if(info!=null){
+                    return info;
+                }
+                return object;
+            }else if(method.getName().equals("queryBroadcastReceivers")){
+                Intent intent = (Intent) args[0];
+                List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentReceivers(intent);
+                if(info!=null){
+                    return info.addAll((List<ResolveInfo>)object);
+                }
+                return object;
+            }else if(method.getName().equals("queryContentProviders")){
+                List<ProviderInfo> infos = AdditionalPackageManager.getInstance().queryContentProviders((String)args[0]);
+                if(infos==null) {
+                    return object;
+                }else{
+                    infos.addAll((List<ProviderInfo>)object);
+                    return infos;
+                }
+            }else if(method.getName().equals("getProviderInfo")){
+                ProviderInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo((ComponentName)args[0],ProviderInfo.class);
                 if(info!=null){
                     return info;
                 }

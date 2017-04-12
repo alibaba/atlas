@@ -3,6 +3,7 @@ package android.taobao.atlas.runtime.newcomponent.service;
 import android.content.Intent;
 import android.content.ComponentName;
 import android.content.pm.ServiceInfo;
+import android.content.pm.ActivityInfo;
 import android.app.IServiceConnection;
 import android.content.pm.ProviderInfo;
 import android.app.IActivityManager.ContentProviderHolder;
@@ -17,5 +18,5 @@ interface IDelegateBinder {
 
     int stopService(in Intent serviceIntent);
 
-    ContentProviderHolder getContentProvider(in ProviderInfo info);
+    void handleReceiver(in Intent intent, in ActivityInfo info);
 }

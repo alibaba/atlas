@@ -10,27 +10,17 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.taobao.atlas.runtime.newcomponent.provider.ContentProviderBridge;
+import android.taobao.atlas.runtime.newcomponent.service.ServiceBridge;
 
 /**
  * Created by guanjie on 2017/4/3.
  */
 
-public class AdditionalActivityManagerProxy extends Handler{
-
-    public final int BIND_SERVICE_MSG = 1;
-    public final int UNBIND_SERVICE_MSG = 2;
-    public final int START_SERVICE_MSG = 3;
-    public final int STOP_SERVICE_MSG = 4;
+public class AdditionalActivityManagerProxy{
 
     private static AdditionalActivityManagerProxy sAdditionalActivityManagerProxy;
-    private static HandlerThread shandlerThread;
-    private Handler sMainHandler;
 
-
-    static{
-        shandlerThread = new HandlerThread("atlas_service_manager");
-        shandlerThread.start();
-    }
 
     public synchronized static AdditionalActivityManagerProxy get(){
         if(sAdditionalActivityManagerProxy ==null){
@@ -39,52 +29,24 @@ public class AdditionalActivityManagerProxy extends Handler{
         return sAdditionalActivityManagerProxy;
     }
 
-
-    public AdditionalActivityManagerProxy(){
-        super(shandlerThread.getLooper());
-        sMainHandler = new Handler(Looper.getMainLooper());
-    }
-
     public ComponentName startService(Intent service) {
-        return null;
+        return ServiceBridge.startService(service);
     }
 
     public boolean stopService(Intent service){
-        return false;
+        return ServiceBridge.stopService(service);
     }
 
-    public int bindService(IBinder token,
-                               Intent service, String resolvedType, IServiceConnection connection) {
-        return 1;
-    }
-
-    /**
-     *
-     * @param info
-     * @return IActivityManager.ContentProviderHolder
-     */
-    public IActivityManager.ContentProviderHolder getContentProvider(ProviderInfo info){
-
+    public int bindService(IBinder token, Intent service, String resolveType, IServiceConnection connection) {
+        return ServiceBridge.bindService(token,service,resolveType,connection);
     }
 
     public boolean unbindService(IServiceConnection conn) {
-        return true;
+        return ServiceBridge.unbindService(conn);
     }
 
-    @Override
-    public void handleMessage(Message msg) {
-        switch(msg.what){
-            case BIND_SERVICE_MSG:
-                break;
-            case UNBIND_SERVICE_MSG:
-                break;
-            case START_SERVICE_MSG:
-                break;
-            case STOP_SERVICE_MSG:
-                break;
-            default:
-                break;
-        }
+    public IActivityManager.ContentProviderHolder getContentProvider(ProviderInfo info){
+        return ContentProviderBridge.getContentProvider(info);
     }
 
 }

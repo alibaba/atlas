@@ -238,8 +238,8 @@ import android.taobao.atlas.framework.BundleClassLoader;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.StringUtils;
 import android.text.TextUtils;
@@ -275,7 +275,6 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-                AdditionalPackagemanager.storeTargetBundleIfNeed(intent);
 				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
 			}
 			
@@ -291,7 +290,6 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-                AdditionalPackagemanager.storeTargetBundleIfNeed(intent);
 				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
 			}
 			
@@ -307,7 +305,6 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-                AdditionalPackagemanager.storeTargetBundleIfNeed(intent);
 				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
 			}
 			
@@ -324,7 +321,6 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-                AdditionalPackagemanager.storeTargetBundleIfNeed(intent);
 				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
 			}
 			
@@ -339,7 +335,7 @@ public class InstrumentationHook extends Instrumentation {
         /**
          * bundle update后可能需要预处理
          */
-		AdditionalPackagemanager.getInstance().wrapperActivityIntentIfNeed(intent);
+		ActivityBridge.wrapperActivityIntentIfNeed(intent);
 
         if(intent!=null){
             Atlas.getInstance().checkDownGradeToH5(intent);

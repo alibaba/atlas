@@ -5,13 +5,19 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.ServiceInfo;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.taobao.atlas.runtime.RuntimeVariables;
-
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
+import android.taobao.atlas.runtime.newcomponent.BridgeUtil;
+import android.util.Log;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -20,7 +26,10 @@ import java.util.concurrent.CountDownLatch;
 
 public class ServiceBridge {
 
-    private static volatile ServiceBridge sInstance;
+    private static HandlerThread shandlerThread;
+    private static Handler sServicehandler;
+    private static ConcurrentHashMap<String,ServiceBridge> sBridges = new ConcurrentHashMap<>();
+
     private IDelegateBinder mRemoteDelegate;
     private CountDownLatch mCountDownLatch;
     private String processName;
@@ -28,23 +37,42 @@ public class ServiceBridge {
 
     HashMap<Intent,IServiceConnection> mActiveServiceInfo = new HashMap<>();
 
-    private ServiceBridge(String processname) {
-        this.processName = processname;
-        connectBinderPoolService(processname);
+    static {
+        shandlerThread = new HandlerThread("atlas_service_manager");
+        shandlerThread.start();
+        sServicehandler = new Handler(shandlerThread.getLooper());
+
     }
 
-    public static ServiceBridge getInstance(String processName) {     // 2
-        if (sInstance == null) {
+    private ServiceBridge(String processname) {
+        this.processName = processname;
+    }
+
+    private static ServiceBridge obtain(String processName) {
+        if (sBridges.get(processName) == null) {
             synchronized (ServiceBridge.class) {
-                if (sInstance == null) {
-                    sInstance = new ServiceBridge(processName);
+                if (sBridges.get(processName) == null) {
+                    ServiceBridge bridge = new ServiceBridge(processName);
+                    sBridges.put(processName,bridge);
                 }
             }
         }
-        return sInstance;
+        return sBridges.get(processName);
+    }
+
+    public IDelegateBinder getRemoteDelegate(){
+        if(mRemoteDelegate!=null && mRemoteDelegate.asBinder().isBinderAlive()){
+            return mRemoteDelegate;
+        }else{
+            connectBinderPoolService(processName);
+            return mRemoteDelegate;
+        }
     }
 
     private synchronized void connectBinderPoolService(String processName) {
+        if(mRemoteDelegate!=null && mRemoteDelegate.asBinder().isBinderAlive()){
+            return ;
+        }
         mCountDownLatch = new CountDownLatch(1);
         if(targetIntent==null){
             targetIntent = createDelegateServiceIntent(processName);
@@ -59,17 +87,95 @@ public class ServiceBridge {
     }
 
     private Intent createDelegateServiceIntent(String processName){
-        String prefix = RuntimeVariables.androidApplication+":";
-        String serviceTag = null;
-        if(processName.startsWith(prefix)){
-            serviceTag = processName.substring(prefix.length(),processName.length());
-        }else{
-            serviceTag = processName.replace(".","_");
-        }
-        String targetServiceName = String.format("android.taobao.atlas.runtime.newcomponent.service.AtlasDelegateService_For_%s",serviceTag);
         Intent service = new Intent();
-        service.setClassName(RuntimeVariables.androidApplication,targetServiceName);
+        service.setClassName(RuntimeVariables.androidApplication, BridgeUtil.getBridgeComponent(BridgeUtil.TYPE_SERVICEBRIDGE,processName));
         return service;
+    }
+
+    public static ComponentName startService(final Intent service) {
+        final ServiceInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo(service.getComponent(),ServiceInfo.class);
+        if(info==null){
+            Log.e("ServiceBridge","can't find startservice | serviceinfo for intent: "+service.toString());
+            return null;
+        }
+        sServicehandler.post(new Runnable() {
+            @Override
+            public void run() {
+                String processName = info.processName;
+                try {
+                    ServiceBridge.obtain(processName).getRemoteDelegate().startService(service,info);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        return service.getComponent();
+    }
+
+    public static boolean stopService(final Intent service){
+        final ServiceInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo(service.getComponent(),ServiceInfo.class);
+        if(info==null){
+            Log.e("ServiceBridge","can't stopService | serviceinfo for intent: "+service.toString());
+            return false;
+        }
+        sServicehandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String processName = info.processName;
+                    ServiceBridge.obtain(processName).getRemoteDelegate().stopService(service);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        return true;
+    }
+
+    public static int bindService(final IBinder token, final Intent service, final String resolvedType, final IServiceConnection connection) {
+        final ServiceInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo(service.getComponent(),ServiceInfo.class);
+        if(info==null){
+            Log.e("ServiceBridge","can't bindService | serviceinfo for intent: "+service.toString());
+            return 0;
+        }
+        sServicehandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String processName = info.processName;
+                    ServiceBridge.obtain(processName).mActiveServiceInfo.put(service,connection);
+                    ServiceBridge.obtain(processName).getRemoteDelegate().bindService(service,token,connection);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        return 1;
+    }
+
+    public static boolean unbindService(final IServiceConnection conn) {
+        String tmp = null;
+        for (Map.Entry<String,ServiceBridge> entry : sBridges.entrySet()) {
+            if(entry.getValue().mActiveServiceInfo.containsValue(conn)){
+                tmp = entry.getKey();
+            }
+        }
+        final String processOfRemoteService = tmp;
+        if(processOfRemoteService!=null) {
+            sServicehandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ServiceBridge.obtain(processOfRemoteService).mRemoteDelegate.unbindService(conn);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            return true;
+        }else{
+            return false;
+        }
     }
 
     /**

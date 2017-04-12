@@ -248,7 +248,7 @@ import android.taobao.atlas.hack.AssertionArrayException;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.ActivityManagerHook;
 import android.taobao.atlas.runtime.BundleLifecycleHandler;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.runtime.ClassNotFoundInterceptorCallback;
 import android.taobao.atlas.runtime.DelegateClassLoader;
 import android.taobao.atlas.runtime.FrameworkLifecycleHandler;
@@ -396,19 +396,19 @@ public class Atlas {
     }
 
     public List<ResolveInfo> queryNewIntentActivities(Intent intent){
-        return AdditionalPackagemanager.getInstance().queryIntentActivities(intent);
+        return AdditionalPackageManager.getInstance().queryIntentActivities(intent);
     }
 
     public List<ResolveInfo> queryNewIntentServices(Intent intent){
-        return AdditionalPackagemanager.getInstance().queryIntentService(intent);
+        return AdditionalPackageManager.getInstance().queryIntentService(intent);
     }
 
     public ActivityInfo getNewActivityInfo(ComponentName componentName, int flags){
-        return AdditionalPackagemanager.getInstance().getNewComponentInfo(componentName,flags,ActivityInfo.class);
+        return AdditionalPackageManager.getInstance().getNewComponentInfo(componentName,ActivityInfo.class);
     }
 
     public ServiceInfo getNewServiceInfo(ComponentName componentName, int flags){
-        return AdditionalPackagemanager.getInstance().getNewComponentInfo(componentName,flags,ServiceInfo.class);
+        return AdditionalPackageManager.getInstance().getNewComponentInfo(componentName,ServiceInfo.class);
     }
 
     public void checkDownGradeToH5(Intent intent) {

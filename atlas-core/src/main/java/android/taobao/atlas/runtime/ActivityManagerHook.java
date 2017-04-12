@@ -221,7 +221,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.Interception;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackagemanager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
 import android.text.TextUtils;
 
@@ -311,10 +311,10 @@ public class ActivityManagerHook extends Interception.InterceptionHandler {
                 }
             }catch (Throwable e){}
         }else if(method.getName().equals("stopService")){
-//            Intent intent = (Intent) args[1];
-//            if(BundlePackageManager.getInstance().queryIntentService(intent)!=null){
-//                return AdditionalServiceManagerProxy.get().stopService(intent);
-//            }
+            Intent intent = (Intent) args[1];
+            if(AdditionalActivityManagerProxy.get().stopService(intent)){
+                return true;
+            }
         }else if(method.getName().equals("unbindService")){
             IServiceConnection sd = (IServiceConnection) args[0];
             if(AdditionalActivityManagerProxy.get().unbindService(sd)){
@@ -352,7 +352,6 @@ public class ActivityManagerHook extends Interception.InterceptionHandler {
                         method.invoke(delegatee(), args);
                         return 0;
                     }
-//                Log.e(TAG,intent.getAction()+"  |  "+(System.currentTimeMillis()-time));
                 }
             }catch(Throwable e){}
         }else if(name.equals("startActivity")){
@@ -364,7 +363,7 @@ public class ActivityManagerHook extends Interception.InterceptionHandler {
             }
         }else if(name.equals("getContentProvider")){
             String auth = (String)args[1];
-            ProviderInfo info = AdditionalPackagemanager.getInstance().resolveContentProvider(auth);
+            ProviderInfo info = AdditionalPackageManager.getInstance().resolveContentProvider(auth);
             if(info!=null){
                 return AdditionalActivityManagerProxy.get().getContentProvider(info);
             }

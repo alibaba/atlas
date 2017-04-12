@@ -11,7 +11,7 @@ import android.os.Bundle;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.runtime.newcomponent.BundleCompat;
+import android.taobao.atlas.runtime.newcomponent.BridgeUtil;
 
 import java.util.HashMap;
 
@@ -19,39 +19,43 @@ import java.util.HashMap;
  * Created by guanjie on 2017/4/10.
  */
 
-public class CotnentProviderBridge extends ContentProvider{
+public class ContentProviderBridge extends ContentProvider{
 
     public static final String METHOD_INSTALLPROVIDER = "atlas_install_provider";
     public static final String PROVIDER_INFO_KEY = "info";
     public static final String PROVIDER_HOLDER_KEY = "holder";
-
-    public static String AUTHORITY_TEMPLATE = "android.taobao.atlas.BridgeProvider_%s";
-    private String processName;
+//    private String processName;
     private HashMap<String,IActivityManager.ContentProviderHolder> providerRecord = new HashMap<>();
 
-    public static IActivityManager.ContentProviderHolder getContentProvider(ProviderInfo info,boolean stable){
+    public static IActivityManager.ContentProviderHolder getContentProvider(ProviderInfo info){
         String targetProcessName = info.processName!=null ? info.processName : RuntimeVariables.androidApplication.getPackageName();
         String currentProcessName = RuntimeVariables.getProcessName(RuntimeVariables.androidApplication);
         if(info.multiprocess || targetProcessName.equals(currentProcessName)){
-            Object contentProviderHolder = AtlasHacks.ContentProviderHolder_constructor.getInstance(info);
-            return (IActivityManager.ContentProviderHolder)contentProviderHolder;
+            return transactProviderInstall(currentProcessName,info);
         }else{
             //remote contentprovider
-
-            return null;
+            return transactProviderInstall(info.processName,info);
         }
     }
 
-    public static Uri accquireRemoteBridgeToken(String processName){
-        return Uri.parse("content://"+String.format(AUTHORITY_TEMPLATE,processName));
+    public static void completeRemoveProvider(){
+
     }
 
-    public static Bundle transactProviderInstall(String processName,ProviderInfo info){
+    public static void removeContentProvider(){
+    }
+
+    private static Uri accquireRemoteBridgeToken(String processName){
+        return Uri.parse("content://"+ BridgeUtil.getBridgeComponent(BridgeUtil.TYPE_PROVIDERBRIDGE,processName));
+    }
+
+    private static IActivityManager.ContentProviderHolder transactProviderInstall(String processName,ProviderInfo info){
         Bundle extras = new Bundle();
-        extras.putParcelable(INSTALLPROVIDER_INFO_KEY,info);
+        extras.putParcelable(PROVIDER_INFO_KEY,info);
         ContentResolver contentResolver = RuntimeVariables.androidApplication.getContentResolver();
         Bundle bundle = contentResolver.call(accquireRemoteBridgeToken(processName),METHOD_INSTALLPROVIDER,null,extras);
-        sdfsdfsd
+        IActivityManager.ContentProviderHolder holder = bundle.getParcelable(PROVIDER_HOLDER_KEY);
+        return holder;
     }
 
     @Override
@@ -91,27 +95,26 @@ public class CotnentProviderBridge extends ContentProvider{
             if(info==null){
                 return null;
             }
-            IActivityManager.ContentProviderHolder existingHolder = providerRecord.get(info.authority);
-            if(existingHolder!=null){
-                Bundle result = new Bundle();
-                result.putParcelable(PROVIDER_HOLDER_KEY,existingHolder);
-                return result;
-            }else{
+            IActivityManager.ContentProviderHolder holder = providerRecord.get(info.authority);
+            if(holder==null){
                 //install contentprovider
-                IActivityManager.ContentProviderHolder holder = (IActivityManager.ContentProviderHolder)AtlasHacks.ContentProviderHolder_constructor.getInstance(null);
+                IActivityManager.ContentProviderHolder origin = (IActivityManager.ContentProviderHolder)AtlasHacks.ContentProviderHolder_constructor.getInstance();
                 try {
                     Object activityThread = AndroidHack.getActivityThread();
                     if(activityThread!=null) {
                         IActivityManager.ContentProviderHolder newHolder = (IActivityManager.ContentProviderHolder)AtlasHacks.ActivityThread_installProvider.invoke(
-                                activityThread,RuntimeVariables.androidApplication,holder,info,false,true,true);
-                        Bundle result = new Bundle();
+                                activityThread,RuntimeVariables.androidApplication,origin,info,false,true,true);
+                        holder = newHolder;
+                        providerRecord.put(info.authority,holder);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                     return null;
                 }
-
             }
+            Bundle result = new Bundle();
+            result.putParcelable(PROVIDER_HOLDER_KEY,holder);
+            return result;
         }
         return super.call(method, arg, extras);
 

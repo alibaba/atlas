@@ -227,15 +227,17 @@ import java.util.List;
 /**
  * Created by guanjie on 15/3/5.
  */
-public class AdditionComponentIntentResolver<T> extends IntentResolver<IntentFilter,ResolveInfo>{
+public class AdditionalComponentIntentResolver<T> extends IntentResolver<IntentFilter,ResolveInfo>{
 
     public static final int TYPE_ACTIVITY = 1;
     public static final int TYPE_SERVICE = 2;
+    public static final int TYPE_PROVIDER= 3;
+
     protected final HashMap<ComponentName, Object> mComponents = new HashMap<ComponentName, Object>();
     private int mFlags;
     private int type;
 
-    public AdditionComponentIntentResolver(int type){
+    public AdditionalComponentIntentResolver(int type){
         this.type = type;
     }
 
@@ -262,10 +264,6 @@ public class AdditionComponentIntentResolver<T> extends IntentResolver<IntentFil
                 (flags & PackageManager.MATCH_DEFAULT_ONLY) != 0);
     }
 
-    /**
-     * 将Activity信息添加入索引表
-     * @param activityObj	android.content.pm.PackageParser.Activity信息
-     */
     public final void addComponent(Object activityObj) {
         //反射获取component变量
         ComponentName component = null;
@@ -286,6 +284,7 @@ public class AdditionComponentIntentResolver<T> extends IntentResolver<IntentFil
 
 
     }
+//
 //    /**
 //     * 移除Activity信息
 //     * @param activityObj  android.content.pm.PackageParser.Activity信息
@@ -329,6 +328,8 @@ public class AdditionComponentIntentResolver<T> extends IntentResolver<IntentFil
                 }
                 res.serviceInfo = ai;
 
+            }else if(type == TYPE_PROVIDER){
+                throw new RuntimeException("not support provider query");
             }
 
             if ((mFlags & PackageManager.GET_RESOLVED_FILTER) != 0) {
