@@ -208,15 +208,20 @@
 
 package android.taobao.atlas.versionInfo;
 
+import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.os.Process;
+import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.WrapperUtil;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -349,6 +354,29 @@ public class BaselineInfoManager {
             e.printStackTrace();
         }
         return new HashMap<String,String>().keySet();
+    }
+
+    public void checkUpdateBundles(String storageDir){
+        Set<String> updateBundles = getUpdateBundles();
+        if(updateBundles==null){
+            return;
+        }
+        for (String str : updateBundles) {
+            if(!TextUtils.isEmpty(str)){
+                Log.e("BaselineInfomanager","check update bundle : "+str);
+                if(!new File(storageDir,str).exists() && AtlasBundleInfoManager.instance().isInternalBundle(str)){
+                    Log.e("BaselineInfomanager","check update bundle invalid: "+str);
+                    rollbackHardly();
+                    try {
+                        Method killChild = mVersionManager.getClass().getDeclaredMethod("killChildProcesses",Context.class);
+                        killChild.invoke(mVersionManager,RuntimeVariables.androidApplication.getApplicationContext());
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                    android.os.Process.killProcess(Process.myPid());
+                }
+            }
+        }
     }
 
     public void superRollback(boolean dexPatch){

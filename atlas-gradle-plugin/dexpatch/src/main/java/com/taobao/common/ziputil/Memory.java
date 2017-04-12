@@ -19,9 +19,6 @@ package com.taobao.common.ziputil;
 
 import java.nio.ByteOrder;
 
-/**
- * modify by zhangshaowen on 16/6/7.
- */
 public final class Memory {
     private Memory() { }
 

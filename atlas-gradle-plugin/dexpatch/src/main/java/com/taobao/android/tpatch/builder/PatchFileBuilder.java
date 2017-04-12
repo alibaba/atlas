@@ -2,11 +2,13 @@ package com.taobao.android.tpatch.builder;
 
 import com.android.utils.ILogger;
 import com.taobao.android.BasePatchTool;
+import com.taobao.android.TPatchDexTool;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.object.PatchBundleInfo;
 import com.taobao.android.object.PatchInfo;
 import com.taobao.android.task.ExecutorServicesHelper;
+import com.taobao.android.tpatch.model.BundleBO;
 import com.taobao.android.tpatch.utils.JarSplitUtils;
 import com.taobao.android.tpatch.utils.MD5Util;
 import com.taobao.android.tpatch.utils.PathUtils;

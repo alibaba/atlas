@@ -208,11 +208,14 @@
 package com.taobao.android;
 
 import com.android.utils.ILogger;
+import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.DiffType;
-
+import com.taobao.android.tpatch.model.ApkBO;
+import com.taobao.android.tpatch.model.BundleBO;
+import com.taobao.android.utils.ZipUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
@@ -231,21 +234,22 @@ public class BasePatchTool {
     protected static final String CLASSES = "classes";
     protected static final int DEFAULT_API_LEVEL = 19;
 
-    protected final File baseApk;
-    protected final File newApk;
-    protected final String baseApkVersion;
-    protected final String newApkVersion;
+    protected final ApkBO baseApkBO;
+    protected final ApkBO newApkBO;
+    public void setSplitDiffBundle(List<Pair<BundleBO,BundleBO>> splitDiffBundle) {
+        this.splitDiffBundle = splitDiffBundle;
+    }
+
+    protected List<Pair<BundleBO,BundleBO>> splitDiffBundle;
 
     protected Set<ArtifactBundleInfo> artifactBundleInfos = Sets.newHashSet();
 
     protected ILogger logger;
     protected boolean onlyIncludeModifyBundle = true;
 
-    public BasePatchTool(File baseApk, File newApk, String baseApkVersion, String newApkVersion) {
-        this.baseApk = baseApk;
-        this.newApk = newApk;
-        this.baseApkVersion = baseApkVersion;
-        this.newApkVersion = newApkVersion;
+    public BasePatchTool(ApkBO baseApkBO,ApkBO newApkBO) {
+        this.baseApkBO = baseApkBO;
+        this.newApkBO = newApkBO;
     }
 
     public void setArtifactBundleInfos(Set<ArtifactBundleInfo> artifactBundleInfos) {
@@ -319,6 +323,20 @@ public class BasePatchTool {
             }
         }
         return dexFiles;
+    }
+
+    /**
+     * 解压二个apk文件
+     *
+     * @param outPatchDir
+     */
+    protected File unzipApk(File outPatchDir) {
+        File unzipFolder = new File(outPatchDir, "unzip");
+        File baseApkUnzipFolder = new File(unzipFolder, BASE_APK_UNZIP_NAME);
+        File newApkUnzipFolder = new File(unzipFolder, NEW_APK_UNZIP_NAME);
+        ZipUtils.unzip(baseApkBO.getApkFile(), baseApkUnzipFolder.getAbsolutePath());
+        ZipUtils.unzip(newApkBO.getApkFile(), newApkUnzipFolder.getAbsolutePath());
+        return unzipFolder;
     }
 
 

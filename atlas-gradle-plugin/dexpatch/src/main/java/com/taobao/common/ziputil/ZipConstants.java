@@ -18,7 +18,6 @@
 package com.taobao.common.ziputil;
 
 /**
- * modify by zhangshaowen on 16/6/7.
  *
  * Do not add constants to this interface! It's implemented by the classes
  * in this package whose names start "Zip", and the constants are thereby

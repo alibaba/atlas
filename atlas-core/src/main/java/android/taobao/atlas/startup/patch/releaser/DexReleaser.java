@@ -208,11 +208,11 @@
 
 package android.taobao.atlas.startup.patch.releaser;
 
+import android.os.Build;
 import android.taobao.atlas.startup.patch.KernalConstants;
+
 import java.io.*;
 import java.util.Enumeration;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -268,19 +268,20 @@ public class DexReleaser {
 
 
         public static boolean isArt() {
-            CharSequence property = System.getProperty("java.vm.version");
-            if (property != null) {
-                Matcher matcher = Pattern.compile("(\\d+)\\.(\\d+)(\\.\\d+)?").matcher(property);
-                if (matcher.matches()) {
-                    try {
-                        if (Integer.parseInt(matcher.group(1)) >= 2) {
-                            return true;
-                        }
-                    } catch (NumberFormatException e) {
-                    }
-                }
-            }
-            return false;
+        return Build.VERSION.SDK_INT > 20;
+//            CharSequence property = System.getProperty("java.vm.version");
+//            if (property != null) {
+//                Matcher matcher = Pattern.compile("(\\d+)\\.(\\d+)(\\.\\d+)?").matcher(property);
+//                if (matcher.matches()) {
+//                    try {
+//                        if (Integer.parseInt(matcher.group(1)) >= 2) {
+//                            return true;
+//                        }
+//                    } catch (NumberFormatException e) {
+//                    }
+//                }
+//            }
+//            return false;
         }
 
 

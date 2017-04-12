@@ -20,16 +20,10 @@ import com.taobao.common.dexpatcher.algorithms.patch.*;
 import com.taobao.common.dexpatcher.struct.DexPatchFile;
 import com.taobao.common.dexpatcher.struct.SmallPatchedDexItemFile;
 import com.taobao.dex.*;
-import com.taobao.dex.util.CompareUtils;
 import com.taobao.dx.util.Hex;
 import com.taobao.dx.util.IndexMap;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Arrays;
 
 /**
@@ -162,18 +156,18 @@ public class DexPatchApplier {
             throw new IOException("failed to compute old dex's signature.");
         }
 
-        if (this.patchFile != null) {
-            byte[] oldDexSignInPatchFile = this.patchFile.getOldDexSignature();
-            if (CompareUtils.uArrCompare(oldDexSign, oldDexSignInPatchFile) != 0) {
-                throw new IOException(
-                        String.format(
-                                "old dex signature mismatch! expected: %s, actual: %s",
-                                Arrays.toString(oldDexSign),
-                                Arrays.toString(oldDexSignInPatchFile)
-                        )
-                );
-            }
-        }
+//        if (this.patchFile != null) {
+//            byte[] oldDexSignInPatchFile = this.patchFile.getOldDexSignature();
+//            if (CompareUtils.uArrCompare(oldDexSign, oldDexSignInPatchFile) != 0) {
+//                throw new IOException(
+//                        String.format(
+//                                "old dex signature mismatch! expected: %s, actual: %s",
+//                                Arrays.toString(oldDexSign),
+//                                Arrays.toString(oldDexSignInPatchFile)
+//                        )
+//                );
+//            }
+//        }
 
         String oldDexSignStr = Hex.toHexString(oldDexSign);
 

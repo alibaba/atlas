@@ -438,6 +438,11 @@ public final class Framework {
         } else if (RuntimeVariables.getProcessName(RuntimeVariables.androidApplication).equals(RuntimeVariables.androidApplication.getPackageName())) {
             restoreProfile();
         }
+
+        if(RuntimeVariables.shouldSyncUpdateInThisProcess()) {
+            BaselineInfoManager.instance().checkUpdateBundles(STORAGE_LOCATION);
+        }
+
         notifyFrameworkListeners(0 /* STARTING */, systemBundle, null);
         // save the metadata
         if (init) {
@@ -890,7 +895,7 @@ public final class Framework {
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
             String version = info!=null ? info.getVersion() : "-1";
             bundle = new BundleImpl(bundleDir, location, new BundleContext(), in, null, version,true,-1);
-            storeMetadata();
+//            storeMetadata();
             return bundle;
         } catch (IOException e) {
 
@@ -949,7 +954,7 @@ public final class Framework {
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
             String version = info!=null ? info.getVersion() : "-1";
             bundle = new BundleImpl(bundleDir, location, new BundleContext(), null, file,version,true,-1);
-            storeMetadata();
+//            storeMetadata();
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);

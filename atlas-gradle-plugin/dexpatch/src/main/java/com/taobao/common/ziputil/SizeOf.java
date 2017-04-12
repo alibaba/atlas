@@ -16,9 +16,7 @@
 
 package com.taobao.common.ziputil;
 
-/**
- * modify by zhangshaowen on 16/6/7.
- */
+
 public final class SizeOf {
     public static final int CHAR = 2;
     public static final int DOUBLE = 8;
