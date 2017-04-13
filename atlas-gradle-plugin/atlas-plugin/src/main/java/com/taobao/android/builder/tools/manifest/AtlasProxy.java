@@ -299,7 +299,7 @@ public class AtlasProxy {
             }
         }
 
-        List<String> elementNames = Lists.newArrayList("Activity", "Service", "ContentProvider");
+        List<String> elementNames = Lists.newArrayList("activity", "service", "provider");
 
         Element applicationElement = root.element("application");
 
@@ -307,10 +307,8 @@ public class AtlasProxy {
 
             for (String elementName : elementNames) {
 
-                boolean isProvider = "ContentProvider".equals(elementName);
                 String processClazzName = processName.replace(":", "").replace(".", "_");
-                String fullClazzName = "ATLASPROXY_" + processClazzName + "_" + (isProvider ? "Provider"
-                    : elementName);
+                String fullClazzName = "ATLASPROXY_" + processClazzName + "_" + StringUtils.capitalize(elementName);
 
                 if ("Activity".equals(elementName)) {
                     result.proxyActivities.add(fullClazzName);
@@ -327,8 +325,10 @@ public class AtlasProxy {
                     newElement.addAttribute("android:process", processName);
                 }
 
+                boolean isProvider = "provider".equals(elementName);
                 if (isProvider) {
-                    newElement.addAttribute("android:authorities", "android.taobao.atlas.runtime.newcomponent." +  fullClazzName);
+                    newElement.addAttribute("android:authorities",
+                                            "android.taobao.atlas.runtime.newcomponent." + fullClazzName);
                 }
 
             }
