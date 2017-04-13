@@ -207,165 +207,45 @@
  *
  */
 
-package com.taobao.android.builder.tools.manifest;
+package com.taobao.atlas.manifest;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
-import com.google.common.collect.Lists;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import com.taobao.android.builder.tools.manifest.AtlasProxy;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.builder.tools.manifest.Result;
+import org.apache.commons.io.IOUtils;
 import org.dom4j.Document;
-import org.dom4j.Element;
-import org.dom4j.Node;
+import org.dom4j.DocumentException;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * Created by wuzhong on 2017/4/13.
- *
- * * example:
- * if your app has three process: 1 :com.taobao.demo
- * 2 :remote
- * 3 :com.taobao.single
- *
- * then AndroidManifest will add the components below
- *
- * <Activity
- * android:name="ATLASPROXY_com_taobao_demo_Activity"/>
- * <Activity
- * android:name="ATLASPROXY_remote_Activity"
- * android:process=":remote"/>
- * <Activity
- * android:name="ATLASPROXY_com_taobao_single_Activity"
- * android:process="com.taobao.single"/>
- *
- * <Service
- * android:name="ATLASPROXY_com_taobao_demo_Service"/>
- * <Service
- * android:name="ATLASPROXY_remote_Service"
- * android:process=":remote"/>
- * <Service
- * android:name="ATLASPROXY_com_taobao_single_Service"
- * android:process="com.taobao.single"/>
- *
- * <ContentProvider
- * android:name="ATLASPROXY_com_taobao_demo_Provider"
- * android:authorities="ATLASPROXY_com_taobao_demo_Provider"/>
- * <ContentProvider
- * android:name="ATLASPROXY_remote_Provider"
- * android:authorities="ATLASPROXY_remote_Provider"
- * android:process=":remote"/>
- * <ContentProvider
- * android:name="ATLASPROXY_com_taobao_single_Provider"
- * android:authorities="ATLASPROXY_com_taobao_single_Provider"
- * android:process="com.taobao.single"/>
- *
- * and also apk will add the classses below
- *
- * class ATLASPROXY_com_taobao_demo_Service   extends android.taobao.atlas.runtime.newcomponent.service
- * .AdditionBaseDelegateService
- * class ATLASPROXY_remote_Service            extends android.taobao.atlas.runtime.newcomponent.service
- * .AdditionBaseDelegateService
- * class ATLASPROXY_com_taobao_single_Service extends android.taobao.atlas.runtime.newcomponent.service
- * .AdditionBaseDelegateService
- *
- * class ATLASPROXY_com_taobao_demo_Provider    extends android.taobao.atlas.runtime.newcomponent.provider
- * .ContentProviderBridge
- * class ATLASPROXY_remote_Service              extends android.taobao.atlas.runtime.newcomponent.provider
- * .ContentProviderBridge
- * class ATLASPROXY_com_taobao_single_Provider  extends android.taobao.atlas.runtime.newcomponent.provider
- * .ContentProviderBridge
+ * Created by wuzhong on 2017/4/12.
  */
-public class AtlasProxy {
+public class ManifestHelperTest {
 
-    public static void addAtlasProxyClazz(Document document, Result result) {
+    @Test
+    public void test() throws DocumentException, IOException {
 
-        Element root = document.getRootElement();// 得到根节点
+        File manifest = new File(
+            ManifestHelperTest.class.getClassLoader().getResource("AndroidManifest.xml").getFile());
 
-        List<? extends Node> serviceNodes = root.selectNodes("//@android:process");
+        File manifest2 = new File(
+            ManifestHelperTest.class.getClassLoader().getResource("AndroidManifest2.xml").getFile());
 
-        String packageName = root.attribute("package").getStringValue();
+        File manifest3 = new File( manifest2.getParentFile(),"AndroidManifest3.xml");
 
-        List<String> processNames = new ArrayList<>();
-        processNames.add(packageName);
+        Assert.assertTrue(manifest.exists());
 
-        for (Node node : serviceNodes) {
-            if (null != node && StringUtils.isNotEmpty(node.getStringValue())) {
-                String value = node.getStringValue();
-                if (!":dexmerge".equals(value) && !":dex2oat".equals(value)) {
-                    processNames.add(value);
-                }
-            }
-        }
+        ManifestFileUtils.createPatchManifest(manifest,manifest2,manifest3);
 
-        List<String> elementNames = Lists.newArrayList("Activity", "Service", "ContentProvider");
 
-        Element applicationElement = root.element("application");
-
-        for (String processName : processNames) {
-
-            for (String elementName : elementNames) {
-
-                boolean isProvider = "ContentProvider".equals(elementName);
-                String processClazzName = processName.replace(":", "").replace(".", "_");
-                String fullClazzName = "ATLASPROXY_" + processClazzName + "_" + (isProvider ? "Provider"
-                    : elementName);
-
-                if ("Activity".equals(elementName)) {
-                    result.proxyActivities.add(fullClazzName);
-                } else if ("Service".equals(elementName)) {
-                    result.proxyServices.add(fullClazzName);
-                } else {
-                    result.proxyProviders.add(fullClazzName);
-                }
-
-                Element newElement = applicationElement.addElement(elementName);
-                newElement.addAttribute("android:name", "android.taobao.atlas.runtime.newcomponent." + fullClazzName);
-
-                if (!packageName.equals(processName)) {
-                    newElement.addAttribute("android:process", processName);
-                }
-
-                if (isProvider) {
-                    newElement.addAttribute("android:authorities", "android.taobao.atlas.runtime.newcomponent." +  fullClazzName);
-                }
-
-            }
-
-        }
-
-    }
-
-    private static String serviceTmp
-        = "package android.taobao.atlas.runtime.newcomponent;\r\n"
-        + "public class ${clazzName} extends android.taobao.atlas.runtime.newcomponent"
-        + ".service.BaseDelegateService {}";
-    private static String providerTmp
-        = "package android.taobao.atlas.runtime.newcomponent;\r\n"
-        + "public class ${clazzName} extends android.taobao.atlas.runtime.newcomponent"
-        + ".provider.ContentProviderBridge {}";
-
-    public static boolean genProxyJavaSource(File rootDir, Result result) throws IOException {
-
-        if (result.proxyProviders.isEmpty() && result.proxyServices
-            .isEmpty()) {
-            return false;
-        }
-
-        rootDir = new File(rootDir, "android/taobao/atlas/runtime/newcomponent");
-        FileUtils.deleteDirectory(rootDir);
-        rootDir.mkdirs();
-
-        for (String clazzName : result.proxyServices) {
-            FileUtils.write(new File(rootDir, clazzName + ".java"), serviceTmp.replace("${clazzName}", clazzName));
-        }
-
-        for (String clazzName : result.proxyProviders) {
-            FileUtils.write(new File(rootDir, clazzName + ".java"), providerTmp.replace("${clazzName}", clazzName));
-        }
-
-        return true;
     }
 
 }
