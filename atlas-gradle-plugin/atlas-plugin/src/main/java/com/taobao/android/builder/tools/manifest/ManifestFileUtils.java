@@ -234,6 +234,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.taobao.android.builder.extension.ManifestOptions;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
+import com.taobao.android.builder.tools.xml.XmlHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -253,7 +254,8 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
 /**
- * Manifest文件的工具类 Created by shenghua.nish on 2015-04-22 上午10:58.
+ * @author shenghua.nish
+ * @date 2015-04-22 上午10:58
  */
 public class ManifestFileUtils {
 
@@ -269,81 +271,63 @@ public class ManifestFileUtils {
      * @param baseBunfleInfoFile
      * @param manifestOptions
      */
-    public static void postProcessManifests(File mainManifest,
-                                            Map<String, File> libManifestMap,
-                                            Multimap<String, File> libDependenciesMaps,
-                                            File baseBunfleInfoFile,
-                                            ManifestOptions manifestOptions,
-                                            boolean addMultiDex,
-                                            boolean isInstantRun,
-                                            Set<String> remoteBundles) throws IOException, DocumentException {
+    public static Result postProcessManifests(File mainManifest,
+                                              Map<String, File> libManifestMap,
+                                              Multimap<String, File> libDependenciesMaps,
+                                              File baseBunfleInfoFile,
+                                              ManifestOptions manifestOptions,
+                                              boolean addMultiDex,
+                                              boolean isInstantRun,
+                                              Set<String> remoteBundles) throws IOException, DocumentException {
 
-        File backupFile = new File(mainManifest.getParentFile(), "AndroidManifest-backup.xml");
-        FileUtils.deleteQuietly(backupFile);
-        FileUtils.moveFile(mainManifest, backupFile);
+        Result result = new Result();
 
-        postProcessManifests(backupFile, mainManifest, libManifestMap, libDependenciesMaps, baseBunfleInfoFile,
-                             manifestOptions, addMultiDex, isInstantRun, remoteBundles);
-    }
+        File inputFile = new File(mainManifest.getParentFile(), "AndroidManifest-backup.xml");
+        FileUtils.deleteQuietly(inputFile);
+        FileUtils.moveFile(mainManifest, inputFile);
 
-    public static void postProcessManifests(File inputFile, File outputFile,
-                                            Map<String, File> libManifestMap,
-                                            Multimap<String, File> libDependenciesMaps,
-                                            File baseBunfleInfoFile,
-                                            ManifestOptions manifestOptions,
-                                            boolean addMultiDex,
-                                            boolean isInstantRun,
-                                            Set<String> remoteBundles) throws IOException, DocumentException {
+        Document document = XmlHelper.readXml(inputFile);
 
-        FileUtils.deleteQuietly(outputFile);
-
-        XMLWriter writer = null;// 声明写XML的对象
-        SAXReader reader = new SAXReader();
-        OutputFormat format = OutputFormat.createPrettyPrint();
-        format.setEncoding("UTF-8");// 设置XML文件的编码格式
-        FileOutputStream fos = new FileOutputStream(outputFile);
-        if (inputFile.exists()) {
-            try {
-                Document document = reader.read(inputFile);// 读取XML文件
-                if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists()) {
-                    addApplicationMetaData(document,
-                                           libManifestMap,
-                                           baseBunfleInfoFile,
-                                           manifestOptions,
-                                           remoteBundles);
-                }
-                if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
-                    addBundleLocationToDestManifest(document,
-                                                    libManifestMap,
-                                                    libDependenciesMaps,
-                                                    manifestOptions);
-                }
-                if (null != manifestOptions && manifestOptions.isReplaceApplication()) {
-                    replaceManifestApplicationName(document);
-                }
-                if ((null != manifestOptions && manifestOptions.isAddMultiDexMetaData()) ||
-                    addMultiDex) {
-                    addMultiDexMetaData(document);
-                }
-                if (null != manifestOptions && manifestOptions.isRemoveProvider()) {
-                    removeProvider(document);
-                }
-                if (isInstantRun) {
-                    removeProcess(document);
-                }
-                removeCustomLaunches(document, manifestOptions);
-                updatePermission(document, manifestOptions);
-                removeComments(document);
-
-                writer = new XMLWriter(fos, format);
-                writer.write(document);
-            } finally {
-                if (null != writer) {
-                    writer.close();
-                }
-                IOUtils.closeQuietly(fos);
-            }
+        if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists()) {
+            addApplicationMetaData(document,
+                                   libManifestMap,
+                                   baseBunfleInfoFile,
+                                   manifestOptions,
+                                   remoteBundles);
         }
+
+        if (null != manifestOptions && manifestOptions.isAddAtlasProxyComponents()) {
+            AtlasProxy.addAtlasProxyClazz(document, result);
+        }
+
+        if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
+            addBundleLocationToDestManifest(document,
+                                            libManifestMap,
+                                            libDependenciesMaps,
+                                            manifestOptions);
+        }
+        if (null != manifestOptions && manifestOptions.isReplaceApplication()) {
+            replaceManifestApplicationName(document);
+        }
+
+        if ((null != manifestOptions && manifestOptions.isAddMultiDexMetaData()) ||
+            addMultiDex) {
+            addMultiDexMetaData(document);
+        }
+        if (null != manifestOptions && manifestOptions.isRemoveProvider()) {
+            removeProvider(document);
+        }
+        if (isInstantRun) {
+            removeProcess(document);
+        }
+        removeCustomLaunches(document, manifestOptions);
+        updatePermission(document, manifestOptions);
+        removeComments(document);
+
+        XmlHelper.saveDocument(document, mainManifest);
+
+        return result;
+
     }
 
     /**
@@ -360,7 +344,7 @@ public class ManifestFileUtils {
             realApplicationClassName = "";
         }
 
-        applicationElement.addAttribute( StringUtils.isEmpty(realApplicationClassName) ? "android:name" : "name",
+        applicationElement.addAttribute(StringUtils.isEmpty(realApplicationClassName) ? "android:name" : "name",
                                         "android.taobao.atlas.startup.AtlasBridgeApplication");
 
         Element metaData = applicationElement.addElement("meta-data");
@@ -712,11 +696,8 @@ public class ManifestFileUtils {
 
         modifyManifest.getParentFile().mkdirs();
 
-        SAXReader reader = new SAXReader();
-        OutputFormat format = OutputFormat.createPrettyPrint();
-        format.setEncoding("UTF-8");// 设置XML文件的编码格式
+        Document document = XmlHelper.readXml(orgManifestFile);// 读取XML文件
 
-        Document document = reader.read(orgManifestFile);// 读取XML文件
         Element root = document.getRootElement();// 得到根节点
         if (updateSdkVersion) {
             Element useSdkElement = root.element("uses-sdk");
@@ -785,7 +766,7 @@ public class ManifestFileUtils {
         fillFullClazzName(root, packageName, "receiver");
         fillFullClazzName(root, packageName, "service");
 
-        saveFile(document, format, modifyManifest);
+        XmlHelper.saveDocument(document, modifyManifest);
     }
 
     private static void fillFullClazzName(Element root, String packageName, String type) {
@@ -798,24 +779,6 @@ public class ManifestFileUtils {
                     attribute.setValue(packageName + attribute.getValue());
                 }
             }
-        }
-    }
-
-    private static void saveFile(Document document,
-                                 OutputFormat format,
-                                 File file) throws IOException {
-
-        XMLWriter writer = null;// 声明写XML的对象
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(file);
-            writer = new XMLWriter(fos, format);
-            writer.write(document);
-        } finally {
-            if (null != writer) {
-                writer.close();
-            }
-            IOUtils.closeQuietly(fos);
         }
     }
 

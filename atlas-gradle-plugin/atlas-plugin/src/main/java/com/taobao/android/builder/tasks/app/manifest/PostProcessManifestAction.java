@@ -207,41 +207,155 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package com.taobao.android.builder.tasks.app.manifest;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import java.io.File;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.model.AndroidLibrary;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tools.manifest.AtlasProxy;
+import com.taobao.android.builder.tools.manifest.ManifestDependencyUtil;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.builder.tools.manifest.ManifestHelper;
+import com.taobao.android.builder.tools.manifest.Result;
+import org.gradle.api.Action;
+import org.gradle.api.GradleException;
+import org.gradle.api.Task;
+
+/**
+ * Created by wuzhong on 2017/4/13.
+ */
+public class PostProcessManifestAction implements Action<Task> {
+
+    private AppVariantContext appVariantContext;
+    private BaseVariantOutputData baseVariantOutputData;
+
+    public PostProcessManifestAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        this.appVariantContext = appVariantContext;
+        this.baseVariantOutputData = baseVariantOutputData;
+    }
+
+    @Override
+    public void execute(Task task) {
+        AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
+
+        File bundleBaseLineInfo = appVariantContext.getBundleBaseInfoFile();
+
+        VariantScope variantScope = appVariantContext.getScope();
+        GradleVariantConfiguration config = variantScope.getVariantConfiguration();
+        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
+
+        try {
+
+            Result result = ManifestFileUtils.postProcessManifests(
+                baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
+                getLibManifestMap(),
+                getLibManifestDepenendyMap(),
+                bundleBaseLineInfo,
+                atlasExtension.manifestOptions,
+                isMultiDexEnabled(),
+                false,
+                atlasExtension.getTBuildConfig()
+                    .getOutOfApkBundles());
+
+            File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
+            if (AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
+                variantScope.getJavacTask();
+                appVariantContext.getVariantData().javacTask.source(proxySrcDir);
+            }
+
+            File file = variantScope
+                .getInstantRunManifestOutputFile();
+            if (null != file && file.exists() && variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
+                ManifestFileUtils.postProcessManifests(
+                    baseVariantOutputData.manifestProcessorTask.getInstantRunManifestOutputFile(),
+                    getLibManifestMap(),
+                    getLibManifestDepenendyMap(),
+                    bundleBaseLineInfo,
+                    atlasExtension.manifestOptions,
+                    isMultiDexEnabled(),
+                    true,
+                    atlasExtension.getTBuildConfig()
+                        .getOutOfApkBundles());
+            }
+
+            // manifest 清单 校验
+            ManifestHelper.checkManifest(
+                baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(), dependencyTree,
+                atlasExtension);
+
+            //TODO??
+            //AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).generateKeepList(
+            //    baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
+            //    appVariantContext.getScope()
+            //        .getManifestKeepListProguardFile());
+
+        } catch (Throwable e) {
+            throw new GradleException(e.getMessage(), e);
+        }
+    }
+
+    private List<? extends AndroidLibrary> getAwbLibraries() {
+        return ManifestDependencyUtil.getManifestDependencies(
+            AtlasBuildContext.androidDependencyTrees
+                .get(appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles(),
+            appVariantContext.getAtlasExtension().manifestOptions.getNotMergedBundles(),
+            appVariantContext.getProject().getLogger());
+    }
+
+    private boolean isMultiDexEnabled() {
+        boolean isMultiDex = false;
+        for (BuildType buildType : appVariantContext.getAppExtension().getBuildTypes()) {
+            if (buildType.getName().equals(baseVariantOutputData.variantData.getName())) {
+                isMultiDex = (null !=
+                    buildType.getMultiDexEnabled()) ? buildType.getMultiDexEnabled() : false;
+                break;
+            }
+        }
+        return isMultiDex;
+    }
+
+    private Map<String, File> getLibManifestMap() {
+        Map<String, File> maps = Maps.newHashMap();
+        List<? extends AndroidLibrary> libs = getAwbLibraries();
+        if (libs == null || libs.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        for (AndroidLibrary mdi : libs) {
+            ((HashMap<String, File>)maps).put(mdi.getName(), mdi.getManifest());
+        }
+
+        return maps;
+    }
+
+    private Multimap<String, File> getLibManifestDepenendyMap() {
+        Multimap<String, File> maps = HashMultimap.create();
+        List<? extends AndroidLibrary> libs = getAwbLibraries();
+        if (libs == null || libs.isEmpty()) {
+            return maps;
+        }
+
+        for (AndroidLibrary mdi : libs) {
+            for (AndroidLibrary childLib : mdi.getLibraryDependencies()) {
+                ((HashMultimap<String, File>)maps).put(mdi.getName(), childLib.getManifest());
+            }
+        }
+
+        return maps;
     }
 }
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    //    compile 'com.android.databinding:compiler:2.3.0'
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:dex_patch:1.3.+"
-
-    testCompile "junit:junit:4.11"
-}
-
-version = '2.3.0.alpha15-SNAPSHOT'

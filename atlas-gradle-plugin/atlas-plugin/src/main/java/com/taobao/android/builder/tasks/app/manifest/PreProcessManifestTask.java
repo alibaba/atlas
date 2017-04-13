@@ -484,112 +484,11 @@ public class PreProcessManifestTask extends DefaultTask {
             }
             task.awbManifest = awbManifests;
 
-            baseVariantOutputData.manifestProcessorTask.doLast(new Action<Task>() {
-                @Override
-                public void execute(Task task) {
-
-                    AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
-
-                    File bundleBaseLineInfo = new File(variantContext.getScope()
-                                                           .getGlobalScope()
-                                                           .getProject()
-                                                           .getProjectDir(),
-                                                       "bundleBaseInfoFile.json");
-
-                    try {
-                        ManifestFileUtils.postProcessManifests(
-                            baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
-                            getLibManifestMap(),
-                            getLibManifestDepenendyMap(),
-                            bundleBaseLineInfo,
-                            atlasExtension.manifestOptions,
-                            isMultiDexEnabled(),
-                            false,
-                            atlasExtension.getTBuildConfig()
-                                .getOutOfApkBundles());
-
-                        File file = scope.getVariantScope()
-                            .getInstantRunManifestOutputFile();
-                        if (null != file && file.exists()) {
-                            ManifestFileUtils.postProcessManifests(
-                                baseVariantOutputData.manifestProcessorTask.getInstantRunManifestOutputFile(),
-                                getLibManifestMap(),
-                                getLibManifestDepenendyMap(),
-                                bundleBaseLineInfo,
-                                atlasExtension.manifestOptions,
-                                isMultiDexEnabled(),
-                                true,
-                                atlasExtension.getTBuildConfig()
-                                    .getOutOfApkBundles());
-                        }
-
-                        //TODO manifest 清单
-                        ManifestHelper.checkManifest(
-                            baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(), dependencyTree,
-                            atlasExtension);
-
-                        AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).generateKeepList(
-                            baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
-                            appVariantContext.getScope()
-                                .getManifestKeepListProguardFile());
-
-                    } catch (Throwable e) {
-                        throw new GradleException(e.getMessage(), e);
-                    }
-                }
-            });
+            baseVariantOutputData.manifestProcessorTask.doLast(new PostProcessManifestAction(appVariantContext,baseVariantOutputData));
 
         }
 
-        private List<? extends AndroidLibrary> getAwbLibraries() {
-            return ManifestDependencyUtil.getManifestDependencies(
-                AtlasBuildContext.androidDependencyTrees
-                    .get(scope.getVariantScope().getVariantConfiguration().getFullName()).getAwbBundles(),
-                appVariantContext.getAtlasExtension().manifestOptions.getNotMergedBundles(),
-                appVariantContext.getProject().getLogger());
-        }
 
-        private boolean isMultiDexEnabled() {
-            boolean isMultiDex = false;
-            for (BuildType buildType : appVariantContext.getAppExtension().getBuildTypes()) {
-                if (buildType.getName().equals(baseVariantOutputData.variantData.getName())) {
-                    isMultiDex = (null !=
-                        buildType.getMultiDexEnabled()) ? buildType.getMultiDexEnabled() : false;
-                    break;
-                }
-            }
-            return isMultiDex;
-        }
-
-        private Map<String, File> getLibManifestMap() {
-            Map<String, File> maps = Maps.newHashMap();
-            List<? extends AndroidLibrary> libs = getAwbLibraries();
-            if (libs == null || libs.isEmpty()) {
-                return Collections.emptyMap();
-            }
-
-            for (AndroidLibrary mdi : libs) {
-                ((HashMap<String, File>)maps).put(mdi.getName(), mdi.getManifest());
-            }
-
-            return maps;
-        }
-
-        private Multimap<String, File> getLibManifestDepenendyMap() {
-            Multimap<String, File> maps = HashMultimap.create();
-            List<? extends AndroidLibrary> libs = getAwbLibraries();
-            if (libs == null || libs.isEmpty()) {
-                return maps;
-            }
-
-            for (AndroidLibrary mdi : libs) {
-                for (AndroidLibrary childLib : mdi.getLibraryDependencies()) {
-                    ((HashMultimap<String, File>)maps).put(mdi.getName(), childLib.getManifest());
-                }
-            }
-
-            return maps;
-        }
 
     }
 }

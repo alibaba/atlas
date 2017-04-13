@@ -207,41 +207,59 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package com.taobao.android.builder.tools.xml;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import org.apache.commons.io.IOUtils;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
+
+/**
+ * Created by wuzhong on 2017/4/13.
+ */
+public class XmlHelper {
+
+    public static Document readXml(File inputFile) throws DocumentException {
+
+        SAXReader reader = new SAXReader();
+
+        Document document = reader.read(inputFile);// 读取XML文件
+
+        return document;
     }
+
+    public static void saveDocument(Document document, File file) throws IOException {
+
+        file.getParentFile().mkdirs();
+
+        OutputFormat format = OutputFormat.createPrettyPrint();
+        format.setEncoding("UTF-8");
+
+        saveFile(document, format, file);
+    }
+
+    public static void saveFile(Document document,
+                                OutputFormat format,
+                                File file) throws IOException {
+
+        XMLWriter writer = null;// 声明写XML的对象
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(file);
+            writer = new XMLWriter(fos, format);
+            writer.write(document);
+        } finally {
+            if (null != writer) {
+                writer.close();
+            }
+            IOUtils.closeQuietly(fos);
+        }
+    }
+
 }
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    //    compile 'com.android.databinding:compiler:2.3.0'
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:dex_patch:1.3.+"
-
-    testCompile "junit:junit:4.11"
-}
-
-version = '2.3.0.alpha15-SNAPSHOT'
