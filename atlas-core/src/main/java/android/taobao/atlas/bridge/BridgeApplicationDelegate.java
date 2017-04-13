@@ -224,6 +224,8 @@ import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.AtlasPreLauncher;
 import android.taobao.atlas.runtime.PackageManagerDelegater;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.util.SoLoader;
 import android.taobao.atlas.util.log.IAlarmer;
 import android.taobao.atlas.util.log.IMonitor;
@@ -256,6 +258,7 @@ public class BridgeApplicationDelegate {
         mInstalledVersionName = installedVersion;
         mIsUpdated = isUpdated;
         PackageManagerDelegater.delegatepackageManager(rawApplication.getBaseContext());
+        AdditionalActivityManagerProxy.get().startRegisterReceivers();
     }
 
     public void attachBaseContext(){

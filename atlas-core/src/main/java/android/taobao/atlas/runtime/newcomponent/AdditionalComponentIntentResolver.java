@@ -208,16 +208,16 @@
 
 package android.taobao.atlas.runtime.newcomponent;
 
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.taobao.atlas.hack.AtlasHacks;
+
+import com.android.server.IntentResolver;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -227,7 +227,7 @@ import java.util.List;
 /**
  * Created by guanjie on 15/3/5.
  */
-public class AdditionalComponentIntentResolver<T> extends IntentResolver<IntentFilter,ResolveInfo>{
+public class AdditionalComponentIntentResolver<T> extends IntentResolver<IntentFilter,ResolveInfo> {
 
     public static final int TYPE_ACTIVITY = 1;
     public static final int TYPE_SERVICE = 2;

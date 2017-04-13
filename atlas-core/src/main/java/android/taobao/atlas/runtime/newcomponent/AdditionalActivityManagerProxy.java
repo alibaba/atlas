@@ -10,7 +10,9 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.newcomponent.provider.ContentProviderBridge;
+import android.taobao.atlas.runtime.newcomponent.receiver.ReceiverBridge;
 import android.taobao.atlas.runtime.newcomponent.service.ServiceBridge;
 
 /**
@@ -27,6 +29,13 @@ public class AdditionalActivityManagerProxy{
             sAdditionalActivityManagerProxy = new AdditionalActivityManagerProxy();
         }
         return sAdditionalActivityManagerProxy;
+    }
+
+    public void startRegisterReceivers(){
+        if(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication)
+                .equals(RuntimeVariables.androidApplication.getPackageName())) {
+            ReceiverBridge.registerAdditionalReceiver();
+        }
     }
 
     public ComponentName startService(Intent service) {

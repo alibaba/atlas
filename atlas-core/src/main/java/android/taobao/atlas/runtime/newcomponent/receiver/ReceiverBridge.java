@@ -22,9 +22,8 @@ public class ReceiverBridge {
     private static DelegateReceiver receiver;
     private static Handler sMainHandler;
 
-    public synchronized static void registerAdditional() {
-        if(receiver == null &&
-                RuntimeVariables.getProcessName(RuntimeVariables.androidApplication).equals(RuntimeVariables.androidApplication.getPackageName())){
+    public synchronized static void registerAdditionalReceiver() {
+        if(receiver == null){
             receiver = new DelegateReceiver();
             IntentFilter additionalFilter = AdditionalPackageManager.getInstance().getAdditionIntentFilter();
             RuntimeVariables.androidApplication.registerReceiver(receiver,additionalFilter);

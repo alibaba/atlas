@@ -208,7 +208,6 @@
 
 package android.taobao.atlas.runtime.newcomponent;
 
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -221,13 +220,12 @@ import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.hack.Hack;
-import android.taobao.atlas.runtime.AtlasFakeActivity;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import java.io.File;
 import java.lang.reflect.Field;
@@ -235,24 +233,22 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 
 /**
  * Created by guanjie on 15/3/5.
  */
 public class AdditionalPackageManager {
 
+    private static AdditionalPackageManager sBundlePackagemanager;
+    private static int retryCount = 2;
+
     private AdditionalComponentIntentResolver mExternalActivity;
     private AdditionalComponentIntentResolver mExternalServices;
     private AdditionalComponentIntentResolver mExternalReceivers;
     private AdditionalComponentIntentResolver mExternalProviders;
-
     private final HashMap<String,IntentFilter> mReceiverIntentFilters = new HashMap<>();
-    final HashMap<String, Object> mProvidersByAuthority = new HashMap<String, Object>();
-
-    private static AdditionalPackageManager sBundlePackagemanager;
+    private final HashMap<String, Object> mProvidersByAuthority = new HashMap<>();
 
     public static synchronized AdditionalPackageManager getInstance(){
         if(sBundlePackagemanager == null){
@@ -262,21 +258,28 @@ public class AdditionalPackageManager {
     }
 
     public AdditionalPackageManager(){
-        try {
-            Class KernalBundleClass = RuntimeVariables.getRawClassLoader().loadClass("android.taobao.atlas.startup.patch.KernalBundle");
-            Object object = KernalBundleClass.getDeclaredField("kernalBundle");
-            if(object!=null){
-                Method method = object.getClass().getDeclaredMethod("getRevisionZip");
-                method.setAccessible(true);
-                File file = (File) method.invoke(object);
-                if(file!=null){
-                    parseBundle(file.getAbsolutePath());
+        if(BaselineInfoManager.instance().isChanged("com.taobao.maindex")) {
+            boolean needRetry ;
+            do {
+                try {
+                    retryCount--;
+                    needRetry = false;
+                    Class KernalBundleClass = RuntimeVariables.getRawClassLoader().loadClass("android.taobao.atlas.startup.patch.KernalBundle");
+                    Object object = KernalBundleClass.getDeclaredField("kernalBundle");
+                    if (object != null) {
+                        Method method = object.getClass().getDeclaredMethod("getRevisionZip");
+                        method.setAccessible(true);
+                        File file = (File) method.invoke(object);
+                        if (file != null) {
+                            parseBundle(file.getAbsolutePath());
+                        }
+                    }
+                } catch (Throwable e) {
+                    needRetry = true;
+                    e.printStackTrace();
                 }
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
+            }while(retryCount>0 && needRetry);
         }
-
     }
 
     /**

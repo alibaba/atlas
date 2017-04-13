@@ -223,7 +223,9 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.taobao.atlas.framework.Framework;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.util.StringUtils;
+import android.taobao.atlas.versionInfo.BaselineInfoManager;
 
 public class FrameworkLifecycleHandler implements FrameworkListener {
 
@@ -250,6 +252,10 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
     private void starting() {
         if(RuntimeVariables.safeMode){
             return;
+        }
+
+        if(BaselineInfoManager.instance().isChanged("com.taobao.maindex")){
+            AdditionalPackageManager.getInstance();
         }
         
         long time = System.currentTimeMillis();

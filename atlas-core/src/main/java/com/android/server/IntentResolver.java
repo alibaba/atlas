@@ -206,7 +206,7 @@
  *
  */
 
-package android.taobao.atlas.runtime.newcomponent;
+package com.android.server;
 
 import java.io.PrintWriter;
 import java.util.*;
