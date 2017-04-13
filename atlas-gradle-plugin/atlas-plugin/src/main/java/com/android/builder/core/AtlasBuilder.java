@@ -1034,53 +1034,6 @@ public class AtlasBuilder extends AndroidBuilder {
         }
     }
 
-    public void generateKeepList(File mainManifestFile, File manifestKeepListProguardFile)
-        throws IOException, DocumentException {
-
-        //提取出application 和 主dex 的class , preLauncher 等信息
-
-        //其他的组件先不加
-        SAXReader reader = new SAXReader();
-        Document document = reader.read(mainManifestFile);// 读取XML文件
-
-        Element root = document.getRootElement();// 得到根节点
-        Element applicationElement = root.element("application");
-
-        String application = applicationElement.attributeValue("name");
-        String preLaunchClass = atlasExtension.getTBuildConfig().getPreLaunch();
-
-        /**
-         *
-         -keep class android.taobao.atlas.startup.AtlasBridgeApplication {
-         <init>();
-         void attachBaseContext(android.content.Context);
-         }
-         -keep class com.taobao.demo.WelcomActivity { <init>(); }
-         -keep class com.taobao.android.runtime.Dex2OatService { <init>(); }
-         -keep class com.taobao.atlas.dexmerge.DexMergeService { <init>(); }
-         -keep class com.taobao.atlas.update.AwoPatchReceiver { <init>(); }
-         -keep class com.taobao.firstbundle.FirstBundleActivity { <init>(); }
-         */
-        List<String> lines = new ArrayList<>();
-        lines.add("-keep class " + application + " {");
-        lines.add("    <init>();");
-        lines.add("    void attachBaseContext(android.content.Context);");
-        lines.add("}");
-
-        if (StringUtils.isNotEmpty(preLaunchClass)) {
-            for (String pre : preLaunchClass.split(",")) {
-                lines.add("-keep class " + pre + " {");
-                lines.add("    <init>();");
-                lines.add("    void initBeforeAtlas(android.content.Context);");
-                lines.add("}");
-            }
-        }
-
-        manifestKeepListProguardFile.getParentFile().mkdirs();
-        FileUtils.writeLines(manifestKeepListProguardFile, lines);
-
-    }
-
     @Override
     public SdkInfo getSdkInfo() {
         return defaultBuilder.getSdkInfo();

@@ -207,295 +207,155 @@
  *
  */
 
-package com.taobao.android.builder.extension;
+package com.taobao.android.builder.tasks.app.manifest;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import com.alibaba.fastjson.annotation.JSONField;
-
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Optional;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.model.AndroidLibrary;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tools.manifest.AtlasProxy;
+import com.taobao.android.builder.tools.manifest.ManifestDependencyUtil;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.builder.tools.manifest.ManifestHelper;
+import com.taobao.android.builder.tools.manifest.Result;
+import org.gradle.api.Action;
+import org.gradle.api.GradleException;
+import org.gradle.api.Task;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午10:15.
+ * Created by wuzhong on 2017/4/13.
  */
-public class TBuildConfig {
+public class PostProcessManifestAction implements Action<Task> {
 
-    @Input
-    @JSONField(serialize = false)
-    private Set<String> removeSoFiles = Sets.newHashSet();
+    private AppVariantContext appVariantContext;
+    private BaseVariantOutputData baseVariantOutputData;
 
-    @Input
-    @JSONField(serialize = false)
-    private Set<String> excludeFiles = Sets.newHashSet();
-
-    @Input
-    @Optional
-    @JSONField(serialize = false)
-    private File packageIdFile = new File("");
-
-    @JSONField(serialize = false)
-    private Map<String, String> packageIdMap = new HashMap<String, String>();
-
-    @Config(message = "自动生成bundle的packageId", order = 0)
-    private boolean autoPackageId = true;
-
-    @Input
-    @Config(message = "预处理manifest， 如果开启atlas，必须为true", order = 0)
-    private Boolean preProcessManifest = true;
-
-    @Input
-    @JSONField(serialize = false)
-    private Boolean updateManifestSdkVersion = true;
-
-    @Input
-    @Config(message = "使用自定义的aapt， 如果开启atlas，必须为true", order = 0)
-    private Boolean useCustomAapt = false;
-
-    @Input
-    @Config(message = "aapt输出的R为常量, 建议值设置为false， 可以减少动态部署的patch包大小", order = 0)
-    private Boolean aaptConstantId = true;
-
-    @Input
-    private Boolean classInject = false;
-
-    @Input
-    private Boolean doPreverify = false;
-
-    private Boolean resV4Enabled = true;
-
-    @JSONField(serialize = false)
-    private Boolean injectBeforeProguard = false;
-
-    @Input
-    @Config(message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0)
-    private Boolean createAP = true;
-
-    @Config(message = "合并bundle jar中的资源文件", order = 0)
-    private Boolean mergeAwbJavaRes = false;
-
-    @Input
-    @Config(message = "是否依赖冲突终止打包", order = 0)
-    private boolean abortIfDependencyConflict = false;
-
-    @Input
-    @Config(message = "是否类冲突终止打包", order = 0)
-    private boolean abortIfClassConflict = false;
-
-    @Input
-    @Config(message = "需要进行databinding的bundle， 值为 packageName ", order = 0)
-    private Set<String> dataBindingBundles = new HashSet<>();
-
-    public Boolean isCreateAP() {
-        return createAP;
+    public PostProcessManifestAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        this.appVariantContext = appVariantContext;
+        this.baseVariantOutputData = baseVariantOutputData;
     }
 
-    public void setCreateAP(Boolean createAP) {
-        this.createAP = createAP;
+    @Override
+    public void execute(Task task) {
+        AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
+
+        File bundleBaseLineInfo = appVariantContext.getBundleBaseInfoFile();
+
+        VariantScope variantScope = appVariantContext.getScope();
+        GradleVariantConfiguration config = variantScope.getVariantConfiguration();
+        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
+
+        try {
+
+            Result result = ManifestFileUtils.postProcessManifests(
+                baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
+                getLibManifestMap(),
+                getLibManifestDepenendyMap(),
+                bundleBaseLineInfo,
+                atlasExtension.manifestOptions,
+                isMultiDexEnabled(),
+                false,
+                atlasExtension.getTBuildConfig()
+                    .getOutOfApkBundles());
+
+            File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
+            if (AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
+                variantScope.getJavacTask();
+                appVariantContext.getVariantData().javacTask.source(proxySrcDir);
+            }
+
+            File file = variantScope
+                .getInstantRunManifestOutputFile();
+            if (null != file && file.exists() && variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
+                ManifestFileUtils.postProcessManifests(
+                    baseVariantOutputData.manifestProcessorTask.getInstantRunManifestOutputFile(),
+                    getLibManifestMap(),
+                    getLibManifestDepenendyMap(),
+                    bundleBaseLineInfo,
+                    atlasExtension.manifestOptions,
+                    isMultiDexEnabled(),
+                    true,
+                    atlasExtension.getTBuildConfig()
+                        .getOutOfApkBundles());
+            }
+
+            // manifest 清单 校验
+            ManifestHelper.checkManifest(
+                baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(), dependencyTree,
+                atlasExtension);
+
+            //TODO??
+            //AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).generateKeepList(
+            //    baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
+            //    appVariantContext.getScope()
+            //        .getManifestKeepListProguardFile());
+
+        } catch (Throwable e) {
+            throw new GradleException(e.getMessage(), e);
+        }
     }
 
-    @Optional
-    private Set<String> outOfApkBundles = Sets.newHashSet();
-
-    @Optional
-    private Set<String> insideOfApkBundles = Sets.newHashSet();
-
-    @Config(message = "自启动的bundle列表， 值是 packageName", order = 1, advance = true)
-    private List<String> autoStartBundles = new ArrayList<String>();
-
-    @Config(
-        message = "实现PreLaunch的类，多个类用 , 号分开", order = 2, advance = true)
-    private String preLaunch = "";
-
-    @Config(
-        message = "atlas的主dex分包机制，第一个dex只放atlas对应的启动代码", order = 3, advance = true)
-    private boolean atlasMultiDex = false;
-
-    public Set<String> getRemoveSoFiles() {
-        return removeSoFiles;
+    private List<? extends AndroidLibrary> getAwbLibraries() {
+        return ManifestDependencyUtil.getManifestDependencies(
+            AtlasBuildContext.androidDependencyTrees
+                .get(appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles(),
+            appVariantContext.getAtlasExtension().manifestOptions.getNotMergedBundles(),
+            appVariantContext.getProject().getLogger());
     }
 
-    public void setRemoveSoFiles(Set<String> removeSoFiles) {
-        this.removeSoFiles = removeSoFiles;
+    private boolean isMultiDexEnabled() {
+        boolean isMultiDex = false;
+        for (BuildType buildType : appVariantContext.getAppExtension().getBuildTypes()) {
+            if (buildType.getName().equals(baseVariantOutputData.variantData.getName())) {
+                isMultiDex = (null !=
+                    buildType.getMultiDexEnabled()) ? buildType.getMultiDexEnabled() : false;
+                break;
+            }
+        }
+        return isMultiDex;
     }
 
-    public Set<String> getExcludeFiles() {
-        return excludeFiles;
+    private Map<String, File> getLibManifestMap() {
+        Map<String, File> maps = Maps.newHashMap();
+        List<? extends AndroidLibrary> libs = getAwbLibraries();
+        if (libs == null || libs.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        for (AndroidLibrary mdi : libs) {
+            ((HashMap<String, File>)maps).put(mdi.getName(), mdi.getManifest());
+        }
+
+        return maps;
     }
 
-    public void setExcludeFiles(Set<String> excludeFiles) {
-        this.excludeFiles = excludeFiles;
-    }
+    private Multimap<String, File> getLibManifestDepenendyMap() {
+        Multimap<String, File> maps = HashMultimap.create();
+        List<? extends AndroidLibrary> libs = getAwbLibraries();
+        if (libs == null || libs.isEmpty()) {
+            return maps;
+        }
 
-    public File getPackageIdFile() {
-        return packageIdFile;
-    }
+        for (AndroidLibrary mdi : libs) {
+            for (AndroidLibrary childLib : mdi.getLibraryDependencies()) {
+                ((HashMultimap<String, File>)maps).put(mdi.getName(), childLib.getManifest());
+            }
+        }
 
-    public void setPackageIdFile(File packageIdFile) {
-        this.packageIdFile = packageIdFile;
-    }
-
-    public Map<String, String> getPackageIdMap() {
-        return packageIdMap;
-    }
-
-    public void setPackageIdMap(Map<String, String> packageIdMap) {
-        this.packageIdMap = packageIdMap;
-    }
-
-    public boolean isAutoPackageId() {
-        return autoPackageId;
-    }
-
-    public void setAutoPackageId(boolean autoPackageId) {
-        this.autoPackageId = autoPackageId;
-    }
-
-    public Boolean getPreProcessManifest() {
-        return preProcessManifest;
-    }
-
-    public void setPreProcessManifest(Boolean preProcessManifest) {
-        this.preProcessManifest = preProcessManifest;
-    }
-
-    public Boolean getUpdateManifestSdkVersion() {
-        return updateManifestSdkVersion;
-    }
-
-    public void setUpdateManifestSdkVersion(Boolean updateManifestSdkVersion) {
-        this.updateManifestSdkVersion = updateManifestSdkVersion;
-    }
-
-    public Boolean getUseCustomAapt() {
-        return useCustomAapt;
-    }
-
-    public void setUseCustomAapt(Boolean useCustomAapt) {
-        this.useCustomAapt = useCustomAapt;
-    }
-
-    public Boolean getAaptConstantId() {
-        return aaptConstantId;
-    }
-
-    public void setAaptConstantId(Boolean aaptConstantId) {
-        this.aaptConstantId = aaptConstantId;
-    }
-
-    public Boolean getClassInject() {
-        return classInject;
-    }
-
-    public void setClassInject(Boolean classInject) {
-        this.classInject = classInject;
-    }
-
-    public Boolean getInjectBeforeProguard() {
-        return injectBeforeProguard;
-    }
-
-    public void setInjectBeforeProguard(Boolean injectBeforeProguard) {
-        this.injectBeforeProguard = injectBeforeProguard;
-    }
-
-    public Boolean getCreateAP() {
-        return createAP;
-    }
-
-    public Boolean getMergeAwbJavaRes() {
-        return mergeAwbJavaRes;
-    }
-
-    public void setMergeAwbJavaRes(Boolean mergeAwbJavaRes) {
-        this.mergeAwbJavaRes = mergeAwbJavaRes;
-    }
-
-    public Set<String> getOutOfApkBundles() {
-        return outOfApkBundles;
-    }
-
-    public void setOutOfApkBundles(Set<String> outOfApkBundles) {
-        this.outOfApkBundles = outOfApkBundles;
-    }
-
-    public Set<String> getInsideOfApkBundles() {
-        return insideOfApkBundles;
-    }
-
-    public void setInsideOfApkBundles(Set<String> insideOfApkBundles) {
-        this.insideOfApkBundles = insideOfApkBundles;
-    }
-
-    public List<String> getAutoStartBundles() {
-        return autoStartBundles;
-    }
-
-    public void setAutoStartBundles(List<String> autoStartBundles) {
-        this.autoStartBundles = autoStartBundles;
-    }
-
-    public String getPreLaunch() {
-        return preLaunch;
-    }
-
-    public void setPreLaunch(String preLaunch) {
-        this.preLaunch = preLaunch;
-    }
-
-    public Boolean getDoPreverify() {
-        return doPreverify;
-    }
-
-    public void setDoPreverify(Boolean doPreverify) {
-        this.doPreverify = doPreverify;
-    }
-
-    public Boolean getResV4Enabled() {
-        return resV4Enabled;
-    }
-
-    public void setResV4Enabled(Boolean resV4Enabled) {
-        this.resV4Enabled = resV4Enabled;
-    }
-
-    public boolean isAbortIfDependencyConflict() {
-        return abortIfDependencyConflict;
-    }
-
-    public void setAbortIfDependencyConflict(boolean abortIfDependencyConflict) {
-        this.abortIfDependencyConflict = abortIfDependencyConflict;
-    }
-
-    public boolean isAbortIfClassConflict() {
-        return abortIfClassConflict;
-    }
-
-    public void setAbortIfClassConflict(boolean abortIfClassConflict) {
-        this.abortIfClassConflict = abortIfClassConflict;
-    }
-
-    public Set<String> getDataBindingBundles() {
-        return dataBindingBundles;
-    }
-
-    public void setDataBindingBundles(Set<String> dataBindingBundles) {
-        this.dataBindingBundles = dataBindingBundles;
-    }
-
-    public boolean isAtlasMultiDex() {
-        return atlasMultiDex;
-    }
-
-    public void setAtlasMultiDex(boolean atlasMultiDex) {
-        this.atlasMultiDex = atlasMultiDex;
+        return maps;
     }
 }

@@ -241,6 +241,11 @@ public class ManifestOptions {
     @Input
     private boolean addBundleLocation = true;
 
+    @Config(message = "开启新增组件的功能" , order = 1)
+    @Input
+    private boolean addAtlasProxyComponents = false;
+
+
     @Config(message = "使用atlas的application，包含 atlas基础初始化及multidex逻辑" , order = 1)
     @Input
     private boolean replaceApplication = true;
@@ -390,6 +395,14 @@ public class ManifestOptions {
 
     public void setRemoveProvider(boolean removeProvider) {
         this.removeProvider = removeProvider;
+    }
+
+    public boolean isAddAtlasProxyComponents() {
+        return addAtlasProxyComponents;
+    }
+
+    public void setAddAtlasProxyComponents(boolean addAtlasProxyComponents) {
+        this.addAtlasProxyComponents = addAtlasProxyComponents;
     }
 
     public String toString() {

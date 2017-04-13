@@ -219,7 +219,9 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.transforms.DexTransform;
+import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.MergeManifests;
@@ -251,10 +253,12 @@ import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tasks.manager.transform.MtlTransformContext;
 import com.taobao.android.builder.tasks.manager.transform.MtlTransformInjector;
+import com.taobao.android.builder.tasks.manager.transform.TransformManager;
 import com.taobao.android.builder.tasks.tpatch.DiffBundleInfoTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchDiffApkBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchDiffResAPBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchTask;
+import com.taobao.android.builder.tasks.transform.AtlasMultiDexTransform;
 import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
 import com.taobao.android.builder.tasks.transform.hook.AwbProguradHook;
 import org.gradle.api.GradleException;
@@ -385,6 +389,14 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 if (!mtlTransformContextList.isEmpty()) {
                     new MtlTransformInjector(appVariantContext).injectTasks(mtlTransformContextList);
+                }
+
+                if (atlasExtension.getTBuildConfig().isAtlasMultiDex()) {
+                    List<BaseVariantOutputData> baseVariantOutputDataList = appVariantContext.getVariantOutputData();
+                    for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
+                        TransformManager.replaceTransformTask(appVariantContext, vod, MultiDexTransform.class,
+                                                              AtlasMultiDexTransform.class);
+                    }
                 }
 
             }

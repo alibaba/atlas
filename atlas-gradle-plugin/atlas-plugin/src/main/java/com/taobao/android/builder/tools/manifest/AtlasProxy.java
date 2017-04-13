@@ -207,295 +207,165 @@
  *
  */
 
-package com.taobao.android.builder.extension;
+package com.taobao.android.builder.tools.manifest;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import com.alibaba.fastjson.annotation.JSONField;
-
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Optional;
+import com.google.common.collect.Lists;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.dom4j.Document;
+import org.dom4j.Element;
+import org.dom4j.Node;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午10:15.
+ * Created by wuzhong on 2017/4/13.
+ *
+ * * example:
+ * if your app has three process: 1 :com.taobao.demo
+ * 2 :remote
+ * 3 :com.taobao.single
+ *
+ * then AndroidManifest will add the components below
+ *
+ * <Activity
+ * android:name="ATLASPROXY_com_taobao_demo_Activity"/>
+ * <Activity
+ * android:name="ATLASPROXY_remote_Activity"
+ * android:process=":remote"/>
+ * <Activity
+ * android:name="ATLASPROXY_com_taobao_single_Activity"
+ * android:process="com.taobao.single"/>
+ *
+ * <Service
+ * android:name="ATLASPROXY_com_taobao_demo_Service"/>
+ * <Service
+ * android:name="ATLASPROXY_remote_Service"
+ * android:process=":remote"/>
+ * <Service
+ * android:name="ATLASPROXY_com_taobao_single_Service"
+ * android:process="com.taobao.single"/>
+ *
+ * <ContentProvider
+ * android:name="ATLASPROXY_com_taobao_demo_Provider"
+ * android:authorities="ATLASPROXY_com_taobao_demo_Provider"/>
+ * <ContentProvider
+ * android:name="ATLASPROXY_remote_Provider"
+ * android:authorities="ATLASPROXY_remote_Provider"
+ * android:process=":remote"/>
+ * <ContentProvider
+ * android:name="ATLASPROXY_com_taobao_single_Provider"
+ * android:authorities="ATLASPROXY_com_taobao_single_Provider"
+ * android:process="com.taobao.single"/>
+ *
+ * and also apk will add the classses below
+ *
+ * class ATLASPROXY_com_taobao_demo_Service   extends android.taobao.atlas.runtime.newcomponent.service
+ * .AdditionBaseDelegateService
+ * class ATLASPROXY_remote_Service            extends android.taobao.atlas.runtime.newcomponent.service
+ * .AdditionBaseDelegateService
+ * class ATLASPROXY_com_taobao_single_Service extends android.taobao.atlas.runtime.newcomponent.service
+ * .AdditionBaseDelegateService
+ *
+ * class ATLASPROXY_com_taobao_demo_Provider    extends android.taobao.atlas.runtime.newcomponent.provider
+ * .ContentProviderBridge
+ * class ATLASPROXY_remote_Service              extends android.taobao.atlas.runtime.newcomponent.provider
+ * .ContentProviderBridge
+ * class ATLASPROXY_com_taobao_single_Provider  extends android.taobao.atlas.runtime.newcomponent.provider
+ * .ContentProviderBridge
  */
-public class TBuildConfig {
+public class AtlasProxy {
 
-    @Input
-    @JSONField(serialize = false)
-    private Set<String> removeSoFiles = Sets.newHashSet();
+    public static void addAtlasProxyClazz(Document document, Result result) {
 
-    @Input
-    @JSONField(serialize = false)
-    private Set<String> excludeFiles = Sets.newHashSet();
+        Element root = document.getRootElement();// 得到根节点
 
-    @Input
-    @Optional
-    @JSONField(serialize = false)
-    private File packageIdFile = new File("");
+        List<? extends Node> serviceNodes = root.selectNodes("//@android:process");
 
-    @JSONField(serialize = false)
-    private Map<String, String> packageIdMap = new HashMap<String, String>();
+        String packageName = root.attribute("package").getStringValue();
 
-    @Config(message = "自动生成bundle的packageId", order = 0)
-    private boolean autoPackageId = true;
+        List<String> processNames = new ArrayList<>();
+        processNames.add(packageName);
 
-    @Input
-    @Config(message = "预处理manifest， 如果开启atlas，必须为true", order = 0)
-    private Boolean preProcessManifest = true;
+        for (Node node : serviceNodes) {
+            if (null != node && StringUtils.isNotEmpty(node.getStringValue())) {
+                String value = node.getStringValue();
+                if (!":dexmerge".equals(value) && !":dex2oat".equals(value)) {
+                    processNames.add(value);
+                }
+            }
+        }
 
-    @Input
-    @JSONField(serialize = false)
-    private Boolean updateManifestSdkVersion = true;
+        List<String> elementNames = Lists.newArrayList("Activity", "Service", "ContentProvider");
 
-    @Input
-    @Config(message = "使用自定义的aapt， 如果开启atlas，必须为true", order = 0)
-    private Boolean useCustomAapt = false;
+        Element applicationElement = root.element("application");
 
-    @Input
-    @Config(message = "aapt输出的R为常量, 建议值设置为false， 可以减少动态部署的patch包大小", order = 0)
-    private Boolean aaptConstantId = true;
+        for (String processName : processNames) {
 
-    @Input
-    private Boolean classInject = false;
+            for (String elementName : elementNames) {
 
-    @Input
-    private Boolean doPreverify = false;
+                boolean isProvider = "ContentProvider".equals(elementName);
+                String processClazzName = processName.replace(":", "").replace(".", "_");
+                String fullClazzName = "ATLASPROXY_" + processClazzName + "_" + (isProvider ? "Provider"
+                    : elementName);
 
-    private Boolean resV4Enabled = true;
+                if ("Activity".equals(elementName)) {
+                    result.proxyActivities.add(fullClazzName);
+                } else if ("Service".equals(elementName)) {
+                    result.proxyServices.add(fullClazzName);
+                } else {
+                    result.proxyProviders.add(fullClazzName);
+                }
 
-    @JSONField(serialize = false)
-    private Boolean injectBeforeProguard = false;
+                Element newElement = applicationElement.addElement(elementName);
+                newElement.addAttribute("android:name", fullClazzName);
 
-    @Input
-    @Config(message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0)
-    private Boolean createAP = true;
+                if (!packageName.equals(processName)) {
+                    newElement.addAttribute("android:process", processName);
+                }
 
-    @Config(message = "合并bundle jar中的资源文件", order = 0)
-    private Boolean mergeAwbJavaRes = false;
+                if (isProvider) {
+                    newElement.addAttribute("android:authorities", fullClazzName);
+                }
 
-    @Input
-    @Config(message = "是否依赖冲突终止打包", order = 0)
-    private boolean abortIfDependencyConflict = false;
+            }
 
-    @Input
-    @Config(message = "是否类冲突终止打包", order = 0)
-    private boolean abortIfClassConflict = false;
+        }
 
-    @Input
-    @Config(message = "需要进行databinding的bundle， 值为 packageName ", order = 0)
-    private Set<String> dataBindingBundles = new HashSet<>();
-
-    public Boolean isCreateAP() {
-        return createAP;
     }
 
-    public void setCreateAP(Boolean createAP) {
-        this.createAP = createAP;
+    private static String serviceTmp
+        = "package android.taobao.atlas.runtime.newcomponent;\r\n"
+        + "public class ${clazzName} extends android.taobao.atlas.runtime.newcomponent"
+        + ".service.BaseDelegateService {}";
+    private static String providerTmp
+        = "package android.taobao.atlas.runtime.newcomponent;\r\n"
+        + "public class ${clazzName} extends android.taobao.atlas.runtime.newcomponent"
+        + ".provider.ContentProviderBridge {}";
+
+    public static boolean genProxyJavaSource(File rootDir, Result result) throws IOException {
+
+        if (result.proxyProviders.isEmpty() && result.proxyServices
+            .isEmpty()) {
+            return false;
+        }
+
+        rootDir = new File(rootDir, "android/taobao/atlas/runtime/newcomponent");
+        FileUtils.deleteDirectory(rootDir);
+        rootDir.mkdirs();
+
+        for (String clazzName : result.proxyServices) {
+            FileUtils.write(new File(rootDir, clazzName + ".java"), serviceTmp.replace("${clazzName}", clazzName));
+        }
+
+        for (String clazzName : result.proxyProviders) {
+            FileUtils.write(new File(rootDir, clazzName + ".java"), providerTmp.replace("${clazzName}", clazzName));
+        }
+
+        return true;
     }
 
-    @Optional
-    private Set<String> outOfApkBundles = Sets.newHashSet();
-
-    @Optional
-    private Set<String> insideOfApkBundles = Sets.newHashSet();
-
-    @Config(message = "自启动的bundle列表， 值是 packageName", order = 1, advance = true)
-    private List<String> autoStartBundles = new ArrayList<String>();
-
-    @Config(
-        message = "实现PreLaunch的类，多个类用 , 号分开", order = 2, advance = true)
-    private String preLaunch = "";
-
-    @Config(
-        message = "atlas的主dex分包机制，第一个dex只放atlas对应的启动代码", order = 3, advance = true)
-    private boolean atlasMultiDex = false;
-
-    public Set<String> getRemoveSoFiles() {
-        return removeSoFiles;
-    }
-
-    public void setRemoveSoFiles(Set<String> removeSoFiles) {
-        this.removeSoFiles = removeSoFiles;
-    }
-
-    public Set<String> getExcludeFiles() {
-        return excludeFiles;
-    }
-
-    public void setExcludeFiles(Set<String> excludeFiles) {
-        this.excludeFiles = excludeFiles;
-    }
-
-    public File getPackageIdFile() {
-        return packageIdFile;
-    }
-
-    public void setPackageIdFile(File packageIdFile) {
-        this.packageIdFile = packageIdFile;
-    }
-
-    public Map<String, String> getPackageIdMap() {
-        return packageIdMap;
-    }
-
-    public void setPackageIdMap(Map<String, String> packageIdMap) {
-        this.packageIdMap = packageIdMap;
-    }
-
-    public boolean isAutoPackageId() {
-        return autoPackageId;
-    }
-
-    public void setAutoPackageId(boolean autoPackageId) {
-        this.autoPackageId = autoPackageId;
-    }
-
-    public Boolean getPreProcessManifest() {
-        return preProcessManifest;
-    }
-
-    public void setPreProcessManifest(Boolean preProcessManifest) {
-        this.preProcessManifest = preProcessManifest;
-    }
-
-    public Boolean getUpdateManifestSdkVersion() {
-        return updateManifestSdkVersion;
-    }
-
-    public void setUpdateManifestSdkVersion(Boolean updateManifestSdkVersion) {
-        this.updateManifestSdkVersion = updateManifestSdkVersion;
-    }
-
-    public Boolean getUseCustomAapt() {
-        return useCustomAapt;
-    }
-
-    public void setUseCustomAapt(Boolean useCustomAapt) {
-        this.useCustomAapt = useCustomAapt;
-    }
-
-    public Boolean getAaptConstantId() {
-        return aaptConstantId;
-    }
-
-    public void setAaptConstantId(Boolean aaptConstantId) {
-        this.aaptConstantId = aaptConstantId;
-    }
-
-    public Boolean getClassInject() {
-        return classInject;
-    }
-
-    public void setClassInject(Boolean classInject) {
-        this.classInject = classInject;
-    }
-
-    public Boolean getInjectBeforeProguard() {
-        return injectBeforeProguard;
-    }
-
-    public void setInjectBeforeProguard(Boolean injectBeforeProguard) {
-        this.injectBeforeProguard = injectBeforeProguard;
-    }
-
-    public Boolean getCreateAP() {
-        return createAP;
-    }
-
-    public Boolean getMergeAwbJavaRes() {
-        return mergeAwbJavaRes;
-    }
-
-    public void setMergeAwbJavaRes(Boolean mergeAwbJavaRes) {
-        this.mergeAwbJavaRes = mergeAwbJavaRes;
-    }
-
-    public Set<String> getOutOfApkBundles() {
-        return outOfApkBundles;
-    }
-
-    public void setOutOfApkBundles(Set<String> outOfApkBundles) {
-        this.outOfApkBundles = outOfApkBundles;
-    }
-
-    public Set<String> getInsideOfApkBundles() {
-        return insideOfApkBundles;
-    }
-
-    public void setInsideOfApkBundles(Set<String> insideOfApkBundles) {
-        this.insideOfApkBundles = insideOfApkBundles;
-    }
-
-    public List<String> getAutoStartBundles() {
-        return autoStartBundles;
-    }
-
-    public void setAutoStartBundles(List<String> autoStartBundles) {
-        this.autoStartBundles = autoStartBundles;
-    }
-
-    public String getPreLaunch() {
-        return preLaunch;
-    }
-
-    public void setPreLaunch(String preLaunch) {
-        this.preLaunch = preLaunch;
-    }
-
-    public Boolean getDoPreverify() {
-        return doPreverify;
-    }
-
-    public void setDoPreverify(Boolean doPreverify) {
-        this.doPreverify = doPreverify;
-    }
-
-    public Boolean getResV4Enabled() {
-        return resV4Enabled;
-    }
-
-    public void setResV4Enabled(Boolean resV4Enabled) {
-        this.resV4Enabled = resV4Enabled;
-    }
-
-    public boolean isAbortIfDependencyConflict() {
-        return abortIfDependencyConflict;
-    }
-
-    public void setAbortIfDependencyConflict(boolean abortIfDependencyConflict) {
-        this.abortIfDependencyConflict = abortIfDependencyConflict;
-    }
-
-    public boolean isAbortIfClassConflict() {
-        return abortIfClassConflict;
-    }
-
-    public void setAbortIfClassConflict(boolean abortIfClassConflict) {
-        this.abortIfClassConflict = abortIfClassConflict;
-    }
-
-    public Set<String> getDataBindingBundles() {
-        return dataBindingBundles;
-    }
-
-    public void setDataBindingBundles(Set<String> dataBindingBundles) {
-        this.dataBindingBundles = dataBindingBundles;
-    }
-
-    public boolean isAtlasMultiDex() {
-        return atlasMultiDex;
-    }
-
-    public void setAtlasMultiDex(boolean atlasMultiDex) {
-        this.atlasMultiDex = atlasMultiDex;
-    }
 }

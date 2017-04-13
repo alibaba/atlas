@@ -221,7 +221,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
 
@@ -337,10 +336,19 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                             .getResolvedCoordinates().getArtifactId() + ".xml");
     }
 
-    //public String getBuildType(){
-    //    String fullName = variantData.getVariantConfiguration().getBaseName();
-    //    String[] names = fullName.split("-");
-    //    return names[names.length-1];
-    //}
+    public File getBundleBaseInfoFile() {
+        File bundleBaseLineInfo = new File(this.getScope()
+                                               .getGlobalScope()
+                                               .getProject()
+                                               .getProjectDir(),
+                                           "bundleBaseInfoFile.json");
+        return bundleBaseLineInfo;
+    }
+
+    public File getAtlasProxySourceDir() {
+        return new File(scope.getGlobalScope().getGeneratedDir(),
+                        "source/atlasproxy/" + getVariantConfiguration().getDirName());
+
+    }
 
 }

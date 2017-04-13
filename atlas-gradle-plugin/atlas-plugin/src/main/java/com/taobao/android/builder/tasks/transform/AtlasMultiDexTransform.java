@@ -207,51 +207,77 @@
  *
  */
 
-package com.taobao.android.builder.tasks.manager.transform;
+package com.taobao.android.builder.tasks.transform;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import org.apache.commons.lang.StringUtils;
 
 /**
- * Created by wuzhong on 16/6/24.
+ * Created by wuzhong on 2017/4/13.
  */
-public class MtlTransformFactory {
+public class AtlasMultiDexTransform extends MultiDexTransform {
 
-    public MtlInjectTransform createTransform(AppVariantContext appVariantContext, BaseVariantOutputData vod, Class<? extends MtlInjectTransform> mtlInjectTransformClass) {
+    private AppVariantContext appVariantContext;
 
-        if (null == mtlInjectTransformClass) {
-            return null;
-        }
-
-        try {
-
-            MtlInjectTransform transform = getConstructor(appVariantContext, mtlInjectTransformClass).newInstance(appVariantContext, vod);
-
-            return transform;
-
-
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-
+    public AtlasMultiDexTransform(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        super(appVariantContext.getScope(), appVariantContext.getAppExtension().getDexOptions(), null);
+        this.appVariantContext = appVariantContext;
     }
 
-    private Constructor<? extends MtlInjectTransform> getConstructor(AppVariantContext appVariantContext, Class<? extends MtlInjectTransform> mtlInjectTransformClass) throws NoSuchMethodException {
-        try {
-            return mtlInjectTransformClass.getConstructor(appVariantContext.getClass(), BaseVariantOutputData.class);
-        } catch (NoSuchMethodException e) {
-            return mtlInjectTransformClass.getConstructor(appVariantContext.getClass().getSuperclass(), BaseVariantOutputData.class);
+    public AtlasMultiDexTransform(VariantScope variantScope,
+                                  DexOptions dexOptions,
+                                  File includeInMainDexJarFile) {
+        super(variantScope, dexOptions, includeInMainDexJarFile);
+    }
+
+    /**
+     * add a couple of rules that cannot be easily parsed from the manifest.
+     * keep("public class * extends android.app.Instrumentation { <init>(); }");
+     * keep("public class * extends android.app.Application { "
+     * + "  <init>(); "
+     * + "  void attachBaseContext(android.content.Context);"
+     * + "}");
+     * keep("public class * extends android.app.backup.BackupAgent { <init>(); }");
+     * keep("public class * extends java.lang.annotation.Annotation { *;}");
+     * keep("class com.android.tools.fd.** {*;}"); // Instant run.
+     *
+     * @param keep
+     */
+    @Override
+    public void keep(String keep) {
+
+        if (keep.startsWith("public class * extends android.app.Application")) {
+
+            List<String> lines = new ArrayList<>();
+            lines.add("class android.taobao.atlas.startup.AtlasBridgeApplication {");
+            lines.add("    <init>();");
+            lines.add("    void attachBaseContext(android.content.Context);");
+            lines.add("}");
+
+            super.keep(StringUtils.join(lines, "\r\n"));
+
+            String preLaunchClass = appVariantContext.getAtlasExtension().getTBuildConfig().getPreLaunch();
+            if (StringUtils.isNotEmpty(preLaunchClass)) {
+                for (String pre : preLaunchClass.split(",")) {
+                    List<String> lines2 = new ArrayList<>();
+                    lines2.add("-keep class " + pre + " {");
+                    lines2.add("    <init>();");
+                    lines2.add("    void initBeforeAtlas(android.content.Context);");
+                    lines2.add("}");
+                    super.keep(StringUtils.join(lines2, "\r\n"));
+                }
+            }
+
+            return;
         }
+
     }
 }
