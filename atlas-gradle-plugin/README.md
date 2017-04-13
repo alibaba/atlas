@@ -2,6 +2,12 @@
 
 ## changelog
 
+### 2.3.0.alpha15
+
+1. 支持手淘灰度版本
+2. 升级aapt
+3. 增加atlasMultiDex功能,默认关闭，mtl.tBuildConfig.atlasMultiDex=true
+
 ### 2.3.0.alpha11
 
 1. processManifest 修复 无 application ， 替换的不对

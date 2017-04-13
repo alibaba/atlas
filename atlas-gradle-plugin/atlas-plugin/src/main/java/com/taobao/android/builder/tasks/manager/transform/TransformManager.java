@@ -207,295 +207,106 @@
  *
  */
 
-package com.taobao.android.builder.extension;
+package com.taobao.android.builder.tasks.manager.transform;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.SortedMap;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import com.android.build.api.transform.Transform;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.VariantConfiguration;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang.reflect.FieldUtils;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.TaskCollection;
 
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Optional;
+public class TransformManager {
 
-/**
- * Created by shenghua.nish on 2016-05-17 上午10:15.
- */
-public class TBuildConfig {
-
-    @Input
-    @JSONField(serialize = false)
-    private Set<String> removeSoFiles = Sets.newHashSet();
-
-    @Input
-    @JSONField(serialize = false)
-    private Set<String> excludeFiles = Sets.newHashSet();
-
-    @Input
-    @Optional
-    @JSONField(serialize = false)
-    private File packageIdFile = new File("");
-
-    @JSONField(serialize = false)
-    private Map<String, String> packageIdMap = new HashMap<String, String>();
-
-    @Config(message = "自动生成bundle的packageId", order = 0)
-    private boolean autoPackageId = true;
-
-    @Input
-    @Config(message = "预处理manifest， 如果开启atlas，必须为true", order = 0)
-    private Boolean preProcessManifest = true;
-
-    @Input
-    @JSONField(serialize = false)
-    private Boolean updateManifestSdkVersion = true;
-
-    @Input
-    @Config(message = "使用自定义的aapt， 如果开启atlas，必须为true", order = 0)
-    private Boolean useCustomAapt = false;
-
-    @Input
-    @Config(message = "aapt输出的R为常量, 建议值设置为false， 可以减少动态部署的patch包大小", order = 0)
-    private Boolean aaptConstantId = true;
-
-    @Input
-    private Boolean classInject = false;
-
-    @Input
-    private Boolean doPreverify = false;
-
-    private Boolean resV4Enabled = true;
-
-    @JSONField(serialize = false)
-    private Boolean injectBeforeProguard = false;
-
-    @Input
-    @Config(message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0)
-    private Boolean createAP = true;
-
-    @Config(message = "合并bundle jar中的资源文件", order = 0)
-    private Boolean mergeAwbJavaRes = false;
-
-    @Input
-    @Config(message = "是否依赖冲突终止打包", order = 0)
-    private boolean abortIfDependencyConflict = false;
-
-    @Input
-    @Config(message = "是否类冲突终止打包", order = 0)
-    private boolean abortIfClassConflict = false;
-
-    @Input
-    @Config(message = "需要进行databinding的bundle， 值为 packageName ", order = 0)
-    private Set<String> dataBindingBundles = new HashSet<>();
-
-    public Boolean isCreateAP() {
-        return createAP;
+    public static List<TransformTask> findTransformTaskByTransformType(AppVariantContext appVariantContext, Class<?>
+        transformClass) {
+        List<TransformTask> transformTasksList = Lists.newArrayList();
+        VariantConfiguration config = appVariantContext.getVariantConfiguration();
+        TaskCollection<TransformTask> transformTasks = appVariantContext.getProject().getTasks().withType(
+            TransformTask.class);
+        SortedMap<String, TransformTask> transformTaskSortedMap = transformTasks.getAsMap();
+        String variantName = config.getFullName();
+        for (String taskName : transformTaskSortedMap.keySet()) {
+            TransformTask transformTask = transformTaskSortedMap.get(taskName);
+            if (variantName == transformTask.getVariantName()) {
+                if (transformTask.getTransform().getClass() == transformClass) {
+                    transformTasksList.add(transformTask);
+                }
+            }
+        }
+        return transformTasksList;
     }
 
-    public void setCreateAP(Boolean createAP) {
-        this.createAP = createAP;
+    public static void replaceTransformTask(TransformTask transformTask,
+                                            Transform newTransform) {
+
+        Field transfromField = FieldUtils.getDeclaredField(TransformTask.class,
+                                                           "transform",
+                                                           true);
+        if (null != transfromField) {
+            try {
+                transfromField.set(transformTask, newTransform);
+            } catch (IllegalAccessException e) {
+                throw new GradleException(e.getMessage(), e);
+            }
+        }
     }
 
-    @Optional
-    private Set<String> outOfApkBundles = Sets.newHashSet();
+    public static void replaceTransformTask(AppVariantContext appVariantContext,
+                                            BaseVariantOutputData baseVariantOutputData,
+                                            Class<? extends Transform> baseTransform, Class<? extends Transform> newTransformClazz) {
 
-    @Optional
-    private Set<String> insideOfApkBundles = Sets.newHashSet();
+        List<TransformTask> baseTransforms = TransformManager.findTransformTaskByTransformType(
+            appVariantContext, baseTransform);
 
-    @Config(message = "自启动的bundle列表， 值是 packageName", order = 1, advance = true)
-    private List<String> autoStartBundles = new ArrayList<String>();
+        for (TransformTask transformTask : baseTransforms) {
 
-    @Config(
-        message = "实现PreLaunch的类，多个类用 , 号分开", order = 2, advance = true)
-    private String preLaunch = "";
+            Transform newTransform = createTransform(appVariantContext, baseVariantOutputData, newTransformClazz);
 
-    @Config(
-        message = "atlas的主dex分包机制，第一个dex只放atlas对应的启动代码", order = 3, advance = true)
-    private boolean atlasMultiDex = false;
+            replaceTransformTask(transformTask, newTransform);
 
-    public Set<String> getRemoveSoFiles() {
-        return removeSoFiles;
+        }
+
     }
 
-    public void setRemoveSoFiles(Set<String> removeSoFiles) {
-        this.removeSoFiles = removeSoFiles;
+    public static <T extends Transform> T createTransform(AppVariantContext appVariantContext,
+                                                          BaseVariantOutputData vod,
+                                                          Class<T> clazz) {
+
+        if (null == clazz) {
+            return null;
+        }
+
+        try {
+
+            return (T)getConstructor(appVariantContext, clazz).newInstance(
+                appVariantContext, vod);
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
+
     }
 
-    public Set<String> getExcludeFiles() {
-        return excludeFiles;
+    private static Constructor<? extends Transform> getConstructor(AppVariantContext appVariantContext,
+                                                                   Class<? extends Transform>
+                                                                       transformClazz)
+        throws NoSuchMethodException {
+        try {
+            return transformClazz.getConstructor(appVariantContext.getClass(), BaseVariantOutputData.class);
+        } catch (NoSuchMethodException e) {
+            return transformClazz.getConstructor(appVariantContext.getClass().getSuperclass(),
+                                                 BaseVariantOutputData.class);
+        }
     }
 
-    public void setExcludeFiles(Set<String> excludeFiles) {
-        this.excludeFiles = excludeFiles;
-    }
-
-    public File getPackageIdFile() {
-        return packageIdFile;
-    }
-
-    public void setPackageIdFile(File packageIdFile) {
-        this.packageIdFile = packageIdFile;
-    }
-
-    public Map<String, String> getPackageIdMap() {
-        return packageIdMap;
-    }
-
-    public void setPackageIdMap(Map<String, String> packageIdMap) {
-        this.packageIdMap = packageIdMap;
-    }
-
-    public boolean isAutoPackageId() {
-        return autoPackageId;
-    }
-
-    public void setAutoPackageId(boolean autoPackageId) {
-        this.autoPackageId = autoPackageId;
-    }
-
-    public Boolean getPreProcessManifest() {
-        return preProcessManifest;
-    }
-
-    public void setPreProcessManifest(Boolean preProcessManifest) {
-        this.preProcessManifest = preProcessManifest;
-    }
-
-    public Boolean getUpdateManifestSdkVersion() {
-        return updateManifestSdkVersion;
-    }
-
-    public void setUpdateManifestSdkVersion(Boolean updateManifestSdkVersion) {
-        this.updateManifestSdkVersion = updateManifestSdkVersion;
-    }
-
-    public Boolean getUseCustomAapt() {
-        return useCustomAapt;
-    }
-
-    public void setUseCustomAapt(Boolean useCustomAapt) {
-        this.useCustomAapt = useCustomAapt;
-    }
-
-    public Boolean getAaptConstantId() {
-        return aaptConstantId;
-    }
-
-    public void setAaptConstantId(Boolean aaptConstantId) {
-        this.aaptConstantId = aaptConstantId;
-    }
-
-    public Boolean getClassInject() {
-        return classInject;
-    }
-
-    public void setClassInject(Boolean classInject) {
-        this.classInject = classInject;
-    }
-
-    public Boolean getInjectBeforeProguard() {
-        return injectBeforeProguard;
-    }
-
-    public void setInjectBeforeProguard(Boolean injectBeforeProguard) {
-        this.injectBeforeProguard = injectBeforeProguard;
-    }
-
-    public Boolean getCreateAP() {
-        return createAP;
-    }
-
-    public Boolean getMergeAwbJavaRes() {
-        return mergeAwbJavaRes;
-    }
-
-    public void setMergeAwbJavaRes(Boolean mergeAwbJavaRes) {
-        this.mergeAwbJavaRes = mergeAwbJavaRes;
-    }
-
-    public Set<String> getOutOfApkBundles() {
-        return outOfApkBundles;
-    }
-
-    public void setOutOfApkBundles(Set<String> outOfApkBundles) {
-        this.outOfApkBundles = outOfApkBundles;
-    }
-
-    public Set<String> getInsideOfApkBundles() {
-        return insideOfApkBundles;
-    }
-
-    public void setInsideOfApkBundles(Set<String> insideOfApkBundles) {
-        this.insideOfApkBundles = insideOfApkBundles;
-    }
-
-    public List<String> getAutoStartBundles() {
-        return autoStartBundles;
-    }
-
-    public void setAutoStartBundles(List<String> autoStartBundles) {
-        this.autoStartBundles = autoStartBundles;
-    }
-
-    public String getPreLaunch() {
-        return preLaunch;
-    }
-
-    public void setPreLaunch(String preLaunch) {
-        this.preLaunch = preLaunch;
-    }
-
-    public Boolean getDoPreverify() {
-        return doPreverify;
-    }
-
-    public void setDoPreverify(Boolean doPreverify) {
-        this.doPreverify = doPreverify;
-    }
-
-    public Boolean getResV4Enabled() {
-        return resV4Enabled;
-    }
-
-    public void setResV4Enabled(Boolean resV4Enabled) {
-        this.resV4Enabled = resV4Enabled;
-    }
-
-    public boolean isAbortIfDependencyConflict() {
-        return abortIfDependencyConflict;
-    }
-
-    public void setAbortIfDependencyConflict(boolean abortIfDependencyConflict) {
-        this.abortIfDependencyConflict = abortIfDependencyConflict;
-    }
-
-    public boolean isAbortIfClassConflict() {
-        return abortIfClassConflict;
-    }
-
-    public void setAbortIfClassConflict(boolean abortIfClassConflict) {
-        this.abortIfClassConflict = abortIfClassConflict;
-    }
-
-    public Set<String> getDataBindingBundles() {
-        return dataBindingBundles;
-    }
-
-    public void setDataBindingBundles(Set<String> dataBindingBundles) {
-        this.dataBindingBundles = dataBindingBundles;
-    }
-
-    public boolean isAtlasMultiDex() {
-        return atlasMultiDex;
-    }
-
-    public void setAtlasMultiDex(boolean atlasMultiDex) {
-        this.atlasMultiDex = atlasMultiDex;
-    }
 }

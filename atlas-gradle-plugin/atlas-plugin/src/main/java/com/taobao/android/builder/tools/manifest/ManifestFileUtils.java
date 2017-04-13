@@ -701,13 +701,8 @@ public class ManifestFileUtils {
         Element root = document.getRootElement();// 得到根节点
         if (updateSdkVersion) {
             Element useSdkElement = root.element("uses-sdk");
-
-            if (null == useSdkElement) {
-                useSdkElement = root.addElement("uses-sdk");
-            }
-
             if (null != useSdkElement) {
-                updateElement(useSdkElement, mainManifestFileObject.getUseSdkProperties());
+                useSdkElement.getParent().remove(useSdkElement);
             }
         }
 
