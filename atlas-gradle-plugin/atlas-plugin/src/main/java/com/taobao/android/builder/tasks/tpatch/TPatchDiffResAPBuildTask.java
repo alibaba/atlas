@@ -272,6 +272,8 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
 
     private File manifestFile;
 
+    private File baseManifestFile;
+
     private AaptOptions aaptOptions;
 
     private File diffResDir;
@@ -311,7 +313,7 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
         //TODO  minifyManifest
         File miniManifest = new File(packageOutputFile.getParentFile(), "AndroidManifest.xml");
         try {
-            ManifestFileUtils.minifyManifest(manifestFile, miniManifest);
+            ManifestFileUtils.createPatchManifest(manifestFile, getBaseManifestFile(), miniManifest);
         } catch (DocumentException e) {
             throw new GradleException(e.getMessage());
         }
@@ -425,6 +427,14 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
                     return variantOutputData.manifestProcessorTask.getOutputFile();
                 }
             });
+
+            ConventionMappingHelper.map(processDiffResources, "baseManifestFile", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return new File(appVariantContext.apContext.getApExploredFolder(),  "AndroidManifest.xml");
+                }
+            });
+
             ConventionMappingHelper.map(processDiffResources,
                                         "aaptOptions",
                                         new Callable<AaptOptions>() {
@@ -592,6 +602,11 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
     @InputFile
     public File getManifestFile() {
         return manifestFile;
+    }
+
+    @InputFile
+    public File getBaseManifestFile() {
+        return baseManifestFile;
     }
 
     public AaptOptions getAaptOptions() {

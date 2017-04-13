@@ -954,35 +954,6 @@ public class ManifestFileUtils {
         return versionName;
     }
 
-    public static void minifyManifest(File mainManifest,
-                                      File destManifest) throws IOException, DocumentException {
-
-        XMLWriter writer = null;// 声明写XML的对象
-        SAXReader reader = new SAXReader();
-        OutputFormat format = OutputFormat.createPrettyPrint();
-        format.setEncoding("UTF-8");// 设置XML文件的编码格式
-        FileOutputStream fos = new FileOutputStream(destManifest);
-        if (mainManifest.exists()) {
-            try {
-                Document document = reader.read(mainManifest);// 读取XML文件
-
-                //                removeComments(document);
-
-                Element element = document.getRootElement();
-
-                element.clearContent();
-
-                writer = new XMLWriter(fos, format);
-                writer.write(document);
-            } finally {
-                if (null != writer) {
-                    writer.close();
-                }
-                IOUtils.closeQuietly(fos);
-            }
-        }
-    }
-
     public static void removeProvider(File androidManifestFile) throws IOException, DocumentException {
         File backupFile = new File(androidManifestFile.getParentFile(),
                                    "AndroidManifest-backup.xml");
@@ -1040,4 +1011,49 @@ public class ManifestFileUtils {
             element.remove(element.attribute("process"));
         }
     }
+
+    public static void createPatchManifest(File mainManifest, File originalManifest,
+                                           File destManifest) throws IOException, DocumentException {
+
+        Document document = XmlHelper.readXml(mainManifest);
+        Document baseDoc = XmlHelper.readXml(originalManifest);
+
+        List<Node> newNodes = selectComponents(document.getRootElement());
+        List<Node> baseNodes = selectComponents(baseDoc.getRootElement());
+
+        Map<String, Node> baseNodeMap = new HashMap<>();
+        for (Node node : baseNodes) {
+            Element el = (Element)node;
+            String key = el.attributeValue("process") + el.attributeValue("name");
+            baseNodeMap.put(key, node);
+        }
+
+        Element applicationElement = document.getRootElement().element("application");
+        applicationElement.clearContent();
+        document.getRootElement().clearContent();
+        document.getRootElement().add(applicationElement);
+
+        for (Node node : newNodes) {
+            Element el = (Element)node;
+            String key = el.attributeValue("process") + el.attributeValue("name");
+            if (!baseNodeMap.containsKey(key)) {
+                applicationElement.add(node);
+            }
+        }
+
+        XmlHelper.saveDocument(document, destManifest);
+    }
+
+    private static List<Node> selectComponents(Element root) {
+
+        String[] components = new String[] {"activity", "provider", "receiver", "service"};
+
+        List<Node> nodes = new ArrayList<>();
+        for (String component : components) {
+            nodes.addAll(root.selectNodes("//" + component));
+        }
+
+        return nodes;
+    }
+
 }
