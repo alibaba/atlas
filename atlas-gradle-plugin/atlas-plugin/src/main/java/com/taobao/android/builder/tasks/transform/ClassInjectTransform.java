@@ -209,11 +209,6 @@
 
 package com.taobao.android.builder.tasks.transform;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -233,13 +228,20 @@ import com.taobao.android.builder.tasks.manager.transform.MtlInjectTransform;
 import com.taobao.android.builder.tools.PathUtil;
 import com.taobao.android.builder.tools.classinject.CodeInjectByJavassist;
 import com.taobao.android.builder.tools.classinject.InjectParam;
-import javassist.ClassPool;
-import javassist.NotFoundException;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.dom4j.DocumentException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.StopExecutionException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+
+import javassist.ClassPool;
+import javassist.NotFoundException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -273,8 +275,8 @@ public class ClassInjectTransform extends MtlInjectTransform {
     }
 
     @Override
-    public Set<QualifiedContent.Scope> getScopes() {
-        return TransformManager.SCOPE_FULL_PROJECT;
+    public Set<QualifiedContent.ScopeType> getScopes() {
+        return TransformManager.SCOPE_FULL_INSTANT_RUN_PROJECT;
     }
 
     @Override
@@ -325,8 +327,8 @@ public class ClassInjectTransform extends MtlInjectTransform {
             }
             String folderName = directoryInput.getFile().getName();
             File to = outputProvider.getContentLocation(folderName,
-                                                        getOutputTypes(),
-                                                        getScopes(),
+                                                        directoryInput.getContentTypes(),
+                                                        directoryInput.getScopes(),
                                                         Format.DIRECTORY);
             if (!injectParam.removePreverify) {
                 CodeInjectByJavassist.injectFolder(classPool,
