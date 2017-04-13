@@ -209,9 +209,6 @@
 
 package com.taobao.android.builder.tasks.manager.transform;
 
-import java.io.File;
-import java.util.Set;
-
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.TransformOutputProvider;
@@ -220,15 +217,12 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.pipeline.InjectTransform;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.model.MavenCoordinates;
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tools.FileNameUtils;
-import org.apache.commons.lang.StringUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.android.SdkConstants.DOT_JAR;
+import java.io.File;
 
 /**
  * Created by wuzhong on 2016/11/30.
@@ -275,7 +269,7 @@ public abstract class MtlInjectTransform extends InjectTransform {
 
         return outputProvider.getContentLocation(getUniqueJarName(jarInput),
                                                  jarInput.getContentTypes(),
-                                                 getScopes(),
+                                                 jarInput.getScopes(),
                                                  Format.JAR);
 
     }
