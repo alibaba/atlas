@@ -290,10 +290,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
                     .getAppVariantContext(project, applicationVariant);
 
-                if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()) {
-                    throw new GradleException(
-                        "atlas plgin is not compatible with instant run， plese turn it off in your ide！");
-                }
+                //if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()) {
+                //    throw new GradleException(
+                //        "atlas plgin is not compatible with instant run， plese turn it off in your ide！");
+                //}
 
                 new AwbProguradHook().hookProguardTask(appVariantContext);
 
