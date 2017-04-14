@@ -45,17 +45,22 @@ tasks.whenTaskAdded {task ->
 
     if (task.name.startsWith("compile") && task.name.endsWith("JavaWithJavac")) {
         task.doLast {
-            File instrumentation = new File(task.getDestinationDir(),
-                                            "android/app/Instrumentation.class");
-            if (instrumentation.exists()) {
-                new File(task.getDestinationDir(), "android/app/Instrumentation.class").delete();
-                println("delete instrumentation success!");
-            }
-            File preVerifier = new File(task.getDestinationDir(),"android/app/PreVerifier.class");
-            if(preVerifier.exists()){
-                new File(task.getDestinationDir(),"android/app/PreVerifier.class").delete();
-                println("delete preVerifier success!");
-            }
+            new File(task.getDestinationDir(),"android/app/Instrumentation.class").delete()
+            new File(task.getDestinationDir(),"android/app/Instrumentation.class").delete();
+            new File(task.getDestinationDir(),"android/app/Instrumentation\$ActivityMonitor.class").delete();
+            new File(task.getDestinationDir(),"android/app/Instrumentation\$ActivityResult.class").delete();
+            new File(task.getDestinationDir(),"android/app/PreVerifier.class").delete();
+            new File(task.getDestinationDir(),"android/app/IActivityManager.class").delete();
+            new File(task.getDestinationDir(),"android/app/IActivityManager\$1.class").delete();
+            new File(task.getDestinationDir(),"android/app/IActivityManager\$ContentProviderHolder.class").delete();
+            new File(task.getDestinationDir(),"android/app/IActivityManager\$ContentProviderHolder\$1.class").delete();
+            new File(task.getDestinationDir(),"android/app/IActivityManager\$1.class").delete();
+            new File(task.getDestinationDir(),"android/app/IServiceConnection.class").delete();
+            new File(task.getDestinationDir(),"android/app/IServiceConnection\$Stub.class").delete();
+            new File(task.getDestinationDir(),"android/app/IServiceConnection\$Stub\$Proxy.class").delete();
+            new File(task.getDestinationDir(),"android/content/IContentProvider.class").delete();
+            new File(task.getDestinationDir(),"android/databinding/DataBindingComponent.class").delete();
+            new File(task.getDestinationDir(),"android/databinding/ViewDataBinding.class").delete();
         }
     }
 }
