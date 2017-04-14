@@ -239,15 +239,13 @@ subprojects {
         return;
     }
 
-//    def command = project.getGradle().startParameter.toString()
-//    def publishFile = new File(project.getRootDir(),
-//                               "publish_" + (command.contains("bintray") ? "bintray" : "mvn") + ".gradle");
-//
-//    if (publishFile.exists()) {
-//        apply from: publishFile.getAbsolutePath()
-//    }
+    def command = project.getGradle().startParameter.toString()
+    def publishFile = new File(project.getRootDir(),
+                               "publish_" + (command.contains("bintray") ? "bintray" : "mvn") + ".gradle");
 
-    apply from: new File(project.getRootDir(), "publish_local.gradle").getAbsolutePath()
+    if (publishFile.exists()) {
+        apply from: publishFile.getAbsolutePath()
+    }
 
     repositories {
         //本地库，local repository(${user.home}/.m2/repository)
