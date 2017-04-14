@@ -21,14 +21,14 @@ import java.util.List;
 public class ReceiverBridge {
 
     private static DelegateReceiver receiver;
-    private static Handler sMainHandler;
+    private static Handler sMainHandler  = new Handler(Looper.getMainLooper());
+
 
     public synchronized static void registerAdditionalReceiver() {
         if(receiver == null){
             receiver = new DelegateReceiver();
             IntentFilter additionalFilter = AdditionalPackageManager.getInstance().getAdditionIntentFilter();
             RuntimeVariables.androidApplication.registerReceiver(receiver,additionalFilter);
-            sMainHandler = new Handler(Looper.getMainLooper());
         }
     }
 
