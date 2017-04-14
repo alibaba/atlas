@@ -465,5 +465,30 @@ public class ManifestHelper {
             return name;
         }
     }
+
+    public static List<? extends AndroidLibrary> getManifestDependencies(List<AwbBundle> awbBundles,
+                                                                         Set<String> notMergedArtifacts,
+                                                                         org.gradle.api.logging.Logger logger) {
+
+        List<AndroidLibrary> list = new ArrayList<>();
+
+        for (AwbBundle lib : awbBundles) {
+            // get the dependencies
+            // [vliux] respect manifestOption.notMergedBundle
+            String cord = String.format("%s:%s",
+                                        lib.getResolvedCoordinates().getGroupId(),
+                                        lib.getResolvedCoordinates().getArtifactId());
+            if (null == notMergedArtifacts || !notMergedArtifacts.contains(cord)) {
+
+                list.add(lib.getAndroidLibrary());
+                list.addAll(lib.getAndroidLibraries());
+
+            } else {
+                logger.info("[NotMergedManifest] " + cord);
+            }
+        }
+
+        return list;
+    }
 }
 

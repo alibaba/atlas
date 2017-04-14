@@ -209,69 +209,140 @@
 
 package com.taobao.android.builder.tools.manifest;
 
-import com.android.builder.model.AndroidLibrary;
-import com.taobao.android.builder.dependency.model.AwbBundle;
+import org.apache.commons.lang.StringUtils;
 
-import org.gradle.api.logging.Logger;
-
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 /**
- * Created by wuzhong on 2016/12/8.
+ * Manifest文件中的常见信息
+ * Created by shenghua.nish on 2015-04-22 上午11:06.
  */
-public class ManifestDependencyUtil {
+public class ManifestInfo {
 
-    //public static List<ManifestDependencyImpl> getManifestDependencies(List<? extends LibraryDependency> libraries,
-    //                                                                   Set<String> notMergedArtifacts,
-    //                                                                   Logger logger) {
-    //
-    //    List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
-    //
-    //    for (LibraryDependency lib : libraries) {
-    //        // get the dependencies
-    //        List<ManifestDependencyImpl> children = ManifestDependencyUtil.getManifestDependencies(
-    //                lib.getAndroidLibraries(),
-    //                notMergedArtifacts,
-    //                logger);
-    //
-    //        // [vliux] respect manifestOption.notMergedBundle
-    //        String cord = String.format("%s:%s",
-    //                                    lib.getResolvedCoordinates().getGroupId(),
-    //                                    lib.getResolvedCoordinates().getArtifactId());
-    //        if (null == notMergedArtifacts || !notMergedArtifacts.contains(cord)) {
-    //            list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
-    //        } else {
-    //            logger.info("[NotMergedManifest] " + cord);
-    //        }
-    //    }
-    //
-    //    return list;
-    //}
+    private Map<String,String> manifestProperties = new HashMap<String, String>();
+    private Map<String,String> applicationProperties = new HashMap<String, String>();
+    private Map<String,String> useSdkProperties = new HashMap<String, String>();
+    private File manifestFile;
 
-    public static List<? extends AndroidLibrary> getManifestDependencies(List<AwbBundle> awbBundles,
-                                                                         Set<String> notMergedArtifacts,
-                                                                         Logger logger) {
+    Map<String,String> replaceApplicationAttribute = new HashMap<>();
+    List<String> removeApplicationAttribute = new ArrayList<>();
 
-        List<AndroidLibrary> list = new ArrayList<>();
+    public File getManifestFile() {
+        return manifestFile;
+    }
 
-        for (AwbBundle lib : awbBundles) {
-            // get the dependencies
-            // [vliux] respect manifestOption.notMergedBundle
-            String cord = String.format("%s:%s",
-                                        lib.getResolvedCoordinates().getGroupId(),
-                                        lib.getResolvedCoordinates().getArtifactId());
-            if (null == notMergedArtifacts || !notMergedArtifacts.contains(cord)) {
+    public void setManifestFile(File manifestFile) {
+        this.manifestFile = manifestFile;
+    }
 
-                list.add(lib.getAndroidLibrary());
-                list.addAll(lib.getAndroidLibraries());
 
-            } else {
-                logger.info("[NotMergedManifest] " + cord);
+    public Map<String, String> getManifestProperties() {
+        return manifestProperties;
+    }
+
+    public ManifestInfo addManifestProperty(String key, String value){
+        this.manifestProperties.put(key,value);
+        return this;
+    }
+
+    public void setManifestProperties(Map<String, String> manifestProperties) {
+        this.manifestProperties = manifestProperties;
+    }
+
+    public Map<String, String> getApplicationProperties() {
+        return applicationProperties;
+    }
+
+    public ManifestInfo addApplicationProperty(String key, String value){
+        this.applicationProperties.put(key,value);
+        return this;
+    }
+
+    public void setApplicationProperties(Map<String, String> applicationProperties) {
+        this.applicationProperties = applicationProperties;
+    }
+
+    public Map<String, String> getUseSdkProperties() {
+        return useSdkProperties;
+    }
+
+    public ManifestInfo addUseSdkProperty(String key, String value){
+        this.useSdkProperties.put(key,value);
+        return this;
+    }
+
+    public void setUseSdkProperties(Map<String, String> useSdkProperties) {
+        this.useSdkProperties = useSdkProperties;
+    }
+
+    public void init(){
+        this.replaceApplicationAttribute.putAll(_getReplaceApplicationAttribute());
+        this.removeApplicationAttribute.addAll(_getRemoveApplicationAttribute());
+    }
+
+    /**
+     * 获取需要替换的属性
+     * @return
+     */
+    public Map<String,String> _getReplaceApplicationAttribute(){
+        Map<String,String> replaceAttrMap = new HashMap<String,String>();
+        //首先判断有没有replace属性
+        if(applicationProperties.containsKey("tools:replace")){
+            String replaceAttrs = applicationProperties.get("tools:replace");
+            String[] attrs = StringUtils.split(replaceAttrs,",");
+            if(null!= attrs && attrs.length > 0){
+                for(String attr:attrs){
+                    String value = applicationProperties.get(attr);
+                    if(null == value){
+                        value = applicationProperties.get("android:" + attr);
+                    }
+                    if(null != value) {
+                        replaceAttrMap.put(attr, value);
+                    }
+                }
             }
         }
+        return replaceAttrMap;
+    }
 
-        return list;
+    /**
+     * 获取需要删除的属性
+     * @return
+     */
+    public List<String> _getRemoveApplicationAttribute(){
+        List<String> removeAttrList = new ArrayList<String>();
+        //首先判断有没有replace属性
+        if(applicationProperties.containsKey("tools:remove")){
+            String replaceAttrs = applicationProperties.get("tools:remove");
+            String[] attrs = StringUtils.split(replaceAttrs,",");
+            if(null!= attrs && attrs.length > 0){
+                for(String attr:attrs){
+                    removeAttrList.add(attr);
+                }
+            }
+        }
+        return removeAttrList;
+    }
+
+    public Map<String, String> getReplaceApplicationAttribute() {
+        return replaceApplicationAttribute;
+    }
+
+    public List<String> getRemoveApplicationAttribute() {
+        return removeApplicationAttribute;
+    }
+
+    @Override
+    public String toString() {
+        return "ManifestFileObject{" +
+                "manifestProperties=" + manifestProperties +
+                ", applicationProperties=" + applicationProperties +
+                ", useSdkProperties=" + useSdkProperties +
+                ", manifestFile=" + manifestFile +
+                '}';
     }
 }

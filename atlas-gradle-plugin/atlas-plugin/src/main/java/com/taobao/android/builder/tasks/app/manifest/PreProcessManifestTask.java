@@ -234,7 +234,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-import com.taobao.android.builder.tools.manifest.ManifestFileObject;
+import com.taobao.android.builder.tools.manifest.ManifestInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
 import org.apache.commons.io.FileUtils;
@@ -308,7 +308,7 @@ public class PreProcessManifestTask extends DefaultTask {
             0);
         List<Runnable> runnables = new ArrayList<>();
 
-        ManifestFileObject mainManifestFileObject = ManifestFileUtils.getManifestFileObject(
+        ManifestInfo mainManifestFileObject = ManifestFileUtils.getManifestFileObject(
             mainManifestFile);
         mainManifestFileObject.init();
 

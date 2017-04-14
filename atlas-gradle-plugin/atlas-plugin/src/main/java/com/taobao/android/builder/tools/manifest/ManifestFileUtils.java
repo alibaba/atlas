@@ -690,7 +690,7 @@ public class ManifestFileUtils {
      */
     public static void updatePreProcessManifestFile(File modifyManifest,
                                                     File orgManifestFile,
-                                                    ManifestFileObject mainManifestFileObject,
+                                                    ManifestInfo mainManifestFileObject,
                                                     boolean updateSdkVersion,
                                                     boolean isAwbLibrary) throws IOException, DocumentException {
 
@@ -840,9 +840,9 @@ public class ManifestFileUtils {
      * @param manifestFile
      * @return
      */
-    public static ManifestFileObject getManifestFileObject(File manifestFile) throws DocumentException {
+    public static ManifestInfo getManifestFileObject(File manifestFile) throws DocumentException {
         SAXReader reader = new SAXReader();
-        ManifestFileObject manifestFileObject = new ManifestFileObject();
+        ManifestInfo manifestFileObject = new ManifestInfo();
         manifestFileObject.setManifestFile(manifestFile);
         if (manifestFile.exists()) {
             Document document = reader.read(manifestFile);// 读取XML文件
@@ -1036,7 +1036,7 @@ public class ManifestFileUtils {
         for (Node node : newNodes) {
             Element el = (Element)node;
             String key = el.attributeValue("process") + el.attributeValue("name");
-            if (!baseNodeMap.containsKey(key)) {
+            if (!baseNodeMap.containsKey(key) && !el.attributeValue("name").startsWith(AtlasProxy.ATLAS_PROXY_PACKAGE) ) {
                 applicationElement.add(node);
             }
         }

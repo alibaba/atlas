@@ -228,7 +228,6 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tools.manifest.AtlasProxy;
-import com.taobao.android.builder.tools.manifest.ManifestDependencyUtil;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
 import com.taobao.android.builder.tools.manifest.Result;
@@ -310,7 +309,7 @@ public class PostProcessManifestAction implements Action<Task> {
     }
 
     private List<? extends AndroidLibrary> getAwbLibraries() {
-        return ManifestDependencyUtil.getManifestDependencies(
+        return ManifestHelper.getManifestDependencies(
             AtlasBuildContext.androidDependencyTrees
                 .get(appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles(),
             appVariantContext.getAtlasExtension().manifestOptions.getNotMergedBundles(),

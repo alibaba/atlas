@@ -279,6 +279,8 @@ import org.dom4j.Node;
  */
 public class AtlasProxy {
 
+    public static final String ATLAS_PROXY_PACKAGE = "android.taobao.atlas.runtime.newcomponent";
+
     public static void addAtlasProxyClazz(Document document, Result result) {
 
         Element root = document.getRootElement();// 得到根节点
@@ -310,16 +312,16 @@ public class AtlasProxy {
                 String processClazzName = processName.replace(":", "").replace(".", "_");
                 String fullClazzName = "ATLASPROXY_" + processClazzName + "_" + StringUtils.capitalize(elementName);
 
-                if ("Activity".equals(elementName)) {
+                if ("activity".equals(elementName)) {
                     result.proxyActivities.add(fullClazzName);
-                } else if ("Service".equals(elementName)) {
+                } else if ("service".equals(elementName)) {
                     result.proxyServices.add(fullClazzName);
                 } else {
                     result.proxyProviders.add(fullClazzName);
                 }
 
                 Element newElement = applicationElement.addElement(elementName);
-                newElement.addAttribute("android:name", "android.taobao.atlas.runtime.newcomponent." + fullClazzName);
+                newElement.addAttribute("android:name", ATLAS_PROXY_PACKAGE + "." + fullClazzName);
 
                 if (!packageName.equals(processName)) {
                     newElement.addAttribute("android:process", processName);
@@ -328,7 +330,7 @@ public class AtlasProxy {
                 boolean isProvider = "provider".equals(elementName);
                 if (isProvider) {
                     newElement.addAttribute("android:authorities",
-                                            "android.taobao.atlas.runtime.newcomponent." + fullClazzName);
+                                            ATLAS_PROXY_PACKAGE + "." + fullClazzName);
                 }
 
             }
@@ -338,12 +340,12 @@ public class AtlasProxy {
     }
 
     private static String serviceTmp
-        = "package android.taobao.atlas.runtime.newcomponent;\r\n"
-        + "public class ${clazzName} extends android.taobao.atlas.runtime.newcomponent"
+        = "package " + ATLAS_PROXY_PACKAGE + ";\r\n"
+        + "public class ${clazzName} extends " + ATLAS_PROXY_PACKAGE
         + ".service.BaseDelegateService {}";
     private static String providerTmp
-        = "package android.taobao.atlas.runtime.newcomponent;\r\n"
-        + "public class ${clazzName} extends android.taobao.atlas.runtime.newcomponent"
+        = "package " + ATLAS_PROXY_PACKAGE + ";\r\n"
+        + "public class ${clazzName} extends " + ATLAS_PROXY_PACKAGE
         + ".provider.ContentProviderBridge {}";
 
     public static boolean genProxyJavaSource(File rootDir, Result result) throws IOException {
@@ -353,7 +355,7 @@ public class AtlasProxy {
             return false;
         }
 
-        rootDir = new File(rootDir, "android/taobao/atlas/runtime/newcomponent");
+        rootDir = new File(rootDir, ATLAS_PROXY_PACKAGE.replace(".","/"));
         FileUtils.deleteDirectory(rootDir);
         rootDir.mkdirs();
 
