@@ -398,7 +398,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         ActivityManagerNative = Hack.into("android.app.ActivityManagerNative");
         Singleton = Hack.into("android.util.Singleton");
         ActivityThread$AppBindData = Hack.into("android.app.ActivityThread$AppBindData");
-        ContentProviderHolder = Hack.into("android.app.IactivityManager$ContentProviderHolder");
+        ContentProviderHolder = Hack.into("android.app.IActivityManager$ContentProviderHolder");
         sIsIgnoreFailure = false;
     }
 
@@ -438,7 +438,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         PackageParser$Package_activities = PackageParser$Package.field("activities").ofGenericType(ArrayList.class);
         PackageParser$Package_services = PackageParser$Package.field("services").ofGenericType(ArrayList.class);
         PackageParser$Package_receivers = PackageParser$Package.field("receivers").ofGenericType(ArrayList.class);
-        PackageParser$Package_receivers = PackageParser$Package.field("providers").ofGenericType(ArrayList.class);
+        PackageParser$Package_providers = PackageParser$Package.field("providers").ofGenericType(ArrayList.class);
         PackageParser$Package_applicationInfo = PackageParser$Package.field("applicationInfo").ofType(ApplicationInfo.class);
         PackageParser$Package_packageName = PackageParser$Package.field("packageName").ofGenericType(String.class);
         PackageParser$ActivityIntentInfo_activity = PackageParser$ActivityIntentInfo.field("activity").ofType(PackageParser$Activity.getmClass());

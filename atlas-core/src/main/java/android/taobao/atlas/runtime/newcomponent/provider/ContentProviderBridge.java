@@ -12,6 +12,7 @@ import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.newcomponent.BridgeUtil;
+import android.util.Log;
 
 import java.util.HashMap;
 
@@ -24,16 +25,14 @@ public class ContentProviderBridge extends ContentProvider{
     public static final String METHOD_INSTALLPROVIDER = "atlas_install_provider";
     public static final String PROVIDER_INFO_KEY = "info";
     public static final String PROVIDER_HOLDER_KEY = "holder";
-//    private String processName;
     private HashMap<String,IActivityManager.ContentProviderHolder> providerRecord = new HashMap<>();
 
     public static IActivityManager.ContentProviderHolder getContentProvider(ProviderInfo info){
         String targetProcessName = info.processName!=null ? info.processName : RuntimeVariables.androidApplication.getPackageName();
         String currentProcessName = RuntimeVariables.getProcessName(RuntimeVariables.androidApplication);
-        if(info.multiprocess || targetProcessName.equals(currentProcessName)){
+        if(info.multiprocess || targetProcessName.equals(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication))){
             return transactProviderInstall(currentProcessName,info);
         }else{
-            //remote contentprovider
             return transactProviderInstall(info.processName,info);
         }
     }
@@ -46,14 +45,14 @@ public class ContentProviderBridge extends ContentProvider{
     }
 
     private static Uri accquireRemoteBridgeToken(String processName){
-        return Uri.parse("content://"+ BridgeUtil.getBridgeComponent(BridgeUtil.TYPE_PROVIDERBRIDGE,processName));
+        return Uri.parse("content://"+ BridgeUtil.getBridgeName(BridgeUtil.TYPE_PROVIDERBRIDGE,processName));
     }
 
     private static IActivityManager.ContentProviderHolder transactProviderInstall(String processName,ProviderInfo info){
         Bundle extras = new Bundle();
         extras.putParcelable(PROVIDER_INFO_KEY,info);
         ContentResolver contentResolver = RuntimeVariables.androidApplication.getContentResolver();
-        Bundle bundle = contentResolver.call(accquireRemoteBridgeToken(processName),METHOD_INSTALLPROVIDER,null,extras);
+        Bundle bundle = contentResolver.call(accquireRemoteBridgeToken(processName),METHOD_INSTALLPROVIDER,"",extras);
         IActivityManager.ContentProviderHolder holder = bundle.getParcelable(PROVIDER_HOLDER_KEY);
         return holder;
     }
@@ -90,6 +89,7 @@ public class ContentProviderBridge extends ContentProvider{
 
     @Override
     public Bundle call(String method, String arg, Bundle extras) {
+        Log.e("ContentProviderBridge","call");
         if(method.equals(METHOD_INSTALLPROVIDER)){
             ProviderInfo info = extras.getParcelable(PROVIDER_INFO_KEY);
             if(info==null){

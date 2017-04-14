@@ -1,5 +1,5 @@
 
-package android.android.support.multidex;
+package android.support.multidex;
 
 import java.io.File;
 import java.io.IOException;

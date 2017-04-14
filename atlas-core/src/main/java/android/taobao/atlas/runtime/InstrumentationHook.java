@@ -272,10 +272,14 @@ public class InstrumentationHook extends Instrumentation {
 			final IBinder token, final Activity target, final Intent intent, final int requestCode) {
 		
 		return execStartActivityInternal(who, intent, requestCode,new  ExecStartActivityCallback() {
-
 			@Override
 			public ActivityResult execStartActivity() {
-				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
+				return ActivityBridge.execStartActivity(intent,new ExecStartActivityCallback(){
+					@Override
+					public ActivityResult execStartActivity(Intent wrapperIntent) {
+						return mBase.execStartActivity(who, contextThread, token, target, wrapperIntent, requestCode);
+					}
+				});
 			}
 			
 		});
@@ -290,7 +294,12 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
+				return ActivityBridge.execStartActivity(intent,new ExecStartActivityCallback(){
+					@Override
+					public ActivityResult execStartActivity(Intent wrapperIntent) {
+						return mBase.execStartActivity(who, contextThread, token, target, wrapperIntent, requestCode, options);
+					}
+				});
 			}
 			
 		});
@@ -305,7 +314,13 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
+				return ActivityBridge.execStartActivity(intent,new ExecStartActivityCallback(){
+					@Override
+					public ActivityResult execStartActivity(Intent wrapperIntent) {
+						return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
+					}
+				});
+//				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode);
 			}
 			
 		});
@@ -321,21 +336,28 @@ public class InstrumentationHook extends Instrumentation {
 
 			@Override
 			public ActivityResult execStartActivity() {
-				return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
+				return ActivityBridge.execStartActivity(intent,new ExecStartActivityCallback(){
+					@Override
+					public ActivityResult execStartActivity(Intent wrapperIntent) {
+						return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
+					}
+				});
+				//return mBase.execStartActivity(who, contextThread, token, target, intent, requestCode, options);
 			}
 			
 		});
 	}
 	
-	private static interface ExecStartActivityCallback {
-		public ActivityResult execStartActivity();
+	public static class ExecStartActivityCallback {
+		ActivityResult execStartActivity(){
+			return null;
+		}
+		public ActivityResult execStartActivity(Intent wrapperIntent){
+			return null;
+		}
 	}
 	
-	private ActivityResult execStartActivityInternal(final Context context, final Intent intent, final int requestCode, ExecStartActivityCallback callback) {
-        /**
-         * bundle update后可能需要预处理
-         */
-		ActivityBridge.wrapperActivityIntentIfNeed(intent);
+	private ActivityResult execStartActivityInternal(final Context context, Intent intent, final int requestCode, ExecStartActivityCallback callback) {
 
         if(intent!=null){
             Atlas.getInstance().checkDownGradeToH5(intent);

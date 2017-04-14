@@ -208,146 +208,192 @@
 
 package android.taobao.atlas.runtime;
 
-import android.content.ComponentName;
-import android.content.Context;
+import android.app.IServiceConnection;
+import android.app.Instrumentation;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
-import android.content.pm.ServiceInfo;
+import android.os.IBinder;
+import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
+import android.taobao.atlas.hack.AndroidHack;
+import android.taobao.atlas.hack.Interception;
 import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
-import android.taobao.atlas.versionInfo.BaselineInfoManager;
+import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
 import android.text.TextUtils;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.List;
+import java.util.*;
 
 /**
- * Created by guanjie on 2017/2/14.
+ * Created by guanjie on 15/3/30.
  */
+public class ActivityManagerDelegate extends Interception.InterceptionHandler {
 
-public class PackageManagerDelegater {
-
-    private static Context mBaseContext;
-    private static PackageManagerProxyhandler mPackageManagerProxyhandler;
-    private static Object mProxyPm;
-
-    public static void delegatepackageManager(Context context){
-        try {
-            mBaseContext = context;
-            PackageManager manager = mBaseContext.getPackageManager();
-            if (mProxyPm == null) {
-                Class ApplicationPackageManager = Class.forName("android.app.ApplicationPackageManager");
-                Field field = ApplicationPackageManager.getDeclaredField("mPM");
-                field.setAccessible(true);
-                Object rawPm = field.get(manager);
-                Class IPackageManagerClass = Class.forName("android.content.pm.IPackageManager");
-                if (rawPm != null) {
-                    if (mPackageManagerProxyhandler == null) {
-                        mPackageManagerProxyhandler = new PackageManagerProxyhandler(rawPm);
-                    }
-                    mProxyPm = Proxy.newProxyInstance(mBaseContext.getClassLoader(), new Class[]{IPackageManagerClass}, mPackageManagerProxyhandler);
+    public static final String TAG = "ActivityManagrHook";
+    public static List sIntentHaveProessed = new ArrayList<Intent>();
+    @Override
+    public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
+        String name = method.getName();
+        if(method.getName().equals("startService")){
+            try{
+                final Intent intent = (Intent)args[1];
+                if(sIntentHaveProessed.contains(intent)){
+                    sIntentHaveProessed.remove(intent);
+                    return super.invoke(proxy, method, args);
                 }
-                field.set(manager, mProxyPm);
+                ServiceDetector.DetectResult result = ServiceDetector.prepareServiceBundle(intent,1);
+                if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_PREPARED){
+                    if(intent.getBooleanExtra(ServiceDetector.ADDITIONAL_SERVICE,false)){
+                        AdditionalActivityManagerProxy.get().startService(intent);
+                    }else {
+                        return super.invoke(proxy, method, args);
+                    }
+                }else if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_UNPREPARED){
+                    return null;
+                }else{
+                    result.setResultListener(new ServiceDetector.DetectResult.ResultListener() {
+                        @Override
+                        public void onPrepared(int resultCode) {
+                            if(resultCode== ServiceDetector.DetectResult.BUNDLE_PREPARED){
+                                try {
+                                    if(intent.getBooleanExtra(ServiceDetector.ADDITIONAL_SERVICE,false)){
+                                        AdditionalActivityManagerProxy.get().startService(intent);
+                                    }else {
+                                        method.invoke(delegatee(), args);
+                                    }
+                                } catch (Throwable e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    return null;
+                }
+            }catch (Throwable e){}
+        }else if(method.getName().equals("bindService")){
+            try{
+                final Intent intent = (Intent)args[2];
+                if(sIntentHaveProessed.contains(intent)){
+                    sIntentHaveProessed.remove(intent);
+                    return super.invoke(proxy, method, args);
+                }
+                ServiceDetector.DetectResult result = ServiceDetector.prepareServiceBundle(intent,1);
+                if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_PREPARED){
+                    if(intent.getBooleanExtra(ServiceDetector.ADDITIONAL_SERVICE,false)){
+                        return AdditionalActivityManagerProxy.get().bindService((IBinder)args[1],intent,(String)args[3],(IServiceConnection) args[4]);
+                    }else {
+                        return super.invoke(proxy, method, args);
+                    }
+                }else if(result.resultCode == ServiceDetector.DetectResult.BUNDLE_UNPREPARED){
+                    return 0;
+                }else{
+                    result.setResultListener(new ServiceDetector.DetectResult.ResultListener() {
+                        @Override
+                        public void onPrepared(int resultCode) {
+                            if(resultCode== ServiceDetector.DetectResult.BUNDLE_PREPARED){
+                                try {
+                                    if(intent.getBooleanExtra(ServiceDetector.ADDITIONAL_SERVICE,false)){
+                                        AdditionalActivityManagerProxy.get().bindService((IBinder)args[1],intent,(String)args[3],(IServiceConnection) args[4]);
+                                    }else {
+                                        method.invoke(delegatee(), args);
+                                    }
+                                } catch (Throwable e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    return 1;
+                }
+            }catch (Throwable e){}
+        }else if(method.getName().equals("stopService")){
+            Intent intent = (Intent) args[1];
+            if(AdditionalActivityManagerProxy.get().stopService(intent)){
+                return true;
             }
-        }catch(Throwable e){
+        }else if(method.getName().equals("unbindService")){
+            IServiceConnection sd = (IServiceConnection) args[0];
+            if(AdditionalActivityManagerProxy.get().unbindService(sd)){
+                return true;
+            }
+        }else if(method.getName().equals("broadcastIntent")){
+            try {
+                Intent intent = (Intent) args[1];
+                long time = System.currentTimeMillis();
+                List<ResolveInfo> infos = RuntimeVariables.androidApplication.getPackageManager().queryBroadcastReceivers(intent, 0);
+                if (infos != null && infos.size() > 0) {
+                    List<String> bundlesToInstall = new ArrayList<String>();
+                    for (ResolveInfo info : infos) {
+                        if (info.activityInfo.packageName.equals(RuntimeVariables.androidApplication.getPackageName()) && isstaticReceiver(info.activityInfo.name)) {
+                            String bundlename = AtlasBundleInfoManager.instance().getBundleForComponet(info.activityInfo.name);
+                            if (!TextUtils.isEmpty(bundlename) && Atlas.getInstance().getBundle(bundlename) == null) {
+                                bundlesToInstall.add(bundlename);
+                            }
+                        }
+                    }
+                    if (bundlesToInstall.size() > 0) {
+                        final Runnable finishTask = new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    method.invoke(delegatee(), args);
+                                } catch (Throwable e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        };
+                        BundleUtil.checkBundleArrayStateAsync(bundlesToInstall.toArray(new String[bundlesToInstall.size()]), finishTask, finishTask);
+                        return 0;
+                    } else {
+                        method.invoke(delegatee(), args);
+                        return 0;
+                    }
+                }
+            }catch(Throwable e){}
+        }else if(name.equals("startActivity")){
+            // 解决某些自带LBE机制系统hook Instrumentation, 导致atlas本身hook Instrumentation不正常，如不会回调execstartactivity
+            Instrumentation hookInstrumentation = AndroidHack.getInstrumentation();
+            if(hookInstrumentation != null && hookInstrumentation.getClass().getName().contains("com.lbe.security.service")) {
+                AndroidHack.injectInstrumentationHook(
+                        new InstrumentationHook(AndroidHack.getInstrumentation(), RuntimeVariables.androidApplication.getBaseContext()));
+            }
+        }else if(name.equals("getContentProvider")){
+            String auth = (String)args[1];
+            ProviderInfo info = AdditionalPackageManager.getInstance().resolveContentProvider(auth);
+            if(info!=null){
+                return AdditionalActivityManagerProxy.get().getContentProvider(info);
+            }
         }
+        return super.invoke(proxy, method, args);
     }
 
-    public static class PackageManagerProxyhandler implements InvocationHandler {
-        private Object mPm;
-        public PackageManagerProxyhandler(Object pm){
-            mPm = pm;
-        }
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            Object object = null;
-            try {
-                object = method.invoke(mPm, args);
-            }catch(InvocationTargetException e){
-                throw e.getTargetException();
+
+    static ActivityInfo[] receiverInfos;
+    private boolean isstaticReceiver(String name){
+        try {
+            if(receiverInfos==null) {
+                PackageInfo info = RuntimeVariables.androidApplication.getPackageManager().getPackageInfo(RuntimeVariables.androidApplication.getPackageName(),
+                        PackageManager.GET_RECEIVERS);
+                if(info!=null && info.receivers!=null && info.receivers.length>0){
+                    receiverInfos = info.receivers;
+                }
             }
-            if(method.getName().equals("getPackageInfo") && args[0]!=null && args[0].equals(mBaseContext.getPackageName())){
-                PackageInfo info = (PackageInfo)object;
-                if(info==null){
-                    throw new RuntimeException("can not get packageInfo");
+            if (receiverInfos != null) {
+                for (ActivityInfo info : receiverInfos) {
+                    if (info != null && info.name != null && info.name.equals(name)) {
+                        return true;
+                    }
                 }
-                String baselineVersion = BaselineInfoManager.instance().currentVersionName();
-                if (!TextUtils.isEmpty(baselineVersion)) {
-                    info.versionName = baselineVersion;
-                    return info;
-                }
-                return object;
-            }else if(method.getName().equals("queryIntentActivities")){
-                Intent intent = (Intent)args[0];
-                List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentActivities(intent);
-                if (info != null) {
-                    return info;
-                }
-                return object;
-            }else if(method.getName().equals("getActivityInfo")){
-                ActivityInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo((ComponentName)args[0],ActivityInfo.class);
-                if(info!=null){
-                    return info;
-                }
-                return object;
-            }else if(method.getName().equals("resolveIntent")) {
-                Intent intent = (Intent) args[0];
-                List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentActivities(intent);
-                if (info != null) {
-                    return info.get(0);
-                }
-                return object;
-            }else if(method.getName().equals("queryIntentServices")) {
-                Intent intent = (Intent) args[0];
-                List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentService(intent);
-                if (info != null) {
-                    return info.get(0);
-                }
-                return object;
-            }else if(method.getName().equals("getServiceInfo")){
-                ServiceInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo((ComponentName)args[0],ServiceInfo.class);
-                if(info!=null){
-                    return info;
-                }
-                return object;
-            }else if(method.getName().equals("getReceiverInfo")){
-                ActivityInfo info = AdditionalPackageManager.getInstance().getReceiverInfo((ComponentName)args[0]);
-                if(info!=null){
-                    return info;
-                }
-                return object;
-            }else if(method.getName().equals("queryBroadcastReceivers")){
-                Intent intent = (Intent) args[0];
-                List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentReceivers(intent);
-                if(info!=null){
-                    return info.addAll((List<ResolveInfo>)object);
-                }
-                return object;
-            }else if(method.getName().equals("queryContentProviders")){
-                List<ProviderInfo> infos = AdditionalPackageManager.getInstance().queryContentProviders((String)args[0]);
-                if(infos==null) {
-                    return object;
-                }else{
-                    infos.addAll((List<ProviderInfo>)object);
-                    return infos;
-                }
-            }else if(method.getName().equals("getProviderInfo")){
-                ProviderInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo((ComponentName)args[0],ProviderInfo.class);
-                if(info!=null){
-                    return info;
-                }
-                return object;
-            }else{
-                return object;
             }
+            return false;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return true;
         }
+
     }
 }

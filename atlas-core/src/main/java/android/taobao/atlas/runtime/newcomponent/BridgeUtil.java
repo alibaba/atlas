@@ -1,6 +1,7 @@
 package android.taobao.atlas.runtime.newcomponent;
 
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.text.TextUtils;
 
 /**
  * Created by guanjie on 2017/4/12.
@@ -12,33 +13,33 @@ import android.taobao.atlas.runtime.RuntimeVariables;
  *
  * then AndroidManifest will add the components below
  *
- *  <Activity
-        android:name="ATLASPROXY_com_taobao_demo_Activity"/>
-    <Activity
-        android:name="ATLASPROXY_remote_Activity"
+ *  <activity
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_Activity"/>
+    <activity
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_remote_Activity"
         android:process=":remote"/>
-    <Activity
-        android:name="ATLASPROXY_com_taobao_single_Activity"
+    <activity
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_single_Activity"
         android:process="com.taobao.single"/>
 
-    <Service
-        android:name="ATLASPROXY_com_taobao_demo_Service"/>
-    <Service
-        android:name="ATLASPROXY_remote_Service"
+    <service
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_Service"/>
+    <service
+        android:name="android.taobao.atlas.runtime.newcomponent.android.taobao.atlas.runtime.newcomponentATLASPROXY_remote_Service"
         android:process=":remote"/>
-    <Service
-        android:name="ATLASPROXY_com_taobao_single_Service"
+    <service
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_single_Service"
         android:process="com.taobao.single"/>
 
-    <ContentProvider
-        android:name="ATLASPROXY_com_taobao_demo_Provider"
+    <provider
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_Provider"
         android:authorities="ATLASPROXY_com_taobao_demo_Provider"/>
-    <ContentProvider
-        android:name="ATLASPROXY_remote_Provider"
+    <provider
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_remote_Provider"
         android:authorities="ATLASPROXY_remote_Provider"
         android:process=":remote"/>
-    <ContentProvider
-        android:name="ATLASPROXY_com_taobao_single_Provider"
+    <provider
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_single_Provider"
         android:authorities="ATLASPROXY_com_taobao_single_Provider"
         android:process="com.taobao.single"/>
 
@@ -59,22 +60,24 @@ public class BridgeUtil {
     public static final int TYPE_SERVICEBRIDGE  = 2;
     public static final int TYPE_PROVIDERBRIDGE = 3;
 
+    public static final String COMPONENT_PACKAGE = "android.taobao.atlas.runtime.newcomponent.";
     public static final String PROXY_PREFIX = "ATLASPROXY";
 
-    public static String getBridgeComponent(final int type,final String process){
+    public static String getBridgeName(final int type, final String process){
         switch(type){
             case TYPE_ACTIVITYBRIDGE:
-                return String.format("%s_%s_%s",PROXY_PREFIX,fixProcess(process),"Activity");
+                return String.format("%s%s_%s_%s",COMPONENT_PACKAGE,PROXY_PREFIX,fixProcess(process),"Activity");
             case TYPE_SERVICEBRIDGE:
-                return String.format("%s_%s_%s",PROXY_PREFIX,fixProcess(process),"Service");
+                return String.format("%s%s_%s_%s",COMPONENT_PACKAGE,PROXY_PREFIX,fixProcess(process),"Service");
             case TYPE_PROVIDERBRIDGE:
-                return String.format("%s_%s_%s",PROXY_PREFIX,fixProcess(process),"Provider");
+                return String.format("%s%s_%s_%s",COMPONENT_PACKAGE,PROXY_PREFIX,fixProcess(process),"Provider");
         }
         throw new RuntimeException("wrong type");
     }
 
     public static String fixProcess(String processName){
-        String prefix = RuntimeVariables.androidApplication+":";
+        processName = TextUtils.isEmpty(processName) ? RuntimeVariables.androidApplication.getPackageName() : processName;
+        String prefix = RuntimeVariables.androidApplication.getPackageName()+":";
         if(processName.startsWith(prefix)){
             return processName.substring(prefix.length(),processName.length());
         }else{

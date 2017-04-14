@@ -18,5 +18,7 @@ interface IDelegateBinder {
 
     int stopService(in Intent serviceIntent);
 
+    Intent handleActivityStack(in Intent intent,in ActivityInfo info);
+
     void handleReceiver(in Intent intent, in ActivityInfo info);
 }

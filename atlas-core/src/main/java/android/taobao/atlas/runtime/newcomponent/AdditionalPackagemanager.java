@@ -247,7 +247,7 @@ public class AdditionalPackageManager {
     private AdditionalComponentIntentResolver mExternalServices;
     private AdditionalComponentIntentResolver mExternalReceivers;
     private AdditionalComponentIntentResolver mExternalProviders;
-    private final HashMap<String,IntentFilter> mReceiverIntentFilters = new HashMap<>();
+    private final HashMap<IntentFilter,String> mReceiverIntentFilters = new HashMap<>();
     private final HashMap<String, Object> mProvidersByAuthority = new HashMap<>();
 
     public static synchronized AdditionalPackageManager getInstance(){
@@ -265,11 +265,12 @@ public class AdditionalPackageManager {
                     retryCount--;
                     needRetry = false;
                     Class KernalBundleClass = RuntimeVariables.getRawClassLoader().loadClass("android.taobao.atlas.startup.patch.KernalBundle");
-                    Object object = KernalBundleClass.getDeclaredField("kernalBundle");
-                    if (object != null) {
-                        Method method = object.getClass().getDeclaredMethod("getRevisionZip");
+                    Field kernalBundleField = KernalBundleClass.getDeclaredField("kernalBundle");
+                    Object kernalBundle = kernalBundleField.get(KernalBundleClass);
+                    if (kernalBundle != null) {
+                        Method method = KernalBundleClass.getDeclaredMethod("getRevisionZip");
                         method.setAccessible(true);
-                        File file = (File) method.invoke(object);
+                        File file = (File) method.invoke(kernalBundle);
                         if (file != null) {
                             parseBundle(file.getAbsolutePath());
                         }
@@ -311,7 +312,6 @@ public class AdditionalPackageManager {
         if (packageObj == null) {
             return ;
         }
-        AdditionalPackageManager packageManager= new AdditionalPackageManager();
         AtlasHacks.PackageParser$Package_packageName.set(packageObj,RuntimeVariables.androidApplication.getPackageName());
         ApplicationInfo info = AtlasHacks.PackageParser$Package_applicationInfo.get(packageObj);
         info.name = RuntimeVariables.androidApplication.getApplicationInfo().name;
@@ -338,14 +338,14 @@ public class AdditionalPackageManager {
         AdditionalComponentIntentResolver providerResolver  = new AdditionalComponentIntentResolver(AdditionalComponentIntentResolver.TYPE_PROVIDER);
 
 
-        ArrayList<Object> activityList = (ArrayList<Object>) AtlasHacks.PackageParser$Package_activities.get(packageObj);
-        ArrayList<Object> serviceList = (ArrayList<Object>)  AtlasHacks.PackageParser$Package_services.get(packageObj);
-        ArrayList<Object> providerList = (ArrayList<Object>) AtlasHacks.PackageParser$Package_providers.get(packageObj);
-        ArrayList<Object> receiverList = (ArrayList<Object>) AtlasHacks.PackageParser$Package_receivers.get(packageObj);
+        ArrayList<Object> activityList = AtlasHacks.PackageParser$Package_activities.get(packageObj);
+        ArrayList<Object> serviceList =  AtlasHacks.PackageParser$Package_services.get(packageObj);
+        ArrayList<Object> providerList = AtlasHacks.PackageParser$Package_providers.get(packageObj);
+        ArrayList<Object> receiverList = AtlasHacks.PackageParser$Package_receivers.get(packageObj);
 
 
         /**
-         * 新增Activity
+         * activity
          */
         if (activityList != null) {
             for (Object activity : activityList) {
@@ -354,37 +354,44 @@ public class AdditionalPackageManager {
                     if(activityInfo.targetActivity!=null) {
                         activityInfo.taskAffinity = RuntimeVariables.androidApplication.getApplicationInfo().taskAffinity;
                     }
+                    activityInfo.processName = TextUtils.isEmpty(activityInfo.processName) ? RuntimeVariables.androidApplication.getPackageName() : activityInfo.processName;
                     activityInfo.packageName = RuntimeVariables.androidApplication.getApplicationInfo().packageName;
+                    activityResolver.addComponent(activity);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                activityResolver.addComponent(activity);
             }
             if(activityResolver!=null && activityResolver.mComponents.size()>0) {
-                packageManager.setNewActivityResolver(activityResolver);
+                setNewActivityResolver(activityResolver);
             }
         }
+
         /**
-         * 新增Service
+         * service
          */
         if (serviceList != null) {
             for (Object service : serviceList) {
                 try {
                     ServiceInfo serviceInfo = (ServiceInfo) service.getClass().getField("info").get(service);
                     serviceInfo.packageName = RuntimeVariables.androidApplication.getApplicationInfo().packageName;
+                    serviceInfo.processName = serviceInfo.processName==null ? RuntimeVariables.androidApplication.getPackageName() : serviceInfo.processName;
                     serviceResolver.addComponent(service);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-            packageManager.setNewServiceResolver(serviceResolver);
+            setNewServiceResolver(serviceResolver);
         }
 
+        /**
+         * provider
+         */
         if(providerList!=null){
             for(Object provider : providerList){
                 provider = providerList.get(0);
                 try {
                     ProviderInfo providerInfo = AtlasHacks.PackageParser$Provider_info.get(provider);
+                    providerInfo.processName = providerInfo.processName==null ? RuntimeVariables.androidApplication.getPackageName() : providerInfo.processName;
                     providerResolver.addComponent(provider);
                     if (providerInfo.authority != null) {
                         String names[] = providerInfo.authority.split(";");
@@ -404,21 +411,30 @@ public class AdditionalPackageManager {
                     e.printStackTrace();
                 }
             }
+            setNewProviderResolver(providerResolver);
         }
 
+        /**
+         * receiver
+         */
         if (receiverList != null) {
             for (Object activity : receiverList) {
                 try {
                     ActivityInfo activityInfo = (ActivityInfo) activity.getClass().getField("info").get(activity);
                     receiverResolver.addComponent(activity);
-                    activityInfo.packageName = RuntimeVariables.androidApplication.getApplicationInfo().packageName;
-                    mReceiverIntentFilters.put(activityInfo.name,(IntentFilter) activity);
+                    activityInfo.processName = activityInfo.processName==null ? RuntimeVariables.androidApplication.getPackageName() : activityInfo.processName;
+                    ArrayList<IntentFilter> intentFilters = (ArrayList<IntentFilter>) activity.getClass().getSuperclass().getDeclaredField("intents").get(activity);
+                    if(intentFilters!=null){
+                        for(IntentFilter filter : intentFilters){
+                            mReceiverIntentFilters.put(filter,activityInfo.name);
+                        }
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
             if(receiverResolver!=null && receiverResolver.mComponents.size()>0) {
-                packageManager.setNewReceiverResolver(receiverResolver);
+                setNewReceiverResolver(receiverResolver);
             }
         }
     }
@@ -458,6 +474,10 @@ public class AdditionalPackageManager {
 
     void setNewReceiverResolver(AdditionalComponentIntentResolver resolver){
         mExternalReceivers = resolver;
+    }
+
+    void setNewProviderResolver(AdditionalComponentIntentResolver resolver){
+        mExternalProviders = resolver;
     }
 
     private <T extends ComponentInfo> ResolveInfo queryIntentResolveInfo(Intent intent,Class<T> infoClass ){
@@ -521,7 +541,7 @@ public class AdditionalPackageManager {
             ProviderInfo pi = new ProviderInfo(AtlasHacks.PackageParser$Provider_info.get(provider));
             try {
                 Field metaDataField = provider.getClass().getSuperclass().getDeclaredField("metaData");
-                pi.metaData = (Bundle)metaDataField.get(pi);
+                pi.metaData = (Bundle)metaDataField.get(provider);
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -642,7 +662,7 @@ public class AdditionalPackageManager {
                     ProviderInfo info = (ProviderInfo) provider.getClass().getField("info").get(provider);
                     info.processName = TextUtils.isEmpty(info.processName) ? RuntimeVariables.androidApplication.getPackageName() : info.processName;
                     if(info!=null){
-                        if(processName==null && processName.equals(info.processName)){
+                        if(processName==null || processName.equals(info.processName)){
                             infos.add(info);
                         }
                     }
@@ -662,7 +682,7 @@ public class AdditionalPackageManager {
             try {
                 Field mActionsField = IntentFilter.class.getDeclaredField("mActions");
                 mActionsField.setAccessible(true);
-                for (IntentFilter filter : mReceiverIntentFilters.values()) {
+                for (IntentFilter filter : mReceiverIntentFilters.keySet()) {
                     ArrayList<String> mActions = (ArrayList<String>) mActionsField.get(filter);
                     if(mActions!=null){
                         for(String action : mActions){

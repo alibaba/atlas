@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -13,6 +14,7 @@ import android.os.RemoteException;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.runtime.newcomponent.BridgeUtil;
+import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.util.Log;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -64,18 +66,21 @@ public class ServiceBridge {
         if(mRemoteDelegate!=null && mRemoteDelegate.asBinder().isBinderAlive()){
             return mRemoteDelegate;
         }else{
-            connectBinderPoolService(processName);
+            connectDelegateService(processName);
             return mRemoteDelegate;
         }
     }
 
-    private synchronized void connectBinderPoolService(String processName) {
+    private synchronized void connectDelegateService(String processName) {
         if(mRemoteDelegate!=null && mRemoteDelegate.asBinder().isBinderAlive()){
             return ;
         }
         mCountDownLatch = new CountDownLatch(1);
         if(targetIntent==null){
-            targetIntent = createDelegateServiceIntent(processName);
+            Intent service = new Intent();
+            String delegateComponentName = BridgeUtil.getBridgeName(BridgeUtil.TYPE_SERVICEBRIDGE,processName);
+            service.setClassName(RuntimeVariables.androidApplication, delegateComponentName);
+            targetIntent = service;
         }
         RuntimeVariables.androidApplication.bindService(targetIntent, mBinderPoolConnection,
                 Context.BIND_AUTO_CREATE);
@@ -84,12 +89,6 @@ public class ServiceBridge {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-
-    private Intent createDelegateServiceIntent(String processName){
-        Intent service = new Intent();
-        service.setClassName(RuntimeVariables.androidApplication, BridgeUtil.getBridgeComponent(BridgeUtil.TYPE_SERVICEBRIDGE,processName));
-        return service;
     }
 
     public static ComponentName startService(final Intent service) {
@@ -178,6 +177,35 @@ public class ServiceBridge {
         }
     }
 
+    public static void handleActivityStack(final Intent intent, final ActivityInfo info, final ActivityBridge.OnIntentPreparedObserver observer){
+        sServicehandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Intent result = ServiceBridge.obtain(info.processName).getRemoteDelegate().handleActivityStack(intent,info);
+                    if(observer!=null){
+                        observer.onPrepared(result);
+                    }
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    public static void notifyonReceived(final Intent intent, final ActivityInfo info){
+        sServicehandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ServiceBridge.obtain(info.processName).getRemoteDelegate().handleReceiver(intent,info);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
     /**
      * process maybe killed,so active service need be restarted
      * @param delegate
@@ -208,7 +236,7 @@ public class ServiceBridge {
         }
     }
 
-    private ServiceConnection mBinderPoolConnection = new ServiceConnection() {   // 5
+    private ServiceConnection mBinderPoolConnection = new ServiceConnection() {
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
@@ -233,7 +261,7 @@ public class ServiceBridge {
         public void binderDied() {
             mRemoteDelegate.asBinder().unlinkToDeath(mBinderPoolDeathRecipient, 0);
             mRemoteDelegate = null;
-            connectBinderPoolService(processName);
+            connectDelegateService(processName);
         }
     };
 }

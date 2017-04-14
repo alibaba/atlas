@@ -246,7 +246,7 @@ import org.osgi.framework.BundleListener;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AssertionArrayException;
 import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.runtime.ActivityManagerHook;
+import android.taobao.atlas.runtime.ActivityManagerDelegate;
 import android.taobao.atlas.runtime.BundleLifecycleHandler;
 import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.runtime.ClassNotFoundInterceptorCallback;
@@ -329,7 +329,7 @@ public class Atlas {
          * 解决某些自带LBE机制无法hook execstartactivity以及service start service的hook
          */
         try {
-            ActivityManagerHook activityManagerProxy = new ActivityManagerHook();
+            ActivityManagerDelegate activityManagerProxy = new ActivityManagerDelegate();
 
             Object gDefault = null;
             if(Build.VERSION.SDK_INT<25) {

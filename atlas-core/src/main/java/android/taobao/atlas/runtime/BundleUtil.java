@@ -210,6 +210,7 @@ package android.taobao.atlas.runtime;
 
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.*;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.text.TextUtils;
 
 public class BundleUtil {

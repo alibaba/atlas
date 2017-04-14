@@ -1,5 +1,5 @@
 
-package android.android.support.multidex;
+package android.support.multidex;
 
 import android.content.Context;
 import android.content.SharedPreferences;

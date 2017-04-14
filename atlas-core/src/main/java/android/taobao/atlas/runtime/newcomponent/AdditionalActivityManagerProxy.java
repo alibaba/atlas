@@ -3,6 +3,7 @@ package android.taobao.atlas.runtime.newcomponent;
 import android.app.IActivityManager;
 import android.app.IServiceConnection;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ProviderInfo;
 import android.os.Handler;
@@ -31,9 +32,9 @@ public class AdditionalActivityManagerProxy{
         return sAdditionalActivityManagerProxy;
     }
 
-    public void startRegisterReceivers(){
-        if(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication)
-                .equals(RuntimeVariables.androidApplication.getPackageName())) {
+    public void startRegisterReceivers(Context context){
+        if(RuntimeVariables.getProcessName(context)
+                .equals(context.getPackageName())) {
             ReceiverBridge.registerAdditionalReceiver();
         }
     }

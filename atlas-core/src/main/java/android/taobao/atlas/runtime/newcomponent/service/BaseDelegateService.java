@@ -1,25 +1,25 @@
 package android.taobao.atlas.runtime.newcomponent.service;
 
-import android.app.IActivityManager;
 import android.app.IServiceConnection;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.ContextImplHook;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.taobao.atlas.runtime.newcomponent.receiver.ReceiverBridge;
-
-import java.lang.reflect.Method;
+import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,47 +34,74 @@ public class BaseDelegateService extends Service{
     private ServiceDispatcherImpl dispatcher = new ServiceDispatcherImpl();
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+    }
+
+    @Override
     public IBinder onBind(Intent intent) {
         return dispatcher;
     }
 
     public static class ServiceDispatcherImpl extends IDelegateBinder.Stub{
 
+        private Handler mMainHandler;
         private HashMap<AdditionalServiceRecord,Service> mActivateServices = new HashMap<>();
 
-        @Override
-        public IBinder startService(Intent serviceIntent,ServiceInfo info) throws RemoteException {
-            AdditionalServiceRecord record = retriveServiceByComponent(serviceIntent.getComponent());
-            if(record == null) {
-                //create new service
-                record = handleCreateService(serviceIntent.getComponent());
-            }
-            record.calledStart = true;
-            if(record!=null) {
-                handleServiceArgs(serviceIntent, record);
-            }
-            return record;
+        public ServiceDispatcherImpl(){
+            mMainHandler = new Handler(Looper.getMainLooper());
         }
 
         @Override
-        public IBinder bindService(Intent serviceIntent,IBinder activityToken,IServiceConnection conn) throws RemoteException {
-            AdditionalServiceRecord record = retriveServiceByComponent(serviceIntent.getComponent());
-            if(record == null) {
-                //create new service
-                record = handleCreateService(serviceIntent.getComponent());
-            }
-            if(record !=null ){
-                IBinder binder = mActivateServices.get(record).onBind(serviceIntent);
-                if(!record.activeConnections.contains(conn)){
-                    record.activeConnections.add(conn);
+        public IBinder startService(final Intent serviceIntent, ServiceInfo info) throws RemoteException {
+            Log.e("BaseDelegateService","startService");
+            mMainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    AdditionalServiceRecord record = retriveServiceByComponent(serviceIntent.getComponent());
+                    if(record == null) {
+                        //create new service
+                        record = handleCreateService(serviceIntent.getComponent());
+                    }
+                    record.calledStart = true;
+                    if(record!=null) {
+                        handleServiceArgs(serviceIntent, record);
+                    }
                 }
-                conn.connected(record.component,binder);
-            }
-            return record;
+            });
+            return null;
+        }
+
+        @Override
+        public IBinder bindService(final Intent serviceIntent, IBinder activityToken, final IServiceConnection conn) throws RemoteException {
+            Log.e("BaseDelegateService","bindService");
+            mMainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    AdditionalServiceRecord record = retriveServiceByComponent(serviceIntent.getComponent());
+                    if(record == null) {
+                        //create new service
+                        record = handleCreateService(serviceIntent.getComponent());
+                    }
+                    if(record !=null ){
+                        IBinder binder = mActivateServices.get(record).onBind(serviceIntent);
+                        if(!record.activeConnections.contains(conn)){
+                            record.activeConnections.add(conn);
+                        }
+                        try {
+                            conn.connected(record.component,binder);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+            return null;
         }
 
         @Override
         public boolean unbindService(IServiceConnection conn) throws RemoteException {
+            Log.e("BaseDelegateService","unbindService");
             Iterator iter = mActivateServices.entrySet().iterator();
             AdditionalServiceRecord record = null;
             while (iter.hasNext()) {
@@ -102,6 +129,7 @@ public class BaseDelegateService extends Service{
 
         @Override
         public int stopService(Intent serviceIntent) throws RemoteException {
+            Log.e("BaseDelegateService","stopService");
             AdditionalServiceRecord record = retriveServiceByComponent(serviceIntent.getComponent());
             if(record!=null){
                 if(record.activeConnections.size()>0){
@@ -114,8 +142,19 @@ public class BaseDelegateService extends Service{
         }
 
         @Override
-        public void handleReceiver(Intent intent, ActivityInfo info) throws RemoteException {
-            ReceiverBridge.postOnReceived(intent,info);
+        public Intent handleActivityStack(Intent intent,ActivityInfo info) throws RemoteException {
+            ActivityBridge.handleActivityStack(info,intent);
+            return intent;
+        }
+
+        @Override
+        public void handleReceiver(final Intent intent, final ActivityInfo info) throws RemoteException {
+            mMainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    ReceiverBridge.postOnReceived(intent,info);
+                }
+            });
         }
 
         private AdditionalServiceRecord handleCreateService(ComponentName componentName){

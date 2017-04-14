@@ -368,6 +368,13 @@ public class ServiceDetector {
         if (intent.getComponent() != null) {
             packageName = intent.getComponent().getPackageName();
             componentName = intent.getComponent().getClassName();
+            ResolveInfo resolveInfo = RuntimeVariables.androidApplication.getPackageManager().resolveService(intent, 0);
+            if (resolveInfo != null && resolveInfo.serviceInfo != null) {
+                if(resolveInfo instanceof AdditionalPackageManager.ExternalResolverInfo){
+                    //set explicit component
+                    intent.putExtra(ADDITIONAL_SERVICE,true);
+                }
+            }
         } else {
             ResolveInfo resolveInfo = RuntimeVariables.androidApplication.getPackageManager().resolveService(intent, 0);
             if (resolveInfo != null && resolveInfo.serviceInfo != null) {

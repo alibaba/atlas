@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
+import android.taobao.atlas.runtime.newcomponent.service.ServiceBridge;
 
 import java.util.List;
 
@@ -59,7 +60,8 @@ public class ReceiverBridge {
                         // main process
                         postOnReceived(intent,info.activityInfo);
                     }else{
-//                        ServiceBridge.sdfsf
+                       // remote process
+                        ServiceBridge.notifyonReceived(intent,info.activityInfo);
                     }
                 }
             }

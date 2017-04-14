@@ -217,8 +217,6 @@ import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.taobao.atlas.hack.AtlasHacks;
 
-import com.android.server.IntentResolver;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
