@@ -82,7 +82,7 @@ public class ServiceBridge {
             service.setClassName(RuntimeVariables.androidApplication, delegateComponentName);
             targetIntent = service;
         }
-        RuntimeVariables.androidApplication.bindService(targetIntent, mBinderPoolConnection,
+        RuntimeVariables.androidApplication.bindService(targetIntent, mDelegateConnection,
                 Context.BIND_AUTO_CREATE);
         try {
             mCountDownLatch.await();
@@ -236,7 +236,7 @@ public class ServiceBridge {
         }
     }
 
-    private ServiceConnection mBinderPoolConnection = new ServiceConnection() {
+    private ServiceConnection mDelegateConnection = new ServiceConnection() {
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
@@ -256,7 +256,7 @@ public class ServiceBridge {
         }
     };
 
-    private IBinder.DeathRecipient mBinderPoolDeathRecipient = new IBinder.DeathRecipient() {    // 6
+    private IBinder.DeathRecipient mBinderPoolDeathRecipient = new IBinder.DeathRecipient() {
         @Override
         public void binderDied() {
             mRemoteDelegate.asBinder().unlinkToDeath(mBinderPoolDeathRecipient, 0);

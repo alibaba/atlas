@@ -33,14 +33,14 @@ import android.text.TextUtils;
 
     <provider
         android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_Provider"
-        android:authorities="ATLASPROXY_com_taobao_demo_Provider"/>
+        android:authorities="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_Provider"/>
     <provider
         android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_remote_Provider"
-        android:authorities="ATLASPROXY_remote_Provider"
+        android:authorities="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_remote_Provider"
         android:process=":remote"/>
     <provider
         android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_single_Provider"
-        android:authorities="ATLASPROXY_com_taobao_single_Provider"
+        android:authorities="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_single_Provider"
         android:process="com.taobao.single"/>
 
  * and also apk will add the classses below
