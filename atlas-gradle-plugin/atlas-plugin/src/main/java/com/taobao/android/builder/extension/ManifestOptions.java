@@ -243,7 +243,7 @@ public class ManifestOptions {
 
     @Config(message = "开启新增组件的功能" , order = 1)
     @Input
-    private boolean addAtlasProxyComponents = true;
+    private boolean addAtlasProxyComponents /*= true*/;
 
 
     @Config(message = "使用atlas的application，包含 atlas基础初始化及multidex逻辑" , order = 1)
