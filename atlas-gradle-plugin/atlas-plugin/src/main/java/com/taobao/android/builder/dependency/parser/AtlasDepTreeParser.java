@@ -287,12 +287,12 @@ public class AtlasDepTreeParser {
 
     private Map forceMap;
 
-    Set<String> conflictDependencies = new HashSet<>();
+    private Set<String> _conflictBundleDependencies = new HashSet<>();
 
     /**
      * 做保护，防止递归循环
      */
-    private Set<String> resolvedDependencies = new HashSet<>();
+    private Set<String> _resolvedDependencies = new HashSet<>();
 
     private ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
 
@@ -307,15 +307,12 @@ public class AtlasDepTreeParser {
         Configuration packageClasspath = variantDeps.getPackageConfiguration();
         Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
 
-        // TODO - shouldn't need to do this - fix this in Gradle
         ensureConfigured(compileClasspath);
         ensureConfigured(packageClasspath);
         ensureConfigured(bundleClasspath);
 
         Set<String> currentUnresolvedDependencies = Sets.newHashSet();
 
-        // TODO - defer downloading until required -- This is hard to do as we need the info to build the variant
-        // config.
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
         collectArtifacts(compileClasspath, artifacts);
         collectArtifacts(packageClasspath, artifacts);
@@ -329,9 +326,7 @@ public class AtlasDepTreeParser {
                     DefaultProjectDependency projectDependency = (DefaultProjectDependency)dependency;
                     String key = projectDependency.getGroup() + ":" + projectDependency.getName();
                     Set<String> providedSets = new HashSet<>();
-                    //TODO exclude google plugins
                     try {
-
                         projectDependency.getDependencyProject().getConfigurations().getByName("compile")
                             .getDependencies().forEach(
                             new Consumer<Dependency>() {
@@ -503,10 +498,14 @@ public class AtlasDepTreeParser {
         if (null != moduleArtifacts) {
             for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
                 String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
-                if (resolvedDependencies.contains(key)) {
+                String parentKey = "";
+                if (null != parent){
+                    parentKey = parent.getGroup() + ":" + parent.getName();
+                }
+                if (_resolvedDependencies.contains(parentKey + "-" + key)) {
                     continue;
                 }
-                resolvedDependencies.add(key);
+                _resolvedDependencies.add(parentKey + "-" + key);
                 boolean isAwbBundle = bundleMap.containsKey(key);
                 Set<String> providedDirectDep = bundleMap.get(key);
 
@@ -660,7 +659,7 @@ public class AtlasDepTreeParser {
                     .getName()
                     .equals(resolvedDependencyInfo.getParent().getName())) {
 
-                conflictDependencies.add(lastResolvedDependencyInfo.getParent().toString() +
+                _conflictBundleDependencies.add(lastResolvedDependencyInfo.getParent().toString() +
                                              " and " +
                                              resolvedDependencyInfo.getParent().toString() +
                                              " has same dependency " +
@@ -706,14 +705,14 @@ public class AtlasDepTreeParser {
      */
     private synchronized void resolveAllDependencies() {
 
-        if (!conflictDependencies.isEmpty()) {
-            for (String str : conflictDependencies) {
+        if (!_conflictBundleDependencies.isEmpty()) {
+            for (String str : _conflictBundleDependencies) {
                 logger.warning(str);
             }
             if (null == forceMap) {
                 throw new GradleException("conflict dependencis");
             } else {
-                AtlasBuildContext.conflictDependencies = conflictDependencies;
+                AtlasBuildContext.conflictDependencies = _conflictBundleDependencies;
             }
         }
 
