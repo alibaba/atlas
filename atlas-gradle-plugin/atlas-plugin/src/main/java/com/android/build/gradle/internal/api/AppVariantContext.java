@@ -210,6 +210,7 @@
 package com.android.build.gradle.internal.api;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -235,6 +236,11 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     private ApplicationVariantData variantData;
 
     private Map<String, AppVariantOutputContext> outputContextMap = Maps.newHashMap();
+
+    /**
+     * buildCache 目录的manifest不能变更， 所以保存修改后的manifest引用
+     */
+    public Map<File, File> manifestMap = new HashMap<>();
 
     public AppVariantContext(ApplicationVariantImpl applicationVariant, Project project, AtlasExtension atlasExtension,
                              AppExtension appExtension) {
@@ -330,10 +336,14 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     }
 
     public File getModifyManifest(AndroidLibrary androidLibrary) {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/manifest-modify/" + getVariantConfiguration().getDirName() + "/" +
-                            androidLibrary.getResolvedCoordinates().getGroupId() + "." + androidLibrary
+        return new File(getModifyManifestDir(),
+                        androidLibrary.getResolvedCoordinates().getGroupId() + "." + androidLibrary
                             .getResolvedCoordinates().getArtifactId() + ".xml");
+    }
+
+    public File getModifyManifestDir() {
+        return new File(scope.getGlobalScope().getIntermediatesDir(),
+                        "/manifest-modify/" + getVariantConfiguration().getDirName() + "/");
     }
 
     public File getBundleBaseInfoFile() {

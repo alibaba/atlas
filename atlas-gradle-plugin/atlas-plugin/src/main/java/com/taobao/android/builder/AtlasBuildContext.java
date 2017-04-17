@@ -209,7 +209,6 @@
 
 package com.taobao.android.builder;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -260,10 +259,5 @@ public class AtlasBuildContext {
      * 修改后的文件 -> 原始文件
      */
     public static Map<String, String> jarTraceMap = new HashMap<String, String>();
-
-    /**
-     * buildCache 目录的manifest不能变更， 所以保存修改后的manifest引用
-     */
-    public static Map<File, File> manifestMap = new HashMap<>();
 
 }

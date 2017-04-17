@@ -884,7 +884,7 @@ public class AtlasBuilder extends AndroidBuilder {
         defaultDexOptions.setDexInProcess(true);
         //外部已经启动了多线程，尽量少一点
         defaultDexOptions.setThreadCount(dexOptions.getThreadCount());
-        //defaultDexOptions.setOptimize(dexOptions.getOptimize());
+        defaultDexOptions.setAdditionalParameters(dexOptions.getAdditionalParameters());
         defaultDexOptions.setJumboMode(dexOptions.getJumboMode());
         defaultDexOptions.setJavaMaxHeapSize("500m");
 

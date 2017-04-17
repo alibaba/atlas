@@ -250,6 +250,7 @@ public class PostProcessManifestAction implements Action<Task> {
 
     @Override
     public void execute(Task task) {
+
         AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
 
         File bundleBaseLineInfo = appVariantContext.getBundleBaseInfoFile();
@@ -293,7 +294,7 @@ public class PostProcessManifestAction implements Action<Task> {
             }
 
             // manifest 清单 校验
-            ManifestHelper.checkManifest(
+            ManifestHelper.checkManifest( appVariantContext,
                 baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(), dependencyTree,
                 atlasExtension);
 

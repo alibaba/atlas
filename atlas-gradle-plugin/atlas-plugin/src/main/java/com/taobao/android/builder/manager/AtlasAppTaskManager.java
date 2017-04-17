@@ -240,7 +240,7 @@ import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingExportBuil
 import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingMergeArtifactsTask;
 import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingProcessLayoutTask;
 import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingRenameTask;
-import com.taobao.android.builder.tasks.app.manifest.PreProcessManifestTask;
+import com.taobao.android.builder.tasks.app.manifest.StandardizeLibManifestTask;
 import com.taobao.android.builder.tasks.app.merge.MergeAssetAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeManifestAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeResAwbsConfigAction;
@@ -261,7 +261,6 @@ import com.taobao.android.builder.tasks.tpatch.TPatchTask;
 import com.taobao.android.builder.tasks.transform.AtlasMultiDexTransform;
 import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
 import com.taobao.android.builder.tasks.transform.hook.AwbProguradHook;
-import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 
 /**
@@ -313,7 +312,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
 
-                mtlTaskContextList.add(new MtlTaskContext(PreProcessManifestTask.ConfigAction.class, null));
+                mtlTaskContextList.add(new MtlTaskContext(StandardizeLibManifestTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
 

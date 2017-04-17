@@ -691,8 +691,7 @@ public class ManifestFileUtils {
     public static void updatePreProcessManifestFile(File modifyManifest,
                                                     File orgManifestFile,
                                                     ManifestInfo mainManifestFileObject,
-                                                    boolean updateSdkVersion,
-                                                    boolean isAwbLibrary) throws IOException, DocumentException {
+                                                    boolean updateSdkVersion) throws IOException, DocumentException {
 
         modifyManifest.getParentFile().mkdirs();
 
@@ -710,7 +709,7 @@ public class ManifestFileUtils {
         Element applicationElement = root.element("application");
 
         //判断是否有application，需要删除掉
-        if (isAwbLibrary && null != applicationElement) {
+        if (null != applicationElement) {
             Attribute attribute = applicationElement.attribute("name");
             if (null != attribute) {
                 applicationElement.remove(attribute);
@@ -832,62 +831,6 @@ public class ManifestFileUtils {
                 }
             }
         }
-    }
-
-    /**
-     * 获取mainifest文件的内容
-     *
-     * @param manifestFile
-     * @return
-     */
-    public static ManifestInfo getManifestFileObject(File manifestFile) throws DocumentException {
-        SAXReader reader = new SAXReader();
-        ManifestInfo manifestFileObject = new ManifestInfo();
-        manifestFileObject.setManifestFile(manifestFile);
-        if (manifestFile.exists()) {
-            Document document = reader.read(manifestFile);// 读取XML文件
-            Element root = document.getRootElement();// 得到根节点
-            for (Attribute attribute : root.attributes()) {
-                if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                    manifestFileObject.addManifestProperty(attribute.getNamespacePrefix() +
-                                                               ":" +
-                                                               attribute.getName(),
-                                                           attribute.getValue());
-                } else {
-                    manifestFileObject.addManifestProperty(attribute.getName(),
-                                                           attribute.getValue());
-                }
-            }
-            Element useSdkElement = root.element("uses-sdk");
-            Element applicationElement = root.element("application");
-            if (null != useSdkElement) {
-                for (Attribute attribute : useSdkElement.attributes()) {
-                    if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                        manifestFileObject.addUseSdkProperty(attribute.getNamespacePrefix() +
-                                                                 ":" +
-                                                                 attribute.getName(),
-                                                             attribute.getValue());
-                    } else {
-                        manifestFileObject.addUseSdkProperty(attribute.getName(),
-                                                             attribute.getValue());
-                    }
-                }
-            }
-            if (null != applicationElement) {
-                for (Attribute attribute : applicationElement.attributes()) {
-                    if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                        manifestFileObject.addApplicationProperty(attribute.getNamespacePrefix() +
-                                                                      ":" +
-                                                                      attribute.getName(),
-                                                                  attribute.getValue());
-                    } else {
-                        manifestFileObject.addApplicationProperty(attribute.getName(),
-                                                                  attribute.getValue());
-                    }
-                }
-            }
-        }
-        return manifestFileObject;
     }
 
     static Map<String, String> manifestMap = new HashMap<String, String>();
@@ -1036,7 +979,8 @@ public class ManifestFileUtils {
         for (Node node : newNodes) {
             Element el = (Element)node;
             String key = el.attributeValue("process") + el.attributeValue("name");
-            if (!baseNodeMap.containsKey(key) && !el.attributeValue("name").startsWith(AtlasProxy.ATLAS_PROXY_PACKAGE) ) {
+            if (!baseNodeMap.containsKey(key) && !el.attributeValue("name").startsWith(
+                AtlasProxy.ATLAS_PROXY_PACKAGE)) {
                 applicationElement.add(node);
             }
         }

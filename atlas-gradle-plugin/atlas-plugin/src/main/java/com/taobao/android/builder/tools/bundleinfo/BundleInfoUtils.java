@@ -290,7 +290,7 @@ public class BundleInfoUtils {
             bundleInfo.setApplicationName(applicationName);
         }
 
-        ManifestHelper.collectBundleInfo(bundleInfo, awbBundle.getAndroidLibrary().getManifest(),
+        ManifestHelper.collectBundleInfo(appVariantContext, bundleInfo, awbBundle.getAndroidLibrary().getManifest(),
                                          awbBundle.getAndroidLibraries());
 
     }

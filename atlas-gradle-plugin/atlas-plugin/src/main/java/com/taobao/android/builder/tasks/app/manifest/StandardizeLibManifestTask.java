@@ -207,190 +207,215 @@
  *
  */
 
-package com.taobao.android.builder.tasks.app.prepare;
+package com.taobao.android.builder.tasks.app.manifest;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.Set;
 
-import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.tasks.PrepareLibraryTask;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.model.SoLibrary;
-import com.taobao.android.builder.dependency.parser.DependencyLocationManager;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-import org.apache.commons.io.FileUtils;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.builder.tools.manifest.ManifestInfo;
+import com.taobao.android.builder.tools.xml.XmlHelper;
+import org.apache.commons.lang.StringUtils;
+import org.dom4j.Attribute;
+import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectories;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.util.GUtil;
 
 /**
- * 1. 自己控制并发，可以提高性能
- * 2. solib 的解压准备
+ * 对manifest文件进行预处理的任务
+ * <p>
+ * 1. 去除 application 信息
+ * 2. 去除 use-sdk
+ * 4. 补全 className
+ * <p>
+ * Created by shenghua.nish on 2016-05-09 下午11:31.
  *
- * @author wuzhong
+ * @author shenghua.nish, wuzhong
  */
-public class PrepareAllDependenciesTask extends BaseTask {
+public class StandardizeLibManifestTask extends DefaultTask {
 
-    static final String taskName = "prepareAllDependencies";
-
-    AppVariantOutputContext appVariantOutputContext;
-
-    AtlasDependencyTree atlasDependencyTree;
+    @InputFile
+    File mainManifestFile;
 
     @InputFiles
-    public List<File> getInputDependencies() {
+    Set<File> libraryManifests;
 
-        List<File> files = new ArrayList<>();
-
-        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            files.add(soLibrary.getSoLibFile());
-        }
-
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-            files.add(aarBundle.getBundle());
-        }
-
-        return files;
+    @OutputFiles
+    private Collection<File> getOutputFiles(){
+        return appVariantContext.manifestMap.values();
     }
 
-    @OutputDirectories
-    public List<File> getOutputDirs(){
-        List<File> files = new ArrayList<>();
-        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            files.add(soLibrary.getFolder());
-        }
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-            files.add(aarBundle.getFolder());
-        }
-        return files;
-    };
+    List<AndroidLibrary> androidLibraries;
+
+    AppVariantContext appVariantContext;
 
     @TaskAction
-    void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
+    public void preProcess() throws IOException, DocumentException, InterruptedException {
 
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
-                                                                                   getLogger(),
-                                                                                   0);
-
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(
+            "StandardizeLibManifestTask", getLogger(), 0);
         List<Runnable> runnables = new ArrayList<>();
 
-        for (final SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
+        ManifestInfo mainManifestFileObject = getManifestFileObject(mainManifestFile);
+
+        for (AndroidLibrary androidLibrary : androidLibraries) {
+
+            File file = androidLibrary.getManifest();
+
+            if (!file.exists()) {
+                getLogger().error(androidLibrary.getResolvedCoordinates().toString() + " not has manifest : " + file
+                    .getAbsolutePath());
+                return;
+            }
+
             runnables.add(new Runnable() {
+
                 @Override
                 public void run() {
+                    try {
 
-                    LibraryCache.unzipAar(soLibrary.getSoLibFile(), soLibrary.getFolder(), getProject());
+                        File modifyManifest = appVariantContext.getModifyManifest(androidLibrary);
 
+                        ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file,
+                                                                       mainManifestFileObject,
+                                                                       true);
+
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        throw new GradleException("preprocess manifest failed " + file.getAbsolutePath(), e);
+                    }
                 }
+
             });
         }
 
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-
-            if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getFolder())) {
-
-                runnables.add(new Runnable() {
-
-                    @Override
-                    public void run() {
-
-                        getLogger().info(
-                            "prepare1 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
-
-                        if (aarBundle.getFolder().exists()) {
-                            try {
-                                FileUtils.deleteDirectory(aarBundle.getFolder());
-                                aarBundle.getFolder().mkdirs();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        PrepareLibraryTask.extract(aarBundle.getBundle(), aarBundle.getFolder(), getProject());
-
-                    }
-                });
-
-            } else {
-                getLogger().info(
-                    "prepare2 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
-                prepareLibrary(aarBundle);
-            }
-
-        }
-
         executorServicesHelper.execute(runnables);
+
     }
 
-    private void prepareLibrary(AndroidLibrary library) {
-        getLogger().info("prepare bundle " + library.getResolvedCoordinates());
+    /**
+     * 获取mainifest文件的内容
+     *
+     * @param manifestFile
+     * @return
+     */
+    public static ManifestInfo getManifestFileObject(File manifestFile) throws DocumentException {
 
-        String bundleName = GUtil.toCamelCase(library.getName().replaceAll("\\:", " "));
-
-        String taskName = "prepare" + bundleName + "Library";
-
-        if (null != getProject().getTasks().findByName(taskName)) {
-            return;
+        ManifestInfo manifestFileObject = new ManifestInfo();
+        manifestFileObject.setManifestFile(manifestFile);
+        if (manifestFile.exists()) {
+            Document document = XmlHelper.readXml(manifestFile);// 读取XML文件
+            Element root = document.getRootElement();// 得到根节点
+            for (Attribute attribute : root.attributes()) {
+                if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
+                    manifestFileObject.addManifestProperty(attribute.getNamespacePrefix() +
+                                                               ":" +
+                                                               attribute.getName(),
+                                                           attribute.getValue());
+                } else {
+                    manifestFileObject.addManifestProperty(attribute.getName(),
+                                                           attribute.getValue());
+                }
+            }
+            Element useSdkElement = root.element("uses-sdk");
+            Element applicationElement = root.element("application");
+            if (null != useSdkElement) {
+                for (Attribute attribute : useSdkElement.attributes()) {
+                    if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
+                        manifestFileObject.addUseSdkProperty(attribute.getNamespacePrefix() +
+                                                                 ":" +
+                                                                 attribute.getName(),
+                                                             attribute.getValue());
+                    } else {
+                        manifestFileObject.addUseSdkProperty(attribute.getName(),
+                                                             attribute.getValue());
+                    }
+                }
+            }
+            if (null != applicationElement) {
+                for (Attribute attribute : applicationElement.attributes()) {
+                    if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
+                        manifestFileObject.addApplicationProperty(attribute.getNamespacePrefix() +
+                                                                      ":" +
+                                                                      attribute.getName(),
+                                                                  attribute.getValue());
+                    } else {
+                        manifestFileObject.addApplicationProperty(attribute.getName(),
+                                                                  attribute.getValue());
+                    }
+                }
+            }
         }
-
-        PrepareLibraryTask prepareLibraryTask = getProject().getTasks().create(
-            taskName, PrepareLibraryTask.class);
-
-        prepareLibraryTask.setDescription("Prepare " + library.getName());
-        prepareLibraryTask.setVariantName("");
-
-        prepareLibraryTask.init(
-            library.getBundle(),
-            library.getFolder(),
-            AndroidGradleOptions.getBuildCache(getProject()),
-            library.getResolvedCoordinates());
-
-        AtlasBuildContext.dependencyTraceMap.put(library.getFolder().getAbsolutePath(),
-                                                 library.getResolvedCoordinates());
-
-        prepareLibraryTask.execute();
-
+        manifestFileObject.init();
+        return manifestFileObject;
     }
 
-    public static class ConfigAction extends MtlBaseTaskAction<PrepareAllDependenciesTask> {
+    public static class ConfigAction extends MtlBaseTaskAction<StandardizeLibManifestTask> {
 
-        public ConfigAction(AppVariantContext appVariantContext,
+        private final AppVariantContext appVariantContext;
+
+        public ConfigAction(AppVariantContext variantContext,
                             BaseVariantOutputData baseVariantOutputData) {
-            super(appVariantContext, baseVariantOutputData);
+            super(variantContext, baseVariantOutputData);
+            this.appVariantContext = variantContext;
         }
 
         @Override
         public String getName() {
-            return scope.getTaskName(taskName);
+            return appVariantContext.getScope().getTaskName("standardize", "LibManifest");
         }
 
         @Override
-        public Class<PrepareAllDependenciesTask> getType() {
-            return PrepareAllDependenciesTask.class;
+        public Class<StandardizeLibManifestTask> getType() {
+            return StandardizeLibManifestTask.class;
         }
 
         @Override
-        public void execute(PrepareAllDependenciesTask prepareAllDependenciesTask) {
+        public void execute(StandardizeLibManifestTask task) {
+            VariantScope variantScope = appVariantContext.getScope();
+            final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
 
-            super.execute(prepareAllDependenciesTask);
+            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
 
-            prepareAllDependenciesTask.appVariantOutputContext = getAppVariantOutputContext();
+            task.mainManifestFile = config.getMainManifest();
+            task.libraryManifests = dependencyTree.getAllLibraryManifests();
+            task.androidLibraries = dependencyTree.getAllAndroidLibrarys();
+            task.appVariantContext = appVariantContext;
 
-            prepareAllDependenciesTask.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                prepareAllDependenciesTask.getVariantName());
+            for (AndroidLibrary androidLibrary : task.androidLibraries) {
+                if (androidLibrary.getManifest().exists()) {
+                    appVariantContext.manifestMap.put(androidLibrary.getManifest(),
+                                                      appVariantContext.getModifyManifest(androidLibrary));
+                }
+            }
+
+            baseVariantOutputData.manifestProcessorTask.doFirst(
+                new PreProcessManifestAction(appVariantContext, baseVariantOutputData));
+
+            baseVariantOutputData.manifestProcessorTask.doLast(
+                new PostProcessManifestAction(appVariantContext, baseVariantOutputData));
+
         }
+
     }
 }

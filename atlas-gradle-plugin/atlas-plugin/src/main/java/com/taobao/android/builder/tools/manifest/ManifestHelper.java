@@ -214,10 +214,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.builder.model.AndroidLibrary;
 import com.android.manifmerger.ManifestProvider;
 import com.google.common.collect.Sets;
-import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
@@ -230,7 +230,6 @@ import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 import org.gradle.api.GradleException;
-import org.gradle.cache.internal.GracefullyStoppedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -241,7 +240,8 @@ public class ManifestHelper {
 
     private static Logger sLogger = LoggerFactory.getLogger(ManifestHelper.class);
 
-    public static List<ManifestProvider> getBundleManifest(AtlasDependencyTree dependencyTree,
+    public static List<ManifestProvider> getBundleManifest(AppVariantContext appVariantContext,
+                                                           AtlasDependencyTree dependencyTree,
                                                            AtlasExtension atlasExtension) {
 
         Set<String> notMergedArtifacts = getNotMergedBundles(atlasExtension);
@@ -257,10 +257,10 @@ public class ManifestHelper {
                 continue;
             }
 
-            bundleProviders.add(createManifestProvider(awbBundle.getAndroidLibrary()));
+            bundleProviders.add(createManifestProvider(awbBundle.getAndroidLibrary(), appVariantContext));
 
             for (AndroidLibrary androidLibrary : awbBundle.getAndroidLibraries()) {
-                bundleProviders.add(createManifestProvider(androidLibrary));
+                bundleProviders.add(createManifestProvider(androidLibrary, appVariantContext));
             }
 
         }
@@ -269,13 +269,14 @@ public class ManifestHelper {
 
     }
 
-    public static boolean checkManifest(File fullManifest, AtlasDependencyTree dependencyTree,
+    public static boolean checkManifest(AppVariantContext appVariantContext, File fullManifest,
+                                        AtlasDependencyTree dependencyTree,
                                         AtlasExtension atlasExtension) throws DocumentException {
 
         Set<String> notMergedArtifacts = getNotMergedBundles(atlasExtension);
 
         BundleInfo mainBundleInfo = new BundleInfo();
-        collectBundleInfo(mainBundleInfo, fullManifest, null);
+        collectBundleInfo(appVariantContext, mainBundleInfo, fullManifest, null);
 
         List<String> errors = new ArrayList<>();
         for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
@@ -300,13 +301,13 @@ public class ManifestHelper {
             }
 
             for (String provider : awbBundle.bundleInfo.getContentProviders()) {
-                if (StringUtils.isNotEmpty(provider) &&!mainBundleInfo.getContentProviders().contains(provider)) {
+                if (StringUtils.isNotEmpty(provider) && !mainBundleInfo.getContentProviders().contains(provider)) {
                     errors.add("miss provider:" + provider);
                 }
             }
 
             for (String receiver : awbBundle.bundleInfo.getReceivers()) {
-                if (StringUtils.isNotEmpty(receiver) &&!mainBundleInfo.getReceivers().contains(receiver)) {
+                if (StringUtils.isNotEmpty(receiver) && !mainBundleInfo.getReceivers().contains(receiver)) {
                     errors.add("miss receiver:" + receiver);
                 }
             }
@@ -321,7 +322,7 @@ public class ManifestHelper {
             sLogger.error(err);
         }
 
-        throw new GradleException("manifest merge error :" + StringUtils.join(errors,","));
+        throw new GradleException("manifest merge error :" + StringUtils.join(errors, ","));
     }
 
     private static Set<String> getNotMergedBundles(AtlasExtension atlasExtension) {
@@ -333,27 +334,29 @@ public class ManifestHelper {
         return notMergedArtifacts;
     }
 
-    private static ManifestProvider createManifestProvider(AndroidLibrary androidLibrary) {
-        File modifyManifest = getModifyManifestFile(androidLibrary);
+    private static ManifestProvider createManifestProvider(AndroidLibrary androidLibrary,
+                                                           AppVariantContext appVariantContext) {
+        File modifyManifest = getModifyManifestFile(androidLibrary, appVariantContext);
         return new BundleManifestProvider(modifyManifest);
     }
 
-    public static File getModifyManifestFile(AndroidLibrary androidLibrary) {
-        return getModifyManifestFile(androidLibrary.getManifest());
+    private static File getModifyManifestFile(AndroidLibrary androidLibrary, AppVariantContext appVariantContext) {
+        return getModifyManifestFile(androidLibrary.getManifest(), appVariantContext);
     }
 
-    public static File getModifyManifestFile(File manifest) {
-        File modifyManifest = AtlasBuildContext.manifestMap.get(manifest);
+    public static File getModifyManifestFile(File manifest, AppVariantContext appVariantContext) {
+        File modifyManifest = (File)appVariantContext.manifestMap.get(manifest);
         if (null == modifyManifest || !modifyManifest.exists()) {
             return manifest;
         }
         return modifyManifest;
     }
 
-    public static void collectBundleInfo(BundleInfo bundleInfo, File manifest, List<AndroidLibrary> androidLibraries)
+    public static void collectBundleInfo(AppVariantContext appVariantContext, BundleInfo bundleInfo, File manifest,
+                                         List<AndroidLibrary> androidLibraries)
         throws DocumentException {
         SAXReader reader = new SAXReader();
-        Document document = reader.read(getModifyManifestFile(manifest));// 读取XML文件
+        Document document = reader.read(getModifyManifestFile(manifest, appVariantContext));// 读取XML文件
         Element root = document.getRootElement();// 得到根节点
 
         List<? extends Node> metadataNodes = root.selectNodes("//meta-data");
@@ -374,7 +377,8 @@ public class ManifestHelper {
         if (null != androidLibraries) {
             for (AndroidLibrary depLib : androidLibraries) {
                 SAXReader reader2 = new SAXReader();
-                Document document2 = reader2.read(getModifyManifestFile(depLib.getManifest()));// 读取XML文件
+                Document document2 = reader2.read(
+                    getModifyManifestFile(depLib.getManifest(), appVariantContext));// 读取XML文件
                 Element root2 = document2.getRootElement();// 得到根节点
                 addComponents(bundleInfo, root2);
             }
@@ -411,12 +415,13 @@ public class ManifestHelper {
         }
     }
 
-    public static List<ManifestProvider> convert(List<ManifestProvider> manifestProviders) {
+    public static List<ManifestProvider> convert(List<ManifestProvider> manifestProviders,
+                                                 AppVariantContext appVariantContext) {
         List<ManifestProvider> modifyManifest = new ArrayList<>();
 
         for (ManifestProvider manifestProvider : manifestProviders) {
 
-            File manifest = getModifyManifestFile(manifestProvider.getManifest());
+            File manifest = getModifyManifestFile(manifestProvider.getManifest(), appVariantContext);
 
             modifyManifest.add(new MainManifestProvider(manifest, manifestProvider.getName()));
 
@@ -453,7 +458,6 @@ public class ManifestHelper {
             this.manifest = manifest;
             this.name = name;
         }
-
 
         @Override
         public File getManifest() {
