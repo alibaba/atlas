@@ -208,17 +208,6 @@
  */
 package com.taobao.android.builder.tasks.awo;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
@@ -243,6 +232,7 @@ import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -255,6 +245,17 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.StopExecutionException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * @author wuzhong
@@ -324,7 +325,7 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
         // BUGFIX , 直接访问属性的写法是访问不到的,动态类的属性名称
         List<String> options = new ArrayList<String>();
         if (StringUtils.isNotBlank(getCustomPackageId())) {
-            options.add("--customized-package-id");
+            options.add("--main-package");
             options.add(getCustomPackageId());
         } else {
             throw new GradleException("bundle is not found in basic apk : " +
@@ -336,7 +337,7 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
         }
 
         if (StringUtils.isNotBlank(getSktPackageName())) {
-            options.add("--use-skt-package-name");
+            options.add("--forced-package-id");
             options.add(getSktPackageName());
         }
         if (null != getShareResourceFile() && getShareResourceFile().exists()) {
