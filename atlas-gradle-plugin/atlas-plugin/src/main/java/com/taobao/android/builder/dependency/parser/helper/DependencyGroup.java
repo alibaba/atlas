@@ -207,233 +207,134 @@
  *
  */
 
-package com.taobao.android.builder.dependency.parser;
+package com.taobao.android.builder.dependency.parser.helper;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
-import com.alibaba.fastjson.JSON;
-
-import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.ExtraModelInfo;
-import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.build.gradle.internal.dependency.VariantDependencies;
-import com.android.build.gradle.internal.ide.DependencyConvertUtils;
-import com.android.build.gradle.internal.ide.DependencyConvertUtils.Type;
-import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.JavaLibrary;
-import com.android.utils.ILogger;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasPlugin;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.dependency.model.SoLibrary;
-import com.taobao.android.builder.dependency.parser.helper.DependencyGroup;
-import com.taobao.android.builder.dependency.parser.helper.DependencyResolver;
 import org.apache.commons.lang.StringUtils;
-import org.gradle.api.GradleException;
-import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.ModuleVersionIdentifier;
-import org.gradle.api.artifacts.ProjectDependency;
-import org.gradle.api.artifacts.ResolvedArtifact;
+import org.gradle.api.artifacts.UnknownConfigurationException;
 import org.gradle.api.artifacts.result.DependencyResult;
-import org.gradle.api.specs.Specs;
+import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
+import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
 
-import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
+public class DependencyGroup {
 
-/**
- * A manager to resolve configuration dependencies.
- *
- * @author wuzhong
- */
-public class AtlasDepTreeParser {
+    public List<DependencyResult> compileDependencies = new ArrayList<>();
+    public List<DependencyResult> bundleDependencies = new ArrayList<>();
 
-    private Project project;
+    /**
+     * bundle (group:name) 和它对应的 私有依赖
+     */
+    public Map<String, Set<String>> bundleProvidedMap = new HashMap<>();
 
-    private ExtraModelInfo extraModelInfo;
+    public DependencyGroup(Configuration compileClasspath,
+                           Configuration bundleClasspath) {
 
-    private List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
+        Set<? extends DependencyResult> compileDependencies = compileClasspath.getIncoming()
+            .getResolutionResult()
+            .getRoot()
+            .getDependencies();
 
-    private ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
+        Set<? extends DependencyResult> bundleCompileDependencies = bundleClasspath.getIncoming()
+            .getResolutionResult()
+            .getRoot()
+            .getDependencies();
 
-    public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
-        this.project = project;
-        this.extraModelInfo = extraModelInfo;
-    }
-
-    public AtlasDependencyTree parseDependencyTree(@NonNull VariantDependencies variantDeps) {
-
-        Configuration compileClasspath = variantDeps.getCompileConfiguration();
-        Configuration packageClasspath = variantDeps.getPackageConfiguration();
-        Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
-
-        ensureConfigured(compileClasspath);
-        ensureConfigured(packageClasspath);
-        ensureConfigured(bundleClasspath);
-
-        Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
-        collectArtifacts(compileClasspath, artifacts);
-        collectArtifacts(packageClasspath, artifacts);
-        collectArtifacts(bundleClasspath, artifacts);
-
-        //依赖分组
-        DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath);
-
-        DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts, new HashSet<>(),
-                                                                       dependencyGroup.bundleProvidedMap);
-
-        mResolvedDependencies.addAll(dependencyResolver.resolve(dependencyGroup.compileDependencies, true));
-
-        for (DependencyResult dependencyResult : dependencyGroup.bundleDependencies) {
-            mResolvedDependencies.addAll(dependencyResolver.resolve(Arrays.asList(dependencyResult), false));
-        }
-
-        AtlasDependencyTree atlasDependencyTree = toAtlasDependencyTree();
-
-        check(atlasDependencyTree);
-
-        return atlasDependencyTree;
-    }
-
-    private void ensureConfigured(Configuration config) {
-        for (Dependency dependency : config.getAllDependencies()) {
-            if (dependency instanceof ProjectDependency) {
-                ProjectDependency projectDependency = (ProjectDependency)dependency;
-                project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
-            }
-        }
-    }
-
-    private void collectArtifacts(Configuration configuration,
-                                  Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
-
-        Set<ResolvedArtifact> allArtifacts;
-        if (!extraModelInfo.getMode().equals(STANDARD)) {
-            allArtifacts = configuration.getResolvedConfiguration()
-                .getLenientConfiguration()
-                .getArtifacts(Specs.satisfyAll());
-        } else {
-            allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
-        }
-
-        for (ResolvedArtifact artifact : allArtifacts) {
-            ModuleVersionIdentifier id = artifact.getModuleVersion().getId();
-            List<ResolvedArtifact> moduleArtifacts = artifacts.get(id);
-
-            if (moduleArtifacts == null) {
-                moduleArtifacts = Lists.newArrayList();
-                artifacts.put(id, moduleArtifacts);
-            }
-
-            if (!moduleArtifacts.contains(artifact)) {
-                moduleArtifacts.add(artifact);
-            }
-        }
-    }
-
-    private AtlasDependencyTree toAtlasDependencyTree() {
-
-        AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies);
-
-        //设置依赖关系
-        for (ResolvedDependencyInfo dependencyInfo : mResolvedDependencies) {
-
-            if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
-
-                AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo, project);
-
-                atlasDependencyTree.getAwbBundles().add(bundle);
-
-                collect(dependencyInfo, bundle);
-
+        Set<String> bundleSets = getBundleDependencies(compileClasspath, bundleCompileDependencies);
+        Set<String> bundleAddedSets = new HashSet<>();
+        for (DependencyResult dependencyResult : compileDependencies) {
+            if (!bundleSets.contains(dependencyResult.toString())) {
+                this.compileDependencies.add(dependencyResult);
             } else {
-
-                collect(dependencyInfo, atlasDependencyTree.getMainBundle());
+                bundleAddedSets.add(dependencyResult.toString());
+                this.bundleDependencies.add(dependencyResult);
+            }
+        }
+        for (DependencyResult dependencyResult : bundleCompileDependencies) {
+            if (!bundleAddedSets.contains(dependencyResult.toString())) {
+                this.bundleDependencies.add(dependencyResult);
             }
         }
 
-        return atlasDependencyTree;
-    }
-
-    private void collect(ResolvedDependencyInfo dependencyInfo, AwbBundle awbBundle) {
-
-        switch (DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
-            case AAR:
-                //添加到主dex中去
-                awbBundle.getAndroidLibraries()
-                    .add(DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project));
-                break;
-            case JAR:
-                awbBundle.getJavaLibraries().add(DependencyConvertUtils.toJavaLib(dependencyInfo));
-                break;
-            case SOLIB:
-                awbBundle.getSoLibraries().add(new SoLibrary(dependencyInfo));
-                return;
-            case AWB:
-                break;
-            default:
-                return;
-        }
-
-        if (null != dependencyInfo.getChildren() && !dependencyInfo.getChildren().isEmpty()) {
-            for (ResolvedDependencyInfo resolvedDependencyInfo : dependencyInfo.getChildren()) {
-                collect(resolvedDependencyInfo, awbBundle);
-            }
-        }
-    }
-
-    private void check(AtlasDependencyTree atlasDependencyTree) {
-
-        Map<String,List<String>> dependeys = new HashMap<>();
-        for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()){
-            String gav = awbBundle.getAndroidLibrary().getResolvedCoordinates().toString();
-
-            for (AndroidLibrary androidLibrary : awbBundle.getAndroidLibraries()){
-                addValuetoList(dependeys, gav, androidLibrary.getResolvedCoordinates().toString());
-            }
-
-            for (JavaLibrary javaLibrary : awbBundle.getJavaLibraries()){
-                addValuetoList(dependeys, gav, javaLibrary.getResolvedCoordinates().toString());
-            }
-
-            for (SoLibrary soLibrary : awbBundle.getSoLibraries()){
-                addValuetoList(dependeys, gav, soLibrary.getResolvedCoordinates().toString());
-            }
-        }
-
-        List<String> warnings = new ArrayList<>();
-        for (String key : dependeys.keySet()){
-            List<String> values = dependeys.get(key);
-            if (values.size() > 1){
-                String msg = key + ":" + StringUtils.join(values, ",");
-                warnings.add(msg);
-                logger.warning(msg);
-            }
-        }
-
-        if (warnings.size() > 0){
-            logger.warning(JSON.toJSONString(atlasDependencyTree.getDependencyJson(),true));
-            throw  new GradleException("decency冲突 : " +  StringUtils.join(warnings,"\r\n"));
-        }
-
+        this.bundleProvidedMap = getBundleProvidedMap(bundleClasspath);
 
     }
 
-    private void addValuetoList(Map<String, List<String>> dependeys, String gav, String key) {
-        List<String> value = dependeys.get(key);
-        if (null == value){
-            value = new ArrayList<>();
-            dependeys.put(key,value);
+    private Set<String> getBundleDependencies(Configuration compileClasspath,
+                                              Set<? extends DependencyResult> bundleDependencies) {
+        Set<String> bundleSets = new HashSet<>();
+        for (DependencyResult dependencyResult : bundleDependencies) {
+            bundleSets.add(dependencyResult.toString());
         }
-        value.add(gav);
+        for (Dependency dependency : compileClasspath.getAllDependencies()) {
+            if (dependency instanceof DefaultExternalModuleDependency) {
+                DefaultExternalModuleDependency externalModuleDependency = (DefaultExternalModuleDependency)dependency;
+                if (!((DefaultExternalModuleDependency)dependency).getArtifacts().isEmpty()) {
+                    if (StringUtils.equalsIgnoreCase("awb", ((DefaultExternalModuleDependency)dependency).getArtifacts()
+                        .iterator().next().getType())) {
+                        bundleSets.add(
+                            dependency.getGroup() + ":" + dependency.getName() + ":" + dependency.getVersion());
+                    }
+                }
+            }
+        }
+        return bundleSets;
+    }
+
+    /**
+     * 获取bundle的私有依赖
+     *
+     * @param bundleClasspath
+     * @return
+     */
+    private Map<String, Set<String>> getBundleProvidedMap(Configuration bundleClasspath) {
+        Map<String, Set<String>> bundleMap = new HashMap<>();
+        bundleClasspath.getDependencies().forEach(new Consumer<Dependency>() {
+            @Override
+            public void accept(Dependency dependency) {
+                if (dependency instanceof DefaultProjectDependency) {
+                    DefaultProjectDependency projectDependency = (DefaultProjectDependency)dependency;
+                    String key = projectDependency.getGroup() + ":" + projectDependency.getName();
+                    Set<String> providedSets = new HashSet<>();
+                    try {
+                        projectDependency.getDependencyProject().getConfigurations().getByName("compile")
+                            .getDependencies().forEach(
+                            new Consumer<Dependency>() {
+                                @Override
+                                public void accept(Dependency dependency) {
+                                    if ("com.android.support".equals(dependency.getGroup()) || "com.android.databinding"
+                                        .equals(dependency.getGroup())) {
+                                        providedSets.add(dependency.getGroup() + ":" + dependency.getName());
+                                    }
+
+                                }
+                            });
+                        projectDependency.getDependencyProject().getConfigurations().getByName(
+                            AtlasPlugin.PROVIDED_COMPILE)
+                            .getDependencies().forEach(
+                            new Consumer<Dependency>() {
+                                @Override
+                                public void accept(Dependency dependency) {
+                                    providedSets.add(dependency.getGroup() + ":" + dependency.getName());
+                                }
+                            });
+                    } catch (UnknownConfigurationException e) {
+
+                    }
+                    bundleMap.put(key, providedSets);
+                }
+            }
+        });
+        return bundleMap;
     }
 
 }
