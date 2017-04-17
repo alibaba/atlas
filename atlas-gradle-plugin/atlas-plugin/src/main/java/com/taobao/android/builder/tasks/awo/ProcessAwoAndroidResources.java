@@ -325,7 +325,7 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
         // BUGFIX , 直接访问属性的写法是访问不到的,动态类的属性名称
         List<String> options = new ArrayList<String>();
         if (StringUtils.isNotBlank(getCustomPackageId())) {
-            options.add("--main-package");
+            options.add("--forced-package-id");
             options.add(getCustomPackageId());
         } else {
             throw new GradleException("bundle is not found in basic apk : " +
@@ -337,7 +337,7 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
         }
 
         if (StringUtils.isNotBlank(getSktPackageName())) {
-            options.add("--forced-package-id");
+            options.add("--main-package");
             options.add(getSktPackageName());
         }
         if (null != getShareResourceFile() && getShareResourceFile().exists()) {
