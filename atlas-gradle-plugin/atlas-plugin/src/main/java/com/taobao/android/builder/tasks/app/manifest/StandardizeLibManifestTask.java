@@ -237,7 +237,6 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.TaskAction;
 
@@ -261,7 +260,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
     Set<File> libraryManifests;
 
     @OutputFiles
-    private Collection<File> getOutputFiles(){
+    private Collection<File> getOutputFiles() {
         return appVariantContext.manifestMap.values();
     }
 
@@ -298,8 +297,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
                         File modifyManifest = appVariantContext.getModifyManifest(androidLibrary);
 
-                        getLogger().debug(file.getAbsolutePath() + " -> " + modifyManifest
-                            .getAbsolutePath());
+                        //getLogger().error(file.getAbsolutePath() + " -> " + modifyManifest
+                        //    .getAbsolutePath());
 
                         ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file,
                                                                        mainManifestFileObject,
@@ -408,10 +407,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
             task.appVariantContext = appVariantContext;
 
             for (AndroidLibrary androidLibrary : task.androidLibraries) {
-                if (androidLibrary.getManifest().exists()) {
-                    appVariantContext.manifestMap.put(androidLibrary.getManifest(),
-                                                      appVariantContext.getModifyManifest(androidLibrary));
-                }
+                appVariantContext.manifestMap.put(androidLibrary.getManifest().getAbsolutePath(),
+                                                  appVariantContext.getModifyManifest(androidLibrary));
             }
 
             baseVariantOutputData.manifestProcessorTask.doFirst(

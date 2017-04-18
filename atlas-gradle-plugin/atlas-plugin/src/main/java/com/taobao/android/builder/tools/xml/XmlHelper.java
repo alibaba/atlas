@@ -234,7 +234,7 @@ public class XmlHelper {
         return document;
     }
 
-    public static synchronized void saveDocument(Document document, File file) throws IOException {
+    public static void saveDocument(Document document, File file) throws IOException {
 
         file.getParentFile().mkdirs();
 

@@ -240,7 +240,7 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     /**
      * buildCache 目录的manifest不能变更， 所以保存修改后的manifest引用
      */
-    public Map<File, File> manifestMap = new HashMap<>();
+    public Map<String, File> manifestMap = new HashMap<>();
 
     public AppVariantContext(ApplicationVariantImpl applicationVariant, Project project, AtlasExtension atlasExtension,
                              AppExtension appExtension) {
