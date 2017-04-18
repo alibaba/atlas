@@ -439,10 +439,10 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             options.add("-I");
             options.add(getShareResourceFile().getAbsolutePath());
         }
-        if (null != getBaselineFile()) {
-            options.add("-B");
-            options.add(getBaselineFile().getAbsolutePath());
-        }
+        //if (null != getBaselineFile()) {
+        //    options.add("-B");
+        //    options.add(getBaselineFile().getAbsolutePath());
+        //}
 
         aaptOptions.additionalParameters(options.toArray(new String[0]));
     }
