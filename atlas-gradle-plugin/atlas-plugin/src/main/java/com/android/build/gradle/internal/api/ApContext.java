@@ -266,6 +266,15 @@ public class ApContext {
         return baseApk;
     }
 
+    public File getBaseAwb(String soFileName) {
+        File file = new File(new File(getApExploredFolder(), ApContext.AP_INLINE_AWB_FILENAME),
+                             soFileName);
+        if (!file.exists()) {
+            return null;
+        }
+        return file;
+    }
+
     public File getPackageIdFile() {
         if (null == apExploredFolder) {
             return null;
