@@ -430,8 +430,9 @@ public class AtlasBridgeApplication extends Application{
         SharedPreferences prefs = context.getSharedPreferences("atlas_configs", Context.MODE_PRIVATE);
         int lastVersionCode = prefs.getInt("last_version_code", 0);
         String lastVersionName = prefs.getString("last_version_name", "");
+        long lastupdatetime = prefs.getLong("lastupdatetime",-1);
         if(packageInfo.versionCode==lastVersionCode && TextUtils.equals(packageInfo.versionName,
-                lastVersionName) && !needRollback()){
+                lastVersionName) && lastupdatetime==packageInfo.lastUpdateTime && !needRollback()){
             return false;
         }
 

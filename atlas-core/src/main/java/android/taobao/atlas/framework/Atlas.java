@@ -324,22 +324,18 @@ public class Atlas {
         Framework.syncBundleListeners.add(bundleLifecycleHandler);
         frameworkLifecycleHandler = new FrameworkLifecycleHandler();
         Framework.frameworkListeners.add(frameworkLifecycleHandler);
-        /**
-         * TODO NEED CHECK
-         * 解决某些自带LBE机制无法hook execstartactivity以及service start service的hook
-         */
+
         try {
             ActivityManagerDelegate activityManagerProxy = new ActivityManagerDelegate();
 
             Object gDefault = null;
-            if(Build.VERSION.SDK_INT<25) {
-                gDefault=AtlasHacks.ActivityManagerNative_gDefault.get(AtlasHacks.ActivityManagerNative.getmClass());
+            if(Build.VERSION.SDK_INT>25 || (Build.VERSION.SDK_INT==25&&Build.VERSION.PREVIEW_SDK_INT>0)){
+                gDefault=AtlasHacks.ActivityManager_IActivityManagerSingleton.get(AtlasHacks.ActivityManager.getmClass());
             }else{
-                gDefault=AtlasHacks.ActivityManagerNative_getDefault.invoke(AtlasHacks.ActivityManagerNative.getmClass());
+                gDefault=AtlasHacks.ActivityManagerNative_gDefault.get(AtlasHacks.ActivityManagerNative.getmClass());
             }
             AtlasHacks.Singleton_mInstance.hijack(gDefault, activityManagerProxy);
         }catch(Throwable e){}
-
         AndroidHack.hackH();
     }
 
@@ -379,6 +375,7 @@ public class Atlas {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putInt("last_version_code", packageInfo.versionCode);
         editor.putString("last_version_name", packageInfo.versionName);
+        editor.putLong("lastupdatetime",packageInfo.lastUpdateTime);
         editor.commit();
     }
 

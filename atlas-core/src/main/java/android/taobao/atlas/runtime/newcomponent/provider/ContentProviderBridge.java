@@ -1,5 +1,6 @@
 package android.taobao.atlas.runtime.newcomponent.provider;
 
+import android.app.ContentProviderHolder;
 import android.app.IActivityManager;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -7,6 +8,7 @@ import android.content.ContentValues;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
@@ -25,9 +27,9 @@ public class ContentProviderBridge extends ContentProvider{
     public static final String METHOD_INSTALLPROVIDER = "atlas_install_provider";
     public static final String PROVIDER_INFO_KEY = "info";
     public static final String PROVIDER_HOLDER_KEY = "holder";
-    private HashMap<String,IActivityManager.ContentProviderHolder> providerRecord = new HashMap<>();
+    private HashMap<String,Object> providerRecord = new HashMap<>();
 
-    public static IActivityManager.ContentProviderHolder getContentProvider(ProviderInfo info){
+    public static Object getContentProvider(ProviderInfo info){
         String targetProcessName = info.processName!=null ? info.processName : RuntimeVariables.androidApplication.getPackageName();
         String currentProcessName = RuntimeVariables.getProcessName(RuntimeVariables.androidApplication);
         if(info.multiprocess || targetProcessName.equals(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication))){
@@ -48,12 +50,12 @@ public class ContentProviderBridge extends ContentProvider{
         return Uri.parse("content://"+ BridgeUtil.getBridgeName(BridgeUtil.TYPE_PROVIDERBRIDGE,processName));
     }
 
-    private static IActivityManager.ContentProviderHolder transactProviderInstall(String processName,ProviderInfo info){
+    private static Object transactProviderInstall(String processName,ProviderInfo info){
         Bundle extras = new Bundle();
         extras.putParcelable(PROVIDER_INFO_KEY,info);
         ContentResolver contentResolver = RuntimeVariables.androidApplication.getContentResolver();
         Bundle bundle = contentResolver.call(accquireRemoteBridgeToken(processName),METHOD_INSTALLPROVIDER,"",extras);
-        IActivityManager.ContentProviderHolder holder = bundle.getParcelable(PROVIDER_HOLDER_KEY);
+        Object holder = bundle.getParcelable(PROVIDER_HOLDER_KEY);
         return holder;
     }
 
@@ -95,15 +97,20 @@ public class ContentProviderBridge extends ContentProvider{
             if(info==null){
                 return null;
             }
-            IActivityManager.ContentProviderHolder holder = providerRecord.get(info.authority);
+            Object holder = providerRecord.get(info.authority);
             if(holder==null){
                 //install contentprovider
-                IActivityManager.ContentProviderHolder origin = (IActivityManager.ContentProviderHolder)AtlasHacks.ContentProviderHolder_constructor.getInstance();
+                Object original = null;
+                if(Build.VERSION.SDK_INT>25 || (Build.VERSION.SDK_INT==25&&Build.VERSION.PREVIEW_SDK_INT>0)) {
+                    original = new ContentProviderHolder(null);
+                }else{
+                    original = new IActivityManager.ContentProviderHolder(null);
+                }
                 try {
                     Object activityThread = AndroidHack.getActivityThread();
                     if(activityThread!=null) {
-                        IActivityManager.ContentProviderHolder newHolder = (IActivityManager.ContentProviderHolder)AtlasHacks.ActivityThread_installProvider.invoke(
-                                activityThread,RuntimeVariables.androidApplication,origin,info,false,true,true);
+                        Object newHolder = AtlasHacks.ActivityThread_installProvider.invoke(
+                                activityThread,RuntimeVariables.androidApplication,original,info,false,true,true);
                         holder = newHolder;
                         providerRecord.put(info.authority,holder);
                     }
@@ -113,7 +120,11 @@ public class ContentProviderBridge extends ContentProvider{
                 }
             }
             Bundle result = new Bundle();
-            result.putParcelable(PROVIDER_HOLDER_KEY,holder);
+            if(Build.VERSION.SDK_INT>25 || (Build.VERSION.SDK_INT==25&&Build.VERSION.PREVIEW_SDK_INT>0)) {
+                result.putParcelable(PROVIDER_HOLDER_KEY, (ContentProviderHolder)holder);
+            }else{
+                result.putParcelable(PROVIDER_HOLDER_KEY, (IActivityManager.ContentProviderHolder)holder);
+            }
             return result;
         }
         return super.call(method, arg, extras);

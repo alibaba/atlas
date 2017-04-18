@@ -210,6 +210,7 @@ package android.taobao.atlas.framework;
 
 import android.os.*;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.runtime.LowDiskException;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.ApkUtils;
@@ -623,8 +624,10 @@ public class BundleInstaller implements Callable{
         String bundleFileName = String.format("lib%s.so",location.replace(".","_"));
         String bundlePath = String.format("%s/lib/%s", dataDir,bundleFileName);
         File bundleFile = new File(bundlePath);
-        if(bundleFile.exists() && AtlasBundleInfoManager.instance().isInternalBundle(location)){
+        BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
+        if(bundleFile.exists() && info.isInternal() && (info.getSize()>0 && info.getSize() == bundleFile.length())){
             mTmpBundleSourceFile = bundleFile;
+            Log.e("BundleInstaller","find valid bundle : "+bundleFile.getAbsolutePath());
         }else{
             if(ApkUtils.getApk()!=null){
                 ZipEntry entry = ApkUtils.getApk().getEntry("lib/armeabi/" + bundleFileName);

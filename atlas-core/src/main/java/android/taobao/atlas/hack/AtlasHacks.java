@@ -264,7 +264,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     public static HackedClass<Object>                           ActivityManagerNative;
     public static HackedClass<Object>                                                       Singleton;
     public static HackedClass<Object>                           ActivityThread$AppBindData;
-    public static HackedClass<Object>                           ContentProviderHolder;
+    public static HackedClass<Object>                           ActivityManager;
 
     // Fields
     public static HackedField<Object, Instrumentation>          ActivityThread_mInstrumentation;
@@ -301,10 +301,9 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     public static HackedField<Object,List<ProviderInfo>>      ActivityThread$AppBindData_providers;
     public static HackedField<Object,Object>  ActivityThread_mBoundApplication;
     public static HackedField<Object,Object>  ContextImpl_mPackageInfo;
-
+    public static HackedField<Object,Object>                                  ActivityManager_IActivityManagerSingleton;
 
     // Methods
-    public static HackedMethod                                  ActivityManagerNative_getDefault;
     public static HackedMethod                                  ActivityThread_currentActivityThread;
     public static HackedMethod                                  AssetManager_addAssetPath;
     public static HackedMethod                                  Application_attach;
@@ -328,7 +327,6 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
 
     // Constructor
     public static Hack.HackedConstructor                        PackageParser_constructor;
-    public static Hack.HackedConstructor                        ContentProviderHolder_constructor;
     // Match method
     public static ArrayList<HackedMethod>                       GeneratePackageInfoList = new ArrayList<HackedMethod>();
     public static ArrayList<HackedMethod>                       GetPackageInfoList      = new ArrayList<HackedMethod>();
@@ -398,7 +396,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         ActivityManagerNative = Hack.into("android.app.ActivityManagerNative");
         Singleton = Hack.into("android.util.Singleton");
         ActivityThread$AppBindData = Hack.into("android.app.ActivityThread$AppBindData");
-        ContentProviderHolder = Hack.into("android.app.IActivityManager$ContentProviderHolder");
+        ActivityManager = Hack.into("android.app.ActivityManager");
         sIsIgnoreFailure = false;
     }
 
@@ -445,7 +443,9 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         PackageParser$ServiceIntentInfo_service = PackageParser$ServiceIntentInfo.field("service").ofType(PackageParser$Service.getmClass());
         PackageParser$ProviderIntentInfo_provider = PackageParser$ProviderIntentInfo.field("provider").ofType(PackageParser$Provider.getmClass());
         PackageParser$Provider_info = PackageParser$Provider.field("info").ofType(ProviderInfo.class);
-        if(Build.VERSION.SDK_INT<25) {
+        if(Build.VERSION.SDK_INT>25 || (Build.VERSION.SDK_INT==25 && Build.VERSION.PREVIEW_SDK_INT>0)) {
+            ActivityManager_IActivityManagerSingleton = ActivityManager.staticField("IActivityManagerSingleton");
+        }else{
             ActivityManagerNative_gDefault = ActivityManagerNative.staticField("gDefault");
         }
         Singleton_mInstance = Singleton.field("mInstance");
@@ -456,9 +456,6 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
 
     public static void allMethods() throws HackAssertionException {
 
-        if(Build.VERSION.SDK_INT>=25) {
-            ActivityManagerNative_getDefault = ActivityManagerNative.method("getDefault");
-        }
         ActivityThread_currentActivityThread = ActivityThread.method("currentActivityThread");
         AssetManager_addAssetPath = AssetManager.method("addAssetPath", String.class);
         Application_attach = Application.method("attach", Context.class);
@@ -486,8 +483,13 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         }
 
         ActivityThread_installContentProviders = ActivityThread.method("installContentProviders",Context.class,List.class);
-        ActivityThread_installProvider = ActivityThread.method("installProvider",Context.class, IActivityManager.ContentProviderHolder.class,
-                ProviderInfo.class,boolean.class,boolean.class,boolean.class);
+        if(Build.VERSION.SDK_INT>25 || (Build.VERSION.SDK_INT==25 && Build.VERSION.PREVIEW_SDK_INT>0)) {
+            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, android.app.ContentProviderHolder.class,
+                    ProviderInfo.class, boolean.class, boolean.class, boolean.class);
+        }else{
+            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, IActivityManager.ContentProviderHolder.class,
+                    ProviderInfo.class, boolean.class, boolean.class, boolean.class);
+        }
         Service_attach = Service.method("attach",Context.class,ActivityThread.getmClass(),String.class,IBinder.class,Application.getmClass(),Object.class);
     }
 
@@ -497,8 +499,6 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         }else{
             PackageParser_constructor = PackageParser.constructor();
         }
-
-        ContentProviderHolder_constructor = ContentProviderHolder.constructor(ProviderInfo.class);
     }
 
     @Override

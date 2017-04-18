@@ -55,7 +55,7 @@ public class AdditionalActivityManagerProxy{
         return ServiceBridge.unbindService(conn);
     }
 
-    public IActivityManager.ContentProviderHolder getContentProvider(ProviderInfo info){
+    public Object getContentProvider(ProviderInfo info){
         return ContentProviderBridge.getContentProvider(info);
     }
 

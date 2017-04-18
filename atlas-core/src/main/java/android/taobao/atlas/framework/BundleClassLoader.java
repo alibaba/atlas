@@ -208,6 +208,7 @@
 
 package android.taobao.atlas.framework;
 
+import android.os.Build;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.Archive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
@@ -223,6 +224,7 @@ import org.osgi.framework.Constants;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -281,6 +283,23 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                         +RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir+":"
                 +System.getProperty("java.library.path"),
                 Object.class.getClassLoader());
+
+        if(Build.VERSION.SDK_INT>=25) {
+            try {
+                Class PatchClassLoaderFactory = Class.forName("com.android.internal.os.PathClassLoaderFactory");
+                Method method = PatchClassLoaderFactory.getDeclaredMethod("createClassloaderNamespace",
+                        ClassLoader.class, int.class, String.class, String.class, boolean.class);
+                method.setAccessible(true);
+                method.invoke(PatchClassLoaderFactory, this, 24, bundle.archive.getCurrentRevision().getRevisionDir().getAbsolutePath() + "/lib" + ":"
+                        + RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir + ":"
+                        + System.getProperty("java.library.path"), bundle.archive.getCurrentRevision().getRevisionDir().getAbsolutePath() + "/lib" + ":"
+                        + RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir + ":"
+                        + System.getProperty("java.library.path"), true);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+
 
         this.bundle = bundle;
         this.archive = bundle.archive;

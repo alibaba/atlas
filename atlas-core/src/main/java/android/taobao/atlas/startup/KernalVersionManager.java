@@ -212,6 +212,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Process;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.taobao.atlas.startup.patch.KernalFileLock;
 import android.text.TextUtils;
@@ -327,14 +328,9 @@ public class KernalVersionManager {
                 cachePreVersion = input.readBoolean();
                 input.close();
             } catch (Throwable e) {
-                removeBaseLineInfo();
-                baselineVersion = "";
-                updateBundles = "";
-                lastVersionName = "";
-                lastUpdateBundles="";
-                dexpatchVersion=0;
-                dexPatchBundles="";
-                e.printStackTrace();
+                rollbackHardly();
+                killChildProcesses(KernalConstants.baseContext);
+                android.os.Process.killProcess(Process.myPid());
             }
         }
         LAST_VERSIONNAME = lastVersionName;
