@@ -240,6 +240,7 @@ public class BuilderAdapter {
 
     /**
      * bundle中允许使用本地jar，默认打开， 淘宝不打开
+     * 主bundle的本地jar一直开启
      */
     public boolean localJarEnabled = true;
 

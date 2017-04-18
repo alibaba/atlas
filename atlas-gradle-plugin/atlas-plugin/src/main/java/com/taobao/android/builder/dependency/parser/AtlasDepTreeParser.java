@@ -369,7 +369,7 @@ public class AtlasDepTreeParser {
             case AAR:
                 //添加到主dex中去
                 awbBundle.getAndroidLibraries()
-                    .add(DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project));
+                    .add(DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
                 break;
             case JAR:
                 awbBundle.getJavaLibraries().add(DependencyConvertUtils.toJavaLib(dependencyInfo));

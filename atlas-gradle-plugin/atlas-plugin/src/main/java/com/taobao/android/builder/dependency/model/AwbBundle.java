@@ -255,9 +255,7 @@ public class AwbBundle {
     private File mergedManifest;
 
     public AwbBundle() {
-
         mainBundle = true;
-
     }
 
     public AwbBundle(ResolvedDependencyInfo resolvedDependencyInfo, AndroidLibrary androidLibrary) {
@@ -406,5 +404,9 @@ public class AwbBundle {
 
     public void setMergedManifest(File mergedManifest) {
         this.mergedManifest = mergedManifest;
+    }
+
+    public boolean isMainBundle() {
+        return mainBundle;
     }
 }

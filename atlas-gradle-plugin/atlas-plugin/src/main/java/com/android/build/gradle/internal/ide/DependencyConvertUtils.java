@@ -211,6 +211,7 @@ package com.android.build.gradle.internal.ide;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.dependency.level2.AndroidDependency;
@@ -259,7 +260,8 @@ public class DependencyConvertUtils {
      * @param resolvedDependencyInfo
      * @return
      */
-    public static AndroidLibrary toAndroidLibrary(ResolvedDependencyInfo resolvedDependencyInfo, Project project) {
+    public static AndroidLibrary toAndroidLibrary(ResolvedDependencyInfo resolvedDependencyInfo, Project project,
+                                                  boolean bundle) {
 
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
 
@@ -271,17 +273,28 @@ public class DependencyConvertUtils {
                                                                                          resolvedDependencyInfo
                                                                                              .getExplodedDir());
 
-        boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
-        if (project.hasProperty("localJarEnabled")) {
-            localJarEnabled = "true".equals(project.property("localJarEnabled"));
-        }
+        List<File> localJars = getLocalJars(project, bundle, androidDependency);
 
         return new AndroidLibraryImpl(androidDependency,
                                       false,
                                       false,
                                       ImmutableList.<AndroidLibrary>of(),
                                       ImmutableList.<JavaLibrary>of(),
-                                      localJarEnabled ? androidDependency.getLocalJars() : new ArrayList<>(0));
+                                      localJars);
+    }
+
+    private static List<File> getLocalJars(Project project, boolean bundle, AndroidDependency androidDependency) {
+
+        if (!bundle) {
+            return androidDependency.getLocalJars();
+        }
+
+        boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
+        if (project.hasProperty("localJarEnabled")) {
+            localJarEnabled = "true".equals(project.property("localJarEnabled"));
+        }
+
+        return localJarEnabled ? androidDependency.getLocalJars() : new ArrayList<>(0);
     }
 
     public static AndroidLibrary toAndroidLibrary(MavenCoordinates mavenCoordinates, File artifact, File dir) {
@@ -302,7 +315,7 @@ public class DependencyConvertUtils {
 
     public static AwbBundle toBundle(ResolvedDependencyInfo resolvedDependencyInfo, Project project) {
 
-        AndroidLibrary androidLibrary = toAndroidLibrary(resolvedDependencyInfo, project);
+        AndroidLibrary androidLibrary = toAndroidLibrary(resolvedDependencyInfo, project, true);
 
         return new AwbBundle(resolvedDependencyInfo, androidLibrary);
     }
