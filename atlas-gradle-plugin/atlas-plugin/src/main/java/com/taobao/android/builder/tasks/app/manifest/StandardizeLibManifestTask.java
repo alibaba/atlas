@@ -278,6 +278,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
         ManifestInfo mainManifestFileObject = getManifestFileObject(mainManifestFile);
 
+        appVariantContext.getModifyManifestDir().mkdirs();
+
         for (AndroidLibrary androidLibrary : androidLibraries) {
 
             File file = androidLibrary.getManifest();
@@ -295,6 +297,9 @@ public class StandardizeLibManifestTask extends DefaultTask {
                     try {
 
                         File modifyManifest = appVariantContext.getModifyManifest(androidLibrary);
+
+                        getLogger().debug(file.getAbsolutePath() + " -> " + modifyManifest
+                            .getAbsolutePath());
 
                         ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file,
                                                                        mainManifestFileObject,

@@ -693,8 +693,6 @@ public class ManifestFileUtils {
                                                     ManifestInfo mainManifestFileObject,
                                                     boolean updateSdkVersion) throws IOException, DocumentException {
 
-        modifyManifest.getParentFile().mkdirs();
-
         Document document = XmlHelper.readXml(orgManifestFile);// 读取XML文件
 
         Element root = document.getRootElement();// 得到根节点
