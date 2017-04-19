@@ -270,6 +270,11 @@ public class AtlasDepTreeParser {
 
     public AtlasDependencyTree parseDependencyTree(@NonNull VariantDependencies variantDeps) {
 
+        String name = variantDeps.getName().toLowerCase();
+        if (!name.endsWith("debug") && !name.endsWith("release")){
+            return new AtlasDependencyTree(new ArrayList<>());
+        }
+
         Configuration compileClasspath = variantDeps.getCompileConfiguration();
         Configuration packageClasspath = variantDeps.getPackageConfiguration();
         Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
