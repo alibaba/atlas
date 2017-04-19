@@ -277,11 +277,11 @@ public class PreProcessManifestAction implements Action<Task> {
             allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(),appVariantContext));
             allManifest.addAll(bundleProviders);
 
-            if (!sLogger.isInfoEnabled()) {
-                for (ManifestProvider manifestProvider : allManifest) {
-                    sLogger.warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());
-                }
-            }
+            //if (sLogger.isInfoEnabled()) {
+            //    for (ManifestProvider manifestProvider : allManifest) {
+            //        sLogger.warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());
+            //    }
+            //}
 
             // 不加这一步,每次的getLibraries 都会从mapping里去重新计算
             mergeManifests.setProviders(allManifest);
