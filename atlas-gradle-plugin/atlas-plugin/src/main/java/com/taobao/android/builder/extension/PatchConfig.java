@@ -214,6 +214,7 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.annotation.Config;
 
+import com.taobao.android.builder.tools.EnvHelper;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
@@ -423,7 +424,14 @@ public class PatchConfig {
         this.tpatchWriteBuildInfo = tpatchWriteBuildInfo;
     }
 
+    /**
+     * 是否要打历史patch， 可以通过 -DdexPatchEnabled=true 来开启
+     * @return
+     */
     public String getTpatchHistoryUrl() {
+        if ("true".equals(EnvHelper.getEnv("dexPatchEnabled","false"))){
+            return "";
+        }
         if (StringUtils.isEmpty(AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl)){
             return "";
         }
