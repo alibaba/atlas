@@ -251,19 +251,16 @@ public class DependencyResolver {
     Project project;
     VariantDependencies variantDeps;
     Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts;
-    Set<String> _resolvedDependencies;
     Map<String, Set<String>> bundleProvidedMap;
 
     public Set<String> mainDependencies = new HashSet<>();
 
     public DependencyResolver(Project project, VariantDependencies variantDeps,
                               Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-                              Set<String> resolvedDependencies,
                               Map<String, Set<String>> bundleProvidedMap) {
         this.project = project;
         this.variantDeps = variantDeps;
         this.artifacts = artifacts;
-        this._resolvedDependencies = resolvedDependencies;
         this.bundleProvidedMap = bundleProvidedMap;
     }
 
@@ -271,6 +268,7 @@ public class DependencyResolver {
         Multimap<String, ResolvedDependencyInfo> dependenciesMap = LinkedHashMultimap.create();
         // 不使用官方的扁平化的依赖处理，改用自己处理树状的依赖关系;对于application的依赖，我们只取compile的依赖
         Set<ModuleVersionIdentifier> directDependencies = new HashSet<ModuleVersionIdentifier>();
+        Set<String> resolveSets = new HashSet<>();
         for (DependencyResult dependencyResult : dependencyResults) {
             if (dependencyResult instanceof ResolvedDependencyResult) {
                 ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult)dependencyResult)
@@ -287,7 +285,7 @@ public class DependencyResolver {
                                       variantDeps,
                                       0,
                                       circleDependencyCheck,
-                                      circleDependencyCheck.getRootDependencyNode(), dependenciesMap);
+                                      circleDependencyCheck.getRootDependencyNode(), dependenciesMap, resolveSets);
                 }
             }
         }
@@ -327,7 +325,8 @@ public class DependencyResolver {
                                    int indent,
                                    CircleDependencyCheck circleDependencyCheck,
                                    CircleDependencyCheck.DependencyNode node,
-                                   Multimap<String, ResolvedDependencyInfo> dependenciesMap) {
+                                   Multimap<String, ResolvedDependencyInfo> dependenciesMap,
+                                   Set<String> resolvedDependencies) {
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
 
         if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
@@ -353,14 +352,10 @@ public class DependencyResolver {
                 if (mainDependencies.contains(key)) {
                     continue;
                 }
-                String parentKey = "";
-                if (null != parent) {
-                    parentKey = parent.getGroup() + ":" + parent.getName();
-                }
-                if (_resolvedDependencies.contains(parentKey + "-" + key)) {
+                if (resolvedDependencies.contains(key)) {
                     continue;
                 }
-                _resolvedDependencies.add(parentKey + "-" + key);
+                resolvedDependencies.add(key);
                 boolean isAwbBundle = bundleProvidedMap.containsKey(key);
                 Set<String> providedDirectDep = bundleProvidedMap.get(key);
 
@@ -432,7 +427,7 @@ public class DependencyResolver {
                                                   configDependencies,
                                                   indent + 1,
                                                   circleDependencyCheck,
-                                                  childNode, dependenciesMap);
+                                                  childNode, dependenciesMap, resolvedDependencies);
                             }
                         }
                     }

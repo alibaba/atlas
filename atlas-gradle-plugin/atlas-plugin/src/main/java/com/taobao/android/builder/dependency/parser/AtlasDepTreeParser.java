@@ -212,7 +212,6 @@ package com.taobao.android.builder.dependency.parser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -287,7 +286,7 @@ public class AtlasDepTreeParser {
         //依赖分组
         DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath);
 
-        DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts, new HashSet<>(),
+        DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts,
                                                                        dependencyGroup.bundleProvidedMap);
 
         mResolvedDependencies.addAll(dependencyResolver.resolve(dependencyGroup.compileDependencies, true));
@@ -392,46 +391,45 @@ public class AtlasDepTreeParser {
 
     private void check(AtlasDependencyTree atlasDependencyTree) {
 
-        Map<String,List<String>> dependeys = new HashMap<>();
-        for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()){
+        Map<String, List<String>> dependeys = new HashMap<>();
+        for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
             String gav = awbBundle.getAndroidLibrary().getResolvedCoordinates().toString();
 
-            for (AndroidLibrary androidLibrary : awbBundle.getAndroidLibraries()){
+            for (AndroidLibrary androidLibrary : awbBundle.getAndroidLibraries()) {
                 addValuetoList(dependeys, gav, androidLibrary.getResolvedCoordinates().toString());
             }
 
-            for (JavaLibrary javaLibrary : awbBundle.getJavaLibraries()){
+            for (JavaLibrary javaLibrary : awbBundle.getJavaLibraries()) {
                 addValuetoList(dependeys, gav, javaLibrary.getResolvedCoordinates().toString());
             }
 
-            for (SoLibrary soLibrary : awbBundle.getSoLibraries()){
+            for (SoLibrary soLibrary : awbBundle.getSoLibraries()) {
                 addValuetoList(dependeys, gav, soLibrary.getResolvedCoordinates().toString());
             }
         }
 
         List<String> warnings = new ArrayList<>();
-        for (String key : dependeys.keySet()){
+        for (String key : dependeys.keySet()) {
             List<String> values = dependeys.get(key);
-            if (values.size() > 1){
+            if (values.size() > 1) {
                 String msg = key + ":" + StringUtils.join(values, ",");
                 warnings.add(msg);
                 logger.warning(msg);
             }
         }
 
-        if (warnings.size() > 0){
-            logger.warning(JSON.toJSONString(atlasDependencyTree.getDependencyJson(),true));
-            throw  new GradleException("decency冲突 : " +  StringUtils.join(warnings,"\r\n"));
+        if (warnings.size() > 0) {
+            logger.warning(JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
+            throw new GradleException("decency冲突 : " + StringUtils.join(warnings, "\r\n"));
         }
-
 
     }
 
     private void addValuetoList(Map<String, List<String>> dependeys, String gav, String key) {
         List<String> value = dependeys.get(key);
-        if (null == value){
+        if (null == value) {
             value = new ArrayList<>();
-            dependeys.put(key,value);
+            dependeys.put(key, value);
         }
         value.add(gav);
     }

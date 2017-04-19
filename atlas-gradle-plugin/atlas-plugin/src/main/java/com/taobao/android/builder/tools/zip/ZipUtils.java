@@ -213,15 +213,16 @@ package com.taobao.android.builder.tools.zip;
  * Created by bisheng.dongbs on 16/6/24.
  */
 
-
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
-import org.codehaus.plexus.util.StringUtils;
-import org.gradle.api.GradleException;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -231,6 +232,13 @@ import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.codehaus.plexus.util.StringUtils;
+import org.gradle.api.GradleException;
 
 import static java.util.zip.ZipEntry.STORED;
 
@@ -271,8 +279,7 @@ public class ZipUtils {
         ZipFile file;
         try {
             file = null;
-            if (null == encoding) file = new ZipFile(zipFile);
-            else file = new ZipFile(zipFile, encoding);
+            if (null == encoding) { file = new ZipFile(zipFile); } else { file = new ZipFile(zipFile, encoding); }
             Enumeration<ZipArchiveEntry> en = file.getEntries();
             ZipArchiveEntry ze = null;
             while (en.hasMoreElements()) {
@@ -322,7 +329,6 @@ public class ZipUtils {
         return name;
     }
 
-
     public static List<String> listZipEntries(File zipFile) {
         List<String> list = new ArrayList<String>();
         ZipFile zip;
@@ -338,7 +344,7 @@ public class ZipUtils {
                     list.add(name);
                 }
             }
-            if (null != zip) ZipFile.closeQuietly(zip);
+            if (null != zip) { ZipFile.closeQuietly(zip); }
         } catch (IOException e) {
         }
         return list;
@@ -374,7 +380,7 @@ public class ZipUtils {
                 is.close();
                 fos.close();
             }
-            if (null != zip) ZipFile.closeQuietly(zip);
+            if (null != zip) { ZipFile.closeQuietly(zip); }
         } catch (IOException e) {
             throw new GradleException(e.getMessage(), e);
         }
@@ -390,7 +396,8 @@ public class ZipUtils {
      * @param overwrite 否覆盖
      * @throws java.io.IOException
      */
-    public static void addFileToZipFile(File zipFile, File outZipFile, File file, String destPath, boolean overwrite) throws IOException {
+    public static void addFileToZipFile(File zipFile, File outZipFile, File file, String destPath, boolean overwrite)
+        throws IOException {
         byte[] buf = new byte[1024];
         ZipInputStream zin = new ZipInputStream(new FileInputStream(zipFile));
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(outZipFile));
@@ -441,7 +448,6 @@ public class ZipUtils {
         out.close();
     }
 
-
     /**
      * 件压缩成一个zip包，主要给solib发布使用
      *
@@ -466,7 +472,7 @@ public class ZipUtils {
         byte[] buf = new byte[1024];
         int readLen = 0;
         for (int i = 0; i < fileList.size(); i++) {
-            File f = (File) fileList.get(i);
+            File f = (File)fileList.get(i);
             ze = new ZipEntry(getAbsFileName(srcDir.getPath(), f));
             ze.setSize(f.length());
             ze.setTime(f.lastModified());
@@ -502,12 +508,11 @@ public class ZipUtils {
         List ret = new ArrayList();
         File[] tmp = baseDir.listFiles();
         for (int i = 0; i < tmp.length; i++) {
-            if (tmp[i].isFile()) ret.add(tmp[i]);
-            if (tmp[i].isDirectory()) ret.addAll(getSubFiles(tmp[i]));
+            if (tmp[i].isFile()) { ret.add(tmp[i]); }
+            if (tmp[i].isDirectory()) { ret.addAll(getSubFiles(tmp[i])); }
         }
         return ret;
     }
-
 
     /**
      * 判断在指定的zip目录下，指定的文件夹是否存在
@@ -545,7 +550,8 @@ public class ZipUtils {
         return false;
     }
 
-    public static boolean removeZipEntry(File file, Pattern pattern, File targetFile) throws FileNotFoundException, IOException {
+    public static boolean removeZipEntry(File file, Pattern pattern, File targetFile)
+        throws FileNotFoundException, IOException {
         byte[] buffer = new byte[1024];
         java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile(file);
         ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(targetFile)));
@@ -553,7 +559,7 @@ public class ZipUtils {
         InputStream inputStream;
         Enumeration enumeration = zipFile.entries();
         while (enumeration.hasMoreElements()) {
-            ZipEntry zipEntry = (ZipEntry) enumeration.nextElement();
+            ZipEntry zipEntry = (ZipEntry)enumeration.nextElement();
             String name = zipEntry.getName();
             if (pattern.matcher(name).find()) {
                 continue;
@@ -581,19 +587,19 @@ public class ZipUtils {
         closeQuitely(inputStream);
     }
 
-
     private static void closeQuitely(Closeable closeable) throws IOException {
         if (closeable != null) {
             closeable.close();
         }
     }
 
-
-    public static List<String> unzip(final File zipFile, final String destination, String encoding, Map<String, ZipEntry> zipEntryMethodMap) {
+    public static List<String> unzip(final File zipFile, final String destination, String encoding,
+                                     Map<String, ZipEntry> zipEntryMethodMap) {
         return unzip(zipFile, destination, encoding, zipEntryMethodMap, false);
     }
 
-    public static List<String> unzip(final File zipFile, final String destination, String encoding, Map<String, ZipEntry> zipEntryMethodMap, boolean isRelativePath) {
+    public static List<String> unzip(final File zipFile, final String destination, String encoding,
+                                     Map<String, ZipEntry> zipEntryMethodMap, boolean isRelativePath) {
         List<String> fileNames = new ArrayList<String>();
         String dest = destination;
         if (!destination.endsWith(File.separator)) {
@@ -602,8 +608,7 @@ public class ZipUtils {
         ZipFile file;
         try {
             file = null;
-            if (null == encoding) file = new ZipFile(zipFile);
-            else file = new ZipFile(zipFile, encoding);
+            if (null == encoding) { file = new ZipFile(zipFile); } else { file = new ZipFile(zipFile, encoding); }
             Enumeration<ZipArchiveEntry> en = file.getEntries();
             ZipArchiveEntry ze = null;
             while (en.hasMoreElements()) {
@@ -632,7 +637,8 @@ public class ZipUtils {
         return fileNames;
     }
 
-    public static void addFileAndDirectoryToZip(File output, File srcDir, Map<String, ZipEntry> zipEntryMethodMap) throws Exception {
+    public static void addFileAndDirectoryToZip(File output, File srcDir, Map<String, ZipEntry> zipEntryMethodMap)
+        throws Exception {
         if (output.isDirectory()) {
             throw new IOException("This is a directory!");
         }
@@ -649,7 +655,7 @@ public class ZipUtils {
         byte[] buf = new byte[1024];
         int readLen = 0;
         for (int i = 0; i < fileList.size(); i++) {
-            File f = (File) fileList.get(i);
+            File f = (File)fileList.get(i);
             ze = new ZipEntry(getAbsFileName(srcDir.getPath(), f));
             ze.setSize(f.length());
             ze.setTime(f.lastModified());
@@ -688,7 +694,7 @@ public class ZipUtils {
         byte[] buf = new byte[1024];
         int readLen = 0;
         for (int i = 0; i < fileList.size(); i++) {
-            File f = (File) fileList.get(i);
+            File f = (File)fileList.get(i);
             ze = new ZipEntry(getAbsFileName(srcDir.getPath(), f));
             ze.setSize(f.length());
             ze.setTime(f.lastModified());
@@ -698,12 +704,16 @@ public class ZipUtils {
                     if (originEntry.getMethod() == STORED) {
                         ze.setCompressedSize(f.length());
                         InputStream in = new BufferedInputStream(new FileInputStream(f));
-                        CRC32 crc = new CRC32();
-                        int c;
-                        while ((c = in.read()) != -1) {
-                            crc.update(c);
+                        try {
+                            CRC32 crc = new CRC32();
+                            int c;
+                            while ((c = in.read()) != -1) {
+                                crc.update(c);
+                            }
+                            ze.setCrc(crc.getValue());
+                        } finally {
+                            in.close();
                         }
-                        ze.setCrc(crc.getValue());
                     }
                     ze.setMethod(originEntry.getMethod());
                 }
@@ -718,12 +728,10 @@ public class ZipUtils {
         zos.close();
     }
 
-
     public static void main(String[] args) {
         String name = "T.class";
         System.out.println(name.substring(0, name.length() - 6));
     }
-
 
 }
 
