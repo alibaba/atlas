@@ -277,24 +277,16 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @param bundle the bundle object.
      * @throws BundleException in case of IO errors.
      */
-    BundleClassLoader(final BundleImpl bundle) throws BundleException {
-        super(".",null,
-                bundle.archive.getCurrentRevision().getRevisionDir().getAbsolutePath()+"/lib"+":"
-                        +RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir+":"
-                +System.getProperty("java.library.path"),
-                Object.class.getClassLoader());
-
+    BundleClassLoader(final BundleImpl bundle,List<String> dependencies,String nativeLibPath) throws BundleException {
+        super(".",null,nativeLibPath,Object.class.getClassLoader());
+        Log.e("BundleClassLoader","nativeLibPath : "+nativeLibPath);
         if(Build.VERSION.SDK_INT>=25) {
             try {
                 Class PatchClassLoaderFactory = Class.forName("com.android.internal.os.PathClassLoaderFactory");
                 Method method = PatchClassLoaderFactory.getDeclaredMethod("createClassloaderNamespace",
                         ClassLoader.class, int.class, String.class, String.class, boolean.class);
                 method.setAccessible(true);
-                method.invoke(PatchClassLoaderFactory, this, 24, bundle.archive.getCurrentRevision().getRevisionDir().getAbsolutePath() + "/lib" + ":"
-                        + RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir + ":"
-                        + System.getProperty("java.library.path"), bundle.archive.getCurrentRevision().getRevisionDir().getAbsolutePath() + "/lib" + ":"
-                        + RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir + ":"
-                        + System.getProperty("java.library.path"), true);
+                method.invoke(PatchClassLoaderFactory, this, 24, nativeLibPath, nativeLibPath, true);
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -305,7 +297,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         this.archive = bundle.archive;
         this.location = bundle.location;
 
-        dependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
+        this.dependencies = dependencies;
 
         try {
             processManifest(archive.getManifest());
