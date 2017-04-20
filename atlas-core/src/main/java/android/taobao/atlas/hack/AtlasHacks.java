@@ -462,7 +462,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         PackageParser$Component_getComponentName = PackageParser$Component.method("getComponentName");
         ClassLoader_findLibrary = ClassLoader.method("findLibrary", String.class);
         ContextImpl_setOuterContext = ContextImpl.method("setOuterContext",Context.class);
-        if(Build.VERSION.SDK_INT>=21){
+        if(Build.VERSION.SDK_INT>=19){
             ContextImpl_createAppContext = ContextImpl.method("createAppContext",ActivityThread.getmClass(),LoadedApk.getmClass());
         }else{
             ContextImpl_init = ContextImpl.method("init",LoadedApk.getmClass(), IBinder.class,ActivityThread.getmClass());
