@@ -453,6 +453,9 @@ public class BundleListing implements Serializable{
             if(bundlesListForInstall.contains(location)){
                 return;
             }
+            if(!bundlesListForInstall.contains(location)) {
+                bundlesListForInstall.add(0,location);
+            }
             List<String> singleLevelDependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
             if(singleLevelDependencies!=null){
                 for(String dependepcy : singleLevelDependencies){
@@ -460,9 +463,6 @@ public class BundleListing implements Serializable{
                         findBundleTransitively(dependepcy,bundlesListForInstall);
                     }
                 }
-            }
-            if(!bundlesListForInstall.contains(location)) {
-                bundlesListForInstall.add(location);
             }
         }
 
