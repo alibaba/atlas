@@ -224,9 +224,10 @@ import android.util.Log;
 import android.view.ViewGroup;
 import dalvik.system.DexFile;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 
-public class RuntimeVariables {
+public class RuntimeVariables implements Serializable{
 
     public static Application         androidApplication;
 

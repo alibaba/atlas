@@ -391,7 +391,7 @@ public class BaselineInfoManager {
         if(dexPatch || !TextUtils.isEmpty(lastVersionName())) {
             List<String> bundles = new ArrayList<String>(getUpdateBundles());
             PackageInfo info = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication);
-            if (bundles!=null && !info.versionName.equals(lastVersionName()) && bundles.size() > 0) {
+            if (RuntimeVariables.sCachePreVersionBundles && bundles!=null && !info.versionName.equals(lastVersionName()) && bundles.size() > 0) {
                 //回滚到上个版本
                 if(!dexPatch) {
                     if (!Atlas.getInstance().restoreBundle(bundles.toArray(new String[bundles.size()]))) {
