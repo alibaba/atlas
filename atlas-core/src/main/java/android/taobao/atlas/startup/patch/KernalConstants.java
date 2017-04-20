@@ -221,4 +221,15 @@ public class KernalConstants {
     public static  String  INSTALLED_VERSIONNAME;
     public static  Context baseContext;
     public static  String  RAW_APPLICATION_NAME;
+
+    public static final String ATLAS_MONITOR = "Atlas_monitor";
+
+    //动态部署稳定性stage
+    public static final String DD_MAINDEX_ROLLBACK_DEXLOAD_FAIL = "dd_maindex_rollback_dexload_fail";
+    public static final String DD_MAINDEX_ROLLBACK_ASSETPATH_FAIL = "dd_maindex_rollback_assetpath_fail";
+    public static final String DD_BASELINEINFO_FAIL = "dd_baselineinfo_fail";
+
+    public static final String DD_INSTALL_DEXOPT_FAIL = "dd_install_dexopt_fail";
+    public static final String DD_INSTALL_NATIVE_SO_UZIP_FAIL = "dd_install_native_os_uzip_fail";
+
 }

@@ -684,10 +684,6 @@ public class InstrumentationHook extends Instrumentation {
 					}
 				}
 			}
-			if(!TextUtils.isEmpty(urlInfo) || !TextUtils.isEmpty(argInfo)){
-				AtlasMonitor.getInstance().trace(AtlasMonitor.TOO_LARGE_BUNDLE, bundleName,
-						String.format("%s|%s", urlInfo, argInfo), "120");
-			}
 		}catch(Throwable e){}
 	}
 
@@ -780,8 +776,6 @@ public class InstrumentationHook extends Instrumentation {
 				exceptionString += "(2.6) DelegateResources equals Activity Resources";
 			}
 			exceptionString += "(2.7) Activity Resources paths length:" + paths.size();
-			AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, bundleName,
-					AtlasMonitor.GET_RESOURCES_FAIL_MSG, FileUtils.getDataAvailableSpace());
 		} catch (Exception e1){
 			String pathsInRunTime = " " +  DelegateResources.getCurrentAssetpathStr(RuntimeVariables.androidApplication.getAssets());
 			exceptionString = "(2.8) paths in history:" + pathsInRunTime  + " getAssetPath fail: " + e1;

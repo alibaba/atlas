@@ -210,6 +210,7 @@ package android.taobao.atlas.startup;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Process;
@@ -328,6 +329,7 @@ public class KernalVersionManager {
                 cachePreVersion = input.readBoolean();
                 input.close();
             } catch (Throwable e) {
+                updateMonitor(KernalConstants.DD_BASELINEINFO_FAIL, e==null?"":e.getMessage());
                 rollbackHardly();
                 killChildProcesses(KernalConstants.baseContext);
                 android.os.Process.killProcess(Process.myPid());
@@ -615,6 +617,12 @@ public class KernalVersionManager {
         } catch (Exception e) {
 
         }
+    }
+
+    private void updateMonitor(String stage, String detail) {
+        SharedPreferences sharedPreferences = KernalConstants.baseContext.getSharedPreferences(KernalConstants.ATLAS_MONITOR, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(stage, detail).commit();
     }
 
 }

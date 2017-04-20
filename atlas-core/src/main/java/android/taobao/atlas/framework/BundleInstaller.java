@@ -215,6 +215,7 @@ import android.taobao.atlas.runtime.LowDiskException;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.ApkUtils;
 import android.taobao.atlas.util.FileUtils;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.util.Log;
 import android.util.Pair;
@@ -646,6 +647,8 @@ public class BundleInstaller implements Callable{
         }else if(mTmpBundleSourceInputStream!=null){
             bundle = Framework.installNewBundle(bundleName,mTmpBundleSourceInputStream);
         }else{
+            AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_BUNDLE_SOURCE_MISMATCH,
+                    false, "0", "can not find bundle source file!", "");
             throw new IOException("can not find bundle source file");
         }
         return bundle;

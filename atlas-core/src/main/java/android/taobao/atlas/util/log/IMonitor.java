@@ -209,6 +209,5 @@
 package android.taobao.atlas.util.log;
 
 public interface IMonitor {
-	public void trace(String TypeID, String BundleName, String Detail, String remainedDisk);
-	public void trace(Integer TypeID, String BundleName, String Detail, String remainedDisk);
+	public void trace(String stage, boolean isSuccess, String errCode, String errMsg, String detail, String remainedDisk);
 }

@@ -265,7 +265,8 @@ public class AtlasBridgeApplication extends Application{
         KernalConstants.RAW_APPLICATION_NAME = getClass().getName();
         boolean hasKernalPatched  = false;
         boolean isMainProcess = getBaseContext().getPackageName().equals(getProcessName(getBaseContext()));
-
+        SharedPreferences sharedPreferences = getBaseContext().getSharedPreferences(KernalConstants.ATLAS_MONITOR, MODE_PRIVATE);
+        sharedPreferences.edit().clear().apply();
         if(isUpdated){
             if (!isMainProcess) {
                 android.os.Process.killProcess(android.os.Process.myPid());

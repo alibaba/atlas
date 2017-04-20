@@ -214,7 +214,6 @@ import android.taobao.atlas.framework.bundlestorage.Archive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.util.FileUtils;
 import android.util.Log;
 
@@ -302,8 +301,8 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         try {
             processManifest(archive.getManifest());
         } catch (IOException ioe) {
-    		AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, bundle.location, AtlasMonitor.OSGI_FAILED_MSG,
-    				FileUtils.getDataAvailableSpace());
+//    		AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, bundle.location, AtlasMonitor.OSGI_FAILED_MSG,
+//    				FileUtils.getDataAvailableSpace());
             ioe.printStackTrace();
             throw new BundleException("Not a valid bundle: " + bundle.location);
         }

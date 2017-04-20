@@ -220,6 +220,7 @@ import android.os.AsyncTask;
 import android.os.Looper;
 import android.taobao.atlas.framework.FrameworkProperties;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.Log;
 import java.io.BufferedReader;
@@ -492,6 +493,10 @@ public class AtlasBundleInfoManager {
             if(!TextUtils.isEmpty(bundleInfoStr)) {
                 try {
                     LinkedHashMap<String,BundleListing.BundleInfo> infos = BundleListingUtil.parseArray(bundleInfoStr);
+                    if (infos == null) {
+                        AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL,
+                                false, "0", "", bundleInfoStr);
+                    }
                     BundleListing listing = new BundleListing();
                     listing.setBundles(infos);
                     mCurrentBundleListing = listing;

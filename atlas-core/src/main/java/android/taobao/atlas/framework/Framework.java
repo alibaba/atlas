@@ -221,7 +221,6 @@ import android.taobao.atlas.runtime.LowDiskException;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.*;
 import android.taobao.atlas.util.AtlasFileLock;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -620,8 +619,8 @@ public final class Framework {
             out.flush();
             out.close();
         } catch (IOException ioe) {
-            AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, "System", AtlasMonitor.UPDATE_META_FAILED_MSG,
-                    FileUtils.getDataAvailableSpace());
+//            AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, "System", AtlasMonitor.UPDATE_META_FAILED_MSG,
+//                    FileUtils.getDataAvailableSpace());
             Log.e("Framework","Could not save meta data.", ioe);
         }
     }
@@ -678,8 +677,8 @@ public final class Framework {
                     deleteDirectory(storage);
                 } catch (Exception e) {
                     if (count == 1) {
-                        AtlasMonitor.getInstance().trace(AtlasMonitor.DELETE_STORAGE_FAIL,
-                                "System", AtlasMonitor.DELETE_STORAGE_FAILED_MSG, FileUtils.getDataAvailableSpace());
+//                        AtlasMonitor.getInstance().trace(AtlasMonitor.DELETE_STORAGE_FAIL,
+//                                "System", AtlasMonitor.DELETE_STORAGE_FAILED_MSG, FileUtils.getDataAvailableSpace());
                         throw new RuntimeException("deleteDirectory failed", e);
                     }
                 }
@@ -689,8 +688,8 @@ public final class Framework {
         }
         // Still not removed yet, throw exception
         if (storage.exists()) {
-            AtlasMonitor.getInstance().trace(AtlasMonitor.DELETE_STORAGE_FAIL,
-                    "System", AtlasMonitor.DELETE_STORAGE_FAILED_MSG, FileUtils.getDataAvailableSpace());
+//            AtlasMonitor.getInstance().trace(AtlasMonitor.DELETE_STORAGE_FAIL,
+//                    "System", AtlasMonitor.DELETE_STORAGE_FAILED_MSG, FileUtils.getDataAvailableSpace());
             throw new RuntimeException("deleteDirectory failed");
         }
 
@@ -1070,8 +1069,8 @@ public final class Framework {
                         bundle = null;
                     }
                 }
-                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL,
-                        location, AtlasMonitor.RESTORED_FAILED_MSG, FileUtils.getDataAvailableSpace());
+//                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL,
+//                        location, AtlasMonitor.RESTORED_FAILED_MSG, FileUtils.getDataAvailableSpace());
                 Log.e("Framework","restore bundle failed" + location, e);
             }finally {
                 if(lockSuccess) {
@@ -1151,8 +1150,8 @@ public final class Framework {
                     }
                 }
             } catch (Exception e) {
-                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL,
-                        locations[i], AtlasMonitor.UPDATE_FAILED_MSG, FileUtils.getDataAvailableSpace());
+//                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL,
+//                        locations[i], AtlasMonitor.UPDATE_FAILED_MSG, FileUtils.getDataAvailableSpace());
                 /**
                  * bundle 安装需要支持事务,失败时回滚已部署的bundle
                  */
