@@ -209,6 +209,11 @@
 
 package com.taobao.android.builder.tasks.transform;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
@@ -228,20 +233,14 @@ import com.taobao.android.builder.tasks.manager.transform.MtlInjectTransform;
 import com.taobao.android.builder.tools.PathUtil;
 import com.taobao.android.builder.tools.classinject.CodeInjectByJavassist;
 import com.taobao.android.builder.tools.classinject.InjectParam;
-
+import javassist.ClassPool;
+import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.dom4j.DocumentException;
+import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.StopExecutionException;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-
-import javassist.ClassPool;
-import javassist.NotFoundException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -316,7 +315,11 @@ public class ClassInjectTransform extends MtlInjectTransform {
             if (injectParam.removePreverify && !isAtlasDependency(jarInput.getFile(), to) && jarInputs.size() > 1) {
                 FileUtils.copyFile(jarInput.getFile(), to);
             } else {
-                CodeInjectByJavassist.inject(classPool, jarInput.getFile(), to, injectParam);
+                try {
+                    CodeInjectByJavassist.inject(classPool, jarInput.getFile(), to, injectParam);
+                } catch (Exception e) {
+                    throw new GradleException(e.getMessage(), e);
+                }
             }
         }
 
@@ -331,10 +334,14 @@ public class ClassInjectTransform extends MtlInjectTransform {
                                                         directoryInput.getScopes(),
                                                         Format.DIRECTORY);
             if (!injectParam.removePreverify) {
-                CodeInjectByJavassist.injectFolder(classPool,
-                                                   directoryInput.getFile(),
-                                                   to,
-                                                   injectParam);
+                try {
+                    CodeInjectByJavassist.injectFolder(classPool,
+                                                       directoryInput.getFile(),
+                                                       to,
+                                                       injectParam);
+                } catch (Exception e) {
+                    throw new GradleException(e.getMessage(), e);
+                }
             } else {
 
                 FileUtils.copyDirectory(directoryInput.getFile(), to);

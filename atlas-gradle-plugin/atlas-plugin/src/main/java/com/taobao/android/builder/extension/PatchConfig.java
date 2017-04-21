@@ -209,17 +209,15 @@
 
 package com.taobao.android.builder.extension;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.extension.annotation.Config;
-
-import com.taobao.android.builder.tools.EnvHelper;
-import org.apache.commons.lang.StringUtils;
-
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.extension.annotation.Config;
+import com.taobao.android.builder.tools.EnvHelper;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by shenghua.nish on 2016-05-17 上午9:57.
@@ -228,34 +226,22 @@ public class PatchConfig {
 
     private String name;
 
-    @Config(message = " 打andfix patch 包 ", order = 1)
+    @Config(message = "app注册的签名的应用名称", order = 0, advance = false)
+    private String appSignName;
+
+    @Config(message = " 打andfix patch 包 ", order = 1, advance = true)
     private boolean createAPatch = false;
 
     @Config(message = " 打动态部署 patch 包 ", order = 2)
     private boolean createTPatch = false;
 
-    @JSONField(serialize = false)
-    private boolean onlyIncrementInAwb = true;
-
-    @JSONField(serialize = false)
-    private boolean containMainBundleRes = true;
-
-    @JSONField(serialize = false)
-    private String tpatchMainBundleName = "libcom_taobao_maindex";
-
-    @JSONField(serialize = false)
-    private String apatchMainBundleName = "com_taobao_maindex";
-
-    @JSONField(serialize = false)
-    private String tpatchHistoryUrl = "/rpc/dynamicBundle/getAllPatchInfo.json";
-
-    @JSONField(serialize = false)
+    @Config(message = "动态部署不包含的文件列表", order = 3, advance = true)
     private Set<String> tPatchNotIncludeFiles = Sets.newHashSet();
 
-    @Config(message = " andfix 打包过滤 class 列表文件 ", order = 3 , advance = true)
+    @Config(message = " andfix 打包过滤 class 列表文件 ", order = 4, advance = true)
     private File filterFile;
 
-    @Config(message = " andfix 打包过滤 class 列表文件 ", order = 4, advance = true)
+    @Config(message = " andfix 打包过滤 class 列表 ", order = 5, advance = true)
     private Set<String> filterClasses = new HashSet<String>();
 
     private boolean apForBaseFile = true;
@@ -266,7 +252,15 @@ public class PatchConfig {
 
     private Boolean devlopMode = false;
 
-    private String appSignName;
+    private boolean onlyIncrementInAwb = true;
+
+    private boolean containMainBundleRes = true;
+
+    private String tpatchMainBundleName = "libcom_taobao_maindex";
+
+    private String apatchMainBundleName = "com_taobao_maindex";
+
+    private String tpatchHistoryUrl = "/rpc/dynamicBundle/getAllPatchInfo.json";
 
     private Boolean onlyBuildModifyAwb = false;
 
@@ -426,16 +420,17 @@ public class PatchConfig {
 
     /**
      * 是否要打历史patch， 可以通过 -DdexPatchEnabled=true 来开启
+     *
      * @return
      */
     public String getTpatchHistoryUrl() {
-        if ("true".equals(EnvHelper.getEnv("dexPatchEnabled","false"))){
+        if ("true".equals(EnvHelper.getEnv("dexPatchEnabled", "false"))) {
             return "";
         }
-        if (StringUtils.isEmpty(AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl)){
+        if (StringUtils.isEmpty(AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl)) {
             return "";
         }
-        return "http://" + AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl +  tpatchHistoryUrl;
+        return "http://" + AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl + tpatchHistoryUrl;
     }
 
     public void setTpatchHistoryUrl(String tpatchHistoryUrl) {

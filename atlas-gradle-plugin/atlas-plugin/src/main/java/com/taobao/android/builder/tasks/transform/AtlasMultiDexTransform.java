@@ -268,13 +268,15 @@ public class AtlasMultiDexTransform extends MultiDexTransform {
             if (StringUtils.isNotEmpty(preLaunchClass)) {
                 for (String pre : preLaunchClass.split(",")) {
                     List<String> lines2 = new ArrayList<>();
-                    lines2.add("-keep class " + pre + " {");
+                    lines2.add("class " + pre + " {");
                     lines2.add("    <init>();");
                     lines2.add("    void initBeforeAtlas(android.content.Context);");
                     lines2.add("}");
                     super.keep(StringUtils.join(lines2, "\r\n"));
                 }
             }
+
+            super.keep("class android.taobao.atlas.** {*;}");
 
             return;
         }

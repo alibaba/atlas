@@ -209,54 +209,44 @@
 
 package com.taobao.android.builder.extension;
 
-import com.alibaba.fastjson.annotation.JSONField;
+import java.util.Set;
+
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.extension.annotation.Config;
-
-import org.gradle.api.tasks.Input;
-
-import java.util.Set;
 
 /**
  * Created by shenghua.nish on 2016-05-17 上午9:39.
  */
 public class ManifestOptions {
 
-    @JSONField(serialize = false)
-    @Input
+    @Config(order = 1, message = "保留的启动launch的列表", advance = false)
     private Set<String> retainLaunches = Sets.newHashSet();
 
-    @JSONField(serialize = false)
-    @Input
+    @Config(order = 2, message = "保留的权限列表", advance = false)
     private Set<String> retainPermissions = Sets.newHashSet();
 
-    @JSONField(serialize = false)
-    @Input
+    @Config(order = 3, message = "移除的系统权限的名称", advance = true)
     private Set<String> removeSystemPermissions = Sets.newHashSet();
 
-    @Input
+    @Config(order = 4, message = "移除的自定义权限的名称", advance = true)
     private boolean removeCustomPermission = false;
 
-    @JSONField(serialize = false)
-    @Input
+    @Config(order = 5, message = "组件增加bundle的坐标", advance = true)
     private boolean addBundleLocation = true;
 
-    @Config(message = "开启新增组件的功能" , order = 1)
-    @Input
+    @Config(order = 6, message = "开启新增组件的功能", advance = true)
     private boolean addAtlasProxyComponents /*= true*/;
 
-
-    @Config(message = "使用atlas的application，包含 atlas基础初始化及multidex逻辑" , order = 1)
-    @Input
+    @Config(order = 7, message = "使用atlas的application，包含 atlas基础初始化及multidex逻辑, 接atlas必须开启", advance = true)
     private boolean replaceApplication = true;
 
-    @JSONField(serialize = false)
+    @Config(order = 8, message = "使用atlas的multiDex功能, 接atlas必须开启", advance = true)
     private boolean addMultiDexMetaData = true;
 
+    @Config(order = 9, message = "移除所有的provider", advance = true)
     private boolean removeProvider = false;
 
-
-    @Input
+    @Config(order = 10, message = "不参与manifest合并的依赖坐标，group:name,group2:name2", advance = true)
     private Set<String> notMergedBundles = Sets.newHashSet();
 
     public Set<String> getNotMergedBundles() {
@@ -362,7 +352,6 @@ public class ManifestOptions {
         }
     }
 
-
     public boolean isAddBundleLocation() {
         return addBundleLocation;
     }
@@ -371,7 +360,6 @@ public class ManifestOptions {
         this.addBundleLocation = addBundleLocation;
     }
 
-
     public boolean isReplaceApplication() {
         return replaceApplication;
     }
@@ -379,7 +367,6 @@ public class ManifestOptions {
     public void setReplaceApplication(boolean replaceApplication) {
         this.replaceApplication = replaceApplication;
     }
-
 
     public boolean isAddMultiDexMetaData() {
         return addMultiDexMetaData;
@@ -405,14 +392,15 @@ public class ManifestOptions {
         this.addAtlasProxyComponents = addAtlasProxyComponents;
     }
 
+    @Override
     public String toString() {
         return "ManifestOptionsImpl{" +
-                "retainLaunches=" + retainLaunches +
-                ", retainPermissions=" + retainPermissions +
-                ", removeSystemPermissions=" + removeSystemPermissions +
-                ", removeCustomPermission=" + removeCustomPermission +
-                ", addBundleLocation=" + addBundleLocation +
-                ", notMergedBundles=" + notMergedBundles +
-                '}';
+            "retainLaunches=" + retainLaunches +
+            ", retainPermissions=" + retainPermissions +
+            ", removeSystemPermissions=" + removeSystemPermissions +
+            ", removeCustomPermission=" + removeCustomPermission +
+            ", addBundleLocation=" + addBundleLocation +
+            ", notMergedBundles=" + notMergedBundles +
+            '}';
     }
 }
