@@ -328,8 +328,9 @@ public class KernalVersionManager {
                 cachePreVersion = input.readBoolean();
                 input.close();
             } catch (Throwable e) {
-                rollbackHardly();
                 killChildProcesses(KernalConstants.baseContext);
+                BASELINEINFO.delete();
+                rollbackHardly();
                 android.os.Process.killProcess(Process.myPid());
             }
         }
