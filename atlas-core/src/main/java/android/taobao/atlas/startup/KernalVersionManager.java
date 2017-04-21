@@ -330,8 +330,9 @@ public class KernalVersionManager {
                 input.close();
             } catch (Throwable e) {
                 updateMonitor(KernalConstants.DD_BASELINEINFO_FAIL, e==null?"":e.getMessage());
-                rollbackHardly();
                 killChildProcesses(KernalConstants.baseContext);
+                BASELINEINFO.delete();
+                rollbackHardly();
                 android.os.Process.killProcess(Process.myPid());
             }
         }

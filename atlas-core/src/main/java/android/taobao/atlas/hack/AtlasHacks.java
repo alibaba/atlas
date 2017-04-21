@@ -318,8 +318,6 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     public static HackedMethod                                  AssetManager_getResourceIdentifier;
     public static HackedMethod                                  AssetManager_ensureStringBlocks;
     public static HackedMethod                                  ContextImpl_setOuterContext;
-    public static HackedMethod                                  ContextImpl_init;
-    public static HackedMethod                                  ContextImpl_createAppContext;
     public static HackedMethod                                  Service_attach;
     public static HackedMethod                                  ActivityThread_installContentProviders;
     public static HackedMethod                                  ActivityThread_installProvider;
@@ -462,11 +460,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         PackageParser$Component_getComponentName = PackageParser$Component.method("getComponentName");
         ClassLoader_findLibrary = ClassLoader.method("findLibrary", String.class);
         ContextImpl_setOuterContext = ContextImpl.method("setOuterContext",Context.class);
-        if(Build.VERSION.SDK_INT>=19){
-            ContextImpl_createAppContext = ContextImpl.method("createAppContext",ActivityThread.getmClass(),LoadedApk.getmClass());
-        }else{
-            ContextImpl_init = ContextImpl.method("init",LoadedApk.getmClass(), IBinder.class,ActivityThread.getmClass());
-        }
+
         if (LexFile != null && LexFile.getmClass() !=null ) {
             LexFile_loadLex = LexFile.method("loadLex", String.class, int.class);
             LexFile_loadClass = LexFile.method("loadClass", String.class, java.lang.ClassLoader.class);

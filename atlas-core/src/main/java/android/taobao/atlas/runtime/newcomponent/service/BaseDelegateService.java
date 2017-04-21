@@ -15,6 +15,7 @@ import android.os.Looper;
 import android.os.RemoteException;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.hack.Hack;
 import android.taobao.atlas.runtime.ContextImplHook;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
@@ -166,12 +167,16 @@ public class BaseDelegateService extends Service{
                 Object activityThread = AndroidHack.getActivityThread();
                 Object loadedApk =  AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,activityThread,RuntimeVariables.androidApplication.getPackageName());
 
-                if(Build.VERSION.SDK_INT>=21) {
-                    contextImpl = AtlasHacks.ContextImpl_createAppContext.invoke(AtlasHacks.ContextImpl.getmClass(),activityThread,loadedApk);
+                Hack.HackedMethod ContextImpl_createAppContext = AtlasHacks.ContextImpl.method("createAppContext",AtlasHacks.ActivityThread.getmClass(),AtlasHacks.LoadedApk.getmClass());
+                if(ContextImpl_createAppContext.getMethod()!=null){
+                    contextImpl = ContextImpl_createAppContext.invoke(AtlasHacks.ContextImpl.getmClass(),activityThread,loadedApk);
                 }else{
+                    Hack.HackedMethod ContextImpl_init = AtlasHacks.ContextImpl.method("init",AtlasHacks.LoadedApk.getmClass(), IBinder.class,AtlasHacks.ActivityThread.getmClass());
                     contextImpl = AtlasHacks.ContextImpl.getmClass().newInstance();
-                    AtlasHacks.ContextImpl_init.invoke(contextImpl, loadedApk,null,activityThread);
+                    ContextImpl_init.invoke(contextImpl, loadedApk,null,activityThread);
+
                 }
+
                 Object gDefault = null;
                 if(Build.VERSION.SDK_INT>25 || (Build.VERSION.SDK_INT==25&&Build.VERSION.PREVIEW_SDK_INT>0)){
                     gDefault=AtlasHacks.ActivityManager_IActivityManagerSingleton.get(AtlasHacks.ActivityManager.getmClass());
