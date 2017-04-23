@@ -626,7 +626,7 @@ public class BundleInstaller implements Callable{
         String bundlePath = String.format("%s/lib/%s", dataDir,bundleFileName);
         File bundleFile = new File(bundlePath);
         BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-        if(bundleFile.exists() && info.isInternal() && (info.getSize()>0 && info.getSize() == bundleFile.length())){
+        if(bundleFile.exists() && info.isInternal()){
             mTmpBundleSourceFile = bundleFile;
             Log.e("BundleInstaller","find valid bundle : "+bundleFile.getAbsolutePath());
         }else{

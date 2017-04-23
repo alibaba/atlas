@@ -1,6 +1,5 @@
 package android.taobao.atlas.util;
 
-import android.taobao.atlas.runtime.ActivityTaskMgr;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
 
@@ -31,7 +30,7 @@ public class AtlasCrashManager {
                 Object mPM = mPMField.get(RuntimeVariables.androidApplication.getPackageManager());
                 Method setPackageStoppedState = mPM.getClass().getDeclaredMethod("setPackageStoppedState",String.class,boolean.class,int.class);
                 setPackageStoppedState.setAccessible(true);
-                setPackageStoppedState.invoke(RuntimeVariables.androidApplication.getPackageName(),true,RuntimeVariables.androidApplication.getApplicationInfo().uid);
+                setPackageStoppedState.invoke(mPM,RuntimeVariables.androidApplication.getPackageName(),true,RuntimeVariables.androidApplication.getApplicationInfo().uid);
             } catch (Throwable e) {
                 e.printStackTrace();
             }
