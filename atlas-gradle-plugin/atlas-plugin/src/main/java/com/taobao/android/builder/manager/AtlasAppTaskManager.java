@@ -209,14 +209,15 @@
 
 package com.taobao.android.builder.manager;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
+import com.android.build.gradle.internal.TaskContainerAdaptor;
+import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
@@ -228,9 +229,12 @@ import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.AtlasBuilder;
+import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.PrepareAPTask;
+import com.taobao.android.builder.tasks.PrepareBaseApkTask;
 import com.taobao.android.builder.tasks.app.ApBuildTask;
 import com.taobao.android.builder.tasks.app.LogDependenciesTask;
 import com.taobao.android.builder.tasks.app.bundle.JavacAwbsTask;
@@ -261,7 +265,14 @@ import com.taobao.android.builder.tasks.tpatch.TPatchTask;
 import com.taobao.android.builder.tasks.transform.AtlasMultiDexTransform;
 import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
 import com.taobao.android.builder.tasks.transform.hook.AwbProguradHook;
+
 import org.gradle.api.Project;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * MTL插件编译apk的任务管理
@@ -360,6 +371,30 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(TransformTask.class));
 
                 mtlTaskContextList.add(new MtlTaskContext(PackageAwbsTask.ConfigAction.class, null));
+
+                if (atlasExtension.getTBuildConfig().isIncremental()) {
+                    mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTask.ConfigAction.class,
+                                                              null));
+                    final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
+                    VariantScope variantScope = appVariantContext.getVariantData().getScope();
+
+                    // create the stream generated from this task
+                    variantScope.getTransformManager()
+                            .addStream(OriginalStream.builder()
+                                               .addContentType(QualifiedContent.DefaultContentType.RESOURCES)
+                                               .addScope(QualifiedContent.Scope.PROJECT)
+                                               .setFolders(new Supplier<Collection<File>>() {
+                                                   @Override
+                                                   public Collection<File> get() {
+                                                       return ImmutableList.of(new File(
+                                                               appVariantContext.apContext.getBaseApk() + "_"));
+                                                   }
+                                               })
+                                               // .setFolder(variantScope.getSourceFoldersJavaResDestinationDir())
+                                               // .setDependency(processJavaResourcesTask.getName())
+                                               .build());
+
+                }
 
                 mtlTaskContextList.add(new MtlTaskContext("package"));
 

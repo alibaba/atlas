@@ -209,6 +209,13 @@
 
 package com.taobao.android.builder.extension;
 
+import com.alibaba.fastjson.annotation.JSONField;
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.extension.annotation.Config;
+
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -216,13 +223,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.alibaba.fastjson.annotation.JSONField;
-
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Optional;
 
 /**
  * Created by shenghua.nish on 2016-05-17 上午10:15.
@@ -311,13 +311,13 @@ public class TBuildConfig {
     @Config(message = "自启动的bundle列表， 值是 packageName", order = 1, advance = true)
     private List<String> autoStartBundles = new ArrayList<String>();
 
-    @Config(
-        message = "实现PreLaunch的类，多个类用 , 号分开", order = 2, advance = true)
+    @Config(message = "实现PreLaunch的类，多个类用 , 号分开", order = 2, advance = true)
     private String preLaunch = "";
 
-    @Config(
-        message = "atlas的主dex分包机制，第一个dex只放atlas对应的启动代码", order = 3, advance = true)
+    @Config(message = "atlas的主dex分包机制，第一个dex只放atlas对应的启动代码", order = 3, advance = true)
     private boolean atlasMultiDex = false;
+
+    private boolean incremental = false;
 
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;
@@ -497,5 +497,13 @@ public class TBuildConfig {
 
     public void setAtlasMultiDex(boolean atlasMultiDex) {
         this.atlasMultiDex = atlasMultiDex;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
     }
 }
