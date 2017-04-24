@@ -274,6 +274,7 @@ public class PrepareAPTask extends BaseTask {
 
             apContext.setApExploredFolder(explodedDir);
             apContext.setBaseApk(new File(explodedDir, ApContext.AP_INLINE_APK_FILENAME));
+            apContext.setBaseManifest(new File(explodedDir, "AndroidManifest.xml"));
             BetterZip.extractFile(apContext.getBaseApk(),
                                   "lib/armeabi/*",
                                   new File(explodedDir, ApContext.AP_INLINE_AWB_FILENAME));
