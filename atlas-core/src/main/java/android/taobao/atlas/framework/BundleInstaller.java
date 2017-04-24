@@ -616,6 +616,11 @@ public class BundleInstaller implements Callable{
 
     /**
      * 获取bundle源文件地址
+     *
+     * bundle finding order by follwing paths:
+     * 1) ${getApplicationInfo().dataDir}/lib/
+     * 2) ${getApplicationInfo().nativeLibraryDir}
+     * 3) apk's "lib/armeabi" path.
      * @param location
      */
     private void findBundleSource(String location) throws IOException{
@@ -625,8 +630,10 @@ public class BundleInstaller implements Callable{
         String bundleFileName = String.format("lib%s.so",location.replace(".","_"));
         String bundlePath = String.format("%s/lib/%s", dataDir,bundleFileName);
         File bundleFile = new File(bundlePath);
-        BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-        if(bundleFile.exists() && info.isInternal()){
+        if(!bundleFile.exists()){
+            bundleFile = new File(RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir,bundleFileName);
+        }
+        if(bundleFile.exists() && AtlasBundleInfoManager.instance().isInternalBundle(location)){
             mTmpBundleSourceFile = bundleFile;
             Log.e("BundleInstaller","find valid bundle : "+bundleFile.getAbsolutePath());
         }else{
