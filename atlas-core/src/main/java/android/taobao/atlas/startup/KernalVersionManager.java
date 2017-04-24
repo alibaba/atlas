@@ -393,7 +393,10 @@ public class KernalVersionManager {
     }
 
     public boolean isCachePreVersion(){
-        Log.e("KernalVersionManager","can no be inlined");
+        boolean flag = Boolean.FALSE.booleanValue();
+        if(flag) {
+            Log.e("KernalVersionManager", "can no be inlined");
+        }
         return cachePreVersion;
     }
 

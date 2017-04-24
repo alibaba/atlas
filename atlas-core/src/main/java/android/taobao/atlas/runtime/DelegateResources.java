@@ -296,7 +296,7 @@ public class DelegateResources extends Resources {
     }
 
 
-    private synchronized static void updateResources(Resources res,String assetPath,int assertType) throws Exception{
+    private static void updateResources(Resources res,String assetPath,int assertType) throws Exception{
         if(sAssetManagerProcessor==null){
             sAssetManagerProcessor = new AssetManagerProcessor();
         }
