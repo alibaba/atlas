@@ -212,6 +212,7 @@ import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Environment;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.util.*;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
@@ -373,11 +374,12 @@ public class BundleArchiveRevision {
             in.close();
 
             if(!BaselineInfoManager.instance().isDexPatched(location)) {
+                String wantedVersion = BaselineInfoManager.instance().getBaseBundleVersion(location);
+                BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
                 if (containerVersion == null ||
                         (!TextUtils.isEmpty(Framework.getContainerVersion()) && !containerVersion.equals(Framework.getContainerVersion())) ||
-                        (!TextUtils.isEmpty(version) && !TextUtils.isEmpty(BaselineInfoManager.instance().getBaseBundleVersion(location)) && !version.equals(BaselineInfoManager.instance().getBaseBundleVersion(location)))) {
-//                    AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_MISMATCH, location, AtlasMonitor.UPDATE_META_FAILED_MSG,
-//                            FileUtils.getDataAvailableSpace());
+                        (!TextUtils.isEmpty(version) && !TextUtils.isEmpty(wantedVersion) && !version.equals(wantedVersion)) ||
+                        (!TextUtils.isEmpty(info.getVersion()) && version!=null&&!version.equals("-1") && !version.equals(info.getVersion()))) {
                     throw new BundleArchive.MisMatchException("mismatch bundle version" + revisionDir.getAbsolutePath());
                 }
             }
