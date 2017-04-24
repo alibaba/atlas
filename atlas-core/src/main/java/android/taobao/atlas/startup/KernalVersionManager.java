@@ -217,6 +217,7 @@ import android.os.Process;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.taobao.atlas.startup.patch.KernalFileLock;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 import java.io.*;
 import java.util.ArrayList;
@@ -392,6 +393,7 @@ public class KernalVersionManager {
     }
 
     public boolean isCachePreVersion(){
+        Log.e("KernalVersionManager","can no be inlined");
         return cachePreVersion;
     }
 
