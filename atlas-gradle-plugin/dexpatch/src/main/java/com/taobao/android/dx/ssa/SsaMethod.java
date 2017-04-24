@@ -90,17 +90,17 @@ public final class SsaMethod {
     private boolean backMode;
 
     /**
-     * @param ropMethod rop-form method to convert from
+     * @param rmeth rop-form method to convert from
      * @param paramWidth the total width, in register-units, of the
      * method's parameters
      * @param isStatic {@code true} if this method has no {@code this}
      * pointer argument
      */
-    public static SsaMethod newFromRopMethod(RopMethod ropMethod,
+    public static SsaMethod newFromRopMethod(RopMethod rmeth,
             int paramWidth, boolean isStatic) {
-        SsaMethod result = new SsaMethod(ropMethod, paramWidth, isStatic);
+        SsaMethod result = new SsaMethod(rmeth, paramWidth, isStatic);
 
-        result.convertRopToSsaBlocks(ropMethod);
+        result.convertRopToSsaBlocks(rmeth);
 
         return result;
     }

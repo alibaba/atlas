@@ -526,12 +526,12 @@ public final class SmallDexPatchGenerator {
             patchedDexToSmallPatchedMapListOffsetMap.put(
                     patchedDex, smallPatchedMapListOffset
             );
-            int smallPatchedMapListSize
+            int position
                     = SizeOf.UINT + SizeOf.MAP_ITEM * smallPatchedSectionCount;
 
             int smallPatchedDexSize
                     = smallPatchedMapListOffset
-                    + smallPatchedMapListSize;
+                    + position;
             patchedDexToSmallPatchedDexSizeMap.put(patchedDex, smallPatchedDexSize);
         }
     }

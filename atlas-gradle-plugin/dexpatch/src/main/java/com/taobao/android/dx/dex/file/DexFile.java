@@ -568,14 +568,14 @@ public final class DexFile {
                 out.writeZeroes(one.getFileOffset() - out.getCursor());
                 one.writeTo(out);
             } catch (RuntimeException ex) {
-                ExceptionWithContext ec;
+                ExceptionWithContext ewc;
                 if (ex instanceof ExceptionWithContext) {
-                    ec = (ExceptionWithContext) ex;
+                    ewc = (ExceptionWithContext) ex;
                 } else {
-                    ec = new ExceptionWithContext(ex);
+                    ewc = new ExceptionWithContext(ex);
                 }
-                ec.addContext("...while writing section " + i);
-                throw ec;
+                ewc.addContext("...while writing section " + i);
+                throw ewc;
             }
         }
 
