@@ -44,6 +44,7 @@ public class PatchFileBuilder {
     private final File tPatchTmpFolder;
     private Map<String, File> awbMaps;
     private Map<String, PatchInfo> hisPatchInfos = new HashMap<String, PatchInfo>();
+    private List<String>versionList = new ArrayList<>();
     private final File patchsFolder;
 
     private List<String> noPatchBundles;
@@ -77,6 +78,9 @@ public class PatchFileBuilder {
         String taskName = "CreateHisPatch";
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper();
         for (final PatchInfo patchInfo : patchInfos) {
+            if (!versionList.isEmpty()&&!versionList.contains(patchInfo.getPatchVersion())){
+                continue;
+            }
             executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
@@ -223,7 +227,7 @@ public class PatchFileBuilder {
             bundlePatch.hisPatchUrl = hisPatchInfo.getDownloadUrl();
             bundlePatch.mainBundle = curBundleInfo.getMainBundle();
             bundlePatch.baseVersion = curBundleInfo.getBaseVersion();
-            if (hisBundles.containsKey(bundleName)) { // 如果之前的patch版本也包含这个bundle的patch
+            if (hisBundles.containsKey(bundleName)&&!hisBundles.get(bundleName).getNewBundle()) { // 如果之前的patch版本也包含这个bundle的patch
                 PatchBundleInfo hisBundleInfo = hisBundles.get(bundleName);
                 bundlePatch.baseVersion = hisBundleInfo.getVersion();
                 if (curBundleInfo.getVersion().equalsIgnoreCase(hisBundleInfo.getVersion())) { // 如果2个patch版本没变化
@@ -358,6 +362,12 @@ public class PatchFileBuilder {
 //                        FileUtils.copyDirectory(curBundleFolder, bundleDestFolder);
                     } else {
                         File fullAwbFile = awbMaps.get(bundlePatch.artifactId);
+                        if (fullAwbFile == null){
+                            System.out.println(bundlePatch.artifactId + " is not exits!");
+                            FileUtils.copyDirectory(curBundleFolder, bundleDestFolder);
+                            break;
+
+                        }
                         copyDiffFiles(fullAwbFile, curBundleFolder, hisBundleFolder, bundleDestFolder);
                         if (!bundleDestFolder.exists()||bundleDestFolder.listFiles().length == 0){
                             addToPatch = false;
@@ -391,11 +401,11 @@ public class PatchFileBuilder {
             FileDef curFileDef = entry.getValue();
 
             File destFile = new File(destBundleFolder, curFilePath);
-            if (curFilePath.endsWith(".dex")){
-                createHisBundleDex(curFileDef,hisBundleFileMap.get(curFilePath),destFile,fullLibFile);
-                hisBundleFileMap.remove(curFilePath);
-                continue;
-            }
+//            if (curFilePath.endsWith(".dex")){
+//                createHisBundleDex(curFileDef,hisBundleFileMap.get(curFilePath),destFile,fullLibFile);
+//                hisBundleFileMap.remove(curFilePath);
+//                continue;
+//            }
             if (hisBundleFileMap.containsKey(curFilePath)) {
                 FileDef hisFileDef = hisBundleFileMap.get(curFilePath);
                 if (curFileDef.md5.equals(hisFileDef.md5)) {
@@ -472,6 +482,11 @@ public class PatchFileBuilder {
             map.put(path, fileDef);
         }
         return map;
+    }
+
+    public void setHistroyVersionList(List<String> versionList) {
+        this.versionList = versionList;
+
     }
 
     // 简易文件定义

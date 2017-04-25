@@ -215,10 +215,18 @@ import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.DiffType;
 import com.taobao.android.tpatch.model.ApkBO;
 import com.taobao.android.tpatch.model.BundleBO;
+import com.taobao.android.tpatch.utils.HttpClientUtils;
 import com.taobao.android.utils.ZipUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.List;
 import java.util.Set;
 
@@ -233,9 +241,11 @@ public class BasePatchTool {
     protected static final String DEX_SUFFIX = ".dex";
     protected static final String CLASSES = "classes";
     protected static final int DEFAULT_API_LEVEL = 19;
+    public static final String LAST_PATCH_URL = "http://mtl3.alibaba-inc.com/rpc/dynamicBundle/getLastPatch.json?";
 
     protected final ApkBO baseApkBO;
     protected final ApkBO newApkBO;
+
     public void setSplitDiffBundle(List<Pair<BundleBO,BundleBO>> splitDiffBundle) {
         this.splitDiffBundle = splitDiffBundle;
     }
@@ -337,6 +347,60 @@ public class BasePatchTool {
         ZipUtils.unzip(baseApkBO.getApkFile(), baseApkUnzipFolder.getAbsolutePath());
         ZipUtils.unzip(newApkBO.getApkFile(), newApkUnzipFolder.getAbsolutePath());
         return unzipFolder;
+    }
+
+    protected File getLastPatchFile(String baseApkVersion,
+                                  String productName,
+                                  File outPatchDir) throws IOException {
+        try {
+            String httpUrl = LAST_PATCH_URL +
+                    "baseVersion=" +
+                    baseApkVersion +
+                    "&productIdentifier=" +
+                    productName;
+            String response = HttpClientUtils.getUrl(httpUrl);
+            if (StringUtils.isBlank(response) ||
+                    response.equals("\"\"") ||
+                    !productName.equals("taobao4android")) {
+                return null;
+            }
+            File downLoadFolder = new File(outPatchDir, "LastPatch");
+            downLoadFolder.mkdirs();
+            File downLoadFile = new File(downLoadFolder, "lastpatch.tpatch");
+            String downLoadUrl = StringEscapeUtils.unescapeJava(response);
+            downloadTPath(downLoadUrl.substring(1, downLoadUrl.length() - 1), downLoadFile);
+            return downLoadFile;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void downloadTPath(String httpUrl, File saveFile) throws IOException {
+        if (!saveFile.exists() || !saveFile.isFile()) {
+            downloadFile(httpUrl, saveFile);
+        }
+    }
+
+    /**
+     * http下载
+     */
+    private void downloadFile(String httpUrl, File saveFile) throws IOException {
+        // 下载网络文件
+        int bytesum = 0;
+        int byteread = 0;
+        URL url = new URL(httpUrl);
+        URLConnection conn = url.openConnection();
+        InputStream inStream = conn.getInputStream();
+        FileOutputStream fs = new FileOutputStream(saveFile);
+
+        byte[] buffer = new byte[1204];
+        while ((byteread = inStream.read(buffer)) != -1) {
+            bytesum += byteread;
+            fs.write(buffer, 0, byteread);
+        }
+        fs.flush();
+        inStream.close();
+        fs.close();
     }
 
 

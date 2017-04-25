@@ -10,7 +10,6 @@ import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.DiffType;
 import com.taobao.android.smali.AfBakSmali;
 import com.taobao.android.smali.SmaliMod;
-import com.taobao.common.dexpatcher.DexPatchGenerator;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;
 import org.jf.baksmali.baksmaliOptions;
@@ -41,10 +40,10 @@ public class TPatchDexTool {
     private DexDiffer dexDiffer;
     private DexDiffFilter dexDiffFilter;
     private boolean mainBundle;
-//    private Map<String, ClassDef>lastBundleClassMap = new HashMap<String, ClassDef>();
+    private Map<String, ClassDef>lastBundleClassMap = new HashMap<String, ClassDef>();
     private boolean removeDupStrings;
 
-    public TPatchDexTool(List<File> baseDexFiles, List<File> newDexFiles, int apiLevel, boolean mainBundle) {
+    public TPatchDexTool(List<File> baseDexFiles, List<File> newDexFiles, int apiLevel, Map<String,ClassDef> map,boolean mainBundle) {
         this.baseDexFiles = baseDexFiles;
         this.newDexFiles = newDexFiles;
         this.apiLevel = apiLevel;
@@ -52,6 +51,12 @@ public class TPatchDexTool {
         assert (null != baseDexFiles && baseDexFiles.size() > 0);
         assert (null != newDexFiles && newDexFiles.size() > 0);
         this.dexDiffer = new DexDiffer(baseDexFiles, newDexFiles, apiLevel);
+        if (map == null) {
+            dexDiffer.setLastBundleClassMap(lastBundleClassMap);
+        }else {
+            dexDiffer.setLastBundleClassMap(map);
+        }
+
 
     }
 
@@ -62,7 +67,7 @@ public class TPatchDexTool {
         newDexFiles.add(newDex);
         this.mainBundle = mainBundle;
         this.dexDiffer = new DexDiffer(baseDex, newDex, apiLevel);
-//        dexDiffer.setLastBundleClassMap(lastBundleClassMap);
+       dexDiffer.setLastBundleClassMap(lastBundleClassMap);
 
     }
 
@@ -78,7 +83,7 @@ public class TPatchDexTool {
      */
     public DexDiffInfo createTPatchDex(File outDexFile) throws IOException, RecognitionException, PatchException {
         DexDiffInfo dexDiffInfo = null;
-        if (mainBundle){
+//        if (mainBundle){
             outDexFile.getParentFile().mkdirs();
              dexDiffInfo = dexDiffer.doDiff();
 
@@ -110,12 +115,11 @@ public class TPatchDexTool {
                     }
                 });
             }
-        }else {
-
-            DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(baseDexFiles.get(0),removeDebugInfo(newDexFiles.get(0)));
-            dexPatchGenerator.executeAndSaveTo(outDexFile);
-            dexDiffInfo = dexDiffer.doDiff();
-        }
+//        }else {
+//            dexDiffInfo = dexDiffer.doDiff();
+////            DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(baseDexFiles.get(0),removeDebugInfo(newDexFiles.get(0)));
+////            dexPatchGenerator.executeAndSaveTo(outDexFile);
+//        }
         return dexDiffInfo;
 
     }
