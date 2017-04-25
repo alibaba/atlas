@@ -284,7 +284,7 @@ public class BundleInfoUtils {
 
         String applicationName = ManifestFileUtils.getApplicationName(awbBundle.getAndroidLibrary().getManifest());
         if (StringUtils.isNotEmpty(applicationName)) {
-            if (applicationName.startsWith(".")){
+            if (applicationName.startsWith(".")) {
                 applicationName = awbBundle.getPackageName() + applicationName;
             }
             bundleInfo.setApplicationName(applicationName);
@@ -300,6 +300,8 @@ public class BundleInfoUtils {
                                                .getGlobalScope()
                                                .getProject()
                                                .getProjectDir(), "bundleBaseInfoFile.json");
+
+        //使用插件里的文件替换
         Map<String, BundleInfo> bundleFileMap = Maps.newHashMap();
         if (null != baseBunfleInfoFile &&
             baseBunfleInfoFile.exists() &&
@@ -309,6 +311,34 @@ public class BundleInfoUtils {
                                              new TypeReference<Map<String, BundleInfo>>() {
                                              });
         }
+
+        List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
+            appVariantContext.getVariantData().getName()).getAwbBundles();
+
+        List<String> duplicatedBundleInfo = new ArrayList<>();
+        for (AwbBundle awbBundle : awbBundles) {
+            String name = awbBundle.getResolvedCoordinates().getArtifactId();
+            File bundleBaseInfoFile = new File(awbBundle.getAndroidLibrary().getFolder(), "bundleBaseInfoFile.json");
+            if (bundleBaseInfoFile.exists()) {
+                String json = FileUtils.readFileToString(bundleBaseInfoFile, "utf-8");
+                BundleInfo bundleInfo = JSON.parseObject(json, BundleInfo.class);
+
+                if (bundleFileMap.containsKey(name)) {
+                    appVariantContext.getProject().getLogger().error(
+                        "bundleBaseInfoFile>>>" + name + " has declared bundleBaseInfoFile");
+                    duplicatedBundleInfo.add(name);
+                }
+
+                bundleFileMap.put(name, bundleInfo);
+            }
+        }
+
+        if (duplicatedBundleInfo.size() > 0) {
+            FileUtils.writeLines(
+                new File(appVariantContext.getProject().getBuildDir(), "outputs/warning-dupbundleinfo.properties"),
+                duplicatedBundleInfo);
+        }
+
         return bundleFileMap;
     }
 

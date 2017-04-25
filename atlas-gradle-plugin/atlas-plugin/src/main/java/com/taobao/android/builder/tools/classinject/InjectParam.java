@@ -209,6 +209,8 @@
 
 package com.taobao.android.builder.tools.classinject;
 
+import java.io.File;
+
 /**
  * Created by wuzhong on 2016/11/24.
  */
@@ -227,5 +229,7 @@ public class InjectParam {
     public boolean outApp = false;
 
     public boolean removePreverify;
+
+    public File outputFile;
 
 }

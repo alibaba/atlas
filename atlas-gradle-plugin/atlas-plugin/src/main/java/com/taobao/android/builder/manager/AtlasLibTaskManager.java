@@ -306,7 +306,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
                         //构建awb 和 extension
                         if (atlasExtension.getBundleConfig().isAwbBundle()) {
-                            awbGenerator.generateAwbArtifict(zipTask);
+                            awbGenerator.generateAwbArtifict(zipTask,libVariantOutputData);
                         }
 
                         if (null != tBuildType && (StringUtils.isNotEmpty(tBuildType.getBaseApDependency())

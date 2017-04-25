@@ -303,6 +303,9 @@ public class ClassInjectTransform extends MtlInjectTransform {
         InjectParam injectParam = null;
         try {
             injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
+
+            injectParam.outputFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/atlasFrameworkProperties.json");
+
         } catch (DocumentException e) {
             throw new TransformException(e);
         }

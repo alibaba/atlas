@@ -228,6 +228,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
+import com.alibaba.fastjson.JSON;
+
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -281,6 +283,17 @@ public class CodeInjectByJavassist {
             addField(pool, cc, "preLaunch", injectParam.preLaunch);
             addField(pool, cc, "group", injectParam.group);
             addField(pool, cc, "outApp", String.valueOf(injectParam.outApp));
+
+            if (null != injectParam.outputFile) {
+                Map output = new HashMap();
+                output.put("bundleInfo", JSON.parseArray(injectParam.bundleInfo));
+                output.put("autoStartBundles", injectParam.autoStartBundles);
+                output.put("preLaunch", injectParam.preLaunch);
+                output.put("group", injectParam.group);
+                output.put("outApp", injectParam.outApp);
+                FileUtils.write(injectParam.outputFile, JSON.toJSONString(output, true));
+            }
+
         }
 
         ClazzInjecter clazzInjecter = sInjecterMap.get(className);
