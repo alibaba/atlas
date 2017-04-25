@@ -209,6 +209,13 @@
 
 package com.taobao.android.builder.extension;
 
+import com.alibaba.fastjson.annotation.JSONField;
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.extension.annotation.Config;
+
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -284,6 +291,8 @@ public class TBuildConfig {
 
     @Deprecated
     private Set<String> insideOfApkBundles = Sets.newHashSet();
+
+    private boolean incremental = false;
 
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;
@@ -447,5 +456,13 @@ public class TBuildConfig {
 
     public void setCreateAP(Boolean createAP) {
         this.createAP = createAP;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
     }
 }

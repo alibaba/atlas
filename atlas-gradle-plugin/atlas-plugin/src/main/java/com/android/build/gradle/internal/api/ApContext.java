@@ -234,6 +234,8 @@ public class ApContext {
 
     private File baseApk;
 
+    private File baseManifest;
+
     public String getApDependency() {
         return apDependency;
     }
@@ -264,6 +266,14 @@ public class ApContext {
 
     public File getBaseApk() {
         return baseApk;
+    }
+
+    public File getBaseManifest() {
+        return baseManifest;
+    }
+
+    public void setBaseManifest(File baseManifest) {
+        this.baseManifest = baseManifest;
     }
 
     public File getBaseAwb(String soFileName) {
