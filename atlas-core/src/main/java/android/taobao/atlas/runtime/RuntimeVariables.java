@@ -281,14 +281,14 @@ public class RuntimeVariables implements Serializable{
         }
     }
 
-    private static Class versionKernalClass;
+    public static Class FrameworkPropertiesClazz;
 
     public static boolean isCurrentMaindexMatch(DexFile dexFile){
         try {
-            versionKernalClass = dexFile.loadClass("android.taobao.atlas.framework.FrameworkProperties",ClassLoader.getSystemClassLoader());
-            Field field = versionKernalClass.getDeclaredField("version");
+            FrameworkPropertiesClazz = dexFile.loadClass("android.taobao.atlas.framework.FrameworkProperties",ClassLoader.getSystemClassLoader());
+            Field field = FrameworkPropertiesClazz.getDeclaredField("version");
             field.setAccessible(true);
-            String version = (String)field.get(versionKernalClass.newInstance());
+            String version = (String)field.get(FrameworkPropertiesClazz.newInstance());
             String currentVersion = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).versionName;
             if(currentVersion!=null && version!=null && version.equals(currentVersion)){
                 return true;
@@ -300,13 +300,13 @@ public class RuntimeVariables implements Serializable{
     }
 
     public static Object getFrameworkProperty(String fieldName){
-        if(versionKernalClass==null){
-            versionKernalClass = FrameworkProperties.class;
+        if(FrameworkPropertiesClazz==null){
+            FrameworkPropertiesClazz = FrameworkProperties.class;
         }
         try {
-            Field field = versionKernalClass.getDeclaredField(fieldName);
+            Field field = FrameworkPropertiesClazz.getDeclaredField(fieldName);
             field.setAccessible(true);
-            return field.get(versionKernalClass);
+            return field.get(FrameworkPropertiesClazz);
         }catch(Throwable e){
 //            e.printStackTrace();
             return null;

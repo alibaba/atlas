@@ -265,8 +265,6 @@ public class AtlasBridgeApplication extends Application{
         KernalConstants.RAW_APPLICATION_NAME = getClass().getName();
         boolean hasKernalPatched  = false;
         boolean isMainProcess = getBaseContext().getPackageName().equals(getProcessName(getBaseContext()));
-//        SharedPreferences sharedPreferences = getBaseContext().getSharedPreferences(KernalConstants.ATLAS_MONITOR, MODE_PRIVATE);
-//        sharedPreferences.edit().clear().apply();
         if(isUpdated){
             if (!isMainProcess) {
                 android.os.Process.killProcess(android.os.Process.myPid());
@@ -292,18 +290,6 @@ public class AtlasBridgeApplication extends Application{
                         KernalVersionManager.instance().rollbackHardly();
                     }
                     android.os.Process.killProcess(android.os.Process.myPid());
-                }
-                if(Build.VERSION.SDK_INT>=24) {
-                    ClassLoader currentClassLoader = getClassLoader();
-                    replacePathClassLoader();
-                    try {
-                        Class RuntimeVariablesClass = getClassLoader().loadClass("android.taobao.atlas.runtime.RuntimeVariables");
-                        Field rawClassLoaderField = RuntimeVariablesClass.getDeclaredField("sRawClassLoader");
-                        rawClassLoaderField.setAccessible(true);
-                        rawClassLoaderField.set(RuntimeVariablesClass,currentClassLoader);
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                    }
                 }
             }else{
                 //remove deprecated info
@@ -465,25 +451,6 @@ public class AtlasBridgeApplication extends Application{
             }
         }
         return false;
-    }
-
-    private void replacePathClassLoader(){
-        ClassLoader loader = getClass().getClassLoader();
-        boolean needReplace = false;
-        do{
-            if(loader.getClass().getName().equals(PathClassLoader.class.getName())){
-                needReplace = true;
-                break;
-            }
-        }
-        while((loader=loader.getParent())!=null);
-        if(needReplace){
-            try {
-                NClassLoader.replacePathClassLoader(getBaseContext(),AtlasBridgeApplication.class.getClassLoader());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     public void deleteDirectory(final File path) {
