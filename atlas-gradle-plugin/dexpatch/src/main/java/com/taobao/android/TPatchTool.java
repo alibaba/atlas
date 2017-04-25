@@ -216,6 +216,8 @@ import com.taobao.android.apatch.utils.TypeGenUtil;
 import com.taobao.android.differ.dex.ApkDiff;
 import com.taobao.android.differ.dex.BundleDiffResult;
 import com.taobao.android.differ.dex.PatchException;
+import com.taobao.android.dx.merge.CollisionPolicy;
+import com.taobao.android.dx.merge.DexMerger;
 import com.taobao.android.object.ApkFileList;
 import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.BuildPatchInfos;
@@ -240,6 +242,7 @@ import com.taobao.android.utils.ZipUtils;
 
 import com.taobao.common.dexpatcher.DexPatchApplier;
 import com.taobao.common.dexpatcher.DexPatchGenerator;
+import com.taobao.dex.Dex;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -297,9 +300,9 @@ public class TPatchTool extends BasePatchTool {
     private ApkDiff apkPatchInfos = new ApkDiff();
 
 
-    private List<BundleDiffResult> bundleDiffResults = new ArrayList<>();
+    private List<BundleDiffResult> bundleDiffResults = Collections.synchronizedList(new ArrayList<>());
 
-    private List<BundleDiffResult> patchInfos = new ArrayList<>();
+    private List<BundleDiffResult> patchInfos = Collections.synchronizedList(new ArrayList<>());
 
     private final PathMatcher pathMatcher = new PathMatcher();
 
@@ -329,6 +332,12 @@ public class TPatchTool extends BasePatchTool {
     private boolean hasMainBundle;
 
     private List<String> noPatchBundles = Lists.newArrayList();
+
+    public void setVersionList(List<String> versionList) {
+        this.versionList = versionList;
+    }
+
+    private List<String>versionList = new ArrayList<>();
 
     private Map<String, Map<String, ClassDef>> bundleClassMap = new ConcurrentHashMap<String, Map<String, ClassDef>>();
 
@@ -408,6 +417,10 @@ public class TPatchTool extends BasePatchTool {
         patchTmpDir.mkdirs();
         FileUtils.cleanDirectory(patchTmpDir);
         mainDiffFolder.mkdirs();
+        File lastPatchFile = null;
+        lastPatchFile = getLastPatchFile(baseApkBO.getVersionName(), productName, outPatchDir);
+        PatchUtils.getTpatchClassDef(lastPatchFile, bundleClassMap);
+
         // 解压apk
         File unzipFolder = unzipApk(outPatchDir);
         final File newApkUnzipFolder = new File(unzipFolder, NEW_APK_UNZIP_NAME);
@@ -749,7 +762,12 @@ public class TPatchTool extends BasePatchTool {
         File dexDiffFile = new File(tmpDexFile, "diff.dex");
         TPatchDexTool dexTool = new TPatchDexTool(baseDexFiles,
                 newDexFiles,
-                DEFAULT_API_LEVEL, mainDex);
+                DEFAULT_API_LEVEL,
+                bundleClassMap.get(tmpDexFile.getName().substring(0,
+                        tmpDexFile.getName()
+                                .length() -
+                                4)),
+        mainDex);
         DexDiffInfo dexDiffInfo = dexTool.createTPatchDex(dexDiffFile);
         if (dexDiffFile.exists()) {
             dexs.add(dexDiffFile);
@@ -878,6 +896,7 @@ public class TPatchTool extends BasePatchTool {
             String response = HttpClientUtils.getUrl(patchHisUrl);
             historyBuildPatchInfos = JSON.parseObject(response, BuildPatchInfos.class);
         }
+
         Map<String, File> awbBundleMap = new HashMap<String, File>();
         for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
             String bundleFileSoName = "lib" +
@@ -900,6 +919,7 @@ public class TPatchTool extends BasePatchTool {
                 targetDirectory,
                 baseApkBO.getVersionName());
         patchFileBuilder.setNoPatchBundles(noPatchBundles);
+        patchFileBuilder.setHistroyVersionList(versionList);
 
         return patchFileBuilder.createHistoryTPatches(diffBundleDex, logger);
     }
@@ -1136,68 +1156,19 @@ public class TPatchTool extends BasePatchTool {
     }
 
 
-    /**
-     * http下载
-     */
-    private void downloadFile(String httpUrl, File saveFile) throws IOException {
-        // 下载网络文件
-        int bytesum = 0;
-        int byteread = 0;
-        URL url = new URL(httpUrl);
-        URLConnection conn = url.openConnection();
-        InputStream inStream = conn.getInputStream();
-        FileOutputStream fs = new FileOutputStream(saveFile);
-
-        byte[] buffer = new byte[1204];
-        while ((byteread = inStream.read(buffer)) != -1) {
-            bytesum += byteread;
-            fs.write(buffer, 0, byteread);
-        }
-        fs.flush();
-        inStream.close();
-        fs.close();
-    }
 
     public static void main(String[] args) throws Exception {
-        File baseDexFile = new File("/Users/lilong/Downloads/10004583@taobao_android_6.6.0/lib/armeabi/libcom_taobao_android_capsule/classes.dex");
-//        File newDexFile = new File("/Users/lilong/Downloads/1.dex");
-        File patchFile = new File("/Users/lilong/Downloads/patch-6.6.1.2@6.6.0/libcom_taobao_android_capsule/classes.dex");
-//        File newDex = new File("/Users/lilong/Downloads/bundle/classes.dex");
-//        File dexFile = new File("/Users/lilong/Downloads/2.dex");
-//        File aaa = new File("/Users/lilong/Downloads/tpatch-diff/lib/armeabi/libcom_taobao_android_capsule/classes.dex");
-//        File bbb = TPatchDexTool.removeDebugInfo(aaa);
+//        File file = new File("/Users/lilong/Downloads/tpatch-diff/lib/armeabi/libcom_alibaba_wdk_txd/classes.dex");
+        File file1 = new File("/Users/lilong/Downloads/10004583@taobao_android_6.6.0/lib/armeabi/libcom_etao_feimagesearch/classes.dex");
+        Dex dex = new Dex(file1);
+//        dex.getTableOfContents().typeLists.size
+//       TPatchDexTool.removeDebugInfo(file);
+//        TPatchDexTool.removeDebugInfo(file1);
+//        DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(file1,file);
+//        dexPatchGenerator.executeAndSaveTo(new File("/Users/lilong/Downloads/1.dex"));
+//        DexPatchApplier dexPatchApplier = new DexPatchApplier(file1,new File("/Users/lilong/Downloads/1.dex"));
+//        dexPatchApplier.executeAndSaveTo(new File("/Users/lilong/Downloads/2.dex"));
 
-//        Set<? extends DexBackedClassDef>classes = DexFileFactory.loadDexFile(aaa,19,true).getClasses();
-//        DexBuilder dexBuilder = DexBuilder.makeDexBuilder();
-//        File smaliDir = new File("/Users/lilong/Downloads/444");
-//        smaliDir.mkdirs();
-//        final ClassFileNameHandler outFileNameHandler = new ClassFileNameHandler(smaliDir, ".smali");
-//        final ClassFileNameHandler inFileNameHandler = new ClassFileNameHandler(smaliDir, ".smali");
-//        for (DexBackedClassDef classDef : classes) {
-//            AfBakSmali.disassembleClass(classDef, outFileNameHandler, getBuildOption(classes, 19), true, true);
-//            String className = TypeGenUtil.newType(classDef.getType());
-//            File smaliFile = inFileNameHandler.getUniqueFilenameForClass(className);
-//            SmaliMod.assembleSmaliFile(smaliFile, dexBuilder, true, true);
-//        }
-//        dexBuilder.writeTo(new FileDataStore(new File("/Users/lilong/Downloads/5.dex")));
-        DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(new File("/Users/lilong/Documents/main_builder/libcom_taobao_android_capsule/classes.dex"), new File("/Users/lilong/Downloads/a.dex"));
-        dexPatchGenerator.executeAndSaveTo(new File("/Users/lilong/Downloads/7.dex"));
-//       DexPatchApplier dexPatchApplier = new DexPatchApplier(baseDexFile,new File("/Users/lilong/Downloads/patch-6.6.1.2@6.6.0/libcom_taobao_android_capsule/classes.dex"));
-//       dexPatchApplier.executeAndSaveTo(new File("/Users/lilong/Downloads/a.dex"));
-//        TPatchDexTool.removeDebugInfo(new File("/Users/lilong/Downloads/6.dex"));
-//
-//        TPatchTool tPatchTool = new TPatchTool(new File("/Users/lilong/Downloads/taobao-android.apk"),
-//                                               new File("/Users/lilong/Downloads/tpatch-diff.apk"),
-//                                               "1.0.0",
-//                                               "2.0.0",
-//                                               true);
-////        tPatchTool.bundleClassMap = bundleClassMap;
-//        tPatchTool.doPatch(new File("/Users/lilong/Downloads/aaa"),
-//                           false,
-//                           null,
-//                           true,
-//                           null,
-//                           "taobao4android");
 
     }
 
