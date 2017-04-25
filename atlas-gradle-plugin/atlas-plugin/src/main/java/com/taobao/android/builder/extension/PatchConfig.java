@@ -226,22 +226,22 @@ public class PatchConfig {
 
     private String name;
 
-    @Config(message = "app注册的签名的应用名称", order = 0, advance = false)
+    @Config(message = "app注册的签名的应用名称", order = 0, advance = false, group = "atlas_patch")
     private String appSignName;
 
-    @Config(message = " 打andfix patch 包 ", order = 1, advance = true)
+    @Config(message = " 打andfix patch 包 ", order = 1, advance = true, group = "atlas_patch")
     private boolean createAPatch = false;
 
-    @Config(message = " 打动态部署 patch 包 ", order = 2)
+    @Config(message = " 打动态部署 patch 包 ", order = 2, group = "atlas_patch")
     private boolean createTPatch = false;
 
-    @Config(message = "动态部署不包含的文件列表", order = 3, advance = true)
+    @Config(message = "动态部署不包含的文件列表", order = 3, advance = true, group = "atlas_patch")
     private Set<String> tPatchNotIncludeFiles = Sets.newHashSet();
 
-    @Config(message = " andfix 打包过滤 class 列表文件 ", order = 4, advance = true)
+    @Config(message = " andfix 打包过滤 class 列表文件 ", order = 4, advance = true, group = "atlas_patch")
     private File filterFile;
 
-    @Config(message = " andfix 打包过滤 class 列表 ", order = 5, advance = true)
+    @Config(message = " andfix 打包过滤 class 列表 ", order = 5, advance = true, group = "atlas_patch")
     private Set<String> filterClasses = new HashSet<String>();
 
     private boolean apForBaseFile = true;

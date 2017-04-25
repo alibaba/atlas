@@ -219,34 +219,35 @@ import com.taobao.android.builder.extension.annotation.Config;
  */
 public class ManifestOptions {
 
-    @Config(order = 1, message = "保留的启动launch的列表", advance = false)
+    @Config(order = 1, message = "保留的启动launch的列表", advance = false, group = "atlas")
     private Set<String> retainLaunches = Sets.newHashSet();
 
-    @Config(order = 2, message = "保留的权限列表", advance = false)
+    @Config(order = 2, message = "保留的权限列表", advance = false, group = "atlas")
     private Set<String> retainPermissions = Sets.newHashSet();
 
-    @Config(order = 3, message = "移除的系统权限的名称", advance = true)
+    @Config(order = 3, message = "移除的系统权限的名称", advance = true, group = "atlas")
     private Set<String> removeSystemPermissions = Sets.newHashSet();
 
-    @Config(order = 4, message = "移除的自定义权限的名称", advance = true)
+    @Config(order = 4, message = "移除的自定义权限的名称", advance = true, group = "atlas")
     private boolean removeCustomPermission = false;
 
-    @Config(order = 5, message = "组件增加bundle的坐标", advance = true)
+    @Config(order = 5, message = "组件增加bundle的坐标", advance = true, group = "atlas")
     private boolean addBundleLocation = true;
 
-    @Config(order = 6, message = "开启新增组件的功能", advance = true)
+    @Config(order = 6, message = "开启新增组件的功能", advance = true, group = "atlas")
     private boolean addAtlasProxyComponents /*= true*/;
 
-    @Config(order = 7, message = "使用atlas的application，包含 atlas基础初始化及multidex逻辑, 接atlas必须开启", advance = true)
+    @Config(order = 7, message = "使用atlas的application，包含 atlas基础初始化及multidex逻辑, 接atlas必须开启", advance = true,
+        group = "atlas")
     private boolean replaceApplication = true;
 
-    @Config(order = 8, message = "使用atlas的multiDex功能, 接atlas必须开启", advance = true)
+    @Config(order = 8, message = "使用atlas的multiDex功能, 接atlas必须开启", advance = true, group = "atlas")
     private boolean addMultiDexMetaData = true;
 
-    @Config(order = 9, message = "移除所有的provider", advance = true)
+    @Config(order = 9, message = "移除所有的provider", advance = true, group = "atlas")
     private boolean removeProvider = false;
 
-    @Config(order = 10, message = "不参与manifest合并的依赖坐标，group:name,group2:name2", advance = true)
+    @Config(order = 10, message = "不参与manifest合并的依赖坐标，group:name,group2:name2", advance = true, group = "atlas")
     private Set<String> notMergedBundles = Sets.newHashSet();
 
     public Set<String> getNotMergedBundles() {

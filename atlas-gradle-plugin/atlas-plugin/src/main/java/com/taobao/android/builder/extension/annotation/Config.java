@@ -221,9 +221,17 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface Config {
 
+    public static final String ATLAS = "atlas";
+    public static final String CHECK = "check";
+    public static final String SIGN = "sign";
+    public static final String PROCESS = "process";
+    public static final String FEATURE = "feature";
+
     String message() default "";
 
     int order() default 0;
 
     boolean advance() default false;
+
+    String group() default "";
 }

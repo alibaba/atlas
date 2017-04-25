@@ -209,13 +209,6 @@
 
 package com.taobao.android.builder.tools.guide;
 
-import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.extension.annotation.Config;
-import com.taobao.android.builder.extension.annotation.ConfigGroup;
-
-import org.apache.commons.beanutils.BeanUtils;
-import org.gradle.api.NamedDomainObjectContainer;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -225,14 +218,22 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.extension.annotation.Config;
+import com.taobao.android.builder.extension.annotation.ConfigGroup;
+import org.apache.commons.beanutils.BeanUtils;
+import org.gradle.api.NamedDomainObjectContainer;
+
 /**
  * Created by wuzhong on 2016/12/31.
+ *
  * @author wuzhong
  */
 public class AtlasConfigHelper {
 
     public static void setProperty(Object object,
-                                   Map<String, String> paramMap) throws InvocationTargetException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+                                   Map<String, String> paramMap)
+        throws InvocationTargetException, NoSuchFieldException, InstantiationException, IllegalAccessException {
 
         for (String key : paramMap.keySet()) {
 
@@ -247,7 +248,8 @@ public class AtlasConfigHelper {
 
     public static void setProperty(Object object,
                                    String fieldName,
-                                   String value) throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchFieldException {
+                                   String value)
+        throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchFieldException {
 
         String[] fieldNames = fieldName.split("\\.");
 
@@ -257,16 +259,16 @@ public class AtlasConfigHelper {
             String field = fieldNames[i];
 
             if (last instanceof NamedDomainObjectContainer) {
-                last = ((NamedDomainObjectContainer) last).maybeCreate(field);
+                last = ((NamedDomainObjectContainer)last).maybeCreate(field);
             } else {
                 Field declaredField = last.getClass().getField(field);
                 declaredField.setAccessible(true);
 
                 if (null == declaredField.get(last)) {
                     Object newInstance = declaredField.getType()
-                            .getConstructors()
-                            .getClass()
-                            .newInstance();
+                        .getConstructors()
+                        .getClass()
+                        .newInstance();
                     declaredField.set(last, newInstance);
                 }
 
@@ -277,7 +279,8 @@ public class AtlasConfigHelper {
         BeanUtils.setProperty(last, fieldNames[fieldNames.length - 1], value);
     }
 
-    public static List<AtlasConfigField> readConfig(AtlasExtension atlasExtension , String prefix) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    public static List<AtlasConfigField> readConfig(AtlasExtension atlasExtension, String prefix)
+        throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 
         List<AtlasConfigField> configFieldList = new ArrayList<AtlasConfigField>();
 
@@ -289,6 +292,11 @@ public class AtlasConfigHelper {
 
                 if (o1.groupOrder != o2.groupOrder) {
                     return o1.groupOrder - o2.groupOrder;
+                }
+
+                int compare = String.CASE_INSENSITIVE_ORDER.compare(o1.group, o2.group);
+                if (0 != compare) {
+                    return compare;
                 }
 
                 if (!o1.variantName.equals(o2.variantName)) {
@@ -328,6 +336,7 @@ public class AtlasConfigHelper {
                 configField.variantName = variantName;
                 configField.type = field.getType().getSimpleName();
                 configField.advanced = config.advance();
+                configField.group = config.group();
                 configFieldList.add(configField);
                 continue;
             }
@@ -339,12 +348,12 @@ public class AtlasConfigHelper {
 
                 if (nestedValue instanceof NamedDomainObjectContainer) {
 
-                    readConfig(((NamedDomainObjectContainer) nestedValue).maybeCreate("debug"),
+                    readConfig(((NamedDomainObjectContainer)nestedValue).maybeCreate("debug"),
                                prefix + "." + field.getName() + ".debug",
                                configFieldList,
                                configGroup.order(),
                                "debug");
-                    readConfig(((NamedDomainObjectContainer) nestedValue).maybeCreate("release"),
+                    readConfig(((NamedDomainObjectContainer)nestedValue).maybeCreate("release"),
                                prefix + "." + field.getName() + ".release",
                                configFieldList,
                                configGroup.order(),

@@ -223,7 +223,7 @@ public class TBuildType {
 
     private File baseApFile;
 
-    @Config(message = "基线的依赖坐标， 如： com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1)
+    @Config(message = "基线的依赖坐标， 如： com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
     private String baseApDependency;
 
     private PatchConfig patchConfig;
