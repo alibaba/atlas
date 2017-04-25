@@ -605,14 +605,11 @@ public class InstrumentationHook extends Instrumentation {
         }
         ContextImplHook hook = new ContextImplHook(activity.getBaseContext(), activity.getClass().getClassLoader());
         if(activity.getBaseContext().getResources()!=RuntimeVariables.delegateResources){
-			if(Build.VERSION.SDK_INT<21){
-				try{
-					AtlasHacks.ContextImpl_mResources.set(activity.getBaseContext(),RuntimeVariables.delegateResources);
-				}catch(Throwable e){}
-			}
+			try{
+				AtlasHacks.ContextImpl_mResources.set(activity.getBaseContext(),RuntimeVariables.delegateResources);
+			}catch(Throwable e){}
         }
 		if(AtlasHacks.ContextThemeWrapper_mBase!=null && AtlasHacks.ContextThemeWrapper_mBase.getField()!=null){
-			//AtlasHacks.ContextThemeWrapper_mBase.on(activity).set(hook);
 			AtlasHacks.ContextThemeWrapper_mBase.set(activity,hook);
 		}
 		AtlasHacks.ContextWrapper_mBase.set(activity,hook);

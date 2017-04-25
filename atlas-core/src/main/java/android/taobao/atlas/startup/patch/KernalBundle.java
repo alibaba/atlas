@@ -353,7 +353,7 @@ public class KernalBundle{
         DexFile[] dexFile = archive.getOdexFile();
         if ((dexFile != null&&dexFile.length>0) || archive.getLibraryDirectory().exists()) {
             installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive);
-            Class FrameworkPropertiesClazz = archive.getOdexFile()[0].loadClass("android.taobao.atlas.framework.FrameworkProperties",ClassLoader.getSystemClassLoader());
+            Class FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length-1].loadClass("android.taobao.atlas.framework.FrameworkProperties",ClassLoader.getSystemClassLoader());
             Field versionField = FrameworkPropertiesClazz.getDeclaredField("version");
             versionField.setAccessible(true);
             String version = (String)versionField.get(FrameworkPropertiesClazz.newInstance());
