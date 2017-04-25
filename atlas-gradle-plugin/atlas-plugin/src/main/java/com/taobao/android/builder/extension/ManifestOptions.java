@@ -237,6 +237,9 @@ public class ManifestOptions {
     @Config(order = 6, message = "开启新增组件的功能", advance = true, group = "atlas")
     private boolean addAtlasProxyComponents /*= true*/;
 
+    @Config(order = 6, message = "不进行atlas新增组件功能的channel列表", advance = true, group = "atlas")
+    private Set<String> atlasProxySkipChannels = Sets.newHashSet(":dexmerge", ":dex2oat");
+
     @Config(order = 7, message = "使用atlas的application，包含 atlas基础初始化及multidex逻辑, 接atlas必须开启", advance = true,
         group = "atlas")
     private boolean replaceApplication = true;
@@ -391,6 +394,14 @@ public class ManifestOptions {
 
     public void setAddAtlasProxyComponents(boolean addAtlasProxyComponents) {
         this.addAtlasProxyComponents = addAtlasProxyComponents;
+    }
+
+    public Set<String> getAtlasProxySkipChannels() {
+        return atlasProxySkipChannels;
+    }
+
+    public void setAtlasProxySkipChannels(Set<String> atlasProxySkipChannels) {
+        this.atlasProxySkipChannels = atlasProxySkipChannels;
     }
 
     @Override

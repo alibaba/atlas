@@ -297,7 +297,7 @@ public class ManifestFileUtils {
         }
 
         if (null != manifestOptions && manifestOptions.isAddAtlasProxyComponents()) {
-            AtlasProxy.addAtlasProxyClazz(document, result);
+            AtlasProxy.addAtlasProxyClazz(document,  manifestOptions.getAtlasProxySkipChannels(), result);
         }
 
         if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {

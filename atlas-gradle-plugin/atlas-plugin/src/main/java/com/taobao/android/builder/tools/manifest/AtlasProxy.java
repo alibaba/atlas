@@ -283,7 +283,7 @@ public class AtlasProxy {
 
     public static final String ATLAS_PROXY_PACKAGE = "android.taobao.atlas.runtime.newcomponent";
 
-    public static void addAtlasProxyClazz(Document document, Result result) {
+    public static void addAtlasProxyClazz(Document document, Set<String> nonProxyChannels,  Result result) {
 
         Element root = document.getRootElement();// 得到根节点
 
@@ -301,7 +301,7 @@ public class AtlasProxy {
             }
         }
 
-        processNames.removeAll(AtlasBuildContext.sBuilderAdapter.nonProxyChannels);
+        processNames.removeAll(nonProxyChannels);
 
         List<String> elementNames = Lists.newArrayList("activity", "service", "provider");
 

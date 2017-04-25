@@ -209,9 +209,6 @@
 
 package com.taobao.android.builder.adapter;
 
-import java.util.Set;
-
-import com.google.common.collect.Sets;
 import com.taobao.android.builder.tools.cache.FileCache;
 import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
 import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
@@ -253,7 +250,5 @@ public class BuilderAdapter {
     public boolean prettyDependencyFormat = true;
 
     public boolean dexCacheEnabled = false;
-
-    public Set<String> nonProxyChannels = Sets.newHashSet(":dexmerge", ":dex2oat");
 
 }
