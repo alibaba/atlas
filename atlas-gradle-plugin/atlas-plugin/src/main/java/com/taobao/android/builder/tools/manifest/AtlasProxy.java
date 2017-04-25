@@ -211,10 +211,12 @@ package com.taobao.android.builder.tools.manifest;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.google.common.collect.Lists;
+import com.taobao.android.builder.AtlasBuildContext;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Document;
@@ -289,17 +291,17 @@ public class AtlasProxy {
 
         String packageName = root.attribute("package").getStringValue();
 
-        List<String> processNames = new ArrayList<>();
+        Set<String> processNames = new HashSet<>();
         processNames.add(packageName);
 
         for (Node node : serviceNodes) {
             if (null != node && StringUtils.isNotEmpty(node.getStringValue())) {
                 String value = node.getStringValue();
-                if (!":dexmerge".equals(value) && !":dex2oat".equals(value)) {
-                    processNames.add(value);
-                }
+                processNames.add(value);
             }
         }
+
+        processNames.removeAll(AtlasBuildContext.sBuilderAdapter.nonProxyChannels);
 
         List<String> elementNames = Lists.newArrayList("activity", "service", "provider");
 
@@ -355,7 +357,7 @@ public class AtlasProxy {
             return false;
         }
 
-        rootDir = new File(rootDir, ATLAS_PROXY_PACKAGE.replace(".","/"));
+        rootDir = new File(rootDir, ATLAS_PROXY_PACKAGE.replace(".", "/"));
         FileUtils.deleteDirectory(rootDir);
         rootDir.mkdirs();
 
