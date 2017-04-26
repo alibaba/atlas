@@ -18,26 +18,8 @@ public class FirstBundleActivity extends AppCompatActivity implements BlankFragm
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_firstbundle);
-//        Toast.makeText(this,"this is aaaaaaaaaa  newnewnenenwn bundle",Toast.LENGTH_SHORT).show();
+//       Toast.makeText(this,"this is aaaaaaaaaa  newnewnenenwn bundle",Toast.LENGTH_SHORT).show();
 
-
-        int model = R.drawable.ssss;
-        Resources resources = getResources();
-        Uri uri = null;
-        try {
-            uri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://"
-                    + resources.getResourcePackageName(model) + '/'
-                    + resources.getResourceTypeName(model) + '/'
-                    + resources.getResourceEntryName(model));
-        } catch (Resources.NotFoundException e) {
-            e.printStackTrace();
-        }
-        ContentResolver contentResolver = getContentResolver();
-        try {
-            InputStream is = contentResolver.openInputStream(uri);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
     }
 
 //    @Override

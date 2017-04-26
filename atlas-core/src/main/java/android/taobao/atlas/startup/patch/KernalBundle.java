@@ -210,6 +210,7 @@ package android.taobao.atlas.startup.patch;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.taobao.atlas.startup.AtlasBridgeApplication;
@@ -737,6 +738,11 @@ public class KernalBundle{
             final ApplicationInfo app_info = KernalConstants.baseContext.getApplicationInfo();
             boolean DEBUG = (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
             if (DEBUG) {
+                return true;
+            }
+            SharedPreferences sharedPreferences = KernalConstants.baseContext.getSharedPreferences("dynamic_test",Context.MODE_PRIVATE);
+            boolean dynamic_test_flag = sharedPreferences.getBoolean("dynamic_test_key",false);
+            if(dynamic_test_flag){
                 return true;
             }
         } catch (final Exception e) {
