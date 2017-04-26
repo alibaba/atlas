@@ -251,8 +251,14 @@ public class BundleInfoUtils {
          */
         Map<String, BundleInfo> bundleInfoMap = getBundleInfoMap(appVariantContext);
 
+        String baseVersion = apkVersion;
+
+        if (null != appVariantContext.apContext && null != appVariantContext.apContext.getBaseManifest() && appVariantContext.apContext.getBaseManifest().exists()){
+            baseVersion = ManifestFileUtils.getVersionName(appVariantContext.apContext.getBaseManifest());
+        }
+
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-            update(awbBundle, bundleInfoMap, appVariantContext, apkVersion);
+            update(awbBundle, bundleInfoMap, appVariantContext, apkVersion, baseVersion);
         }
     }
 
@@ -264,7 +270,7 @@ public class BundleInfoUtils {
     private static void update(AwbBundle awbBundle,
                                Map<String, BundleInfo> bundleInfoMap,
                                AppVariantContext appVariantContext,
-                               String apkVersion) throws DocumentException {
+                               String apkVersion, String baseVersion) throws DocumentException {
 
         String artifactId = awbBundle.getResolvedCoordinates().getArtifactId();
         BundleInfo bundleInfo = bundleInfoMap.get(artifactId);
@@ -279,7 +285,7 @@ public class BundleInfoUtils {
             .getOutOfApkBundles()
             .contains(artifactId);
         bundleInfo.setIsInternal(!awbBundle.isRemote);
-        bundleInfo.setVersion(apkVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
+        bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
         bundleInfo.setPkgName(awbBundle.getPackageName());
 
         String applicationName = ManifestFileUtils.getApplicationName(awbBundle.getAndroidLibrary().getManifest());

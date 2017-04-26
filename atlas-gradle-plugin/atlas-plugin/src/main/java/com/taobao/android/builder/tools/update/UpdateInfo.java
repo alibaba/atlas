@@ -251,7 +251,7 @@ public class UpdateInfo implements Serializable {
                 item.name = patchBundleInfo.getPkgName();
             }
 //            item.srcVersion = patchBundleInfo.getVersion();
-            item.version = updateInfo.updateVersion + "@" + patchBundleInfo.getVersion();
+            item.version = updateInfo.baseVersion + "@" + patchBundleInfo.getVersion();
         }
         updateInfo.updateBundles = items;
     }
