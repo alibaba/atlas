@@ -16,7 +16,7 @@ import java.util.List;
  */
 public class DexMergeClient {
 
-    public static final int REMOTE_TIMEOUT = 10 * 60 * 1000;
+    public static final int REMOTE_TIMEOUT = 60 * 1000;
 
     private Object lock = new Object();
 
@@ -65,15 +65,19 @@ public class DexMergeClient {
         /**
          * Block wait service bind
          */
-        try {
-            synchronized (lock) {
-                // 10 minutes timeout
-                lock.wait(REMOTE_TIMEOUT);
+        if (!isBinded) {
+            try {
+                synchronized (lock) {
+                    // 10 minutes timeout
+                    lock.wait(REMOTE_TIMEOUT);
+                }
+            } catch (InterruptedException e) {
             }
-        } catch (InterruptedException e) {
         }
 
+
         if (!isBinded) {
+
             /**
              * unbind once timeout
              */

@@ -11,6 +11,7 @@
         <service
             android:name="com.taobao.android.runtime.Dex2OatService"
             android:process=":dex2oat" />
+
     </application>
 
 

@@ -217,6 +217,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.util.StringUtils;
 import android.text.TextUtils;
 
@@ -227,6 +228,7 @@ import java.util.List;
  */
 public class ServiceDetector {
 
+    public static final String ADDITIONAL_SERVICE = "atlas_external_service";
     public static class DetectResult {
 
         public static final int BUNDLE_PREPARED = 1;
@@ -366,10 +368,22 @@ public class ServiceDetector {
         if (intent.getComponent() != null) {
             packageName = intent.getComponent().getPackageName();
             componentName = intent.getComponent().getClassName();
+            ResolveInfo resolveInfo = RuntimeVariables.androidApplication.getPackageManager().resolveService(intent, 0);
+            if (resolveInfo != null && resolveInfo.serviceInfo != null) {
+                if(resolveInfo instanceof AdditionalPackageManager.ExternalResolverInfo){
+                    //set explicit component
+                    intent.putExtra(ADDITIONAL_SERVICE,true);
+                }
+            }
         } else {
             ResolveInfo resolveInfo = RuntimeVariables.androidApplication.getPackageManager().resolveService(intent, 0);
             if (resolveInfo != null && resolveInfo.serviceInfo != null) {
                 packageName = resolveInfo.serviceInfo.packageName;
+                if(resolveInfo instanceof AdditionalPackageManager.ExternalResolverInfo){
+                    //set explicit component
+                    intent.putExtra(ADDITIONAL_SERVICE,true);
+                    intent.setClassName(RuntimeVariables.androidApplication.getPackageName(),resolveInfo.serviceInfo.name);
+                }
                 componentName = resolveInfo.serviceInfo.name;
             }
         }
@@ -381,4 +395,5 @@ public class ServiceDetector {
         }
         return componentName;
     }
+
 }

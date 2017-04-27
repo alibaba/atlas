@@ -208,7 +208,6 @@
 
 package android.taobao.atlas.bridge;
 
-import android.android.support.multidex.MultiDex;
 import android.app.Application;
 import android.content.ComponentCallbacks;
 import android.content.Context;
@@ -217,13 +216,16 @@ import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.support.multidex.MultiDex;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AssertionArrayException;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.AtlasPreLauncher;
-import android.taobao.atlas.runtime.PackageManagerDelegater;
+import android.taobao.atlas.runtime.PackageManagerDelegate;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
+import android.taobao.atlas.util.AtlasCrashManager;
 import android.taobao.atlas.util.SoLoader;
 import android.taobao.atlas.util.log.IAlarmer;
 import android.taobao.atlas.util.log.IMonitor;
@@ -255,7 +257,7 @@ public class BridgeApplicationDelegate {
         mCurrentProcessname = processname;
         mInstalledVersionName = installedVersion;
         mIsUpdated = isUpdated;
-        PackageManagerDelegater.delegatepackageManager(rawApplication.getBaseContext());
+        PackageManagerDelegate.delegatepackageManager(rawApplication.getBaseContext());
     }
 
     public void attachBaseContext(){
@@ -269,8 +271,8 @@ public class BridgeApplicationDelegate {
         if(!TextUtils.isEmpty(mInstalledVersionName)){
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;
         }
+        AtlasCrashManager.forceStopAppWhenCrashed();
         System.out.print(SoLoader.class.getName());
-
         try {
             String preLaunchStr = (String) RuntimeVariables.getFrameworkProperty("preLaunch");
             if (!TextUtils.isEmpty(preLaunchStr)) {
@@ -334,6 +336,7 @@ public class BridgeApplicationDelegate {
 
     public void onCreate(){
         try {
+            AdditionalActivityManagerProxy.get().startRegisterReceivers(RuntimeVariables.androidApplication);
             // *3 create real Application
             mRealApplication = (Application) mRawApplication.getBaseContext().getClassLoader().loadClass(mRealApplicationName).newInstance();
 

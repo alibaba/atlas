@@ -261,13 +261,17 @@ public class DelegateResources extends Resources {
     }
 
     public static void addBundleResources(String assetPath)  throws Exception{
-        updateResources(RuntimeVariables.delegateResources, assetPath, BUNDLE_RES);
+        synchronized (DelegateResources.class) {
+            updateResources(RuntimeVariables.delegateResources, assetPath, BUNDLE_RES);
+        }
     }
 
     public static void addApkpatchResources(String assetPath) throws Exception{
         AtlasHacks.defineAndVerify();
         sKernalPathPath = assetPath;
-        updateResources(RuntimeVariables.delegateResources, assetPath, APK_RES);
+        synchronized (DelegateResources.class) {
+            updateResources(RuntimeVariables.delegateResources, assetPath, APK_RES);
+        }
     }
 
     public static String getCurrentAssetpathStr(AssetManager manager){
@@ -292,7 +296,7 @@ public class DelegateResources extends Resources {
     }
 
 
-    private synchronized static void updateResources(Resources res,String assetPath,int assertType) throws Exception{
+    private static void updateResources(Resources res,String assetPath,int assertType) throws Exception{
         if(sAssetManagerProcessor==null){
             sAssetManagerProcessor = new AssetManagerProcessor();
         }
@@ -532,12 +536,12 @@ public class DelegateResources extends Resources {
 
             if(sKernalPathPath!=null) {
                 if(sFailedAsssetPath.contains(sKernalPathPath)){
-                    AtlasMonitor.getInstance().trace(AtlasMonitor.KERNAL_RESOLVE_FAIL,"com.taobao.maindex",AtlasMonitor.ADD_RESOURCES_FAIL_MSG,"maindex arsc inject fail");
+//                    AtlasMonitor.getInstance().trace(AtlasMonitor.KERNAL_RESOLVE_FAIL,"com.taobao.maindex",AtlasMonitor.ADD_RESOURCES_FAIL_MSG,"maindex arsc inject fail");
                     throw new RuntimeException("maindex arsc inject fail");
                 }
                 if(sAssetsPatchDir!=null) {
                     if(sFailedAsssetPath.contains(sAssetsPatchDir)){
-                        AtlasMonitor.getInstance().trace(AtlasMonitor.KERNAL_RESOLVE_FAIL,"com.taobao.maindex",AtlasMonitor.ADD_RESOURCES_FAIL_MSG,"maindex assets inject fail");
+//                        AtlasMonitor.getInstance().trace(AtlasMonitor.KERNAL_RESOLVE_FAIL,"com.taobao.maindex",AtlasMonitor.ADD_RESOURCES_FAIL_MSG,"maindex assets inject fail");
                         throw new RuntimeException("maindex assets inject fail");
                     }
                 }
@@ -547,6 +551,7 @@ public class DelegateResources extends Resources {
 
         private boolean appendAssetPath(AssetManager asset,String path) throws Exception{
             int cookie = 0;
+            boolean result = false;
             try{
                 if ((cookie = Integer.parseInt(AtlasHacks.AssetManager_addAssetPath.invoke(asset, path).toString())) == 0){
                     // if failed try three times
@@ -557,14 +562,18 @@ public class DelegateResources extends Resources {
                         }
                     }
                 }
-            }catch(NumberFormatException e){
-                return false;
+                if(cookie==0){
+                    sFailedAsssetPath.add(path);
+                } else {
+                    result = true;
+                }
+            }catch(NumberFormatException e){}
+
+            if (!result) {
+                AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL,
+                        false, "0", "","");
             }
-            if(cookie==0){
-                sFailedAsssetPath.add(path);
-                return false;
-            }
-            return true;
+            return result;
         }
 
         public static ArrayList<String> getAssetPath(AssetManager manager){

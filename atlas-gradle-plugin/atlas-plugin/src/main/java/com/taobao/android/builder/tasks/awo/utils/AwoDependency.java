@@ -321,10 +321,10 @@ public class AwoDependency {
                 boolean exclude = false;
                 for (DependencyResult resolvedDependencyResult2 : providedDependencySet) {
                     if (resolvedDependencyResult2 instanceof ResolvedDependencyResult) {
-                        ModuleVersionIdentifier moduleVersion2 = ((ResolvedDependencyResult) resolvedDependencyResult2)
+                        ModuleVersionIdentifier id = ((ResolvedDependencyResult) resolvedDependencyResult2)
                                 .getSelected()
                                 .getModuleVersion();
-                        String key2 = moduleVersion2.getGroup() + "-" + moduleVersion2.getName();
+                        String key2 = id.getGroup() + "-" + id.getName();
                         if (key.equals(key2)) {
                             exclude = true;
                             break;

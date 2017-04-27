@@ -208,12 +208,12 @@
 
 package android.taobao.atlas.framework;
 
+import android.os.Build;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.Archive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.util.FileUtils;
 import android.util.Log;
 
@@ -223,6 +223,7 @@ import org.osgi.framework.Constants;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -275,24 +276,33 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @param bundle the bundle object.
      * @throws BundleException in case of IO errors.
      */
-    BundleClassLoader(final BundleImpl bundle) throws BundleException {
-        super(".",null,
-                bundle.archive.getCurrentRevision().getRevisionDir().getAbsolutePath()+"/lib"+":"
-                        +RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir+":"
-                +System.getProperty("java.library.path"),
-                Object.class.getClassLoader());
+    BundleClassLoader(final BundleImpl bundle,List<String> dependencies,String nativeLibPath) throws BundleException {
+        super(".",null,nativeLibPath,Object.class.getClassLoader());
+        Log.e("BundleClassLoader","nativeLibPath : "+nativeLibPath);
+        if(Build.VERSION.SDK_INT>=25) {
+            try {
+                Class PatchClassLoaderFactory = Class.forName("com.android.internal.os.PathClassLoaderFactory");
+                Method method = PatchClassLoaderFactory.getDeclaredMethod("createClassloaderNamespace",
+                        ClassLoader.class, int.class, String.class, String.class, boolean.class);
+                method.setAccessible(true);
+                method.invoke(PatchClassLoaderFactory, this, 24, nativeLibPath, nativeLibPath, true);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+
 
         this.bundle = bundle;
         this.archive = bundle.archive;
         this.location = bundle.location;
 
-        dependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
+        this.dependencies = dependencies;
 
         try {
             processManifest(archive.getManifest());
         } catch (IOException ioe) {
-    		AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, bundle.location, AtlasMonitor.OSGI_FAILED_MSG,
-    				FileUtils.getDataAvailableSpace());
+//    		AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, bundle.location, AtlasMonitor.OSGI_FAILED_MSG,
+//    				FileUtils.getDataAvailableSpace());
             ioe.printStackTrace();
             throw new BundleException("Not a valid bundle: " + bundle.location);
         }

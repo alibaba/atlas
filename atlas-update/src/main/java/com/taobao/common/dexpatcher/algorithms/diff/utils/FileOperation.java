@@ -18,19 +18,9 @@ package com.taobao.common.dexpatcher.algorithms.diff.utils;
 
 import com.taobao.common.dexpatcher.Configuration;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -191,54 +181,6 @@ public class FileOperation {
         return true;
     }
 
-    @SuppressWarnings("rawtypes")
-    public static void unZipAPk(String fileName, String filePath) throws IOException {
-        checkDirectory(filePath);
-
-        ZipFile zipFile = new ZipFile(fileName);
-        Enumeration enumeration = zipFile.entries();
-        try {
-            while (enumeration.hasMoreElements()) {
-                ZipEntry entry = (ZipEntry) enumeration.nextElement();
-                if (entry.isDirectory()) {
-                    new File(filePath, entry.getName()).mkdirs();
-                    continue;
-                }
-                BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
-
-                File file = new File(filePath + File.separator + entry.getName());
-
-                File parentFile = file.getParentFile();
-                if (parentFile != null && (!parentFile.exists())) {
-                    parentFile.mkdirs();
-                }
-                FileOutputStream fos = null;
-                BufferedOutputStream bos = null;
-                try {
-                    fos = new FileOutputStream(file);
-                    bos = new BufferedOutputStream(fos, TypedValue.BUFFER_SIZE);
-
-                    byte[] buf = new byte[TypedValue.BUFFER_SIZE];
-                    int len;
-                    while ((len = bis.read(buf, 0, TypedValue.BUFFER_SIZE)) != -1) {
-                        fos.write(buf, 0, len);
-                    }
-                } finally {
-                    if (bos != null) {
-                        bos.flush();
-                        bos.close();
-                    }
-                    if (bis != null) {
-                        bis.close();
-                    }
-                }
-            }
-        } finally {
-            if (zipFile != null) {
-                zipFile.close();
-            }
-        }
-    }
 
     /**
      * zip list of file

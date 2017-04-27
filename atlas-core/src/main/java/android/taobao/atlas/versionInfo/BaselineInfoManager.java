@@ -208,19 +208,20 @@
 
 package android.taobao.atlas.versionInfo;
 
-import android.app.PreVerifier;
+import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.os.Process;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
-import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.util.WrapperUtil;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -229,7 +230,7 @@ import java.util.Set;
 /**
  * Created by guanjie on 15/9/10.
  */
-public class BaselineInfoManager {
+public class BaselineInfoManager{
 
     private static BaselineInfoManager sBaseInfoManager;
 
@@ -355,6 +356,29 @@ public class BaselineInfoManager {
         return new HashMap<String,String>().keySet();
     }
 
+    public void checkUpdateBundles(String storageDir){
+        Set<String> updateBundles = getUpdateBundles();
+        if(updateBundles==null){
+            return;
+        }
+        for (String str : updateBundles) {
+            if(!TextUtils.isEmpty(str)){
+                Log.e("BaselineInfomanager","check update bundle : "+str);
+                if(!new File(storageDir,str).exists() && AtlasBundleInfoManager.instance().isInternalBundle(str)){
+                    Log.e("BaselineInfomanager","check update bundle invalid: "+str);
+                    rollbackHardly();
+                    try {
+                        Method killChild = mVersionManager.getClass().getDeclaredMethod("killChildProcesses",Context.class);
+                        killChild.invoke(mVersionManager,RuntimeVariables.androidApplication.getApplicationContext());
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                    android.os.Process.killProcess(Process.myPid());
+                }
+            }
+        }
+    }
+
     public void superRollback(boolean dexPatch){
         try {
             mVersionManager.getClass().getDeclaredMethod("rollback",boolean.class).invoke(mVersionManager,dexPatch);
@@ -367,7 +391,7 @@ public class BaselineInfoManager {
         if(dexPatch || !TextUtils.isEmpty(lastVersionName())) {
             List<String> bundles = new ArrayList<String>(getUpdateBundles());
             PackageInfo info = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication);
-            if (bundles!=null && !info.versionName.equals(lastVersionName()) && bundles.size() > 0) {
+            if (RuntimeVariables.sCachePreVersionBundles && bundles!=null && !info.versionName.equals(lastVersionName()) && bundles.size() > 0) {
                 //回滚到上个版本
                 if(!dexPatch) {
                     if (!Atlas.getInstance().restoreBundle(bundles.toArray(new String[bundles.size()]))) {

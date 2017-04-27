@@ -35,6 +35,8 @@ You can see there were three main library in this project ([atlas-core](./atlas-
 
 * [Demo](./atlas-demo)
 * Doc: [English](), [中文](./atlas-docs)
+* DingTalk im group: Scan the follow QR code or Search group 11727755 using DingTalk(钉钉) app.
+![dingtalk.png](assets/dingtalk.png) 
 
 
 ## Support

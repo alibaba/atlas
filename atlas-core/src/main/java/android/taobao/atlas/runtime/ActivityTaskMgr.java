@@ -241,39 +241,8 @@ public class ActivityTaskMgr {
         return sInstance;
     }
 
-    public void handleActivityStack(String launchActivityName, Intent intent, int flag,
-                                    int launchMode) {
-        // Handle launchMode with singleTop, and flag with FLAG_ACTIVITY_SINGLE_TOP
-        String prevActivityName = null;
-        if (activityList.size() > 0) {
-            Activity lastActivity = activityList.get(activityList.size() - 1).get();
-            prevActivityName = lastActivity.getClass().getName();
-        }
-        
-        if (StringUtils.equals(prevActivityName, launchActivityName)
-            && (launchMode == ActivityInfo.LAUNCH_SINGLE_TOP || (flag & Intent.FLAG_ACTIVITY_SINGLE_TOP) == Intent.FLAG_ACTIVITY_SINGLE_TOP)) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        } else if (launchMode == ActivityInfo.LAUNCH_SINGLE_TASK || launchMode == ActivityInfo.LAUNCH_SINGLE_INSTANCE
-                   || (flag & Intent.FLAG_ACTIVITY_CLEAR_TOP) == Intent.FLAG_ACTIVITY_CLEAR_TOP) {
-            int i;
-            boolean isExist = false;
-            for (i = 0; i < activityList.size(); i++) {
-                WeakReference<Activity> ref = activityList.get(i);
-                if (ref!=null && ref.get()!=null && ref.get().getClass().getName().equals(launchActivityName)) {
-                    isExist = true;
-                    break;
-                }
-            }
-            if (isExist) {
-                for (WeakReference<Activity> act : activityList.subList(i + 1, activityList.size())) {
-                    if(act!=null && act.get()!=null) {
-                        act.get().finish();
-                    }
-                }
-                activityList.subList(i + 1, activityList.size()).clear();
-                intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            }
-        }
+    public List<WeakReference<Activity>> getActivityList(){
+        return activityList;
     }
 
     public Activity peekTopActivity(){

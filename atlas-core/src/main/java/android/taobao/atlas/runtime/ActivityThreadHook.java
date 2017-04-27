@@ -225,8 +225,8 @@ import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
-import android.taobao.atlas.runtime.newcomponent.BundlePackageManager;
+import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
+import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.text.TextUtils;
 
 /**
@@ -246,7 +246,7 @@ public class ActivityThreadHook implements Handler.Callback{
     public void ensureLoadedApk() throws Exception{
         Object loadedapk = AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,mActivityThread,RuntimeVariables.androidApplication.getPackageName());
         if(loadedapk==null){
-            AtlasMonitor.getInstance().trace(AtlasMonitor.LOADEDAPK_MISSING,"loaded apk","handle message","");
+//            AtlasMonitor.getInstance().trace(AtlasMonitor.LOADEDAPK_MISSING,"loaded apk","handle message","");
             ActivityTaskMgr.getInstance().clearActivityStack();
             android.os.Process.killProcess(android.os.Process.myPid());
         }
@@ -257,7 +257,7 @@ public class ActivityThreadHook implements Handler.Callback{
         try {
             ensureLoadedApk();
             if(msg.what == 100){
-                BundlePackageManager.processActivityIntentIfNeed(msg.obj);
+                ActivityBridge.processActivityIntentIfNeed(msg.obj);
             }
 //            if(msg.what==113){
 //                handleReceiver(msg);

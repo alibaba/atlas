@@ -1,5 +1,4 @@
 /*
- * Tencent is pleased to support the open source community by making Tinker available.
  *
  * Copyright (C) 2016 THL A29 Limited, a Tencent company. All rights reserved.
  *

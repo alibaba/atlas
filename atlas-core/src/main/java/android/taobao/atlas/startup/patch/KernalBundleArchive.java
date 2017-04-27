@@ -226,7 +226,7 @@ import java.util.zip.ZipFile;
 /**
  * Created by guanjie on 15/6/4.
  */
-public class KernalBundleArchive {
+ class KernalBundleArchive {
 
     public static final String TAG = "KernalBundleArchive";
     public static final int RETRY_COUNT = 3;
@@ -390,7 +390,7 @@ public class KernalBundleArchive {
 //
 //            }
 //        },bundleFile,true);
-        boolean success = new KernalBundleRelease(revisionDir).release(bundleFile,true);
+        boolean success = new KernalBundleRelease(revisionDir,true).release(bundleFile,true);
 
         if (!success||odexFile == null){
             throw new IOException("process patch failed!");
@@ -452,7 +452,7 @@ public class KernalBundleArchive {
 //            }
 //        },bundleFile,false);
 //        Looper.loop();
-        boolean success = new KernalBundleRelease(revisionDir).release(bundleFile,false);
+        boolean success = new KernalBundleRelease(revisionDir,false).release(bundleFile,false);
         if (!success||odexFile == null){
             throw new IOException("process mainDex failed!");
         }
@@ -664,8 +664,8 @@ public class KernalBundleArchive {
      */
     public class KernalBundleRelease{
         private BundleReleaser mBundlereleaser;
-        public KernalBundleRelease(File dir) {
-            mBundlereleaser = new BundleReleaser(dir);
+        public KernalBundleRelease(File dir,boolean hasReleasedBefore) {
+            mBundlereleaser = new BundleReleaser(dir,hasReleasedBefore);
         }
 
         public boolean release(final File bundleFile,final boolean start) throws IOException{

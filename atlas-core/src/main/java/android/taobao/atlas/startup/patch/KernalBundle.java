@@ -210,12 +210,17 @@ package android.taobao.atlas.startup.patch;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
+import android.taobao.atlas.startup.AtlasBridgeApplication;
 import android.taobao.atlas.startup.KernalVersionManager;
+import android.taobao.atlas.startup.NClassLoader;
 import android.text.TextUtils;
 import android.util.Log;
 import dalvik.system.DexFile;
+import dalvik.system.PathClassLoader;
+
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -237,6 +242,7 @@ public class KernalBundle{
      * the bundle archive file.
      */
     KernalBundleArchive archive;
+    private Class FrameworkPropertiesClazz ;
 
     public static String KERNAL_BUNDLE_NAME = "com.taobao.maindex";
 
@@ -249,6 +255,7 @@ public class KernalBundle{
             try {
                 kernalBundle = new KernalBundle(kernalDir,currentProcessName,containerVersion);
                 kernalBundle.patchKernalDex();
+                kernalBundle.replacePathClassLoaderIfNeed(application);
                 kernalBundle.patchKernalResource(application);
                 return true;
             } catch (Exception e) {
@@ -351,9 +358,13 @@ public class KernalBundle{
 
     public void patchKernalDex() throws Exception {
         DexFile[] dexFile = archive.getOdexFile();
-        if (dexFile != null || archive.getLibraryDirectory().exists()) {
+        if ((dexFile != null&&dexFile.length>0) || archive.getLibraryDirectory().exists()) {
             installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive);
-            Class FrameworkPropertiesClazz = KernalConstants.baseContext.getClassLoader().loadClass("android.taobao.atlas.framework.FrameworkProperties");
+            FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length-1].loadClass("android.taobao.atlas.framework.FrameworkProperties",ClassLoader.getSystemClassLoader());
+            if(FrameworkPropertiesClazz==null && isDeubgMode()){
+                Log.e("KernalBundle","main dex is not match, library awo test?");
+                return;
+            }
             Field versionField = FrameworkPropertiesClazz.getDeclaredField("version");
             versionField.setAccessible(true);
             String version = (String)versionField.get(FrameworkPropertiesClazz.newInstance());
@@ -364,15 +375,51 @@ public class KernalBundle{
                     throw new RuntimeException("maindex version is not mismatch");
                 }
             }
+        }
+    }
 
+    public void replacePathClassLoaderIfNeed(Application application){
+        ClassLoader originalClassLoader = null;
+        if(Build.VERSION.SDK_INT>=24) {
+            originalClassLoader = application.getClassLoader();
+            ClassLoader loader = getClass().getClassLoader();
+
+            boolean needReplace = false;
+            do{
+                if(loader.getClass().getName().equals(PathClassLoader.class.getName())){
+                    needReplace = true;
+                    break;
+                }
+            }
+            while((loader=loader.getParent())!=null);
+            if(needReplace){
+                try {
+                    NClassLoader.replacePathClassLoader(KernalConstants.baseContext,KernalBundle.class.getClassLoader());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        try {
+            Class RuntimeVariablesClass = application.getClassLoader().loadClass("android.taobao.atlas.runtime.RuntimeVariables");
+            if(originalClassLoader!=null) {
+                RuntimeVariablesClass.getDeclaredField("sRawClassLoader").set(RuntimeVariablesClass, originalClassLoader);
+            }
+            if(FrameworkPropertiesClazz!=null){
+                RuntimeVariablesClass.getDeclaredField("FrameworkPropertiesClazz").set(RuntimeVariablesClass, FrameworkPropertiesClazz);
+            }else if(!isDeubgMode()){
+                throw new RuntimeException("FrameworkPropertiesClazz find error,will be rollback!");
+            }
+            RuntimeVariablesClass.getDeclaredField("androidApplication").set(RuntimeVariablesClass,application);
+            RuntimeVariablesClass.getDeclaredField("delegateResources").set(RuntimeVariablesClass,KernalConstants.baseContext.getResources());
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
     }
 
     public void patchKernalResource(Application application) throws Exception{
         if(archive.hasResources()){
-            Class RuntimeVariablesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.RuntimeVariables");
-            RuntimeVariablesClazz.getDeclaredField("androidApplication").set(RuntimeVariablesClazz,application);
-            RuntimeVariablesClazz.getDeclaredField("delegateResources").set(RuntimeVariablesClazz,KernalConstants.baseContext.getResources());
             Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
             DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
                     .invoke(DelegateResourcesClazz, archive.getArchiveFile().getAbsolutePath());
@@ -511,6 +558,14 @@ public class KernalBundle{
     private static File findDexRawFile(Object element){
         Field field = null;
         File dexRawFile = null;
+        if(Build.VERSION.SDK_INT>=25) {
+            try {
+                field = element.getClass().getDeclaredField("path");
+                field.setAccessible(true);
+                dexRawFile =  (File)field.get(element);
+                return dexRawFile;
+            }catch(Throwable e){}
+        }
         try {
             field = element.getClass().getDeclaredField("file");
             field.setAccessible(true);
@@ -640,6 +695,14 @@ public class KernalBundle{
         return archive;
     }
 
+    public File getRevisionDir(){
+        return getArchive().getRevisionDir();
+    }
+
+    public File getRevisionZip(){
+        return getArchive().getArchiveFile();
+    }
+
     public static boolean shouldSyncUpdateInThisProcess(String process){
         String processName = process;
         if(processName!=null &&
@@ -675,6 +738,11 @@ public class KernalBundle{
             final ApplicationInfo app_info = KernalConstants.baseContext.getApplicationInfo();
             boolean DEBUG = (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
             if (DEBUG) {
+                return true;
+            }
+            SharedPreferences sharedPreferences = KernalConstants.baseContext.getSharedPreferences("dynamic_test",Context.MODE_PRIVATE);
+            boolean dynamic_test_flag = sharedPreferences.getBoolean("dynamic_test_key",false);
+            if(dynamic_test_flag){
                 return true;
             }
         } catch (final Exception e) {

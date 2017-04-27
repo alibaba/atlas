@@ -207,16 +207,18 @@ package com.taobao.android;
  *
  */
 
+import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.taobao.android.apatch.ApkPatch;
 import com.taobao.android.apatch.MergePatch;
 import com.taobao.android.apatch.annotation.MethodReplaceAnnotation;
 import com.taobao.android.differ.dex.PatchException;
+import com.taobao.android.tpatch.model.ApkBO;
+import com.taobao.android.tpatch.model.BundleBO;
 import com.taobao.android.tpatch.utils.PatchUtils;
 import com.taobao.android.tpatch.utils.PathUtils;
 import com.taobao.android.utils.PathMatcher;
 import com.taobao.android.utils.ZipUtils;
-
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -254,13 +256,10 @@ public class APatchTool extends BasePatchTool {
     public static Map<String,String>mappingMap = new HashMap<String, String>();
 
 
-    public APatchTool(File baseApk, File newApk) {
-        super(baseApk, newApk, null, null);
+    public APatchTool(ApkBO baseApkBO,ApkBO newApkBO) {
+        super(baseApkBO, newApkBO);
     }
 
-    public APatchTool(File baseApk, File newApk, String baseApkVersion, String newApkVersion) {
-        super(baseApk, newApk, baseApkVersion, newApkVersion);
-    }
 
     public void setAndfixMainBundleName(String andfixMainBundleName) {
         this.andfixMainBundleName = andfixMainBundleName;
@@ -309,6 +308,18 @@ public class APatchTool extends BasePatchTool {
         // 生成bundle的tpatch文件
         // 判断主bundle的so和awb的插件
         Collection<File> soFiles = FileUtils.listFiles(newApkUnzipFolder, new String[]{"so"}, true);
+        if (splitDiffBundle!= null) {
+            for (Pair<BundleBO, BundleBO> bundle : splitDiffBundle) {
+                List<File> aPatchFiles = processBundleFiles(bundle.getSecond().getBundleFile(), bundle.getFirst().getBundleFile(), patchTmpDir, adiffFile, adiffJsonFile);
+                if (null != aPatchFiles) {
+                    for (File aPatchFile : aPatchFiles) {
+                        if (null != aPatchFile && aPatchFile.exists()) {
+                            aPatches.add(aPatchFile);
+                        }
+                    }
+                }
+            }
+        }
         for (File soFile : soFiles) {
             String relativePath = PathUtils.toRelative(newApkUnzipFolder, soFile.getAbsolutePath());
             if (null != notIncludeFiles && pathMatcher.match(notIncludeFiles, relativePath)) {
@@ -388,19 +399,6 @@ public class APatchTool extends BasePatchTool {
         return null;
     }
 
-    /**
-     * 解压二个apk文件
-     *
-     * @param outPatchDir
-     */
-    private File unzipApk(File outPatchDir) {
-        File unzipFolder = new File(outPatchDir, "unzip");
-        File baseApkUnzipFolder = new File(unzipFolder, BASE_APK_UNZIP_NAME);
-        File newApkUnzipFolder = new File(unzipFolder, NEW_APK_UNZIP_NAME);
-        ZipUtils.unzip(baseApk, baseApkUnzipFolder.getAbsolutePath());
-        ZipUtils.unzip(newApk, newApkUnzipFolder.getAbsolutePath());
-        return unzipFolder;
-    }
 
     /**
      * 得到bundle的Apatch文件

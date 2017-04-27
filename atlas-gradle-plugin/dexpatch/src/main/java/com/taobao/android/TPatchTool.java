@@ -209,9 +209,15 @@ package com.taobao.android;
  */
 
 import com.alibaba.fastjson.JSON;
+import com.android.utils.Pair;
 import com.google.common.collect.Lists;
+import com.taobao.android.apatch.ApkPatch;
+import com.taobao.android.apatch.utils.TypeGenUtil;
+import com.taobao.android.differ.dex.ApkDiff;
+import com.taobao.android.differ.dex.BundleDiffResult;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.dx.merge.CollisionPolicy;
+import com.taobao.android.dx.merge.DexMerger;
 import com.taobao.android.object.ApkFileList;
 import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.BuildPatchInfos;
@@ -219,26 +225,39 @@ import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.DiffType;
 import com.taobao.android.object.PatchBundleInfo;
 import com.taobao.android.object.PatchInfo;
+import com.taobao.android.smali.AfBakSmali;
+import com.taobao.android.smali.SmaliMod;
 import com.taobao.android.tpatch.manifest.AndroidManifestDiffFactory;
 import com.taobao.android.task.ExecutorServicesHelper;
 import com.taobao.android.tpatch.builder.PatchFileBuilder;
-import com.taobao.android.tpatch.utils.DexBuilderUtils;
+import com.taobao.android.tpatch.model.ApkBO;
+import com.taobao.android.tpatch.model.BundleBO;
 import com.taobao.android.tpatch.utils.HttpClientUtils;
 import com.taobao.android.tpatch.utils.MD5Util;
 import com.taobao.android.tpatch.utils.PatchUtils;
 import com.taobao.android.tpatch.utils.PathUtils;
 import com.taobao.android.utils.PathMatcher;
+import com.taobao.android.utils.SmaliCodeUtils;
 import com.taobao.android.utils.ZipUtils;
 
+import com.taobao.common.dexpatcher.DexPatchApplier;
+import com.taobao.common.dexpatcher.DexPatchGenerator;
+import com.taobao.dex.Dex;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jf.baksmali.baksmaliOptions;
+import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.jf.dexlib2.iface.ClassDef;
+import org.jf.dexlib2.util.SyntheticAccessorResolver;
+import org.jf.dexlib2.writer.builder.DexBuilder;
+import org.jf.dexlib2.writer.io.FileDataStore;
+import org.jf.util.ClassFileNameHandler;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -276,6 +295,15 @@ public class TPatchTool extends BasePatchTool {
 
     public static String pName;
 
+    private ApkDiff apkDiff = new ApkDiff();
+
+    private ApkDiff apkPatchInfos = new ApkDiff();
+
+
+    private List<BundleDiffResult> bundleDiffResults = Collections.synchronizedList(new ArrayList<>());
+
+    private List<BundleDiffResult> patchInfos = Collections.synchronizedList(new ArrayList<>());
+
     private final PathMatcher pathMatcher = new PathMatcher();
 
     private final String ANDROID_MANIFEST = "AndroidManifest.xml";
@@ -299,41 +327,33 @@ public class TPatchTool extends BasePatchTool {
 
     private boolean createAll = false;
 
-    public String getDexcode() {
-        return dexcode;
-    }
-
-    public void setDexcode(String dexcode) {
-        this.dexcode = dexcode;
-    }
-
-    private String dexcode;
-
     protected File newApkFileList;
 
     private boolean hasMainBundle;
 
     private List<String> noPatchBundles = Lists.newArrayList();
 
+    public void setVersionList(List<String> versionList) {
+        this.versionList = versionList;
+    }
+
+    private List<String>versionList = new ArrayList<>();
+
     private Map<String, Map<String, ClassDef>> bundleClassMap = new ConcurrentHashMap<String, Map<String, ClassDef>>();
 
-    public void setNoPatchBundles(String noPatchBundles) {
-        if (!StringUtils.isBlank(noPatchBundles)) {
-            this.noPatchBundles.addAll(Arrays.asList(noPatchBundles.split(",")));
+    public void setNoPatchBundles(List<String> noPatchBundles) {
+        if (!noPatchBundles.isEmpty()) {
+            this.noPatchBundles.addAll(noPatchBundles);
         }
     }
 
-    public TPatchTool(File baseApk,
-                      File newApk,
-                      String baseApkVersion,
-                      String newApkVersion,
-                      boolean diffBundleDex) {
-        super(baseApk, newApk, baseApkVersion, newApkVersion);
+    public TPatchTool(ApkBO baseApkBO, ApkBO newApkBO, boolean diffBundleDex) {
+        super(baseApkBO, newApkBO);
         this.diffBundleDex = diffBundleDex;
     }
 
-    public TPatchTool(File baseApk, File newApk, String baseApkVersion, String newApkVersion) {
-        super(baseApk, newApk, baseApkVersion, newApkVersion);
+    public TPatchTool(ApkBO baseApkBO, ApkBO newApkBO) {
+        super(baseApkBO, newApkBO);
     }
 
     /**
@@ -388,17 +408,19 @@ public class TPatchTool extends BasePatchTool {
                         String patchHistoryUrl,
                         String productName) throws Exception {
         isTpatch = true;
-        File lastPatchFile = null;
         pName = productName;
-        lastPatchFile = getLastPatchFile(baseApkVersion, productName, outPatchDir);
-        PatchUtils.getTpatchClassDef(lastPatchFile, bundleClassMap);
-        final File diffTxtFile = new File(outPatchDir, "tpatch-diff.txt");
+        final File diffTxtFile = new File(outPatchDir, "diff.json");
+        final File patchInfoFile = new File(outPatchDir, "patchInfo.json");
         final File patchTmpDir = new File(outPatchDir, "tpatch-tmp");
         File mainDiffFolder = new File(patchTmpDir, mainBundleName);
-        FileUtils.deleteDirectory(patchTmpDir);
-        FileUtils.deleteDirectory(mainDiffFolder);
+//        FileUtils.cleanDirectory(outPatchDir);
         patchTmpDir.mkdirs();
+        FileUtils.cleanDirectory(patchTmpDir);
         mainDiffFolder.mkdirs();
+        File lastPatchFile = null;
+        lastPatchFile = getLastPatchFile(baseApkBO.getVersionName(), productName, outPatchDir);
+        PatchUtils.getTpatchClassDef(lastPatchFile, bundleClassMap);
+
         // 解压apk
         File unzipFolder = unzipApk(outPatchDir);
         final File newApkUnzipFolder = new File(unzipFolder, NEW_APK_UNZIP_NAME);
@@ -408,25 +430,31 @@ public class TPatchTool extends BasePatchTool {
         File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
         File tmpDexFile = new File(patchTmpDir, mainBundleName + "-dex");
         createBundleDexPatch(newApkUnzipFolder,
-                             baseApkUnzipFolder,
-                             mianDiffDestDex,
-                             tmpDexFile,
-                             diffTxtFile);
+                baseApkUnzipFolder,
+                mianDiffDestDex,
+                tmpDexFile,
+                true);
 
         // 是否保留主bundle的资源文件
         if (isRetainMainBundleRes()) {
             copyMainBundleResources(newApkUnzipFolder,
-                                    baseApkUnzipFolder,
-                                    new File(patchTmpDir, mainBundleName));
+                    baseApkUnzipFolder,
+                    new File(patchTmpDir, mainBundleName));
         }
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper();
         String taskName = "diffBundleTask";
         // 判断主bundle的so和awb的插件
         Collection<File> soFiles = FileUtils.listFiles(newApkUnzipFolder, new String[]{"so"}, true);
+        if (splitDiffBundle != null) {
+            for (Pair<BundleBO, BundleBO> bundle : splitDiffBundle) {
+                processBundleFiles(bundle.getSecond().getBundleFile(), bundle.getFirst().getBundleFile(), patchTmpDir);
+
+            }
+        }
         for (final File soFile : soFiles) {
             final String relativePath = PathUtils.toRelative(newApkUnzipFolder,
-                                                             soFile.getAbsolutePath());
+                    soFile.getAbsolutePath());
             if (null != notIncludeFiles && pathMatcher.match(notIncludeFiles, relativePath)) {
                 continue;
             }
@@ -437,10 +465,10 @@ public class TPatchTool extends BasePatchTool {
 
                     File baseSoFile = new File(baseApkUnzipFolder, relativePath);
                     if (PatchUtils.isBundleFile(soFile)) { // 如果是bundle文件
-                        processBundleFiles(soFile, baseSoFile, patchTmpDir, diffTxtFile);
+                        processBundleFiles(soFile, baseSoFile, patchTmpDir);
                     } else {
-                        File destFile = new File(patchTmpDir,
-                                                 mainBundleName + File.separator + relativePath);
+                        File destFile = new File(patchTmpDir, mainBundleName + "/" +
+                                relativePath);
                         if (isFileModify(soFile, baseSoFile)) {
                             FileUtils.copyFile(soFile, destFile);
                         }
@@ -457,16 +485,21 @@ public class TPatchTool extends BasePatchTool {
         File patchFile = createTPatchFile(outPatchDir, patchTmpDir);
 
         PatchInfo curPatchInfo = createBasePatchInfo(patchFile);
-        BuildPatchInfos buildPatchInfos = null;
+        BuildPatchInfos buildPatchInfos = new BuildPatchInfos();
         // 生成多版本的tpatch文件
-             buildPatchInfos = createIncrementPatchFiles(productName,
-                                                                        patchFile,
-                                                                        outPatchDir,
-                                                                        newApkUnzipFolder,
-                                                                        curPatchInfo,
-                                                                        patchHistoryUrl);
+        if (createHistoryPatch && patchHistoryUrl != null) {
+            buildPatchInfos = createIncrementPatchFiles(productName,
+                    patchFile,
+                    outPatchDir,
+                    newApkUnzipFolder,
+                    curPatchInfo,
+                    patchHistoryUrl);
 
-            buildPatchInfos.setDexcode(dexcode);
+        }
+
+        buildPatchInfos.getPatches().add(curPatchInfo);
+        buildPatchInfos.setBaseVersion(baseApkBO.getVersionName());
+        buildPatchInfos.setDiffBundleDex(diffBundleDex);
 
         if (createPatchJson) {
             FileUtils.writeStringToFile(outPatchJson, JSON.toJSONString(buildPatchInfos));
@@ -474,35 +507,24 @@ public class TPatchTool extends BasePatchTool {
 
         // 删除临时的目录
         FileUtils.deleteDirectory(patchTmpDir);
+        apkDiff.setBaseApkVersion(baseApkBO.getVersionName());
+        apkDiff.setNewApkVersion(newApkBO.getVersionName());
+        apkDiff.setBundleDiffResults(bundleDiffResults);
+        apkDiff.setNewApkMd5(MD5Util.getFileMD5String(newApkBO.getApkFile()));
+        apkDiff.setFileName(newApkBO.getApkName());
+        apkPatchInfos.setBaseApkVersion(baseApkBO.getVersionName());
+        apkPatchInfos.setNewApkVersion(newApkBO.getVersionName());
+        apkPatchInfos.setBundleDiffResults(patchInfos);
+        apkPatchInfos.setFileName(patchFile.getName());
+        apkPatchInfos.setNewApkMd5(MD5Util.getFileMD5String(patchFile));
+        FileUtils.writeStringToFile(diffTxtFile, JSON.toJSONString(apkDiff));
+        FileUtils.writeStringToFile(patchInfoFile, JSON.toJSONString(apkPatchInfos));
+        FileUtils.copyFileToDirectory(diffTxtFile, outPatchDir.getParentFile(), true);
+        FileUtils.copyFileToDirectory(newApkBO.getApkFile(), outPatchDir.getParentFile(), true);
 //        FileUtils.deleteDirectory(unzipFolder);
         return patchFile;
     }
 
-    private File getLastPatchFile(String baseApkVersion,
-                                  String productName,
-                                  File outPatchDir) throws IOException {
-        try {
-            String httpUrl = LAST_PATCH_URL +
-                    "baseVersion=" +
-                    baseApkVersion +
-                    "&productIdentifier=" +
-                    productName;
-            String response = HttpClientUtils.getUrl(httpUrl);
-            if (StringUtils.isBlank(response) ||
-                    response.equals("\"\"") ||
-                    !productName.equals("taobao4android")) {
-                return null;
-            }
-            File downLoadFolder = new File(outPatchDir, "LastPatch");
-            downLoadFolder.mkdirs();
-            File downLoadFile = new File(downLoadFolder, "lastpatch.tpatch");
-            String downLoadUrl = StringEscapeUtils.unescapeJava(response);
-            downloadTPath(downLoadUrl.substring(1, downLoadUrl.length() - 1), downLoadFile);
-            return downLoadFile;
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     private File createTPatchFile(File outPatchDir, File patchTmpDir) throws IOException {
         // 首先压缩主bundle,先判断主bundle里有没有文件
@@ -517,7 +539,7 @@ public class TPatchTool extends BasePatchTool {
 
         // 再压缩各自的bundle
         File patchFile = new File(outPatchDir,
-                                  "patch-" + newApkVersion + "@" + baseApkVersion + ".tpatch");
+                "patch-" + newApkBO.getVersionName() + "@" + baseApkBO.getVersionName() + ".tpatch");
         if (patchFile.exists()) {
             FileUtils.deleteQuietly(patchFile);
         }
@@ -569,13 +591,9 @@ public class TPatchTool extends BasePatchTool {
      */
     private void processBundleFiles(File newBundleFile,
                                     File baseBundleFile,
-                                    File patchTmpDir,
-                                    File diffTxtFile) throws IOException, RecognitionException, PatchException {
+                                    File patchTmpDir) throws IOException, RecognitionException, PatchException {
         String bundleName = FilenameUtils.getBaseName(newBundleFile.getName());
         File destPatchBundleDir = new File(patchTmpDir, bundleName);
-        if (!isModifyBundle(newBundleFile.getName())&&!createAll) {
-            return;
-        }
         final File newBundleUnzipFolder = new File(newBundleFile.getParentFile(), bundleName);
         final File baseBundleUnzipFolder = new File(baseBundleFile.getParentFile(), bundleName);
 
@@ -583,10 +601,10 @@ public class TPatchTool extends BasePatchTool {
                 baseBundleFile.isFile() &&
                 baseBundleFile.exists() &&
                 !noPatchBundles.contains(baseBundleFile.getName()
-                                                 .replace("_", ".")
-                                                 .substring(3,
-                                                            baseBundleFile.getName().length() -
-                                                                    3)) &&
+                        .replace("_", ".")
+                        .substring(3,
+                                baseBundleFile.getName().length() -
+                                        3)) &&
                 diffBundleDex) {
             // 解压文件
             // 判断dex的差异性
@@ -595,57 +613,57 @@ public class TPatchTool extends BasePatchTool {
             File destDex = new File(destPatchBundleDir, DEX_NAME);
             File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
             createBundleDexPatch(newBundleUnzipFolder,
-                                 baseBundleUnzipFolder,
-                                 destDex,
-                                 tmpDexFolder,
-                                 diffTxtFile);
+                    baseBundleUnzipFolder,
+                    destDex,
+                    tmpDexFolder,
+                    false);
 
             // 比较其他资源文件的差异性
             Collection<File> newBundleResFiles = FileUtils.listFiles(newBundleUnzipFolder,
-                                                                     new IOFileFilter() {
+                    new IOFileFilter() {
 
-                                                                         @Override
-                                                                         public boolean accept(File file) {
-                                                                             // 不包括dex文件
-                                                                             if (file.getName()
-                                                                                     .endsWith(
-                                                                                             ".dex")) {
-                                                                                 return false;
-                                                                             }
-                                                                             String relativePath = PathUtils
-                                                                                     .toRelative(
-                                                                                             newBundleUnzipFolder,
-                                                                                             file.getAbsolutePath());
-                                                                             if (null !=
-                                                                                     notIncludeFiles &&
-                                                                                     pathMatcher.match(
-                                                                                             notIncludeFiles,
-                                                                                             relativePath)) {
-                                                                                 return false;
-                                                                             }
-                                                                             return true;
-                                                                         }
+                        @Override
+                        public boolean accept(File file) {
+                            // 不包括dex文件
+                            if (file.getName()
+                                    .endsWith(
+                                            ".dex")) {
+                                return false;
+                            }
+                            String relativePath = PathUtils
+                                    .toRelative(
+                                            newBundleUnzipFolder,
+                                            file.getAbsolutePath());
+                            if (null !=
+                                    notIncludeFiles &&
+                                    pathMatcher.match(
+                                            notIncludeFiles,
+                                            relativePath)) {
+                                return false;
+                            }
+                            return true;
+                        }
 
-                                                                         @Override
-                                                                         public boolean accept(File file,
-                                                                                               String s) {
-                                                                             return accept(new File(
-                                                                                     file,
-                                                                                     s));
-                                                                         }
-                                                                     },
-                                                                     TrueFileFilter.INSTANCE);
+                        @Override
+                        public boolean accept(File file,
+                                              String s) {
+                            return accept(new File(
+                                    file,
+                                    s));
+                        }
+                    },
+                    TrueFileFilter.INSTANCE);
 
             for (File newBundleResFile : newBundleResFiles) {
                 String resPath = PathUtils.toRelative(newBundleUnzipFolder,
-                                                      newBundleResFile.getAbsolutePath());
+                        newBundleResFile.getAbsolutePath());
                 File baseBundleResFile = new File(baseBundleUnzipFolder, resPath);
                 File destResFile = new File(destPatchBundleDir, resPath);
                 if (baseBundleResFile.exists()) {
                     if (isFileModify(newBundleResFile,
-                                     baseBundleResFile,
-                                     bundleName,
-                                     resPath)) { // 修改的资源
+                            baseBundleResFile,
+                            bundleName,
+                            resPath)) { // 修改的资源
                         FileUtils.copyFile(newBundleResFile, destResFile);
                     }
                 } else {// 新增的资源
@@ -654,6 +672,16 @@ public class TPatchTool extends BasePatchTool {
             }
         } else { // 新增的bundle，直接全量解压
             FileUtils.copyFileToDirectory(newBundleFile, patchTmpDir);
+        }
+        if (!isModifyBundle(newBundleFile.getName()) && !createAll) {
+            FileUtils.deleteDirectory(destPatchBundleDir);
+            Iterator<BundleDiffResult> iterator = patchInfos.iterator();
+            while (iterator.hasNext()) {
+                BundleDiffResult bundleDiffResult = iterator.next();
+                if (bundleDiffResult.getBundleName().equals(bundleName.substring(3).replace("_", "."))) {
+                    iterator.remove();
+                }
+            }
         }
     }
 
@@ -675,7 +703,7 @@ public class TPatchTool extends BasePatchTool {
             @Override
             public boolean accept(File file) {
                 String relativePath = PathUtils.toRelative(newApkUnzipFolder,
-                                                           file.getAbsolutePath());
+                        file.getAbsolutePath());
                 if (pathMatcher.match(DEFAULT_NOT_INCLUDE_RESOURCES, relativePath)) {
                     return false;
                 }
@@ -693,7 +721,7 @@ public class TPatchTool extends BasePatchTool {
 
         for (File retainFile : retainFiles) {
             String relativePath = PathUtils.toRelative(newApkUnzipFolder,
-                                                       retainFile.getAbsolutePath());
+                    retainFile.getAbsolutePath());
             File baseFile = new File(baseApkUnzipFolder, relativePath);
             if (isFileModify(retainFile, baseFile)) {
                 resoureModified = true;
@@ -723,34 +751,38 @@ public class TPatchTool extends BasePatchTool {
                                       File baseApkUnzipFolder,
                                       File destDex,
                                       File tmpDexFile,
-                                      File diffTxtFile) throws IOException, RecognitionException, PatchException {
+                                      boolean mainDex) throws IOException, RecognitionException, PatchException {
         List<File> dexs = Lists.newArrayList();
         // 比较主bundle的dex
-
+        if (!tmpDexFile.exists()) {
+            tmpDexFile.mkdirs();
+        }
         List<File> baseDexFiles = getFolderDexFiles(baseApkUnzipFolder);
         List<File> newDexFiles = getFolderDexFiles(newApkUnzipFolder);
         File dexDiffFile = new File(tmpDexFile, "diff.dex");
         TPatchDexTool dexTool = new TPatchDexTool(baseDexFiles,
-                                                  newDexFiles,
-                                                  DEFAULT_API_LEVEL,
-                                                  bundleClassMap.get(tmpDexFile.getName()
-                                                                             .substring(0,
-                                                                                        tmpDexFile.getName()
-                                                                                                .length() -
-                                                                                                4)));
+                newDexFiles,
+                DEFAULT_API_LEVEL,
+                bundleClassMap.get(tmpDexFile.getName().substring(0,
+                        tmpDexFile.getName()
+                                .length() -
+                                4)),
+        mainDex);
         DexDiffInfo dexDiffInfo = dexTool.createTPatchDex(dexDiffFile);
-        if (dexDiffFile.exists() && validDiffInfo(dexDiffInfo)) {
+        if (dexDiffFile.exists()) {
             dexs.add(dexDiffFile);
-            dexDiffInfo.writeDiffToFile(diffTxtFile, true);
-        }
+            BundleDiffResult bundleDiffResult = new BundleDiffResult();
+            if (mainDex) {
+                bundleDiffResult.setBundleName("com.taobao.maindex");
 
-        // 合并dex
-        if (dexs.size() > 1) {
-            if (null != logger) {
-                logger.info("To merged dex is:" + StringUtils.join(dexs, ","));
+            } else {
+                bundleDiffResult.setBundleName(baseApkUnzipFolder.getName().substring(3).replace("_", "."));
             }
-            DexBuilderUtils.mergeDex(dexs, destDex, CollisionPolicy.FAIL);
-        } else if (dexs.size() > 0) {
+            bundleDiffResults.add(bundleDiffResult);
+            patchInfos.add(bundleDiffResult);
+            dexDiffInfo.save(bundleDiffResult);
+        }
+        if (dexs.size() > 0) {
             FileUtils.copyFile(dexs.get(0), destDex);
         }
 
@@ -758,19 +790,6 @@ public class TPatchTool extends BasePatchTool {
         return destDex;
     }
 
-    /**
-     * 解压二个apk文件
-     *
-     * @param outPatchDir
-     */
-    private File unzipApk(File outPatchDir) {
-        File unzipFolder = new File(outPatchDir, "unzip");
-        File baseApkUnzipFolder = new File(unzipFolder, BASE_APK_UNZIP_NAME);
-        File newApkUnzipFolder = new File(unzipFolder, NEW_APK_UNZIP_NAME);
-        ZipUtils.unzip(baseApk, baseApkUnzipFolder.getAbsolutePath());
-        ZipUtils.unzip(newApk, newApkUnzipFolder.getAbsolutePath());
-        return unzipFolder;
-    }
 
     /**
      * 获取基准patch包的patchInfo对象
@@ -780,26 +799,22 @@ public class TPatchTool extends BasePatchTool {
      */
     public PatchInfo createBasePatchInfo(File file) {
         PatchInfo patchInfo = new PatchInfo();
-        patchInfo.setPatchVersion(newApkVersion);
-        patchInfo.setTargetVersion(baseApkVersion);
+        patchInfo.setPatchVersion(newApkBO.getVersionName());
+        patchInfo.setTargetVersion(baseApkBO.getVersionName());
         patchInfo.setFileName(file.getName());
-        Set<String>modifyBundles = new HashSet<>();
+        Set<String> modifyBundles = new HashSet<>();
         ZipFile zipFile = newZipFile(file);
         Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
-        while (enumeration.hasMoreElements()){
-           ZipEntry zipEntry = enumeration.nextElement();
-           if (zipEntry.getName().startsWith("lib")&&zipEntry.getName().indexOf(File.separator)!= -1){
-                   modifyBundles.add(zipEntry.getName().substring(3,zipEntry.getName().indexOf(File.separator)).replace("_","."));
-               }else if (zipEntry.getName().endsWith(".so")&&zipEntry.getName().indexOf(File.separator)== -1){
-                   modifyBundles.add(zipEntry.getName().substring(3,zipEntry.getName().lastIndexOf(".")).replace("_","."));
-               }
+        while (enumeration.hasMoreElements()) {
+            ZipEntry zipEntry = enumeration.nextElement();
+            if (zipEntry.getName().startsWith("lib") && zipEntry.getName().indexOf("/") != -1) {
+                modifyBundles.add(zipEntry.getName().substring(3, zipEntry.getName().indexOf("/")).replace("_", "."));
+            } else if (zipEntry.getName().endsWith(".so") && zipEntry.getName().indexOf("/") == -1) {
+                modifyBundles.add(zipEntry.getName().substring(3, zipEntry.getName().lastIndexOf(".")).replace("_", "."));
+            }
 
         }
-        try {
-            zipFile.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
         for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
             if (artifactBundleInfo.getMainBundle()) {
                 if (DiffType.MODIFY.equals(artifactBundleInfo.getDiffType()) || hasMainBundle) {
@@ -829,7 +844,7 @@ public class TPatchTool extends BasePatchTool {
                 patchBundleInfo.setDependency(artifactBundleInfo.getDependency());
                 //                patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                 patchInfo.getBundles().add(patchBundleInfo);
-            }else if (modifyBundles.contains(artifactBundleInfo.getPkgName())){
+            } else if (modifyBundles.contains(artifactBundleInfo.getPkgName())) {
                 PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
                 patchBundleInfo.setNewBundle(false);
                 patchBundleInfo.setMainBundle(false);
@@ -844,7 +859,11 @@ public class TPatchTool extends BasePatchTool {
             }
         }
 
-
+        try {
+            zipFile.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         return patchInfo;
     }
@@ -867,38 +886,40 @@ public class TPatchTool extends BasePatchTool {
                                                       File newApkUnzipFolder,
                                                       PatchInfo curPatchInfo,
                                                       String patchHistoryUrl) throws IOException, PatchException {
-        BuildPatchInfos historyBuildPatchInfos= null;
+        BuildPatchInfos historyBuildPatchInfos = null;
         if (!StringUtils.isEmpty(patchHistoryUrl)) {
             String patchHisUrl = patchHistoryUrl +
                     "?baseVersion=" +
-                    baseApkVersion +
+                    baseApkBO.getVersionName() +
                     "&productIdentifier=" +
                     productionName;
             String response = HttpClientUtils.getUrl(patchHisUrl);
-             historyBuildPatchInfos = JSON.parseObject(response, BuildPatchInfos.class);
+            historyBuildPatchInfos = JSON.parseObject(response, BuildPatchInfos.class);
         }
+
         Map<String, File> awbBundleMap = new HashMap<String, File>();
         for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
             String bundleFileSoName = "lib" +
                     artifactBundleInfo.getPkgName().replace('.', '_') +
                     ".so";
             File bundleFile = new File(newApkUnzipFolder,
-                                       "lib" +
-                                               File.separator +
-                                               "armeabi" +
-                                               File.separator +
-                                               bundleFileSoName);
+                    "lib" +
+                            "/" +
+                            "armeabi" +
+                            "/" +
+                            bundleFileSoName);
             if (bundleFile.exists()) {
                 awbBundleMap.put(artifactBundleInfo.getArtifactId(), bundleFile);
             }
         }
         PatchFileBuilder patchFileBuilder = new PatchFileBuilder(historyBuildPatchInfos,
-                                                                 curTPatchFile,
-                                                                 curPatchInfo,
-                                                                 awbBundleMap,
-                                                                 targetDirectory,
-                                                                 baseApkVersion);
+                curTPatchFile,
+                curPatchInfo,
+                awbBundleMap,
+                targetDirectory,
+                baseApkBO.getVersionName());
         patchFileBuilder.setNoPatchBundles(noPatchBundles);
+        patchFileBuilder.setHistroyVersionList(versionList);
 
         return patchFileBuilder.createHistoryTPatches(diffBundleDex, logger);
     }
@@ -959,19 +980,19 @@ public class TPatchTool extends BasePatchTool {
         String newFileMd5 = MD5Util.getFileMD5String(newFile);
         String baseFileMd5 = MD5Util.getFileMD5String(baseFile);
         newFileMd5 = getBundleFileMappingMd5(getNewApkFileList(),
-                                             bundleFileName,
-                                             filePath,
-                                             newFileMd5);
+                bundleFileName,
+                filePath,
+                newFileMd5);
         baseFileMd5 = getBundleFileMappingMd5(getBaseApkFileList(),
-                                              bundleFileName,
-                                              filePath,
-                                              baseFileMd5);
+                bundleFileName,
+                filePath,
+                baseFileMd5);
         if (StringUtils.equals(newFileMd5, baseFileMd5)) {
             return false;
-        } else if (newFile.getName().equals(ANDROID_MANIFEST)){
-            return isManifestModify(baseFile,newFile);
+        } else if (newFile.getName().equals(ANDROID_MANIFEST)) {
+            return isManifestModify(baseFile, newFile);
 
-        }else {
+        } else {
             return true;
         }
     }
@@ -979,9 +1000,10 @@ public class TPatchTool extends BasePatchTool {
     private boolean isManifestModify(File baseFile, File newFile) {
         AndroidManifestDiffFactory androidManifestDiffFactory = new AndroidManifestDiffFactory();
         try {
-            androidManifestDiffFactory.diff(baseFile,newFile);
-            for (AndroidManifestDiffFactory.DiffItem diffItem:androidManifestDiffFactory.diffResuit){
-                if (diffItem.Component instanceof com.taobao.android.tpatch.manifest.Manifest.Activity||diffItem.Component instanceof com.taobao.android.tpatch.manifest.Manifest.Service){
+            androidManifestDiffFactory.diff(baseFile, newFile);
+            for (AndroidManifestDiffFactory.DiffItem diffItem : androidManifestDiffFactory.diffResuit) {
+                if (diffItem.Component instanceof com.taobao.android.tpatch.manifest.Manifest.Activity ||
+                        diffItem.Component instanceof com.taobao.android.tpatch.manifest.Manifest.Service) {
                     return true;
                 }
             }
@@ -1063,15 +1085,15 @@ public class TPatchTool extends BasePatchTool {
                                 String prefix) throws IOException {
         if (directory != null && directory.exists()) {
             Collection<File> files = FileUtils.listFiles(directory,
-                                                         TrueFileFilter.INSTANCE,
-                                                         TrueFileFilter.INSTANCE);
+                    TrueFileFilter.INSTANCE,
+                    TrueFileFilter.INSTANCE);
             byte[] buf = new byte[8064];
             for (File file : files) {
                 if (file.isDirectory()) {
                     continue;
                 }
                 String path = prefix +
-                        File.separator +
+                        "/" +
                         PathUtils.toRelative(directory, file.getAbsolutePath());
                 InputStream in = null;
                 try {
@@ -1133,102 +1155,23 @@ public class TPatchTool extends BasePatchTool {
         return null;
     }
 
-    private boolean validDiffInfo(DexDiffInfo dexDiffInfo) {
-        if (dexDiffInfo.getClassDiffInfoMap().size() == 1 &&
-                dexDiffInfo.getClassDiffInfoMap()
-                        .containsKey("android.taobao.atlas.version.VersionKernal")) {
-            return false;
-        } else if (dexDiffInfo.getClassDiffInfoMap().size() == 0) {
-            return false;
-        } else
-            return true;
-    }
 
-    private void downloadTPath(String httpUrl, File saveFile) throws IOException {
-        if (!saveFile.exists() || !saveFile.isFile()) {
-            downloadFile(httpUrl, saveFile);
-        }
-    }
 
-    /**
-     * http下载
-     */
-    private void downloadFile(String httpUrl, File saveFile) throws IOException {
-        // 下载网络文件
-        int bytesum = 0;
-        int byteread = 0;
-        URL url = new URL(httpUrl);
-        URLConnection conn = url.openConnection();
-        InputStream inStream = conn.getInputStream();
-        FileOutputStream fs = new FileOutputStream(saveFile);
-
-        byte[] buffer = new byte[1204];
-        while ((byteread = inStream.read(buffer)) != -1) {
-            bytesum += byteread;
-            fs.write(buffer, 0, byteread);
-        }
-        fs.flush();
-        inStream.close();
-        fs.close();
-    }
-
-    //    public static void main(String[] args) throws Exception {
-    //        File newApk = new File("/Users/shenghua/Downloads/tpatch/new.apk");
-    //        File baseApk = new File("/Users/shenghua/Downloads/tpatch/base.apk");
-    //        File atalsPatchFoder = new File("/Users/shenghua/Downloads/tpatch/tpatch");
-    //        atalsPatchFoder.mkdirs();
-    //        TPatchTool tPatchTool = new TPatchTool(baseApk, newApk, "5.5.3.39", "5.5.3.40", true);
-    //        tPatchTool.setMainBundleName("libcom_taobao_maindex");
-    //        tPatchTool.setNotIncludeFiles(new String[] { "lib/x86/**" });
-    //        tPatchTool.setRetainMainBundleRes(false);
-    //        List<ArtifactBundleInfo> bundleInfoList = new ArrayList<ArtifactBundleInfo>();
-    //        Set<ArtifactBundleInfo> artifactBundleInfos = Sets.newHashSet();
-    //        bundleInfoList = JSON.parseArray(FileUtils.readFileToString(new File("/Users/shenghua/Downloads/tpatch/tpatch-bundles.json")),
-    //                                         ArtifactBundleInfo.class);
-    //        artifactBundleInfos.addAll(bundleInfoList);
-    //        tPatchTool.setArtifactBundleInfos(artifactBundleInfos);
-    //        tPatchTool.setOnlyIncludeModifyBundle(true);
-    //        tPatchTool.doPatch(atalsPatchFoder, true, new File(atalsPatchFoder, "patchs.json"), false, null, "");
-    //    }
     public static void main(String[] args) throws Exception {
+//        File file = new File("/Users/lilong/Downloads/tpatch-diff/lib/armeabi/libcom_alibaba_wdk_txd/classes.dex");
+        File file1 = new File("/Users/lilong/Downloads/10004583@taobao_android_6.6.0/lib/armeabi/libcom_etao_feimagesearch/classes.dex");
+        Dex dex = new Dex(file1);
+//        dex.getTableOfContents().typeLists.size
+//       TPatchDexTool.removeDebugInfo(file);
+//        TPatchDexTool.removeDebugInfo(file1);
+//        DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(file1,file);
+//        dexPatchGenerator.executeAndSaveTo(new File("/Users/lilong/Downloads/1.dex"));
+//        DexPatchApplier dexPatchApplier = new DexPatchApplier(file1,new File("/Users/lilong/Downloads/1.dex"));
+//        dexPatchApplier.executeAndSaveTo(new File("/Users/lilong/Downloads/2.dex"));
 
-        //        String response = HttpClientUtils.getUrl(url);
-        //        if (response.equals("\"\"")){
-        //            System.out.println("xxx");
-        //        }
-        //        String aaa = StringEscapeUtils.unescapeJava(response);
-        //        URL url1 = new URL(aaa.substring(1,aaa.length()-1));
-        ////        downloadTPath(aaa.substring(1,aaa.length()-1), new File("/Users/lilong/Downloads/1111.patch"));
-        ////        PatchUtils.getTpatchClassDef(lastPatchFile, bundleClassMap)
-//        Map<String, Map<String, ClassDef>> bundleClassMap = new ConcurrentHashMap<String, Map<String, ClassDef>>();
-//        PatchUtils.getTpatchClassDef(new File("/Users/lilong/Downloads/temp/patch-6.1.1@6.1.0.zip"),
-//                                     bundleClassMap);
-//        System.out.println(bundleClassMap.size());
-        TPatchTool tPatchTool = new TPatchTool(new File("/Users/lilong/Downloads/taobao-android.apk"),
-                                               new File("/Users/lilong/Downloads/tpatch-diff.apk"),
-                                               "1.0.0",
-                                               "2.0.0",
-                                               true);
-//        tPatchTool.bundleClassMap = bundleClassMap;
-        tPatchTool.doPatch(new File("/Users/lilong/Downloads/aaa"),
-                           false,
-                           null,
-                           true,
-                           null,
-                           "taobao4android");
-
-        //
-        //        TPatchDexTool dexTool = new TPatchDexTool(new File("/Users/lilong/Downloads/10006492@taobao_android_5.7.2/classes.dex"), new File("/Users/lilong/Downloads/taobao-android/classes.dex"), DEFAULT_API_LEVEL);
-        //        File dexDiffFile = new File(new File("/Users/lilong/Downloads/10006492@taobao_android_5.7.2"), "diff.dex");
-        //        DexDiffInfo dexDiffInfo = dexTool.createTPatchDex(dexDiffFile);
-        //        TPatchTool.debug = true;
-        //        TPatchTool.isTpatch = true;
-        //
-        //        TPatchTool tPatchTool = new TPatchTool(new File("/Users/lilong/Downloads/taobao-android3.apk"), new File("/Users/lilong/Downloads/tpatch-diff.apk"),"5.8.0","5.8.4", true);
-        //
-        //        File dexDiffFile = new File("/Users/lilong/Downloads/taobao-android");
-        //        tPatchTool.doPatch(dexDiffFile,false,null,false,null,null);
 
     }
+
+
 
 }

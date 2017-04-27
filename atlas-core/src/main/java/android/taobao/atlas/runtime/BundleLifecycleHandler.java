@@ -223,7 +223,6 @@ import android.app.Application;
 import android.os.Looper;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.StringUtils;
 import android.util.Log;
@@ -353,8 +352,8 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
                     if(b.getArchive()!=null && b.getArchive().isDexOpted()){
                         throw new RuntimeException(e);
                     }
-                    AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_APPLICATION_FAIL,
-                            bundle.getLocation(),e.getMessage(),FileUtils.getAvailableDisk());
+//                    AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_APPLICATION_FAIL,
+//                            bundle.getLocation(),e.getMessage(),FileUtils.getAvailableDisk());
 
                     Log.e("BundleLifeCycle","started application crash | "+(Looper.getMainLooper().getThread().getId()==Thread.currentThread().getId()));
 

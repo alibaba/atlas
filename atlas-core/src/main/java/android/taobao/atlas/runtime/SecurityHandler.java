@@ -217,8 +217,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
-import android.taobao.atlas.util.FileUtils;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -291,8 +289,8 @@ public class SecurityHandler implements BundleListener {
                     Log.e(TAG, "Security check failed. " + location);
                     Handler handler = new Handler(Looper.getMainLooper());
                     handler.post(new postInvalidBundle());
-                    AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, location, AtlasMonitor.SECURITY_CHECK_FAILED,
-                            FileUtils.getDataAvailableSpace());
+//                    AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, location, AtlasMonitor.SECURITY_CHECK_FAILED,
+//                            FileUtils.getDataAvailableSpace());
                     isSecurityCheckFailed = true;
                 }
                 if (isSecurityCheckFailed == false) {

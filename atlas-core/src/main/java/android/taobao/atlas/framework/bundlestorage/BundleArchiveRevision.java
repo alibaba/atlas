@@ -212,9 +212,10 @@ import android.content.res.AssetManager;
 import android.os.Build;
 import android.os.Environment;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Framework;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.util.*;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import android.taobao.atlas.hack.AtlasHacks;
@@ -373,11 +374,12 @@ public class BundleArchiveRevision {
             in.close();
 
             if(!BaselineInfoManager.instance().isDexPatched(location)) {
+                String wantedVersion = BaselineInfoManager.instance().getBaseBundleVersion(location);
+                BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
                 if (containerVersion == null ||
                         (!TextUtils.isEmpty(Framework.getContainerVersion()) && !containerVersion.equals(Framework.getContainerVersion())) ||
-                        (!TextUtils.isEmpty(version) && !TextUtils.isEmpty(BaselineInfoManager.instance().getBaseBundleVersion(location)) && !version.equals(BaselineInfoManager.instance().getBaseBundleVersion(location)))) {
-                    AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_MISMATCH, location, AtlasMonitor.UPDATE_META_FAILED_MSG,
-                            FileUtils.getDataAvailableSpace());
+                        (!TextUtils.isEmpty(version) && !TextUtils.isEmpty(wantedVersion) && !version.equals(wantedVersion)) ||
+                        (!TextUtils.isEmpty(info.getVersion()) && version!=null&&!version.equals("-1") && !version.equals(info.getVersion()))) {
                     throw new BundleArchive.MisMatchException("mismatch bundle version" + revisionDir.getAbsolutePath());
                 }
             }
@@ -567,19 +569,21 @@ public class BundleArchiveRevision {
             }
 
             if (dexFile == null){
-                dexFile = com.taobao.android.runtime.RuntimeUtils.loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
-//                dexFile = DexFile.loadDex(bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+//                dexFile = com.taobao.android.runtime.RuntimeUtils.loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+                dexFile = DexFile.loadDex(bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
             }
             //9月份版本明天发布先不集成
 //            isDexOptDone = checkDexValid(dexFile);
             isDexOptDone = true;
         } catch (IOException e) {
-            AtlasMonitor.getInstance().trace(AtlasMonitor.DEXOPT_FAIL, location, AtlasMonitor.DEXOPT_FAIL_MSG,
-            		FileUtils.getDataAvailableSpace());
+//            AtlasMonitor.getInstance().trace(AtlasMonitor.DEXOPT_FAIL, location, AtlasMonitor.DEXOPT_FAIL_MSG,
+//            		FileUtils.getDataAvailableSpace());
             if (odexFile.exists()) {
                 odexFile.delete();
             }
             Log.e("Framework","Failed optDexFile '" + bundleFile.getAbsolutePath() + "' >>> ", e);
+            AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_DEXOPT_FAIL,
+                    false, "0", e==null?"":e.getMessage(), bundleFile.getName());
         } finally {
             AtlasFileLock.getInstance().unLock(odexFile);
         }
@@ -645,8 +649,10 @@ public class BundleArchiveRevision {
                     extractEntry(zip,zipEntry);
                 }
             }
-        }catch(final Exception e){
-            e.printStackTrace();
+        }catch(IOException e){
+            AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_SOLIB_UNZIP_FAIL,
+                    false, "0", e==null?"":e.getMessage(), bundle.getName());
+            throw e;
         }finally{
         	if(null!=zip){
             zip.close();
@@ -734,12 +740,12 @@ public class BundleArchiveRevision {
                     e.printStackTrace();
                 }
             } else {
-                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, location, AtlasMonitor.OSGI_ADD_PATH_FAILED_MSG,
-                        FileUtils.getDataAvailableSpace());
+//                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, location, AtlasMonitor.OSGI_ADD_PATH_FAILED_MSG,
+//                        FileUtils.getDataAvailableSpace());
             }
         } catch (Exception e) {
-            AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, location, AtlasMonitor.OSGI_ADD_PATH_FAILED_MSG,
-                    FileUtils.getDataAvailableSpace());
+//            AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, location, AtlasMonitor.OSGI_ADD_PATH_FAILED_MSG,
+//                    FileUtils.getDataAvailableSpace());
         } finally {
             if (input != null) {
                 input.close();

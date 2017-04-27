@@ -213,6 +213,8 @@ package android.taobao.atlas.startup.patch.releaser;
  */
 
 import android.app.PreVerifier;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -222,6 +224,7 @@ import dalvik.system.DexFile;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -243,6 +246,7 @@ public class BundleReleaser {
     private Handler handler;
     private ProcessCallBack processCallBack;
     private File apkFile;
+    private boolean hasReleased;
 
     public DexFile[] getDexFile() {
         return dexFiles;
@@ -250,10 +254,11 @@ public class BundleReleaser {
 
     private DexFile[] dexFiles = null;
 
-    public BundleReleaser(final File reversionDir) {
+    public BundleReleaser(final File reversionDir,boolean hasReleased) {
         if(Boolean.FALSE.booleanValue()){
             String.valueOf(PreVerifier.class);
         }
+        this.hasReleased = hasReleased;
         this.reversionDir = reversionDir;
         if (!(Looper.getMainLooper() == Looper.myLooper())) {
             Looper.prepare();
@@ -357,10 +362,12 @@ public class BundleReleaser {
                                 message.what = MSG_ID_DEX_RELEASE_DONE;
                             } else {
                                 message.what = MSG_ID_RELEASE_FAILED;
+                                updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL, apkFile.getAbsolutePath());
                             }
                             handler.sendMessage(message);
                         } catch (IOException e) {
                             e.printStackTrace();
+                            updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL, e==null?"":e.getMessage());
                         }
                         break;
                     case RESOURCE:
@@ -390,10 +397,12 @@ public class BundleReleaser {
                                 message.what = MSG_ID_RELEASE_DONE;
                             } else {
                                 message.what = MSG_ID_RELEASE_FAILED;
+                                updateMonitor(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, apkFile.getAbsolutePath());
                             }
                             handler.sendMessage(message);
                         } catch (IOException e) {
                             e.printStackTrace();
+                            updateMonitor(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, e==null?"":e.getMessage());
                         }
                         break;
                     default:
@@ -426,13 +435,16 @@ public class BundleReleaser {
                     String optimizedPath = optimizedPathFor(validDexes[j], dexOptDir());
                     try {
                         dexFiles[j] = DexFile.loadDex(validDexes[j].getPath(), optimizedPath, 0);
-                        boolean result = verifyDexFile(dexFiles[j]);
+                        boolean result = verifyDexFile(dexFiles[j],optimizedPath);
                         if (!result) {
                             handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
+                            updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL, validDexes[j].getAbsolutePath());
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
                         handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
+                        updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL,
+                                validDexes[j].getAbsolutePath() + " and IOException : " + e==null?"null":e.getMessage());
                     } finally {
                         //后面需要loadclass,这里不能close
 //                        if (dexFile != null) {
@@ -459,11 +471,23 @@ public class BundleReleaser {
         handler.sendMessage(handler.obtainMessage(MSG_ID_DEX_OPT_DONE));
     }
 
-    private boolean verifyDexFile(DexFile dexFile) throws IOException {
+    private boolean verifyDexFile(DexFile dexFile,String optimizedPath) throws IOException {
         if (dexFile != null) {
-            if (checkDexValid(dexFile)) {
-                return true;
+            if (!checkDexValid(dexFile)) {
+                return false;
             }
+            if(!hasReleased) {
+                try {
+                    Class OdexVerifierClass = getClass().getClassLoader().loadClass("android.taobao.atlas.util.OdexVerifier");
+                    Method isOdexValidMethod = OdexVerifierClass.getDeclaredMethod("isOdexValid", String.class);
+                    isOdexValidMethod.setAccessible(true);
+                    boolean result = (Boolean) isOdexValidMethod.invoke(OdexVerifierClass,optimizedPath);
+                    if(!result){
+                        return false;
+                    }
+                }catch(Throwable e){}
+            }
+            return true;
         }
         return false;
     }
@@ -520,6 +544,12 @@ public class BundleReleaser {
         handler.removeCallbacksAndMessages(null);
         handler = null;
         service.shutdown();
+    }
+
+    private void updateMonitor(String stage, String detail) {
+        SharedPreferences sharedPreferences = KernalConstants.baseContext.getSharedPreferences(KernalConstants.ATLAS_MONITOR, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(stage, detail).commit();
     }
 
     public interface ProcessCallBack{

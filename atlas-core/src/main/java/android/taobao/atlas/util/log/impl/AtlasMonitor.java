@@ -208,59 +208,24 @@
 
 package android.taobao.atlas.util.log.impl;
 
+import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.log.IMonitor;
 
-public class AtlasMonitor implements IMonitor {
+public class AtlasMonitor {
 
     private static IMonitor externalMonitor;
-    private static AtlasMonitor singleton;    
-    
-    public final static int BUNDLE_INSTALL_FAIL = 1;
-    public final static int DEXOPT_FAIL = 2;
-    public final static int RESOURCES_FAIL = 3;
-    public final static int DELETE_STORAGE_FAIL = 4;    
-    public final static int BUNDLE_MISMATCH = 5;
-    public final static int PREVERIFY_FAIL = 6;
-    public final static int AVAILABLE_DISKS = 7;
-    public final static int BUNDLE_APPLICATION_FAIL = 8;
-    public final static int KERNAL_RESOLVE_FAIL = 9;
-    public final static int LOADEDAPK_MISSING = 10;
-    public final static int TOO_LARGE_BUNDLE  =11;
-    
-    // BUNDLE_INSTALL_FAIL = 1 details
-    public final static String OSGI_FAILED_MSG = "OSGI parse failed";
-    public final static String UPDATE_FAILED_MSG = "Update bundle failed";
-    public final static String RESTORED_FAILED_MSG = "Restore bundle failed";
-    public final static String UPDATE_META_FAILED_MSG = "Update metadata failed";    
-    public final static String OSGI_ADD_PATH_FAILED_MSG = "Add asset path failed";    
-    public final static String PACKAGE_LITE_NULL_FROM_BUNDLEINFOLIST = "Package lite null from bundleinfolist";    
-    public final static String PACKAGE_LITE_NULL_FROM_SYSTEM_METHOD = "Package lite null from system method";    
-    public final static String FAILED_TO_FIND_LIB = "Failed to find the library";        
-    public final static String DISK_SIZE_TOO_SMALL = "Disk size too small";       
-    public final static String INSTALL_BUNDLE_EXCEPTION_MSG = "Install bundle got exception";       
-    public final static String SECURITY_CHECK_FAILED = "Security check failed";
+    private static AtlasMonitor singleton;
 
-    //DEXOPT_FAIL = 2;
-    public final static String DEXOPT_FAIL_MSG = "Dexopt failed";
-    
-    // RESOURCES_FAIL = 3;
-    public final static String ADD_RESOURCES_FAIL_MSG = "Add resource path failed";
-    public final static String GET_ORIG_PATHS_FAIL_MSG = "Get original asset paths failed";
-    public final static String GET_RESOURCES_FAIL_MSG = "Get resources failed";
-    
-    //DELETE_STORAGE_FAIL = 4
-    public final static String DELETE_STORAGE_FAILED_MSG = "Delete storage failed";
-    
-    //BUNDLE_MISMATCH = 5
-    public final static String BUNDLE_MISMATCH_MSG = "Bundle mismatch";
-    
-    // PREVERIFY_FAIL = 6
-    public final static String PREVERIFY_FAIL_MSG = "Preverify error";
+    //容器稳定性stage
+    public static final String CONTAINER_BUNDLE_SOURCE_UNZIP_FAIL = "container_bundle_unzip_fail";
+    public static final String CONTAINER_BUNDLE_SOURCE_MISMATCH = "container_bundle_mismatch";
+    public static final String CONTAINER_SOLIB_UNZIP_FAIL = "container_solib_unzip_fail";
+    public static final String CONTAINER_DEXOPT_FAIL = "container_dexopt_fail";
+    public static final String CONTAINER_APPEND_ASSETPATH_FAIL = "container_append_assetpath_fail";
+    public static final String CONTAINER_BUNDLEINFO_PARSE_FAIL = "container_bundleinfo_parse_fail";
 
-    public final static String KERNAL_RESOLVE_FAIL_MSG = "kernal bundle reslove failed!";
-    public final static String NEW_ACTIVITY_BUNDLE = "new activity bundle";
-
-
+    //动态部署稳定性stage
+    public static final String DD_BUNDLE_MISMATCH = "dd_bundle_mismatch";
 
 
     public static AtlasMonitor getInstance(){
@@ -273,18 +238,10 @@ public class AtlasMonitor implements IMonitor {
     public static void setExternalMonitor(IMonitor monitor){
     	externalMonitor = monitor;
     }
-    
-    @Override
-	public void trace(String TypeID, String BundleName, String Detail, String remainedDisk){
-        if(externalMonitor!=null){
-        	externalMonitor.trace(TypeID, BundleName, Detail, remainedDisk);
-        }
-    }
 
-	@Override
-	public void trace(Integer TypeID, String BundleName, String Detail, String remainedDisk){
+    public void trace(String stage, boolean isSuccess, String errCode, String errMsg, String detail) {
         if(externalMonitor!=null){
-        	externalMonitor.trace(TypeID, BundleName, Detail, remainedDisk);
+        	externalMonitor.trace(stage, isSuccess, errCode, errMsg, detail, FileUtils.getAvailableDisk());
         }
 	}
 }
