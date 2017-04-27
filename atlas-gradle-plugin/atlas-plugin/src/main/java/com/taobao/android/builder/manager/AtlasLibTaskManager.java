@@ -236,10 +236,11 @@ import com.taobao.android.builder.tasks.awo.ProcessAwoAndroidResources;
 import com.taobao.android.builder.tasks.awo.maindex.DexBuildTask;
 import com.taobao.android.builder.tasks.awo.maindex.DexInstallTask;
 import com.taobao.android.builder.tasks.awo.maindex.PrepareMainDexJarsTask;
-import com.taobao.android.builder.tasks.bundle.MergeAwbAssetConfigAction;
-import com.taobao.android.builder.tasks.bundle.MergeAwbResourceConfigAction;
+import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbAssetConfigAction;
+import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbResourceConfigAction;
 import com.taobao.android.builder.tasks.library.AwbGenerator;
-import com.taobao.android.builder.tasks.library.publish.UpdatePomTaskInjector;
+import com.taobao.android.builder.tasks.library.JarExtractTask;
+import com.taobao.android.builder.tasks.library.publish.UpdatePomTask;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tools.ideaplugin.AwoPropHandler;
@@ -267,16 +268,12 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
     @Override
     public void runTask() {
 
-        new UpdatePomTaskInjector(project).updatePom();
+        new UpdatePomTask(project).updatePom();
 
         libraryExtension.getLibraryVariants().forEach(new Consumer<LibraryVariant>() {
 
             @Override
             public void accept(LibraryVariant libraryVariant) {
-
-                //if ("debug".equals(libraryVariant.getBaseName())) {
-                //    new ModuleInfoWriter(project, libraryVariant).write();
-                //}
 
                 LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant,
                                                                             project,
@@ -303,9 +300,13 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
                         Zip zipTask = libVariantOutputData.packageLibTask;
 
+                        if (atlasExtension.getBundleConfig().isJarEnabled()) {
+                            new JarExtractTask().generateJarArtifict(zipTask);
+                        }
+
                         //构建awb 和 extension
                         if (atlasExtension.getBundleConfig().isAwbBundle()) {
-                            awbGenerator.generateAwbArtifict(zipTask);
+                            awbGenerator.generateAwbArtifict(zipTask,libVariantOutputData);
                         }
 
                         if (null != tBuildType && (StringUtils.isNotEmpty(tBuildType.getBaseApDependency())

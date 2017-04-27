@@ -215,6 +215,7 @@ import java.io.IOException;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
+import com.android.build.gradle.internal.variant.LibVariantOutputData;
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.model.MavenCoordinates;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -227,6 +228,7 @@ import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.bundling.Zip;
@@ -248,7 +250,9 @@ public class AwbGenerator {
     /**
      * 创建基本的AWB任务
      */
-    public void generateAwbArtifict(final Zip bundleTask) {
+    public void generateAwbArtifict(final Zip bundleTask,LibVariantOutputData libVariantOutputData) {
+
+        Project project = bundleTask.getProject();
 
         bundleTask.setExtension("awb");
 
@@ -257,6 +261,24 @@ public class AwbGenerator {
 
         bundleTask.setDestinationDir(new File(bundleTask.getDestinationDir().getParentFile(),
                                               "awb"));
+
+        bundleTask.doFirst(new Action<Task>() {
+            @Override
+            public void execute(Task task) {
+
+                File bundleBaseInfoFile = project.file("bundleBaseInfoFile.json");
+                if (bundleBaseInfoFile.exists()){
+                    project.getLogger().warn("copy " + bundleBaseInfoFile.getAbsolutePath() + " to awb");
+                    File destDir = libVariantOutputData.getScope().getVariantScope().getBaseBundleDir();
+                    try {
+                        FileUtils.copyFileToDirectory(bundleBaseInfoFile,destDir);
+                    } catch (IOException e) {
+                        throw new GradleException(e.getMessage(),e);
+                    }
+                }
+            }
+        });
+
 
         bundleTask.doLast(new Action<Task>() {
 
@@ -268,19 +290,6 @@ public class AwbGenerator {
 
                 if (!outputFile.exists()) {
                     return;
-                }
-
-                File f = ZipUtils.extractZipFileToFolder(outputFile,
-                                                         "classes.jar",
-                                                         outputFile.getParentFile());
-
-                if (null != f && f.exists()) {
-                    File jar = new File(new File(bundleTask.getDestinationDir().getParentFile(), "jar"),
-                                        FilenameUtils.getBaseName(bundleTask.getArchiveName()) +
-                                            ".jar");
-                    jar.getParentFile().mkdirs();
-                    f.renameTo(jar);
-
                 }
 
                 //重新生成aar

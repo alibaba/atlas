@@ -209,35 +209,32 @@
 
 package com.taobao.android.builder;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.android.build.gradle.api.ApplicationVariant;
-import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.Maps;
+import com.taobao.android.builder.adapter.BuilderAdapter;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tools.cache.FileCache;
-import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
-import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
-import com.taobao.android.builder.tools.sign.AndroidSigner;
 import com.taobao.android.object.ApkFileList;
+import org.gradle.api.Project;
 
 /**
  * Created by shenghua.nish on 2016-05-09 下午3:50.
  */
 public class AtlasBuildContext {
 
+    /**
+     * 外部插件可以更改该类的具体的实现
+     */
+    public static BuilderAdapter sBuilderAdapter = new BuilderAdapter();
+
     public static Map<String, AtlasDependencyTree> androidDependencyTrees = Maps.newHashMap();
 
     public static Map<String, AtlasDependencyTree> libDependencyTrees = Maps.newHashMap();
-
-    public static Map<ApplicationVariant, AppVariantContext> appVariantContextMap
-        = new HashMap<ApplicationVariant, AppVariantContext>();
 
     public static ApkFileList apkFileList = new ApkFileList();
 
@@ -245,19 +242,11 @@ public class AtlasBuildContext {
 
     public static Map<String, String> customPackageIdMaps = new HashMap<String, String>();
 
-    public static AtlasBuilder androidBuilder;
-
-    public static AndroidSigner androidSigner = new AndroidSigner();
-
-    public static ApkInjectInfoCreator sApkInjectInfoCreator = new ApkInjectInfoCreator();
+    public static Map<Project, AtlasBuilder> androidBuilderMap = new HashMap<>();
 
     public static Map<String, AwbBundle> awbBundleMap = new HashMap<String, AwbBundle>();
 
-    public static String serverHost = "";
-
     public static Set<String> conflictDependencies;
-
-    public static FileCache sFileCache = new SimpleFileCache();
 
     /**
      * 依赖对应原始的坐标地址， classInject 需要查找到atlas。
@@ -270,10 +259,5 @@ public class AtlasBuildContext {
      * 修改后的文件 -> 原始文件
      */
     public static Map<String, String> jarTraceMap = new HashMap<String, String>();
-
-    /**
-     * buildCache 目录的manifest不能变更， 所以保存修改后的manifest引用
-     */
-    public static Map<File, File> manifestMap = new HashMap<>();
 
 }

@@ -238,7 +238,7 @@ public class BuildHelper {
 
         File signFile = new File(apkFile.getParent(), apkFile.getName().replace(".apk", "-signed.apk"));
 
-        AtlasBuildContext.androidSigner.signFile(apkFile, signFile, signConfig);
+        AtlasBuildContext.sBuilderAdapter.androidSigner.signFile(apkFile, signFile, signConfig);
 
         return signFile;
     }
@@ -254,7 +254,7 @@ public class BuildHelper {
         Pattern pattern = Pattern.compile("META-INF");
         ZipUtils.removeZipEntry(apkFile, pattern, unsignedApk);
 
-        AtlasBuildContext.androidSigner.signFile(unsignedApk, apkFile, signConfig);
+        AtlasBuildContext.sBuilderAdapter.androidSigner.signFile(unsignedApk, apkFile, signConfig);
 
         apkFile.renameTo(new File(filePath));
         FileUtils.deleteDirectory(workDir);

@@ -219,7 +219,9 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.zip.BetterZip;
 import com.taobao.android.builder.tools.zip.ZipUtils;
+
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -249,7 +251,8 @@ public class PrepareAPTask extends BaseTask {
             apBaseFile = apContext.getApFile();
         } else if (StringUtils.isNotBlank(apContext.getApDependency())) {
             Dependency dependency = project.getDependencies().create(apContext.getApDependency());
-            Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
+            Configuration configuration = project.getConfigurations()
+                    .detachedConfiguration(dependency);
             configuration.setTransitive(false);
             for (File file : configuration.getFiles()) {
                 if (file.getName().endsWith(".ap")) {
@@ -262,22 +265,26 @@ public class PrepareAPTask extends BaseTask {
         if (null != apBaseFile && apBaseFile.exists()) {
 
             File explodedDir = project.file(project.getBuildDir().getAbsolutePath() +
-                    "/" + FD_INTERMEDIATES + "/exploded-ap" + "/");
+                                                    "/" +
+                                                    FD_INTERMEDIATES +
+                                                    "/exploded-ap" +
+                                                    "/");
 
             ZipUtils.unzip(apBaseFile, explodedDir.getAbsolutePath());
 
             apContext.setApExploredFolder(explodedDir);
             apContext.setBaseApk(new File(explodedDir, ApContext.AP_INLINE_APK_FILENAME));
-
+            apContext.setBaseManifest(new File(explodedDir, "AndroidManifest.xml"));
+            BetterZip.extractFile(apContext.getBaseApk(),
+                                  "lib/armeabi/*",
+                                  new File(explodedDir, ApContext.AP_INLINE_AWB_FILENAME));
         }
-
-
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {
 
-
-        public ConfigAction(VariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(VariantContext variantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
             super(variantContext, baseVariantOutputData);
         }
 
@@ -307,14 +314,15 @@ public class PrepareAPTask extends BaseTask {
 
             prepareAPTask.apContext = variantContext.apContext;
 
-            File explodedDir = variantContext.getProject().file(variantContext.getProject().getBuildDir().getAbsolutePath() +
-                    "/" + FD_INTERMEDIATES + "/exploded-ap" + "/");
+            File explodedDir = variantContext.getProject()
+                    .file(variantContext.getProject().getBuildDir().getAbsolutePath() +
+                                  "/" +
+                                  FD_INTERMEDIATES +
+                                  "/exploded-ap" +
+                                  "/");
             variantContext.apContext.setApExploredFolder(explodedDir);
-            variantContext.apContext.setBaseApk(new File(explodedDir, ApContext.AP_INLINE_APK_FILENAME));
-
-
+            variantContext.apContext.setBaseApk(new File(explodedDir,
+                                                         ApContext.AP_INLINE_APK_FILENAME));
         }
     }
-
-
 }

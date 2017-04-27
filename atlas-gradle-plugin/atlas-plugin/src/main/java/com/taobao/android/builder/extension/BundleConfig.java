@@ -214,6 +214,8 @@ package com.taobao.android.builder.extension;
  */
 public class BundleConfig {
 
+    private boolean jarEnabled = false;
+
     private Boolean awbBundle = false;
     private Boolean awoBuildEnabled = false;
     private boolean awoDynDeploy = true;
@@ -258,5 +260,13 @@ public class BundleConfig {
 
     public void setMergeRes(boolean mergeRes) {
         this.mergeRes = mergeRes;
+    }
+
+    public boolean isJarEnabled() {
+        return jarEnabled;
+    }
+
+    public void setJarEnabled(boolean jarEnabled) {
+        this.jarEnabled = jarEnabled;
     }
 }

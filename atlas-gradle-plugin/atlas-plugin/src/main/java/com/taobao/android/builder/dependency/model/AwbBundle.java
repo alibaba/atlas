@@ -234,9 +234,13 @@ import java.util.List;
  */
 public class AwbBundle {
 
+    private boolean mainBundle;
+
     private String name;
 
     private String variantName;
+
+    private boolean dataBindEnabled;
 
     //当前模块本身, 主bundle为空， 否则为awb本身
     private AndroidLibrary androidLibrary;
@@ -248,7 +252,10 @@ public class AwbBundle {
     //兼容老的模式，逐步废弃到 androidLibrary
     private List<SoLibrary> soLibraries = new ArrayList<>();
 
+    private File mergedManifest;
+
     public AwbBundle() {
+        mainBundle = true;
     }
 
     public AwbBundle(ResolvedDependencyInfo resolvedDependencyInfo, AndroidLibrary androidLibrary) {
@@ -325,8 +332,7 @@ public class AwbBundle {
     public String getPackageName() {
 
         if (StringUtils.isEmpty(packageName)) {
-            packageName = ManifestFileUtils.getPackage(ManifestHelper.getOrgManifestFile(
-                    androidLibrary));
+            packageName = ManifestFileUtils.getPackage(androidLibrary.getManifest());
         }
 
         return packageName;
@@ -340,6 +346,10 @@ public class AwbBundle {
         return soFileName;
     }
 
+    /**
+     * 获取所有的相关jar
+     * @return
+     */
     public List<File> getLibraryJars() {
         List<File> jars = Lists.newArrayList();
         jars.add(androidLibrary.getJarFile());
@@ -353,7 +363,7 @@ public class AwbBundle {
                 if (aarBundle.getJarFile().exists()) {
                     jars.add(aarBundle.getJarFile());
                 }
-                //jars.addAll(aarBundle.getLocalJars());
+                jars.addAll(aarBundle.getLocalJars());
             }
         }
 
@@ -365,5 +375,38 @@ public class AwbBundle {
             }
         }
         return jars;
+    }
+
+    /**
+     * 获取所有的相关aars
+     * @return
+     */
+    public List<AndroidLibrary> getAllLibraryAars() {
+        List<AndroidLibrary> libraries = Lists.newArrayList();
+
+        libraries.add(androidLibrary);
+        libraries.addAll(androidLibraries);
+
+        return libraries;
+    }
+
+    public boolean isDataBindEnabled() {
+        return dataBindEnabled;
+    }
+
+    public void setDataBindEnabled(boolean dataBindEnabled) {
+        this.dataBindEnabled = dataBindEnabled;
+    }
+
+    public File getMergedManifest() {
+        return mergedManifest;
+    }
+
+    public void setMergedManifest(File mergedManifest) {
+        this.mergedManifest = mergedManifest;
+    }
+
+    public boolean isMainBundle() {
+        return mainBundle;
     }
 }

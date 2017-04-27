@@ -381,7 +381,7 @@ public class LogDependenciesTask extends BaseTask {
 
         @Override
         public String getName() {
-            return scope.getTaskName("log", "dependencies");
+            return scope.getTaskName("log", "Dependencies");
         }
 
         @Override

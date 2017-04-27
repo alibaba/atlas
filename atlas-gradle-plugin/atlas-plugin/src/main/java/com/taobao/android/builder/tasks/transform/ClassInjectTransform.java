@@ -238,6 +238,7 @@ import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.dom4j.DocumentException;
+import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.StopExecutionException;
 
@@ -273,8 +274,8 @@ public class ClassInjectTransform extends MtlInjectTransform {
     }
 
     @Override
-    public Set<QualifiedContent.Scope> getScopes() {
-        return TransformManager.SCOPE_FULL_PROJECT;
+    public Set<QualifiedContent.ScopeType> getScopes() {
+        return TransformManager.SCOPE_FULL_INSTANT_RUN_PROJECT;
     }
 
     @Override
@@ -301,7 +302,10 @@ public class ClassInjectTransform extends MtlInjectTransform {
 
         InjectParam injectParam = null;
         try {
-            injectParam = AtlasBuildContext.sApkInjectInfoCreator.creteInjectParam(appVariantContext);
+            injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
+
+            injectParam.outputFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/atlasFrameworkProperties.json");
+
         } catch (DocumentException e) {
             throw new TransformException(e);
         }
@@ -314,7 +318,11 @@ public class ClassInjectTransform extends MtlInjectTransform {
             if (injectParam.removePreverify && !isAtlasDependency(jarInput.getFile(), to) && jarInputs.size() > 1) {
                 FileUtils.copyFile(jarInput.getFile(), to);
             } else {
-                CodeInjectByJavassist.inject(classPool, jarInput.getFile(), to, injectParam);
+                try {
+                    CodeInjectByJavassist.inject(classPool, jarInput.getFile(), to, injectParam);
+                } catch (Exception e) {
+                    throw new GradleException(e.getMessage(), e);
+                }
             }
         }
 
@@ -325,14 +333,18 @@ public class ClassInjectTransform extends MtlInjectTransform {
             }
             String folderName = directoryInput.getFile().getName();
             File to = outputProvider.getContentLocation(folderName,
-                                                        getOutputTypes(),
-                                                        getScopes(),
+                                                        directoryInput.getContentTypes(),
+                                                        directoryInput.getScopes(),
                                                         Format.DIRECTORY);
             if (!injectParam.removePreverify) {
-                CodeInjectByJavassist.injectFolder(classPool,
-                                                   directoryInput.getFile(),
-                                                   to,
-                                                   injectParam);
+                try {
+                    CodeInjectByJavassist.injectFolder(classPool,
+                                                       directoryInput.getFile(),
+                                                       to,
+                                                       injectParam);
+                } catch (Exception e) {
+                    throw new GradleException(e.getMessage(), e);
+                }
             } else {
 
                 FileUtils.copyDirectory(directoryInput.getFile(), to);

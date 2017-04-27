@@ -225,67 +225,6 @@ import java.util.regex.Pattern;
  */
 public class DiffResExtractor {
 
-//    public static void extractDiff(File currentApk, File baseApk, File fullResDir, File destDir) throws IOException {
-//
-//        if (!currentApk.exists() || !baseApk.exists() || !fullResDir.exists()) {
-//            return;
-//        }
-//
-//
-//        FileUtils.deleteDirectory(destDir);
-//        destDir.mkdirs();
-//
-//        File tmpFolder = new File(destDir.getParentFile(), "tmp");
-//        FileUtils.deleteDirectory(tmpFolder);
-//        tmpFolder.mkdirs();
-//
-//
-//        File apkDir = new File(tmpFolder, "newApkDir");
-//        File baseApkDir = new File(tmpFolder, "baseApkDir");
-//
-//        ZipUtils.unzip(currentApk, apkDir.getAbsolutePath());
-//        ZipUtils.unzip(baseApk, baseApkDir.getAbsolutePath());
-//
-//        //compare res and assets
-//        Collection<File> files = FileUtils.listFiles(apkDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-//
-//        int basePathLength = apkDir.getAbsolutePath().length();
-//
-//        List<String> diffResPath = new ArrayList<String>();
-//
-//        for (File file : files) {
-//            String relativePath = file.getAbsolutePath().substring(basePathLength);
-//
-//            if (!relativePath.startsWith("/res/") && !relativePath.startsWith("/assets/")) {
-//                continue;
-//            }
-//
-//            File baseFile = new File(baseApkDir, relativePath);
-//            if (!baseFile.exists()) {
-//                diffResPath.add(relativePath);
-//                continue;
-//            }
-//
-//            if (!MD5Util.getFileMD5(file).equals(MD5Util.getFileMD5(baseFile))) {
-//                diffResPath.add(relativePath);
-//            }
-//        }
-//
-//        for (String path : diffResPath) {
-//
-//            if (path.startsWith("/assets")) {
-//                File rawFile = new File(apkDir, path);
-//                FileUtils.copyFile(rawFile, new File(destDir, path));
-//            } else {
-//                File rawFile = new File(fullResDir, path);
-//                FileUtils.copyFile(rawFile, new File(destDir, path));
-//            }
-//
-//        }
-//
-//
-//    }
-
     /**
      * assets : 直接通过比较apk
      * res : 通过diffResFiles ， 再去apk 验证

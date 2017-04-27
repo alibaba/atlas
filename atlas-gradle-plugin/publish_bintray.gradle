@@ -1,0 +1,41 @@
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+def siteUrl = 'https://github.com/alibaba/atlas'
+// 项目的主页
+def gitUrl = 'https://github.com/alibaba/atlas'
+// Git仓库的url
+task sourcesJar(type: Jar) {
+    from('src/main/java') {
+        include '**'
+    }
+    classifier = 'sources'
+}
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+
+        }
+    }
+}
+
+Properties properties = new Properties()
+def file = project.rootProject.file('local.properties')
+if (file.exists()) {
+    properties.load(file.newDataInputStream())
+}
+bintray {
+    user = project.hasProperty('BINTRAY_USER') ? BINTRAY_USER : properties.getProperty("bintray.user")
+    key = project.hasProperty('BINTRAY_APIKEY') ? BINTRAY_APIKEY : properties.getProperty("bintray.apikey")
+    publications = ['MyPublication']
+    pkg {
+        repo = "maven"
+        name = project.name	//发布到JCenter上的项目名字
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["Apache-2.0"]
+        publish = true
+    }
+}

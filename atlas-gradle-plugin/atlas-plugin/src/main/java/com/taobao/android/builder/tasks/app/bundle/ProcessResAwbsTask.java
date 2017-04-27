@@ -219,6 +219,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tasks.manager.TaskCreater;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 
 import org.gradle.api.GradleException;

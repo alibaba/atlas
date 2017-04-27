@@ -258,7 +258,7 @@ public class AwoFullApkBuildTask extends DefaultAndroidTask {
         ZipUtils.addFileToZipFile(baseApkFile, outApkFile, awoFile, destPath, true);
 
         File signFile = new File(outApkFile.getParent(), outApkFile.getName().replace(".apk", "-signed.apk"));
-        AtlasBuildContext.androidSigner.signFile(outApkFile, signFile, getSigningConfig());
+        AtlasBuildContext.sBuilderAdapter.androidSigner.signFile(outApkFile, signFile, getSigningConfig());
         if (null != zipAlign && zipAlign) {
             File signAndZipAlignedFile = ZipAlignUtils.doZipAlign(androidBuilder, getProject(), signFile);
             FileUtils.deleteQuietly(outApkFile);

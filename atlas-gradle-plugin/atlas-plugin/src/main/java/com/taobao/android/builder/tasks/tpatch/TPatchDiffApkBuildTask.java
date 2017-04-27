@@ -243,30 +243,33 @@ public class TPatchDiffApkBuildTask extends BaseTask {
         apkFile = getApkFile();
         diffAPkFile = getDiffAPkFile();
 
-        File tmpDir = new File(diffAPkFile.getParentFile(), "tmp-apk");
-        if (tmpDir.exists()) {
-            FileUtils.deleteDirectory(tmpDir);
+        File tmpWorkDir = new File(diffAPkFile.getParentFile(), "tmp-apk");
+        if (tmpWorkDir.exists()) {
+            FileUtils.deleteDirectory(tmpWorkDir);
         }
-        if (!tmpDir.exists()) {
-            tmpDir.mkdirs();
+        if (!tmpWorkDir.exists()) {
+            tmpWorkDir.mkdirs();
         }
 
         Map zipEntityMap = new HashMap();
-        ZipUtils.unzip(apkFile, tmpDir.getAbsolutePath(), "UTF-8", zipEntityMap, true);
+        ZipUtils.unzip(apkFile, tmpWorkDir.getAbsolutePath(), "UTF-8", zipEntityMap, true);
 
-        FileUtils.deleteDirectory(new File(tmpDir, "assets"));
-        FileUtils.deleteDirectory(new File(tmpDir, "res"));
-        new File(tmpDir, "resources.arsc").delete();
+        FileUtils.deleteDirectory(new File(tmpWorkDir, "assets"));
+        FileUtils.deleteDirectory(new File(tmpWorkDir, "res"));
+        FileUtils.forceDelete(new File(tmpWorkDir, "resources.arsc"));
+        FileUtils.forceDelete(new File(tmpWorkDir, "AndroidManifest.xml"));
 
-        File tmpDir2 = new File(diffAPkFile.getParentFile(), "tmp-diffApk");
-        tmpDir2.mkdirs();
-        ZipUtils.unzip(getResourceFile(), tmpDir2.getAbsolutePath(), "UTF-8", new HashMap<String, ZipEntry>(), true);
+        File resdir = new File(diffAPkFile.getParentFile(), "tmp-diffResAp");
+        resdir.mkdirs();
+        ZipUtils.unzip(getResourceFile(), resdir.getAbsolutePath(), "UTF-8", new HashMap<String, ZipEntry>(), true);
 
-        new File(tmpDir2, "AndroidManifest.xml").delete();
+        FileUtils.copyDirectory(resdir, tmpWorkDir);
+        ZipUtils.rezip(diffAPkFile, tmpWorkDir, zipEntityMap);
 
-        FileUtils.copyDirectory(tmpDir2, tmpDir);
+        FileUtils.deleteDirectory(tmpWorkDir);
+        FileUtils.deleteDirectory(resdir);
 
-        ZipUtils.rezip(diffAPkFile, tmpDir, zipEntityMap);
+
 
     }
 

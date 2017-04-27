@@ -212,7 +212,6 @@ package com.taobao.android.builder.extension;
 import com.android.annotations.NonNull;
 import com.taobao.android.builder.extension.annotation.Config;
 import com.taobao.android.builder.extension.annotation.ConfigGroup;
-
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
@@ -238,7 +237,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     public ManifestOptions manifestOptions;
 
     //如果atlas开关开启了，自动会打开一些默认的开关
-    @Config(message = "是否启用atlas", order = 1)
+    @Config(message = "是否启用atlas", order = 0, group = "atlas")
     private boolean atlasEnabled;
 
     protected Project project;
@@ -259,7 +258,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         this.patchConfigs = patchConfigs;
         this.buildTypes = buildTypes;
 
-        tBuildConfig = (Z) instantiator.newInstance(TBuildConfig.class);
+        tBuildConfig = (Z)instantiator.newInstance(TBuildConfig.class);
         manifestOptions = instantiator.newInstance(ManifestOptions.class);
         bundleConfig = instantiator.newInstance(BundleConfig.class);
     }

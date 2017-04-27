@@ -209,6 +209,7 @@
 
 package com.taobao.android.builder.tasks.app.prepare;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -224,12 +225,14 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
+import com.taobao.android.builder.dependency.parser.DependencyLocationManager;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.apache.commons.io.FileUtils;
 import org.dom4j.DocumentException;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
 
@@ -247,28 +250,44 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
     AtlasDependencyTree atlasDependencyTree;
 
+    @InputFiles
+    public List<File> getInputDependencies() {
+
+        List<File> files = new ArrayList<>();
+
+        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
+            files.add(soLibrary.getSoLibFile());
+        }
+
+        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
+            files.add(aarBundle.getBundle());
+        }
+
+        return files;
+    }
+
+    @OutputDirectories
+    public List<File> getOutputDirs(){
+        List<File> files = new ArrayList<>();
+        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
+            files.add(soLibrary.getFolder());
+        }
+        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
+            files.add(aarBundle.getFolder());
+        }
+        return files;
+    };
+
     @TaskAction
     void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
 
-        atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-            getVariantName());
-
-        if (null == atlasDependencyTree) {
-            return;
-        }
-
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
-                                                                                   1);
+                                                                                   0);
+
         List<Runnable> runnables = new ArrayList<>();
 
-        List<SoLibrary> soLibraries = new ArrayList<>();
-        soLibraries.addAll(atlasDependencyTree.getMainBundle().getSoLibraries());
-        for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-            soLibraries.addAll(awbBundle.getSoLibraries());
-        }
-
-        for (final SoLibrary soLibrary : soLibraries) {
+        for (final SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
             runnables.add(new Runnable() {
                 @Override
                 public void run() {
@@ -279,32 +298,38 @@ public class PrepareAllDependenciesTask extends BaseTask {
             });
         }
 
-        List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
-        for (final AndroidLibrary aarBundle : androidLibraries) {
-            runnables.add(new Runnable() {
-                @Override
-                public void run() {
+        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
 
-                    if (atlasDependencyTree.getProjectDependencies().contains(
-                        aarBundle.getResolvedCoordinates().getGroupId() + ":" + aarBundle.getResolvedCoordinates()
-                            .getArtifactId())) {
+            if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getFolder())) {
+
+                runnables.add(new Runnable() {
+
+                    @Override
+                    public void run() {
+
+                        getLogger().info(
+                            "prepare1 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
 
                         if (aarBundle.getFolder().exists()) {
                             try {
                                 FileUtils.deleteDirectory(aarBundle.getFolder());
+                                aarBundle.getFolder().mkdirs();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
                         }
 
                         PrepareLibraryTask.extract(aarBundle.getBundle(), aarBundle.getFolder(), getProject());
-                    } else {
 
-                        prepareLibrary(aarBundle);
                     }
+                });
 
-                }
-            });
+            } else {
+                getLogger().info(
+                    "prepare2 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
+                prepareLibrary(aarBundle);
+            }
+
         }
 
         executorServicesHelper.execute(runnables);
@@ -358,11 +383,14 @@ public class PrepareAllDependenciesTask extends BaseTask {
         }
 
         @Override
-        public void execute(PrepareAllDependenciesTask prepareAwbsTask) {
+        public void execute(PrepareAllDependenciesTask prepareAllDependenciesTask) {
 
-            super.execute(prepareAwbsTask);
+            super.execute(prepareAllDependenciesTask);
 
-            prepareAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
+            prepareAllDependenciesTask.appVariantOutputContext = getAppVariantOutputContext();
+
+            prepareAllDependenciesTask.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                prepareAllDependenciesTask.getVariantName());
         }
     }
 }

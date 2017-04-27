@@ -209,15 +209,14 @@
 
 package com.taobao.android.builder.dependency.parser;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+
+import com.alibaba.fastjson.JSON;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.ExtraModelInfo;
@@ -225,18 +224,17 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils.Type;
-import com.android.builder.model.MavenCoordinates;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.utils.ILogger;
-import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.AtlasPlugin;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
+import com.taobao.android.builder.dependency.parser.helper.DependencyGroup;
+import com.taobao.android.builder.dependency.parser.helper.DependencyResolver;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -245,15 +243,7 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.ResolvedArtifact;
-import org.gradle.api.artifacts.UnknownConfigurationException;
-import org.gradle.api.artifacts.component.ComponentIdentifier;
-import org.gradle.api.artifacts.component.ComponentSelector;
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.DependencyResult;
-import org.gradle.api.artifacts.result.ResolvedComponentResult;
-import org.gradle.api.artifacts.result.ResolvedDependencyResult;
-import org.gradle.api.artifacts.result.UnresolvedDependencyResult;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
 import org.gradle.api.specs.Specs;
 
 import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
@@ -271,23 +261,6 @@ public class AtlasDepTreeParser {
 
     private List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
 
-    // 所有加入的一级依赖
-    private List<ResolvedDependencyInfo> dependencies = Lists.newArrayList();
-
-    // 所有依赖的关系
-    private Multimap<String, ResolvedDependencyInfo> dependenciesMap = LinkedHashMultimap.create();
-
-    /**
-     * bundle ,  provided 依赖
-     */
-    private Map<String, Set<String>> bundleMap = new HashMap<>();
-
-    private Map forceMap;
-
-    Set<String> conflictDependencies = new HashSet<>();
-
-    private Set<String> projectDependences = new HashSet<>();
-
     private ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
 
     public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
@@ -297,229 +270,41 @@ public class AtlasDepTreeParser {
 
     public AtlasDependencyTree parseDependencyTree(@NonNull VariantDependencies variantDeps) {
 
+        String name = variantDeps.getName().toLowerCase();
+        if (!name.endsWith("debug") && !name.endsWith("release")){
+            return new AtlasDependencyTree(new ArrayList<>());
+        }
+
         Configuration compileClasspath = variantDeps.getCompileConfiguration();
         Configuration packageClasspath = variantDeps.getPackageConfiguration();
         Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
 
-        // TODO - shouldn't need to do this - fix this in Gradle
         ensureConfigured(compileClasspath);
         ensureConfigured(packageClasspath);
         ensureConfigured(bundleClasspath);
 
-        Set<String> currentUnresolvedDependencies = Sets.newHashSet();
-
-        // TODO - defer downloading until required -- This is hard to do as we need the info to build the variant
-        // config.
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
         collectArtifacts(compileClasspath, artifacts);
         collectArtifacts(packageClasspath, artifacts);
         collectArtifacts(bundleClasspath, artifacts);
 
-        //计算那些 bundle 和 provided 的依赖
-        bundleClasspath.getDependencies().forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof DefaultProjectDependency) {
-                    DefaultProjectDependency projectDependency = (DefaultProjectDependency)dependency;
-                    String key = projectDependency.getGroup() + ":" + projectDependency.getName();
-                    Set<String> providedSets = new HashSet<>();
-                    //TODO exclude google plugins
-                    try {
+        //依赖分组
+        DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath);
 
-                        projectDependency.getDependencyProject().getConfigurations().getByName("compile")
-                            .getDependencies().forEach(
-                            new Consumer<Dependency>() {
-                                @Override
-                                public void accept(Dependency dependency) {
-                                    if ("com.android.support".equals(dependency.getGroup())) {
-                                        providedSets.add(dependency.getGroup() + ":" + dependency.getName());
-                                    }
+        DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts,
+                                                                       dependencyGroup.bundleProvidedMap);
 
-                                }
-                            });
-                        projectDependency.getDependencyProject().getConfigurations().getByName(
-                            AtlasPlugin.PROVIDED_COMPILE)
-                            .getDependencies().forEach(
-                            new Consumer<Dependency>() {
-                                @Override
-                                public void accept(Dependency dependency) {
-                                    providedSets.add(dependency.getGroup() + ":" + dependency.getName());
-                                }
-                            });
-                    } catch (UnknownConfigurationException e) {
+        mResolvedDependencies.addAll(dependencyResolver.resolve(dependencyGroup.compileDependencies, true));
 
-                    }
-                    bundleMap.put(key, providedSets);
-                }
-            }
-        });
-
-        // 不使用官方的扁平化的依赖处理，改用自己处理树状的依赖关系;对于application的依赖，我们只取compile的依赖
-        Set<ModuleVersionIdentifier> directDependencies = new HashSet<ModuleVersionIdentifier>();
-
-        Set<? extends DependencyResult> projectDependencies = compileClasspath.getIncoming()
-            .getResolutionResult()
-            .getRoot()
-            .getDependencies();
-
-        Set<? extends DependencyResult> projectDependencies2 = bundleClasspath.getIncoming()
-            .getResolutionResult()
-            .getRoot()
-            .getDependencies();
-
-        Set<DependencyResult> dependencyResults = new HashSet<>();
-        dependencyResults.addAll(projectDependencies);
-        dependencyResults.addAll(projectDependencies2);
-
-        for (DependencyResult dependencyResult : dependencyResults) {
-            if (dependencyResult instanceof ResolvedDependencyResult) {
-                ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult)dependencyResult)
-                    .getSelected()
-                    .getModuleVersion();
-                CircleDependencyCheck circleDependencyCheck = new CircleDependencyCheck(
-                    moduleVersion);
-
-                if (!directDependencies.contains(moduleVersion)) {
-                    directDependencies.add(moduleVersion);
-                    resolveDependency(null,
-                                      ((ResolvedDependencyResult)dependencyResult).getSelected(),
-                                      artifacts,
-                                      variantDeps,
-                                      0,
-                                      circleDependencyCheck,
-                                      circleDependencyCheck.getRootDependencyNode());
-                }
-            } else if (dependencyResult instanceof UnresolvedDependencyResult) {
-                ComponentSelector attempted = ((UnresolvedDependencyResult)dependencyResult).getAttempted();
-                if (attempted != null) {
-                    currentUnresolvedDependencies.add(attempted.toString());
-                }
-            }
+        for (DependencyResult dependencyResult : dependencyGroup.bundleDependencies) {
+            mResolvedDependencies.addAll(dependencyResolver.resolve(Arrays.asList(dependencyResult), false));
         }
 
-        resolveAllDependencies();
+        AtlasDependencyTree atlasDependencyTree = toAtlasDependencyTree();
 
-        return toAtlasDependencyTree();
-    }
+        check(atlasDependencyTree);
 
-    /**
-     * 解析依赖
-     *
-     * @param parent
-     * @param resolvedComponentResult
-     * @param artifacts
-     * @param configDependencies
-     * @param indent
-     */
-    private void resolveDependency(ResolvedDependencyInfo parent,
-                                   ResolvedComponentResult resolvedComponentResult,
-                                   Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-                                   VariantDependencies configDependencies,
-                                   int indent,
-                                   CircleDependencyCheck circleDependencyCheck,
-                                   CircleDependencyCheck.DependencyNode node) {
-        ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
-
-        if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
-            return;
-        }
-
-        if (moduleVersion.getName().equals("support-annotations") &&
-            moduleVersion.getGroup().equals("com.android.support")) {
-            configDependencies.setAnnotationsPresent(true);
-        }
-
-        // now loop on all the artifact for this modules.
-        List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
-
-        ComponentIdentifier id = resolvedComponentResult.getId();
-        String gradlePath = (id instanceof ProjectComponentIdentifier) ? ((ProjectComponentIdentifier)id)
-            .getProjectPath() : null;
-
-        // 如果同时找到多个依赖，暂时没法判断是那个真正有用
-        for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
-
-            String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
-
-            boolean isAwbBundle = bundleMap.containsKey(key);
-            Set<String> providedDirectDep = bundleMap.get(key);
-
-            ResolvedDependencyInfo resolvedDependencyInfo =
-                new ResolvedDependencyInfo(moduleVersion.getVersion(),
-                                           moduleVersion
-                                               .getGroup(),
-                                           moduleVersion
-                                               .getName(),
-                                           isAwbBundle
-                                               ? "awb" :
-                                               resolvedArtifact
-                                                   .getType(),
-                                           resolvedArtifact
-                                               .getClassifier());
-            resolvedDependencyInfo.setIndent(indent);
-            resolvedDependencyInfo.setGradlePath(gradlePath);
-            resolvedDependencyInfo.setResolvedArtifact(resolvedArtifact);
-
-            String path = AtlasDepHelper.computeArtifactPath(moduleVersion, resolvedArtifact);
-            String name = AtlasDepHelper.computeArtifactName(moduleVersion, resolvedArtifact);
-
-            MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
-
-            boolean isProjDependency = projectDependences.contains(
-                mavenCoordinates.getGroupId() + ":" + mavenCoordinates.getArtifactId());
-
-            File explodedDir = DependencyLocationManager.getExploreDir(project, mavenCoordinates,
-                                                                       resolvedArtifact.getFile(),
-                                                                       resolvedArtifact.getType().toLowerCase(),
-                                                                       path, !isProjDependency);
-
-            resolvedDependencyInfo.setExplodedDir(explodedDir);
-
-            resolvedDependencyInfo.setDependencyName(name);
-
-            if (null == parent) {
-                parent = resolvedDependencyInfo;
-            } else {
-                resolvedDependencyInfo.setParent(parent);
-                parent.getChildren().add(resolvedDependencyInfo);
-            }
-
-            Set<? extends DependencyResult> dependencies = resolvedComponentResult.getDependencies();
-            for (DependencyResult dep : dependencies) {
-
-                if (dep instanceof ResolvedDependencyResult) {
-                    ResolvedComponentResult childResolvedComponentResult = ((ResolvedDependencyResult)dep)
-                        .getSelected();
-
-                    if (isAwbBundle && providedDirectDep.contains(
-                        childResolvedComponentResult.getModuleVersion().getGroup() + ":" + childResolvedComponentResult
-                            .getModuleVersion().getName())) {
-                        continue;
-                    }
-
-                    CircleDependencyCheck.DependencyNode childNode = circleDependencyCheck.addDependency(
-                        childResolvedComponentResult.getModuleVersion(),
-                        node,
-                        indent + 1);
-                    CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(
-                        logger);
-                    if (circleResult.hasCircle) {
-                        logger.warning("[CircleDependency]" +
-                                           StringUtils.join(circleResult.detail, ";"));
-                    } else {
-                        resolveDependency(parent,
-                                          ((ResolvedDependencyResult)dep).getSelected(),
-                                          artifacts,
-                                          configDependencies,
-                                          indent + 1,
-                                          circleDependencyCheck,
-                                          childNode);
-                    }
-                }
-            }
-
-            addDependency(resolvedDependencyInfo);
-        }
+        return atlasDependencyTree;
     }
 
     private void ensureConfigured(Configuration config) {
@@ -527,14 +312,6 @@ public class AtlasDepTreeParser {
             if (dependency instanceof ProjectDependency) {
                 ProjectDependency projectDependency = (ProjectDependency)dependency;
                 project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
-                projectDependences.add(projectDependency.getGroup() + ":" + projectDependency.getName());
-                //try {
-                //    ensureConfigured( projectDependency.getProjectConfiguration());
-                //} catch (Throwable e) {
-                //    //throw new UnknownProjectException(String.format("Cannot evaluate module %s : %s",
-                //    //                                                projectDependency.getName(),
-                //    //                                                e.getMessage()), e);
-                //}
             }
         }
     }
@@ -566,157 +343,6 @@ public class AtlasDepTreeParser {
         }
     }
 
-    private void addDependency(ResolvedDependencyInfo resolvedDependencyInfo) {
-        this.dependencies.add(resolvedDependencyInfo);
-        addDependencyInfo(resolvedDependencyInfo, null);
-    }
-
-    /**
-     * 增加dependency
-     *
-     * @param resolvedDependencyInfo
-     * @param parent                 这个parent为一级依赖
-     */
-    private void addDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo,
-                                   ResolvedDependencyInfo parent) {
-        String name = resolvedDependencyInfo.toString();
-
-        Collection<ResolvedDependencyInfo> list = dependenciesMap.get(name);
-        if (null != list && list.size() > 0) {
-
-            ResolvedDependencyInfo lastResolvedDependencyInfo = list.iterator().next();
-            if (null != lastResolvedDependencyInfo.getParent() &&
-                null != resolvedDependencyInfo.getParent() &&
-                "awb".equals(lastResolvedDependencyInfo.getParent().getType()) &&
-                "awb".equals(resolvedDependencyInfo.getParent().getType()) &&
-                !lastResolvedDependencyInfo.getParent()
-                    .getName()
-                    .equals(resolvedDependencyInfo.getParent().getName())) {
-
-                conflictDependencies.add(lastResolvedDependencyInfo.getParent().toString() +
-                                             " and " +
-                                             resolvedDependencyInfo.getParent().toString() +
-                                             " has same dependency " +
-                                             resolvedDependencyInfo);
-
-                if (null != forceMap) {
-
-                    String forceParent = (String)forceMap.get(resolvedDependencyInfo.getName());
-
-                    if (null != forceParent) {
-
-                        String nowParent = resolvedDependencyInfo.getParent().getName();
-                        String lastParent = lastResolvedDependencyInfo.getParent().getName();
-
-                        if (!forceParent.equals(nowParent)) {
-                            return;
-                        }
-
-                        if (!lastParent.equals(forceParent)) {
-                            dependenciesMap.removeAll(name);
-                        }
-                    }
-                }
-            }
-        }
-
-        dependenciesMap.put(name, resolvedDependencyInfo);
-
-        if (null != parent) {
-            resolvedDependencyInfo.setParent(parent);
-        }
-        List<ResolvedDependencyInfo> children = resolvedDependencyInfo.getChildren();
-        if (null != children && children.size() > 0) {
-
-            for (ResolvedDependencyInfo child : children) {
-                addDependencyInfo(child, resolvedDependencyInfo);
-            }
-        }
-    }
-
-    /**
-     * 进行依赖仲裁
-     */
-    private synchronized void resolveAllDependencies() {
-
-        if (!conflictDependencies.isEmpty()) {
-            for (String str : conflictDependencies) {
-                logger.warning(str);
-            }
-            if (null == forceMap) {
-                throw new GradleException("conflict dependencis");
-            } else {
-                AtlasBuildContext.conflictDependencies = conflictDependencies;
-            }
-        }
-
-        // 仲裁后的依赖关系.结构为父类-子类
-        Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap = LinkedHashMultimap
-            .create();
-        Map<ModuleVersionIdentifier, ResolvedDependencyInfo> directDependencies
-            = new HashMap<ModuleVersionIdentifier, ResolvedDependencyInfo>();
-        for (String key : dependenciesMap.keySet()) {
-            Collection<ResolvedDependencyInfo> dependencyLevels = dependenciesMap.get(key);
-
-            if (dependencyLevels.size() > 0) {
-                List<ResolvedDependencyInfo> resolvedDependencyInfos = Lists.newArrayList();
-                resolvedDependencyInfos.addAll(dependencyLevels);
-                Collections.sort(resolvedDependencyInfos);
-                ResolvedDependencyInfo resolvedDependencyInfo = resolvedDependencyInfos.get(0);
-                ResolvedDependencyInfo parent = resolvedDependencyInfo.getParent();
-                //对于放入resolvedDependenciesMap中的信息不需要加入children
-                resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo>newArrayList());
-                if (null != parent) {
-                    //如果存在的父依赖,就把当前依赖加入到父依赖的子依赖中
-                    resolvedDependenciesMap.put(parent.getModuleVersionIdentifier(),
-                                                resolvedDependencyInfo);
-                } else {
-                    //如果没有父依赖,就是一级依赖
-                    directDependencies.put(resolvedDependencyInfo.getModuleVersionIdentifier(),
-                                           resolvedDependencyInfo);
-                }
-            }
-        }
-
-        // 开始构建依赖树
-        mResolvedDependencies.clear();
-
-        for (ModuleVersionIdentifier key : directDependencies.keySet()) {
-            ResolvedDependencyInfo resolvedDependencyInfo = directDependencies.get(key);
-            //清空children
-            resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo>newArrayList());
-            addResolvedDependencyInfo(resolvedDependencyInfo, resolvedDependenciesMap);
-            mResolvedDependencies.add(resolvedDependencyInfo);
-        }
-    }
-
-    /**
-     * 通过递归的方式进行依赖的解析
-     *
-     * @param parentDependency
-     * @param resolvedDependenciesMap
-     */
-    private void addResolvedDependencyInfo(ResolvedDependencyInfo parentDependency,
-                                           Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo>
-                                               resolvedDependenciesMap) {
-        int indent = parentDependency.getIndent();
-        ModuleVersionIdentifier identifier = parentDependency.getModuleVersionIdentifier();
-        Collection<ResolvedDependencyInfo> childDependencies = resolvedDependenciesMap.get(
-            identifier);
-
-        //TODO here
-        for (ResolvedDependencyInfo childDependency : childDependencies) {
-            if (childDependency.getIndent() > indent) {
-                //                System.out.println(parentDependency + " indent " + indent + "->" + childDependency
-                // +  " indent " + childDependency.getIndent());
-                parentDependency.getChildren().add(childDependency);
-                if (childDependency.getIndent() <= 1) {
-                    addResolvedDependencyInfo(childDependency, resolvedDependenciesMap);
-                }
-            }
-        }
-    }
-
     private AtlasDependencyTree toAtlasDependencyTree() {
 
         AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies);
@@ -726,18 +352,17 @@ public class AtlasDepTreeParser {
 
             if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
 
-                AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo);
+                AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo, project);
 
                 atlasDependencyTree.getAwbBundles().add(bundle);
 
                 collect(dependencyInfo, bundle);
+
             } else {
 
                 collect(dependencyInfo, atlasDependencyTree.getMainBundle());
             }
         }
-
-        atlasDependencyTree.setProjectDependencies(projectDependences);
 
         return atlasDependencyTree;
     }
@@ -748,7 +373,7 @@ public class AtlasDepTreeParser {
             case AAR:
                 //添加到主dex中去
                 awbBundle.getAndroidLibraries()
-                    .add(DependencyConvertUtils.toAndroidLibrary(dependencyInfo));
+                    .add(DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
                 break;
             case JAR:
                 awbBundle.getJavaLibraries().add(DependencyConvertUtils.toJavaLib(dependencyInfo));
@@ -768,4 +393,50 @@ public class AtlasDepTreeParser {
             }
         }
     }
+
+    private void check(AtlasDependencyTree atlasDependencyTree) {
+
+        Map<String, List<String>> dependeys = new HashMap<>();
+        for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            String gav = awbBundle.getAndroidLibrary().getResolvedCoordinates().toString();
+
+            for (AndroidLibrary androidLibrary : awbBundle.getAndroidLibraries()) {
+                addValuetoList(dependeys, gav, androidLibrary.getResolvedCoordinates().toString());
+            }
+
+            for (JavaLibrary javaLibrary : awbBundle.getJavaLibraries()) {
+                addValuetoList(dependeys, gav, javaLibrary.getResolvedCoordinates().toString());
+            }
+
+            for (SoLibrary soLibrary : awbBundle.getSoLibraries()) {
+                addValuetoList(dependeys, gav, soLibrary.getResolvedCoordinates().toString());
+            }
+        }
+
+        List<String> warnings = new ArrayList<>();
+        for (String key : dependeys.keySet()) {
+            List<String> values = dependeys.get(key);
+            if (values.size() > 1) {
+                String msg = key + ":" + StringUtils.join(values, ",");
+                warnings.add(msg);
+                logger.warning(msg);
+            }
+        }
+
+        if (warnings.size() > 0) {
+            logger.warning(JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
+            throw new GradleException("decency冲突 : " + StringUtils.join(warnings, "\r\n"));
+        }
+
+    }
+
+    private void addValuetoList(Map<String, List<String>> dependeys, String gav, String key) {
+        List<String> value = dependeys.get(key);
+        if (null == value) {
+            value = new ArrayList<>();
+            dependeys.put(key, value);
+        }
+        value.add(gav);
+    }
+
 }

@@ -210,17 +210,18 @@
 package com.android.build.gradle.internal.api;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
 
@@ -235,6 +236,11 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     private ApplicationVariantData variantData;
 
     private Map<String, AppVariantOutputContext> outputContextMap = Maps.newHashMap();
+
+    /**
+     * buildCache 目录的manifest不能变更， 所以保存修改后的manifest引用
+     */
+    public Map<String, File> manifestMap = new HashMap<>();
 
     public AppVariantContext(ApplicationVariantImpl applicationVariant, Project project, AtlasExtension atlasExtension,
                              AppExtension appExtension) {
@@ -283,6 +289,11 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
         return sourceSets.build();
     }
 
+    public File getAwbLibraryDirForDataBinding(AwbBundle awbBundle) {
+        return new File(scope.getGlobalScope().getIntermediatesDir() + "/transforms-awbs/databinding/" +
+                            getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+    }
+
     public File getAwbLayoutInfoOutputForDataBinding(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir() + "/data-binding-info-awbs/" +
                             getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
@@ -304,6 +315,16 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                             getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
     }
 
+    public File getAwbDataBindingMergeArtifacts(AwbBundle awbBundle) {
+
+        return new File(scope.getGlobalScope().getIntermediatesDir() + "/data-binding-compiler-awbs/" +
+                            getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+
+        //return new File(scope.getBuildFolderForDataBindingCompiler() +  "-" + awbBundle.getName(),
+        //                     DataBindingBuilder.ARTIFACT_FILES_DIR_FROM_LIBS);
+
+    }
+
     public File getAwbMergeResourcesOutputDir(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
                         "/awb-res/merged/" + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
@@ -314,16 +335,30 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                         "/awb-blame/" + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
     }
 
-    public File getModifyManifest(File manifest) {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/manifest-modify/" + getVariantConfiguration().getDirName() + "/" + ManifestFileUtils
-                            .getPackage(manifest) + ".xml");
+    public File getModifyManifest(AndroidLibrary androidLibrary) {
+        return new File(getModifyManifestDir(),
+                        androidLibrary.getResolvedCoordinates().getGroupId() + "." + androidLibrary
+                            .getResolvedCoordinates().getArtifactId() + ".xml");
     }
 
-    //public String getBuildType(){
-    //    String fullName = variantData.getVariantConfiguration().getBaseName();
-    //    String[] names = fullName.split("-");
-    //    return names[names.length-1];
-    //}
+    public File getModifyManifestDir() {
+        return new File(scope.getGlobalScope().getIntermediatesDir(),
+                        "/manifest-modify/" + getVariantConfiguration().getDirName() + "/");
+    }
+
+    public File getBundleBaseInfoFile() {
+        File bundleBaseLineInfo = new File(this.getScope()
+                                               .getGlobalScope()
+                                               .getProject()
+                                               .getProjectDir(),
+                                           "bundleBaseInfoFile.json");
+        return bundleBaseLineInfo;
+    }
+
+    public File getAtlasProxySourceDir() {
+        return new File(scope.getGlobalScope().getGeneratedDir(),
+                        "source/atlasproxy/" + getVariantConfiguration().getDirName());
+
+    }
 
 }
