@@ -379,7 +379,7 @@ public class BundleArchiveRevision {
                 if (containerVersion == null ||
                         (!TextUtils.isEmpty(Framework.getContainerVersion()) && !containerVersion.equals(Framework.getContainerVersion())) ||
                         (!TextUtils.isEmpty(version) && !TextUtils.isEmpty(wantedVersion) && !version.equals(wantedVersion)) ||
-                        (!TextUtils.isEmpty(info.getVersion()) && version!=null&&!version.equals("-1") && !version.equals(info.getVersion()))) {
+                        (!TextUtils.isEmpty(info.getVersion()) && version!=null&&!version.equals("-1") && !version.equals(info.getVersion()) && !Framework.isDeubgMode())) {
                     throw new BundleArchive.MisMatchException("mismatch bundle version" + revisionDir.getAbsolutePath());
                 }
             }
