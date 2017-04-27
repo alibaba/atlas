@@ -209,12 +209,6 @@
 
 package com.taobao.android.builder.tools.classinject;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -234,6 +228,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
+import com.alibaba.fastjson.JSON;
+
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -243,6 +239,11 @@ import javassist.CtMethod;
 import javassist.CtNewMethod;
 import javassist.Modifier;
 import javassist.NotFoundException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 通过Javassist进行代码注入操作
@@ -257,80 +258,92 @@ public class CodeInjectByJavassist {
     public synchronized static byte[] inject(ClassPool pool,
                                              String className,
                                              InjectParam injectParam) throws Exception {
-        try {
-            CtClass cc = pool.get(className);
-            cc.defrost();
-            if (className.equalsIgnoreCase("android.taobao.atlas.framework.FrameworkProperties") ||
-                    className.equalsIgnoreCase("android.taobao.atlas.version.VersionKernal")) {
 
-                if (StringUtils.isNotBlank(injectParam.version)) {
-                    CtClass ctClass = pool.get("java.lang.String");
-                    CtField ctField = new CtField(ctClass, "version", cc);
-                    ctField.setModifiers(Modifier.PRIVATE);
-                    CtMethod ctMethod = CtNewMethod.getter("getVersion", ctField);
-                    ctMethod.setModifiers(Modifier.PUBLIC);
-                    CtField.Initializer initializer = CtField.Initializer.constant(injectParam.version);
-                    cc.addField(ctField, initializer);
-                    cc.addMethod(ctMethod);
-                    logger.info(
-                            "[android.taobao.atlas.framework.FrameworkProperties] inject version " +
-                                    injectParam.version);
-                }
+        CtClass cc = pool.get(className);
+        cc.defrost();
+        if (className.equalsIgnoreCase("android.taobao.atlas.framework.FrameworkProperties") ||
+            className.equalsIgnoreCase("android.taobao.atlas.version.VersionKernal")) {
 
-                addField(pool, cc, "bundleInfo", injectParam.bundleInfo);
-                addField(pool, cc, "autoStartBundles", injectParam.autoStartBundles);
-                addField(pool, cc, "preLaunch", injectParam.preLaunch);
-                addField(pool, cc, "group", injectParam.group);
-                addField(pool, cc, "outApp", String.valueOf(injectParam.outApp));
+            if (StringUtils.isNotBlank(injectParam.version)) {
+                CtClass ctClass = pool.get("java.lang.String");
+                CtField ctField = new CtField(ctClass, "version", cc);
+                ctField.setModifiers(Modifier.PRIVATE);
+                CtMethod ctMethod = CtNewMethod.getter("getVersion", ctField);
+                ctMethod.setModifiers(Modifier.PUBLIC);
+                CtField.Initializer initializer = CtField.Initializer.constant(injectParam.version);
+                cc.addField(ctField, initializer);
+                cc.addMethod(ctMethod);
+                logger.info(
+                    "[android.taobao.atlas.framework.FrameworkProperties] inject version " +
+                        injectParam.version);
             }
 
-            ClazzInjecter clazzInjecter = sInjecterMap.get(className);
-            if (null != clazzInjecter) {
-                Map<String, String> stringMap = clazzInjecter.getInjectFields();
-                if (!stringMap.isEmpty()) {
-                    for (String key : stringMap.keySet()) {
-                        addField(pool, cc, key, stringMap.get(key));
-                    }
-                }
+            addField(pool, cc, "bundleInfo", injectParam.bundleInfo);
+            addField(pool, cc, "autoStartBundles", injectParam.autoStartBundles);
+            addField(pool, cc, "preLaunch", injectParam.preLaunch);
+            addField(pool, cc, "group", injectParam.group);
+            addField(pool, cc, "outApp", String.valueOf(injectParam.outApp));
+
+            if (null != injectParam.outputFile) {
+                Map output = new HashMap();
+                output.put("bundleInfo", JSON.parseArray(injectParam.bundleInfo));
+                output.put("autoStartBundles", injectParam.autoStartBundles);
+                output.put("preLaunch", injectParam.preLaunch);
+                output.put("group", injectParam.group);
+                output.put("outApp", injectParam.outApp);
+                FileUtils.write(injectParam.outputFile, JSON.toJSONString(output, true));
             }
 
-            if (!injectParam.removePreverify) {
-                Collection<String> refClasses = cc.getRefClasses();
-                if (refClasses.contains("com.taobao.verify.Verifier")) {
-                    return cc.toBytecode();
-                }
-                boolean flag = false;
-                if (className.equalsIgnoreCase("com.ut.mini.crashhandler.IUTCrashCaughtListner")) {
-                    flag = true;
-                }
+        }
 
-                if (cc.isInterface()) {
+        ClazzInjecter clazzInjecter = sInjecterMap.get(className);
+        if (null != clazzInjecter) {
+            Map<String, String> stringMap = clazzInjecter.getInjectFields();
+            if (!stringMap.isEmpty()) {
+                for (String key : stringMap.keySet()) {
+                    addField(pool, cc, key, stringMap.get(key));
+                }
+            }
+        }
+
+        if (!injectParam.removePreverify) {
+            Collection<String> refClasses = cc.getRefClasses();
+            if (refClasses.contains("com.taobao.verify.Verifier")) {
+                return cc.toBytecode();
+            }
+            boolean flag = false;
+            if (className.equalsIgnoreCase("com.ut.mini.crashhandler.IUTCrashCaughtListner")) {
+                flag = true;
+            }
+
+            if (cc.isInterface()) {
+                final CtClass defClass = pool.get(Class.class.getName());
+                CtField defField = new CtField(defClass, "_inject_field__", cc);
+                defField.setModifiers(Modifier.STATIC | Modifier.PUBLIC | Modifier.FINAL);
+                cc.addField(defField,
+                            CtField.Initializer.byExpr(
+                                "Boolean.TRUE.booleanValue()?java.lang.String.class:com.taobao.verify.Verifier"
+                                    + ".class;"));
+            } else {
+                CtConstructor[] ctConstructors = cc.getDeclaredConstructors();
+                if (null != ctConstructors && ctConstructors.length > 0) {
+                    CtConstructor ctConstructor = ctConstructors[0];
+                    ctConstructor.insertBeforeBody(
+                        "if(Boolean.FALSE.booleanValue()){java.lang.String.valueOf(com.taobao.verify.Verifier"
+                            + ".class);}");
+                } else {
                     final CtClass defClass = pool.get(Class.class.getName());
                     CtField defField = new CtField(defClass, "_inject_field__", cc);
-                    defField.setModifiers(Modifier.STATIC | Modifier.PUBLIC | Modifier.FINAL);
+                    defField.setModifiers(Modifier.STATIC);
                     cc.addField(defField,
                                 CtField.Initializer.byExpr(
-                                        "Boolean.TRUE.booleanValue()?java.lang.String.class:com.taobao.verify.Verifier.class;"));
-                } else {
-                    CtConstructor[] ctConstructors = cc.getDeclaredConstructors();
-                    if (null != ctConstructors && ctConstructors.length > 0) {
-                        CtConstructor ctConstructor = ctConstructors[0];
-                        ctConstructor.insertBeforeBody(
-                                "if(Boolean.FALSE.booleanValue()){java.lang.String.valueOf(com.taobao.verify.Verifier.class);}");
-                    } else {
-                        final CtClass defClass = pool.get(Class.class.getName());
-                        CtField defField = new CtField(defClass, "_inject_field__", cc);
-                        defField.setModifiers(Modifier.STATIC);
-                        cc.addField(defField,
-                                    CtField.Initializer.byExpr(
-                                            "Boolean.TRUE.booleanValue()?java.lang.String.class:com.taobao.verify.Verifier.class;"));
-                    }
+                                    "Boolean.TRUE.booleanValue()?java.lang.String.class:com.taobao.verify"
+                                        + ".Verifier.class;"));
                 }
             }
-            return cc.toBytecode();
-        } catch (Throwable e) {
-            throw new Exception("[InjectError]:" + className + ",reason:" + e.getMessage());
         }
+        return cc.toBytecode();
+
     }
 
     private static void addField(ClassPool pool,
@@ -366,10 +379,10 @@ public class CodeInjectByJavassist {
     public static List<String> injectFolder(ClassPool pool,
                                             File folder,
                                             File outFolder,
-                                            InjectParam injectParam) {
+                                            InjectParam injectParam) throws Exception {
         List<String> errorFiles = new ArrayList<String>();
         if (folder.exists() && folder.isDirectory()) {
-            Collection<File> classFiles = FileUtils.listFiles(folder, new String[]{"class"}, true);
+            Collection<File> classFiles = FileUtils.listFiles(folder, new String[] {"class"}, true);
             for (File classFile : classFiles) {
                 String className = toRelative(folder, classFile.getAbsolutePath());
                 File outClassFile = new File(outFolder, className);
@@ -377,18 +390,10 @@ public class CodeInjectByJavassist {
                 className = StringUtils.replace(className, File.separator, ".");
                 className = className.substring(0, className.length() - 6);
                 byte[] codes;
-                try {
-                    codes = inject(pool, className, injectParam);
-                    FileUtils.writeByteArrayToFile(outClassFile, codes);
-                } catch (Throwable e) {
-                    System.err.println(e.getMessage());
-                    // 发现异常不做处理，使用原先的类
-                    try {
-                        FileUtils.copyFile(classFile, outClassFile);
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                }
+
+                codes = inject(pool, className, injectParam);
+                FileUtils.writeByteArrayToFile(outClassFile, codes);
+
             }
         }
         return errorFiles;
@@ -406,7 +411,7 @@ public class CodeInjectByJavassist {
     public static List<String> inject(ClassPool pool,
                                       File inJar,
                                       File outJar,
-                                      InjectParam injectParam) throws IOException {
+                                      InjectParam injectParam) throws Exception {
         List<String> errorFiles = new ArrayList<String>();
         JarFile jarFile = newJarFile(inJar);
 
@@ -427,17 +432,11 @@ public class CodeInjectByJavassist {
                 IOUtils.closeQuietly(inputStream);
             } else {
                 byte[] codes;
-                try {
-                    codes = inject(pool, className, injectParam);
-                    InputStream classInstream = new ByteArrayInputStream(codes);
-                    copyStreamToJar(classInstream, jos, name, jarEntry.getTime(), jarEntry);
-                } catch (Throwable e) { // 如果出现异常，则原样写入
-                    System.err.println(e.getMessage());
-                    InputStream inputStream = jarFile.getInputStream(jarEntry);
-                    copyStreamToJar(inputStream, jos, name, jarEntry.getTime(), jarEntry);
-                    IOUtils.closeQuietly(inputStream);
-                    errorFiles.add(className);
-                }
+
+                codes = inject(pool, className, injectParam);
+                InputStream classInstream = new ByteArrayInputStream(codes);
+                copyStreamToJar(classInstream, jos, name, jarEntry.getTime(), jarEntry);
+
             }
         }
         jarFile.close();

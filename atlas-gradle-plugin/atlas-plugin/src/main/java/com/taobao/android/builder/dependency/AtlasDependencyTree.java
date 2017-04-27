@@ -209,16 +209,18 @@
 
 package com.taobao.android.builder.dependency;
 
-import com.android.builder.model.AndroidLibrary;
-import com.google.common.collect.Lists;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.dependency.output.DependencyJson;
-import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
-
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.android.builder.model.AndroidLibrary;
+import com.google.common.collect.Lists;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
+import com.taobao.android.builder.dependency.output.DependencyJson;
+import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 
 /**
  * Android的编译的依赖库
@@ -230,8 +232,6 @@ import java.util.Set;
  * @author shenghua.nish, wuzhong
  */
 public class AtlasDependencyTree {
-
-    private Set<String> projectDependencies = new HashSet<>();
 
     private List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
 
@@ -277,14 +277,11 @@ public class AtlasDependencyTree {
         this.awbBundles = awbBundles;
     }
 
-    public Set<String> getProjectDependencies() {
-        return projectDependencies;
-    }
-
-    public void setProjectDependencies(Set<String> projectDependencies) {
-        this.projectDependencies = projectDependencies;
-    }
-
+    /**
+     * 获取所有的 aar 和 awb 依赖
+     *
+     * @return
+     */
     public List<AndroidLibrary> getAllAndroidLibrarys() {
 
         if (null == allAndroidLibrarys) {
@@ -300,6 +297,36 @@ public class AtlasDependencyTree {
         }
 
         return allAndroidLibrarys;
+    }
+
+    /**
+     * 获取所有awb依赖类型的依赖清单
+     *
+     * @return
+     */
+    public Set<AndroidLibrary> getAllAwbLibrarys() {
+        Set<AndroidLibrary> sets = new HashSet<>();
+        for (AwbBundle awbBundle : this.getAwbBundles()) {
+            sets.add(awbBundle.getAndroidLibrary());
+        }
+        return sets;
+    }
+
+    public Set<File> getAllLibraryManifests() {
+        Set<File> libManifests = new HashSet<File>();
+        for (AndroidLibrary manifestDependency : this.getAllAndroidLibrarys()) {
+            libManifests.add(manifestDependency.getManifest());
+        }
+        return libManifests;
+    }
+
+    public List<SoLibrary> getAllSoLibraries() {
+        List<SoLibrary> soLibraries = new ArrayList<>();
+        soLibraries.addAll(this.getMainBundle().getSoLibraries());
+        for (AwbBundle awbBundle : this.getAwbBundles()) {
+            soLibraries.addAll(awbBundle.getSoLibraries());
+        }
+        return soLibraries;
     }
 
     public Set<String> getFlatDependencies() {
@@ -343,4 +370,9 @@ public class AtlasDependencyTree {
         }
         return dependencyJson;
     }
+
+    public List<ResolvedDependencyInfo> getResolvedDependencies() {
+        return mResolvedDependencies;
+    }
+
 }

@@ -212,6 +212,8 @@ package com.taobao.android.builder.tasks.tpatch;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -225,8 +227,10 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.signing.DefaultSigningConfig;
+import com.android.utils.Pair;
 import com.taobao.android.TPatchTool;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.BuildHelper;
@@ -236,12 +240,14 @@ import com.taobao.android.builder.tools.update.UpdateInfo;
 import com.taobao.android.object.ApkFileList;
 import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.BuildPatchInfos;
+import com.taobao.android.tpatch.model.ApkBO;
+import com.taobao.android.tpatch.model.BundleBO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.DocumentException;
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.api.tasks.TaskAction;
 
 import static com.android.build.gradle.internal.api.ApContext.APK_FILE_MD5;
@@ -288,11 +294,44 @@ public class TPatchTask extends BaseTask {
                              ",newApkVersion:" +
                              newApkVersion);
 
-        TPatchTool tPatchTool = new TPatchTool(baseApk,
-                                               newApk,
-                                               baseApkVersion,
-                                               newApkVersion,
+        ApkBO apkBO = new ApkBO(baseApk, baseApkVersion, baseApk.getName());
+        ApkBO newApkBO = new ApkBO(newApk, newApkVersion, newApk.getName());
+
+        TPatchTool tPatchTool = new TPatchTool(apkBO,
+                                               newApkBO,
                                                patchContext.diffBundleDex);
+
+        List<Pair<BundleBO, BundleBO>> remoteBundles = new ArrayList<>();
+
+        //获取远程的bundle
+        for (AwbBundle awbBundle : AtlasBuildContext.awbBundleMap.values()) {
+            if (awbBundle.isRemote) {
+
+                File bundleFile = awbBundle.outputBundleFile;
+
+                getProject().getLogger().error("add bundle compare " + bundleFile.getAbsolutePath());
+
+                BundleBO newBundleBO = new BundleBO(bundleFile.getName(), bundleFile, "");
+
+                File baseBundleFile = new File(patchContext.apExplodeFolder, "remotebundles/" + bundleFile.getName());
+
+                getProject().getLogger().error("add bundle compare base : " + baseBundleFile.getAbsolutePath());
+
+                BundleBO baseBundleBO = null;
+                if (baseBundleFile.exists()) {
+
+                    getProject().getLogger().error(
+                        "add bundle compare " + baseBundleFile.getAbsolutePath() + "->" + bundleFile.getAbsolutePath());
+
+                    baseBundleBO = new BundleBO(baseBundleFile.getName(), baseBundleFile, "");
+                }
+                remoteBundles.add(Pair.of(baseBundleBO, newBundleBO));
+            }
+        }
+
+        if (remoteBundles.size() > 0) {
+            tPatchTool.setSplitDiffBundle(remoteBundles);
+        }
 
         tPatchTool.setMainBundleName(patchContext.mainBundleName);
         if (StringUtils.isNotBlank(patchContext.excludeFiles)) {
@@ -307,12 +346,14 @@ public class TPatchTask extends BaseTask {
         tPatchTool.setNewApkFileList(patchContext.getNewApkFiles());
         tPatchTool.setLogger(getILogger());
         tPatchTool.setOnlyIncludeModifyBundle(patchContext.onlyBuildModifyAwb);
-        tPatchTool.setNoPatchBundles(patchContext.notPatchBundles);
+
+        if (StringUtils.isNotBlank(patchContext.excludeFiles)) {
+            tPatchTool.setNotIncludeFiles(patchContext.excludeFiles.split(","));
+        }
 
         ApkFileList apkFileList = AtlasBuildContext.finalApkFileList;
         try {
 
-            tPatchTool.setDexcode(apkFileList.getMainBundle().get("classes.dex"));
             tPatchTool.setCreateAll(StringUtils.isEmpty(patchContext.tpatchHistoryUrl));
             FileUtils.writeStringToFile(new File(getOutPatchFolder(), "tpatch-bundles.json"),
                                         JSON.toJSONString(patchContext.artifactBundleInfos));
@@ -332,31 +373,32 @@ public class TPatchTask extends BaseTask {
             BuildPatchInfos patchInfos = JSON.parseObject(json, BuildPatchInfos.class);
             UpdateInfo updateInfo = new UpdateInfo(patchInfos);
             FileUtils.writeStringToFile(updateJson, JSON.toJSONString(updateInfo, true));
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new StopExecutionException(e.getMessage());
-        }
 
-        File baseVesrionApk = new File(patchContext.newApk.getParentFile(),
-                                       patchContext.newApk.getName()
-                                           .replace(".apk", "-" + baseApkVersion + ".apk"));
-        FileUtils.copyFile(patchContext.getBaseApk(), baseVesrionApk);
-        if (patchContext.writeBuildInfo && StringUtils.isNotEmpty(patchContext.buildId)) {
-            File buildFile = new File(getOutPatchFolder(), "build.txt");
-            FileUtils.writeStringToFile(buildFile,
-                                        patchContext.buildId +
-                                            "," +
-                                            patchContext.versionName +
-                                            "," +
-                                            apkFileList.getMainBundle().get("classes.dex"));
-            if (buildFile != null && buildFile.exists()) {
-                getLogger().debug("write build to apk!");
-                BuildHelper.writeFileToApk(buildFile, baseVesrionApk, "assets/build.txt");
+            File baseVesrionApk = new File(patchContext.newApk.getParentFile(),
+                                           patchContext.newApk.getName()
+                                               .replace(".apk", "-" + baseApkVersion + ".apk"));
+            FileUtils.copyFile(patchContext.getBaseApk(), baseVesrionApk);
+            if (patchContext.writeBuildInfo && StringUtils.isNotEmpty(patchContext.buildId)) {
+                File buildFile = new File(getOutPatchFolder(), "build.txt");
+                FileUtils.writeStringToFile(buildFile,
+                                            patchContext.buildId +
+                                                "," +
+                                                patchContext.versionName +
+                                                "," +
+                                                apkFileList.getMainBundle().get("classes.dex"));
+                if (buildFile != null && buildFile.exists()) {
+                    getLogger().debug("write build to apk!");
+                    BuildHelper.writeFileToApk(buildFile, baseVesrionApk, "assets/build.txt");
+                }
+                BuildHelper.reSign(baseVesrionApk, signingConfig);
             }
-            BuildHelper.reSign(baseVesrionApk, signingConfig);
+
+            FileUtils.forceDelete(patchContext.newApk);
+
+        } catch (Exception e) {
+            throw new GradleException(e.getMessage(), e);
         }
 
-        FileUtils.forceDelete(patchContext.newApk);
     }
 
     @OutputDirectory

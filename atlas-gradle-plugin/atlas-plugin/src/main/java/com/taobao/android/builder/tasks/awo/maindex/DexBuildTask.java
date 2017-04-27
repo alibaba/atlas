@@ -209,6 +209,12 @@
 
 package com.taobao.android.builder.tasks.awo.maindex;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
 
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.LibVariantContext;
@@ -227,17 +233,14 @@ import com.taobao.android.tpatch.utils.DexBuilderUtils;
 import javassist.ClassPool;
 import javassist.NotFoundException;
 import org.apache.commons.io.FilenameUtils;
-import org.gradle.api.tasks.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.Callable;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.StopExecutionException;
+import org.gradle.api.tasks.TaskAction;
 
 import static com.android.SdkConstants.FN_CLASSES_JAR;
-
 
 public class DexBuildTask extends DefaultAndroidTask {
 
@@ -277,7 +280,6 @@ public class DexBuildTask extends DefaultAndroidTask {
         }
         jarMergerWithOverride.close();
 
-
         ClassPool classPool = initClassPool(mergeJar);
 
         String jarFileName = classJar.getName();
@@ -286,15 +288,18 @@ public class DexBuildTask extends DefaultAndroidTask {
 
         File outPutJar = new File(classJar.getParentFile(), outFileName);
 
-        CodeInjectByJavassist.inject(classPool, mergeJar, outPutJar, new InjectParam());
+        try {
+            CodeInjectByJavassist.inject(classPool, mergeJar, outPutJar, new InjectParam());
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new GradleException(e.getMessage(), e);
+        }
 
         getOutputDexFile().getParentFile().mkdirs();
-
 
         outputDexFile = DexBuilderUtils.buildDexInJvm(outPutJar, getOutputDexFile(), new ArrayList<String>());
 
     }
-
 
     private ClassPool initClassPool(File jar) {
         final ClassPool pool = ClassPool.getDefault();
@@ -307,7 +312,6 @@ public class DexBuildTask extends DefaultAndroidTask {
         }
         return pool;
     }
-
 
     public static class ConfigAction extends MtlBaseTaskAction<DexBuildTask> {
 
@@ -343,8 +347,8 @@ public class DexBuildTask extends DefaultAndroidTask {
                     File intermediatesDir = scope.getGlobalScope().getIntermediatesDir();
                     Collection<String> variantDirectorySegments = variantConfig.getDirectorySegments();
                     File variantBundleDir = FileUtils.join(
-                            intermediatesDir,
-                            StringHelper.toStrings(TaskManager.DIR_BUNDLES, variantDirectorySegments));
+                        intermediatesDir,
+                        StringHelper.toStrings(TaskManager.DIR_BUNDLES, variantDirectorySegments));
                     return new File(variantBundleDir, FN_CLASSES_JAR);
                 }
             });
@@ -355,7 +359,6 @@ public class DexBuildTask extends DefaultAndroidTask {
                     return libVariantContext.getDex();
                 }
             });
-
 
             ConventionMappingHelper.map(dexBuildTask, "dependencyJars", new Callable<List<File>>() {
                 @Override

@@ -209,10 +209,16 @@
 
 package com.taobao.android.builder.tools.bundleinfo;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -220,22 +226,10 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.dom4j.Attribute;
-import org.dom4j.Document;
 import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.Node;
-import org.dom4j.io.SAXReader;
 import org.jetbrains.annotations.NotNull;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Created by wuzhong on 2016/11/24.
@@ -249,16 +243,22 @@ public class BundleInfoUtils {
         String apkVersion = appVariantContext.getVariantConfiguration().getVersionName();
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                appVariantContext.getScope().
-                        getVariantConfiguration().getFullName());
+            appVariantContext.getScope().
+                getVariantConfiguration().getFullName());
 
         /**
          * name 是artifictId
          */
         Map<String, BundleInfo> bundleInfoMap = getBundleInfoMap(appVariantContext);
 
+        String baseVersion = apkVersion;
+
+        if (null != appVariantContext.apContext && null != appVariantContext.apContext.getBaseManifest() && appVariantContext.apContext.getBaseManifest().exists()){
+            baseVersion = ManifestFileUtils.getVersionName(appVariantContext.apContext.getBaseManifest());
+        }
+
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-            update(awbBundle, bundleInfoMap, appVariantContext, apkVersion);
+            update(awbBundle, bundleInfoMap, appVariantContext, apkVersion, baseVersion);
         }
     }
 
@@ -270,7 +270,7 @@ public class BundleInfoUtils {
     private static void update(AwbBundle awbBundle,
                                Map<String, BundleInfo> bundleInfoMap,
                                AppVariantContext appVariantContext,
-                               String apkVersion) throws DocumentException {
+                               String apkVersion, String baseVersion) throws DocumentException {
 
         String artifactId = awbBundle.getResolvedCoordinates().getArtifactId();
         BundleInfo bundleInfo = bundleInfoMap.get(artifactId);
@@ -281,90 +281,70 @@ public class BundleInfoUtils {
         }
 
         awbBundle.isRemote = appVariantContext.getAtlasExtension()
-                .getTBuildConfig()
-                .getOutOfApkBundles()
-                .contains(artifactId);
+            .getTBuildConfig()
+            .getOutOfApkBundles()
+            .contains(artifactId);
         bundleInfo.setIsInternal(!awbBundle.isRemote);
-        bundleInfo.setVersion(apkVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
+        bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
         bundleInfo.setPkgName(awbBundle.getPackageName());
 
-        String applicationName = ManifestFileUtils.getApplicationName(ManifestHelper.getOrgManifestFile(
-                awbBundle.getAndroidLibrary()));
+        String applicationName = ManifestFileUtils.getApplicationName(awbBundle.getAndroidLibrary().getManifest());
         if (StringUtils.isNotEmpty(applicationName)) {
+            if (applicationName.startsWith(".")) {
+                applicationName = awbBundle.getPackageName() + applicationName;
+            }
             bundleInfo.setApplicationName(applicationName);
         }
 
-        SAXReader reader = new SAXReader();
-        Document document = reader.read(awbBundle.getAndroidLibrary().getManifest());// 读取XML文件
-        Element root = document.getRootElement();// 得到根节点
+        ManifestHelper.collectBundleInfo(appVariantContext, bundleInfo, awbBundle.getAndroidLibrary().getManifest(),
+                                         awbBundle.getAndroidLibraries());
 
-        List<? extends Node> metadataNodes = root.selectNodes("//meta-data");
-        for (Node node : metadataNodes) {
-            Element element = (Element) node;
-            Attribute attribute = element.attribute("name");
-            if (attribute.getValue().equals("label")) {
-                Attribute labelAttribute = element.attribute("value");
-                bundleInfo.setName(labelAttribute.getValue());
-            } else if (attribute.getValue().equals("description")) {
-                Attribute descAttribute = element.attribute("value");
-                bundleInfo.setDesc(descAttribute.getValue());
-            }
-        }
-
-        addComponents(bundleInfo, root);
-
-        for (AndroidLibrary depLib : awbBundle.getAndroidLibraries()) {
-            SAXReader reader2 = new SAXReader();
-            Document document2 = reader2.read(depLib.getManifest());// 读取XML文件
-            Element root2 = document2.getRootElement();// 得到根节点
-            addComponents(bundleInfo, root2);
-        }
-    }
-
-    private static void addComponents(BundleInfo bundleInfo, Element root) {
-        List<? extends Node> serviceNodes = root.selectNodes("//service");
-        for (Node node : serviceNodes) {
-            Element element = (Element) node;
-            Attribute attribute = element.attribute("name");
-            bundleInfo.getServices().add(attribute.getValue());
-        }
-        List<? extends Node> receiverNodes = root.selectNodes("//receiver");
-        for (Node node : receiverNodes) {
-            Element element = (Element) node;
-            Attribute attribute = element.attribute("name");
-
-            bundleInfo.getReceivers().add(attribute.getValue());
-        }
-        List<? extends Node> providerNodes = root.selectNodes("//provider");
-        for (Node node : providerNodes) {
-            Element element = (Element) node;
-            Attribute attribute = element.attribute("name");
-
-            bundleInfo.getContentProviders().add(attribute.getValue());
-        }
-        List<? extends Node> activityNodes = root.selectNodes("//activity");
-        for (Node node : activityNodes) {
-            Element element = (Element) node;
-            Attribute attribute = element.attribute("name");
-
-            bundleInfo.getActivities().add(attribute.getValue());
-        }
     }
 
     private static Map<String, BundleInfo> getBundleInfoMap(AppVariantContext appVariantContext) throws IOException {
         File baseBunfleInfoFile = new File(appVariantContext.getScope()
-                                                   .getGlobalScope()
-                                                   .getProject()
-                                                   .getProjectDir(), "bundleBaseInfoFile.json");
+                                               .getGlobalScope()
+                                               .getProject()
+                                               .getProjectDir(), "bundleBaseInfoFile.json");
+
+        //使用插件里的文件替换
         Map<String, BundleInfo> bundleFileMap = Maps.newHashMap();
         if (null != baseBunfleInfoFile &&
-                baseBunfleInfoFile.exists() &&
-                baseBunfleInfoFile.canRead()) {
+            baseBunfleInfoFile.exists() &&
+            baseBunfleInfoFile.canRead()) {
             String bundleBaseInfo = FileUtils.readFileToString(baseBunfleInfoFile, "utf-8");
             bundleFileMap = JSON.parseObject(bundleBaseInfo,
                                              new TypeReference<Map<String, BundleInfo>>() {
                                              });
         }
+
+        List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
+            appVariantContext.getVariantData().getName()).getAwbBundles();
+
+        List<String> duplicatedBundleInfo = new ArrayList<>();
+        for (AwbBundle awbBundle : awbBundles) {
+            String name = awbBundle.getResolvedCoordinates().getArtifactId();
+            File bundleBaseInfoFile = new File(awbBundle.getAndroidLibrary().getFolder(), "bundleBaseInfoFile.json");
+            if (bundleBaseInfoFile.exists()) {
+                String json = FileUtils.readFileToString(bundleBaseInfoFile, "utf-8");
+                BundleInfo bundleInfo = JSON.parseObject(json, BundleInfo.class);
+
+                if (bundleFileMap.containsKey(name)) {
+                    appVariantContext.getProject().getLogger().error(
+                        "bundleBaseInfoFile>>>" + name + " has declared bundleBaseInfoFile");
+                    duplicatedBundleInfo.add(name);
+                }
+
+                bundleFileMap.put(name, bundleInfo);
+            }
+        }
+
+        if (duplicatedBundleInfo.size() > 0) {
+            FileUtils.writeLines(
+                new File(appVariantContext.getProject().getBuildDir(), "outputs/warning-dupbundleinfo.properties"),
+                duplicatedBundleInfo);
+        }
+
         return bundleFileMap;
     }
 
@@ -374,14 +354,14 @@ public class BundleInfoUtils {
 
         File bundleInfoFile = new File(appVariantContext.getProject().getBuildDir(),
                                        "outputs/bundleInfo-" +
-                                               appVariantContext.getVariantConfiguration()
-                                                       .getVersionName() +
-                                               ".json");
+                                           appVariantContext.getVariantConfiguration()
+                                               .getVersionName() +
+                                           ".json");
         File bundleInfoFile2 = new File(appVariantContext.getProject().getBuildDir(),
                                         "outputs/pretty-bundleInfo-" +
-                                                appVariantContext.getVariantConfiguration()
-                                                        .getVersionName() +
-                                                ".json");
+                                            appVariantContext.getVariantConfiguration()
+                                                .getVersionName() +
+                                            ".json");
 
         try {
             FileUtils.write(bundleInfoFile, JSON.toJSONString(bundleInfoList, false));
@@ -396,8 +376,8 @@ public class BundleInfoUtils {
     @NotNull
     public static List<BundleInfo> getBundleInfoList(AppVariantContext appVariantContext) {
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                appVariantContext.getScope().
-                        getVariantConfiguration().getFullName());
+            appVariantContext.getScope().
+                getVariantConfiguration().getFullName());
 
         List<BundleInfo> bundleInfoList = new ArrayList<BundleInfo>();
 

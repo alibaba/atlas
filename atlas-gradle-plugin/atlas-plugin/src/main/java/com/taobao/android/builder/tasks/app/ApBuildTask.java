@@ -226,6 +226,7 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.bundleinfo.ApkFileListUtils;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.io.FileUtils;
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.TaskAction;
 
@@ -255,10 +256,14 @@ public class ApBuildTask extends DefaultAndroidTask {
     }
 
     @TaskAction
-    public void taskAction() throws IOException {
+    public void taskAction() {
         // 生成build.ap
-
-        createAP(getApkFile(), baseVariantOutputData, appVariantContext);
+        try {
+            createAP(getApkFile(), baseVariantOutputData, appVariantContext);
+        }catch (Throwable e){
+            //getProject().getLogger().error("createAp exception", e);
+            throw new GradleException("createAp exception",e);
+        }
     }
 
     private File createAP(File apkFile,
@@ -308,8 +313,12 @@ public class ApBuildTask extends DefaultAndroidTask {
 
         addFile(jarshrinkLog, jarshrinkLog.getName());
 
-        addFile(getApkFiles(APFile.getParentFile().getParentFile(), appVariantContext),
-                ApContext.APK_FILE_LIST);
+        try {
+            addFile(getApkFiles(APFile.getParentFile().getParentFile(), appVariantContext),
+                    ApContext.APK_FILE_LIST);
+        }catch (Throwable e){
+
+        }
 
         // 如果存在着proguard文件，加入结果信息
         if (null != proguardOut &&
@@ -352,7 +361,9 @@ public class ApBuildTask extends DefaultAndroidTask {
     }
 
     private void addFile(File file) throws IOException {
-        addFile(file, file.getName());
+        if (null != file && file.exists()){
+            addFile(file, file.getName());
+        }
     }
 
     /**

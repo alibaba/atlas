@@ -315,14 +315,16 @@ public class PackageAwbsTask extends BaseTask {
                             inputFiles.add(awbTransform.getInputDir());
                         }
 
-                        AtlasBuildContext.androidBuilder.convertByteCode(inputFiles,
-                                                                         dexOutputFile,
-                                                                         appVariantContext.getVariantData()
-                                                                             .getVariantConfiguration()
-                                                                             .isMultiDexEnabled(),
-                                                                         null,
-                                                                         androidConfig.getDexOptions(),
-                                                                         outputHandler);
+                        AtlasBuildContext.androidBuilderMap.get(getProject()).convertByteCode(inputFiles,
+                                                                                              dexOutputFile,
+                                                                                              appVariantContext
+                                                                                                  .getVariantData()
+                                                                                                  .getVariantConfiguration()
+                                                                                                  .isMultiDexEnabled(),
+                                                                                              null,
+                                                                                              androidConfig
+                                                                                                  .getDexOptions(),
+                                                                                              outputHandler);
                         //create package
 
                         long endDex = System.currentTimeMillis();
@@ -349,22 +351,23 @@ public class PackageAwbsTask extends BaseTask {
                         }
 
                         //TODO 2.3
-                        AtlasBuildContext.androidBuilder.oldPackageApk(resourceFile.getAbsolutePath(),
-                                                                       dexFolders,
-                                                                       javaResourcesLocations,
-                                                                       jniFolders,
-                                                                       null,
-                                                                       getAbiFilters(),
-                                                                       config.getBuildType().isJniDebuggable(),
-                                                                       null,
-                                                                       getOutputFile(awbBundle),
-                                                                       config.getMinSdkVersion().getApiLevel(),
-                                                                       new com.google.common.base.Predicate<String>() {
-                                                                           @Override
-                                                                           public boolean apply(@Nullable String s) {
-                                                                               return false;
-                                                                           }
-                                                                       }
+                        AtlasBuildContext.androidBuilderMap.get(getProject()).oldPackageApk(
+                            resourceFile.getAbsolutePath(),
+                            dexFolders,
+                            javaResourcesLocations,
+                            jniFolders,
+                            null,
+                            getAbiFilters(),
+                            config.getBuildType().isJniDebuggable(),
+                            null,
+                            getOutputFile(awbBundle),
+                            config.getMinSdkVersion().getApiLevel(),
+                            new com.google.common.base.Predicate<String>() {
+                                @Override
+                                public boolean apply(@Nullable String s) {
+                                    return false;
+                                }
+                            }
                         );
 
                         long endPackage = System.currentTimeMillis();
@@ -406,9 +409,12 @@ public class PackageAwbsTask extends BaseTask {
             return awbBundle.outputBundleFile;
         }
 
-        if (!appVariantContext.getAtlasExtension().getTBuildConfig().isPackageRemoteAwbInJni() && awbBundle.isRemote){
-            return appVariantOutputContext.getAwbPackageOutAppOutputFile(awbBundle);
+        if (AtlasBuildContext.sBuilderAdapter.packageRemoteAwbInJni && awbBundle.isRemote) {
+            File file = appVariantOutputContext.getAwbPackageOutAppOutputFile(awbBundle);
+            appVariantOutputContext.appBuildInfo.getOtherFilesMap().put("remotebundles/" + file.getName(), file);
+            return file;
         }
+
         return appVariantOutputContext.getAwbPackageOutputFile(awbBundle);
     }
 

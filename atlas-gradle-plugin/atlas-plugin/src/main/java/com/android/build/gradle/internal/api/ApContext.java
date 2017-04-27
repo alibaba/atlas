@@ -213,18 +213,28 @@ import java.io.File;
 
 /**
  * Created by wuzhong on 2016/10/3.
+ *
  * @author wuzhong
  */
 public class ApContext {
 
     public static final String AP_INLINE_APK_FILENAME = "android.apk";
+
+    public static final String AP_INLINE_AWB_FILENAME = "awbs";
+
     public static final String APK_FILE_LIST = "apk-files.txt";
+
     public static final String APK_FILE_MD5 = "apk-files.txt";
 
     private String apDependency;
+
     private File apExploredFolder;
+
     private File apFile;
+
     private File baseApk;
+
+    private File baseManifest;
 
     public String getApDependency() {
         return apDependency;
@@ -256,6 +266,23 @@ public class ApContext {
 
     public File getBaseApk() {
         return baseApk;
+    }
+
+    public File getBaseManifest() {
+        return baseManifest;
+    }
+
+    public void setBaseManifest(File baseManifest) {
+        this.baseManifest = baseManifest;
+    }
+
+    public File getBaseAwb(String soFileName) {
+        File file = new File(new File(getApExploredFolder(), ApContext.AP_INLINE_AWB_FILENAME),
+                             soFileName);
+        if (!file.exists()) {
+            return null;
+        }
+        return file;
     }
 
     public File getPackageIdFile() {

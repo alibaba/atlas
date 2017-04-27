@@ -209,9 +209,6 @@
 
 package com.taobao.android.builder.tasks.manager.transform;
 
-import java.io.File;
-import java.util.Set;
-
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.TransformOutputProvider;
@@ -220,14 +217,12 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.pipeline.InjectTransform;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.model.MavenCoordinates;
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.AtlasBuildContext;
-import org.apache.commons.lang.StringUtils;
+import com.taobao.android.builder.tools.FileNameUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.android.SdkConstants.DOT_JAR;
+import java.io.File;
 
 /**
  * Created by wuzhong on 2016/11/30.
@@ -235,8 +230,6 @@ import static com.android.SdkConstants.DOT_JAR;
 public abstract class MtlInjectTransform extends InjectTransform {
 
     private static Logger logger = LoggerFactory.getLogger(MtlInjectTransform.class);
-
-    private Set<String> outFileNames = Sets.newHashSet();
 
     protected VariantOutputScope scope;
     protected AppVariantContext appVariantContext;
@@ -276,84 +269,15 @@ public abstract class MtlInjectTransform extends InjectTransform {
 
         return outputProvider.getContentLocation(getUniqueJarName(jarInput),
                                                  jarInput.getContentTypes(),
-                                                 getScopes(),
+                                                 jarInput.getScopes(),
                                                  Format.JAR);
 
     }
 
     protected String getUniqueJarName(JarInput jarInput) {
 
-        File inputFile = jarInput.getFile();
-
-        String jarFileName = inputFile.getName();
-
-        String newFileName = "";
-
-        if (jarFileName.equalsIgnoreCase("classes.jar")) {
-
-            String inputPath = inputFile.getAbsolutePath();
-            String rootInputPath = "";
-
-            //计算最原始的jar路径
-            while (true) {
-                rootInputPath = AtlasBuildContext.jarTraceMap.get(inputPath);
-                if (null == rootInputPath) {
-                    rootInputPath = inputPath;
-                    break;
-                }
-            }
-
-            if (StringUtils.isNotEmpty(rootInputPath)) {
-                MavenCoordinates mavenCoordinates = getMavenCoordinate(rootInputPath);
-                if (null != mavenCoordinates) {
-                    newFileName = mavenCoordinates.getArtifactId();
-                }
-            }
-
-        } else {
-            newFileName = jarFileName;
-        }
-
-        if (StringUtils.isEmpty(newFileName)) {
-            newFileName = inputFile
-                .getParentFile()
-                .getParentFile()
-                .getParentFile()
-                .getName() +
-                "-" +
-                jarInput.getFile().getParentFile().getParentFile().getName() +
-                DOT_JAR;
-        }
-
-
-        String outFileName = newFileName;
-        if (newFileName.endsWith(DOT_JAR)){
-            outFileName = outFileName.substring(0, outFileName.length() - DOT_JAR.length());
-        }
-
-        int index = 1;
-        while (outFileNames.contains(outFileName)) {
-            outFileName = outFileName + "-" + index;
-            index++;
-        }
-        outFileNames.add(outFileName);
-
-        return outFileName;
+        return FileNameUtils.getUniqueJarName(jarInput.getFile());
     }
 
-    protected MavenCoordinates getMavenCoordinate(String path) {
-        File file = new File(path);
-        File parentDir = file.getParentFile();
-        //查找3级
-        for (int i = 0; i < 3; i++) {
-            MavenCoordinates mavenCoordinates = AtlasBuildContext.dependencyTraceMap.get(parentDir.getAbsolutePath());
-            if (null != mavenCoordinates) {
-                return mavenCoordinates;
-            }
-            parentDir = parentDir.getParentFile();
-        }
-
-        return null;
-    }
 
 }

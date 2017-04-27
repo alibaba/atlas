@@ -227,24 +227,61 @@ import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
-import org.gradle.api.DefaultTask;
+import org.gradle.api.Action;
+import org.gradle.api.GradleException;
+import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.publish.maven.tasks.GenerateMavenPom;
 
 /**
- * Created by wuzhong on 2017/3/11.
+ * Created by wuzhong on 2017/2/9.
+ *
+ * 更新pom里依赖的 type 和 scope
  *
  * @author wuzhong
- * @date 2017/03/11
  */
-public class UpdatePomTask extends DefaultTask {
+public class UpdatePomTask {
 
-    public File xml;
+    private Project project;
 
-    @TaskAction
-    public void updatePomXml() throws IOException, DocumentException {
+    public UpdatePomTask(Project project) {
+        this.project = project;
+    }
+
+    public void updatePom() {
+
+        project.getTasks().whenTaskAdded(new Action<Task>() {
+            @Override
+            public void execute(Task task) {
+
+                if ("generatePomFileForMavenPublication".equals(task.getName())) {
+
+                    GenerateMavenPom generateMavenPom = (GenerateMavenPom)task;
+
+                    generateMavenPom.doLast(new Action<Task>() {
+                        @Override
+                        public void execute(Task task) {
+
+                            try {
+                                updatePomXml(generateMavenPom.getDestination());
+                            } catch (Throwable e) {
+                                throw new GradleException(e.getMessage(), e);
+                            }
+
+                        }
+                    });
+
+                }
+
+            }
+        });
+
+    }
+
+    private void updatePomXml(File xml) throws IOException, DocumentException {
 
         Map<String, DependencyExtraInfo> extraInfoMap = getExtraMap();
 
@@ -264,62 +301,60 @@ public class UpdatePomTask extends DefaultTask {
 
             Element dependencies = document.getRootElement().element("dependencies");
 
-            if ((null == dependencies) || null == dependencies.elements()) {
-                return;
-            }
+            if ((null != dependencies) && null != dependencies.elements()) {
+                List<Element> list = dependencies.elements();
 
-            List<Element> list = dependencies.elements();
+                for (Element element : list) {
 
-            for (Element element : list) {
+                    List<Element> itemList = element.elements();
 
-                List<Element> itemList = element.elements();
+                    String group = "";
+                    String name = "";
+                    String type;
+                    String scope;
 
-                String group = "";
-                String name = "";
-                String type;
-                String scope;
+                    Element scopeEl = null;
+                    Element typeEl = null;
 
-                Element scopeEl = null;
-                Element typeEl = null;
-
-                for (Element element1 : itemList) {
-                    if ("groupId".equals(element1.getQName().getName())) {
-                        group = element1.getStringValue();
-                    } else if ("artifactId".equals(element1.getQName().getName())) {
-                        name = element1.getStringValue();
-                    } else if ("scope".equals(element1.getQName().getName())) {
-                        scope = element1.getStringValue();
-                        scopeEl = element1;
-                    } else if ("type".equals(element1.getQName().getName())) {
-                        type = element1.getStringValue();
-                        typeEl = element1;
+                    for (Element element1 : itemList) {
+                        if ("groupId".equals(element1.getQName().getName())) {
+                            group = element1.getStringValue();
+                        } else if ("artifactId".equals(element1.getQName().getName())) {
+                            name = element1.getStringValue();
+                        } else if ("scope".equals(element1.getQName().getName())) {
+                            scope = element1.getStringValue();
+                            scopeEl = element1;
+                        } else if ("type".equals(element1.getQName().getName())) {
+                            type = element1.getStringValue();
+                            typeEl = element1;
+                        }
                     }
-                }
 
-                DependencyExtraInfo dependencyExtraInfo = extraInfoMap.get(group + ":" + name);
-                if (null == dependencyExtraInfo) {
-                    continue;
-                }
-
-                //update scope
-                if (StringUtils.isNotEmpty(dependencyExtraInfo.scope)) {
-                    if (null != scopeEl) {
-                        scopeEl.setText(dependencyExtraInfo.scope);
-                    } else {
-                        Element newEl = element.addElement("scope");
-                        newEl.setText(dependencyExtraInfo.scope);
+                    DependencyExtraInfo dependencyExtraInfo = extraInfoMap.get(group + ":" + name);
+                    if (null == dependencyExtraInfo) {
+                        continue;
                     }
-                }
 
-                if (StringUtils.isNotEmpty(dependencyExtraInfo.type)) {
-                    if (null != typeEl) {
-                        typeEl.setText(dependencyExtraInfo.type);
-                    } else {
-                        Element newEl = element.addElement("type");
-                        newEl.setText(dependencyExtraInfo.type);
+                    //update scope
+                    if (StringUtils.isNotEmpty(dependencyExtraInfo.scope)) {
+                        if (null != scopeEl) {
+                            scopeEl.setText(dependencyExtraInfo.scope);
+                        } else {
+                            Element newEl = element.addElement("scope");
+                            newEl.setText(dependencyExtraInfo.scope);
+                        }
                     }
-                }
 
+                    if (StringUtils.isNotEmpty(dependencyExtraInfo.type)) {
+                        if (null != typeEl) {
+                            typeEl.setText(dependencyExtraInfo.type);
+                        } else {
+                            Element newEl = element.addElement("type");
+                            newEl.setText(dependencyExtraInfo.type);
+                        }
+                    }
+
+                }
             }
 
             writer = new XMLWriter(fos, format);
@@ -338,7 +373,7 @@ public class UpdatePomTask extends DefaultTask {
 
         Map<String, DependencyExtraInfo> dependencyExtraInfoMap = new HashMap<>();
 
-        DependencySet dependencies = getProject().getConfigurations().getByName("compile").getDependencies();
+        DependencySet dependencies = project.getConfigurations().getByName("compile").getDependencies();
 
         dependencies.forEach(new Consumer<Dependency>() {
             @Override
@@ -364,7 +399,7 @@ public class UpdatePomTask extends DefaultTask {
 
     }
 
-    public static class DependencyExtraInfo {
+    private static class DependencyExtraInfo {
 
         String type;
         String scope;

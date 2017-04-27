@@ -239,6 +239,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Configuration Action for a JavaCompile task.
+ *
  * @author wuzhong
  */
 public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
@@ -281,7 +282,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         assert null != processAwbAndroidResources;
 
         javacTask.source(processAwbAndroidResources.getSourceOutputDir());
-        if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
+        if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled() && awbBundle.isDataBindEnabled()) {
             javacTask.source(appVariantOutputContext.getVariantContext()
                                  .getAwbClassOutputForDataBinding(awbBundle));
         }
@@ -290,17 +291,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
 
             @Override
             public FileCollection call() {
-                FileCollection classpath = scope.getVariantScope().getJavaClasspath();
-                Set<File> dependencies = new HashSet<File>();
-                dependencies.addAll(classpath.getFiles());
-                //增加awb的依赖
-
-                dependencies.addAll(awbBundle.getLibraryJars());
-
-                FileCollection allClassPatch = appVariantOutputContext.getVariantContext()
-                    .getProject()
-                    .files(dependencies);
-                return allClassPatch;
+                return getInputJars();
             }
         });
 
@@ -339,8 +330,6 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
                         annotationProcessorOptions.getIncludeCompileClasspath(),
                         scope.getGlobalScope().getAndroidBuilder().getErrorReporter()));
 
-
-
         if (!processorPath.isEmpty()) {
             if (Boolean.TRUE.equals(annotationProcessorOptions.getIncludeCompileClasspath())) {
                 processorPath.addAll(javacTask.getClasspath().getFiles());
@@ -357,8 +346,26 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         if (!annotationProcessorOptions.getArguments().isEmpty()) {
             for (Map.Entry<String, String> arg :
                 annotationProcessorOptions.getArguments().entrySet()) {
+
+                String key = arg.getKey();
+                String value = arg.getValue();
+
+                if ("android.databinding.modulePackage".equals(key)) {
+                    value = awbBundle.getPackageName() + "._bundleapp_";
+                } else if ("android.databinding.artifactType".equals(key)) {
+                    //value = "LIBRARY";
+                } else if ("android.databinding.xmlOutDir".equals(key)) {
+                    value = appVariantOutputContext.getVariantContext().getAwbLayoutInfoOutputForDataBinding(awbBundle)
+                        .getAbsolutePath();
+                } else if ("android.databinding.bindingBuildFolder".equals(key)) {
+                    value = appVariantOutputContext.getVariantContext().getAwbDataBindingMergeArtifacts(awbBundle)
+                        .getAbsolutePath();
+                } else if ("android.databinding.generationalFileOutDir".equals(key)) {
+                    value = value + "-" + awbBundle.getName();
+                }
+
                 javacTask.getOptions().getCompilerArgs().add(
-                    "-A" + arg.getKey() + "=" + arg.getValue());
+                    "-A" + key + "=" + value);
             }
         }
 
@@ -366,5 +373,21 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         javacTask.getOptions().getCompilerArgs().add(
             variantScope.getAnnotationProcessorOutputDir().getAbsolutePath());
 
+        //修改
+
+    }
+
+    private FileCollection getInputJars() {
+        FileCollection classpath = scope.getVariantScope().getJavaClasspath();
+        Set<File> dependencies = new HashSet<File>();
+        dependencies.addAll(classpath.getFiles());
+        //增加awb的依赖
+
+        dependencies.addAll(awbBundle.getLibraryJars());
+
+        FileCollection allClassPatch = appVariantOutputContext.getVariantContext()
+            .getProject()
+            .files(dependencies);
+        return allClassPatch;
     }
 }

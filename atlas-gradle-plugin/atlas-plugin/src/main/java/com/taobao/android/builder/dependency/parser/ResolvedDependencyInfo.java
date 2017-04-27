@@ -209,14 +209,15 @@
 
 package com.taobao.android.builder.dependency.parser;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.taobao.android.builder.AtlasBuildContext;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 解析后的依赖结果
@@ -399,7 +400,7 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
             return false;
         }
 
-        ResolvedDependencyInfo that = (ResolvedDependencyInfo) o;
+        ResolvedDependencyInfo that = (ResolvedDependencyInfo)o;
 
         if (version != null ? !version.equals(that.version) : that.version != null) {
             return false;
@@ -461,17 +462,25 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
     /**
      * 获取一个DependencyInfo的字符描述
      *
-     * @return
+     * @return //TODO , do this later
      */
     public String getDependencyString() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.getGroup()).append(":");
         sb.append(this.getName()).append(":");
-        sb.append(this.getVersion()).append("@");
-        sb.append(this.getType());
-        //if (org.apache.commons.lang.StringUtils.isNotBlank(this.getClassifier())) {
-        //    sb.append(":").append(this.getClassifier());
-        //}
+
+        //FIXME REPLACE IT LATER
+        if (AtlasBuildContext.sBuilderAdapter.prettyDependencyFormat) {
+            sb.append(this.getVersion()).append("@");
+            sb.append(this.getType());
+        } else {
+            sb.append(this.getType());
+            if (org.apache.commons.lang.StringUtils.isNotBlank(this.getClassifier())) {
+                sb.append(":").append(this.getClassifier());
+            }
+            sb.append(":").append(this.getVersion());
+        }
+
         return sb.toString();
     }
 }

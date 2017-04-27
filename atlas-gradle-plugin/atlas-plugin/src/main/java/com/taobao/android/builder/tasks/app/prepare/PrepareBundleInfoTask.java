@@ -252,8 +252,7 @@ public class PrepareBundleInfoTask extends BaseTask {
             try {
                 map.put(awbBundle.getAwbSoName(), awbBundle);
             }catch (Throwable e){
-                e.printStackTrace();
-                System.out.println(awbBundle.getAndroidLibrary());
+                getProject().getLogger().error(awbBundle.getAndroidLibrary().toString(), e);
             }
         }
 

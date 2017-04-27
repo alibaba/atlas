@@ -210,31 +210,293 @@
 package com.taobao.android.builder.tools.manifest;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
+import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.builder.model.AndroidLibrary;
-import org.apache.commons.io.FilenameUtils;
+import com.android.manifmerger.ManifestProvider;
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
+import org.apache.commons.lang.StringUtils;
+import org.dom4j.Attribute;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
+import org.gradle.api.GradleException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by wuzhong on 2017/3/6.
  */
 public class ManifestHelper {
 
-    public static File getOrgManifestFile(AndroidLibrary androidLibrary) {
+    private static Logger sLogger = LoggerFactory.getLogger(ManifestHelper.class);
 
-        return androidLibrary.getManifest();
+    public static List<ManifestProvider> getBundleManifest(AppVariantContext appVariantContext,
+                                                           AtlasDependencyTree dependencyTree,
+                                                           AtlasExtension atlasExtension) {
 
-        //File manifestFile = androidLibrary.getManifest();
-        //File orgManifestFile = new File(manifestFile.getParentFile(),
-        //                                FilenameUtils.getBaseName(manifestFile.getName()) +
-        //                                        "-org.xml");
-        //return orgManifestFile.exists() ? orgManifestFile : manifestFile;
+        Set<String> notMergedArtifacts = getNotMergedBundles(atlasExtension);
+
+        List<ManifestProvider> bundleProviders = new ArrayList<>();
+
+        for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
+            String cord = String.format("%s:%s",
+                                        awbBundle.getResolvedCoordinates().getGroupId(),
+                                        awbBundle.getResolvedCoordinates().getArtifactId());
+
+            if (null != notMergedArtifacts && notMergedArtifacts.contains(cord)) {
+                continue;
+            }
+
+            bundleProviders.add(createManifestProvider(awbBundle.getAndroidLibrary(), appVariantContext));
+
+            for (AndroidLibrary androidLibrary : awbBundle.getAndroidLibraries()) {
+                bundleProviders.add(createManifestProvider(androidLibrary, appVariantContext));
+            }
+
+        }
+
+        return bundleProviders;
+
     }
 
-    public static File getModifyManifestFile(AndroidLibrary androidLibrary) {
-        File manifestFile = androidLibrary.getManifest();
-        File orgManifestFile = new File(manifestFile.getParentFile(),
-                                        FilenameUtils.getBaseName(manifestFile.getName()) +
-                                            "-modify.xml");
-        return orgManifestFile.exists() ? orgManifestFile : manifestFile;
+    public static boolean checkManifest(AppVariantContext appVariantContext, File fullManifest,
+                                        AtlasDependencyTree dependencyTree,
+                                        AtlasExtension atlasExtension) throws DocumentException {
+
+        Set<String> notMergedArtifacts = getNotMergedBundles(atlasExtension);
+
+        BundleInfo mainBundleInfo = new BundleInfo();
+        collectBundleInfo(appVariantContext, mainBundleInfo, fullManifest, null);
+
+        List<String> errors = new ArrayList<>();
+        for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
+            String cord = String.format("%s:%s",
+                                        awbBundle.getResolvedCoordinates().getGroupId(),
+                                        awbBundle.getResolvedCoordinates().getArtifactId());
+
+            if (null != notMergedArtifacts && notMergedArtifacts.contains(cord)) {
+                continue;
+            }
+
+            for (String activity : awbBundle.bundleInfo.getActivities()) {
+                if (StringUtils.isNotEmpty(activity) && !mainBundleInfo.getActivities().contains(activity)) {
+                    errors.add("miss activity:" + activity);
+                }
+            }
+
+            for (String service : awbBundle.bundleInfo.getServices()) {
+                if (StringUtils.isNotEmpty(service) && !mainBundleInfo.getServices().contains(service)) {
+                    errors.add("miss service:" + service);
+                }
+            }
+
+            for (String provider : awbBundle.bundleInfo.getContentProviders()) {
+                if (StringUtils.isNotEmpty(provider) && !mainBundleInfo.getContentProviders().contains(provider)) {
+                    errors.add("miss provider:" + provider);
+                }
+            }
+
+            for (String receiver : awbBundle.bundleInfo.getReceivers()) {
+                if (StringUtils.isNotEmpty(receiver) && !mainBundleInfo.getReceivers().contains(receiver)) {
+                    errors.add("miss receiver:" + receiver);
+                }
+            }
+
+        }
+
+        if (errors.isEmpty()) {
+            return true;
+        }
+
+        for (String err : errors) {
+            sLogger.error(err);
+        }
+
+        throw new GradleException("manifest merge error :" + StringUtils.join(errors, ","));
+    }
+
+    private static Set<String> getNotMergedBundles(AtlasExtension atlasExtension) {
+        Set<String> notMergedArtifacts = Sets.newHashSet();
+        if (null != atlasExtension.getManifestOptions() &&
+            null != atlasExtension.getManifestOptions().getNotMergedBundles()) {
+            notMergedArtifacts = atlasExtension.getManifestOptions().getNotMergedBundles();
+        }
+        return notMergedArtifacts;
+    }
+
+    private static ManifestProvider createManifestProvider(AndroidLibrary androidLibrary,
+                                                           AppVariantContext appVariantContext) {
+        File modifyManifest = getModifyManifestFile(androidLibrary, appVariantContext);
+        return new BundleManifestProvider(modifyManifest);
+    }
+
+    private static File getModifyManifestFile(AndroidLibrary androidLibrary, AppVariantContext appVariantContext) {
+        return getModifyManifestFile(androidLibrary.getManifest(), appVariantContext);
+    }
+
+    public static File getModifyManifestFile(File manifest, AppVariantContext appVariantContext) {
+
+        File modifyManifest = (File)appVariantContext.manifestMap.get(manifest.getAbsolutePath());
+
+        //sLogger.error("get file : " + manifest.getAbsolutePath() + "->" + modifyManifest);
+
+        if (null == modifyManifest || !modifyManifest.exists()) {
+            return manifest;
+        }
+        return modifyManifest;
+    }
+
+    public static void collectBundleInfo(AppVariantContext appVariantContext, BundleInfo bundleInfo, File manifest,
+                                         List<AndroidLibrary> androidLibraries)
+        throws DocumentException {
+        SAXReader reader = new SAXReader();
+        Document document = reader.read(getModifyManifestFile(manifest, appVariantContext));// 读取XML文件
+        Element root = document.getRootElement();// 得到根节点
+
+        List<? extends Node> metadataNodes = root.selectNodes("//meta-data");
+        for (Node node : metadataNodes) {
+            Element element = (Element)node;
+            Attribute attribute = element.attribute("name");
+            if (attribute.getValue().equals("label")) {
+                Attribute labelAttribute = element.attribute("value");
+                bundleInfo.setName(labelAttribute.getValue());
+            } else if (attribute.getValue().equals("description")) {
+                Attribute descAttribute = element.attribute("value");
+                bundleInfo.setDesc(descAttribute.getValue());
+            }
+        }
+
+        addComponents(bundleInfo, root);
+
+        if (null != androidLibraries) {
+            for (AndroidLibrary depLib : androidLibraries) {
+                SAXReader reader2 = new SAXReader();
+                Document document2 = reader2.read(
+                    getModifyManifestFile(depLib.getManifest(), appVariantContext));// 读取XML文件
+                Element root2 = document2.getRootElement();// 得到根节点
+                addComponents(bundleInfo, root2);
+            }
+        }
+
+    }
+
+    private static void addComponents(BundleInfo bundleInfo, Element root) {
+        List<? extends Node> serviceNodes = root.selectNodes("//service");
+        for (Node node : serviceNodes) {
+            Element element = (Element)node;
+            Attribute attribute = element.attribute("name");
+            bundleInfo.getServices().add(attribute.getValue());
+        }
+        List<? extends Node> receiverNodes = root.selectNodes("//receiver");
+        for (Node node : receiverNodes) {
+            Element element = (Element)node;
+            Attribute attribute = element.attribute("name");
+            bundleInfo.getReceivers().add(attribute.getValue());
+        }
+        List<? extends Node> providerNodes = root.selectNodes("//provider");
+        for (Node node : providerNodes) {
+            Element element = (Element)node;
+            Attribute attribute = element.attribute("name");
+
+            bundleInfo.getContentProviders().add(attribute.getValue());
+        }
+        List<? extends Node> activityNodes = root.selectNodes("//activity");
+        for (Node node : activityNodes) {
+            Element element = (Element)node;
+            Attribute attribute = element.attribute("name");
+
+            bundleInfo.getActivities().add(attribute.getValue());
+        }
+    }
+
+    public static List<ManifestProvider> convert(List<ManifestProvider> manifestProviders,
+                                                 AppVariantContext appVariantContext) {
+        List<ManifestProvider> modifyManifest = new ArrayList<>();
+
+        for (ManifestProvider manifestProvider : manifestProviders) {
+
+            File manifest = getModifyManifestFile(manifestProvider.getManifest(), appVariantContext);
+
+            modifyManifest.add(new MainManifestProvider(manifest, manifestProvider.getName()));
+
+        }
+
+        return modifyManifest;
+    }
+
+    public static class BundleManifestProvider implements ManifestProvider {
+
+        private File manifest;
+
+        public BundleManifestProvider(File manifest) {
+            this.manifest = manifest;
+        }
+
+        @Override
+        public File getManifest() {
+            return manifest;
+        }
+
+        @Override
+        public String getName() {
+            return manifest.getName();
+        }
+    }
+
+    public static class MainManifestProvider implements ManifestProvider {
+
+        private File manifest;
+        private String name;
+
+        public MainManifestProvider(File manifest, String name) {
+            this.manifest = manifest;
+            this.name = name;
+        }
+
+        @Override
+        public File getManifest() {
+            return manifest;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+    }
+
+    public static List<? extends AndroidLibrary> getManifestDependencies(List<AwbBundle> awbBundles,
+                                                                         Set<String> notMergedArtifacts,
+                                                                         org.gradle.api.logging.Logger logger) {
+
+        List<AndroidLibrary> list = new ArrayList<>();
+
+        for (AwbBundle lib : awbBundles) {
+            // get the dependencies
+            // [vliux] respect manifestOption.notMergedBundle
+            String cord = String.format("%s:%s",
+                                        lib.getResolvedCoordinates().getGroupId(),
+                                        lib.getResolvedCoordinates().getArtifactId());
+            if (null == notMergedArtifacts || !notMergedArtifacts.contains(cord)) {
+
+                list.add(lib.getAndroidLibrary());
+                list.addAll(lib.getAndroidLibraries());
+
+            } else {
+                logger.info("[NotMergedManifest] " + cord);
+            }
+        }
+
+        return list;
     }
 }
+

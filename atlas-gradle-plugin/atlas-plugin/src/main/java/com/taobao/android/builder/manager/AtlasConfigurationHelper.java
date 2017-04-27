@@ -209,11 +209,6 @@
 
 package com.taobao.android.builder.manager;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.internal.AndroidComponent;
@@ -226,23 +221,14 @@ import com.android.builder.core.ErrorReporter;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.AtlasPlugin;
 import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.extension.TBuildConfig;
-import com.taobao.android.builder.extension.TBuildType;
-import com.taobao.android.builder.extension.factory.PatchConfigFactory;
-import com.taobao.android.builder.extension.factory.TBuildTypeFactory;
 import com.taobao.android.builder.hook.AppPluginHook;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import com.taobao.android.builder.tools.ReflectUtils;
-import com.taobao.android.builder.tools.guide.AtlasConfigField;
-import com.taobao.android.builder.tools.guide.AtlasConfigHelper;
-import org.apache.commons.io.FileUtils;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
-import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.internal.reflect.Instantiator;
 
@@ -297,18 +283,7 @@ public class AtlasConfigurationHelper {
      **/
     public AtlasExtension createExtendsion() {
 
-        final NamedDomainObjectContainer<TBuildType> buildTypeContainer = project.container(TBuildType.class,
-                                                                                            new TBuildTypeFactory(
-                                                                                                instantiator, project,
-                                                                                                project.getLogger()));
-        final NamedDomainObjectContainer<PatchConfig> patchConfigContainer = project.container(PatchConfig.class,
-                                                                                               new PatchConfigFactory(
-                                                                                                   instantiator,
-                                                                                                   project, project
-                                                                                                       .getLogger()));
-
-        this.atlasExtension = project.getExtensions().create("atlas", AtlasExtension.class, project, instantiator,
-                                                             buildTypeContainer, patchConfigContainer);
+        this.atlasExtension = AtlasBuildContext.sBuilderAdapter.extensionFactory.createExtendsion(project, instantiator);
 
         return atlasExtension;
     }
@@ -359,7 +334,7 @@ public class AtlasConfigurationHelper {
 
         ((AtlasBuilder)atlasBuilder).setDefaultBuilder(androidBuilder);
         ((AtlasBuilder)atlasBuilder).setAtlasExtension(atlasExtension);
-        AtlasBuildContext.androidBuilder = ((AtlasBuilder)(atlasBuilder));
+        AtlasBuildContext.androidBuilderMap.put(project, (AtlasBuilder)(atlasBuilder));
     }
 
     public void configTasksAfterEvaluate() {
@@ -367,11 +342,13 @@ public class AtlasConfigurationHelper {
         if (PluginTypeUtils.isAppProject(project)) {
             AppExtension appExtension = DefaultGroovyMethods.asType(
                 DefaultGroovyMethods.getAt(project.getExtensions(), "android"), AppExtension.class);
-            new AtlasAppTaskManager(AtlasBuildContext.androidBuilder, appExtension, project, atlasExtension).run();
+            new AtlasAppTaskManager(AtlasBuildContext.androidBuilderMap.get(project), appExtension, project,
+                                    atlasExtension).run();
         } else if (PluginTypeUtils.isLibraryProject(project)) {
             LibraryExtension libExtension = DefaultGroovyMethods.asType(
                 DefaultGroovyMethods.getAt(project.getExtensions(), "android"), LibraryExtension.class);
-            new AtlasLibTaskManager(AtlasBuildContext.androidBuilder, libExtension, project, atlasExtension).run();
+            new AtlasLibTaskManager(AtlasBuildContext.androidBuilderMap.get(project), libExtension, project,
+                                    atlasExtension).run();
         }
 
     }

@@ -270,6 +270,9 @@ public interface FileCache {
             }
 
             File cacheFile = new File(cacheDir, type + "/" + key);
+            if (!cacheFile.exists()){
+                return "";
+            }
             cacheFile.getParentFile().mkdirs();
             try {
                 if (file.isDirectory()) {

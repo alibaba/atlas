@@ -218,105 +218,81 @@ import org.gradle.api.tasks.Optional;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.extension.annotation.Config;
 
 /**
  * Created by shenghua.nish on 2016-05-17 上午10:15.
  */
 public class TBuildConfig {
 
-    @Input
-    @JSONField(serialize = false)
-    private Set<String> removeSoFiles = Sets.newHashSet();
-
-    @Input
-    @JSONField(serialize = false)
-    private Set<String> excludeFiles = Sets.newHashSet();
-
-    @Input
-    @Optional
-    @JSONField(serialize = false)
-    private File packageIdFile = new File("");
-
-    @JSONField(serialize = false)
-    private Map<String, String> packageIdMap = new HashMap<String, String>();
-
-    @Config(message = "自动生成bundle的packageId", order = 0)
-    private boolean autoPackageId = true;
-
-    @Input
-    @Config(message = "预处理manifest， 如果开启atlas，必须为true", order = 0)
-    private Boolean preProcessManifest = true;
-
-    @Input
-    @JSONField(serialize = false)
-    private Boolean updateManifestSdkVersion = true;
-
-    @Input
-    @Config(message = "使用自定义的aapt， 如果开启atlas，必须为true", order = 0)
-    private Boolean useCustomAapt = false;
-
-    @Input
-    @Config(message = "aapt输出的R为常量, 建议值设置为false， 可以减少动态部署的patch包大小", order = 0)
-    private Boolean aaptConstantId = true;
-
-    @Input
-    private Boolean classInject = false;
-
-    @Input
-    private Boolean doPreverify = false;
-
-    /**
-     * 默认不做 jar 里资源的copy
-     */
-    @Input
-    @Config(message = "合并jar中的资源文件", order = 0)
-    private Boolean mergeJavaRes = false;
-
-    private Boolean resV4Enabled = true;
-
-    @JSONField(serialize = false)
-    private Boolean injectBeforeProguard = false;
-
-    @Input
-    @Config(message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0)
-    private Boolean createAP = true;
-
-    @Config(message = "合并bundle jar中的资源文件", order = 0)
-    private Boolean mergeAwbJavaRes = false;
-
-    @Input
-    @Config(message = "是否依赖冲突终止打包", order = 0)
-    private boolean abortIfDependencyConflict = false;
-
-    @Input
-    @Config(message = "是否类冲突终止打包", order = 0)
-    private boolean abortIfClassConflict = false;
-
-    public Boolean isCreateAP() {
-        return createAP;
-    }
-
-    public void setCreateAP(Boolean createAP) {
-        this.createAP = createAP;
-    }
-
-    @Optional
+    @Config(message = "远程bundle清单, artifactId", advance = false, order = 1, group = "atlas")
     private Set<String> outOfApkBundles = Sets.newHashSet();
 
-    private boolean packageRemoteAwbInJni = false;
-
-    @Optional
-    private Set<String> insideOfApkBundles = Sets.newHashSet();
-
-    @Config(message = "自启动的bundle列表， 值是 packageName", order = 1, advance = true)
+    @Config(message = "自启动的bundle列表， 值是 packageName", order = 1, advance = false, group = "atlas")
     private List<String> autoStartBundles = new ArrayList<String>();
 
-    @Config(message = "提前执行的方法，格式是 className:methodName|className2:methodName2 ， 注意class和methodname都不能混淆，且方法实现是 class.method(Context)", order = 2, advance = true)
+    @Config(
+        message = "实现PreLaunch的类，多个类用 , 号分开", order = 1, advance = false, group = "atlas")
     private String preLaunch = "";
+
+    @Config(
+        message = "atlas的主dex分包机制，第一个dex只放atlas对应的启动代码", order = 3, advance = false, group = "atlas")
+    private boolean atlasMultiDex = false;
+
+    @Config(message = "需要删除的so文件列表", order = 4, advance = true, group = "atlas")
+    private Set<String> removeSoFiles = Sets.newHashSet();
+
+    @Config(message = "[atlas]bundle的packageId定义文件，不定义会自动分配", group = "atlas")
+    private File packageIdFile = new File("");
+
+    @Config(message = "[atlas]自动生成bundle的packageId", order = 6, advance = false, group = "atlas")
+    private boolean autoPackageId = true;
+
+    @Config(message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0, group = "atlas_patch")
+    private Boolean createAP = true;
+
+    @Config(message = "合并bundle jar中的资源文件", order = 8, advance = true, group = "atlas")
+    private Boolean mergeAwbJavaRes = false;
+
+    @Config(message = "是否依赖冲突终止打包", order = 0, group = "check")
+    private boolean abortIfDependencyConflict = false;
+
+    @Config(message = "是否类冲突终止打包", order = 0, group = "check")
+    private boolean abortIfClassConflict = false;
+
+    @Config(message = "预处理manifest， 如果开启atlas，必须为true", order = 7, advance = true, group = "atlas")
+    private Boolean preProcessManifest = true;
+
+    @Config(message = "[atlas]使用自定义的aapt， 如果开启atlas，必须为true", order = 8, advance = true, group = "atlas")
+    private Boolean useCustomAapt = false;
+
+    @Config(message = "[atlas]aapt输出的R为常量, 建议值设置为false， 可以减少动态部署的patch包大小", order = 9, advance = true, group = "atlas")
+    private Boolean aaptConstantId = true;
+
+    @Config(message = "[atlas]注入核心的bundle信息", advance = true, order = 10, group = "atlas")
+    private Boolean classInject = true;
+
+    @Config(message = "[atlas]老版本的主dex动态部署，已经废弃", advance = true, order = 11, group = "atlas")
+    private Boolean doPreverify = false;
+
+    @Deprecated
+    private Boolean resV4Enabled = true;
+
+    @Config(message = "[atlas]class注入在proguard之前", advance = true, order = 12, group = "atlas")
+    private Boolean injectBeforeProguard = false;
+
+    @Config(message = "需要进行databinding的bundle， 值为 packageName ", order = 13, advance = true, group = "atlas")
+    private Set<String> dataBindingBundles = new HashSet<>();
+
+    @Deprecated
+    private Set<String> insideOfApkBundles = Sets.newHashSet();
+
+    private boolean incremental = false;
 
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;
@@ -326,28 +302,12 @@ public class TBuildConfig {
         this.removeSoFiles = removeSoFiles;
     }
 
-    public Set<String> getExcludeFiles() {
-        return excludeFiles;
-    }
-
-    public void setExcludeFiles(Set<String> excludeFiles) {
-        this.excludeFiles = excludeFiles;
-    }
-
     public File getPackageIdFile() {
         return packageIdFile;
     }
 
     public void setPackageIdFile(File packageIdFile) {
         this.packageIdFile = packageIdFile;
-    }
-
-    public Map<String, String> getPackageIdMap() {
-        return packageIdMap;
-    }
-
-    public void setPackageIdMap(Map<String, String> packageIdMap) {
-        this.packageIdMap = packageIdMap;
     }
 
     public boolean isAutoPackageId() {
@@ -364,14 +324,6 @@ public class TBuildConfig {
 
     public void setPreProcessManifest(Boolean preProcessManifest) {
         this.preProcessManifest = preProcessManifest;
-    }
-
-    public Boolean getUpdateManifestSdkVersion() {
-        return updateManifestSdkVersion;
-    }
-
-    public void setUpdateManifestSdkVersion(Boolean updateManifestSdkVersion) {
-        this.updateManifestSdkVersion = updateManifestSdkVersion;
     }
 
     public Boolean getUseCustomAapt() {
@@ -396,14 +348,6 @@ public class TBuildConfig {
 
     public void setClassInject(Boolean classInject) {
         this.classInject = classInject;
-    }
-
-    public Boolean getMergeJavaRes() {
-        return mergeJavaRes;
-    }
-
-    public void setMergeJavaRes(Boolean mergeJavaRes) {
-        this.mergeJavaRes = mergeJavaRes;
     }
 
     public Boolean getInjectBeforeProguard() {
@@ -490,11 +434,35 @@ public class TBuildConfig {
         this.abortIfClassConflict = abortIfClassConflict;
     }
 
-    public boolean isPackageRemoteAwbInJni() {
-        return packageRemoteAwbInJni;
+    public Set<String> getDataBindingBundles() {
+        return dataBindingBundles;
     }
 
-    public void setPackageRemoteAwbInJni(boolean packageRemoteAwbInJni) {
-        this.packageRemoteAwbInJni = packageRemoteAwbInJni;
+    public void setDataBindingBundles(Set<String> dataBindingBundles) {
+        this.dataBindingBundles = dataBindingBundles;
+    }
+
+    public boolean isAtlasMultiDex() {
+        return atlasMultiDex;
+    }
+
+    public void setAtlasMultiDex(boolean atlasMultiDex) {
+        this.atlasMultiDex = atlasMultiDex;
+    }
+
+    public Boolean isCreateAP() {
+        return createAP;
+    }
+
+    public void setCreateAP(Boolean createAP) {
+        this.createAP = createAP;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
     }
 }
