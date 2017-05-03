@@ -207,41 +207,95 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package proguard;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.api.AwbTransform;
+import com.google.common.collect.Lists;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * 增加Awb的配置到混淆的配置中去
+ * Created by shenghua.nish on 2016-06-12 上午9:23.
+ */
+public class AwbProguardConfiguration {
+
+    public static final String INJARS_OPTION = "-injars";
+
+    public static final String OUTJARS_OPTION = "-outjars";
+
+    public static final String OBUSCATED_JAR = "obfuscated.jar";
+
+    private final Collection<AwbTransform> awbTransforms;
+
+    private final File awbObfuscatedDir;
+
+    private final AppVariantOutputContext appVariantOutputContext;
+
+    public AwbProguardConfiguration(Collection<AwbTransform> awbTransforms,
+                                    File awbObfuscatedDir,
+                                    AppVariantOutputContext appVariantOutputContext) {
+        this.awbTransforms = awbTransforms;
+        this.awbObfuscatedDir = awbObfuscatedDir;
+        this.appVariantOutputContext = appVariantOutputContext;
+    }
+
+    /**
+     * 打印proguard的config文件到指定文件
+     *
+     * @param outConfigFile
+     */
+    public void printConfigFile(File outConfigFile) throws IOException {
+        List<String> configs = Lists.newArrayList();
+        //awb对没个lib单独做proguard，方便predex
+        for (AwbTransform awbTransform : awbTransforms) {
+
+            List<File> inputLibraries = Lists.newArrayList();
+
+            String name = awbTransform.getAwbBundle().getName();
+            File obuscateDir = new File(awbObfuscatedDir, awbTransform.getAwbBundle().getName());
+            obuscateDir.mkdirs();
+
+            //configs.add();
+            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
+                configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
+                File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
+                inputLibraries.add(obsJar);
+                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+            }
+
+            Set<String> classNames = new HashSet<>();
+            for (File inputLibrary : awbTransform.getInputLibraries()) {
+                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
+
+                String fileName = inputLibrary.getName();
+
+                if (classNames.contains(fileName)) {
+                    fileName = "a" + classNames.size() + "_" + fileName;
+                }
+
+                classNames.add(fileName);
+
+                File obsJar = new File(obuscateDir, fileName);
+
+                inputLibraries.add(obsJar);
+                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+            }
+            //            configs.add();
+
+            awbTransform.setInputFiles(inputLibraries);
+            awbTransform.setInputDir(null);
+            awbTransform.getInputLibraries().clear();
+            appVariantOutputContext.getAwbTransformMap().put(name, awbTransform);
+        }
+        FileUtils.writeLines(outConfigFile, configs);
     }
 }
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    //compile 'com.android.databinding:compiler:2.3.0'
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:dex_patch:1.3.0.5"
-
-    testCompile "junit:junit:4.11"
-}
-
-version = '2.3.1.beta10-SNAPSHOT'

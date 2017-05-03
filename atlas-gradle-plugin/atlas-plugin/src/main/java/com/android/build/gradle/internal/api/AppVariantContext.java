@@ -217,6 +217,7 @@ import java.util.Map;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -359,6 +360,20 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
         return new File(scope.getGlobalScope().getGeneratedDir(),
                         "source/atlasproxy/" + getVariantConfiguration().getDirName());
 
+    }
+
+    public AppVariantOutputContext getAppVariantOutputContext(BaseVariantOutputData vod) {
+
+        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)this
+            .getOutputContextMap().get(vod.getFullName());
+
+        if (null == appVariantOutputContext) {
+            appVariantOutputContext =
+                new AppVariantOutputContext(vod.getFullName(), this, vod.getScope(), vod.variantData);
+            this.getOutputContextMap().put(vod.getFullName(), appVariantOutputContext);
+        }
+
+        return appVariantOutputContext;
     }
 
 }

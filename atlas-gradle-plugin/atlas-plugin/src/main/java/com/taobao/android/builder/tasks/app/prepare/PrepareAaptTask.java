@@ -254,12 +254,15 @@ public class PrepareAaptTask extends BaseTask {
         processAndroidResources.setAaptOptions(aaptOptions);
 
         ApContext apContext = appVariantContext.apContext;
-        if (null != apContext && apContext.getBaseApk().exists()) {
+        if (null != apContext && apContext.getBaseApk() != null) {
             File baseApk = appVariantContext.apContext.getBaseApk();
             //需要增加-b参数
             if (!aaptOptions.getAdditionalParameters().contains("-B")) {
                 aaptOptions.getAdditionalParameters().add("-B");
                 aaptOptions.getAdditionalParameters().add(baseApk.getAbsolutePath());
+            }
+            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+                aaptOptions.getAdditionalParameters().add("--merge");
             }
             //AndroidManifest文件不能有修改OR在patch的时候忽略,目前选择在patch的时候忽略
         }

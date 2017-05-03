@@ -209,7 +209,11 @@
 
 package com.android.build.gradle.internal.api;
 
+import com.android.utils.FileUtils;
+
 import java.io.File;
+
+import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 
 /**
  * Created by wuzhong on 2016/10/3.
@@ -217,39 +221,49 @@ import java.io.File;
  * @author wuzhong
  */
 public class ApContext {
-
     public static final String AP_INLINE_APK_FILENAME = "android.apk";
 
-    public static final String AP_INLINE_AWB_FILENAME = "awbs";
+    public static final String AP_INLINE_APK_EXTRACT_DIRECTORY = "android.apk_";
+
+    public static final String AP_INLINE_AWB_EXTRACT_DIRECTORY = "awbs";
 
     public static final String APK_FILE_LIST = "apk-files.txt";
 
     public static final String APK_FILE_MD5 = "apk-files.txt";
 
-    private String apDependency;
+    public static final String PACKAGE_ID_PROPERTIES_FILENAME = "packageIdFile.properties";
 
-    private File apExploredFolder;
+    public static final String ATLAS_FRAMEWORK_PROPERTIES_FILENAME = "atlasFrameworkProperties.json";
+
+    public static final String DEPENDENCIES_FILENAME = "dependencies.txt";
+
+    private String apDependency;
 
     private File apFile;
 
+    private File apExploredFolder;
+
     private File baseApk;
+
+    private File baseApkDirectory;
+
+    private File baseAwbDirectory;
 
     private File baseManifest;
 
+    private File baseAtlasFrameworkPropertiesFile;
+
+    private File basePackageIdFile;
+
+    private File baseDependenciesFile;
+
+    // 解压前
     public String getApDependency() {
         return apDependency;
     }
 
     public void setApDependency(String apDependency) {
         this.apDependency = apDependency;
-    }
-
-    public File getApExploredFolder() {
-        return apExploredFolder;
-    }
-
-    public void setApExploredFolder(File apExploredFolder) {
-        this.apExploredFolder = apExploredFolder;
     }
 
     public File getApFile() {
@@ -260,39 +274,56 @@ public class ApContext {
         this.apFile = apFile;
     }
 
-    public void setBaseApk(File baseApk) {
-        this.baseApk = baseApk;
+    // 解压后
+    public File getApExploredFolder() {
+        return apExploredFolder;
+    }
+
+    public void setApExploredFolder(File apExploredFolder) {
+        this.apExploredFolder = apExploredFolder;
+        this.baseManifest = new File(apExploredFolder, ANDROID_MANIFEST_XML);
+        this.baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
+        this.baseAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXTRACT_DIRECTORY);
+        this.baseApkDirectory = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
+        this.basePackageIdFile = new File(apExploredFolder, PACKAGE_ID_PROPERTIES_FILENAME);
+        this.baseAtlasFrameworkPropertiesFile = new File(apExploredFolder,
+                                                         ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
+        this.baseDependenciesFile = new File(apExploredFolder, DEPENDENCIES_FILENAME);
+    }
+
+    public File getBaseApkDirectory() {
+        return baseApkDirectory;
     }
 
     public File getBaseApk() {
         return baseApk;
     }
 
+    public File getBaseAwbDirectory() {
+        return baseAwbDirectory;
+    }
+
     public File getBaseManifest() {
         return baseManifest;
     }
 
-    public void setBaseManifest(File baseManifest) {
-        this.baseManifest = baseManifest;
+    public File getBaseAtlasFrameworkPropertiesFile() {
+        return baseAtlasFrameworkPropertiesFile;
+    }
+
+    public File getPackageIdFile() {
+        return basePackageIdFile;
+    }
+
+    public File getBaseDependenciesFile() {
+        return baseDependenciesFile;
     }
 
     public File getBaseAwb(String soFileName) {
-        File file = new File(new File(getApExploredFolder(), ApContext.AP_INLINE_AWB_FILENAME),
-                             soFileName);
+        File file = FileUtils.join(baseAwbDirectory, soFileName);
         if (!file.exists()) {
             return null;
         }
         return file;
-    }
-
-    public File getPackageIdFile() {
-        if (null == apExploredFolder) {
-            return null;
-        }
-        File file = new File(apExploredFolder, "packageIdFile.properties");
-        if (file.exists()) {
-            return file;
-        }
-        return null;
     }
 }

@@ -209,6 +209,12 @@
 
 package com.taobao.android.builder.manager;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
+
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
@@ -234,7 +240,8 @@ import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.PrepareAPTask;
-import com.taobao.android.builder.tasks.PrepareBaseApkTask;
+import com.taobao.android.builder.tasks.incremental.CorrectAtlasDependenciesTask;
+import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
 import com.taobao.android.builder.tasks.app.ApBuildTask;
 import com.taobao.android.builder.tasks.app.LogDependenciesTask;
 import com.taobao.android.builder.tasks.app.bundle.JavacAwbsTask;
@@ -263,16 +270,9 @@ import com.taobao.android.builder.tasks.tpatch.TPatchDiffApkBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchDiffResAPBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchTask;
 import com.taobao.android.builder.tasks.transform.AtlasMultiDexTransform;
+import com.taobao.android.builder.tasks.transform.AtlasProguardTransform;
 import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
-import com.taobao.android.builder.tasks.transform.hook.AwbProguradHook;
-
 import org.gradle.api.Project;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * MTL插件编译apk的任务管理
@@ -300,13 +300,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
                     .getAppVariantContext(project, applicationVariant);
 
-                //if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()) {
-                //    throw new GradleException(
-                //        "atlas plgin is not compatible with instant run， plese turn it off in your ide！");
-                //}
-
-                new AwbProguradHook().hookProguardTask(appVariantContext);
-
                 List<MtlTaskContext> mtlTaskContextList = new ArrayList<MtlTaskContext>();
 
                 mtlTaskContextList.add(new MtlTaskContext(appVariantContext.getVariantData().preBuildTask));
@@ -314,6 +307,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(LogDependenciesTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
+
+                if (atlasExtension.getTBuildConfig().isIncremental()) {
+                    mtlTaskContextList.add(new MtlTaskContext(CorrectAtlasDependenciesTask.ConfigAction.class,
+                                                              null));
+                }
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareDependenciesTask.class));
 
@@ -370,8 +368,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(TransformTask.class));
 
-                mtlTaskContextList.add(new MtlTaskContext(PackageAwbsTask.ConfigAction.class, null));
-
                 if (atlasExtension.getTBuildConfig().isIncremental()) {
                     mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTask.ConfigAction.class,
                                                               null));
@@ -395,6 +391,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                .build());
 
                 }
+
+                mtlTaskContextList.add(new MtlTaskContext(PackageAwbsTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext("package"));
 
@@ -431,6 +429,12 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                         TransformManager.replaceTransformTask(appVariantContext, vod, MultiDexTransform.class,
                                                               AtlasMultiDexTransform.class);
                     }
+                }
+
+                List<BaseVariantOutputData> baseVariantOutputDataList = appVariantContext.getVariantOutputData();
+                for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
+                    TransformManager.replaceTransformTask(appVariantContext, vod, ProGuardTransform.class,
+                                                          AtlasProguardTransform.class);
                 }
 
             }

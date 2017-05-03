@@ -282,6 +282,10 @@ public class PreProcessManifestAction implements Action<Task> {
             //        sLogger.warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());
             //    }
             //}
+            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+                allManifest.add(new ManifestHelper.MainManifestProvider(appVariantContext.apContext.getBaseManifest(),
+                                                                        "Base sub-manifest"));
+            }
 
             // 不加这一步,每次的getLibraries 都会从mapping里去重新计算
             mergeManifests.setProviders(allManifest);

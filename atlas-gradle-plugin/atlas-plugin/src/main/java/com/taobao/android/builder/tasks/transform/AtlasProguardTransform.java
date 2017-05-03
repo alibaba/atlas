@@ -207,41 +207,125 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package com.taobao.android.builder.tasks.transform;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Supplier;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import com.android.annotations.NonNull;
+import com.android.build.api.transform.TransformException;
+import com.android.build.api.transform.TransformInvocation;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.transforms.BaseProguardAction;
+import com.android.build.gradle.internal.transforms.ProGuardTransform;
+import com.android.build.gradle.internal.transforms.ProguardConfigurable;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.extension.TBuildConfig;
+import com.taobao.android.builder.tools.ReflectUtils;
+import org.gradle.api.GradleException;
+import proguard.AtlasProguardHelper;
+import proguard.Configuration;
+import proguard.KeepOnlyConfigurationParser;
+import proguard.ParseException;
+
+/**
+ * Created by wuzhong on 2017/4/25.
+ */
+public class AtlasProguardTransform extends ProGuardTransform {
+
+    public AppVariantContext appVariantContext;
+    public ProGuardTransform oldTransform;
+
+    private TBuildConfig buildConfig;
+
+    List<File> defaultProguardFiles = new ArrayList<>();
+
+    public AtlasProguardTransform(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        super(appVariantContext.getScope(), false);
+        this.appVariantContext = appVariantContext;
+        defaultProguardFiles.addAll(
+            appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>()));
+
+        this.buildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
+    }
+
+    public AtlasProguardTransform(VariantScope variantScope, boolean asJar) {
+        super(variantScope, asJar);
+    }
+
+    @Override
+    public void transform(TransformInvocation invocation) throws TransformException {
+
+        try {
+
+            List oldConfigList = (List)ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
+                                                             "configurationFiles");
+
+            List configList = (List)ReflectUtils.getField(ProguardConfigurable.class, this, "configurationFiles");
+
+            configList.addAll(oldConfigList);
+
+            Configuration configuration = (Configuration)ReflectUtils.getField(BaseProguardAction.class,
+                                                                               oldTransform, "configuration");
+            if (null == this.configuration.keep) {
+                this.configuration.keep = new ArrayList();
+            }
+            if (null != configuration.keep) {
+                this.configuration.keep.addAll(configuration.keep);
+            }
+
+        } catch (Exception e) {
+            throw new GradleException(e.getMessage(), e);
+        }
+
+        //apply bundle Inout
+        AtlasProguardHelper.applyBundleInOutConfigration(appVariantContext, this);
+
+        //apply bundle's configuration, 做开关控制
+        if (buildConfig.isBundleProguardConfigEnabled()) {
+            AtlasProguardHelper.applyBundleProguardConfigration(appVariantContext, this);
+        }
+
+        //apply mapping
+        AtlasProguardHelper.applyMapping(appVariantContext, this);
+
+        //set output
+        File proguardOutFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
+        this.printconfiguration(proguardOutFile);
+
+        super.transform(invocation);
+    }
+
+    //TODO include bundles's configuration
+    @Override
+    public void setConfigurationFiles(Supplier<Collection<File>> configFiles) {
+        super.setConfigurationFiles(configFiles);
+    }
+
+    @Override
+    public void applyConfigurationFile(File file) throws IOException, ParseException {
+        //appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>());
+        if (!defaultProguardFiles.contains(file) && buildConfig.isLibraryProguardKeepOnly()) {
+            appVariantContext.getProject().getLogger().info("applyConfigurationFile keep only :" + file);
+            applyLibConfigurationFile(file);
+            return;
+        }
+        appVariantContext.getProject().getLogger().info("applyConfigurationFile :" + file);
+        super.applyConfigurationFile(file);
+    }
+
+    public void applyLibConfigurationFile(@NonNull File file) throws IOException, ParseException {
+        KeepOnlyConfigurationParser parser =
+            new KeepOnlyConfigurationParser(file, System.getProperties());
+        try {
+            parser.parse(configuration);
+        } finally {
+            parser.close();
+        }
     }
 }
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    //compile 'com.android.databinding:compiler:2.3.0'
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:dex_patch:1.3.0.5"
-
-    testCompile "junit:junit:4.11"
-}
-
-version = '2.3.1.beta10-SNAPSHOT'

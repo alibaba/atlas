@@ -216,6 +216,8 @@ public class AtlasConfigField {
 
     public String name;
 
+    public String title;
+
     public String desc;
 
     public String group;

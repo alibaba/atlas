@@ -343,7 +343,6 @@ public class DiffBundleInfoTask extends BaseTask {
         artifactBundleInfos.add(mainBundleInfo);
 
         // 2. 添加各自的bundle
-
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 appVariantOutputContext.getVariantContext().
                         getVariantConfiguration().getFullName());
@@ -467,6 +466,10 @@ public class DiffBundleInfoTask extends BaseTask {
         public void execute(DiffBundleInfoTask diffBundleInfoTask) {
 
             super.execute(diffBundleInfoTask);
+
+            if (!appVariantContext.getAtlasExtension().isAtlasEnabled()){
+                diffBundleInfoTask.setEnabled(false);
+            }
 
             final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope.getVariantOutputData();
             final GradleVariantConfiguration config = scope.getVariantScope()

@@ -217,12 +217,18 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.DocumentException;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by wuzhong on 2016/12/1.
@@ -243,7 +249,7 @@ public class ApkInjectInfoCreator {
                         getVariantConfiguration().getFullName());
 
         List<BasicBundleInfo> basicBundleInfos = new ArrayList<BasicBundleInfo>();
-
+        Map<String, BasicBundleInfo> basicBundleInfoMap = new HashMap<>();
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
             BundleInfo muppBundleInfo = awbBundle.bundleInfo;
@@ -274,6 +280,7 @@ public class ApkInjectInfoCreator {
             }
 
             basicBundleInfos.add(basicBundleInfo);
+            basicBundleInfoMap.put(muppBundleInfo.getPkgName(), basicBundleInfo);
         }
 
         injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
@@ -294,7 +301,57 @@ public class ApkInjectInfoCreator {
         injectParam.preLaunch = appVariantContext.getAtlasExtension()
                 .getTBuildConfig()
                 .getPreLaunch();
-
+        mergeBundleInfos(appVariantContext, injectParam, basicBundleInfos, basicBundleInfoMap);
         return injectParam;
+
+    }
+
+    private void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam, List<BasicBundleInfo> basicBundleInfos, Map<String, BasicBundleInfo> basicBundleInfoMap) throws IOException {
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+            File atlasFrameworkPropertiesFile = new File(appVariantContext.apContext.getApExploredFolder(),
+                                                         "atlasFrameworkProperties.json");
+            String atlasFrameworkPropertiesStr = FileUtils.readFileToString(
+                    atlasFrameworkPropertiesFile);
+            FrameworkProperties atlasFrameworkProperties = JSON.parseObject(
+                    atlasFrameworkPropertiesStr,
+                    FrameworkProperties.class);
+            List<BasicBundleInfo> baseBundleInfos = atlasFrameworkProperties.bundleInfo;
+            for (BasicBundleInfo baseBundleInfo : baseBundleInfos) {
+                BasicBundleInfo basicBundleInfo = basicBundleInfoMap.get(baseBundleInfo.getPkgName());
+                if (basicBundleInfo == null) {
+                    basicBundleInfos.add(baseBundleInfo);
+                    continue;
+                }
+                if (!baseBundleInfo.getActivities().isEmpty()) {
+                    basicBundleInfo.setActivities(concatList(baseBundleInfo.getActivities(),
+                                                             basicBundleInfo.getActivities()));
+                }
+                if (!baseBundleInfo.getContentProviders().isEmpty()) {
+                    basicBundleInfo.setContentProviders(concatList(baseBundleInfo.getContentProviders(),
+                                                                   basicBundleInfo.getContentProviders()));
+                }
+                if (!baseBundleInfo.getDependency().isEmpty()) {
+                    basicBundleInfo.setDependency(concatList(baseBundleInfo.getDependency(),
+                                                             basicBundleInfo.getDependency()));
+                }
+                if (!baseBundleInfo.getReceivers().isEmpty()) {
+                    basicBundleInfo.setReceivers(concatList(baseBundleInfo.getReceivers(),
+                                                            basicBundleInfo.getReceivers()));
+                }
+                if (!baseBundleInfo.getServices().isEmpty()) {
+                    basicBundleInfo.setServices(concatList(baseBundleInfo.getServices(),
+                                                           basicBundleInfo.getServices()));
+                }
+            }
+            injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
+            injectParam.autoStartBundles = atlasFrameworkProperties.autoStartBundles;
+            injectParam.preLaunch = atlasFrameworkProperties.preLaunch;
+        }
+    }
+
+    private static List<String> concatList(List<String> listOne, List<String> listTwo) {
+        return Stream.concat(listOne.stream(), listTwo.stream())
+                .distinct()
+                .collect(Collectors.toList());
     }
 }

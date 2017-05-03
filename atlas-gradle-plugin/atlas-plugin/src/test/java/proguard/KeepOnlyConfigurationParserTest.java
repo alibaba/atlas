@@ -207,41 +207,43 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package proguard;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import java.io.File;
+import java.io.IOException;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import com.alibaba.fastjson.JSON;
+
+import org.junit.Test;
+
+/**
+ * Created by wuzhong on 2017/4/26.
+ */
+public class KeepOnlyConfigurationParserTest {
+
+    @Test
+    public void test() throws IOException, ParseException {
+
+        File
+            file = new File(
+            "src/test/resources/proguard.txt");
+
+        Configuration configuration = new Configuration();
+
+        // Parse the options specified in the command line arguments.
+        KeepOnlyConfigurationParser parser = new KeepOnlyConfigurationParser(file,
+                                                                             System.getProperties());
+        try {
+            parser.parse(configuration);
+        } finally {
+            parser.close();
+        }
+
+        System.out.println(JSON.toJSONString(configuration,true));
+
+        //// Execute ProGuard with these options.
+        //new ProGuard(configuration).execute();
+
     }
+
 }
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    //compile 'com.android.databinding:compiler:2.3.0'
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:dex_patch:1.3.0.5"
-
-    testCompile "junit:junit:4.11"
-}
-
-version = '2.3.1.beta10-SNAPSHOT'

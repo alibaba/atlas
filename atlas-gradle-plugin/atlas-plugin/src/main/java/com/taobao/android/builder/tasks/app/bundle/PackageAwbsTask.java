@@ -219,6 +219,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.annotation.Nullable;
 
@@ -230,6 +232,11 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.dex.Dex;
+import com.android.dex.DexException;
+import com.android.dx.command.dexer.DxContext;
+import com.android.dx.merge.CollisionPolicy;
+import com.android.dx.merge.DexMerger;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
 import com.android.ide.common.blame.parser.DexParser;
@@ -325,6 +332,20 @@ public class PackageAwbsTask extends BaseTask {
                                                                                               androidConfig
                                                                                                   .getDexOptions(),
                                                                                               outputHandler);
+                        File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
+                                awbBundle.getAwbSoName());
+                        if (baseAwb != null) {
+                            ZipFile files = new ZipFile(baseAwb);
+                            ZipEntry entry = files.getEntry("classes.dex");
+                            if (entry == null) {
+                                throw new DexException("Expected classes.dex in " + baseAwb);
+                            }
+                            DxContext context = new DxContext();
+                            File file = new File(dexOutputFile, "classes.dex");
+                            Dex merged = new DexMerger(new Dex[]{new Dex(file), new Dex(files.getInputStream(
+                                    entry))}, CollisionPolicy.KEEP_FIRST, context).merge();
+                            merged.writeTo(file);
+                        }
                         //create package
 
                         long endDex = System.currentTimeMillis();
@@ -377,8 +398,8 @@ public class PackageAwbsTask extends BaseTask {
                         monitors.put(awbBundle.getName(),
                                      new Long[] {endDex - start, endPackage - endDex});
                     } catch (Throwable e) {
-                        e.printStackTrace();
-                        throw new GradleException("package " + awbBundle.getName() + " failed");
+                        //e.printStackTrace();
+                        throw new GradleException("package " + awbBundle.getName() + " failed",e);
                     }
                 }
             });

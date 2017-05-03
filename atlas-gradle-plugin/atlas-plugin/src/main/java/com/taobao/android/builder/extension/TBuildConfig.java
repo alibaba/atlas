@@ -209,13 +209,6 @@
 
 package com.taobao.android.builder.extension;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
-
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.Optional;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -233,27 +226,27 @@ public class TBuildConfig {
     @Config(message = "远程bundle清单, artifactId", advance = false, order = 1, group = "atlas")
     private Set<String> outOfApkBundles = Sets.newHashSet();
 
-    @Config(message = "自启动的bundle列表， 值是 packageName", order = 1, advance = false, group = "atlas")
+    @Config(title = "自启动的bundle列表", message = "值是 packageName", order = 1, advance = false, group = "atlas")
     private List<String> autoStartBundles = new ArrayList<String>();
 
-    @Config(
+    @Config(title = "提前启动列表",
         message = "实现PreLaunch的类，多个类用 , 号分开", order = 1, advance = false, group = "atlas")
     private String preLaunch = "";
 
-    @Config(
+    @Config(title = "atlas 分包",
         message = "atlas的主dex分包机制，第一个dex只放atlas对应的启动代码", order = 3, advance = false, group = "atlas")
     private boolean atlasMultiDex = false;
 
     @Config(message = "需要删除的so文件列表", order = 4, advance = true, group = "atlas")
     private Set<String> removeSoFiles = Sets.newHashSet();
 
-    @Config(message = "[atlas]bundle的packageId定义文件，不定义会自动分配", group = "atlas")
+    @Config(title = "bundle的packageId定义文件", message = "bundle的packageId定义文件，不定义会自动分配", group = "atlas")
     private File packageIdFile = new File("");
 
-    @Config(message = "[atlas]自动生成bundle的packageId", order = 6, advance = false, group = "atlas")
+    @Config(message = "自动生成bundle的packageId", order = 6, advance = false, group = "atlas")
     private boolean autoPackageId = true;
 
-    @Config(message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0, group = "atlas_patch")
+    @Config(title = "构建基线包", message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0, group = "atlas_patch")
     private Boolean createAP = true;
 
     @Config(message = "合并bundle jar中的资源文件", order = 8, advance = true, group = "atlas")
@@ -265,29 +258,41 @@ public class TBuildConfig {
     @Config(message = "是否类冲突终止打包", order = 0, group = "check")
     private boolean abortIfClassConflict = false;
 
-    @Config(message = "预处理manifest， 如果开启atlas，必须为true", order = 7, advance = true, group = "atlas")
+    @Config(title = "预处理manifest", message = "如果开启atlas，必须为true", order = 7, advance = true, group = "atlas")
     private Boolean preProcessManifest = true;
 
-    @Config(message = "[atlas]使用自定义的aapt， 如果开启atlas，必须为true", order = 8, advance = true, group = "atlas")
+    @Config(title = "使用自定义的aapt", message = "如果开启atlas，必须为true", order = 8, advance = true, group = "atlas")
     private Boolean useCustomAapt = false;
 
-    @Config(message = "[atlas]aapt输出的R为常量, 建议值设置为false， 可以减少动态部署的patch包大小", order = 9, advance = true, group = "atlas")
+    @Config(title = "aapt输出的R为常量", message = "建议值设置为false， 可以减少动态部署的patch包大小", order = 9, advance = true,
+        group = "atlas")
     private Boolean aaptConstantId = true;
 
-    @Config(message = "[atlas]注入核心的bundle信息", advance = true, order = 10, group = "atlas")
+    @Config(message = "注入核心的bundle信息", advance = true, order = 10, group = "atlas")
     private Boolean classInject = true;
 
-    @Config(message = "[atlas]老版本的主dex动态部署，已经废弃", advance = true, order = 11, group = "atlas")
+    @Config(title = "主dex插桩", message = "老版本的主dex动态部署，已经废弃", advance = true, order = 11, group = "atlas")
     private Boolean doPreverify = false;
 
     @Deprecated
     private Boolean resV4Enabled = true;
 
-    @Config(message = "[atlas]class注入在proguard之前", advance = true, order = 12, group = "atlas")
+    @Config(message = "class注入在proguard之前", advance = true, order = 12, group = "atlas")
     private Boolean injectBeforeProguard = false;
 
-    @Config(message = "需要进行databinding的bundle， 值为 packageName ", order = 13, advance = true, group = "atlas")
+    @Config(title = "使用databinding的bundle列表", message = "需要进行databinding的bundle， 值为 packageName ", order = 13,
+        advance = true, group = "atlas")
     private Set<String> dataBindingBundles = new HashSet<>();
+
+    @Config(message = "proguard是否需要读取bundle中的混淆配置", order = 14, advance = true, group = "atlas")
+    private boolean bundleProguardConfigEnabled = true;
+
+    @Config(message = "依赖中的混淆是否只读取keep规则", order = 15, advance = true, group = "atlas")
+    private boolean libraryProguardKeepOnly = true;
+
+    @Config(title = "proguard配置读取依赖黑名单", message = "group:name,group2:name2", order = 16, advance = true,
+        group = "atlas")
+    private Set<String> bundleProguardConfigBlackList = new HashSet<>();
 
     @Deprecated
     private Set<String> insideOfApkBundles = Sets.newHashSet();
@@ -464,5 +469,29 @@ public class TBuildConfig {
 
     public void setIncremental(boolean incremental) {
         this.incremental = incremental;
+    }
+
+    public boolean isBundleProguardConfigEnabled() {
+        return bundleProguardConfigEnabled;
+    }
+
+    public void setBundleProguardConfigEnabled(boolean bundleProguardConfigEnabled) {
+        this.bundleProguardConfigEnabled = bundleProguardConfigEnabled;
+    }
+
+    public boolean isLibraryProguardKeepOnly() {
+        return libraryProguardKeepOnly;
+    }
+
+    public void setLibraryProguardKeepOnly(boolean libraryProguardKeepOnly) {
+        this.libraryProguardKeepOnly = libraryProguardKeepOnly;
+    }
+
+    public Set<String> getBundleProguardConfigBlackList() {
+        return bundleProguardConfigBlackList;
+    }
+
+    public void setBundleProguardConfigBlackList(Set<String> bundleProguardConfigBlackList) {
+        this.bundleProguardConfigBlackList = bundleProguardConfigBlackList;
     }
 }

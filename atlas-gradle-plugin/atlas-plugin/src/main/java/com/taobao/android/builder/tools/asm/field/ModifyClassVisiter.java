@@ -207,135 +207,38 @@
  *
  */
 
-package com.taobao.android.builder.tasks.transform.hook;
+package com.taobao.android.builder.tools.asm.field;
 
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.pipeline.TransformTask;
-import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.transforms.ProGuardTransform;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.core.VariantConfiguration;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.tasks.app.bundle.AwbProguardConfiguration;
-import org.gradle.api.Action;
-import org.gradle.api.GradleException;
-import org.gradle.api.Task;
-import org.gradle.api.tasks.StopExecutionException;
-import org.gradle.api.tasks.TaskCollection;
+import java.util.HashSet;
+import java.util.Set;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.function.Supplier;
-
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
 
 /**
- * Created by wuzhong on 2016/12/9.
+ * Created by wuzhong on 2017/4/27.
  */
-public class AwbProguradHook {
+public class ModifyClassVisiter extends ClassVisitor {
 
-    /**
-     * hook混淆的任务,加入awb的混淆配置
-     *
-     * @param appVariantContext
-     */
-    public void hookProguardTask(final AppVariantContext appVariantContext) {
-        final VariantScope variantScope = appVariantContext.getScope();
-        List<TransformTask> proguaradTransformTasks = getTransformTaskByTransformType(appVariantContext, ProGuardTransform.class);
-        for (TransformTask proguaradTransformTask : proguaradTransformTasks) {
-            final ProGuardTransform proGuardTransform = (ProGuardTransform) proguaradTransformTask.getTransform();
-            if (null != proGuardTransform) {
+    private Set<String> removeFields = new HashSet<>();
 
-                proguaradTransformTask.doFirst(new Action<Task>() {
-                    @Override
-                    public void execute(Task task) {
-                        GlobalScope globalScope = variantScope.getGlobalScope();
-                        File proguardOut = new File(Joiner.on(File.separatorChar).join(String.valueOf(globalScope.getBuildDir()), FD_OUTPUTS, "mapping", variantScope.getVariantConfiguration().getDirName()));
-                        //为了方便排查,先把configuration打印到目录
-                        proGuardTransform.printconfiguration(new File(proguardOut, "tmp_config.cfg"));
-                        final File outConfigFile = new File(proguardOut, "awb_config.cfg");
-
-                        //增加awb的配置
-                        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantScope.getVariantConfiguration().getFullName());
-                        if (null == dependencyTree) {
-                            throw new StopExecutionException("DependencyTree cannot be null!");
-                        }
-
-                        if (dependencyTree.getAwbBundles().size() > 0) {
-
-                            BaseVariantOutputData vod = appVariantContext.getVariantData().getOutputs().get(0);
-                            AppVariantOutputContext appVariantOutputContext = getAppVariantOutputContext(appVariantContext, vod);
-                            File awbObfuscatedDir = new File(globalScope.getIntermediatesDir(), "/classes-proguard/" + variantScope.getVariantConfiguration().getDirName());
-                            AwbProguardConfiguration awbProguardConfiguration = new AwbProguardConfiguration(appVariantOutputContext.getAwbTransformMap().values(), awbObfuscatedDir, appVariantOutputContext);
-                            try {
-                                awbProguardConfiguration.printConfigFile(outConfigFile);
-                            } catch (IOException e) {
-                                throw new GradleException("", e);
-                            }
-                            proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
-                                @Override
-                                public Collection<File> get() {
-                                    Set<File> proguardFiles = new HashSet<File>();
-                                    ((HashSet<File>) proguardFiles).add(outConfigFile);
-                                    return proguardFiles;
-                                }
-                            });
-                        }
-
-                        File mappingFile = null;
-                        if (null != appVariantContext.apContext.getApExploredFolder() && appVariantContext.apContext.getApExploredFolder().exists()) {
-                            mappingFile = new File(appVariantContext.apContext.getApExploredFolder(), "mapping.txt");
-                        } else {
-                            mappingFile = new File(appVariantContext.getScope().getGlobalScope().getProject().getProjectDir(), "mapping.txt");
-                        }
-
-                        if (null != mappingFile && mappingFile.exists()) {
-                            proGuardTransform.applyTestedMapping(mappingFile);
-                        }
-                    }
-
-                });
-            }
-
-        }
-
-
+    public ModifyClassVisiter(int api) {
+        super(api);
     }
 
-    private AppVariantOutputContext getAppVariantOutputContext(AppVariantContext appVariantContext, BaseVariantOutputData vod) {
-
-        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) appVariantContext.getOutputContextMap().get(vod.getFullName());
-
-        if (null == appVariantOutputContext) {
-            appVariantOutputContext =
-                    new AppVariantOutputContext(vod.getFullName(), appVariantContext, vod.getScope(), vod.variantData);
-            appVariantContext.getOutputContextMap().put(vod.getFullName(), appVariantOutputContext);
-        }
-
-        return appVariantOutputContext;
+    public ModifyClassVisiter(int api, ClassVisitor cv) {
+        super(api, cv);
     }
 
-    private List<TransformTask> getTransformTaskByTransformType(AppVariantContext appVariantContext, Class<?> transformClass) {
-        List<TransformTask> transformTasksList = Lists.newArrayList();
-        VariantConfiguration config = appVariantContext.getVariantConfiguration();
-        TaskCollection<TransformTask> transformTasks = appVariantContext.getProject().getTasks().withType(TransformTask.class);
-        SortedMap<String, TransformTask> transformTaskSortedMap = transformTasks.getAsMap();
-        String variantName = config.getFullName();
-        for (String taskName : transformTaskSortedMap.keySet()) {
-            TransformTask transformTask = transformTaskSortedMap.get(taskName);
-            if (variantName.equals(transformTask.getVariantName())) {
-                if (transformTask.getTransform().getClass().equals(transformClass)) {
-                    transformTasksList.add(transformTask);
-                }
-            }
+    @Override
+    public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+        if (removeFields.contains(name)) {
+            return null;
         }
-        return transformTasksList;
+        return super.visitField(access, name, desc, signature, value);
     }
 
+    public void addRemoveField(String fieldName) {
+        this.removeFields.add(fieldName);
+    }
 }

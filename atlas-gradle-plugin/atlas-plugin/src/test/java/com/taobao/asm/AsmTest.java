@@ -207,41 +207,98 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package com.taobao.asm;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import java.io.File;
+import java.io.FileOutputStream;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import com.taobao.android.builder.tools.asm.field.ModifyClassVisiter;
+import com.taobao.asm.AsmExample.MethodChangeClassAdapter;
+import org.junit.Test;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+
+/**
+ * Created by wuzhong on 2017/4/27.
+ */
+public class AsmTest implements Opcodes{
+
+    @Test
+    public void test() throws Throwable {
+
+        ClassReader cr = new ClassReader(Config.class.getName());
+        ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+        ClassVisitor cv = new MethodChangeClassAdapter(cw);
+        cr.accept(cv, Opcodes.ASM5);
+
+        //新增加一个方法
+        MethodVisitor mw = cw.visitMethod(ACC_PUBLIC + ACC_STATIC,
+                                          "add",
+                                          "([Ljava/lang/String;)V",
+                                          null,
+                                          null);
+
+        // pushes the 'out' field (of type PrintStream) of the System class
+        mw.visitFieldInsn(GETSTATIC,
+                          "java/lang/System",
+                          "out",
+                          "Ljava/io/PrintStream;");
+        // pushes the "Hello World!" String constant
+        mw.visitLdcInsn("this is add method print!");
+        // invokes the 'println' method (defined in the PrintStream class)
+        mw.visitMethodInsn(INVOKEVIRTUAL,
+                           "java/io/PrintStream",
+                           "println",
+                           "(Ljava/lang/String;)V");
+        mw.visitInsn(RETURN);
+        // this code uses a maximum of two stack elements and two local
+        // variables
+        mw.visitMaxs(0, 0);
+        mw.visitEnd();
+
+
+        //Type.getDescriptor(AdviceFlowOuterHolder.class)
+        FieldVisitor fv = cw.visitField(ACC_PUBLIC + ACC_STATIC + ACC_FINAL,
+                                         "age",
+                                        Type.INT_TYPE.toString(),
+                                         null,
+                                         1);
+        fv.visitEnd();
+
+        FieldVisitor fv2 = cw.visitField(ACC_PUBLIC + ACC_STATIC + ACC_FINAL,
+                                        "name2",
+                                        Type.getDescriptor(String.class),
+                                        null,
+                                        "name2");
+        fv2.visitEnd();
+
+
+        ModifyClassVisiter cv2 = new ModifyClassVisiter(Opcodes.ASM5);
+        cv2.addRemoveField("name");
+        cr.accept(cv2, Opcodes.ASM5);
+
+        FieldVisitor fv3 = cw.visitField(ACC_PUBLIC + ACC_STATIC + ACC_FINAL,
+                                         "name",
+                                         Type.getDescriptor(String.class),
+                                         null,
+                                         "name");
+        fv3.visitEnd();
+
+
+
+
+        byte[] code = cw.toByteArray();
+        File file = new File("Config.class");
+        System.out.println(file.getAbsolutePath());
+        FileOutputStream fos = new FileOutputStream(file);
+        fos.write(code);
+        fos.close();
+
     }
+
 }
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    //compile 'com.android.databinding:compiler:2.3.0'
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:dex_patch:1.3.0.5"
-
-    testCompile "junit:junit:4.11"
-}
-
-version = '2.3.1.beta10-SNAPSHOT'

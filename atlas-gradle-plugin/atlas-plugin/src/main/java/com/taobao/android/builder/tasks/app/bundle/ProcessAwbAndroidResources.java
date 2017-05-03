@@ -439,10 +439,11 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             options.add("-I");
             options.add(getShareResourceFile().getAbsolutePath());
         }
-        //if (null != getBaselineFile()) {
-        //    options.add("-B");
-        //    options.add(getBaselineFile().getAbsolutePath());
-        //}
+        if (null != getBaselineFile()) {
+           options.add("-B");
+           options.add(getBaselineFile().getAbsolutePath());
+            options.add("--merge");
+        }
 
         aaptOptions.additionalParameters(options.toArray(new String[0]));
     }
@@ -685,9 +686,12 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             ConventionMappingHelper.map(processResources, "baselineFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
-                            awbBundle.getAwbSoName());
-                    return baseAwb;
+                    if (appVariantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().isIncremental()) {
+                        File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
+                                awbBundle.getAwbSoName());
+                        return baseAwb;
+                    }
+                    return null;
                 }
             });
 

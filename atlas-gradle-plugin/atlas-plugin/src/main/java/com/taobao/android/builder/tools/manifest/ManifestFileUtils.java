@@ -572,11 +572,33 @@ public class ManifestFileUtils {
      * @param document
      * @param manifestOptions
      */
-    private static void updatePermission(Document document, ManifestOptions manifestOptions) {
+    private static void updatePermission(Document document, ManifestOptions manifestOptions) throws IOException {
         if (null == manifestOptions) {
             return;
         }
+
         Element root = document.getRootElement();// 得到根节点
+
+        if (null != manifestOptions.getPermissionListFile() && manifestOptions.getPermissionListFile().exists()){
+            List<String> whiteList = FileUtils.readLines(manifestOptions.getPermissionListFile());
+            List<Node> nodes = new ArrayList<>();
+            nodes.addAll(root.selectNodes("//permission"));
+            nodes.addAll(root.selectNodes("//uses-permission"));
+
+            for (Node node : nodes) {
+                Element element = (Element)node;
+                String name = element.attributeValue("name");
+
+                if (whiteList.contains(name)){
+                    logger.warn("[permission] remove " + name);
+                    element.getParent().remove(element);
+                }
+            }
+
+            return;
+        }
+
+
         // 更新自定义权限
         if (manifestOptions.isRemoveCustomPermission()) {
             List<? extends Node> nodes = root.selectNodes("//permission");

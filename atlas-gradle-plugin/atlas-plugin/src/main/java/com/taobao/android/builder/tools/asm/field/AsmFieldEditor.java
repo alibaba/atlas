@@ -207,95 +207,59 @@
  *
  */
 
-package com.taobao.android.builder.tasks.app.bundle;
+package com.taobao.android.builder.tools.asm.field;
 
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.api.AwbTransform;
-import com.google.common.collect.Lists;
-
-import org.apache.commons.io.FileUtils;
-
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 /**
- * 增加Awb的配置到混淆的配置中去
- * Created by shenghua.nish on 2016-06-12 上午9:23.
+ * Created by wuzhong on 2017/4/27.
  */
-public class AwbProguardConfiguration {
+public class AsmFieldEditor {
 
-    public static final String INJARS_OPTION = "-injars";
+    public static byte[] edit(FileInputStream fileInputStream, List<Field> fields) throws IOException {
 
-    public static final String OUTJARS_OPTION = "-outjars";
+        ClassReader cr = new ClassReader(fileInputStream);
+        return rewriteBytes(fields, cr);
 
-    public static final String OBUSCATED_JAR = "obfuscated.jar";
-
-    private final Collection<AwbTransform> awbTransforms;
-
-    private final File awbObfuscatedDir;
-
-    private final AppVariantOutputContext appVariantOutputContext;
-
-    public AwbProguardConfiguration(Collection<AwbTransform> awbTransforms,
-                                    File awbObfuscatedDir,
-                                    AppVariantOutputContext appVariantOutputContext) {
-        this.awbTransforms = awbTransforms;
-        this.awbObfuscatedDir = awbObfuscatedDir;
-        this.appVariantOutputContext = appVariantOutputContext;
     }
 
-    /**
-     * 打印proguard的config文件到指定文件
-     *
-     * @param outConfigFile
-     */
-    public void printConfigFile(File outConfigFile) throws IOException {
-        List<String> configs = Lists.newArrayList();
-        //awb对没个lib单独做proguard，方便predex
-        for (AwbTransform awbTransform : awbTransforms) {
 
-            List<File> inputLibraries = Lists.newArrayList();
+    public static byte[] edit(String className, List<Field> fields) throws IOException {
 
-            String name = awbTransform.getAwbBundle().getName();
-            File obuscateDir = new File(awbObfuscatedDir, awbTransform.getAwbBundle().getName());
-            obuscateDir.mkdirs();
+        ClassReader cr = new ClassReader(className);
+        return rewriteBytes(fields, cr);
 
-            //            configs.add();
-            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
-                File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
-                inputLibraries.add(obsJar);
-                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-            }
+    }
 
-            Set<String> classNames = new HashSet<>();
-            for (File inputLibrary : awbTransform.getInputLibraries()) {
-                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
+    private static byte[] rewriteBytes(List<Field> fields, ClassReader cr) {
+        ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+        ModifyClassVisiter modifyClassVisiter = new ModifyClassVisiter(Opcodes.ASM5, cw);
 
-                String fileName = inputLibrary.getName();
-
-                if (classNames.contains(fileName)) {
-                    fileName = "a" + classNames.size() + "_" + fileName;
-                }
-
-                classNames.add(fileName);
-
-                File obsJar = new File(obuscateDir, fileName);
-
-                inputLibraries.add(obsJar);
-                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-            }
-            //            configs.add();
-
-            awbTransform.setInputFiles(inputLibraries);
-            awbTransform.setInputDir(null);
-            awbTransform.getInputLibraries().clear();
-            appVariantOutputContext.getAwbTransformMap().put(name, awbTransform);
+        for (Field field : fields) {
+            modifyClassVisiter.addRemoveField(field.name);
         }
-        FileUtils.writeLines(outConfigFile, configs);
+        cr.accept(modifyClassVisiter, Opcodes.ASM5);
+
+        for (Field field : fields) {
+
+            FieldVisitor fv = cw.visitField(field.flag,
+                                            field.name,
+                                            Type.getDescriptor(field.value.getClass()),
+                                            null,
+                                            field.value);
+            fv.visitEnd();
+
+        }
+
+        return cw.toByteArray();
     }
+
 }

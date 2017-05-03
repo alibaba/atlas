@@ -810,14 +810,18 @@ public class AtlasBuilder extends AndroidBuilder {
             }
             long endDexTime = System.currentTimeMillis();
 
-            DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
-                                                CollisionPolicy.KEEP_FIRST,
-                                                new DxContext());
-            Dex dex = dexMerger.merge();
+            if (dexs.size() > 0) {
+                DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
+                                                    CollisionPolicy.KEEP_FIRST,
+                                                    new DxContext());
+                Dex dex = dexMerger.merge();
 
-            File dexFile = new File(outDexFolder, "classes.dex");
+                File dexFile = new File(outDexFolder, "classes.dex");
 
-            dex.writeTo(dexFile);
+                dex.writeTo(dexFile);
+            }else {
+                sLogger.warn("no dex found to  " + outDexFolder.getAbsolutePath());
+            }
 
             FileUtils.deleteDirectory(tmpDir);
 
