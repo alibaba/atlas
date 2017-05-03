@@ -332,20 +332,20 @@ public class PackageAwbsTask extends BaseTask {
                                                                                               androidConfig
                                                                                                   .getDexOptions(),
                                                                                               outputHandler);
-                        File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
-                                awbBundle.getAwbSoName());
-                        if (baseAwb != null) {
-                            ZipFile files = new ZipFile(baseAwb);
-                            ZipEntry entry = files.getEntry("classes.dex");
-                            if (entry == null) {
-                                throw new DexException("Expected classes.dex in " + baseAwb);
-                            }
-                            DxContext context = new DxContext();
-                            File file = new File(dexOutputFile, "classes.dex");
-                            Dex merged = new DexMerger(new Dex[]{new Dex(file), new Dex(files.getInputStream(
-                                    entry))}, CollisionPolicy.KEEP_FIRST, context).merge();
-                            merged.writeTo(file);
-                        }
+                        // File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
+                        //         awbBundle.getAwbSoName());
+                        // if (baseAwb != null) {
+                        //     ZipFile files = new ZipFile(baseAwb);
+                        //     ZipEntry entry = files.getEntry("classes.dex");
+                        //     if (entry == null) {
+                        //         throw new DexException("Expected classes.dex in " + baseAwb);
+                        //     }
+                        //     DxContext context = new DxContext();
+                        //     File file = new File(dexOutputFile, "classes.dex");
+                        //     Dex merged = new DexMerger(new Dex[]{new Dex(file), new Dex(files.getInputStream(
+                        //             entry))}, CollisionPolicy.KEEP_FIRST, context).merge();
+                        //     merged.writeTo(file);
+                        // }
                         //create package
 
                         long endDex = System.currentTimeMillis();
