@@ -2,6 +2,10 @@
 
 ## changelog
 
+### 2.3.1.rc11
+
+1. 支持bundle配置proguard规则，仅支持keep和dontwarn
+
 ### 2.3.0.alpha15
 
 1. 支持手淘灰度版本
