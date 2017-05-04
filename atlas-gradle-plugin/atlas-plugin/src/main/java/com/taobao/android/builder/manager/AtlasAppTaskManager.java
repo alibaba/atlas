@@ -209,12 +209,6 @@
 
 package com.taobao.android.builder.manager;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
-
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
@@ -240,8 +234,6 @@ import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.PrepareAPTask;
-import com.taobao.android.builder.tasks.incremental.CorrectAtlasDependenciesTask;
-import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
 import com.taobao.android.builder.tasks.app.ApBuildTask;
 import com.taobao.android.builder.tasks.app.LogDependenciesTask;
 import com.taobao.android.builder.tasks.app.bundle.JavacAwbsTask;
@@ -260,6 +252,8 @@ import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
+import com.taobao.android.builder.tasks.incremental.CorrectAtlasDependenciesTask;
+import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tasks.manager.transform.MtlTransformContext;
@@ -272,7 +266,14 @@ import com.taobao.android.builder.tasks.tpatch.TPatchTask;
 import com.taobao.android.builder.tasks.transform.AtlasMultiDexTransform;
 import com.taobao.android.builder.tasks.transform.AtlasProguardTransform;
 import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
+
 import org.gradle.api.Project;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * MTL插件编译apk的任务管理
@@ -368,7 +369,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(TransformTask.class));
 
-                if (atlasExtension.getTBuildConfig().isIncremental()) {
+                if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() &&
+                    (appVariantContext.getBuildType().getPatchConfig() == null ||
+                     !appVariantContext.getBuildType().getPatchConfig().isCreateTPatch())) {
                     mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTask.ConfigAction.class,
                                                               null));
                     final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
