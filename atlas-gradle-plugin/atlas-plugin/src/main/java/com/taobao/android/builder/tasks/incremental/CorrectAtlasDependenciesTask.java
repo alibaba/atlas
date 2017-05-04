@@ -172,7 +172,7 @@ public class CorrectAtlasDependenciesTask extends BaseTask {
                     correctDependencies.getVariantName());
 
             ConventionMappingHelper.map(correctDependencies, "baseDependenciesFile", () -> {
-                return new File(variantContext.apContext.getApExploredFolder(), "dependencies.txt");
+                return variantContext.apContext.getBaseDependenciesFile();
             });
         }
     }
