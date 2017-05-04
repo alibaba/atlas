@@ -303,13 +303,15 @@ public class ApkInjectInfoCreator {
                 .getPreLaunch();
         mergeBundleInfos(appVariantContext, injectParam, basicBundleInfos, basicBundleInfoMap);
         return injectParam;
-
     }
 
     private void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam, List<BasicBundleInfo> basicBundleInfos, Map<String, BasicBundleInfo> basicBundleInfoMap) throws IOException {
         if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
             File atlasFrameworkPropertiesFile = new File(appVariantContext.apContext.getApExploredFolder(),
                                                          "atlasFrameworkProperties.json");
+            if (!atlasFrameworkPropertiesFile.exists()) {
+                return;
+            }
             String atlasFrameworkPropertiesStr = FileUtils.readFileToString(
                     atlasFrameworkPropertiesFile);
             FrameworkProperties atlasFrameworkProperties = JSON.parseObject(
