@@ -209,15 +209,6 @@
 
 package com.android.build.gradle.internal.api;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
 import com.android.build.api.transform.Format;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
@@ -234,8 +225,18 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
 import com.taobao.android.object.ArtifactBundleInfo;
+
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.api.tasks.compile.JavaCompile;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
@@ -438,7 +439,11 @@ public class AppVariantOutputContext {
                       ".apk");
 
         if (checkExist && !file.exists()) {
-            return outputScope.getFinalPackage();
+            file = outputScope.getFinalPackage();
+            if (checkExist && !file.exists()) {
+                file = outputScope.getVariantOutputData().getOutputFile();
+            }
+            return file;
             //return outputScope.getPackageApk();
         }
 
