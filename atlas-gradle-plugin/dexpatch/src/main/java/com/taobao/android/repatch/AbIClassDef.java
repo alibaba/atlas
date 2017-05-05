@@ -453,6 +453,10 @@ public abstract class AbIClassDef implements IClassDef {
         basicType.put("[C","char[]");
         basicType.put("[S","short[]");
         basicType.put("[B","byte[]");
+        basicType.put("[Z","boolean[]");
+        basicType.put("[V","void[]");
+
+
 
     }
 
@@ -476,9 +480,7 @@ public abstract class AbIClassDef implements IClassDef {
         }
         String reSuperClass = reSuperClass(superClass);
         for (Annotation annotation:annotations){
-            if (type.startsWith("Landroid/taobao/atlas/bundleInfo/AtlasBundleInfoManager;")){
-                System.out.println("xxxx");
-            }
+
             immutableAnnotations.add(reAnnotation(annotation));
         }
         for (Field field:fields){

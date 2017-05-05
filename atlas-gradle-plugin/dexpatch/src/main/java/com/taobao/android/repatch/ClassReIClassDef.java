@@ -417,18 +417,13 @@ package com.taobao.android.repatch;
 import com.taobao.android.repatch.Utils.DefineUtils;
 import com.taobao.android.repatch.processor.ClassProcessor;
 import com.taobao.android.tpatch.utils.SmaliUtils;
-
 import org.apache.commons.lang3.StringUtils;
 import org.jf.dexlib2.iface.Annotation;
 import org.jf.dexlib2.iface.AnnotationElement;
 import org.jf.dexlib2.iface.Field;
 import org.jf.dexlib2.iface.Method;
 import org.jf.dexlib2.iface.reference.MethodReference;
-import org.jf.dexlib2.iface.value.ArrayEncodedValue;
-import org.jf.dexlib2.iface.value.EncodedValue;
-import org.jf.dexlib2.iface.value.MethodEncodedValue;
-import org.jf.dexlib2.iface.value.StringEncodedValue;
-import org.jf.dexlib2.iface.value.TypeEncodedValue;
+import org.jf.dexlib2.iface.value.*;
 import org.jf.dexlib2.immutable.ImmutableAnnotation;
 import org.jf.dexlib2.immutable.ImmutableAnnotationElement;
 import org.jf.dexlib2.immutable.ImmutableField;
@@ -498,10 +493,15 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                         }
                         if (basicValue.contains(value)) {
                             newValue = value;
-                        } else if (value.startsWith("Ljava/util/") || value.startsWith("Ljava/lang/") || !value.endsWith(";")) {
+                        } else if (value.startsWith("Ljava/util/") || value.startsWith("Ljava/lang/") || !value.startsWith("L")) {
                             newValue = value;
                         } else {
-                            newValue = DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(value)).className, isArray1);
+                            if (value.endsWith(";")) {
+                                newValue = DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(value)).className, isArray1);
+                            }else {
+                                newValue = DefineUtils.getDotDefineClassName(classProcessor.classProcess(DefineUtils.getDotDalvikClassName(value)).className, isArray1);
+
+                            }
                         }
                         ImmutableStringEncodedValue immutableStringEncodedValue = new ImmutableStringEncodedValue(newValue);
                         lists.add(immutableStringEncodedValue);
@@ -539,10 +539,15 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                 }
                 if (basicValue.contains(value)) {
                     newValue = value;
-                } else if (value.startsWith("Ljava/util/") || !value.endsWith(";")) {
+                } else if (value.startsWith("Ljava/util/") || value.startsWith("Ljava/lang/") || !value.startsWith("L")) {
                     newValue = value;
                 } else {
-                    newValue = DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(value)).className, isArray);
+                    if (value.endsWith(";")) {
+                        newValue = DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(value)).className, isArray);
+                    }else {
+                        newValue = DefineUtils.getDotDefineClassName(classProcessor.classProcess(DefineUtils.getDotDalvikClassName(value)).className, isArray);
+
+                    }
                 }
                 ImmutableStringEncodedValue immutableStringEncodedValue = new ImmutableStringEncodedValue(newValue);
                 ImmutableAnnotationElement immutableAnnotationElement = new ImmutableAnnotationElement(name, immutableStringEncodedValue);
@@ -611,7 +616,6 @@ public abstract class ClassReIClassDef extends AbIClassDef {
 
     @Override
     protected Field reField(Field field) {
-
         String name = field.getName();
         String newType;
         boolean isBasic = false;
@@ -667,7 +671,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                             }
                             if (basicValue.contains(value)) {
                                 newValue = value;
-                            } else if (value.startsWith("Ljava/util/") || !value.endsWith(";") || value.startsWith("Ljava/lang/")) {
+                            } else if (value.startsWith("Ljava/util/") || !value.endsWith(";") || value.startsWith("Ljava/lang/")||!value.startsWith("L")) {
                                 newValue = value;
                             } else {
                                 newValue = DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(value)).className, isArray1);

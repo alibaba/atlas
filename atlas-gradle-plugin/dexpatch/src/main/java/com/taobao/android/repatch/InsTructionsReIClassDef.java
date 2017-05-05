@@ -487,9 +487,7 @@ public class InsTructionsReIClassDef extends MethodImplReIClassDef {
                             isArray = true;
                         }
                         String methodName = methodReference.getName();
-                        if (methodName.equals("InitBundleInfoByVersionIfNeed")){
-                            System.out.println("InitBundleInfoByVersionIfNeed");
-                        }
+
                         if (basicType.containsKey(returnType)) {
                             isBasic = true;
                         }

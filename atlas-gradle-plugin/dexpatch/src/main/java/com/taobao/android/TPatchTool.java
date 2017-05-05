@@ -211,6 +211,7 @@ package com.taobao.android;
 import com.alibaba.fastjson.JSON;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
+import com.google.common.io.LineReader;
 import com.taobao.android.apatch.ApkPatch;
 import com.taobao.android.apatch.utils.TypeGenUtil;
 import com.taobao.android.differ.dex.ApkDiff;
@@ -259,12 +260,7 @@ import org.jf.dexlib2.writer.builder.DexBuilder;
 import org.jf.dexlib2.writer.io.FileDataStore;
 import org.jf.util.ClassFileNameHandler;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.sql.Date;
@@ -308,7 +304,6 @@ public class TPatchTool extends BasePatchTool {
 
     private final String ANDROID_MANIFEST = "AndroidManifest.xml";
 
-    private static final String LAST_PATCH_URL = "";
 
     // 不进入patch包的主bundle资源的资料列表,dex,lib将做另外的对比
     private static final String[] DEFAULT_NOT_INCLUDE_RESOURCES = new String[]{"*.dex",
@@ -332,6 +327,8 @@ public class TPatchTool extends BasePatchTool {
     private boolean hasMainBundle;
 
     private List<String> noPatchBundles = Lists.newArrayList();
+
+    private List<String>whiteList = new ArrayList<>();
 
     public void setVersionList(List<String> versionList) {
         this.versionList = versionList;
@@ -418,6 +415,7 @@ public class TPatchTool extends BasePatchTool {
         FileUtils.cleanDirectory(patchTmpDir);
         mainDiffFolder.mkdirs();
         File lastPatchFile = null;
+        readWhiteList(outPatchDir.getParentFile().getParentFile().getParentFile());
         lastPatchFile = getLastPatchFile(baseApkBO.getVersionName(), productName, outPatchDir);
         PatchUtils.getTpatchClassDef(lastPatchFile, bundleClassMap);
 
@@ -462,13 +460,14 @@ public class TPatchTool extends BasePatchTool {
 
                 @Override
                 public Boolean call() throws Exception {
-
+                    File destFile = new File(patchTmpDir, mainBundleName + "/" +
+                            relativePath);
                     File baseSoFile = new File(baseApkUnzipFolder, relativePath);
-                    if (PatchUtils.isBundleFile(soFile)) { // 如果是bundle文件
+                    if (whiteList.contains(soFile.getName())){
+                        FileUtils.copyFile(soFile, destFile);
+                    }else if (PatchUtils.isBundleFile(soFile)) { // 如果是bundle文件
                         processBundleFiles(soFile, baseSoFile, patchTmpDir);
                     } else {
-                        File destFile = new File(patchTmpDir, mainBundleName + "/" +
-                                relativePath);
                         if (isFileModify(soFile, baseSoFile)) {
                             FileUtils.copyFile(soFile, destFile);
                         }
@@ -523,6 +522,20 @@ public class TPatchTool extends BasePatchTool {
         FileUtils.copyFileToDirectory(newApkBO.getApkFile(), outPatchDir.getParentFile(), true);
 //        FileUtils.deleteDirectory(unzipFolder);
         return patchFile;
+    }
+
+    private void readWhiteList(File parentFile) throws Exception {
+        File whiteListFile = new File(parentFile,"DiffWhiteList.txt");
+        if (whiteListFile.exists()){
+            BufferedReader br = null;
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(whiteListFile),
+                        "UTF-8"));
+            String lineTxt = null;
+            while ((lineTxt = br.readLine()) != null) {
+                    whiteList.add(lineTxt);
+                }
+            br.close();
+        }
     }
 
 
