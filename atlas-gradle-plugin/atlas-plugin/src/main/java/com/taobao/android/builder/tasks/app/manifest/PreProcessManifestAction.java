@@ -209,10 +209,6 @@
 
 package com.taobao.android.builder.tasks.app.manifest;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -225,10 +221,15 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
+
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 设置awb 的bundle依赖
@@ -237,10 +238,11 @@ import org.slf4j.LoggerFactory;
  */
 public class PreProcessManifestAction implements Action<Task> {
 
-    private static Logger sLogger = LoggerFactory.getLogger(PreProcessManifestAction.class);
+    private static final Logger sLogger = LoggerFactory.getLogger(PreProcessManifestAction.class);
 
-    private AppVariantContext appVariantContext;
-    private BaseVariantOutputData baseVariantOutputData;
+    private final AppVariantContext appVariantContext;
+
+    private final BaseVariantOutputData baseVariantOutputData;
 
     public PreProcessManifestAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
         this.appVariantContext = appVariantContext;
@@ -263,18 +265,24 @@ public class PreProcessManifestAction implements Action<Task> {
 
         if (manifestProcessorTask instanceof MergeManifests) {
 
-            MergeManifests mergeManifests = (MergeManifests)manifestProcessorTask;
+            MergeManifests mergeManifests = (MergeManifests) manifestProcessorTask;
 
             VariantScope variantScope = appVariantContext.getScope();
             GradleVariantConfiguration config = variantScope.getVariantConfiguration();
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                config.getFullName());
+            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
 
-            List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(appVariantContext, dependencyTree,
-                                                                                      atlasExtension);
+            List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(
+                    appVariantContext,
+                    dependencyTree,
+                    atlasExtension);
 
             List<ManifestProvider> allManifest = new ArrayList<>();
-            allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(),appVariantContext));
+            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+                allManifest.add(new ManifestHelper.MainManifestProvider(appVariantContext.apContext.getBaseModifyManifest(),
+                                                                        "Base sub-manifest"));
+            }
+            allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(),
+                                                      appVariantContext));
             allManifest.addAll(bundleProviders);
 
             //if (sLogger.isInfoEnabled()) {
@@ -282,16 +290,9 @@ public class PreProcessManifestAction implements Action<Task> {
             //        sLogger.warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());
             //    }
             //}
-            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                allManifest.add(new ManifestHelper.MainManifestProvider(appVariantContext.apContext.getBaseManifest(),
-                                                                        "Base sub-manifest"));
-            }
 
             // 不加这一步,每次的getLibraries 都会从mapping里去重新计算
             mergeManifests.setProviders(allManifest);
-
         }
-
     }
-
 }
