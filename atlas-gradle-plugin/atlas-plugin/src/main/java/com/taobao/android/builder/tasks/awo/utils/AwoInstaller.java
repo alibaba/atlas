@@ -221,6 +221,7 @@ import org.gradle.api.logging.Logger;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 public class AwoInstaller {
@@ -242,6 +243,26 @@ public class AwoInstaller {
     //protected static final List<String> PATCH_DEPENDENCY_SCOPES = Arrays.asList(
     //        Artifact.SCOPE_SYSTEM, Artifact.SCOPE_IMPORT
     //);
+
+    public static void installAwoSos(AndroidBuilder androidBuilder, File maindexFile, Collection<File> awoSoFiles, String packageName, Logger logger) {
+        try {
+            installPatchIfDeviceConnected(androidBuilder,
+                                          maindexFile,
+                                          packageName,
+                                          logger,
+                                          "libcom_taobao_maindex.so");
+            for (File awoSoFile : awoSoFiles) {
+                installPatchIfDeviceConnected(androidBuilder,
+                                              awoSoFile,
+                                              packageName,
+                                              logger,
+                                              awoSoFile.getName());
+            }
+            notifyApppatching(androidBuilder, packageName, logger);
+        } catch (Throwable e) {
+            throw new GradleException("install awo error", e);
+        }
+    }
 
     public static void installAwoSo(AndroidBuilder androidBuilder, File awoSoFile, String packageName, Logger logger, String name) {
 
