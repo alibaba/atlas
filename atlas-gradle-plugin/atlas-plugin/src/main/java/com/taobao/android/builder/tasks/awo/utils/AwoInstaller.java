@@ -215,8 +215,8 @@ import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.IDevice;
 import com.taobao.android.builder.tools.command.CommandExecutor;
 import com.taobao.android.builder.tools.command.ExecutionException;
+
 import org.gradle.api.GradleException;
-import org.gradle.api.invocation.Gradle;
 import org.gradle.api.logging.Logger;
 
 import java.io.File;
@@ -239,30 +239,28 @@ public class AwoInstaller {
 
     protected static int adbConnectionTimeout = 5000;
 
-
     //protected static final List<String> PATCH_DEPENDENCY_SCOPES = Arrays.asList(
     //        Artifact.SCOPE_SYSTEM, Artifact.SCOPE_IMPORT
     //);
 
-
-    public static void installAwoSo(AndroidBuilder androidBuilder, File awoSoFile, String packageName, Logger logger) {
+    public static void installAwoSo(AndroidBuilder androidBuilder, File awoSoFile, String packageName, Logger logger, String name) {
 
         try {
-            installPatchIfDeviceConnected( androidBuilder, awoSoFile, packageName, logger);
+            installPatchIfDeviceConnected(androidBuilder, awoSoFile, packageName, logger, name);
             notifyApppatching(androidBuilder, packageName, logger);
         } catch (Throwable e) {
-            throw  new GradleException("install awo error", e);
+            throw new GradleException("install awo error", e);
         }
-
     }
 
     /**
      * no device or too many device make install fail
      *
+     * @param name
      * @param patch
      * @return
      */
-    private static boolean installPatchIfDeviceConnected(AndroidBuilder androidBuilder, File patch, String patchPkg, Logger logger) {
+    private static boolean installPatchIfDeviceConnected(AndroidBuilder androidBuilder, File patch, String patchPkg, Logger logger, String name) {
 
         final AndroidDebugBridge androidDebugBridge = initAndroidDebugBridge(androidBuilder);
 
@@ -272,21 +270,33 @@ public class AwoInstaller {
 
         waitForInitialDeviceList(androidDebugBridge, logger);
         List<IDevice> devices = Arrays.asList(androidDebugBridge.getDevices());
-        String PATCH_INSTALL_DIRECTORY = String.format("%s%s%s", PATCH_INSTALL_DIRECTORY_PREFIX, patchPkg, PATCH_INSTALL_DIRECTORY_SUFFIX);
+        String PATCH_INSTALL_DIRECTORY = String.format("%s%s%s",
+                                                       PATCH_INSTALL_DIRECTORY_PREFIX,
+                                                       patchPkg,
+                                                       PATCH_INSTALL_DIRECTORY_SUFFIX);
         if (devices.size() == 0) {
-            throw new RuntimeException(String.format("%s%s%s%s%s", "no device connected,please check whether the connection is successful or copy "
-                    , patch, " in build/outputs/awbs/libxxx.so ", PATCH_INSTALL_DIRECTORY, " and restart you app"));
+            throw new RuntimeException(String.format("%s%s%s%s%s",
+                                                     "no device connected,please check whether the connection is successful or copy ",
+                                                     patch,
+                                                     " in build/outputs/awbs/libxxx.so ",
+                                                     PATCH_INSTALL_DIRECTORY,
+                                                     " and restart you app"));
         }
         if (devices.size() > 1) {
-            throw new RuntimeException("too much devices be connected,please disconnect the others and try again");
+            throw new RuntimeException(
+                    "too much devices be connected,please disconnect the others and try again");
         }
         CommandExecutor executor = CommandExecutor.Factory.createDefaultCommmandExecutor();
         executor.setLogger(logger);
         executor.setCaptureStdOut(true);
         executor.setCaptureStdErr(true);
-        List<String> cmd = Arrays.asList("push", patch.getAbsolutePath(), PATCH_INSTALL_DIRECTORY + patch.getName());
+        List<String> cmd = Arrays.asList("push",
+                                         patch.getAbsolutePath(),
+                                         PATCH_INSTALL_DIRECTORY + name);
         try {
-            executor.executeCommand(androidBuilder.getSdkInfo().getAdb().getAbsolutePath(), cmd, false);
+            executor.executeCommand(androidBuilder.getSdkInfo().getAdb().getAbsolutePath(),
+                                    cmd,
+                                    false);
             return true;
         } catch (ExecutionException e) {
             throw new RuntimeException("Error while trying to push patch to device ", e);
@@ -305,7 +315,10 @@ public class AwoInstaller {
                 AndroidDebugBridge.init(false);
                 adbInitialized = true;
             }
-            AndroidDebugBridge androidDebugBridge = AndroidDebugBridge.createBridge(androidBuilder.getSdkInfo().getAdb().getAbsolutePath(), false);
+            AndroidDebugBridge androidDebugBridge = AndroidDebugBridge.createBridge(androidBuilder.getSdkInfo()
+                                                                                            .getAdb()
+                                                                                            .getAbsolutePath(),
+                                                                                    false);
             waitUntilConnected(androidDebugBridge);
             return androidDebugBridge;
         }
@@ -334,7 +347,8 @@ public class AwoInstaller {
         if (!androidDebugBridge.hasInitialDeviceList()) {
             logger.info("Waiting for initial device list from the Android Debug Bridge");
             long limitTime = System.currentTimeMillis() + ADB_TIMEOUT_MS;
-            while (!androidDebugBridge.hasInitialDeviceList() && (System.currentTimeMillis() < limitTime)) {
+            while (!androidDebugBridge.hasInitialDeviceList() &&
+                   (System.currentTimeMillis() < limitTime)) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -352,21 +366,28 @@ public class AwoInstaller {
      * todo how know which app will be debugged?
      * just support taobao.apk now
      */
-    private static void notifyApppatching( AndroidBuilder androidBuilder, String patchPkg, Logger logger) {
+    private static void notifyApppatching(AndroidBuilder androidBuilder, String patchPkg, Logger logger) {
         CommandExecutor executor = CommandExecutor.Factory.createDefaultCommmandExecutor();
         executor.setLogger(logger);
         executor.setCaptureStdOut(true);
         executor.setCaptureStdErr(true);
-//        List<String> killCmd = Arrays.asList("shell", "am", "force-stop", packageNameForPatch);
-//        List<String> startCmd = Arrays.asList("shell", "am", "start", packageNameForPatch + "/" + launcherActivityForPatch);
-        List<String> patchCmd = Arrays.asList("shell", "am", "broadcast", "-a", "com.taobao.atlas.intent.PATCH_APP", "-e", "pkg", patchPkg);
+        //        List<String> killCmd = Arrays.asList("shell", "am", "force-stop", packageNameForPatch);
+        //        List<String> startCmd = Arrays.asList("shell", "am", "start", packageNameForPatch + "/" + launcherActivityForPatch);
+        List<String> patchCmd = Arrays.asList("shell",
+                                              "am",
+                                              "broadcast",
+                                              "-a",
+                                              "com.taobao.atlas.intent.PATCH_APP",
+                                              "-e",
+                                              "pkg",
+                                              patchPkg);
         try {
-            executor.executeCommand(androidBuilder.getSdkInfo().getAdb().getAbsolutePath(), patchCmd, false);
+            executor.executeCommand(androidBuilder.getSdkInfo().getAdb().getAbsolutePath(),
+                                    patchCmd,
+                                    false);
         } catch (Exception e) {
-            throw new RuntimeException("error while restarting app,you can also restart by yourself", e);
+            throw new RuntimeException("error while restarting app,you can also restart by yourself",
+                                       e);
         }
-
     }
-
-
 }

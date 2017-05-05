@@ -212,18 +212,22 @@ package com.taobao.android.builder.tasks.awo.maindex;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.signing.SigningException;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tasks.awo.utils.AwoInstaller;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -234,7 +238,9 @@ import java.util.zip.ZipOutputStream;
 public class DexInstallTask extends BaseTask {
 
     private File dexFile;
+
     private String packageName;
+
     private File kernelSoFile;
 
     @TaskAction
@@ -258,12 +264,14 @@ public class DexInstallTask extends BaseTask {
             }
         }
 
-        AwoInstaller.installAwoSo( getBuilder(), targetPatch, getPackageName(), getLogger());
-
+        AwoInstaller.installAwoSo(getBuilder(),
+                                  targetPatch,
+                                  getPackageName(),
+                                  getLogger(),
+                                  targetPatch.getName());
     }
 
-    private static void zip(File[] files, String baseFolder, ZipOutputStream zos)
-            throws Exception {
+    private static void zip(File[] files, String baseFolder, ZipOutputStream zos) throws Exception {
         byte[] buffer = new byte[1024];
         FileInputStream fis = null;
         ZipEntry entry = null;
@@ -317,7 +325,6 @@ public class DexInstallTask extends BaseTask {
             this.libVariantContext = variantContext;
         }
 
-
         @Override
         public String getName() {
             return libVariantContext.getScope().getTaskName("installDex");
@@ -337,11 +344,11 @@ public class DexInstallTask extends BaseTask {
 
                 @Override
                 public String call() {
-                    String packageName = ManifestFileUtils.getPackage(new File(libVariantContext.apContext.getApExploredFolder(),
-                            "AndroidManifest.xml"));
+                    String packageName = ManifestFileUtils.getPackage(new File(libVariantContext.apContext
+                                                                                       .getApExploredFolder(),
+                                                                               "AndroidManifest.xml"));
                     return packageName;
                 }
-
             });
 
             ConventionMappingHelper.map(task, "dexFile", new Callable<File>() {
@@ -356,11 +363,12 @@ public class DexInstallTask extends BaseTask {
 
                 @Override
                 public File call() {
-                    return new File(libVariantContext.getScope().getGlobalScope().getOutputsDir(), AwoInstaller.PATCH_NAME_PREFIX + libVariantContext.getVariantName() + ".so");
+                    return new File(libVariantContext.getScope().getGlobalScope().getOutputsDir(),
+                                    AwoInstaller.PATCH_NAME_PREFIX +
+                                    libVariantContext.getVariantName() +
+                                    ".so");
                 }
             });
-
         }
     }
-
 }
