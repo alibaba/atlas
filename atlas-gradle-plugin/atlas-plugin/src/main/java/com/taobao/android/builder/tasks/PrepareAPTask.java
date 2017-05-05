@@ -215,20 +215,23 @@ package com.taobao.android.builder.tasks;
 
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 
+import org.dom4j.DocumentException;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.io.IOException;
@@ -241,7 +244,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
  */
-public class PrepareAPTask extends IncrementalTask {
+public class PrepareAPTask extends DefaultTask {
     private ApContext apContext;
 
     private File explodedDir;
@@ -273,10 +276,15 @@ public class PrepareAPTask extends IncrementalTask {
     /**
      * 生成so的目录
      */
-    @Override
-    protected void doFullTaskAction() throws IOException {
+    @TaskAction
+    public void run() throws IOException, DocumentException {
         ZipUtils.unzip(apBaseFile, explodedDir.getAbsolutePath());
-        ZipUtils.extractZipFolderToFolder(apContext.getBaseApk(), "lib/armeabi", apContext.getBaseAwbDirectory().getAbsolutePath(), null);
+        ZipUtils.extractZipFolderToFolder(apContext.getBaseApk(),
+                                          "lib/armeabi",
+                                          apContext.getBaseAwbDirectory().getAbsolutePath(),
+                                          null);
+        ManifestFileUtils.updatePreProcessBaseManifestFile(apContext.getBaseModifyManifest(),
+                                                           apContext.getBaseManifest());
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {
