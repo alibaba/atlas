@@ -207,214 +207,132 @@
  *
  */
 
-package com.android.build.gradle.internal.api;
+package com.taobao.android.builder.tasks.incremental;
 
-import com.android.annotations.NonNull;
-import com.android.build.gradle.AppExtension;
-import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.internal.variant.ApplicationVariantData;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.model.AndroidLibrary;
-import com.android.utils.FileUtils;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
-import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.android.builder.signing.SigningException;
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tasks.awo.utils.AwoInstaller;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 
-import org.gradle.api.Project;
-import org.gradle.api.file.ConfigurableFileTree;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.concurrent.Callable;
 
 /**
- * Applicaiton的编译的context
- * Created by shenghua.nish on 2016-05-04 下午3:46.
+ * 把 patch 安装到手机上的任务
  */
-public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtension, E extends AtlasExtension> extends VariantContext<ApplicationVariantImpl, AppExtension, AtlasExtension> {
+public class AwoInstallTask extends BaseTask {
 
-    private final ApplicationVariantImpl applicationVariant;
+    private File mainDexFile;
 
-    private final ApplicationVariantData variantData;
+    private String packageName;
 
-    private final Map<String, AppVariantOutputContext> outputContextMap = Maps.newHashMap();
+    private Collection<File> awbApkFiles;
 
-    /**
-     * buildCache 目录的manifest不能变更， 所以保存修改后的manifest引用
-     */
-    public Map<String, File> manifestMap = new HashMap<>();
+    // ----- PRIVATE TASK API -----
 
-    public AppVariantContext(ApplicationVariantImpl applicationVariant, Project project, AtlasExtension atlasExtension, AppExtension appExtension) {
-        super(applicationVariant, project, atlasExtension, appExtension);
-        this.applicationVariant = applicationVariant;
-        this.variantData = (ApplicationVariantData) applicationVariant.getApkVariantData();
-        this.scope = this.variantData.getScope();
-    }
-
-    public ApplicationVariantImpl getApplicationVariant() {
-        return applicationVariant;
-    }
-
-    public ApplicationVariantData getVariantData() {
-        return variantData;
-    }
-
-    public Map<String, AppVariantOutputContext> getOutputContextMap() {
-        return outputContextMap;
-    }
-
-    public File getAwbDexOutput(String awbName) {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-dex/" + getVariantConfiguration().getDirName() + "/" + awbName);
-    }
-
-    public File getAwbRClassSourceOutputDir(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getGeneratedDir(),
-                        "source/awb-r/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
-    }
-
-    public List<ConfigurableFileTree> getAwSourceOutputDir(AwbBundle awbBundle) {
-        Project project = scope.getGlobalScope().getProject();
-        // Build the list of source folders.
-        ImmutableList.Builder<ConfigurableFileTree> sourceSets = ImmutableList.builder();
-
-        // then all the generated src folders.
-        if (getAwbRClassSourceOutputDir(awbBundle) != null) {
-            sourceSets.add(project.fileTree(getAwbRClassSourceOutputDir(awbBundle)));
-        }
-
-        if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
-            sourceSets.add(project.fileTree(getAwbClassOutputForDataBinding(awbBundle)));
-        }
-
-        return sourceSets.build();
-    }
-
-    public File getAwbLibraryDirForDataBinding(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getIntermediatesDir() +
-                        "/transforms-awbs/databinding/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
-    }
-
-    public File getAwbLayoutInfoOutputForDataBinding(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getIntermediatesDir() +
-                        "/data-binding-info-awbs/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
-    }
-
-    public File getJAwbavaOutputDir(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-classes/" +
-                        variantData.getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
-    }
-
-    public File getAwbClassOutputForDataBinding(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getGeneratedDir(),
-                        "source/awb-dataBinding/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
-    }
-
-    public File getAwbLayoutFolderOutputForDataBinding(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getIntermediatesDir() +
-                        "/data-binding-layout-out-awb/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
-    }
-
-    public File getAwbDataBindingMergeArtifacts(AwbBundle awbBundle) {
-
-        return new File(scope.getGlobalScope().getIntermediatesDir() +
-                        "/data-binding-compiler-awbs/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
-
-        //return new File(scope.getBuildFolderForDataBindingCompiler() +  "-" + awbBundle.getName(),
-        //                     DataBindingBuilder.ARTIFACT_FILES_DIR_FROM_LIBS);
-
-    }
-
-    public File getAwbMergeResourcesOutputDir(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-res/merged/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
-    }
-
-    public File getAwbBlameLogFolder(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-blame/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
-    }
-
-    public File getModifyManifest(AndroidLibrary androidLibrary) {
-        return new File(getModifyManifestDir(),
-                        androidLibrary.getResolvedCoordinates().getGroupId() +
-                        "." +
-                        androidLibrary.getResolvedCoordinates().getArtifactId() +
-                        ".xml");
-    }
-
-    @NonNull
+    @InputFiles
+    @Optional
     public Collection<File> getAwbApkFiles() {
-        return FileUtils.find(getAwbApkOutputDir(), Pattern.compile("\\.so$"));
+        return awbApkFiles;
     }
 
-    public File getAwbApkOutputDir() {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-apks/" + getVariantConfiguration().getDirName() + "/");
+    @TaskAction
+    public void doTask() throws IOException, SigningException {
+
+        AwoInstaller.installAwoSos(getBuilder(),
+                                   getMainDexFile(),
+                                   getAwbApkFiles(),
+                                   getPackageName(),
+                                   getLogger());
     }
 
-    public File getModifyManifestDir() {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/manifest-modify/" + getVariantConfiguration().getDirName() + "/");
+    @InputFile
+    public File getMainDexFile() {
+        return mainDexFile;
     }
 
-    public File getBundleBaseInfoFile() {
-        File bundleBaseLineInfo = new File(this.getScope()
-                                                   .getGlobalScope()
-                                                   .getProject()
-                                                   .getProjectDir(), "bundleBaseInfoFile.json");
-        return bundleBaseLineInfo;
+    public void setMainDexFile(File maindexFile) {
+        this.mainDexFile = maindexFile;
     }
 
-    public File getAtlasProxySourceDir() {
-        return new File(scope.getGlobalScope().getGeneratedDir(),
-                        "source/atlasproxy/" + getVariantConfiguration().getDirName());
+    @Input
+    public String getPackageName() {
+        return packageName;
     }
 
-    public AppVariantOutputContext getAppVariantOutputContext(BaseVariantOutputData vod) {
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
 
-        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) this.getOutputContextMap()
-                .get(vod.getFullName());
+    public static class ConfigAction extends MtlBaseTaskAction<AwoInstallTask> {
 
-        if (null == appVariantOutputContext) {
-            appVariantOutputContext = new AppVariantOutputContext(vod.getFullName(),
-                                                                  this,
-                                                                  vod.getScope(),
-                                                                  vod.variantData);
-            this.getOutputContextMap().put(vod.getFullName(), appVariantOutputContext);
+        private final AppVariantContext appVariantContext;
+
+        private final AtlasExtension atlasExtension;
+
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
+            this.atlasExtension = this.appVariantContext.getAtlasExtension();
         }
 
-        return appVariantOutputContext;
+        @Override
+        public String getName() {
+            return appVariantContext.getScope().getTaskName("awoInstall");
+        }
+
+        @Override
+        public Class<AwoInstallTask> getType() {
+            return AwoInstallTask.class;
+        }
+
+        @Override
+        public void execute(AwoInstallTask task) {
+
+            task.setVariantName(appVariantContext.getVariantName());
+
+            String buildType = appVariantContext.getScope()
+                    .getVariantConfiguration()
+                    .getBuildType()
+                    .getName();
+            if (!atlasExtension.getBundleConfig().isAwoDynDeploy()) {
+                task.setEnabled(false);
+                return;
+            }
+
+            ConventionMappingHelper.map(task, "packageName", new Callable<String>() {
+
+                @Override
+                public String call() {
+                    //TODO  from config
+                    String packageName = ManifestFileUtils.getPackage(new File(appVariantContext.apContext
+                                                                                       .getApExploredFolder(),
+                                                                               "AndroidManifest.xml"));
+                    return packageName;
+                }
+            });
+
+            ConventionMappingHelper.map(task, "mainDexFile", new Callable<File>() {
+
+                @Override
+                public File call() {
+                    return getAppVariantOutputContext().getDiffApk();
+                }
+            });
+            ConventionMappingHelper.map(task, "awbApkFiles", appVariantContext::getAwbApkFiles);
+        }
     }
 }
