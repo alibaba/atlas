@@ -286,6 +286,7 @@ public class PreProcessManifestAction implements Action<Task> {
                 allManifest.add(new ManifestHelper.MainManifestProvider(baseModifyManifest,
                                                                         "Base sub-manifest"));
                 if (baseVariantOutputData instanceof ApkVariantOutputData) {
+                    // TODO 提升性能
                     ApkVariantOutputData variantOutputData = (ApkVariantOutputData) baseVariantOutputData;
                     String versionName = variantOutputData.getVersionName();
                     if (Strings.isNullOrEmpty(versionName)) {
