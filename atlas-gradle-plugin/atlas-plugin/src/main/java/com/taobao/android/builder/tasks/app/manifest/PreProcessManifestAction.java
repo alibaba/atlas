@@ -212,14 +212,17 @@ package com.taobao.android.builder.tasks.app.manifest;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.MergeManifests;
 import com.android.manifmerger.ManifestProvider;
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
 
 import org.gradle.api.Action;
@@ -227,6 +230,7 @@ import org.gradle.api.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -278,8 +282,37 @@ public class PreProcessManifestAction implements Action<Task> {
 
             List<ManifestProvider> allManifest = new ArrayList<>();
             if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                allManifest.add(new ManifestHelper.MainManifestProvider(appVariantContext.apContext.getBaseModifyManifest(),
+                File baseModifyManifest = appVariantContext.apContext.getBaseModifyManifest();
+                allManifest.add(new ManifestHelper.MainManifestProvider(baseModifyManifest,
                                                                         "Base sub-manifest"));
+                if (baseVariantOutputData instanceof ApkVariantOutputData) {
+                    ApkVariantOutputData variantOutputData = (ApkVariantOutputData) baseVariantOutputData;
+                    String versionName = variantOutputData.getVersionName();
+                    if (Strings.isNullOrEmpty(versionName)) {
+                        try {
+                            String versionNameOverride = ManifestFileUtils.getVersionName(
+                                    baseModifyManifest);
+                            if (!Strings.isNullOrEmpty(versionNameOverride)) {
+                                variantOutputData.setVersionNameOverride(versionNameOverride);
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    int versionCode = variantOutputData.getVersionCode();
+                    if (versionCode == -1) {
+                        try {
+                            String versionCodeOverride = ManifestFileUtils.getVersionCode(
+                                    baseModifyManifest);
+                            if (!Strings.isNullOrEmpty(versionCodeOverride)) {
+                                variantOutputData.setVersionCodeOverride(Integer.parseInt(
+                                        versionCodeOverride));
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
             }
             allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(),
                                                       appVariantContext));

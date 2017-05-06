@@ -912,6 +912,24 @@ public class ManifestFileUtils {
         return versionName;
     }
 
+    public static String getVersionCode(File androidManifestFile) throws IOException, DocumentException {
+        SAXReader reader = new SAXReader();
+        String versionCode = "";
+        if (androidManifestFile.exists()) {
+            Document document = reader.read(androidManifestFile);// 读取XML文件
+            Element root = document.getRootElement();// 得到根节点
+            if ("manifest".equalsIgnoreCase(root.getName())) {
+                List<Attribute> attributes = root.attributes();
+                for (Attribute attr : attributes) {
+                    if (StringUtils.equalsIgnoreCase(attr.getName(), "versionCode")) {
+                        versionCode = attr.getValue();
+                    }
+                }
+            }
+        }
+        return versionCode;
+    }
+
     public static void removeProvider(File androidManifestFile) throws IOException, DocumentException {
         File backupFile = new File(androidManifestFile.getParentFile(),
                                    "AndroidManifest-backup.xml");
