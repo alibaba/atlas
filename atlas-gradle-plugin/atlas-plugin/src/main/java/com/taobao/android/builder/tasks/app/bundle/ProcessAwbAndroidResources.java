@@ -446,9 +446,9 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             options.add(getShareResourceFile2().getAbsolutePath());
         }
         if (null != getBaselineFile()) {
-            options.add("-B");
-            options.add(getBaselineFile().getAbsolutePath());
-            options.add("--merge");
+            // options.add("-B");
+            // options.add(getBaselineFile().getAbsolutePath());
+            // options.add("--merge");
         }
 
         aaptOptions.additionalParameters(options.toArray(new String[0]));
