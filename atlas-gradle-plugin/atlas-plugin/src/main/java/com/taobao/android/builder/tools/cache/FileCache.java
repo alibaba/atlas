@@ -268,10 +268,9 @@ public interface FileCache {
             if (StringUtils.isEmpty(key)) {
                 return "";
             }
-
             File cacheFile = new File(cacheDir, type + "/" + key);
-            if (!cacheFile.exists()){
-                return "";
+            if (cacheFile.exists()){
+                return cacheFile.getAbsolutePath();
             }
             cacheFile.getParentFile().mkdirs();
             try {

@@ -332,7 +332,11 @@ public class AtlasConfigHelper {
                 configField.order = config.order();
                 configField.desc = config.message();
                 Object obj = field.get(object);
-                configField.value = (null == obj ? null : String.valueOf(obj));
+                String value = "";
+                if (obj != null && !(obj instanceof Map) && !(obj instanceof List)) {
+                    value = String.valueOf(obj);
+                }
+                configField.value = value;
                 configField.groupOrder = groupOrder;
                 configField.variantName = variantName;
                 configField.type = field.getType().getSimpleName();
