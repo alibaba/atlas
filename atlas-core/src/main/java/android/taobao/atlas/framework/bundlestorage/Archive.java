@@ -226,12 +226,6 @@ public interface Archive {
     boolean isDexOpted();
     
     void optDexFile();
-    
-    InputStream openAssetInputStream(String fileName) throws IOException;
-    
-    InputStream openNonAssetInputStream(String fileName) throws IOException;
-
-    Manifest getManifest() throws IOException;
 
     Class<?> findClass(String className, ClassLoader cl) throws ClassNotFoundException;
 
@@ -239,9 +233,5 @@ public interface Archive {
 
     List<URL> getResources(String resName) throws IOException;
 
-    public boolean isUpdated();
-
-    void purge() throws Exception;
-
-    void close();
+    void purge();
 }

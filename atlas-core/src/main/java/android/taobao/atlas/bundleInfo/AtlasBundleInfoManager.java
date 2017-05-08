@@ -313,23 +313,6 @@ public class AtlasBundleInfoManager {
 
     }
 
-    /*
-    * Get all dependent bundles for the designated bundle
-    */
-    public boolean getHasSO(String bundleName){
-
-        InitBundleInfoByVersionIfNeed();
-        if (mCurrentBundleListing == null || mCurrentBundleListing.getBundles()==null || mCurrentBundleListing.getBundles().size() == 0){
-            return false;
-        }
-
-        BundleListing.BundleInfo info = mCurrentBundleListing.getBundles().get(bundleName);
-        if(info!=null){
-            return info.isHasSO();
-        }
-        return false;
-    }
-
     public String getBundleForComponet(String componentName){
         InitBundleInfoByVersionIfNeed();
         if (mCurrentBundleListing == null ||

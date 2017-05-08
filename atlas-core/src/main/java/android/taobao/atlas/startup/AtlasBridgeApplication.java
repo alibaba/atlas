@@ -229,8 +229,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import dalvik.system.PathClassLoader;
-
 /**
  * Created by guanjie on 16/10/20.
  */
@@ -283,7 +281,7 @@ public class AtlasBridgeApplication extends Application{
 
             if(KernalBundle.hasKernalPatch()) {
                 //has patch ? true -> must load successed
-                hasKernalPatched = KernalBundle.checkloadKernalBundle(this,mInstalledVersionName, getProcessName(getBaseContext()));
+                hasKernalPatched = KernalBundle.checkloadKernalBundle(this, getProcessName(getBaseContext()));
                 if (!hasKernalPatched) {
                     // load failed
                     if(isMainProcess) {

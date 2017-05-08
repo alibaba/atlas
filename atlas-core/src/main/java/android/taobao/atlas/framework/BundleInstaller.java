@@ -543,7 +543,7 @@ public class BundleInstaller implements Callable{
         if(bundle==null){
             bundle = Framework.restoreFromExistedBundle(bundleName);
         }
-        if(bundle==null && BaselineInfoManager.instance().isChanged(bundleName)){
+        if(bundle==null && (BaselineInfoManager.instance().isDexPatched(bundleName) || BaselineInfoManager.instance().isUpdated(bundleName))){
             throw new RuntimeException("restore existed bundle failed");
         }
         return bundle;

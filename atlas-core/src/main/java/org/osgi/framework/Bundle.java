@@ -444,35 +444,6 @@ public abstract interface Bundle
     public abstract void uninstall() throws BundleException;
 
     /**
-	 * Returns this bundle's Manifest headers and values.
-	 * This method returns all the Manifest headers and values
-	 * from the main section of the bundle's Manifest file; that is, all lines prior
-	 * to the first blank line.
-	 *
-	 * <p>Manifest header names are case-insensitive. The methods of the returned
-	 * <tt>Dictionary</tt> object will operate on header names in a case-insensitive manner.
-	 *
-	 * <p>For example, the following Manifest headers and values are included
-	 * if they are present in the Manifest file:
-	 * <pre>
-	 * Bundle-Name
-	 * Bundle-Vendor
-	 * Bundle-Version
-	 * Bundle-Description
-	 * Bundle-DocURL
-	 * Bundle-ContactAddress
-	 * </pre>
-	 * <p>This method will continue to return Manifest header information
-	 * while this bundle is in the <tt>UNINSTALLED</tt> state.
-	 *
-	 * @return A <tt>Dictionary</tt> object containing this bundle's Manifest headers and values.
-	 *
-	 * @exception java.lang.SecurityException If the caller does not have
-	 * the <tt>AdminPermission</tt>, and the Java Runtime Environment supports permissions.
-	 */
-    public abstract Dictionary<String,String> getHeaders();
-
-    /**
 	 * Returns this bundle's identifier. The bundle is assigned a unique identifier by the Framework
 	 * when it is installed in the OSGi environment.
 	 *

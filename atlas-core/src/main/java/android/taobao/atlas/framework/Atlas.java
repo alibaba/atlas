@@ -264,13 +264,9 @@ import static android.taobao.atlas.runtime.InstrumentationHook.sOnIntentRedirect
 
 public class Atlas {
 
-    public static final String ATLAS_NEW_ACTIVITY_SUPPORT = "new_activity_support";
-    public static final String ATLAS_NEW_ACTIVITY_BUNDLE  = "new_activity_bundle";
-
     public static String sAPKSource ;
     protected static Atlas instance;
     public static boolean Downgrade_H5 = false;
-    public static Map<String,String> sConfig = new HashMap<String,String>();
     public static boolean isDebug;
 
     private Atlas(){
@@ -379,35 +375,6 @@ public class Atlas {
         editor.commit();
     }
 
-    public boolean restoreBundle(final String[] location){
-        return Framework.restoreBundle(location);
-    }
-
-    public void installOrUpdate(final String[] locations, final File[] files,String[] newVersion,long dexPatchVersion) throws BundleException {
-        Framework.installOrUpdate(locations, files,newVersion,dexPatchVersion);
-    }
-
-    @Deprecated
-    public void installOrUpdate(final String[] locations, final File[] files,String[] newVersion) throws BundleException {
-        Framework.installOrUpdate(locations, files,newVersion,123);
-    }
-
-    public List<ResolveInfo> queryNewIntentActivities(Intent intent){
-        return AdditionalPackageManager.getInstance().queryIntentActivities(intent);
-    }
-
-    public List<ResolveInfo> queryNewIntentServices(Intent intent){
-        return AdditionalPackageManager.getInstance().queryIntentService(intent);
-    }
-
-    public ActivityInfo getNewActivityInfo(ComponentName componentName, int flags){
-        return AdditionalPackageManager.getInstance().getNewComponentInfo(componentName,ActivityInfo.class);
-    }
-
-    public ServiceInfo getNewServiceInfo(ComponentName componentName, int flags){
-        return AdditionalPackageManager.getInstance().getNewComponentInfo(componentName,ServiceInfo.class);
-    }
-
     public void checkDownGradeToH5(Intent intent) {
         if (Downgrade_H5) {
             if (intent != null && intent.getComponent() != null) {
@@ -434,19 +401,6 @@ public class Atlas {
                 Log.w("Atlas","can not install bundle in ui thread");
             }
         }
-    }
-
-    public void onConfigUpdate(String key,String value){
-        sConfig.put(key,value);
-    }
-
-    public String getConfig(String key){
-        String value = sConfig.get(key);
-        return value!=null ? value : "";
-    }
-
-    public void startPatch(){
-        Framework.checkInstallDebugBundle();
     }
 
     public boolean isBundleNeedUpdate(String bundleName,String version){
@@ -512,7 +466,6 @@ public class Atlas {
                 if(soFile.canWrite()){
                     soFile.delete();
                 }
-                b.getArchive().purge();
                 delDir = b.getArchive().getCurrentRevision().getRevisionDir();
                 bundle.uninstall();
                 if(delDir !=null ){

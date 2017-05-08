@@ -312,15 +312,4 @@ public class FileUtils {
 	    return avliableSpace;
 	}
 
-	public synchronized static void createNewDirIfNotExist(File dir,String dirName){
-		try {
-			File file = new File(dir, dirName);
-			if (file != null && !file.exists()) {
-				file.createNewFile();
-			}
-		}catch (IOException e){
-			//e.printStackTrace();
-		}
-	}
-
 }

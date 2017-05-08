@@ -237,10 +237,6 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
     public void frameworkEvent(FrameworkEvent event) {
         switch (event.getType()) {
             case 0:/* STARTING */
-                //TODO bundle 可配置
-//                if(Framework.getCurProcessName().equals(RuntimeVariables.androidApplication.getPackageName())) {
-//                    BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{"com.taobao.taobao.home"});
-//                }
                 starting();
                 break;
             case FrameworkEvent.STARTED:
@@ -258,7 +254,7 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
             return;
         }
 
-        if(BaselineInfoManager.instance().isChanged("com.taobao.maindex")){
+        if(BaselineInfoManager.instance().isUpdated("com.taobao.maindex")){
             AdditionalPackageManager.getInstance();
         }
         
@@ -284,7 +280,6 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
                         Application app = BundleLifecycleHandler.newApplication(appClassName,
                                                                                 Framework.getSystemClassLoader());
                         app.onCreate();
-//                        DelegateComponent.apkApplications.put("system:" + appClassName, app);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

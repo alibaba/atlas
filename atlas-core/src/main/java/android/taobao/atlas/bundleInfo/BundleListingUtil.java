@@ -218,80 +218,6 @@ import java.util.*;
  * Created by guanjie on 15/7/7.
  */
 public class BundleListingUtil {
-    public static String toJSONString(LinkedHashMap<String,BundleListing.BundleInfo> infos){
-        if(infos==null){
-            return "";
-        }
-        JSONArray array = new JSONArray();
-        try {
-            Iterator<Map.Entry<String, BundleListing.BundleInfo>> iterator = infos.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, BundleListing.BundleInfo> mapEntry = iterator.next();
-                BundleListing.BundleInfo info = mapEntry.getValue();
-                JSONObject object = new JSONObject();
-                object.put("name", info.getName());
-                object.put("pkgName", info.getPkgName());
-                object.put("applicationName", info.getApplicationName());
-                object.put("size", info.getSize());
-                object.put("version", info.getVersion());
-                object.put("desc", info.getDesc());
-                object.put("url", info.getUrl());
-                object.put("md5", info.getMd5());
-                object.put("host", info.getHost());
-                object.put("hasSO", info.isHasSO());
-                object.put("isInternal",info.isInternal());
-
-                if (info.getDependency() != null) {
-                    JSONArray dependency = new JSONArray();
-                    for (String dependencyItem : info.getDependency())
-                        dependency.put(dependencyItem);
-                    object.put("dependency", dependency);
-                }
-                if (info.getActivities() != null) {
-                    JSONArray activities = new JSONArray();
-                    Iterator iter = info.getActivities().entrySet().iterator();
-                    while (iter.hasNext()) {
-                        Map.Entry entry = (Map.Entry) iter.next();
-                        activities.put(entry.getKey());
-                       }
-                    object.put("activities", activities);
-                }
-                if (info.getServices() != null) {
-                    JSONArray services = new JSONArray();
-                    Iterator iter = info.getServices().entrySet().iterator();
-                    while (iter.hasNext()) {
-                        Map.Entry entry = (Map.Entry) iter.next();
-                        services.put(entry.getKey());
-                    }
-                    object.put("services", services);
-                }
-                if (info.getReceivers() != null) {
-                    JSONArray receivers = new JSONArray();
-                    Iterator iter = info.getReceivers().entrySet().iterator();
-                    while (iter.hasNext()) {
-                        Map.Entry entry = (Map.Entry) iter.next();
-                        receivers.put(entry.getKey());
-                    }
-                    object.put("receivers", receivers);
-                }
-                if (info.getContentProviders() != null) {
-                    JSONArray contentProviders = new JSONArray();
-                    Iterator iter = info.getContentProviders().entrySet().iterator();
-                    while (iter.hasNext()) {
-                        Map.Entry entry = (Map.Entry) iter.next();
-                        contentProviders.put(entry.getKey());
-                    }
-                    object.put("contentProviders", contentProviders);
-                }
-                array.put(object);
-
-            }
-        }catch(Exception e){
-            e.printStackTrace();
-        }finally {
-            return array.toString();
-        }
-    }
 
     public static LinkedHashMap<String,BundleListing.BundleInfo> parseArray(String listingStr){
         LinkedHashMap<String,BundleListing.BundleInfo> infos= new LinkedHashMap<String,BundleListing.BundleInfo>();
@@ -303,13 +229,11 @@ public class BundleListingUtil {
                 info.setName(object.optString("name"));
                 info.setPkgName(object.optString("pkgName"));
                 info.setApplicationName(object.optString("applicationName"));
-                info.setSize(object.optLong("size"));
                 info.setVersion(object.optString("version"));
                 info.setDesc(object.optString("desc"));
                 info.setUrl(object.optString("url"));
                 info.setMd5(object.optString("md5"));
-                info.setHost(object.optString("host"));
-                info.setHasSO(object.optBoolean("hasSO"));
+                info.setUnique_tag(object.optString("unique_tag"));
                 if (object.has("isInternal")) {
                     info.setIsInternal(object.optBoolean("isInternal"));
                 }

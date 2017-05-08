@@ -222,8 +222,11 @@ import android.util.Pair;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by guanjie on 15/9/10.
@@ -237,13 +240,12 @@ public class KernalVersionManager {
     private String LAST_VERSIONNAME;
     private String LAST_UPDATE_BUNDLES;
     private String CURRENT_UPDATE_BUNDLES;
+    private String DEXPATCH_BUNDLES;
     private HashMap<String,String> currentUpdateBundles = new HashMap<String,String>();
-    private HashMap<String,String> currentDexPatchBundles= new HashMap<String,String>();
+    private ConcurrentHashMap<String,Long> dexPatchBundles = new ConcurrentHashMap<>();
     private boolean isRollback;
 
     public String CURRENT_VERSIONAME;
-    public long DEXPATCH_VERSION;
-    public String DEXPATCH_BUNDLES;
     public boolean cachePreVersion = false;
     public synchronized static KernalVersionManager instance(){
         if(sBaseInfoManager==null){
@@ -262,10 +264,8 @@ public class KernalVersionManager {
         LAST_UPDATE_BUNDLES = "";
         CURRENT_VERSIONAME = "";
         CURRENT_UPDATE_BUNDLES="";
-        DEXPATCH_VERSION=0;
-        DEXPATCH_BUNDLES="";
+        DEXPATCH_BUNDLES = "";
         currentUpdateBundles.clear();
-        currentDexPatchBundles.clear();
     }
 
     private KernalVersionManager(){
@@ -330,10 +330,12 @@ public class KernalVersionManager {
                 cachePreVersion = input.readBoolean();
                 input.close();
             } catch (Throwable e) {
-                updateMonitor(KernalConstants.DD_BASELINEINFO_FAIL, e==null?"":e.getMessage());
+                if(KernalConstants.PROCESS.equals(KernalConstants.baseContext.getPackageName())) {
+                    updateMonitor(KernalConstants.DD_BASELINEINFO_FAIL, e == null ? "" : e.getMessage());
+                    BASELINEINFO.delete();
+                    rollbackHardly();
+                }
                 killChildProcesses(KernalConstants.baseContext);
-                BASELINEINFO.delete();
-                rollbackHardly();
                 android.os.Process.killProcess(Process.myPid());
             }
         }
@@ -341,9 +343,7 @@ public class KernalVersionManager {
         LAST_UPDATE_BUNDLES = lastUpdateBundles;
         CURRENT_VERSIONAME = baselineVersion;
         CURRENT_UPDATE_BUNDLES= updateBundles;
-        DEXPATCH_VERSION = dexpatchVersion;
         DEXPATCH_BUNDLES = dexPatchBundles;
-
         parseUpdatedBundles();
     }
 
@@ -376,8 +376,12 @@ public class KernalVersionManager {
         return currentUpdateBundles.get(bundleName);
     }
 
-    public String getDexPatchBundleVersion(String bundleName){
-        return currentDexPatchBundles.get(bundleName);
+    public long getDexPatchBundleVersion(String bundleName){
+        if(dexPatchBundles.containsKey(bundleName)){
+            return dexPatchBundles.get(bundleName);
+        }else {
+            return -1;
+        }
     }
 
     public Set<String> getUpdateBundles(){
@@ -400,59 +404,37 @@ public class KernalVersionManager {
         return cachePreVersion;
     }
 
-    //dexpatched
-    public boolean isDexPatched(String bundleName){
-        if(dexPatchVersion()>0 && !TextUtils.isEmpty(getDexPatchBundleVersion(bundleName))){
+    //updated
+    public boolean isUpdated(String bundleName){
+        if(!TextUtils.isEmpty(getBaseBundleVersion(bundleName))){
             return true;
-        }else{
-            return false;
-        }
-    }
-
-    //被dexpatch过或者动态部署过
-    public boolean isChanged(String bundleName){
-        if(dexPatchVersion()>0 && !TextUtils.isEmpty(getDexPatchBundleVersion(bundleName))){
-            return true;
-        }else{
-            if(!TextUtils.isEmpty(getBaseBundleVersion(bundleName))){
-                return true;
-            }
         }
         return false;
     }
 
-    public long dexPatchVersion(){
-        return DEXPATCH_VERSION;
+    //dexpatched
+    public boolean isDexPatched(String bundleName){
+        return getDexPatchBundleVersion(bundleName)>0;
     }
 
     public synchronized void parseUpdatedBundles(){
         if(CURRENT_UPDATE_BUNDLES!=null){
             String[] bundles = CURRENT_UPDATE_BUNDLES.split(";");
             if(bundles!=null && bundles.length>0){
-                List<String> bundleNameList = new ArrayList<String>(bundles.length);
                 for(String bundleInfo : bundles){
                     String[] infoItems = bundleInfo.split("@");
-                    if(infoItems!=null && infoItems[0]!=null){
-                        bundleNameList.add(infoItems[0]);
-                    }
                     if(infoItems.length>2){
                         currentUpdateBundles.put(infoItems[0],infoItems[1]+"@"+infoItems[2]);
                     }
                 }
             }
         }
-        if(DEXPATCH_BUNDLES!=null){
+        if(dexPatchBundles!=null){
             String[] bundles = DEXPATCH_BUNDLES.split(";");
             if(bundles!=null && bundles.length>0){
-                List<String> bundleNameList = new ArrayList<String>(bundles.length);
                 for(String bundleInfo : bundles){
                     String[] infoItems = bundleInfo.split("@");
-                    if(infoItems!=null && infoItems[0]!=null){
-                        bundleNameList.add(infoItems[0]);
-                    }
-                    if(infoItems.length>2){
-                        currentDexPatchBundles.put(infoItems[0],infoItems[1]+"@"+infoItems[2]);
-                    }
+                    dexPatchBundles.put(infoItems[0],Long.parseLong(infoItems[1]));
                 }
             }
         }
@@ -476,7 +458,7 @@ public class KernalVersionManager {
         }
     }
 
-    public void rollback(boolean dexPatch){
+    public void upgradeRollback(){
         File baseinfoDir = new File(BASELINEINFO_DIR.getAbsolutePath());
         if (!baseinfoDir.exists()) {
             baseinfoDir.mkdir();
@@ -494,32 +476,21 @@ public class KernalVersionManager {
              */
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(new File(baseinfoDir.getAbsolutePath(), "baselineInfo"))));
 
-            if(dexPatch){
+            out.writeUTF("");
+            out.writeUTF("");
+            if(cachePreVersion){
                 out.writeUTF(LAST_VERSIONNAME);
                 out.writeUTF(LAST_UPDATE_BUNDLES);
-                out.writeUTF(CURRENT_VERSIONAME);
-                out.writeUTF(CURRENT_UPDATE_BUNDLES);
-                out.writeLong(0);
-                out.writeUTF("");
-                out.writeBoolean(true);
-                out.flush();
-                out.close();
             }else {
                 out.writeUTF("");
                 out.writeUTF("");
-                if(cachePreVersion){
-                    out.writeUTF(LAST_VERSIONNAME);
-                    out.writeUTF(LAST_UPDATE_BUNDLES);
-                }else {
-                    out.writeUTF("");
-                    out.writeUTF("");
-                }
-                out.writeLong(0);
-                out.writeUTF("");
-                out.writeBoolean(true);
-                out.flush();
-                out.close();
             }
+            out.writeLong(0);
+            out.writeUTF("");
+            out.writeBoolean(true);
+            out.writeBoolean(cachePreVersion);
+            out.flush();
+            out.close();
         } catch (Throwable e) {
             e.printStackTrace();
             rollbackHardly();
@@ -527,13 +498,64 @@ public class KernalVersionManager {
 
     }
 
-    public void saveBaselineInfo(String newBaselineVersion, List<Pair<String,String>> infos, boolean dexPatch,boolean cachePreVersion) throws IOException{
+    public void dexpatchRollback(List<String> bundles){
+        if(bundles!=null){
+            for(String bundleName : bundles){
+                if(dexPatchBundles.containsKey(bundleName)) {
+                    dexPatchBundles.remove(bundleName);
+                }
+            }
+            StringBuilder bundleList = new StringBuilder("");
+            for(Iterator iterator = dexPatchBundles.entrySet().iterator(); iterator.hasNext();)
+            {
+                Map.Entry entry = (java.util.Map.Entry)iterator.next();
+                bundleList.append(entry.getKey());
+                bundleList.append("@");
+                bundleList.append(""+entry.getValue());
+                bundleList.append(";");
+            }
+            File baseinfoDir = new File(BASELINEINFO_DIR.getAbsolutePath());
+            if (!baseinfoDir.exists()) {
+                baseinfoDir.mkdir();
+            }
+            try {
+                /**
+                 * 写入顺序
+                 * 上一次versionname
+                 * 上一次更新内容
+                 * 本次versionname
+                 * 本次更新内容
+                 * dexpatch versionname
+                 * dexpatch 更新内容
+                 * 是否发生了回滚
+                 */
+                DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(new File(baseinfoDir.getAbsolutePath(), "baselineInfo"))));
+
+                out.writeUTF(LAST_VERSIONNAME);
+                out.writeUTF(LAST_UPDATE_BUNDLES);
+                out.writeUTF(CURRENT_VERSIONAME);
+                out.writeUTF(CURRENT_UPDATE_BUNDLES);
+                out.writeLong(0);
+                out.writeUTF(bundleList.toString());
+                out.writeBoolean(true);
+                out.writeBoolean(cachePreVersion);
+                out.flush();
+                out.close();
+            } catch (Throwable e) {
+                e.printStackTrace();
+                rollbackHardly();
+            }
+        }
+    }
+
+    public void updateVersionInfo(boolean update,String newBaselineVersion, HashMap<String,String> infos,boolean cachePreVersion) throws IOException{
         StringBuilder bundleList = new StringBuilder("");
-        List<Pair<String,String>> bundleUpdateList = infos;
-        for(Pair<String,String> info:bundleUpdateList){
-            bundleList.append(info.first);
+        for(Iterator iterator = infos.entrySet().iterator(); iterator.hasNext();)
+        {
+            Map.Entry entry = (java.util.Map.Entry)iterator.next();
+            bundleList.append(entry.getKey());
             bundleList.append("@");
-            bundleList.append(info.second);
+            bundleList.append(entry.getValue());
             bundleList.append(";");
         }
         File baseinfoFile = BASELINEINFO_DIR;
@@ -541,6 +563,10 @@ public class KernalVersionManager {
             baseinfoFile.mkdirs();
         }
         File newBaselineInfoFile = new File(BASELINEINFO_NEW.getAbsolutePath());
+        if(!update){
+            //dexpatch
+            newBaselineInfoFile = new File(BASELINEINFO.getAbsolutePath());
+        }
         if(!newBaselineInfoFile.exists()){
             newBaselineInfoFile.createNewFile();
         }
@@ -555,7 +581,8 @@ public class KernalVersionManager {
             info = new PackageInfo();
             info.versionName = "";
             info.versionCode = 1;
-        }        String bundleListStr = bundleList.toString();
+        }
+        String bundleListStr = bundleList.toString();
         /**
          * 写入顺序
          * 上一次versionname
@@ -566,32 +593,19 @@ public class KernalVersionManager {
          * dexpatch 更新内容
          * 是否发生了回滚
          */
-        if(!dexPatch) {
-            out.writeUTF(!TextUtils.isEmpty(LAST_VERSIONNAME) ? LAST_VERSIONNAME : info.versionName);
-            if(cachePreVersion) {
-                out.writeUTF(LAST_UPDATE_BUNDLES != null ? LAST_UPDATE_BUNDLES : "");
-            }else{
-                out.writeUTF("");
-            }
-            out.writeUTF(newBaselineVersion != null ? newBaselineVersion : info.versionName);
-            out.writeUTF(bundleListStr);
-            //dexpatch 部分
-            out.writeLong(0);
-            out.writeUTF("");
-            out.writeBoolean(false);
-            out.writeBoolean(cachePreVersion);
+        out.writeUTF(!TextUtils.isEmpty(LAST_VERSIONNAME) ? LAST_VERSIONNAME : info.versionName);
+        if(cachePreVersion) {
+            out.writeUTF(LAST_UPDATE_BUNDLES != null ? LAST_UPDATE_BUNDLES : "");
         }else{
-            out.writeUTF(!TextUtils.isEmpty(LAST_VERSIONNAME) ? LAST_VERSIONNAME : info.versionName);
-            out.writeUTF(!TextUtils.isEmpty(CURRENT_UPDATE_BUNDLES) ? CURRENT_UPDATE_BUNDLES : "");
-            out.writeUTF(!TextUtils.isEmpty(CURRENT_VERSIONAME) ? CURRENT_VERSIONAME :"");
-            out.writeUTF(!TextUtils.isEmpty(CURRENT_UPDATE_BUNDLES) ? CURRENT_UPDATE_BUNDLES:"");
-            //dexpatch 部分
-            out.writeLong(Long.parseLong(newBaselineVersion));
-            out.writeUTF(bundleListStr);
-            out.writeBoolean(false);
-            out.writeBoolean(cachePreVersion);
-
+            out.writeUTF("");
         }
+        out.writeUTF(newBaselineVersion != null ? newBaselineVersion : info.versionName);
+        out.writeUTF(bundleListStr);
+        //dexpatch 部分
+        out.writeLong(0);
+        out.writeUTF("");
+        out.writeBoolean(false);
+        out.writeBoolean(cachePreVersion);
         out.flush();
         out.close();
     }
