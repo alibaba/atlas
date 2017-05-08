@@ -5,6 +5,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
+import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.ApkUtils;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
@@ -36,7 +37,7 @@ public class PatchMerger {
     private ZipFile apkZip;
     private static int BUFFEREDSIZE = 1024;
 
-    public Map<String, Pair> mergeOutputs = new HashMap<String, Pair>();
+    public Map<String, Pair<String,UpdateInfo.Item>> mergeOutputs = new HashMap<>();
     private static boolean supportMerge;
     private static String MAIN_DEX = "com.taobao.maindex";
     static {
@@ -85,18 +86,24 @@ public class PatchMerger {
                     OutputStream outputStream = new FileOutputStream(targetBundle);
                     InputStream inputStream = patchZip.getInputStream(entry);
                     copyStream(inputStream, outputStream);
-                    mergeOutputs.put(bundleName, new Pair<>(targetBundle.getAbsolutePath(), item.version));
+                    mergeOutputs.put(bundleName, new Pair<>(targetBundle.getAbsolutePath(), item));
                 } else {
-                    //差量部署
-                    File originalBundle = findOriginalBundleFile(bundleName, oringnalDir.getAbsolutePath(), item);
-                    if (originalBundle != null && originalBundle.exists()) {
-                        updateBundles[x] = new Pair<File, String>(originalBundle, bundleName);
-                        File targetBundle = new File(outputDirectory, "lib" + bundleName.replace(".", "_") + ".so");
-                        if (targetBundle.exists()) {
-                            targetBundle.delete();
+                    File baselineBundle = findOriginalBundleFile(bundleName, oringnalDir.getAbsolutePath(), item);
+                    if(item.srcVersion.equals("-1")){
+                        //回滚到基线的bundle
+                        mergeOutputs.put(bundleName,new Pair<>(baselineBundle.getAbsolutePath(),item));
+                    }else {
+                        //差量部署
+                        File originalBundle = findOriginalBundleFile(bundleName, oringnalDir.getAbsolutePath(), item);
+                        if (originalBundle != null && originalBundle.exists()) {
+                            updateBundles[x] = new Pair<File, String>(originalBundle, bundleName);
+                            File targetBundle = new File(outputDirectory, "lib" + bundleName.replace(".", "_") + ".so");
+                            if (targetBundle.exists()) {
+                                targetBundle.delete();
+                            }
+                            toMergeList.add(new MergeObject(updateBundles[x].first.getAbsolutePath(), updateBundles[x].second, targetBundle.getAbsolutePath()));
+                            mergeOutputs.put(bundleName, new Pair<>(targetBundle.getAbsolutePath(), item));
                         }
-                        toMergeList.add(new MergeObject(updateBundles[x].first.getAbsolutePath(), updateBundles[x].second, targetBundle.getAbsolutePath()));
-                        mergeOutputs.put(bundleName, new Pair<>(targetBundle.getAbsolutePath(), item.version));
                     }
                 }
             }
@@ -145,60 +152,69 @@ public class PatchMerger {
      */
     public File findOriginalBundleFile(String bundleName, String bundleDirIfNeedCreate, UpdateInfo.Item item) throws IOException {
         if (bundleName.equals(MAIN_DEX)){
-            return new File(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
+            if(item.dexPatchVersion<=0) {
+                return new File(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
+            }else{
+                if(BaselineInfoManager.instance().getBaseBundleVersion("com.taobao.maindex").equals(item.srcVersion)){
+                    File old = new File(RuntimeVariables.androidApplication.getFilesDir(),"storage/com.taobao.maindex/"+item.srcVersion+"/com_taobao_maindex.zip");
+                    if(old.exists()){
+                        return old;
+                    }else{
+                        throw new IOException("can not find original com_taobao_maindex.zip");
+                    }
+                }
+            }
         }
-        if (!TextUtils.isEmpty(bundleName)) {
-            File oldBundle = null;
+        if(item.reset){
+            return getOriginalBundleFromApk(bundleName,bundleDirIfNeedCreate);
+        }
+        File oldBundle = null;
 
-            if (TextUtils.isEmpty(item.srcVersion)) {
-                oldBundle = Atlas.getInstance().getBundleFile(bundleName) != null ? Atlas.getInstance().getBundleFile(bundleName) : Framework.getInstalledBundle(bundleName, "");
+        if (TextUtils.isEmpty(item.srcVersion)) {
+            throw new IllegalStateException("src version can not be null");
+        } else {
+            BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
+            if (impl != null && !BaselineInfoManager.instance().isDexPatched(bundleName)) {
+                String path = impl.getArchive().getCurrentRevision().getRevisionDir().getAbsolutePath();
+                if(!path.contains(BundleArchive.DEXPATCH_DIR) && AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getUnique_tag().equals(item.srcVersion)){
+                    oldBundle = impl.getArchive().getArchiveFile();
+                }
             } else {
-                BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
-
-                if (impl != null && !BaselineInfoManager.instance().isDexPatched(bundleName)) {
-                    String version = impl.getArchive().getCurrentRevision().getVersion();
-                    if (version != null && version.equals(item.srcVersion)) {
-                        oldBundle = impl.getArchive().getArchiveFile();
-                    } else if (version != null && !version.equals(item.srcVersion) && !AtlasBundleInfoManager.instance().isInternalBundle(bundleName)) {
-//                            Atlas.getInstance().restoreBundle(new String[]{bundleName});
-                        return null;
-                    } else if (version != null && !version.equals(item.srcVersion)) {
-
-                        throw new IOException("can not find valid src bundle of " + bundleName);
-
-                    }
-                } else {
-                    oldBundle = Framework.getInstalledBundle(bundleName, item.srcVersion);
-                    if (oldBundle == null) {
-                        throw new IOException("can not find valid src bundle of " + bundleName);
-                    }
-                }
+                oldBundle = Framework.getInstalledBundle(bundleName, item.srcVersion);
             }
-            if (oldBundle == null) {
-
-                String oldBundleFileName = String.format("lib%s.so", bundleName.replace(".", "_"));
-                File libDir = new File(RuntimeVariables.androidApplication.getFilesDir().getParentFile(), "lib");
-                oldBundle = new File(libDir,
-                        oldBundleFileName);
-                if (oldBundle.exists()) {
-                    return oldBundle;
-                } else {
-                    if (apkZip == null) {
-                        apkZip = new ZipFile(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
-                    }
-                    String entryName = String.format("lib/armeabi/%s", oldBundleFileName);
-                    if (apkZip.getEntry(entryName) != null) {
-                        InputStream inputStream = apkZip.getInputStream(apkZip.getEntry(entryName));
-                        oldBundle = new File(bundleDirIfNeedCreate, oldBundleFileName);
-//                        oldBundle.createNewFile();
-                        ApkUtils.copyInputStreamToFile(inputStream, oldBundle);
-                        return oldBundle;
-                    }
-                }
-            }
-            return oldBundle;
         }
-        return null;
+        if (oldBundle == null && AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getUnique_tag().equals(item.srcVersion) && !BaselineInfoManager.instance().isUpdated(bundleName)) {
+            oldBundle = getOriginalBundleFromApk(bundleName,bundleDirIfNeedCreate);
+        }
+        if(oldBundle!=null || !AtlasBundleInfoManager.instance().isInternalBundle(bundleName)) {
+            return oldBundle;
+        }else{
+            throw new IOException("can not find valid src bundle of " + bundleName);
+        }
+    }
+
+    private File getOriginalBundleFromApk(String bundleName,String bundleDirIfNeedCreate) throws IOException{
+        String oldBundleFileName = String.format("lib%s.so", bundleName.replace(".", "_"));
+        File libDir = new File(RuntimeVariables.androidApplication.getFilesDir().getParentFile(), "lib");
+        File oldBundle = new File(libDir,oldBundleFileName);
+        if(!oldBundle.exists()){
+            oldBundle = new File(RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir,oldBundleFileName);
+        }
+        if (oldBundle.exists()) {
+            return oldBundle;
+        } else {
+            if (apkZip == null) {
+                apkZip = new ZipFile(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
+            }
+            String entryName = String.format("lib/armeabi/%s", oldBundleFileName);
+            if (apkZip.getEntry(entryName) != null) {
+                InputStream inputStream = apkZip.getInputStream(apkZip.getEntry(entryName));
+                oldBundle = new File(bundleDirIfNeedCreate, oldBundleFileName);
+                ApkUtils.copyInputStreamToFile(inputStream, oldBundle);
+                return oldBundle;
+            }
+        }
+        return oldBundle;
     }
 
     private DexMergeClient getMergeClient() {

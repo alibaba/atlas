@@ -213,7 +213,6 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.util.*;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
-import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.RuntimeVariables;

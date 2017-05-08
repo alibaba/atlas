@@ -210,7 +210,6 @@ package android.taobao.atlas.framework;
 
 import android.app.PreVerifier;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.os.Environment;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
@@ -224,32 +223,18 @@ import android.taobao.atlas.util.AtlasFileLock;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.Pair;
-
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
-import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Dictionary;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -297,6 +282,8 @@ public final class Framework {
      * framework listeners.
      */
     static List<FrameworkListener> frameworkListeners = new ArrayList<FrameworkListener>();
+
+    static HashMap<String,Integer> installingBundles = new HashMap<>();
 
     /**
      * system ClassLoader
@@ -408,22 +395,6 @@ public final class Framework {
         return (String) properties.get(key);
     }
 
-//    /**
-//     * store the framework metadata.
-//     */
-//    static void storeMetadata() {
-//        File file = null;
-//        try {
-//            file = new File(STORAGE_LOCATION, "meta");
-//            final DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
-//            out.writeUTF("");
-//            out.flush();
-//            out.close();
-//        } catch (IOException ioe) {
-//            Log.e("Framework","Could not save meta data.", ioe);
-//        }
-//    }
-
     public static String getCurProcessName() {
         return RuntimeVariables.getProcessName(RuntimeVariables.androidApplication);
     }
@@ -460,11 +431,7 @@ public final class Framework {
         File bundleDir = null;
         try{
             BundleLock.WriteLock(location);
-	        /*
-	         * <specs page="58">Every bundle is uniquely identified by its location string. If an installed bundle is using
-	         * the specified location, the installBundle method must return the Bundle object for that installed bundle and
-	         * not install a new bundle.</specs>
-	         */
+            installingBundles.put(location,0);
             bundleDir = new File(STORAGE_LOCATION, location);
             if(!bundleDir.exists()){
                 bundleDir.mkdirs();
@@ -475,14 +442,11 @@ public final class Framework {
                 return cached;
             }
 
-            Log.e("BundleInstaller","real install " + location);
             BundleImpl bundle = null;
-
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            bundle = new BundleImpl(bundleDir, location, new BundleContext(), in, null, info.getUnique_tag(),true,-1);
+            bundle = new BundleImpl(bundleDir, location, in, null, info.getUnique_tag(),true,-1);
             return bundle;
         } catch (IOException e) {
-
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
             if (bundleDir != null)
                 Framework.deleteDirectory(bundleDir);
@@ -496,6 +460,7 @@ public final class Framework {
                 Framework.deleteDirectory(bundleDir);
             throw e1;
         } finally {
+            installingBundles .remove(location);
             BundleLock.WriteUnLock(location);
             if (bundleDir != null) {
                 AtlasFileLock.getInstance().unLock(bundleDir);
@@ -516,18 +481,13 @@ public final class Framework {
         File bundleDir = null;
 
         try {
+            BundleLock.WriteLock(location);
+            installingBundles.put(location,0);
             bundleDir = new File(STORAGE_LOCATION, location);
             if(!bundleDir.exists()){
                 bundleDir.mkdirs();
             }
-
-            BundleLock.WriteLock(location);
             AtlasFileLock.getInstance().LockExclusive(bundleDir);
-	        /*
-	         * <specs page="58">Every bundle is uniquely identified by its location string. If an installed bundle is using
-	         * the specified location, the installBundle method must return the Bundle object for that installed bundle and
-	         * not install a new bundle.</specs>
-	         */
             final BundleImpl cached;
             if ((cached = (BundleImpl) getBundle(location)) != null) {
                 return cached;
@@ -536,7 +496,7 @@ public final class Framework {
             BundleImpl bundle = null;
 
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            bundle = new BundleImpl(bundleDir, location, new BundleContext(), null, file,info.getUnique_tag(),true,-1);
+            bundle = new BundleImpl(bundleDir, location, null, file,info.getUnique_tag(),true,-1);
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
@@ -552,6 +512,7 @@ public final class Framework {
                 Framework.deleteDirectory(bundleDir);
             throw e1;
         } finally {
+            installingBundles.remove(location);
             BundleLock.WriteUnLock(location);
             if (bundleDir != null) {
                 AtlasFileLock.getInstance().unLock(bundleDir);
@@ -563,20 +524,18 @@ public final class Framework {
         boolean lockSuccess = false;
         File bundleDir = new File(STORAGE_LOCATION, location);
         BundleImpl bundle = null;
-        // just restore
-        if(bundleDir.exists()) {
+        String bundleUniqueTag = AtlasBundleInfoManager.instance().getBundleInfo(location).getUnique_tag();
+        long dexPatchVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(location);
+        if(!installingBundles.containsKey(location) && (new File(bundleDir,bundleUniqueTag).exists() || new File(bundleDir,BundleArchive.DEXPATCH_DIR+dexPatchVersion).exists())){
             try {
                 lockSuccess = BundleLock.ReadLock(location);
                 AtlasFileLock.getInstance().LockExclusive(bundleDir);
                 BundleContext bcontext = new BundleContext();
-                String bundleUniqueTag = AtlasBundleInfoManager.instance().getBundleInfo(location).getUnique_tag();
-                if(new File(bundleDir,bundleUniqueTag).exists()){
-                    bcontext.bundle_tag = bundleUniqueTag;
-                    bcontext.location = location;
-                    bundle = new BundleImpl(bundleDir, bcontext);
-                    if (bundle != null) {
-                        bundle.optDexFile();
-                    }
+                bcontext.bundle_tag = bundleUniqueTag;
+                bcontext.location = location;
+                bundle = new BundleImpl(bundleDir, bcontext);
+                if (bundle != null) {
+                    bundle.optDexFile();
                 }
             } catch (Exception e) {
                 if (e instanceof BundleArchive.MisMatchException) {
@@ -640,9 +599,9 @@ public final class Framework {
                         // Hold the storage file lock
                         AtlasFileLock.getInstance().LockExclusive(bundleDir);
                         if(upgrade) {
-                            new BundleImpl(bundleDir, locations[i], new BundleContext(), null, files[i], newBundleTag[i], false, -1);
+                            new BundleImpl(bundleDir, locations[i], null, files[i], newBundleTag[i], false, -1);
                         }else{
-                            new BundleImpl(bundleDir, locations[i], new BundleContext(), null, files[i],null, false,dexPatchVersions[i]);
+                            new BundleImpl(bundleDir, locations[i], null, files[i],null, false,dexPatchVersions[i]);
                         }
                     }
                 }

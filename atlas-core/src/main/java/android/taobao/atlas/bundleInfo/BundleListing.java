@@ -270,6 +270,15 @@ public class BundleListing implements Serializable{
         private HashMap<String,Boolean> receivers;
         private HashMap<String,Boolean> contentProviders;
         private String unique_tag;
+        private long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
 
         public boolean isInternal() {
             return isInternal;

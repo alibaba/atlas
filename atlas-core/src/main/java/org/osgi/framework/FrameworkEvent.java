@@ -40,19 +40,6 @@ public class FrameworkEvent extends EventObject {
 	 */
 	private final transient int type;
 
-	/**
-	 * The Framework has started.
-	 * 
-	 * <p>
-	 * This event is broadcast when the Framework has started after all
-	 * installed bundles that are marked to be started have been started and the
-	 * Framework has reached the intitial start level.
-	 * 
-	 * <p>
-	 * The value of <tt>STARTED</tt> is 0x00000001.
-	 * 
-	 * @see org.osgi.service.startlevel.StartLevel
-	 */
 	public static final int STARTED = 0x00000001;
 
 	/**
@@ -66,36 +53,10 @@ public class FrameworkEvent extends EventObject {
 	 */
 	public static final int ERROR = 0x00000002;
 
-	/**
-	 * A PackageAdmin.refreshPackage operation has completed.
-	 * 
-	 * <p>
-	 * This event is broadcast when the Framework has completed the refresh
-	 * packages operation initiated by a call to the
-	 * PackageAdmin.refreshPackages method.
-	 * 
-	 * <p>
-	 * The value of <tt>PACKAGES_REFRESHED</tt> is 0x00000004.
-	 * 
-	 * @since 1.2
-	 * @see org.osgi.service.packageadmin.PackageAdmin#refreshPackages
-	 */
+
 	public static final int PACKAGES_REFRESHED = 0x00000004;
 
-	/**
-	 * A StartLevel.setStartLevel operation has completed.
-	 * 
-	 * <p>
-	 * This event is broadcast when the Framework has completed changing the
-	 * active start level initiated by a call to the StartLevel.setStartLevel
-	 * method.
-	 * 
-	 * <p>
-	 * The value of <tt>STARTLEVEL_CHANGED</tt> is 0x00000008.
-	 * 
-	 * @since 1.2
-	 * @see org.osgi.service.startlevel.StartLevel
-	 */
+
 	public static final int STARTLEVEL_CHANGED = 0x00000008;
 
 	/**

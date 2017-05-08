@@ -77,13 +77,6 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                     if(!TextUtils.isEmpty(tpatchLocation) && !TextUtils.isEmpty(tpatchInfo)){
                         UpdateInfo info = parseObject(tpatchInfo);
                         try {
-                            info.dexPatchVersion = Integer.parseInt(info.updateVersion);
-                        }catch(Throwable e){
-                        }
-                        if(info.dexPatchVersion==0){
-                            return null;
-                        }
-                        try {
                             AtlasUpdater.update(info,new File(tpatchLocation));
                         } catch (MergeException e) {
                             e.printStackTrace();
@@ -151,10 +144,9 @@ public class AwoPatchReceiver extends BroadcastReceiver{
 
         private void wrapperPatchAndInstall(String action){
             if(action.equals(ROLLBACK_ACTION)){
-                BaselineInfoManager.instance().rollback(false);
+                BaselineInfoManager.instance().rollback(true,null);
                 return;
             }else if(action.equals(DEXROLLBACK_ACTION)){
-                BaselineInfoManager.instance().rollback(true);
                 return;
             }
             File debugDirectory = new File(ATLAS_DEBUG_DIRECTORY);
@@ -258,7 +250,7 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                     info = parseObject(realJSON);
                     tpatchFile = tPatch;
                     if(action.equals(DEX_PATCH_ACTION)) {
-                        info.dexPatchVersion = System.currentTimeMillis();
+                        info.dexPatch = true;
                     }
                 }else if(tpatchs!=null && tpatchs.length>0){
                     // tpatch
