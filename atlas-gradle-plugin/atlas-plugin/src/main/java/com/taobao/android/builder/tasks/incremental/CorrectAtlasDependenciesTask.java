@@ -92,13 +92,13 @@ public class CorrectAtlasDependenciesTask extends BaseTask {
                     }
                 }
 
-                // // 移除相同依赖
-                // for (String baseLibrary : baseLibraries) {
-                //     if (isSameResolvedDependency(library, baseLibrary)) {
-                //         librarysToRemove.add(library);
-                //         break;
-                //     }
-                // }
+                // 移除相同依赖
+                for (String baseLibrary : baseLibraries) {
+                    if (isSameResolvedDependency(library, baseLibrary)) {
+                        librarysToRemove.add(library);
+                        break;
+                    }
+                }
             }
 
             System.out.println("Removed " +
