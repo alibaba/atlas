@@ -209,15 +209,16 @@
 
 package com.taobao.android.builder.tools.manifest;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by wuzhong on 2017/4/13.
  */
-public class Result {
+public class Result implements Serializable {
 
-    public boolean sucess;
+    public boolean success;
 
     public List<String> proxyActivities = new ArrayList<>();
     public List<String> proxyServices = new ArrayList<>();

@@ -210,11 +210,12 @@
 package com.taobao.android.builder.tools.classinject;
 
 import java.io.File;
+import java.io.Serializable;
 
 /**
  * Created by wuzhong on 2016/11/24.
  */
-public class InjectParam {
+public class InjectParam implements Serializable {
 
     public String version;
 
@@ -232,4 +233,34 @@ public class InjectParam {
 
     public File outputFile;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (o == null || getClass() != o.getClass()) { return false; }
+
+        InjectParam that = (InjectParam)o;
+
+        if (outApp != that.outApp) { return false; }
+        if (removePreverify != that.removePreverify) { return false; }
+        if (!version.equals(that.version)) { return false; }
+        if (!bundleInfo.equals(that.bundleInfo)) { return false; }
+        if (group != null ? !group.equals(that.group) : that.group != null) { return false; }
+        if (autoStartBundles != null ? !autoStartBundles.equals(that.autoStartBundles)
+            : that.autoStartBundles != null) {
+            return false;
+        }
+        return preLaunch != null ? preLaunch.equals(that.preLaunch) : that.preLaunch == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = version.hashCode();
+        result = 31 * result + bundleInfo.hashCode();
+        result = 31 * result + (group != null ? group.hashCode() : 0);
+        result = 31 * result + (autoStartBundles != null ? autoStartBundles.hashCode() : 0);
+        result = 31 * result + (preLaunch != null ? preLaunch.hashCode() : 0);
+        result = 31 * result + (outApp ? 1 : 0);
+        result = 31 * result + (removePreverify ? 1 : 0);
+        return result;
+    }
 }

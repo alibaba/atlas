@@ -310,7 +310,7 @@ public class AtlasConfigurationHelper {
         if (atlasExtension.isAtlasEnabled()) {
             TBuildConfig tBuildConfig = atlasExtension.getTBuildConfig();
             //            tBuildConfig.setAaptConstantId(false);
-            tBuildConfig.setClassInject(true);
+            //tBuildConfig.setClassInject(true);
             // tBuildConfig.setCreateAP(true);
             tBuildConfig.setUseCustomAapt(true);
             atlasExtension.getManifestOptions().setAddMultiDexMetaData(true);

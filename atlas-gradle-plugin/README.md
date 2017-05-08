@@ -2,6 +2,11 @@
 
 ## changelog
 
+### TODO
+
+1. bundleInfo 增加unique_tag
+2. 去除classInjectTransform
+
 ### 2.3.1.rc11
 
 1. 支持bundle配置proguard规则，仅支持keep和dontwarn

@@ -207,156 +207,148 @@
  *
  */
 
-package com.taobao.android.builder.tools;
-
-import org.apache.commons.io.FileUtils;
-import org.gradle.BuildListener;
-import org.gradle.BuildResult;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.execution.TaskExecutionListener;
-import org.gradle.api.initialization.Settings;
-import org.gradle.api.invocation.Gradle;
-import org.gradle.api.tasks.TaskState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package com.taobao.android.builder.tasks.app;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by wuzhong on 16/8/16.
- *
- *
- *  use --profile replace
- */
-@Deprecated
-public class PerfMonitor {
+import com.alibaba.fastjson.JSON;
 
-    private static Logger logger = LoggerFactory.getLogger(PerfMonitor.class);
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.classinject.InjectParam;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.TaskAction;
 
-    public static File perfProp;
+public class GenerateAtlasSourceTask extends BaseTask {
 
-    public static List<String> keyPoints = new ArrayList<String>();
+    private AppVariantContext appVariantContext;
 
-    public static void monitor(Project project) {
-        project.getGradle().addListener(new TimingRecorder());
-        if (null == perfProp) {
-            perfProp = new File(project.getBuildDir(), "outputs/perf.properties");
-        }
+    private File outputDir;
+
+    @OutputDirectory
+    public File getOutputDir() {
+        return outputDir;
     }
 
+    private InjectParam injectParam;
 
-    public static class TimeDuring implements Serializable {
-        public String threadName;
-        public String taskName;
-        public long startTime;
-        public long endTime;
-
-        public long getDuring() {
-            return endTime - startTime;
+    @Input
+    public InjectParam getInput() {
+        if (null != injectParam) {
+            return injectParam;
         }
-
-        @Override
-        public String toString() {
-            return "TimeDuring{" +
-                    "threadName='" + threadName + '\'' +
-                    ", taskName='" + taskName + '\'' +
-                    ", startTime=" + startTime +
-                    ", endTime=" + endTime +
-                    ", during=" + getDuring() +
-                    '}';
+        try {
+            injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return injectParam;
     }
 
-    public static class TimingRecorder implements TaskExecutionListener, BuildListener {
+    @TaskAction
+    void generate() {
 
-        public static long startTime = System.currentTimeMillis();
-        static List<TimeDuring> list = new ArrayList<TimeDuring>();
-        static final Map<String, TimeDuring> map = new HashMap<String, TimeDuring>();
+        InjectParam injectParam = getInput();
 
-        private TimeDuring getTimeDuring(Task task) {
-            String path = task.getPath();
-            if (map.containsKey(path)) {
-                return map.get(path);
-            }
-            TimeDuring timeDuring = new TimeDuring();
-            map.put(path, timeDuring);
-            return timeDuring;
+        File outputFile = new File(outputDir, "android/taobao/atlas/framework/FrameworkProperties.java");
+
+        List<String> lines = new ArrayList<>();
+
+        lines.add("package android.taobao.atlas.framework;");
+        lines.add("public class FrameworkProperties {");
+
+        lines.add("private String version = \"" + injectParam.version + "\";");
+        lines.add("public String getVersion() {return version;}");
+        lines.add("public static String bunleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
+        //lines.add("public static String bunleInfo = \"\";");
+        if (StringUtils.isNotEmpty(injectParam.autoStartBundles)) {
+            lines.add("public static String autoStartBundles = \"" + injectParam.autoStartBundles + "\";");
+        }
+        if (StringUtils.isNotEmpty(injectParam.preLaunch)) {
+            lines.add("public static String preLaunch = \"" + injectParam.preLaunch + "\";");
+        }
+        if (StringUtils.isNotEmpty(injectParam.group)) {
+            lines.add("public static String group = \"" + injectParam.group + "\";");
+        }
+        lines.add("public static String outApp = \"" + injectParam.outApp + "\";");
+
+        lines.add("}");
+
+        outputFile.getParentFile().mkdirs();
+        try {
+
+            FileUtils.writeLines(outputFile, lines);
+
+            Map output = new HashMap();
+            output.put("bundleInfo", JSON.parseArray(injectParam.bundleInfo));
+            output.put("autoStartBundles", injectParam.autoStartBundles);
+            output.put("preLaunch", injectParam.preLaunch);
+            output.put("group", injectParam.group);
+            output.put("outApp", injectParam.outApp);
+
+            FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),
+                                     "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
+
+        } catch (Exception e) {
+            throw new GradleException(e.getMessage(), e);
         }
 
-        @Override
-        public void beforeExecute(Task task) {
-            TimeDuring timeDuring = getTimeDuring(task);
-            timeDuring.startTime = System.currentTimeMillis() - startTime;
-            list.add(timeDuring);
-        }
+    }
 
-        @Override
-        public void afterExecute(Task task, TaskState taskState) {
-            TimeDuring timeDuring = getTimeDuring(task);
-            timeDuring.endTime = System.currentTimeMillis() - startTime;
-            timeDuring.taskName = task.getPath();
-            timeDuring.threadName = Thread.currentThread().getName();
-            logger.debug("[PerfMonitor]" + timeDuring.toString());
-
-        }
-
-        @Override
-        public void buildStarted(Gradle gradle) {
-
-        }
-
-        @Override
-        public void settingsEvaluated(Settings settings) {
-
-        }
-
-        @Override
-        public void projectsLoaded(Gradle gradle) {
-
-        }
-
-        @Override
-        public void projectsEvaluated(Gradle gradle) {
-
-        }
-
-        @Override
-        public void buildFinished(BuildResult result) {
-
-            perfProp.getParentFile().mkdirs();
-
-            String format = "[PerfMonitor] startTime: %10s  endTime: %10s  during: %10s taskName: %s";
-            for (int i = 1; i < list.size(); i++) {
-                TimeDuring timeDuring = list.get(i);
-//                String paralle = String.valueOf(list.get(i - 1).endTime > timeDuring.startTime);
-                String startTime = String.valueOf(timeDuring.startTime / 1000);
-                String endTime = String.valueOf(timeDuring.endTime / 1000);
-                long during = timeDuring.getDuring() / 1000;
-                String output = String.format(format, startTime, endTime, String.valueOf(during), timeDuring.taskName);
-                keyPoints.add(output);
-                if (during > 10) {
-                    System.err.println(output);
-                } else {
-                    System.out.println(output);
+    private String escapeExprSpecialWord(String keyword) {
+        if (StringUtils.isNotBlank(keyword)) {
+            String[] fbsArr = {"\""};
+            for (String key : fbsArr) {
+                if (keyword.contains(key)) {
+                    keyword = keyword.replace(key, "\\" + key);
                 }
             }
-
-            try {
-                FileUtils.writeLines(perfProp, keyPoints);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            keyPoints.clear();
-
         }
-
+        return keyword;
     }
 
+    public static class ConfigAction extends MtlBaseTaskAction<GenerateAtlasSourceTask> {
+
+        private AppVariantContext appVariantContext;
+
+        public ConfigAction(AppVariantContext appVariantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName("generate", "AtlasSources");
+        }
+
+        @Override
+        public Class<GenerateAtlasSourceTask> getType() {
+            return GenerateAtlasSourceTask.class;
+        }
+
+        @Override
+        public void execute(GenerateAtlasSourceTask atlasSourceTask) {
+
+            super.execute(atlasSourceTask);
+
+            File srcDir = appVariantContext.getAtlaSourceDir();
+            appVariantContext.getVariantData().javacTask.source(srcDir);
+
+            atlasSourceTask.outputDir = srcDir;
+            atlasSourceTask.appVariantContext = appVariantContext;
+
+        }
+    }
 }

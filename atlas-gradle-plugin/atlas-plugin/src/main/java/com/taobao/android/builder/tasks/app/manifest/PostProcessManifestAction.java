@@ -274,7 +274,6 @@ public class PostProcessManifestAction implements Action<Task> {
 
             File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
             if (AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
-                variantScope.getJavacTask();
                 appVariantContext.getVariantData().javacTask.source(proxySrcDir);
             }
 

@@ -209,6 +209,12 @@
 
 package com.taobao.android.builder.dependency.model;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
@@ -217,14 +223,7 @@ import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import com.taobao.android.builder.tools.manifest.ManifestHelper;
-
 import org.apache.commons.lang.StringUtils;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Created by shenghua.nish on 2016-05-06 下午5:46.
@@ -348,6 +347,7 @@ public class AwbBundle {
 
     /**
      * 获取所有的相关jar
+     *
      * @return
      */
     public List<File> getLibraryJars() {
@@ -379,6 +379,7 @@ public class AwbBundle {
 
     /**
      * 获取所有的相关aars
+     *
      * @return
      */
     public List<AndroidLibrary> getAllLibraryAars() {
@@ -410,4 +411,20 @@ public class AwbBundle {
     public boolean isMainBundle() {
         return mainBundle;
     }
+
+    public List<String> getAllDependencies() {
+        List<String> list = new ArrayList<>();
+        for (AndroidLibrary androidL : getAllLibraryAars()) {
+            list.add(androidL.getResolvedCoordinates().toString());
+        }
+        for (JavaLibrary javaLibrary : getJavaLibraries()) {
+            list.add(javaLibrary.getResolvedCoordinates().toString());
+        }
+        for (SoLibrary soLibrary : getSoLibraries()) {
+            list.add(soLibrary.getResolvedCoordinates().toString());
+        }
+        Collections.sort(list);
+        return list;
+    }
+
 }
