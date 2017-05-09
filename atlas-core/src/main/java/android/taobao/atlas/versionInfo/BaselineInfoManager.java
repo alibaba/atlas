@@ -342,42 +342,33 @@ public class BaselineInfoManager{
         return new HashMap<String,String>().keySet();
     }
 
-    private void rollbackInternal(boolean dexPatch,List<String> bundles){
+    private void rollbackInternal(){
         try {
-            if(dexPatch) {
-                mVersionManager.getClass().getDeclaredMethod("dexpatchRollback", List.class).invoke(mVersionManager,bundles);
-            }else{
-                mVersionManager.getClass().getDeclaredMethod("upgradeRollback").invoke(mVersionManager);
-            }
+            mVersionManager.getClass().getDeclaredMethod("rollback").invoke(mVersionManager);
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 
-    public void rollback(boolean upgrade,List<String> rollbackBundles){
-        if(upgrade) {
-            if (!TextUtils.isEmpty(lastVersionName())) {
-                List<String> bundles = new ArrayList<String>(getUpdateBundles());
-                PackageInfo info = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication);
-                if (RuntimeVariables.sCachePreVersionBundles && bundles != null && !info.versionName.equals(lastVersionName()) && bundles.size() > 0) {
-                    rollbackInternal(false,null);
-                } else {
-                    //回滚到安装时期
-                    rollbackHardly();
-                }
+    public void rollback(){
+        if (!TextUtils.isEmpty(lastVersionName())) {
+            List<String> bundles = new ArrayList<String>(getUpdateBundles());
+            PackageInfo info = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication);
+            if (RuntimeVariables.sCachePreVersionBundles && bundles != null && !info.versionName.equals(lastVersionName()) && bundles.size() > 0) {
+                rollbackInternal();
             } else {
+                //回滚到安装时期
                 rollbackHardly();
             }
-        }else{
-            rollbackInternal(true,rollbackBundles);
+        } else {
+            rollbackHardly();
         }
-
     }
 
     public void saveBaselineInfo(String newBaselineVersion, HashMap<String,String> infos) throws IOException{
         try {
-            mVersionManager.getClass().getDeclaredMethod("updateVersionInfo",boolean.class,String.class,HashMap.class,boolean.class).invoke(
-                    mVersionManager,true,newBaselineVersion,infos,RuntimeVariables.sCachePreVersionBundles
+            mVersionManager.getClass().getDeclaredMethod("saveUpdateInfo",String.class,HashMap.class,boolean.class).invoke(
+                    mVersionManager,newBaselineVersion,infos,RuntimeVariables.sCachePreVersionBundles
             );
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -392,9 +383,8 @@ public class BaselineInfoManager{
 
     public void saveDexPathInfo(HashMap<String,String> infos) throws IOException{
         try {
-            mVersionManager.getClass().getDeclaredMethod("updateVersionInfo",boolean.class,String.class,HashMap.class,boolean.class).invoke(
-                    mVersionManager,false,"",infos,RuntimeVariables.sCachePreVersionBundles
-            );
+            mVersionManager.getClass().getDeclaredMethod("saveDexPatchInfo",HashMap.class).invoke(
+                    mVersionManager,infos);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
@@ -402,12 +392,6 @@ public class BaselineInfoManager{
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
-    }
-
-    public static class UpdateBundleInfo{
-        public String name;
-        public String version;
-        public String size;
     }
 
 }

@@ -300,7 +300,11 @@ public final class BundleImpl implements Bundle {
         this.state = Bundle.INSTALLED;
         try {
             if(dexPatchVersion>0){
-                this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag,dexPatchVersion);
+                try {
+                    this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, dexPatchVersion);
+                }catch(Throwable e){
+                    this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, -1);
+                }
             }else {
                 this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag,-1);
             }

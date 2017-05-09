@@ -208,10 +208,13 @@
 
 package android.taobao.atlas.bundleInfo;
 
+import android.text.TextUtils;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -219,76 +222,75 @@ import java.util.*;
  */
 public class BundleListingUtil {
 
-    public static LinkedHashMap<String,BundleListing.BundleInfo> parseArray(String listingStr){
-        LinkedHashMap<String,BundleListing.BundleInfo> infos= new LinkedHashMap<String,BundleListing.BundleInfo>();
-        try {
-            JSONArray array = new JSONArray(listingStr);
-            for(int x=0; x<array.length(); x++){
-                JSONObject object = array.getJSONObject(x);
-                BundleListing.BundleInfo info = new BundleListing.BundleInfo();
-                info.setName(object.optString("name"));
-                info.setPkgName(object.optString("pkgName"));
-                info.setApplicationName(object.optString("applicationName"));
-                info.setVersion(object.optString("version"));
-                info.setDesc(object.optString("desc"));
-                info.setUrl(object.optString("url"));
-                info.setMd5(object.optString("md5"));
-                info.setUnique_tag(object.optString("unique_tag"));
-                if (object.has("isInternal")) {
-                    info.setIsInternal(object.optBoolean("isInternal"));
-                }
-
-                JSONArray dependency = object.optJSONArray("dependency");
-                if(dependency!=null && dependency.length()>0){
-                    List<String> dependencyList = new ArrayList<String>();
-                    for(int i=0; i<dependency.length(); i++){
-                        dependencyList.add(dependency.getString(i));
-                    }
-                    info.setDependency(dependencyList);
-                }
-
-                JSONArray activities = object.optJSONArray("activities");
-                if(activities!=null && activities.length()>0){
-                    HashMap<String,Boolean> activitiesList = new HashMap<String,Boolean>();
-                    for(int i=0; i<activities.length(); i++){
-                        activitiesList.put(activities.getString(i),Boolean.FALSE);
-                    }
-                    info.setActivities(activitiesList);
-                }
-
-                JSONArray services = object.optJSONArray("services");
-                if(services!=null && services.length()>0){
-                    HashMap<String,Boolean> servicesList = new HashMap<String,Boolean>();
-                    for(int i=0; i<services.length(); i++){
-                        servicesList.put(services.getString(i),Boolean.FALSE);
-                    }
-                    info.setServices(servicesList);
-                }
-
-                JSONArray receivers = object.optJSONArray("receivers");
-                if(receivers!=null && receivers.length()>0){
-                    HashMap<String,Boolean> receiversList = new HashMap<String,Boolean>();
-                    for(int i=0; i<receivers.length(); i++){
-                        receiversList.put(receivers.getString(i),Boolean.FALSE);
-                    }
-                    info.setReceivers(receiversList);
-                }
-
-                JSONArray contentProviders = object.optJSONArray("contentProviders");
-                if(contentProviders!=null && contentProviders.length()>0){
-                    HashMap<String,Boolean> contentProvidersList = new HashMap<String,Boolean>();
-                    for(int i=0; i<contentProviders.length(); i++){
-                        contentProvidersList.put(contentProviders.getString(i),Boolean.FALSE);
-                    }
-                    info.setContentProviders(contentProvidersList);
-                }
-
-                infos.put(info.getPkgName(),info);
-
+    public static LinkedHashMap<String,BundleListing.BundleInfo> parseArray(String listingStr) throws Exception{
+        LinkedHashMap<String,BundleListing.BundleInfo> infos= new LinkedHashMap<>();
+        JSONArray array = new JSONArray(listingStr);
+        for(int x=0; x<array.length(); x++){
+            JSONObject object = array.getJSONObject(x);
+            BundleListing.BundleInfo info = new BundleListing.BundleInfo();
+            info.setName(object.optString("name"));
+            info.setPkgName(object.optString("pkgName"));
+            info.setApplicationName(object.optString("applicationName"));
+            info.setVersion(object.optString("version"));
+            info.setDesc(object.optString("desc"));
+            info.setUrl(object.optString("url"));
+            info.setMd5(object.optString("md5"));
+            String uniqueTag = object.optString("unique_tag");
+            if(TextUtils.isEmpty(uniqueTag)){
+                throw new IOException("uniqueTag is empty");
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return null;
+            info.setUnique_tag(object.optString("unique_tag"));
+            if (object.has("isInternal")) {
+                info.setIsInternal(object.optBoolean("isInternal"));
+            }
+
+            JSONArray dependency = object.optJSONArray("dependency");
+            if(dependency!=null && dependency.length()>0){
+                List<String> dependencyList = new ArrayList<String>();
+                for(int i=0; i<dependency.length(); i++){
+                    dependencyList.add(dependency.getString(i));
+                }
+                info.setDependency(dependencyList);
+            }
+
+            JSONArray activities = object.optJSONArray("activities");
+            if(activities!=null && activities.length()>0){
+                HashMap<String,Boolean> activitiesList = new HashMap<String,Boolean>();
+                for(int i=0; i<activities.length(); i++){
+                    activitiesList.put(activities.getString(i),Boolean.FALSE);
+                }
+                info.setActivities(activitiesList);
+            }
+
+            JSONArray services = object.optJSONArray("services");
+            if(services!=null && services.length()>0){
+                HashMap<String,Boolean> servicesList = new HashMap<String,Boolean>();
+                for(int i=0; i<services.length(); i++){
+                    servicesList.put(services.getString(i),Boolean.FALSE);
+                }
+                info.setServices(servicesList);
+            }
+
+            JSONArray receivers = object.optJSONArray("receivers");
+            if(receivers!=null && receivers.length()>0){
+                HashMap<String,Boolean> receiversList = new HashMap<String,Boolean>();
+                for(int i=0; i<receivers.length(); i++){
+                    receiversList.put(receivers.getString(i),Boolean.FALSE);
+                }
+                info.setReceivers(receiversList);
+            }
+
+            JSONArray contentProviders = object.optJSONArray("contentProviders");
+            if(contentProviders!=null && contentProviders.length()>0){
+                HashMap<String,Boolean> contentProvidersList = new HashMap<String,Boolean>();
+                for(int i=0; i<contentProviders.length(); i++){
+                    contentProvidersList.put(contentProviders.getString(i),Boolean.FALSE);
+                }
+                info.setContentProviders(contentProvidersList);
+            }
+
+            infos.put(info.getPkgName(),info);
+
         }
         return infos.size()>0 ? infos : null;
     }

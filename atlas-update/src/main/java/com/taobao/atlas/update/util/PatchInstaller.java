@@ -47,14 +47,22 @@ public class PatchInstaller {
             Map.Entry entry = (Map.Entry) entries.next();
             bundleNameList[index] = (String) entry.getKey();
             Pair<String, UpdateInfo.Item> bundlePair = (Pair<String, UpdateInfo.Item>) entry.getValue();
-            bundleFilePathList[index] = new File(bundlePair.first);
-            if (!bundleFilePathList[index].exists()) {
-                throw new BundleException("bundle input is wrong : "+bundleFilePathList);
-            }
-            if(!updateInfo.dexPatch) {
-                upgradeVersions[index] = bundlePair.second.version;
-            }else{
-                dexPatchVersions[index] = bundlePair.second.dexPatchVersion;
+            if(bundlePair.second.reset){
+                if (!updateInfo.dexPatch) {
+                    upgradeVersions[index] = "-1";
+                } else {
+                    dexPatchVersions[index] = -1;
+                }
+            }else {
+                bundleFilePathList[index] = new File(bundlePair.first);
+                if (!bundleFilePathList[index].exists()) {
+                    throw new BundleException("bundle input is wrong : " + bundleFilePathList);
+                }
+                if (!updateInfo.dexPatch) {
+                    upgradeVersions[index] = bundlePair.second.version;
+                } else {
+                    dexPatchVersions[index] = bundlePair.second.dexPatchVersion;
+                }
             }
             index++;
         }

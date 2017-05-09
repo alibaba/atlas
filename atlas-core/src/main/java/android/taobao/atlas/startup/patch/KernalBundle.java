@@ -300,11 +300,14 @@ public class KernalBundle{
         this.bundleDir = bundleDir;
         long dexPatchVersion = KernalVersionManager.instance().getDexPatchBundleVersion(KERNAL_BUNDLE_NAME);
         try {
-            archive = new KernalBundleArchive(KernalConstants.baseContext,bundleDir,version,dexPatchVersion,process);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new IOException("resolve kernal Bundlele fail ", e);
-        }finally {
+            try {
+                archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, version, dexPatchVersion, process);
+            }catch(Throwable e){
+                if(dexPatchVersion>0){
+                    archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, version, -1, process);
+                }
+            }
+        } finally {
             KernalFileLock.getInstance().unLock(bundleDir);
         }
     }

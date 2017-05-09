@@ -88,12 +88,12 @@ public class PatchMerger {
                     copyStream(inputStream, outputStream);
                     mergeOutputs.put(bundleName, new Pair<>(targetBundle.getAbsolutePath(), item));
                 } else {
-                    File baselineBundle = findOriginalBundleFile(bundleName, oringnalDir.getAbsolutePath(), item);
-                    if(item.srcVersion.equals("-1")){
+                    if(item.reset){
                         //回滚到基线的bundle
-                        mergeOutputs.put(bundleName,new Pair<>(baselineBundle.getAbsolutePath(),item));
+                        mergeOutputs.put(bundleName, new Pair<>("", item));
                     }else {
                         //差量部署
+                        File baselineBundle = findOriginalBundleFile(bundleName, oringnalDir.getAbsolutePath(), item);
                         File originalBundle = findOriginalBundleFile(bundleName, oringnalDir.getAbsolutePath(), item);
                         if (originalBundle != null && originalBundle.exists()) {
                             updateBundles[x] = new Pair<File, String>(originalBundle, bundleName);
@@ -151,8 +151,13 @@ public class PatchMerger {
      * @return
      */
     public File findOriginalBundleFile(String bundleName, String bundleDirIfNeedCreate, UpdateInfo.Item item) throws IOException {
+
+        if (TextUtils.isEmpty(item.srcVersion)) {
+            throw new IllegalStateException("src version can not be null");
+        }
+
         if (bundleName.equals(MAIN_DEX)){
-            if(item.dexPatchVersion<=0) {
+            if(!updateInfo.dexPatch) {
                 return new File(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
             }else{
                 if(BaselineInfoManager.instance().getBaseBundleVersion("com.taobao.maindex").equals(item.srcVersion)){
@@ -162,27 +167,23 @@ public class PatchMerger {
                     }else{
                         throw new IOException("can not find original com_taobao_maindex.zip");
                     }
+                }else{
+                    throw new IOException("can not find valid original com_taobao_maindex.zip");
                 }
             }
         }
-        if(item.reset){
-            return getOriginalBundleFromApk(bundleName,bundleDirIfNeedCreate);
-        }
-        File oldBundle = null;
 
-        if (TextUtils.isEmpty(item.srcVersion)) {
-            throw new IllegalStateException("src version can not be null");
-        } else {
-            BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
-            if (impl != null && !BaselineInfoManager.instance().isDexPatched(bundleName)) {
-                String path = impl.getArchive().getCurrentRevision().getRevisionDir().getAbsolutePath();
-                if(!path.contains(BundleArchive.DEXPATCH_DIR) && AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getUnique_tag().equals(item.srcVersion)){
-                    oldBundle = impl.getArchive().getArchiveFile();
-                }
-            } else {
-                oldBundle = Framework.getInstalledBundle(bundleName, item.srcVersion);
+        File oldBundle = null;
+        BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
+        if (impl != null && !BaselineInfoManager.instance().isDexPatched(bundleName)) {
+            String path = impl.getArchive().getCurrentRevision().getRevisionDir().getAbsolutePath();
+            if(!path.contains(BundleArchive.DEXPATCH_DIR) && AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getUnique_tag().equals(item.srcVersion)){
+                oldBundle = impl.getArchive().getArchiveFile();
             }
+        } else {
+            oldBundle = Framework.getInstalledBundle(bundleName, item.srcVersion);
         }
+
         if (oldBundle == null && AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getUnique_tag().equals(item.srcVersion) && !BaselineInfoManager.instance().isUpdated(bundleName)) {
             oldBundle = getOriginalBundleFromApk(bundleName,bundleDirIfNeedCreate);
         }

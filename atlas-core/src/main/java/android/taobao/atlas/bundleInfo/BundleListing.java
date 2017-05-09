@@ -222,31 +222,8 @@ public class BundleListing implements Serializable{
 
     private LinkedHashMap<String,BundleInfo> bundles = new LinkedHashMap<String,BundleInfo>();
 
-    public static BundleListing clone(BundleListing source){
-        BundleListing listing = new BundleListing();
-        if(source.getBundles()==null){
-            return listing;
-        }
-        LinkedHashMap<String,BundleInfo> infos = new LinkedHashMap<String,BundleInfo>();
-
-        Iterator<Map.Entry<String, BundleInfo>> iterator = source.getBundles().entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, BundleInfo> entry = iterator.next();
-            BundleInfo newInfo = BundleInfo.cloneWithoutUrl(entry.getValue());
-            infos.put(entry.getKey(),newInfo);
-        }
-        listing.setBundles(infos);
-        return listing;
-    }
-
     public LinkedHashMap<String,BundleInfo> getBundles() {
         return bundles;
-    }
-
-    public void insertBundle(BundleInfo bundle){
-        if(bundle!=null){
-            bundles.put(bundle.getPkgName(),bundle);
-        }
     }
 
     public void setBundles(LinkedHashMap<String,BundleInfo> bundles) {
@@ -453,41 +430,6 @@ public class BundleListing implements Serializable{
                     }
                 }
             }
-        }
-
-
-
-        public static BundleInfo cloneWithoutUrl(BundleInfo source){
-            BundleInfo info = new BundleInfo();
-            info.setName(source.getName());
-            info.setPkgName(source.getPkgName());
-            info.setApplicationName(source.getApplicationName());
-            info.setVersion(source.getVersion());
-            info.setDesc(source.getDesc());
-            info.setMd5(source.getMd5());
-            info.setIsInternal(source.isInternal());
-            info.setUnique_tag(source.getUnique_tag());
-            if(source.getDependency()!=null) {
-                ArrayList dependency = new ArrayList<String>(source.getDependency());
-                info.setDependency(dependency);
-            }
-            if(source.getActivities()!=null) {
-                HashMap<String,Boolean> activies = new HashMap<String,Boolean>(source.getActivities());
-                info.setActivities(activies);
-            }
-            if(source.getServices()!=null) {
-                HashMap<String,Boolean> services = new HashMap<String,Boolean>(source.getServices());
-                info.setServices(services);
-            }
-            if(source.getReceivers()!=null) {
-                HashMap<String,Boolean> receivers = new HashMap<String,Boolean>(source.getReceivers());
-                info.setReceivers(receivers);
-            }
-            if(source.getContentProviders()!=null) {
-                HashMap<String,Boolean> providers = new HashMap<String,Boolean>(source.getContentProviders());
-                info.setContentProviders(providers);
-            }
-            return info;
         }
     }
 }

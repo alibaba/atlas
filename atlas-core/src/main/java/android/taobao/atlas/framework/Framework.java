@@ -567,6 +567,13 @@ public final class Framework {
             if (locations[i] == null || files[i] == null) {
                 continue;
             }
+            //reset
+            if(upgrade && newBundleTag[i].equals("-1")){
+                continue;
+            }else if(!upgrade && dexPatchVersions[i]==-1){
+                updateBundles.put(locations[i],"-1");
+            }
+
             File bundleDir = null;
             try {
                 BundleLock.WriteLock(locations[i]);
@@ -642,8 +649,8 @@ public final class Framework {
         }
     }
 
-    public static void rollback(boolean upgrade,List<String> bundles){
-        BaselineInfoManager.instance().rollback(upgrade,bundles);
+    public static void rollback(){
+        BaselineInfoManager.instance().rollback();
     }
 
     static boolean isKernalBundle(String location) {
@@ -712,9 +719,9 @@ public final class Framework {
             return;
         }
 
-        final FrameworkEvent event = new FrameworkEvent(state, bundle, throwable);
+        final FrameworkEvent event = new FrameworkEvent(state);
 
-        final FrameworkListener[] listeners = (FrameworkListener[]) frameworkListeners.toArray(new FrameworkListener[frameworkListeners.size()]);
+        final FrameworkListener[] listeners = frameworkListeners.toArray(new FrameworkListener[frameworkListeners.size()]);
 
         for (int i = 0; i < listeners.length; i++) {
             final FrameworkListener listener = listeners[i];

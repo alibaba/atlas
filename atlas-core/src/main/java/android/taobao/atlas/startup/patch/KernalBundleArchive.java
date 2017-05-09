@@ -309,7 +309,7 @@ import java.util.zip.ZipFile;
             @Override
             public boolean accept(File dir, String filename) {
                 if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"")){
-                    return true;
+                    return false;
                 }else{
                     return true;
                 }

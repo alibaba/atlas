@@ -144,7 +144,7 @@ public class AwoPatchReceiver extends BroadcastReceiver{
 
         private void wrapperPatchAndInstall(String action){
             if(action.equals(ROLLBACK_ACTION)){
-                BaselineInfoManager.instance().rollback(true,null);
+                BaselineInfoManager.instance().rollback();
                 return;
             }else if(action.equals(DEXROLLBACK_ACTION)){
                 return;

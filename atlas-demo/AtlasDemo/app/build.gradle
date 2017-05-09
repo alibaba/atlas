@@ -33,6 +33,11 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+        debug {
+            ndk {
+                abiFilters "x86","armeabi"
+            }
+        }
     }
 
 //    productFlavors {
@@ -53,6 +58,7 @@ atlas {
         autoStartBundles = ['com.taobao.firstbundle'] //自启动bundle配置
         outOfApkBundles = ['remotebundle']
         preLaunch = 'com.taobao.demo.DemoPreLaunch'
+        classInject false
     }
 
     manifestOptions{
@@ -80,7 +86,7 @@ atlas {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile('com.taobao.android:atlas_core:5.0.6-rc52@aar') {
+    compile('com.taobao.android:atlas_core:5.0.6-rc65@aar') {
 
         transitive = true
     }
@@ -100,7 +106,7 @@ dependencies {
     compile 'com.android.support:design:25.1.0'
     compile 'com.android.support:support-vector-drawable:25.1.0'
     compile 'com.android.support:support-v4:25.1.0'
-    compile 'com.taobao.android:atlasupdate:1.1.4.7@aar'
+    compile 'com.taobao.android:atlasupdate:1.1.4.7_rc4@aar'
 
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
