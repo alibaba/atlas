@@ -227,6 +227,7 @@ import com.google.common.collect.Multimap;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.manifest.AtlasProxy;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
@@ -325,7 +326,11 @@ public class PostProcessManifestAction implements Action<Task> {
                 break;
             }
         }
-        return isMultiDex;
+
+        MultiDexConfig multiDexConfig = (MultiDexConfig)appVariantContext.getAtlasExtension().getMultiDexConfigs().findByName(appVariantContext.getBuildType().getName());
+        boolean fastMultiDex = null != multiDexConfig && multiDexConfig.isFastMultiDex();
+
+        return isMultiDex || fastMultiDex;
     }
 
     private Map<String, File> getLibManifestMap() {

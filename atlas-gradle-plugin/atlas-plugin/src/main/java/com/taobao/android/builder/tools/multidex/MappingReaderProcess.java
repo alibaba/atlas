@@ -207,80 +207,31 @@
  *
  */
 
-package com.taobao.android.builder.extension;
+package com.taobao.android.builder.tools.multidex;
 
-import com.android.builder.signing.DefaultSigningConfig;
-import com.taobao.android.builder.extension.annotation.Config;
+import java.util.Map;
 
-import java.io.File;
+import com.google.common.collect.Maps;
+import proguard.obfuscate.MappingProcessor;
 
-/**
- * Created by shenghua.nish on 2016-05-17 上午10:21.
- */
-public class TBuildType {
+public class MappingReaderProcess implements MappingProcessor {
+    public Map<String, String> classMapping = Maps.newHashMap();
 
-    private String name;
-
-    private File baseApFile;
-
-    @Config(title = "基线的依赖坐标",message = "如： com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
-    private String baseApDependency;
-
-    private PatchConfig patchConfig;
-
-    private MultiDexConfig multiDexConfig;
-
-    private DefaultSigningConfig signingConfig;
-
-    public TBuildType(String name) {
-        this.name = name;
+    @Override
+    public boolean processClassMapping(String className, String newClassName) {
+        classMapping.put(className, newClassName);
+        return true;
     }
 
-    public String getName() {
-        return name;
+    @Override
+    public void processFieldMapping(String className, String fieldType, String fieldName, String newClassName,
+                                    String newFieldName) {
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public File getBaseApFile() {
-        return baseApFile;
-    }
-
-    public void setBaseApFile(File baseApFile) {
-        this.baseApFile = baseApFile;
-    }
-
-    public String getBaseApDependency() {
-        return baseApDependency;
-    }
-
-    public void setBaseApDependency(String baseApDependency) {
-        this.baseApDependency = baseApDependency;
-    }
-
-    public PatchConfig getPatchConfig() {
-        return patchConfig;
-    }
-
-    public void setPatchConfig(PatchConfig patchConfig) {
-        this.patchConfig = patchConfig;
-    }
-
-    public DefaultSigningConfig getSigningConfig() {
-        return signingConfig;
-    }
-
-    public void setSigningConfig(DefaultSigningConfig signingConfig) {
-        this.signingConfig = signingConfig;
-    }
-
-    public MultiDexConfig getMultiDexConfig() {
-        return multiDexConfig;
-    }
-
-    public void setMultiDexConfig(MultiDexConfig multiDexConfig) {
-        this.multiDexConfig = multiDexConfig;
+    @Override
+    public void processMethodMapping(String className, int firstLineNumber, int lastLineNumber,
+                                     String methodReturnType, String methodName, String methodArguments,
+                                     String newClassName, int newFirstLineNumber, int newLastLineNumber,
+                                     String newMethodName) {
     }
 }

@@ -209,6 +209,18 @@
 
 package com.android.builder.core;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -257,31 +269,14 @@ import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.ZipUtils;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.StopExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -295,6 +290,8 @@ public class AtlasBuilder extends AndroidBuilder {
     private static Logger sLogger = LoggerFactory.getLogger(AtlasBuilder.class);
 
     protected AtlasExtension atlasExtension;
+
+    public MultiDexer multiDexer;
 
     protected AndroidBuilder defaultBuilder;
 
@@ -761,9 +758,9 @@ public class AtlasBuilder extends AndroidBuilder {
         }
 
         String path = AtlasBuilder.class.getProtectionDomain()
-                .getCodeSource()
-                .getLocation()
-                .getFile();
+            .getCodeSource()
+            .getLocation()
+            .getFile();
         File jarFile = new File(path);
         File jarFolder = new File(jarFile.getParentFile(),
                                   FilenameUtils.getBaseName(jarFile.getName()));
@@ -778,14 +775,20 @@ public class AtlasBuilder extends AndroidBuilder {
         return aaptFile;
     }
 
-    @Override
+    //dex主入口
     public void convertByteCode(Collection<File> inputs,
                                 File outDexFolder,
                                 boolean multidex,
                                 File mainDexList,
                                 DexOptions dexOptions,
-                                ProcessOutputHandler processOutputHandler)
+                                ProcessOutputHandler processOutputHandler, boolean awb)
         throws IOException, InterruptedException, ProcessException {
+
+        boolean fastMultiDex = null != multiDexer && !awb;
+
+        if (fastMultiDex) {
+            inputs = multiDexer.repackageJarList(inputs);
+        }
 
         if (AtlasBuildContext.sBuilderAdapter.fileCache.isCacheEnabled() && inputs.size() > 1) {
 
@@ -811,15 +814,23 @@ public class AtlasBuilder extends AndroidBuilder {
             long endDexTime = System.currentTimeMillis();
 
             if (dexs.size() > 0) {
-                DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
-                                                    CollisionPolicy.KEEP_FIRST,
-                                                    new DxContext());
-                Dex dex = dexMerger.merge();
 
-                File dexFile = new File(outDexFolder, "classes.dex");
+                if (fastMultiDex) {
 
-                dex.writeTo(dexFile);
-            }else {
+                    multiDexer.dexMerge(dexs, outDexFolder);
+
+                } else {
+                    DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
+                                                        CollisionPolicy.KEEP_FIRST,
+                                                        new DxContext());
+                    Dex dex = dexMerger.merge();
+
+                    File dexFile = new File(outDexFolder, "classes.dex");
+
+                    dex.writeTo(dexFile);
+                }
+
+            } else {
                 sLogger.warn("no dex found to  " + outDexFolder.getAbsolutePath());
             }
 
@@ -838,6 +849,20 @@ public class AtlasBuilder extends AndroidBuilder {
                                   dexOptions,
                                   processOutputHandler);
         }
+
+    }
+
+    @Override
+    public void convertByteCode(Collection<File> inputs,
+                                File outDexFolder,
+                                boolean multidex,
+                                File mainDexList,
+                                DexOptions dexOptions,
+                                ProcessOutputHandler processOutputHandler)
+        throws IOException, InterruptedException, ProcessException {
+
+        convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, false);
+
     }
 
     @Override
@@ -848,8 +873,8 @@ public class AtlasBuilder extends AndroidBuilder {
                               @NonNull ProcessOutputHandler processOutputHandler)
         throws IOException, InterruptedException, ProcessException {
 
-        if (!AtlasBuildContext.sBuilderAdapter.dexCacheEnabled){
-            super.preDexLibrary(inputFile,outFile,multiDex,dexOptions,processOutputHandler);
+        if (!AtlasBuildContext.sBuilderAdapter.dexCacheEnabled) {
+            super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler);
             return;
         }
 
@@ -1062,6 +1087,13 @@ public class AtlasBuilder extends AndroidBuilder {
         outputFile.delete();
 
         FileUtils.write(outputFile, xml);
+
+    }
+
+    public static interface MultiDexer {
+
+        public Collection<File> repackageJarList(Collection<File> files) throws IOException;
+        public void dexMerge(List<Dex> dexList, File outDexFolder) throws IOException;
 
     }
 }

@@ -209,32 +209,28 @@
 
 package com.taobao.android.builder.extension;
 
-import com.android.builder.signing.DefaultSigningConfig;
+import java.util.Set;
+
+import com.google.common.collect.Sets;
 import com.taobao.android.builder.extension.annotation.Config;
 
-import java.io.File;
-
 /**
- * Created by shenghua.nish on 2016-05-17 上午10:21.
+ * Created by wuzhong on 2017/5/8.
  */
-public class TBuildType {
+public class MultiDexConfig {
 
     private String name;
 
-    private File baseApFile;
-
-    @Config(title = "基线的依赖坐标",message = "如： com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
-    private String baseApDependency;
-
-    private PatchConfig patchConfig;
-
-    private MultiDexConfig multiDexConfig;
-
-    private DefaultSigningConfig signingConfig;
-
-    public TBuildType(String name) {
+    public MultiDexConfig(String name) {
         this.name = name;
     }
+
+    @Config(title = "是否启用快速", message = "是否启用atlas , true/false", order = 0, group = "atlas")
+    private boolean fastMultiDex = false;
+
+    private Set<String> mainDexWhiteList = Sets.newHashSet();
+
+    private Set<String> mainDexBlackList = Sets.newHashSet();
 
     public String getName() {
         return name;
@@ -244,43 +240,27 @@ public class TBuildType {
         this.name = name;
     }
 
-    public File getBaseApFile() {
-        return baseApFile;
+    public boolean isFastMultiDex() {
+        return fastMultiDex;
     }
 
-    public void setBaseApFile(File baseApFile) {
-        this.baseApFile = baseApFile;
+    public void setFastMultiDex(boolean fastMultiDex) {
+        this.fastMultiDex = fastMultiDex;
     }
 
-    public String getBaseApDependency() {
-        return baseApDependency;
+    public Set<String> getMainDexWhiteList() {
+        return mainDexWhiteList;
     }
 
-    public void setBaseApDependency(String baseApDependency) {
-        this.baseApDependency = baseApDependency;
+    public void setMainDexWhiteList(Set<String> mainDexWhiteList) {
+        this.mainDexWhiteList = mainDexWhiteList;
     }
 
-    public PatchConfig getPatchConfig() {
-        return patchConfig;
+    public Set<String> getMainDexBlackList() {
+        return mainDexBlackList;
     }
 
-    public void setPatchConfig(PatchConfig patchConfig) {
-        this.patchConfig = patchConfig;
-    }
-
-    public DefaultSigningConfig getSigningConfig() {
-        return signingConfig;
-    }
-
-    public void setSigningConfig(DefaultSigningConfig signingConfig) {
-        this.signingConfig = signingConfig;
-    }
-
-    public MultiDexConfig getMultiDexConfig() {
-        return multiDexConfig;
-    }
-
-    public void setMultiDexConfig(MultiDexConfig multiDexConfig) {
-        this.multiDexConfig = multiDexConfig;
+    public void setMainDexBlackList(Set<String> mainDexBlackList) {
+        this.mainDexBlackList = mainDexBlackList;
     }
 }
