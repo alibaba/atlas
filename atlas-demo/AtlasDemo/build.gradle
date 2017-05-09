@@ -2,6 +2,9 @@
 
 buildscript {
     repositories {
+        maven {
+            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+        }
         mavenLocal()
         jcenter()
     }
@@ -11,7 +14,7 @@ buildscript {
     }
     dependencies {
 
-        classpath "com.taobao.android:atlasplugin:2.3.1.rc+"
+        classpath "com.taobao.android:atlasplugin:2.3.1.beta13-SNAPSHOT"
         //classpath "com.taobao.android:atlasplugin:2.3.0.alpha15-SNAPSHOT"
 
     }

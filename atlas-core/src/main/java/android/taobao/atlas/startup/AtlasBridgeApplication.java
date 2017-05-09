@@ -410,7 +410,12 @@ public class AtlasBridgeApplication extends Application{
             // 不可能发生
             android.os.Process.killProcess(android.os.Process.myPid());
         }
+        if(TextUtils.isEmpty(mInstalledVersionName)){
+            //不可能发生
+            android.os.Process.killProcess(android.os.Process.myPid());
+        }
         mInstalledVersionName = packageInfo.versionName;
+        System.setProperty("APP_VERSION_TAG",mInstalledVersionName);
         // 检测之前的版本记录
         SharedPreferences prefs = context.getSharedPreferences("atlas_configs", Context.MODE_PRIVATE);
         int lastVersionCode = prefs.getInt("last_version_code", 0);
