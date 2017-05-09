@@ -270,7 +270,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
         lines.add("private String version = \"" + injectParam.version + "\";");
         lines.add("public String getVersion() {return version;}");
-        lines.add("public static String bunleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
+        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
         //lines.add("public static String bunleInfo = \"\";");
         if (StringUtils.isNotEmpty(injectParam.autoStartBundles)) {
             lines.add("public static String autoStartBundles = \"" + injectParam.autoStartBundles + "\";");
