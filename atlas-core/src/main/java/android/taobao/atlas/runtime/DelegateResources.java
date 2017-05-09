@@ -570,8 +570,11 @@ public class DelegateResources extends Resources {
             }catch(NumberFormatException e){}
 
             if (!result) {
-                AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL,
-                        false, "0", "","");
+//                AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL,
+//                        false, "0", "","");
+                Map<String, Object> detail = new HashMap<>();
+                detail.put("appendAssetPath", path);
+                AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL, detail, new RuntimeException());
             }
             return result;
         }

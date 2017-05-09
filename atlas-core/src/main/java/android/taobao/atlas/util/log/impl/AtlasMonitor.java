@@ -211,6 +211,8 @@ package android.taobao.atlas.util.log.impl;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.log.IMonitor;
 
+import java.util.Map;
+
 public class AtlasMonitor {
 
     private static IMonitor externalMonitor;
@@ -241,7 +243,13 @@ public class AtlasMonitor {
 
     public void trace(String stage, boolean isSuccess, String errCode, String errMsg, String detail) {
         if(externalMonitor!=null){
-        	externalMonitor.trace(stage, isSuccess, errCode, errMsg, detail, FileUtils.getAvailableDisk());
+//        	externalMonitor.trace(stage, isSuccess, errCode, errMsg, detail, FileUtils.getAvailableDisk());
         }
 	}
+
+ 	public void report(String errCode, Map<String, Object> detail, Throwable throwable) {
+        if(externalMonitor != null) {
+            externalMonitor.report(errCode, detail, throwable);
+        }
+    }
 }

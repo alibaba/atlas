@@ -332,7 +332,6 @@ public class KernalVersionManager {
                 input.close();
             } catch (Throwable e) {
                 if(KernalConstants.PROCESS.equals(KernalConstants.baseContext.getPackageName())) {
-                    updateMonitor(KernalConstants.DD_BASELINEINFO_FAIL, e == null ? "" : e.getMessage());
                     BASELINEINFO.delete();
                     rollbackHardly();
                 }
@@ -643,12 +642,6 @@ public class KernalVersionManager {
         } catch (Exception e) {
 
         }
-    }
-
-    private void updateMonitor(String stage, String detail) {
-        SharedPreferences sharedPreferences = KernalConstants.baseContext.getSharedPreferences(KernalConstants.ATLAS_MONITOR, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(stage, detail).commit();
     }
 
 }

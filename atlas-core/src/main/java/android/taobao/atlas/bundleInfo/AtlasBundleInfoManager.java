@@ -366,15 +366,17 @@ public class AtlasBundleInfoManager {
                 try {
                     LinkedHashMap<String,BundleListing.BundleInfo> infos = BundleListingUtil.parseArray(bundleInfoStr);
                     if (infos == null) {
-                        AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL,
-                                false, "0", "", bundleInfoStr);
+                        Map<String, Object> detail = new HashMap<>();
+                        detail.put("InitBundleInfoByVersionIfNeed",bundleInfoStr);
+                        AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL, detail, new RuntimeException("the infos is null!"));
                     }
                     BundleListing listing = new BundleListing();
                     listing.setBundles(infos);
                     mCurrentBundleListing = listing;
                 }catch(Throwable e){
-                    AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL,
-                            false, "0", "", bundleInfoStr);
+                    Map<String, Object> detail = new HashMap<>();
+                    detail.put("InitBundleInfoByVersionIfNeed",bundleInfoStr);
+                    AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL, detail, e);
                     throw new RuntimeException("parse bundleinfo failed");
                 }
             }else{

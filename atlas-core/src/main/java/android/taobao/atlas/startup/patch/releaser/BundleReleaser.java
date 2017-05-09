@@ -362,12 +362,10 @@ public class BundleReleaser {
                                 message.what = MSG_ID_DEX_RELEASE_DONE;
                             } else {
                                 message.what = MSG_ID_RELEASE_FAILED;
-                                updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL, apkFile.getAbsolutePath());
                             }
                             handler.sendMessage(message);
                         } catch (IOException e) {
                             e.printStackTrace();
-                            updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL, e==null?"":e.getMessage());
                         }
                         break;
                     case RESOURCE:
@@ -397,12 +395,10 @@ public class BundleReleaser {
                                 message.what = MSG_ID_RELEASE_DONE;
                             } else {
                                 message.what = MSG_ID_RELEASE_FAILED;
-                                updateMonitor(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, apkFile.getAbsolutePath());
                             }
                             handler.sendMessage(message);
                         } catch (IOException e) {
                             e.printStackTrace();
-                            updateMonitor(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, e==null?"":e.getMessage());
                         }
                         break;
                     default:
@@ -438,13 +434,10 @@ public class BundleReleaser {
                         boolean result = verifyDexFile(dexFiles[j],optimizedPath);
                         if (!result) {
                             handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
-                            updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL, validDexes[j].getAbsolutePath());
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
                         handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
-                        updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL,
-                                validDexes[j].getAbsolutePath() + " and IOException : " + e==null?"null":e.getMessage());
                     } finally {
                         //后面需要loadclass,这里不能close
 //                        if (dexFile != null) {
@@ -544,12 +537,6 @@ public class BundleReleaser {
         handler.removeCallbacksAndMessages(null);
         handler = null;
         service.shutdown();
-    }
-
-    private void updateMonitor(String stage, String detail) {
-        SharedPreferences sharedPreferences = KernalConstants.baseContext.getSharedPreferences(KernalConstants.ATLAS_MONITOR, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(stage, detail).commit();
     }
 
     public interface ProcessCallBack{
