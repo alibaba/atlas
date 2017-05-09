@@ -430,6 +430,36 @@ public class PatchBundleInfo {
     private String  artifactId;
     private String baseVersion;
 
+    public boolean isReset() {
+        return reset;
+    }
+
+    public void setReset(boolean reset) {
+        this.reset = reset;
+    }
+
+    boolean reset;
+
+    public String getUnitTag() {
+        return unitTag;
+    }
+
+    public void setUnitTag(String unitTag) {
+        this.unitTag = unitTag;
+    }
+
+    private String unitTag;
+
+    public String getSrcUnitTag() {
+        return srcUnitTag;
+    }
+
+    public void setSrcUnitTag(String srcUnitTag) {
+        this.srcUnitTag = srcUnitTag;
+    }
+
+    private String srcUnitTag;
+
     public String getBaseVersion() {
         return baseVersion;
     }

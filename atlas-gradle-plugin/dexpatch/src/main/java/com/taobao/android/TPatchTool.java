@@ -836,11 +836,13 @@ public class TPatchTool extends BasePatchTool {
                     patchBundleInfo.setMainBundle(true);
                     patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
                     patchBundleInfo.setName(mainBundleName);
+                    patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
+                    patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
                     patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());
                     patchBundleInfo.setArtifactId(artifactBundleInfo.getArtifactId());
                     patchBundleInfo.setPkgName(artifactBundleInfo.getPkgName());
                     patchBundleInfo.setDependency(artifactBundleInfo.getDependency());
-                    //                    patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
+                    patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                     patchInfo.getBundles().add(patchBundleInfo);
                     continue;
                 }
@@ -849,25 +851,29 @@ public class TPatchTool extends BasePatchTool {
                 PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
                 patchBundleInfo.setNewBundle(DiffType.ADD.equals(artifactBundleInfo.getDiffType()));
                 patchBundleInfo.setMainBundle(false);
+                patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
+                patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
                 patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
                 patchBundleInfo.setName(artifactBundleInfo.getName());
                 patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());
                 patchBundleInfo.setArtifactId(artifactBundleInfo.getArtifactId());
                 patchBundleInfo.setPkgName(artifactBundleInfo.getPkgName());
                 patchBundleInfo.setDependency(artifactBundleInfo.getDependency());
-                //                patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
+                patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                 patchInfo.getBundles().add(patchBundleInfo);
             } else if (modifyBundles.contains(artifactBundleInfo.getPkgName())) {
                 PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
                 patchBundleInfo.setNewBundle(false);
                 patchBundleInfo.setMainBundle(false);
+                patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
+                patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
                 patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
                 patchBundleInfo.setName(artifactBundleInfo.getName());
                 patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());
                 patchBundleInfo.setArtifactId(artifactBundleInfo.getArtifactId());
                 patchBundleInfo.setPkgName(artifactBundleInfo.getPkgName());
                 patchBundleInfo.setDependency(artifactBundleInfo.getDependency());
-                //                patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
+                patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                 patchInfo.getBundles().add(patchBundleInfo);
             }
         }

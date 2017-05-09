@@ -222,7 +222,9 @@ public class PatchFileBuilder {
             bundlePatch.dependency = curBundleInfo.getDependency();
             bundlePatch.pkgName = curBundleInfo.getPkgName();
             bundlePatch.artifactId = curBundleInfo.getArtifactId();
+            bundlePatch.unitTag = curBundleInfo.getUnitTag();
             bundlePatch.version = curBundleInfo.getVersion();
+            bundlePatch.srcUnitTag = curBundleInfo.getSrcUnitTag();
             bundlePatch.newBundle = curBundleInfo.getNewBundle();
             bundlePatch.hisPatchUrl = hisPatchInfo.getDownloadUrl();
             bundlePatch.mainBundle = curBundleInfo.getMainBundle();
@@ -248,11 +250,14 @@ public class PatchFileBuilder {
             PatchBundleInfo hisBundleInfo = entry.getValue();
             BundlePatch bundlePatch = new BundlePatch();
             bundlePatch.name = hisBundleInfo.getName();
+            bundlePatch.unitTag = hisBundleInfo.getUnitTag();
+            bundlePatch.srcUnitTag = hisBundleInfo.getSrcUnitTag();
             bundlePatch.dependency = hisBundleInfo.getDependency();
             bundlePatch.pkgName = hisBundleInfo.getPkgName();
             bundlePatch.artifactId = hisBundleInfo.getArtifactId();
             bundlePatch.bundlePolicy = BundlePolicy.ROLLBACK;
             bundlePatch.version = ROLLBACK_VERSION;
+            bundlePatch.reset = true;
             bundlePatch.baseVersion = hisBundleInfo.getVersion();
             list.add(bundlePatch);
         }
@@ -320,6 +325,8 @@ public class PatchFileBuilder {
                 patchBundleInfo.setApplicationName(bundlePatch.applicationName);
                 patchBundleInfo.setArtifactId(bundlePatch.artifactId);
                 patchBundleInfo.setMainBundle(false);
+                patchBundleInfo.setSrcUnitTag(bundlePatch.srcUnitTag);
+                patchBundleInfo.setUnitTag(bundlePatch.unitTag);
                 patchBundleInfo.setNewBundle(bundlePatch.newBundle);
                 patchBundleInfo.setName(bundleName);
                 patchBundleInfo.setPkgName(bundlePatch.pkgName);
@@ -335,7 +342,10 @@ public class PatchFileBuilder {
             PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
             patchBundleInfo.setApplicationName(bundlePatch.applicationName);
             patchBundleInfo.setArtifactId(bundlePatch.artifactId);
+            patchBundleInfo.setSrcUnitTag(bundlePatch.srcUnitTag);
             patchBundleInfo.setMainBundle(false);
+            patchBundleInfo.setUnitTag(bundlePatch.unitTag);
+            patchBundleInfo.setReset(bundlePatch.reset);
             patchBundleInfo.setNewBundle(bundlePatch.newBundle);
             patchBundleInfo.setName(bundleName);
             patchBundleInfo.setPkgName(bundlePatch.pkgName);
@@ -644,6 +654,9 @@ public class PatchFileBuilder {
         String hisPatchUrl;
         boolean mainBundle;
         String baseVersion;
+        String unitTag;
+        String srcUnitTag;
+        boolean reset;
     }
 
     /**
