@@ -210,6 +210,7 @@
 package com.android.builder.core;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.PrivateKey;
@@ -266,7 +267,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.MD5Util;
+import com.taobao.android.builder.tools.Profiler;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
@@ -784,35 +788,82 @@ public class AtlasBuilder extends AndroidBuilder {
                                 ProcessOutputHandler processOutputHandler, boolean awb)
         throws IOException, InterruptedException, ProcessException {
 
+        Profiler.start();
+
         boolean fastMultiDex = null != multiDexer && !awb;
 
         if (fastMultiDex) {
+            Profiler.enter("repackageJarlist");
             inputs = multiDexer.repackageJarList(inputs);
+            Profiler.release();
         }
 
         if (AtlasBuildContext.sBuilderAdapter.fileCache.isCacheEnabled() && inputs.size() > 1) {
 
+            Profiler.enter("jar2dex");
             List<Dex> dexs = new ArrayList<>();
             //做dexMerge
             File tmpDir = new File(outDexFolder, "tmp");
             tmpDir.mkdirs();
 
             long startTime = System.currentTimeMillis();
-            for (File input : inputs) {
 
-                File dexDir = new File(tmpDir, "dexDir" + dexs.size());
+            List<File> outputs = new ArrayList<>();
 
-                dexDir.mkdirs();
+            if (fastMultiDex) {
+                ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, 0);
+                List<Runnable> runnables = new ArrayList<>();
+                for (File input : inputs) {
 
-                preDexLibrary(input, dexDir, multidex, dexOptions, processOutputHandler);
+                    final File dexDir = getDexOutputDir(input, tmpDir, outputs);
+                    dexDir.mkdirs();
 
-                File dexFile = new File(dexDir, "classes.dex");
-                if (dexFile.exists() && dexFile.length() > 0) {
-                    dexs.add(new Dex(dexFile));
+                    runnables.add(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                preDexLibrary(input, dexDir, multidex, dexOptions, processOutputHandler);
+                            } catch (Exception e) {
+                                throw new GradleException(e.getMessage(), e);
+                            }
+                        }
+                    });
+
+                    outputs.add(dexDir);
+                }
+                executorServicesHelper.execute(runnables);
+            } else {
+                for (File input : inputs) {
+
+                    final File dexDir = getDexOutputDir(input, tmpDir, outputs);
+                    dexDir.mkdirs();
+
+                    preDexLibrary(input, dexDir, multidex, dexOptions, processOutputHandler);
+
+                    outputs.add(dexDir);
                 }
             }
+
+            FilenameFilter filenameFilter = new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return name.endsWith("dex");
+                }
+            };
+
+            for (File dexDir : outputs) {
+                File[] files = dexDir.listFiles();
+                for (File dexFile : files) {
+                    if (dexFile.exists() && dexFile.length() > 0) {
+                        dexs.add(new Dex(dexFile));
+                    }
+                }
+            }
+
+            Profiler.release();
             long endDexTime = System.currentTimeMillis();
 
+            Profiler.enter("dexmerge");
             if (dexs.size() > 0) {
 
                 if (fastMultiDex) {
@@ -833,6 +884,7 @@ public class AtlasBuilder extends AndroidBuilder {
             } else {
                 sLogger.warn("no dex found to  " + outDexFolder.getAbsolutePath());
             }
+            Profiler.release();
 
             FileUtils.deleteDirectory(tmpDir);
 
@@ -850,6 +902,21 @@ public class AtlasBuilder extends AndroidBuilder {
                                   processOutputHandler);
         }
 
+        Profiler.release();
+        if (fastMultiDex) {
+            sLogger.error("[mtldex] main dex consume {} ", Profiler.dump());
+        }
+
+    }
+
+    private File getDexOutputDir(File input, File rootDir, List<File> outputs){
+        File dexDir = null;
+        if (input.isFile() && input.getName().endsWith("jar")) {
+            dexDir = new File(rootDir, FileNameUtils.getUniqueJarName(input));
+        } else {
+            dexDir = new File(rootDir, "dexDir" + outputs.size());
+        }
+        return dexDir;
     }
 
     @Override
@@ -894,7 +961,7 @@ public class AtlasBuilder extends AndroidBuilder {
             if (StringUtils.isNotEmpty(md5)) {
                 AtlasBuildContext.sBuilderAdapter.fileCache.fetchFile(md5, dexFile, "pre-dex");
                 if (dexFile.exists() && dexFile.length() > 0) {
-                    sLogger.info("[mtldex] cache dex for {} , {}",
+                    sLogger.info("[mtldex] hit cache dex for {} , {}",
                                  inputFile.getAbsolutePath(),
                                  dexFile.getAbsolutePath());
                     return;
@@ -902,6 +969,9 @@ public class AtlasBuilder extends AndroidBuilder {
                     sLogger.info("[mtldex] discache dex for {}", inputFile.getAbsolutePath());
                 }
             }
+        } else {
+            //R 太多了，需要开启多dex
+            multiDex = true;
         }
 
         dexFile.delete();
@@ -923,7 +993,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
         super.preDexLibrary(inputFile, outFile, multiDex, defaultDexOptions, processOutputHandler);
 
-        if (StringUtils.isNotEmpty(md5)) {
+        if (StringUtils.isNotEmpty(md5) && dexFile.exists()) {
             AtlasBuildContext.sBuilderAdapter.fileCache.cacheFile(md5, dexFile, "pre-dex");
         }
     }
@@ -1093,6 +1163,7 @@ public class AtlasBuilder extends AndroidBuilder {
     public static interface MultiDexer {
 
         public Collection<File> repackageJarList(Collection<File> files) throws IOException;
+
         public void dexMerge(List<Dex> dexList, File outDexFolder) throws IOException;
 
     }

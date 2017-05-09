@@ -207,333 +207,277 @@
  *
  */
 
-package com.taobao.android.builder.tools.multidex;
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by Fernflower decompiler)
+//
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+package com.taobao.android.builder.tools;
+
+import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
 
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.transforms.JarMerger;
-import com.android.builder.core.AtlasBuilder.MultiDexer;
-import com.android.dex.Dex;
-import com.android.dx.command.dexer.DxContext;
-import com.android.dx.merge.CollisionPolicy;
-import com.android.dx.merge.DexMerger;
-import com.google.common.base.Joiner;
-import com.taobao.android.builder.extension.MultiDexConfig;
-import com.taobao.android.builder.tools.FileNameUtils;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.NotFoundException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.comparator.NameFileComparator;
-import org.gradle.api.GradleException;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import proguard.obfuscate.MappingReader;
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+public final class Profiler {
+    private static final ThreadLocal entryStack = new ThreadLocal();
 
-/**
- * Created by wuzhong on 2017/5/8.
- */
-public class FastMultiDexer implements MultiDexer {
-
-    private static Logger logger = LoggerFactory.getLogger(FastMultiDexer.class);
-
-    private AppVariantContext appVariantContext;
-    private MultiDexConfig multiDexConfig;
-
-    public FastMultiDexer(AppVariantContext appVariantContext) {
-        this.appVariantContext = appVariantContext;
-        this.multiDexConfig = (MultiDexConfig)appVariantContext.getAtlasExtension().getMultiDexConfigs().findByName(
-            appVariantContext.getVariantConfiguration().getBuildType().getName());
+    public Profiler() {
     }
 
-    public boolean isFastMultiDexEnabled() {
-        if (null == multiDexConfig){
-            return false;
-        }
-        boolean fastMultiDex = multiDexConfig.isFastMultiDex();
-        if (fastMultiDex) {
-
-            if (appVariantContext.getVariantData().getVariantConfiguration().isMultiDexEnabled()) {
-                throw new GradleException(
-                    "atlas fast multi dex must close android's default multi dex , please `multiDexEnabled false`");
-            }
-
-            if (appVariantContext.getAtlasExtension().getTBuildConfig().isAtlasMultiDex()) {
-                logger.error("atlasMultiDex is ignored");
-            }
-        }
-        return fastMultiDex;
+    public static void start() {
+        start((String)null);
     }
 
-    @Override
-    public Collection<File> repackageJarList(Collection<File> files) throws IOException {
+    public static void start(String message) {
+        entryStack.set(new Profiler.Entry(message, (Profiler.Entry)null, (Profiler.Entry)null));
+    }
 
-        List<String> mainDexList = getMainDexList(files);
+    public static void start(Profiler.Message message) {
+        entryStack.set(new Profiler.Entry(message, (Profiler.Entry)null, (Profiler.Entry)null));
+    }
 
-        List<File> jarList = new ArrayList<>();
-        List<File> folderList = new ArrayList<>();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                folderList.add(file);
+    public static void reset() {
+        entryStack.set((Object)null);
+    }
+
+    public static void enter(String message) {
+        Profiler.Entry currentEntry = getCurrentEntry();
+        if (currentEntry != null) {
+            currentEntry.enterSubEntry(message);
+        }
+
+    }
+
+    public static void enter(Profiler.Message message) {
+        Profiler.Entry currentEntry = getCurrentEntry();
+        if (currentEntry != null) {
+            currentEntry.enterSubEntry(message);
+        }
+
+    }
+
+    public static void release() {
+        Profiler.Entry currentEntry = getCurrentEntry();
+        if (currentEntry != null) {
+            currentEntry.release();
+        }
+
+    }
+
+    public static long getDuration() {
+        Profiler.Entry entry = (Profiler.Entry)entryStack.get();
+        return entry != null ? entry.getDuration() : -1L;
+    }
+
+    public static String dump() {
+        return dump("", "");
+    }
+
+    public static String dump(String prefix) {
+        return dump(prefix, prefix);
+    }
+
+    public static String dump(String prefix1, String prefix2) {
+        Profiler.Entry entry = (Profiler.Entry)entryStack.get();
+        return entry != null ? entry.toString(prefix1, prefix2) : "";
+    }
+
+    public static Profiler.Entry getEntry() {
+        return (Profiler.Entry)entryStack.get();
+    }
+
+    private static Profiler.Entry getCurrentEntry() {
+        Profiler.Entry subEntry = (Profiler.Entry)entryStack.get();
+        Profiler.Entry entry = null;
+        if (subEntry != null) {
+            do {
+                entry = subEntry;
+                subEntry = subEntry.getUnreleasedEntry();
+            } while (subEntry != null);
+        }
+
+        return entry;
+    }
+
+    public interface Message {
+
+        String getBriefMessage();
+
+        String getDetailedMessage();
+    }
+
+    public static final class Entry {
+        private final List subEntries;
+        private final Object message;
+        private final Profiler.Entry parentEntry;
+        private final Profiler.Entry firstEntry;
+        private final long baseTime;
+        private final long startTime;
+        private long endTime;
+
+        private Entry(Object message, Profiler.Entry parentEntry, Profiler.Entry firstEntry) {
+            this.subEntries = new ArrayList(4);
+            this.message = message;
+            this.startTime = System.currentTimeMillis();
+            this.parentEntry = parentEntry;
+            this.firstEntry = (Profiler.Entry)ObjectUtils.defaultIfNull(firstEntry, this);
+            this.baseTime = firstEntry == null ? 0L : firstEntry.startTime;
+        }
+
+        public String getMessage() {
+            String messageString = null;
+            if (this.message instanceof String) {
+                messageString = (String)this.message;
+            } else if (this.message instanceof Profiler.Message) {
+                Profiler.Message messageObject = (Profiler.Message)this.message;
+
+                messageString = messageObject.getDetailedMessage();
+
+            }
+
+            return StringUtils.defaultIfEmpty(messageString, (String)null);
+        }
+
+        public long getStartTime() {
+            return this.baseTime > 0L ? this.startTime - this.baseTime : 0L;
+        }
+
+        public long getEndTime() {
+            return this.endTime < this.baseTime ? -1L : this.endTime - this.baseTime;
+        }
+
+        public long getDuration() {
+            return this.endTime < this.startTime ? -1L : this.endTime - this.startTime;
+        }
+
+        public long getDurationOfSelf() {
+            long duration = this.getDuration();
+            if (duration < 0L) {
+                return -1L;
+            } else if (this.subEntries.isEmpty()) {
+                return duration;
             } else {
-                jarList.add(file);
-            }
-        }
-
-        File dir = new File(appVariantContext.getScope().getGlobalScope().getIntermediatesDir(), "fastmultidex/" + appVariantContext.getVariantName());
-        FileUtils.deleteDirectory(dir);
-        dir.mkdirs();
-
-        if (!folderList.isEmpty()){
-            File mergedJar = new File(dir, "jarmerging/combined.jar");
-            mergedJar.getParentFile().mkdirs();
-            mergedJar.delete();
-            mergedJar.createNewFile();
-            JarMerger jarMerger = new JarMerger(mergedJar);
-            for (File folder : folderList){
-                jarMerger.addFolder(folder);
-            }
-            jarMerger.close();
-            if (mergedJar.length() > 0) {
-                jarList.add(mergedJar);
-            }
-        }
-
-        List<File> result = new ArrayList<>();
-        File maindexJar = new File(dir, "fastmaindex.jar");
-
-        JarOutputStream mainJarOuputStream = new JarOutputStream(
-            new BufferedOutputStream(new FileOutputStream(maindexJar)));
-        for (File jar : jarList) {
-            File outJar = new File(dir, FileNameUtils.getUniqueJarName(jar) + ".jar");
-            result.add(outJar);
-            JarFile jarFile = new JarFile(jar);
-            JarOutputStream jos = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(outJar)));
-            Enumeration<JarEntry> jarFileEntries = jarFile.entries();
-            while (jarFileEntries.hasMoreElements()) {
-                JarEntry ze = jarFileEntries.nextElement();
-                String pathName = ze.getName();
-                if (mainDexList.contains(pathName)) {
-                    copyStream(jarFile.getInputStream(ze), mainJarOuputStream, ze, pathName);
-                } else {
-                    copyStream(jarFile.getInputStream(ze), jos, ze, pathName);
-                }
-            }
-            jarFile.close();
-            IOUtils.closeQuietly(jos);
-        }
-        IOUtils.closeQuietly(mainJarOuputStream);
-
-        Collections.sort(result, NameFileComparator.NAME_COMPARATOR);
-
-        result.add(0, maindexJar);
-
-        return result;
-
-    }
-
-    protected void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
-        try {
-
-            ZipEntry newEntry = new ZipEntry(pathName);
-            // Make sure there is date and time set.
-            if (ze.getTime() != -1) {
-                newEntry.setTime(ze.getTime()); // If found set it into output file.
-            }
-            jos.putNextEntry(newEntry);
-            IOUtils.copy(inputStream, jos);
-            IOUtils.closeQuietly(inputStream);
-
-        } catch (Exception e) {
-            throw new GradleException("copy stream exception", e);
-        }
-    }
-
-    public List<String> getMainDexList(Collection<File> files) {
-
-        GradleVariantConfiguration config = appVariantContext.getVariantConfiguration();
-
-        Set<String> mainDexList = new HashSet<String>();
-
-        //混淆的map
-        Map<String, String> classMap = getClassObfMap(config);
-
-        File manifest = appVariantContext.getVariantData().getOutputs().get(0).manifestProcessorTask
-            .getManifestOutputFile();
-
-        String applicationName = ManifestFileUtils.getApplicationName(manifest);
-
-        ClassPool classPool = new ClassPool();
-
-        try {
-            for (File file : files) {
-                if (file.isFile()) {
-                    classPool.insertClassPath(file.getAbsolutePath());
-                } else {
-                    classPool.appendClassPath(file.getAbsolutePath());
-                }
-            }
-        } catch (NotFoundException e) {
-            throw new GradleException(e.getMessage(), e);
-        }
-
-        addApplicationRefClazz(classPool, applicationName, mainDexList, new HashSet<String>());
-
-        //get manifest
-        List<String> newLines = new ArrayList<String>();
-        for (String newLine : mainDexList) {
-            newLine = newLine.replaceAll("\\.", "/") + ".class";
-            newLines.add(newLine);
-        }
-
-        return newLines;
-    }
-
-    private Map<String, String> getClassObfMap(GradleVariantConfiguration config) {
-        Map<String, String> classMap = new HashMap<String, String>();
-        boolean isMinifyEnabled = config.isMinifyEnabled();
-        File proguardOut = new File(
-            Joiner.on(File.separatorChar)
-                .join(String.valueOf(appVariantContext.getScope().getGlobalScope().getBuildDir()),
-                      FD_OUTPUTS, "mapping",
-                      appVariantContext.getScope().getVariantConfiguration().getDirName()));
-        File mappingFile = new File(proguardOut, "mapping.txt");
-        // 解析mapping文件,生成新的mainDexListFile
-        if (isMinifyEnabled && mappingFile.exists()) {
-            MappingReader mappingReader = new MappingReader(mappingFile);
-            MappingReaderProcess process = new MappingReaderProcess();
-            try {
-                mappingReader.pump(process);
-            } catch (IOException e) {
-                throw new GradleException(e.getMessage(), e);
-            }
-            classMap = process.classMapping;
-        }
-        return classMap;
-    }
-
-    @Nullable
-    private String getRealClazz(Map<String, String> classMap, String line) {
-        String realClazz = classMap.isEmpty() ? line : classMap.get(line);
-        if (null == realClazz) {
-            realClazz = line;
-        }
-        return realClazz;
-    }
-
-    private void addApplicationRefClazz(ClassPool classPool, String clazz, Set<String> classList,
-                                        Set<String> handleList) {
-
-        if (handleList.contains(clazz)) {
-            return;
-        }
-
-        //增加黑名单
-        if (!multiDexConfig.getMainDexBlackList().isEmpty()) {
-            for (String blackItem : multiDexConfig.getMainDexBlackList()) {
-                if (clazz.startsWith(blackItem)) {
-                    return;
-                }
-            }
-        }
-
-        try {
-
-            CtClass ctClass = classPool.get(clazz);
-
-            if (null != ctClass) {
-
-                logger.info("[MainDex] add " + clazz + " to main dex list");
-                classList.add(clazz);
-                handleList.add(clazz);
-
-                Collection<String> references = ctClass.getRefClasses();
-
-                if (null == references) {
-                    return;
+                for (int i = 0; i < this.subEntries.size(); ++i) {
+                    Profiler.Entry subEntry = (Profiler.Entry)this.subEntries.get(i);
+                    duration -= subEntry.getDuration();
                 }
 
-                for (String clazz2 : references) {
-                    addApplicationRefClazz(classPool, clazz2, classList, handleList);
-                }
+                return duration < 0L ? -1L : duration;
+            }
+        }
 
+        public double getPecentage() {
+            double parentDuration = 0.0D;
+            double duration = (double)this.getDuration();
+            if (this.parentEntry != null && this.parentEntry.isReleased()) {
+                parentDuration = (double)this.parentEntry.getDuration();
             }
 
-        } catch (Throwable e) {
+            return duration > 0.0D && parentDuration > 0.0D ? duration / parentDuration : 0.0D;
         }
-    }
 
-    @Override
-    public void dexMerge(List<Dex> dexList, File outDexFolder) throws IOException {
+        public double getPecentageOfAll() {
+            double firstDuration = 0.0D;
+            double duration = (double)this.getDuration();
+            if (this.firstEntry != null && this.firstEntry.isReleased()) {
+                firstDuration = (double)this.firstEntry.getDuration();
+            }
 
-        int index = 1;
+            return duration > 0.0D && firstDuration > 0.0D ? duration / firstDuration : 0.0D;
+        }
 
-        int tmpMethod = 0;
-        int tmpFiled = 0;
-        List<Dex> tmpList = new ArrayList<>();
+        public List getSubEntries() {
+            return Collections.unmodifiableList(this.subEntries);
+        }
 
-        for (Dex dex : dexList) {
+        private void release() {
+            this.endTime = System.currentTimeMillis();
+        }
 
-            int methodCount = dex.getTableOfContents().methodIds.size;
-            int fieldCount = dex.getTableOfContents().fieldIds.size;
+        private boolean isReleased() {
+            return this.endTime > 0L;
+        }
 
-            if (tmpFiled + fieldCount < 60000 && tmpMethod + methodCount < 60000) {
-                tmpFiled += fieldCount;
-                tmpMethod += methodCount;
-                tmpList.add(dex);
+        private void enterSubEntry(Object message) {
+            Profiler.Entry subEntry = new Profiler.Entry(message, this, this.firstEntry);
+            this.subEntries.add(subEntry);
+        }
+
+        private Profiler.Entry getUnreleasedEntry() {
+            Profiler.Entry subEntry = null;
+            if (!this.subEntries.isEmpty()) {
+                subEntry = (Profiler.Entry)this.subEntries.get(this.subEntries.size() - 1);
+                if (subEntry.isReleased()) {
+                    subEntry = null;
+                }
+            }
+
+            return subEntry;
+        }
+
+        @Override
+        public String toString() {
+            return this.toString("", "");
+        }
+
+        private String toString(String prefix1, String prefix2) {
+            StringBuffer buffer = new StringBuffer();
+            this.toString(buffer, prefix1, prefix2);
+            return buffer.toString();
+        }
+
+        private void toString(StringBuffer buffer, String prefix1, String prefix2) {
+            buffer.append(prefix1);
+            String message = this.getMessage();
+            long startTime = this.getStartTime();
+            long duration = this.getDuration();
+            long durationOfSelf = this.getDurationOfSelf();
+            double percent = this.getPecentage();
+            double percentOfAll = this.getPecentageOfAll();
+            Object[] params = new Object[] {message, new Long(startTime), new Long(duration), new Long(durationOfSelf),
+                new Double(percent), new Double(percentOfAll)};
+            StringBuffer pattern = new StringBuffer("{1,number} ");
+            if (this.isReleased()) {
+                pattern.append("[{2,number}ms");
+                if (durationOfSelf > 0L && durationOfSelf != duration) {
+                    pattern.append(" ({3,number}ms)");
+                }
+
+                if (percent > 0.0D) {
+                    pattern.append(", {4,number,##%}");
+                }
+
+                if (percentOfAll > 0.0D) {
+                    pattern.append(", {5,number,##%}");
+                }
+
+                pattern.append("]");
             } else {
-
-                //todo dexmerge
-                mergeDex(outDexFolder, tmpList, index++);
-
-                tmpFiled = fieldCount;
-                tmpMethod = methodCount;
-                tmpList = new ArrayList<>();
-                tmpList.add(dex);
-
+                pattern.append("[UNRELEASED]");
             }
+
+            if (message != null) {
+                pattern.append(" - {0}");
+            }
+
+            buffer.append(MessageFormat.format(pattern.toString(), params));
+
+            for (int i = 0; i < this.subEntries.size(); ++i) {
+                Profiler.Entry subEntry = (Profiler.Entry)this.subEntries.get(i);
+                buffer.append('\n');
+                if (i == this.subEntries.size() - 1) {
+                    subEntry.toString(buffer, prefix2 + "`---", prefix2 + "    ");
+                } else if (i == 0) {
+                    subEntry.toString(buffer, prefix2 + "+---", prefix2 + "|   ");
+                } else {
+                    subEntry.toString(buffer, prefix2 + "+---", prefix2 + "|   ");
+                }
+            }
+
         }
-
-        mergeDex(outDexFolder, tmpList, index++);
-
     }
-
-    private void mergeDex(File outDexFolder, List<Dex> tmpList, int index) throws IOException {
-
-        DexMerger dexMerger = new DexMerger(tmpList.toArray(new Dex[0]),
-                                            CollisionPolicy.KEEP_FIRST,
-                                            new DxContext());
-        Dex dex = dexMerger.merge();
-
-        String name = "classes" + (1 == index ? "" : String.valueOf(index)) + ".dex";
-
-        File dexFile = new File(outDexFolder, name);
-
-        dex.writeTo(dexFile);
-    }
-
 }
