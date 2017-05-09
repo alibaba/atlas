@@ -226,7 +226,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -449,8 +451,9 @@ public class BundleArchiveRevision {
                 odexFile.delete();
             }
             Log.e("Framework","Failed optDexFile '" + bundleFile.getAbsolutePath() + "' >>> ", e);
-            AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_DEXOPT_FAIL,
-                    false, "0", e==null?"":e.getMessage(), bundleFile.getName());
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("optDexFile", bundleFile.getAbsolutePath());
+            AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_DEXOPT_FAIL, detail, e);
         } finally {
             AtlasFileLock.getInstance().unLock(odexFile);
         }
@@ -517,8 +520,9 @@ public class BundleArchiveRevision {
                 }
             }
         }catch(IOException e){
-            AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_SOLIB_UNZIP_FAIL,
-                    false, "0", e==null?"":e.getMessage(), bundle.getName());
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("installSoLib", bundle.getAbsolutePath());
+            AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_SOLIB_UNZIP_FAIL, detail, e);
             throw e;
         }finally{
         	if(null!=zip){

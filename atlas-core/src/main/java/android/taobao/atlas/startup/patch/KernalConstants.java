@@ -225,9 +225,9 @@ public class KernalConstants {
     public static final String ATLAS_MONITOR = "Atlas_monitor";
 
     //动态部署稳定性stage
-    public static final String DD_BASELINEINFO_FAIL = "dd_baselineinfo_fail";
-
-    public static final String DD_INSTALL_DEXOPT_FAIL = "dd_install_dexopt_fail";
-    public static final String DD_INSTALL_NATIVE_SO_UZIP_FAIL = "dd_install_native_os_uzip_fail";
+//    public static final String DD_BASELINEINFO_FAIL = "dd_baselineinfo_fail";
+//
+//    public static final String DD_INSTALL_DEXOPT_FAIL = "dd_install_dexopt_fail";
+//    public static final String DD_INSTALL_NATIVE_SO_UZIP_FAIL = "dd_install_native_os_uzip_fail";
 
 }

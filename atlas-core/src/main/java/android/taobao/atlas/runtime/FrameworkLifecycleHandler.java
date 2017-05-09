@@ -306,20 +306,20 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
             }
         });
 
-        try {
-            if (RuntimeVariables.androidApplication.getPackageName().equals(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication))) {
-                SharedPreferences sharedPreferences = RuntimeVariables.androidApplication.getSharedPreferences(KernalConstants.ATLAS_MONITOR, Context.MODE_PRIVATE);
-                String errMsg = sharedPreferences.getString(KernalConstants.DD_BASELINEINFO_FAIL, " ");
-                AtlasMonitor.getInstance().trace(KernalConstants.DD_BASELINEINFO_FAIL, false, "0", errMsg, "");
-
-                errMsg = sharedPreferences.getString(KernalConstants.DD_INSTALL_DEXOPT_FAIL, "");
-                AtlasMonitor.getInstance().trace(KernalConstants.DD_INSTALL_DEXOPT_FAIL, false, "0", errMsg, "");
-
-                errMsg = sharedPreferences.getString(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, "");
-                AtlasMonitor.getInstance().trace(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, false, "0", errMsg, "");
-                sharedPreferences.edit().clear();
-            }
-        } catch (Throwable e) {}
+//        try {
+//            if (RuntimeVariables.androidApplication.getPackageName().equals(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication))) {
+//                SharedPreferences sharedPreferences = RuntimeVariables.androidApplication.getSharedPreferences(KernalConstants.ATLAS_MONITOR, Context.MODE_PRIVATE);
+//                String errMsg = sharedPreferences.getString(KernalConstants.DD_BASELINEINFO_FAIL, " ");
+//                AtlasMonitor.getInstance().trace(KernalConstants.DD_BASELINEINFO_FAIL, false, "0", errMsg, "");
+//
+//                errMsg = sharedPreferences.getString(KernalConstants.DD_INSTALL_DEXOPT_FAIL, "");
+//                AtlasMonitor.getInstance().trace(KernalConstants.DD_INSTALL_DEXOPT_FAIL, false, "0", errMsg, "");
+//
+//                errMsg = sharedPreferences.getString(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, "");
+//                AtlasMonitor.getInstance().trace(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, false, "0", errMsg, "");
+//                sharedPreferences.edit().clear();
+//            }
+//        } catch (Throwable e) {}
 
         if(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication).equals(RuntimeVariables.androidApplication.getPackageName())) {
             String autoStartBundle = (String) RuntimeVariables.getFrameworkProperty("autoStartBundles");

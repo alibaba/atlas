@@ -226,7 +226,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
 
@@ -654,9 +656,11 @@ public class BundleInstaller implements Callable{
         }else if(mTmpBundleSourceInputStream!=null){
             bundle = Framework.installNewBundle(bundleName,mTmpBundleSourceInputStream);
         }else{
-            AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_BUNDLE_SOURCE_MISMATCH,
-                    false, "0", "can not find bundle source file!", "");
-            throw new IOException("can not find bundle source file");
+            IOException e = new IOException("can not find bundle source file");
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("installBundleFromApk",bundleName);
+            AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLE_SOURCE_MISMATCH, detail, e);
+            throw e;
         }
         return bundle;
     }
