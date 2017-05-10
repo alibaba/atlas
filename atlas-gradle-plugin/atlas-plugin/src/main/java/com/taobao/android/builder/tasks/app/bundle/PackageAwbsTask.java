@@ -354,8 +354,8 @@ public class PackageAwbsTask extends BaseTask {
 
                         Set<File> javaResourcesLocations = Sets.newHashSet();
                         if (appVariantContext.getAtlasExtension()
-                                .getTBuildConfig()
-                                .isIncremental()) {
+                                    .getTBuildConfig()
+                                    .isIncremental() && awbBundle.getAllLibraryAars().size() > 1) {
                             File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
                                     awbBundle.getAwbSoName());
                             if (baseAwb != null) {
@@ -468,7 +468,8 @@ public class PackageAwbsTask extends BaseTask {
 
         private final AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
