@@ -232,12 +232,10 @@ public class UpdateInfo implements Serializable {
     public UpdateInfo() {
     }
 
-    public UpdateInfo(BuildPatchInfos patchInfos) {
+    public UpdateInfo(PatchInfo patchInfo,String baseVersion) {
         UpdateInfo updateInfo = this;
-        updateInfo.baseVersion = patchInfos.getBaseVersion();
-        updateInfo.updateVersion = patchInfos.getPatches().get(0).getPatchVersion();
-
-        PatchInfo patchInfo = patchInfos.getPatches().get(0);
+        updateInfo.baseVersion = patchInfo.getTargetVersion();
+        updateInfo.updateVersion = patchInfo.getPatchVersion();
 
         List<Item> items = new ArrayList<Item>();
         for (PatchBundleInfo patchBundleInfo : patchInfo.getBundles()) {
@@ -251,7 +249,7 @@ public class UpdateInfo implements Serializable {
                 item.name = patchBundleInfo.getPkgName();
             }
 //            item.srcVersion = patchBundleInfo.getVersion();
-            item.version = updateInfo.baseVersion + "@" + patchBundleInfo.getVersion();
+            item.version = baseVersion + "@" + patchBundleInfo.getVersion();
         }
         updateInfo.updateBundles = items;
     }

@@ -324,6 +324,8 @@ public class TPatchTool extends BasePatchTool {
 
     protected File newApkFileList;
 
+    public static File hisTpatchFolder;
+
     private boolean hasMainBundle;
 
     private List<String> noPatchBundles = Lists.newArrayList();
@@ -406,6 +408,8 @@ public class TPatchTool extends BasePatchTool {
                         String productName) throws Exception {
         isTpatch = true;
         pName = productName;
+         hisTpatchFolder = new File(outPatchDir.getParentFile().getParentFile().getParentFile().getParentFile(),"hisTpatch");
+         System.out.println();hisTpatchFolder.getAbsolutePath();
         final File diffTxtFile = new File(outPatchDir, "diff.json");
         final File patchInfoFile = new File(outPatchDir, "patchInfo.json");
         final File patchTmpDir = new File(outPatchDir, "tpatch-tmp");
@@ -484,9 +488,8 @@ public class TPatchTool extends BasePatchTool {
         File patchFile = createTPatchFile(outPatchDir, patchTmpDir);
 
         PatchInfo curPatchInfo = createBasePatchInfo(patchFile);
-        BuildPatchInfos buildPatchInfos = new BuildPatchInfos();
+        BuildPatchInfos buildPatchInfos = null;
         // 生成多版本的tpatch文件
-        if (createHistoryPatch && patchHistoryUrl != null) {
             buildPatchInfos = createIncrementPatchFiles(productName,
                     patchFile,
                     outPatchDir,
@@ -494,7 +497,6 @@ public class TPatchTool extends BasePatchTool {
                     curPatchInfo,
                     patchHistoryUrl);
 
-        }
 
         buildPatchInfos.getPatches().add(curPatchInfo);
         buildPatchInfos.setBaseVersion(baseApkBO.getVersionName());
@@ -906,15 +908,24 @@ public class TPatchTool extends BasePatchTool {
                                                       PatchInfo curPatchInfo,
                                                       String patchHistoryUrl) throws IOException, PatchException {
         BuildPatchInfos historyBuildPatchInfos = null;
+        String response = null;
         if (!StringUtils.isEmpty(patchHistoryUrl)) {
             String patchHisUrl = patchHistoryUrl +
                     "?baseVersion=" +
                     baseApkBO.getVersionName() +
                     "&productIdentifier=" +
                     productionName;
-            String response = HttpClientUtils.getUrl(patchHisUrl);
-            historyBuildPatchInfos = JSON.parseObject(response, BuildPatchInfos.class);
+              response = HttpClientUtils.getUrl(patchHisUrl);
+
+        }else {
+            File localPatchInfo = new File(hisTpatchFolder,"patchs.json");
+            if (localPatchInfo.exists()) {
+                response = FileUtils.readFileToString(localPatchInfo);
+            }
+
         }
+        historyBuildPatchInfos = JSON.parseObject(response, BuildPatchInfos.class);
+
 
         Map<String, File> awbBundleMap = new HashMap<String, File>();
         for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {

@@ -3,6 +3,7 @@ package com.taobao.android.tpatch.builder;
 import com.android.utils.ILogger;
 import com.taobao.android.BasePatchTool;
 import com.taobao.android.TPatchDexTool;
+import com.taobao.android.TPatchTool;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.object.PatchBundleInfo;
@@ -19,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.net.URL;
@@ -363,7 +365,16 @@ public class PatchFileBuilder {
                 case ROLLBACK:// donothing
                     break;
                 case MERGE:
-                    downloadTPathAndUnzip(hisPatchInfo.getDownloadUrl(), hisTPatchFile, hisTPatchUnzipFolder);
+                    if (StringUtils.isBlank(hisPatchInfo.getDownloadUrl()) && new File(TPatchTool.hisTpatchFolder,hisPatchInfo.getFileName()).exists()){
+                        File hisPatchFile = new File(TPatchTool.hisTpatchFolder,hisPatchInfo.getFileName());
+                        System.out.println("hisPatchFile:"+hisPatchFile.getAbsolutePath());
+                        if (hisPatchFile.exists()) {
+                            FileUtils.copyFile(new File(TPatchTool.hisTpatchFolder, hisPatchInfo.getFileName()), hisTPatchFile);
+                            ZipUtils.unzip(hisTPatchFile, hisTPatchUnzipFolder.getAbsolutePath());
+                        }
+                    }else {
+                        downloadTPathAndUnzip(hisPatchInfo.getDownloadUrl(), hisTPatchFile, hisTPatchUnzipFolder);
+                    }
                     File hisBundleFolder = new File(hisTPatchUnzipFolder, bundleName);
                     if (!hisBundleFolder.exists()) { //如果历史的文件不存在,就直接覆盖
                         throw new PatchException("The bundle:" + bundleName + " does not existed in tpatch:"
