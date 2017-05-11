@@ -228,8 +228,8 @@ import java.io.File;
 public class Updater {
 
     public static void update(Context context) {
-
-        File updateInfo = new File(context.getExternalCacheDir(), "update.json");
+        String versionName = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+        File updateInfo = new File(context.getExternalCacheDir(), "update-"+versionName+".json");
 
         if (!updateInfo.exists()) {
             Log.e("update", "更新信息不存在，请先 执行 buildTpatch.sh");
