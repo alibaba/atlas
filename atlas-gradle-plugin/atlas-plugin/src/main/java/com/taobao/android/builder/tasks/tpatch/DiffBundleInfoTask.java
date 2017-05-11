@@ -209,7 +209,15 @@
 
 package com.taobao.android.builder.tasks.tpatch;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import com.alibaba.fastjson.JSON;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -228,7 +236,6 @@ import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.DiffType;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Attribute;
@@ -243,13 +250,6 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
 
 /**
  * Created by wuzhong on 16/6/24.
@@ -358,6 +358,8 @@ public class DiffBundleInfoTask extends BaseTask {
             awbBundleInfo.setApplicationName(bundleInfo.getApplicationName());
             awbBundleInfo.setArtifactId(awbBundle.getResolvedCoordinates().getArtifactId());
             awbBundleInfo.setName(bundleInfo.getName());
+            awbBundleInfo.setSrcUnitTag(bundleInfo.getUnique_tag());
+            awbBundleInfo.setUnitTag(bundleInfo.getUnique_tag());
             String version = bundleInfo.getVersion();
             if (version.indexOf("@") > 0) {
                 String[] arr = version.split("@");
