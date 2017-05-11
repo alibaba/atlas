@@ -269,7 +269,6 @@ public class AtlasBridgeApplication extends Application{
             if (!isMainProcess) {
                 android.os.Process.killProcess(android.os.Process.myPid());
             }
-            storePackageVersion(base);
             File storageDir = new File(getFilesDir(),"storage");
             File bundleBaseline = new File(getFilesDir(),"bundleBaseline");
             deleteDirectory(storageDir);
@@ -277,6 +276,7 @@ public class AtlasBridgeApplication extends Application{
             if(storageDir.exists() || bundleBaseline.exists()){
                 android.os.Process.killProcess(Process.myPid());
             }
+            storePackageVersion(base);
             KernalVersionManager.instance().init();
             System.setProperty("APK_INSTALLED", "true");
         }else{
@@ -310,16 +310,17 @@ public class AtlasBridgeApplication extends Application{
             mVersionManager.set(instance,KernalVersionManager.instance());
 
             Class BridgeApplicationDelegateClazz = getBaseContext().getClassLoader().loadClass("android.taobao.atlas.bridge.BridgeApplicationDelegate");
-            Class<?>[] parTypes=new Class<?>[4];
+            Class<?>[] parTypes=new Class<?>[7];
             parTypes[0]= Application.class;
             parTypes[1]= String.class;
             parTypes[2]= String.class;
             parTypes[3]= long.class;
             parTypes[4]= long.class;
-            parTypes[5]= boolean.class;
+            parTypes[5]= String.class;
+            parTypes[6]= boolean.class;
             Constructor<?> con = BridgeApplicationDelegateClazz.getConstructor(parTypes);
             mBridgeApplicationDelegate = con.newInstance(this,KernalConstants.PROCESS,KernalConstants.INSTALLED_VERSIONNAME,
-                    KernalConstants.INSTALLED_VERSIONCODE,KernalConstants.LASTUPDATETIME,isUpdated);
+                    KernalConstants.INSTALLED_VERSIONCODE,KernalConstants.LASTUPDATETIME,KernalConstants.APK_PATH,isUpdated);
             Method method = BridgeApplicationDelegateClazz.getDeclaredMethod("attachBaseContext");
             method.invoke(mBridgeApplicationDelegate);
         } catch (Throwable e) {
