@@ -1,6 +1,8 @@
 package com.taobao.atlas.update;
 
+import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.util.Log;
+import android.util.Pair;
 
 import com.taobao.atlas.dexmerge.MergeCallback;
 import com.taobao.atlas.update.exception.MergeException;
@@ -13,6 +15,11 @@ import org.osgi.framework.BundleException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by wuzhong on 2016/11/23.
@@ -53,10 +60,75 @@ public class AtlasUpdater {
 
         patchInstaller.install();
 
-        new PatchCleaner().clearUpdatePath(updateInfo.workDir.getAbsolutePath());
+        PatchCleaner.clearUpdatePath(updateInfo.workDir.getAbsolutePath());
 
 
     }
 
+
+    public static void dexpatchUpdate(UpdateInfo updateInfo, File patchFile, final IDexpatchMonitor monitor){
+
+        PatchMerger patchMerger = null;
+        try {
+            patchMerger = new PatchMerger(updateInfo, patchFile, null);
+            patchMerger.merge();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (patchMerger == null) {
+            return;
+        } else {
+            List<UpdateInfo.Item> result = new ArrayList<>();
+            for (int i = 0; i < updateInfo.updateBundles.size(); i++) {
+                UpdateInfo.Item item = updateInfo.updateBundles.get(i);
+                if (patchMerger.mergeOutputs.containsKey(item.name)) {//对于merge成功的bundle列表进行更新
+                    Pair<String, UpdateInfo.Item> pair = patchMerger.mergeOutputs.get(item.name);
+                    if (new File(pair.first).exists()) {
+                        result.add(item);
+                        monitor.merge(true, item.name, "");
+                    } else {
+                        if (monitor != null) {
+                            monitor.merge(false, item.name, "");
+                        }
+                    }
+                }
+            }
+            updateInfo.updateBundles = result;
+        }
+
+
+        try {
+            PatchInstaller patchInstaller = new PatchInstaller(patchMerger.mergeOutputs, updateInfo);
+            patchInstaller.install();
+        } catch (BundleException e) {
+            e.printStackTrace();
+        }
+
+        ConcurrentHashMap<String, Long> installList = BaselineInfoManager.instance().getDexPatchBundles();
+        if (installList == null || installList.size() == 0) {
+            return;
+        } else {
+            for (int j = 0; j < updateInfo.updateBundles.size(); j++) {
+                UpdateInfo.Item item = updateInfo.updateBundles.get(j);
+                if (installList.containsKey(item.name)) {
+                    if (item.dexPatchVersion == installList.get(item.name)) {
+                        if (monitor != null) monitor.install(true, item.name, "");
+                    } else {
+                        if (monitor != null) monitor.install(false, item.name, "");
+                    }
+                } else {
+                    if (monitor != null) monitor.install(false, item.name, "");
+                }
+            }
+        }
+
+        PatchCleaner.clearUpdatePath(updateInfo.workDir.getAbsolutePath());
+    }
+
+    public interface IDexpatchMonitor {
+        public void merge(boolean success, String bundleName, String errMsg);
+        public void install(boolean success, String bundleName, String errMsg);
+    }
 
 }

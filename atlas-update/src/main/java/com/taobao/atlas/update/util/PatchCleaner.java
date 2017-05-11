@@ -8,7 +8,7 @@ import java.io.File;
 
 public class PatchCleaner {
 
-    public void clearUpdatePath(String bundleUpdatePath) {
+    public static void clearUpdatePath(String bundleUpdatePath) {
         File updatePath = new File(bundleUpdatePath);
         if (updatePath.exists()) {
             File[] updatePathArray = updatePath.listFiles();
