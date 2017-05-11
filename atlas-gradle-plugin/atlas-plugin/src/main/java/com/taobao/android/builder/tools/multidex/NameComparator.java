@@ -207,63 +207,28 @@
  *
  */
 
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by Fernflower decompiler)
-//
-
-package com.taobao.android.builder.tools.update;
-
-import com.taobao.android.object.BuildPatchInfos;
-import com.taobao.android.object.PatchBundleInfo;
-import com.taobao.android.object.PatchInfo;
+package com.taobao.android.builder.tools.multidex;
 
 import java.io.File;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
-public class UpdateInfo implements Serializable {
-    public String baseVersion;
-    public String updateVersion;
-    public List<Item> updateBundles;
-    public File workDir;
+import org.apache.commons.io.comparator.NameFileComparator;
 
-    public UpdateInfo() {
-    }
+/**
+ * Created by wuzhong on 2017/5/9.
+ */
+public class NameComparator extends NameFileComparator {
 
-    public UpdateInfo(BuildPatchInfos patchInfos) {
-        UpdateInfo updateInfo = this;
-        updateInfo.baseVersion = patchInfos.getBaseVersion();
-        updateInfo.updateVersion = patchInfos.getPatches().get(0).getPatchVersion();
+    @Override
+    public int compare(File file1, File file2) {
 
-        PatchInfo patchInfo = patchInfos.getPatches().get(0);
-
-        List<Item> items = new ArrayList<Item>();
-        for (PatchBundleInfo patchBundleInfo : patchInfo.getBundles()) {
-            UpdateInfo.Item item = new UpdateInfo.Item();
-            items.add(item);
-            item.dependency = patchBundleInfo.getDependency();
-            item.isMainDex = patchBundleInfo.getMainBundle();
-            if (item.isMainDex){
-                item.name = "com.taobao.maindex";
-            }else {
-                item.name = patchBundleInfo.getPkgName();
-            }
-//            item.srcVersion = patchBundleInfo.getVersion();
-            item.version = updateInfo.baseVersion + "@" + patchBundleInfo.getVersion();
+        if (file1.getName().startsWith("combined")) {
+            return 1;
         }
-        updateInfo.updateBundles = items;
-    }
 
-    public static class Item implements Serializable {
-        public boolean isMainDex;
-        public String name;
-        public String version;
-        public String srcVersion;
-        public List<String> dependency;
-
-        public Item() {
+        if (file2.getName().startsWith("combined")) {
+            return -1;
         }
+
+        return super.compare(file1, file2);
     }
 }

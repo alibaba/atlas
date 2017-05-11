@@ -295,12 +295,12 @@ public class ManifestFileUtils {
                                           result);
         }
 
-        //if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
-        //    addBundleLocationToDestManifest(document,
-        //                                    libManifestMap,
-        //                                    libDependenciesMaps,
-        //                                    manifestOptions);
-        //}
+        if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
+            addBundleLocationToDestManifest(document,
+                                            libManifestMap,
+                                            libDependenciesMaps,
+                                            manifestOptions);
+        }
         if (null != manifestOptions && manifestOptions.isReplaceApplication()) {
             replaceManifestApplicationName(document);
         }

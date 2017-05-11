@@ -233,19 +233,21 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.transforms.JarMerger;
 import com.android.builder.core.AtlasBuilder.MultiDexer;
 import com.android.dex.Dex;
+import com.android.dex.FieldId;
+import com.android.dex.MethodId;
 import com.android.dx.command.dexer.DxContext;
 import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
 import com.google.common.base.Joiner;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.FileNameUtils;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.comparator.NameFileComparator;
 import org.gradle.api.GradleException;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -271,7 +273,7 @@ public class FastMultiDexer implements MultiDexer {
     }
 
     public boolean isFastMultiDexEnabled() {
-        if (null == multiDexConfig){
+        if (null == multiDexConfig) {
             return false;
         }
         boolean fastMultiDex = multiDexConfig.isFastMultiDex();
@@ -304,17 +306,18 @@ public class FastMultiDexer implements MultiDexer {
             }
         }
 
-        File dir = new File(appVariantContext.getScope().getGlobalScope().getIntermediatesDir(), "fastmultidex/" + appVariantContext.getVariantName());
+        File dir = new File(appVariantContext.getScope().getGlobalScope().getIntermediatesDir(),
+                            "fastmultidex/" + appVariantContext.getVariantName());
         FileUtils.deleteDirectory(dir);
         dir.mkdirs();
 
-        if (!folderList.isEmpty()){
+        if (!folderList.isEmpty()) {
             File mergedJar = new File(dir, "jarmerging/combined.jar");
             mergedJar.getParentFile().mkdirs();
             mergedJar.delete();
             mergedJar.createNewFile();
             JarMerger jarMerger = new JarMerger(mergedJar);
-            for (File folder : folderList){
+            for (File folder : folderList) {
                 jarMerger.addFolder(folder);
             }
             jarMerger.close();
@@ -348,7 +351,7 @@ public class FastMultiDexer implements MultiDexer {
         }
         IOUtils.closeQuietly(mainJarOuputStream);
 
-        Collections.sort(result, NameFileComparator.NAME_COMPARATOR);
+        Collections.sort(result, new NameComparator());
 
         result.add(0, maindexJar);
 
@@ -380,7 +383,7 @@ public class FastMultiDexer implements MultiDexer {
         Set<String> mainDexList = new HashSet<String>();
 
         //混淆的map
-        Map<String, String> classMap = getClassObfMap(config);
+        //Map<String, String> classMap = getClassObfMap(config);
 
         File manifest = appVariantContext.getVariantData().getOutputs().get(0).manifestProcessorTask
             .getManifestOutputFile();
@@ -401,16 +404,41 @@ public class FastMultiDexer implements MultiDexer {
             throw new GradleException(e.getMessage(), e);
         }
 
-        addApplicationRefClazz(classPool, applicationName, mainDexList, new HashSet<String>());
+        HashSet handleList = new HashSet<String>();
 
-        //get manifest
-        List<String> newLines = new ArrayList<String>();
-        for (String newLine : mainDexList) {
-            newLine = newLine.replaceAll("\\.", "/") + ".class";
-            newLines.add(newLine);
+        addRefClazz(classPool, applicationName, mainDexList, handleList);
+
+        String preLaunchStr = appVariantContext.getAtlasExtension()
+            .getTBuildConfig()
+            .getPreLaunch();
+
+        if (!org.apache.commons.lang3.StringUtils.isEmpty(preLaunchStr)) {
+            String[] launchArray = preLaunchStr.split("\\|");
+            if (launchArray.length > 0) {
+                for (String launchItem : launchArray) {
+                    String[] launchInfo = launchItem.split(":");
+                    String clazzName = launchInfo[0];
+
+                    addRefClazz(classPool, clazzName, mainDexList, handleList);
+                }
+            }
         }
 
-        return newLines;
+        //get manifest
+        List<String> maindexListClazz = new ArrayList<String>();
+        for (String newLine : mainDexList) {
+            newLine = newLine.replaceAll("\\.", "/") + ".class";
+            maindexListClazz.add(newLine);
+        }
+
+        try {
+            FileUtils.writeLines(new File(appVariantContext.getProject().getBuildDir(), "outputs/maindexlist.txt"),
+                                 mainDexList);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return maindexListClazz;
     }
 
     private Map<String, String> getClassObfMap(GradleVariantConfiguration config) {
@@ -445,8 +473,8 @@ public class FastMultiDexer implements MultiDexer {
         return realClazz;
     }
 
-    private void addApplicationRefClazz(ClassPool classPool, String clazz, Set<String> classList,
-                                        Set<String> handleList) {
+    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList,
+                             Set<String> handleList) {
 
         if (handleList.contains(clazz)) {
             return;
@@ -478,7 +506,7 @@ public class FastMultiDexer implements MultiDexer {
                 }
 
                 for (String clazz2 : references) {
-                    addApplicationRefClazz(classPool, clazz2, classList, handleList);
+                    addRefClazz(classPool, clazz2, classList, handleList);
                 }
 
             }
@@ -490,50 +518,109 @@ public class FastMultiDexer implements MultiDexer {
     @Override
     public void dexMerge(List<Dex> dexList, File outDexFolder) throws IOException {
 
-        int index = 1;
-
-        int tmpMethod = 0;
-        int tmpFiled = 0;
-        List<Dex> tmpList = new ArrayList<>();
-
+        List<DexDto> dexDtos = new ArrayList<>();
+        DexDto dexDto = new DexDto();
         for (Dex dex : dexList) {
-
-            int methodCount = dex.getTableOfContents().methodIds.size;
-            int fieldCount = dex.getTableOfContents().fieldIds.size;
-
-            if (tmpFiled + fieldCount < 60000 && tmpMethod + methodCount < 60000) {
-                tmpFiled += fieldCount;
-                tmpMethod += methodCount;
-                tmpList.add(dex);
-            } else {
-
-                //todo dexmerge
-                mergeDex(outDexFolder, tmpList, index++);
-
-                tmpFiled = fieldCount;
-                tmpMethod = methodCount;
-                tmpList = new ArrayList<>();
-                tmpList.add(dex);
-
+            if (!dexDto.addDex(dex)) {
+                dexDtos.add(dexDto);
+                dexDto = new DexDto();
+                dexDto.addDex(dex);
             }
         }
+        dexDtos.add(dexDto);
 
-        mergeDex(outDexFolder, tmpList, index++);
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("dexmerge", LoggerFactory
+            .getLogger(FastMultiDexer.class), dexDtos.size());
+        List<Runnable> runnables = new ArrayList<>(dexDtos.size());
+
+        Dex[] mergedList = new Dex[dexDtos.size()];
+        for (int i = 0; i < dexDtos.size(); i++) {
+            final List<Dex> dexes = dexDtos.get(i).dexs;
+            final int index = i;
+            runnables.add(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        mergeDex(outDexFolder, dexes, index, mergedList);
+                    } catch (Throwable e) {
+                        throw new GradleException(e.getMessage(), e);
+                    }
+                }
+            });
+        }
+
+        try {
+            executorServicesHelper.execute(runnables);
+        } catch (InterruptedException e) {
+            throw new GradleException(e.getMessage(), e);
+        }
+
+        //todo
+        //System.out.println(mergedList.length);
+        //File[] files = outDexFolder.listFiles(new FilenameFilter() {
+        //    @Override
+        //    public boolean accept(File dir, String name) {
+        //        return name.endsWith("dex");
+        //    }
+        //});
 
     }
 
-    private void mergeDex(File outDexFolder, List<Dex> tmpList, int index) throws IOException {
+    private void mergeDex(File outDexFolder, List<Dex> tmpList, int index, Dex[] mergedList) throws IOException {
 
         DexMerger dexMerger = new DexMerger(tmpList.toArray(new Dex[0]),
                                             CollisionPolicy.KEEP_FIRST,
                                             new DxContext());
         Dex dex = dexMerger.merge();
 
-        String name = "classes" + (1 == index ? "" : String.valueOf(index)) + ".dex";
+        mergedList[index] = dex;
+
+        String name = "classes" + (0 == index ? "" : String.valueOf(index + 1)) + ".dex";
 
         File dexFile = new File(outDexFolder, name);
 
         dex.writeTo(dexFile);
+
+    }
+
+    private static class DexDto {
+
+        public List<Dex> dexs = new ArrayList<>();
+        public int methods = 0;
+        public int fields = 0;
+
+        public boolean addDex(Dex dex) {
+
+            int ms = dex.getTableOfContents().methodIds.size;
+            int fs = dex.getTableOfContents().fieldIds.size;
+
+            if (methods + ms >= 65535 || fields + fs >= 65535) {
+                return false;
+            }
+
+            dexs.add(dex);
+            methods += ms;
+            fields += fs;
+
+            return true;
+        }
+
+        private Set<String> getMethods(Dex dex) {
+            Set<String> sets = new HashSet<>();
+            for (MethodId mi : dex.methodIds()) {
+                sets.add(mi.toString());
+            }
+            return sets;
+        }
+
+        private Set<String> getFields(Dex dex) {
+            Set<String> sets = new HashSet<>();
+            for (FieldId filedId : dex.fieldIds()) {
+                sets.add(filedId.toString());
+            }
+            return sets;
+        }
+
     }
 
 }

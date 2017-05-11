@@ -309,7 +309,8 @@ public class AtlasProxy {
 
         for (String processName : processNames) {
 
-            boolean isMainPkg = packageName.equals(processName);
+            //boolean isMainPkg = packageName.equals(processName);
+            boolean isMainPkg = true;
             String processClazzName = processName.replace(":", "").replace(".", "_");
 
             for (String elementName : elementNames) {
