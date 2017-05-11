@@ -208,7 +208,6 @@
 
 package android.taobao.atlas.framework;
 
-import android.app.PreVerifier;
 import android.content.pm.ApplicationInfo;
 import android.os.Environment;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
@@ -237,7 +236,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class Framework {
@@ -290,17 +288,6 @@ public final class Framework {
      */
     static ClassLoader systemClassLoader;
 
-    /**
-     * properties.
-     */
-    static Properties properties;
-
-    static String currentProcessName;
-
-    /**
-     * the admin permission.
-     */
-
     private static boolean bundleUpdated = false;
 
     static {
@@ -321,9 +308,6 @@ public final class Framework {
      * Hide defautlt constructor
      */
     private Framework() {
-        if(Boolean.FALSE.booleanValue()){
-            String.valueOf(PreVerifier.class);
-        }
     }
 
     /**
@@ -331,18 +315,8 @@ public final class Framework {
      *
      * @throws Throwable
      */
-    static void startup(Properties props) throws BundleException {
-        properties = props == null ? new Properties() : props;
+    static void startup(boolean updated) throws BundleException {
         AtlasBundleInfoManager.instance().getBundleInfo();
-        startup();
-    }
-
-    /**
-     * launch the framework.
-     *
-     * @throws Throwable
-     */
-    static void startup() throws BundleException {
         notifyFrameworkListeners(0 /* STARTING */, null, null);
         notifyFrameworkListeners(FrameworkEvent.STARTED, null, null);
     }
@@ -364,39 +338,6 @@ public final class Framework {
             return null;
         }
         return bundles.get(location);
-    }
-
-    /**
-     * get a boolean property.
-     *
-     * @param key        the key.
-     * @param defaultVal the default.
-     * @return the value.
-     */
-    public static boolean getProperty(final String key, final boolean defaultVal) {
-        if (properties == null) {
-            return defaultVal;
-        }
-        final String val = (String) properties.get(key);
-        return val != null ? Boolean.valueOf(val).booleanValue() : defaultVal;
-    }
-
-    /**
-     * get an String property.
-     *
-     * @param key
-     * @param defaultString
-     * @return
-     */
-    public static String getProperty(final String key, final String defaultString) {
-        if (properties == null) {
-            return defaultString;
-        }
-        return (String) properties.get(key);
-    }
-
-    public static String getCurProcessName() {
-        return RuntimeVariables.getProcessName(RuntimeVariables.androidApplication);
     }
 
     /**

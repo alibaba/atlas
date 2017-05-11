@@ -221,6 +221,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by guanjie on 15/9/10.
@@ -278,6 +279,15 @@ public class BaselineInfoManager{
             e.printStackTrace();
         }
         return -1;
+    }
+
+    public ConcurrentHashMap<String,Long> getDexPatchBundles(){
+        try {
+            return (ConcurrentHashMap<String,Long>) mVersionManager.getClass().getDeclaredField("dexPatchBundles").get(mVersionManager);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public boolean isUpdated(String bundleName){

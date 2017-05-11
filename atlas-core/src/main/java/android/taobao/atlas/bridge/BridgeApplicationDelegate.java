@@ -249,14 +249,21 @@ public class BridgeApplicationDelegate {
     private Application mRawApplication;
     private String mInstalledVersionName;
     private String mCurrentProcessname;
+    private long   mInstalledVersionCode;
+    private long   mLastUpdateTime;
     private boolean mIsUpdated;
+    private String mApkPath;
     private List<ProviderInfo> mBoundApplication_provider;
 
-    public BridgeApplicationDelegate(Application rawApplication,String processname,String installedVersion,boolean isUpdated){
+    public BridgeApplicationDelegate(Application rawApplication,String processname,String installedVersion,
+                                     long versioncode,long lastupdatetime,String apkPath,boolean isUpdated){
         mRawApplication = rawApplication;
         mCurrentProcessname = processname;
         mInstalledVersionName = installedVersion;
+        mInstalledVersionCode = versioncode;
+        mLastUpdateTime = lastupdatetime;
         mIsUpdated = isUpdated;
+        mApkPath = apkPath;
         PackageManagerDelegate.delegatepackageManager(rawApplication.getBaseContext());
     }
 
@@ -267,6 +274,10 @@ public class BridgeApplicationDelegate {
             throw new RuntimeException(e);
         }
         RuntimeVariables.androidApplication = mRawApplication;
+        RuntimeVariables.sCurrentProcessName = mCurrentProcessname;
+        RuntimeVariables.sInstalledVersionCode = mInstalledVersionCode;
+        RuntimeVariables.sAppLastUpdateTime = mLastUpdateTime;
+        RuntimeVariables.sApkPath = mApkPath;
         RuntimeVariables.delegateResources = mRawApplication.getResources();
         if(!TextUtils.isEmpty(mInstalledVersionName)){
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;

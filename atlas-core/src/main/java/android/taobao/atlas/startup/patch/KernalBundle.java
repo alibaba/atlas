@@ -215,7 +215,6 @@ import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.NClassLoader;
-import android.taobao.atlas.util.IOUtil;
 import android.text.TextUtils;
 import android.util.Log;
 import dalvik.system.DexFile;
@@ -367,6 +366,7 @@ public class KernalBundle{
             }else if(!isDeubgMode()){
                 throw new RuntimeException("FrameworkPropertiesClazz find error,will be rollback!");
             }
+            RuntimeVariablesClass.getDeclaredField("sCurrentProcessName").set(RuntimeVariablesClass,KernalConstants.PROCESS);
             RuntimeVariablesClass.getDeclaredField("androidApplication").set(RuntimeVariablesClass,application);
             RuntimeVariablesClass.getDeclaredField("delegateResources").set(RuntimeVariablesClass,KernalConstants.baseContext.getResources());
         } catch (Throwable e) {

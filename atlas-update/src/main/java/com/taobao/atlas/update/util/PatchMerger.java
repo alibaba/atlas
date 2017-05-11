@@ -116,7 +116,7 @@ public class PatchMerger {
 
                 dexMergeClient.unPrepare();
 
-                if (!mergeFinish) {
+                if (!updateInfo.dexPatch && !mergeFinish) {
                     throw new MergeException("merge failed!");
                 }
             }

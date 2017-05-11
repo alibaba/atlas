@@ -208,7 +208,6 @@
 
 package android.taobao.atlas.startup.patch;
 
-import android.app.PreVerifier;
 import android.content.Context;
 import android.os.Looper;
 import android.taobao.atlas.startup.patch.releaser.BundleReleaser;
@@ -243,9 +242,6 @@ import java.util.zip.ZipFile;
 
     //reload
     public KernalBundleArchive(Context context, File bundleDir,String version,long dexPatchVersion,String process) throws IOException {
-        if(Boolean.FALSE.booleanValue()){
-            String.valueOf(PreVerifier.class);
-        }
         mContext = context;
         this.bundleDir = bundleDir;
         if(process.equals(KernalConstants.baseContext.getPackageName())) {

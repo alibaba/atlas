@@ -210,17 +210,12 @@ package android.taobao.atlas.startup;
 
 import android.app.ActivityManager;
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.os.Process;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.taobao.atlas.startup.patch.KernalFileLock;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.Pair;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -332,7 +327,6 @@ public class KernalVersionManager {
                 input.close();
             } catch (Throwable e) {
                 if(KernalConstants.PROCESS.equals(KernalConstants.baseContext.getPackageName())) {
-                    BASELINEINFO.delete();
                     rollbackHardly();
                 }
                 killChildProcesses(KernalConstants.baseContext);
@@ -541,11 +535,7 @@ public class KernalVersionManager {
          * 是否发生了回滚
          */
         out.writeUTF(LAST_VERSIONNAME);
-        if(cachePreVersion) {
-            out.writeUTF(LAST_UPDATE_BUNDLES != null ? LAST_UPDATE_BUNDLES : "");
-        }else{
-            out.writeUTF("");
-        }
+        out.writeUTF(LAST_UPDATE_BUNDLES != null ? LAST_UPDATE_BUNDLES : "");
         out.writeUTF(CURRENT_VERSIONAME);
         out.writeUTF(CURRENT_UPDATE_BUNDLES);
         //dexpatch 部分
@@ -576,17 +566,6 @@ public class KernalVersionManager {
             newBaselineInfoFile.createNewFile();
         }
         DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(new File(newBaselineInfoFile.getAbsolutePath()))));
-        PackageInfo info = null;
-        // 获取当前的版本号
-        try {
-            PackageManager packageManager = KernalConstants.baseContext.getPackageManager();
-            info = packageManager.getPackageInfo(KernalConstants.baseContext.getPackageName(), 0);
-        } catch (Exception e) {
-            // 不可能发生
-            info = new PackageInfo();
-            info.versionName = "";
-            info.versionCode = 1;
-        }
         String bundleListStr = bundleList.toString();
         /**
          * 写入顺序
@@ -598,13 +577,14 @@ public class KernalVersionManager {
          * dexpatch 更新内容
          * 是否发生了回滚
          */
-        out.writeUTF(!TextUtils.isEmpty(LAST_VERSIONNAME) ? LAST_VERSIONNAME : info.versionName);
         if(cachePreVersion) {
-            out.writeUTF(LAST_UPDATE_BUNDLES != null ? LAST_UPDATE_BUNDLES : "");
+            out.writeUTF(!TextUtils.isEmpty(CURRENT_VERSIONAME) ? CURRENT_VERSIONAME : "");
+            out.writeUTF(CURRENT_UPDATE_BUNDLES != null ? CURRENT_UPDATE_BUNDLES : "");
         }else{
             out.writeUTF("");
+            out.writeUTF("");
         }
-        out.writeUTF(newBaselineVersion != null ? newBaselineVersion : info.versionName);
+        out.writeUTF(newBaselineVersion);
         out.writeUTF(bundleListStr);
         //dexpatch 部分
         out.writeLong(0);

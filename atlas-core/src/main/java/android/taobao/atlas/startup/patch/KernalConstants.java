@@ -219,6 +219,8 @@ public class KernalConstants {
     public static  String  PROCESS;
     public static  String  APK_PATH;
     public static  String  INSTALLED_VERSIONNAME;
+    public static  long INSTALLED_VERSIONCODE;
+    public static  long LASTUPDATETIME;
     public static  Context baseContext;
     public static  String  RAW_APPLICATION_NAME;
 

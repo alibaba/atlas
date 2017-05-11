@@ -221,17 +221,14 @@ import java.util.List;
 
 public class BundleArchive {
 
-    public final static String DEPRECATED_MARK = Framework.DEPRECATED_MARK;
     public final static String DEXPATCH_DIR = "dexpatch/";
-
     private File                                         bundleDir = null;
     private  final BundleArchiveRevision                currentRevision;
 
     // reload
     public BundleArchive(String location,File bundleDir,String uniqueTag,long dexPatchVersion) throws IOException {
         this.bundleDir = bundleDir;
-        String processName = RuntimeVariables.getProcessName(RuntimeVariables.androidApplication);
-        if (processName.equals(RuntimeVariables.androidApplication.getPackageName())) {
+        if (RuntimeVariables.sCurrentProcessName.equals(RuntimeVariables.androidApplication.getPackageName())) {
             purge(uniqueTag,dexPatchVersion);
         }
         File revisionDir ;
@@ -295,7 +292,7 @@ public class BundleArchive {
 
     //update
     public BundleArchiveRevision newRevision(String location,File bundleDir, File input,String uniqueTag,long dexPatchVersion) throws IOException {
-        if(!Framework.getCurProcessName().equals(RuntimeVariables.androidApplication.getPackageName())){
+        if(!RuntimeVariables.sCurrentProcessName.equals(RuntimeVariables.androidApplication.getPackageName())){
             throw new RuntimeException("can not update bundle in child process");
         }
         if(dexPatchVersion>0){
@@ -353,11 +350,18 @@ public class BundleArchive {
         File[] dexPatchs = dexPatchDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String filename) {
-                if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"")){
+                long version = 0;
+                try {
+                    version = Long.parseLong(filename);
+                }catch(Throwable e){}
+                if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"") && dexPatchVersion>version){
                     return true;
                 }else{
-                    return true;
+                    if(System.currentTimeMillis()-dir.lastModified()>10*1000) {
+                        return true;
+                    }
                 }
+                return false;
             }
         });
         if(dexPatchs!=null){
