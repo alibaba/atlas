@@ -213,6 +213,7 @@ import com.android.annotations.NonNull;
 import com.taobao.android.builder.extension.annotation.Config;
 import com.taobao.android.builder.extension.annotation.ConfigGroup;
 
+import com.taobao.android.builder.extension.factory.MultiDexConfigFactory;
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
@@ -237,6 +238,9 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     @ConfigGroup(order = 3, advance = true)
     public ManifestOptions manifestOptions;
 
+    @ConfigGroup(order = 4, advance = false)
+    public NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs;
+
     //如果atlas开关开启了，自动会打开一些默认的开关
     @Config(title = "是否启用atlas", message = "是否启用atlas , true/false", order = 0, group = "atlas")
     private boolean atlasEnabled;
@@ -258,6 +262,8 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
         this.patchConfigs = patchConfigs;
         this.buildTypes = buildTypes;
+        this.multiDexConfigs = project.container(MultiDexConfig.class, new MultiDexConfigFactory(
+            instantiator,project, project.getLogger()));
 
         tBuildConfig = (Z) instantiator.newInstance(TBuildConfig.class);
         manifestOptions = instantiator.newInstance(ManifestOptions.class);
@@ -282,6 +288,10 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     public void bundleConfig(Action<BundleConfig> action) {
         action.execute(bundleConfig);
+    }
+
+    public void multiDexConfigs(Action<? super NamedDomainObjectContainer<MultiDexConfig>> action) {
+        action.execute(multiDexConfigs);
     }
 
     public NamedDomainObjectContainer<PatchConfig> getPatchConfigs() {
@@ -318,5 +328,13 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     public Project getProject() {
         return project;
+    }
+    public NamedDomainObjectContainer<MultiDexConfig> getMultiDexConfigs() {
+        return multiDexConfigs;
+    }
+
+    public void setMultiDexConfigs(
+        NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs) {
+        this.multiDexConfigs = multiDexConfigs;
     }
 }

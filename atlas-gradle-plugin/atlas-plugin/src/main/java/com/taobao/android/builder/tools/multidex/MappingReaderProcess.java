@@ -207,21 +207,31 @@
  *
  */
 
-package com.taobao.android.builder.tools.manifest;
+package com.taobao.android.builder.tools.multidex;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
-/**
- * Created by wuzhong on 2017/4/13.
- */
-public class Result implements Serializable {
+import com.google.common.collect.Maps;
+import proguard.obfuscate.MappingProcessor;
 
-    public boolean success;
+public class MappingReaderProcess implements MappingProcessor {
+    public Map<String, String> classMapping = Maps.newHashMap();
 
-    public List<String> proxyActivities = new ArrayList<>();
-    public List<String> proxyServices = new ArrayList<>();
-    public List<String> proxyProviders = new ArrayList<>();
+    @Override
+    public boolean processClassMapping(String className, String newClassName) {
+        classMapping.put(className, newClassName);
+        return true;
+    }
 
+    @Override
+    public void processFieldMapping(String className, String fieldType, String fieldName, String newClassName,
+                                    String newFieldName) {
+    }
+
+    @Override
+    public void processMethodMapping(String className, int firstLineNumber, int lastLineNumber,
+                                     String methodReturnType, String methodName, String methodArguments,
+                                     String newClassName, int newFirstLineNumber, int newLastLineNumber,
+                                     String newMethodName) {
+    }
 }

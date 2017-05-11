@@ -207,21 +207,148 @@
  *
  */
 
-package com.taobao.android.builder.tools.manifest;
+package com.taobao.android.builder.tasks.app;
 
-import java.io.Serializable;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- * Created by wuzhong on 2017/4/13.
- */
-public class Result implements Serializable {
+import com.alibaba.fastjson.JSON;
 
-    public boolean success;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.classinject.InjectParam;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.TaskAction;
 
-    public List<String> proxyActivities = new ArrayList<>();
-    public List<String> proxyServices = new ArrayList<>();
-    public List<String> proxyProviders = new ArrayList<>();
+public class GenerateAtlasSourceTask extends BaseTask {
 
+    private AppVariantContext appVariantContext;
+
+    private File outputDir;
+
+    @OutputDirectory
+    public File getOutputDir() {
+        return outputDir;
+    }
+
+    private InjectParam injectParam;
+
+    @Input
+    public InjectParam getInput() {
+        if (null != injectParam) {
+            return injectParam;
+        }
+        try {
+            injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return injectParam;
+    }
+
+    @TaskAction
+    void generate() {
+
+        InjectParam injectParam = getInput();
+
+        File outputFile = new File(outputDir, "android/taobao/atlas/framework/FrameworkProperties.java");
+
+        List<String> lines = new ArrayList<>();
+
+        lines.add("package android.taobao.atlas.framework;");
+        lines.add("public class FrameworkProperties {");
+
+        lines.add("private String version = \"" + injectParam.version + "\";");
+        lines.add("public String getVersion() {return version;}");
+        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
+        //lines.add("public static String bunleInfo = \"\";");
+        if (StringUtils.isNotEmpty(injectParam.autoStartBundles)) {
+            lines.add("public static String autoStartBundles = \"" + injectParam.autoStartBundles + "\";");
+        }
+        if (StringUtils.isNotEmpty(injectParam.preLaunch)) {
+            lines.add("public static String preLaunch = \"" + injectParam.preLaunch + "\";");
+        }
+        if (StringUtils.isNotEmpty(injectParam.group)) {
+            lines.add("public static String group = \"" + injectParam.group + "\";");
+        }
+        lines.add("public static String outApp = \"" + injectParam.outApp + "\";");
+
+        lines.add("}");
+
+        outputFile.getParentFile().mkdirs();
+        try {
+
+            FileUtils.writeLines(outputFile, lines);
+
+            Map output = new HashMap();
+            output.put("bundleInfo", JSON.parseArray(injectParam.bundleInfo));
+            output.put("autoStartBundles", injectParam.autoStartBundles);
+            output.put("preLaunch", injectParam.preLaunch);
+            output.put("group", injectParam.group);
+            output.put("outApp", injectParam.outApp);
+
+            FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),
+                                     "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
+
+        } catch (Exception e) {
+            throw new GradleException(e.getMessage(), e);
+        }
+
+    }
+
+    private String escapeExprSpecialWord(String keyword) {
+        if (StringUtils.isNotBlank(keyword)) {
+            String[] fbsArr = {"\""};
+            for (String key : fbsArr) {
+                if (keyword.contains(key)) {
+                    keyword = keyword.replace(key, "\\" + key);
+                }
+            }
+        }
+        return keyword;
+    }
+
+    public static class ConfigAction extends MtlBaseTaskAction<GenerateAtlasSourceTask> {
+
+        private AppVariantContext appVariantContext;
+
+        public ConfigAction(AppVariantContext appVariantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName("generate", "AtlasSources");
+        }
+
+        @Override
+        public Class<GenerateAtlasSourceTask> getType() {
+            return GenerateAtlasSourceTask.class;
+        }
+
+        @Override
+        public void execute(GenerateAtlasSourceTask atlasSourceTask) {
+
+            super.execute(atlasSourceTask);
+
+            File srcDir = appVariantContext.getAtlaSourceDir();
+            appVariantContext.getVariantData().javacTask.source(srcDir);
+
+            atlasSourceTask.outputDir = srcDir;
+            atlasSourceTask.appVariantContext = appVariantContext;
+
+        }
+    }
 }

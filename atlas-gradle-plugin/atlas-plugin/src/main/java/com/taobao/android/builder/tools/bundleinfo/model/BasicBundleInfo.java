@@ -220,6 +220,11 @@ public class BasicBundleInfo {
 
     private String pkgName;
 
+    /**
+     * 主dex依赖+当前依赖的md5
+     */
+    private String unique_tag;
+
     private String applicationName;
 
     private String version;
@@ -306,5 +311,13 @@ public class BasicBundleInfo {
 
     public void setIsInternal(boolean internal) {
         isInternal = internal;
+    }
+
+    public String getUnique_tag() {
+        return unique_tag;
+    }
+
+    public void setUnique_tag(String unique_tag) {
+        this.unique_tag = unique_tag;
     }
 }

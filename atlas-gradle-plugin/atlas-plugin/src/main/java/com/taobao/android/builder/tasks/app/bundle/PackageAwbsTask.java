@@ -333,7 +333,7 @@ public class PackageAwbsTask extends BaseTask {
                                                          .isMultiDexEnabled(),
                                                  null,
                                                  androidConfig.getDexOptions(),
-                                                 outputHandler);
+                                                 outputHandler, true);
                         //create package
 
                         long endDex = System.currentTimeMillis();

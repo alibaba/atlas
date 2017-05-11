@@ -249,6 +249,7 @@ public class ManifestOptions {
     private boolean replaceApplication = true;
 
     @Config(order = 8, title = "启用atlas multidex", message = "使用atlas的multiDex功能, 接atlas必须开启", advance = true, group = "atlas")
+    @Deprecated //根据是否是多dex自动控制，不要使用
     private boolean addMultiDexMetaData = true;
 
     @Config(order = 9, message = "移除所有的provider", advance = true, group = "atlas")

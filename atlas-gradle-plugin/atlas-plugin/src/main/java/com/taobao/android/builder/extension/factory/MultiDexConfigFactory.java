@@ -207,21 +207,33 @@
  *
  */
 
-package com.taobao.android.builder.tools.manifest;
+package com.taobao.android.builder.extension.factory;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import com.android.annotations.NonNull;
+import com.taobao.android.builder.extension.MultiDexConfig;
+import org.gradle.api.NamedDomainObjectFactory;
+import org.gradle.api.Project;
+import org.gradle.api.logging.Logger;
+import org.gradle.internal.reflect.Instantiator;
 
-/**
- * Created by wuzhong on 2017/4/13.
- */
-public class Result implements Serializable {
+public class MultiDexConfigFactory implements NamedDomainObjectFactory<MultiDexConfig> {
 
-    public boolean success;
+    @NonNull
+    private final Instantiator instantiator;
+    @NonNull
+    private final Project project;
 
-    public List<String> proxyActivities = new ArrayList<>();
-    public List<String> proxyServices = new ArrayList<>();
-    public List<String> proxyProviders = new ArrayList<>();
+    @NonNull
+    private final Logger logger;
 
+    public MultiDexConfigFactory(@NonNull Instantiator instantiator, @NonNull Project project, @NonNull Logger logger) {
+        this.instantiator = instantiator;
+        this.project = project;
+        this.logger = logger;
+    }
+
+    @Override
+    public MultiDexConfig create(String name) {
+        return instantiator.newInstance(MultiDexConfig.class, name);
+    }
 }

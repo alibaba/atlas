@@ -228,6 +228,8 @@ public class TBuildType {
 
     private PatchConfig patchConfig;
 
+    private MultiDexConfig multiDexConfig;
+
     private DefaultSigningConfig signingConfig;
 
     public TBuildType(String name) {
@@ -272,5 +274,13 @@ public class TBuildType {
 
     public void setSigningConfig(DefaultSigningConfig signingConfig) {
         this.signingConfig = signingConfig;
+    }
+
+    public MultiDexConfig getMultiDexConfig() {
+        return multiDexConfig;
+    }
+
+    public void setMultiDexConfig(MultiDexConfig multiDexConfig) {
+        this.multiDexConfig = multiDexConfig;
     }
 }

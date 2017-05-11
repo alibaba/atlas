@@ -207,21 +207,60 @@
  *
  */
 
-package com.taobao.android.builder.tools.manifest;
+package com.taobao.android.builder.extension;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.extension.annotation.Config;
 
 /**
- * Created by wuzhong on 2017/4/13.
+ * Created by wuzhong on 2017/5/8.
  */
-public class Result implements Serializable {
+public class MultiDexConfig {
 
-    public boolean success;
+    private String name;
 
-    public List<String> proxyActivities = new ArrayList<>();
-    public List<String> proxyServices = new ArrayList<>();
-    public List<String> proxyProviders = new ArrayList<>();
+    public MultiDexConfig(String name) {
+        this.name = name;
+    }
 
+    @Config(title = "是否启用快速", message = "是否启用atlas , true/false", order = 0, group = "atlas")
+    private boolean fastMultiDex = false;
+
+    private Set<String> mainDexWhiteList = Sets.newHashSet();
+
+    private Set<String> mainDexBlackList = Sets.newHashSet();
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public boolean isFastMultiDex() {
+        return fastMultiDex;
+    }
+
+    public void setFastMultiDex(boolean fastMultiDex) {
+        this.fastMultiDex = fastMultiDex;
+    }
+
+    public Set<String> getMainDexWhiteList() {
+        return mainDexWhiteList;
+    }
+
+    public void setMainDexWhiteList(Set<String> mainDexWhiteList) {
+        this.mainDexWhiteList = mainDexWhiteList;
+    }
+
+    public Set<String> getMainDexBlackList() {
+        return mainDexBlackList;
+    }
+
+    public void setMainDexBlackList(Set<String> mainDexBlackList) {
+        this.mainDexBlackList = mainDexBlackList;
+    }
 }

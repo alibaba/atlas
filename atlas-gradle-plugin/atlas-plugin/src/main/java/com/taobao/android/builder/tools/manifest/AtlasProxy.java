@@ -309,10 +309,13 @@ public class AtlasProxy {
 
         for (String processName : processNames) {
 
+            //boolean isMainPkg = packageName.equals(processName);
+            boolean isMainPkg = true;
+            String processClazzName = processName.replace(":", "").replace(".", "_");
+
             for (String elementName : elementNames) {
 
-                String processClazzName = processName.replace(":", "").replace(".", "_");
-                String fullClazzName = "ATLASPROXY_" + processClazzName + "_" + StringUtils.capitalize(elementName);
+                String fullClazzName = "ATLASPROXY_" +  (isMainPkg ? "" : (packageName.replace(".", "_") + "_" )) +  processClazzName + "_" + StringUtils.capitalize(elementName);
 
                 if ("activity".equals(elementName)) {
                     result.proxyActivities.add(fullClazzName);

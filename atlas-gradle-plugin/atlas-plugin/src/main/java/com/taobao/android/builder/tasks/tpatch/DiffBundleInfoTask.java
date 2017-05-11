@@ -365,6 +365,9 @@ public class DiffBundleInfoTask extends BaseTask {
             }
             awbBundleInfo.setVersion(version);
 
+            //TODO
+            bundleInfo.getUnique_tag();
+
             String libBundleName = getBundleName(awbBundle);
             if (dependencyDiff.getAwbDiffs().contains(libBundleName)) {
                 if (dependencyDiff.getNewAwbs().contains(libBundleName)) {
