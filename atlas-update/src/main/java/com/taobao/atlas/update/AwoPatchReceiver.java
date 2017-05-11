@@ -333,7 +333,7 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                 UpdateInfo.Item item = new UpdateInfo.Item();
                 item.isMainDex = updateBundleInfo.getBoolean("isMainDex");
                 item.name = updateBundleInfo.getString("name");
-                item.version = updateBundleInfo.getString("version");
+                item.unitTag = updateBundleInfo.getString("unitTag");
                 JSONArray array = updateBundleInfo.optJSONArray("dependency");
                 if(array!=null && array.length()>0) {
                     List<String> dependencies = new ArrayList<String>();

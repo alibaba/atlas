@@ -8,6 +8,7 @@ import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.ApkUtils;
+import android.taobao.atlas.util.WrapperUtil;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import android.util.Pair;
@@ -151,40 +152,42 @@ public class PatchMerger {
      * @return
      */
     public File findOriginalBundleFile(String bundleName, String bundleDirIfNeedCreate, UpdateInfo.Item item) throws IOException {
-
-        if (TextUtils.isEmpty(item.srcVersion)) {
-            throw new IllegalStateException("src version can not be null");
-        }
-
         if (bundleName.equals(MAIN_DEX)){
             if(!updateInfo.dexPatch) {
                 return new File(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
             }else{
-                if(BaselineInfoManager.instance().getBaseBundleVersion("com.taobao.maindex").equals(item.srcVersion)){
-                    File old = new File(RuntimeVariables.androidApplication.getFilesDir(),"storage/com.taobao.maindex/"+item.srcVersion+"/com_taobao_maindex.zip");
-                    if(old.exists()){
-                        return old;
-                    }else{
-                        throw new IOException("can not find original com_taobao_maindex.zip");
+                String maindexVersion = BaselineInfoManager.instance().getBaseBundleVersion("com.taobao.maindex");
+                String currentVersionName = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).versionName;
+                if(currentVersionName.equals(updateInfo.baseVersion)) {
+                    if (!TextUtils.isEmpty(maindexVersion)) {
+                        File old = new File(RuntimeVariables.androidApplication.getFilesDir(), "storage/com.taobao.maindex/" + maindexVersion + "/com_taobao_maindex.zip");
+                        if (old.exists()) {
+                            return old;
+                        }
+                    } else if (updateInfo.baseVersion.equals(RuntimeVariables.sInstalledVersionName)) {
+                        return new File(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
                     }
-                }else{
-                    throw new IOException("can not find valid original com_taobao_maindex.zip");
                 }
+                throw new IllegalStateException("src version can not be null");
             }
+        }
+
+        if (TextUtils.isEmpty(item.srcUnitTag)) {
+            throw new IllegalStateException("src version can not be null");
         }
 
         File oldBundle = null;
         BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
         if (impl != null && !BaselineInfoManager.instance().isDexPatched(bundleName)) {
             String path = impl.getArchive().getCurrentRevision().getRevisionDir().getAbsolutePath();
-            if(!path.contains(BundleArchive.DEXPATCH_DIR) && AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getUnique_tag().equals(item.srcVersion)){
+            if(!path.contains(BundleArchive.DEXPATCH_DIR) && AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getUnique_tag().equals(item.srcUnitTag)){
                 oldBundle = impl.getArchive().getArchiveFile();
             }
         } else {
-            oldBundle = Framework.getInstalledBundle(bundleName, item.srcVersion);
+            oldBundle = Framework.getInstalledBundle(bundleName, item.srcUnitTag);
         }
 
-        if (oldBundle == null && AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getUnique_tag().equals(item.srcVersion) && !BaselineInfoManager.instance().isUpdated(bundleName)) {
+        if (oldBundle == null && AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getUnique_tag().equals(item.srcUnitTag) && !BaselineInfoManager.instance().isUpdated(bundleName)) {
             oldBundle = getOriginalBundleFromApk(bundleName,bundleDirIfNeedCreate);
         }
         if(oldBundle!=null || !AtlasBundleInfoManager.instance().isInternalBundle(bundleName)) {

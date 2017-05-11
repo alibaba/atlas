@@ -59,7 +59,7 @@ public class PatchInstaller {
                     throw new BundleException("bundle input is wrong : " + bundleFilePathList);
                 }
                 if (!updateInfo.dexPatch) {
-                    upgradeVersions[index] = bundlePair.second.version;
+                    upgradeVersions[index] = bundlePair.second.unitTag;
                 } else {
                     dexPatchVersions[index] = bundlePair.second.dexPatchVersion;
                 }
