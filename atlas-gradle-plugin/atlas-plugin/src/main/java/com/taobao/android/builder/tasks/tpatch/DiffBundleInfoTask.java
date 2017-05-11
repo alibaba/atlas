@@ -211,12 +211,16 @@ package com.taobao.android.builder.tasks.tpatch;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -328,6 +332,13 @@ public class DiffBundleInfoTask extends BaseTask {
             throw new GradleException(e.getMessage(), e);
         }
 
+        Map<String,String> tagMap = new HashMap<>();
+        JSONObject jsonObject = (JSONObject)JSON.parse(FileUtils.readFileToString(new File(apDir, "atlasFrameworkProperties.json")));
+        JSONArray jsonArray = jsonObject.getJSONArray("bundleInfo");
+        for (JSONObject obj : jsonArray.toArray(new JSONObject[0])){
+            tagMap.put(obj.getString("pkgName"), obj.getString("unique_tag"));
+        }
+
         // 1. 首先添加主bundle
         ArtifactBundleInfo mainBundleInfo = getMainArtifactBundInfo(mainfestFile);
         mainBundleInfo.setBaseVersion(apVersion);
@@ -358,7 +369,8 @@ public class DiffBundleInfoTask extends BaseTask {
             awbBundleInfo.setApplicationName(bundleInfo.getApplicationName());
             awbBundleInfo.setArtifactId(awbBundle.getResolvedCoordinates().getArtifactId());
             awbBundleInfo.setName(bundleInfo.getName());
-            awbBundleInfo.setSrcUnitTag(bundleInfo.getUnique_tag());
+            //历史bundle的tag todo
+            awbBundleInfo.setSrcUnitTag(tagMap.get(bundleInfo.getPkgName()));
             awbBundleInfo.setUnitTag(bundleInfo.getUnique_tag());
             String version = bundleInfo.getVersion();
             if (version.indexOf("@") > 0) {
