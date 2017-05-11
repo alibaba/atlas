@@ -125,6 +125,11 @@ public class AwbPackagingScope implements PackagingScope {
     @Override
     public Set<File> getJavaResources() {
         Set<File> javaResourcesLocations = Sets.newHashSet();
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()
+            && awbBundle.getAllLibraryAars().size() > 1) {
+            File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
+            javaResourcesLocations.add(baseAwb);
+        }
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getMergeAwbJavaRes()) {
             javaResourcesLocations.addAll(awbBundle.getLibraryJars());
         }

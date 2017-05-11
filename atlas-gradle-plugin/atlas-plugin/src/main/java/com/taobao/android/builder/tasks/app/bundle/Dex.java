@@ -330,7 +330,6 @@ public class Dex extends BaseTask {
             // variantData.dexTask = dexTask;
             dexTask.setVariantName(scope.getFullVariantName());
             dexTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-            AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName());
             ConventionMappingHelper.map(dexTask, "outputFolder", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
@@ -352,8 +351,20 @@ public class Dex extends BaseTask {
             //                                 awbBundle.invokeMethod("getInputDirCallable", new Object[0]));
             // }
 
-            ConventionMappingHelper.map(dexTask, "inputFiles", awbTransform::getInputFiles);
-            ConventionMappingHelper.map(dexTask, "libraries", awbTransform::getInputLibraries);
+            ConventionMappingHelper.map(dexTask, "inputFiles", new Callable<List<File>>() {
+                @Override
+                public List<File> call() {
+                    AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName());
+                    return awbTransform.getInputFiles();
+                }
+            });
+            ConventionMappingHelper.map(dexTask, "libraries", new Callable<List<File>>() {
+                @Override
+                public List<File> call() {
+                    AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName());
+                    return awbTransform.getInputLibraries();
+                }
+            });
 
             // if (isMultiDexEnabled && isLegacyMultiDexMode) {
             //     // configure the dex task to receive the generated class list.
