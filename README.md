@@ -1,62 +1,14 @@
-# Atlas
+# 简介
+Atlas是伴随着手机淘宝的不断发展而衍生出来的一个运行于Android系统上的一个容器化框架，我们也叫动态组件化(Dynamic Bundle)框架。它主要提供了解耦化、组件化、动态性的支持。覆盖了工程师的工程编码期、Apk运行期以及后续运维期的各种问题。
 
-[![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/alibaba/atlas/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-5.0.7-yellow.svg)](https://github.com/alibaba/atlas/releases) 
+* 在工程期，实现工程独立开发，调试的功能，工程模块可以独立。
 
-> A powerful Android Dynamic Component Framework.
+* 在运行期，实现完整的组件生命周期的映射，类隔离等机制。
 
-Atlas is an Android client-side containerization framework. we call it android dynamic component framework.
+* 在运维期，提供快速增量的更新修复能力，快速升级。
 
-Atlas provides decoupled, component, and dynamic support. Atlas covers various issues in the project coding period, Apk run-time and follow-up operation and maintenance.
+Atlas是工程期和运行期共同起作用的框架，我们尽量将一些工作放到工程期，这样保证运行期更简单，更稳定。
 
-In the project period, Atlas enable engineers independent development, independent debug, because their project were physical isolation.
+相比multidex，atlas在解决了方法数限制的同时以OSGI为参考，明确了业务开发的边界，使得业务在满足并行迭代，快速开发的同时，能够进行灵活发布，动态更新以及提供了线上故障快速修复的能力。
 
-In the apk run-time, Atlas has complete component life cycle, class isolation and other mechanisms.
-
-In the operation and maintenance period, Atlas provide rapid incremental update and rapid upgrade capacity.
-
-Atlas put the work into the project period as much as possible, to ensure runtime simple and stable, maintenance easy.
-
-------
-
-Compared with multidex solution, Atlas not only solved the limitation of the method count(65535), but also clarified the boundary of development, provied the powerful capabilities for Android development, such as Parallel Iteration, Rapid Development, Flexible Release, Dynamically Update, Quick Fix Online Failure.
-
-Unlike some Android plugin frameworks, Atlas is a component framework (we call it Bundle), Atlas is not a multi-process framework.
-
-------
-You can see there were three main library in this project ([atlas-core](./atlas-core)/[atlas-update](./atlas-update)/[atlas-gradle-plugin](./atlas-gradle-plugin))
-
-* [atlas-core](./atlas-core): This is client-side core library, it's job is to install each bundle, load the classes and resources on-demand when runtime.
-* [atlas-update](./atlas-update): This is client-side update library, which provide dexmerge capacity for update or upgrade.
-* [atlas-gradle-plugin](./atlas-gradle-plugin): This is Android Studio Gradle Plugin for engineers developing in project period, because we change some android default package mechanisms, include android aapt [atlas-aapt](./atlas-aapt).
-
-## Use Atlas
-
-* [Demo](./atlas-demo)
-* Doc: [English](), [中文](./atlas-docs)
-* DingTalk im group: Scan the follow QR code or Search group 11727755 using DingTalk(钉钉) app.
-![dingtalk.png](assets/dingtalk.png) 
-
-
-## Support
-----------
-Atlas support all Android version from Android 4.0 to 7.0. 
-
-Follow is support status.
-
-Runtime | Android Version | Support
-------  | --------------- | --------
-Dalvik  | 2.2             | Not Test
-Dalvik  | 2.3             | Not Test
-Dalvik  | 3.0             | Not Test
-Dalvik  | 4.0-4.4         | Yes
-ART     | 5.0             | Yes
-ART     | 5.1             | Yes
-ART     | M               | Yes
-ART     | N               | Yes
-
-<!--## Contributing
-
-See [Atlas Contributing Guide](./CONTRIBUTING.md) for more information.
- No newline at end of file
--->
+与外界某些插件框架不同的是，atlas是一个组件框架，atlas不是一个多进程的框架，他主要完成的就是在运行环境中按需地去完成各个bundle的安装，加载类和资源。

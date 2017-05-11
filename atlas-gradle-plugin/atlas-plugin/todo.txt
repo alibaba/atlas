@@ -1,3 +1,0 @@
-1. 多模块
-2. atlasPlugin
-3. jdk，builder， gradle 等版本的校验
