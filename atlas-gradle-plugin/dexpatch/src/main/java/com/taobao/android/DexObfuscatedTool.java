@@ -443,8 +443,13 @@ public class DexObfuscatedTool {
 
     public Map<String,String>map = new HashMap<String, String>();
 
+    public static boolean aliProguard = false;
+
     public DexObfuscatedTool(File mappingFile) {
         this.mappingFile = mappingFile;
+        if (mappingFile.getName().equals("full-mapping.txt")){
+            aliProguard = true;
+        }
     }
 
     private File mappingFile;
@@ -493,5 +498,10 @@ public class DexObfuscatedTool {
 
 
     }
+
+//    public static void main(String []args) throws IOException {
+//        DexObfuscatedTool dexObfuscatedTool = new DexObfuscatedTool(new File("/Users/lilong/Documents/main_builder/build/intermediates/exploded-ap/full-mapping.txt"));
+//        dexObfuscatedTool.obfuscateDex(new File("/Users/lilong/Documents/main_builder/build/outputs/diff/diffAwbDex/com.taobao.tao.update/update-test/classes.dex"),new File("/Users/lilong/Documents/b.dex"));
+//    }
 
 }

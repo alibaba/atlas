@@ -1,0 +1,13 @@
+@startuml
+
+autonumber
+
+ActivityThread -> LoadedApk : makeApplication
+LoadedApk -> Instrumentation : Instrumentation
+Instrumentation -> Application : attach
+Application -> Application :attachBaseContext
+ActivityThread -> ActivityThread : installContentProviders
+ActivityThread -> Instrumentation : callApplicationOnCreate
+Instrumentation -> Application : onCreate
+
+@enduml

@@ -1,3 +1,8 @@
+#欢迎扫码进入atlas交流钉钉群
+
+![MacDown Screenshot](dingtalk.png)
+
+
 # 简介
 Atlas是伴随着手机淘宝的不断发展而衍生出来的一个运行于Android系统上的一个容器化框架，我们也叫动态组件化(Dynamic Bundle)框架。它主要提供了解耦化、组件化、动态性的支持。覆盖了工程师的工程编码期、Apk运行期以及后续运维期的各种问题。
 

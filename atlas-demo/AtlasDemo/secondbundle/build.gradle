@@ -6,6 +6,8 @@ atlas {
         awbBundle true
     }
 }
+group = 'com.atlas.demo'
+version = '1.0.0'
 
 android {
     compileSdkVersion 25
