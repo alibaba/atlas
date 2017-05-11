@@ -1,6 +1,0 @@
-before_deploy:
-  - gitbook install
-  - gitbook build .
-options:
-  dist: '_book'
-cname: 'atlas.alibaba.net'
