@@ -511,6 +511,7 @@ public class AtlasBuilder extends AndroidBuilder {
                     aaptConfig.getBaseFeature() != null) {
                 finalIds = false;
             }
+            SymbolIo.write(mainSymbols, mainRTxt);
             SymbolIo.exportToJava(mainSymbols, sourceOut, finalIds);
             RGeneration.generateRForLibraries(mainSymbols, depSymbolTables, sourceOut, finalIds);
         }
