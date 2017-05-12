@@ -217,6 +217,8 @@ import java.io.Serializable;
  */
 public class InjectParam implements Serializable {
 
+    public String unit_tag;
+
     public String version;
 
     public String bundleInfo;

@@ -229,8 +229,6 @@ import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.dom4j.DocumentException;
-import org.gradle.api.GradleException;
 
 /**
  * Created by wuzhong on 2016/12/1.
@@ -254,6 +252,8 @@ public class ApkInjectInfoCreator {
         Map<String, BasicBundleInfo> basicBundleInfoMap = new HashMap<>();
 
         String mainMd5 = MD5Util.getMD5(StringUtils.join(atlasDependencyTree.getMainBundle().getAllDependencies()));
+        injectParam.unit_tag = mainMd5;
+        appVariantContext.unit_tag = mainMd5;
 
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 

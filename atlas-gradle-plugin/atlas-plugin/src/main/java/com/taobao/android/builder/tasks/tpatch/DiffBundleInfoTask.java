@@ -351,6 +351,10 @@ public class DiffBundleInfoTask extends BaseTask {
         } else {
             mainBundleInfo.setDiffType(DiffType.NONE);
         }
+
+        mainBundleInfo.setSrcUnitTag(jsonObject.getString("unit_tag"));
+        mainBundleInfo.setUnitTag(appVariantOutputContext.getVariantContext().unit_tag);
+
         artifactBundleInfos.add(mainBundleInfo);
 
         // 2. 添加各自的bundle

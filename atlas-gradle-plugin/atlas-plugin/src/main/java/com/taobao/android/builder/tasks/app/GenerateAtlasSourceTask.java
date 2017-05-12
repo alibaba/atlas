@@ -296,6 +296,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
             output.put("preLaunch", injectParam.preLaunch);
             output.put("group", injectParam.group);
             output.put("outApp", injectParam.outApp);
+            output.put("unit_tag", injectParam.unit_tag);
 
             FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),
                                      "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
