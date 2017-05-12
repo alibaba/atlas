@@ -208,9 +208,7 @@
 
 package android.taobao.atlas.framework;
 
-import android.app.PreVerifier;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.os.Environment;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
@@ -224,88 +222,44 @@ import android.taobao.atlas.util.AtlasFileLock;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import android.util.Log;
-
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
-import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Dictionary;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class Framework {
 
     public final static String DEPRECATED_MARK = "deprecated";
-    public final static String UPDATED_MARK = "markUpdated";
-    /**
-     * Version displayed upon startup and returned by System Bundle
-     */
-    static final String FRAMEWORK_VERSION = "0.9.0";
-
-    static Map<String,Integer> restoreFailedMap = new HashMap<String,Integer>();
     static String containerVersion = "";
     private static ClassNotFoundInterceptorCallback classNotFoundCallback;
 
     public static String ATLAS_DEBUG_DIRECTORY;
 
-    // the runtime args
     /**
      * framework basedir.
      */
     private static String BASEDIR;
 
     /**
-     * bundle location.
-     */
-    private static String BUNDLE_LOCATION;
-
-    /**
      * the location where the storage resides.
      */
     public static final String STORAGE_LOCATION;
-
-
-    /**
-     * classloader buffer size.
-     */
-    static int CLASSLOADER_BUFFER_SIZE;
-
-    /**
-     * log level.
-     */
-    static int LOG_LEVEL;
 
     /**
      * debug outputs from bundles ?
      */
     static boolean DEBUG_BUNDLES;
-
-
-    /**
-     * debug outputs from class loading ?
-     */
-    static boolean DEBUG_CLASSLOADING;
 
     /**
      * location -> bundle.
@@ -327,54 +281,12 @@ public final class Framework {
      */
     static List<FrameworkListener> frameworkListeners = new ArrayList<FrameworkListener>();
 
+    static HashMap<String,Integer> installingBundles = new HashMap<>();
+
     /**
      * system ClassLoader
      */
     static ClassLoader systemClassLoader;
-
-    // the system bundle
-
-    /**
-     * system bundle.
-     */
-    static SystemBundle systemBundle;
-
-
-    // the fields
-
-    /**
-     * properties.
-     */
-    static Properties properties;
-
-    /**
-     * the framework start level.
-     */
-    static int startlevel = 0;
-
-    /**
-     * the dir name of WAL
-     */
-    static List<String> writeAheads = new ArrayList<String>();
-
-    /**
-     * the initial startlevel for installed bundles.
-     */
-    static int                                 initStartlevel           = 1;
-
-    static Map<String,String>			mMapForComAndBundles					= new HashMap<String,String>();
-
-    /**
-     * a hook in delegateClassLoader's find class to trigger whether install/dexopt bundle when class not find happend
-     */
-    public static boolean					needRestart		=    false;
-
-    static String currentProcessName;
-    // constants
-
-    /**
-     * the admin permission.
-     */
 
     private static boolean bundleUpdated = false;
 
@@ -396,71 +308,17 @@ public final class Framework {
      * Hide defautlt constructor
      */
     private Framework() {
-        if(Boolean.FALSE.booleanValue()){
-            String.valueOf(PreVerifier.class);
-        }
     }
-
-    /*
-     * startup and shutdown related methods
-     */
 
     /**
      * launch the framework.
      *
      * @throws Throwable
      */
-    static void startup(Properties props) throws BundleException {
-//        Log.e("Framwork","patch success!");
-        properties = props == null ? new Properties() : props;
+    static void startup(boolean updated) throws BundleException {
         AtlasBundleInfoManager.instance().getBundleInfo();
-        startup();
-    }
-
-    /**
-     * launch the framework.
-     *
-     * @throws Throwable
-     */
-    static void startup() throws BundleException {
-        long time = System.currentTimeMillis();
-        initialize();
-        launch();
-        // if profile set, try to restart the profile
-        boolean init = getProperty("osgi.init", true);
-        // some non-main process, major dex is enough
-        if (needRestart) {
-            init = true;
-        }
-        if (init) {
-            resetStorage();
-        } else if (RuntimeVariables.getProcessName(RuntimeVariables.androidApplication).equals(RuntimeVariables.androidApplication.getPackageName())) {
-            restoreProfile();
-        }
-
-        if(RuntimeVariables.shouldSyncUpdateInThisProcess()) {
-            BaselineInfoManager.instance().checkUpdateBundles(STORAGE_LOCATION);
-        }
-
-        notifyFrameworkListeners(0 /* STARTING */, systemBundle, null);
-        // save the metadata
-        if (init) {
-            try {
-                storeProfile();
-            }catch(Exception e){
-                throw new RuntimeException("storeProfile failed", e);
-            }
-        }
-
-        final long timediff = System.currentTimeMillis() - time;
-
-        systemBundle.state = Bundle.ACTIVE;
-        try {
-            notifyFrameworkListeners(FrameworkEvent.STARTED, systemBundle, null);
-        } catch (Exception e) {
-            throw new RuntimeException("notifyFrameworkListeners failed", e);
-        }
-
+        notifyFrameworkListeners(0 /* STARTING */, null, null);
+        notifyFrameworkListeners(FrameworkEvent.STARTED, null, null);
     }
 
     public static ClassLoader getSystemClassLoader() {
@@ -480,343 +338,6 @@ public final class Framework {
             return null;
         }
         return bundles.get(location);
-    }
-
-    public static Bundle getBundle(long id) {
-        return null;
-    }
-
-    private static void initialize() {
-        BUNDLE_LOCATION = properties.getProperty("android.taobao.atlas.jars", "file:" + BASEDIR);
-        CLASSLOADER_BUFFER_SIZE = getProperty("android.taobao.atlas.classloader.buffersize", 2048);
-        LOG_LEVEL = getProperty("android.taobao.atlas.log.level", Log.ERROR);
-        DEBUG_BUNDLES = getProperty("android.taobao.atlas.debug.bundles", false);
-        DEBUG_CLASSLOADING = getProperty("android.taobao.atlas.debug.classloading", false);
-        if (getProperty("android.taobao.atlas.debug", false)) {
-            LOG_LEVEL = Log.DEBUG;
-            DEBUG_BUNDLES = true;
-            DEBUG_CLASSLOADING = true;
-        }
-
-        final String sv = System.getProperty("java.specification.version");
-        final String sn = System.getProperty("java.specification.name");
-        properties.put("org.osgi.framework.executionenvironment", sn + "/" + sv);
-
-        // set framework properties
-        Object obj;
-        properties.put(Constants.FRAMEWORK_OS_NAME, (obj = System.getProperty("os.name")) != null ? obj : "undefined");
-        properties.put(Constants.FRAMEWORK_OS_VERSION,
-                (obj = System.getProperty("os.version")) != null ? obj : "undefined");
-        properties.put(Constants.FRAMEWORK_PROCESSOR, (obj = System.getProperty("os.arch")) != null ? obj : "undefined");
-        properties.put(Constants.FRAMEWORK_VERSION, FRAMEWORK_VERSION);
-        properties.put(Constants.FRAMEWORK_VENDOR, "Atlas");
-        final String lang = java.util.Locale.getDefault().getLanguage();
-        properties.put(Constants.FRAMEWORK_LANGUAGE, lang != null ? lang : "en");
-    }
-
-    /**
-     * create the setup with the properties and the internal framework flags.
-     */
-    private static void launch() {
-        // create the system bundle
-        systemBundle = new SystemBundle();
-        systemBundle.state = Bundle.STARTING;
-    }
-
-    /**
-     * get a boolean property.
-     *
-     * @param key        the key.
-     * @param defaultVal the default.
-     * @return the value.
-     */
-    public static boolean getProperty(final String key, final boolean defaultVal) {
-        if (properties == null) {
-            return defaultVal;
-        }
-        final String val = (String) properties.get(key);
-        return val != null ? Boolean.valueOf(val).booleanValue() : defaultVal;
-    }
-
-    /**
-     * get an int property.
-     *
-     * @param key        the key.
-     * @param defaultVal the default.
-     * @return the value.
-     */
-    public static int getProperty(final String key, final int defaultVal) {
-        if (properties == null) {
-            return defaultVal;
-        }
-        final String val = (String) properties.get(key);
-        return val != null ? Integer.parseInt(val) : defaultVal;
-    }
-
-    /**
-     * get an String property.
-     *
-     * @param key the key.
-     * @return the value.
-     */
-    public static String getProperty(final String key) {
-        if (properties == null) {
-            return null;
-        }
-        return (String) properties.get(key);
-    }
-
-    /**
-     * get an String property.
-     *
-     * @param key
-     * @param defaultString
-     * @return
-     */
-    public static String getProperty(final String key, final String defaultString) {
-        if (properties == null) {
-            return defaultString;
-        }
-        return (String) properties.get(key);
-    }
-
-    /**
-     * write a warning or throw an Exception
-     *
-     * @param message
-     * @throws BundleException
-     */
-    protected static void warning(String message) throws RuntimeException {
-        if (getProperty("android.taobao.atlas.strictStartup", false)) {
-            throw new RuntimeException(message);
-        }
-        System.err.println("WARNING: " + message);
-    }
-
-    /**
-     * store the profile.
-     */
-    private static void storeProfile() {
-//        final BundleImpl[] bundleArray = (BundleImpl[]) getBundles().toArray(new BundleImpl[bundles.size()]);
-//        for (int i = 0; i < bundleArray.length; i++) {
-//            bundleArray[i].updateMetadata();
-//        }
-        storeMetadata();
-    }
-
-    /**
-     * store the framework metadata.
-     */
-    static void storeMetadata() {
-        File file = null;
-        try {
-            file = new File(STORAGE_LOCATION, "meta");
-
-            final DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
-            out.writeInt(startlevel);
-            String str = StringUtils.join(writeAheads.toArray(), ",");
-            out.writeUTF(str != null ? str : "");
-            out.flush();
-            out.close();
-        } catch (IOException ioe) {
-//            AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, "System", AtlasMonitor.UPDATE_META_FAILED_MSG,
-//                    FileUtils.getDataAvailableSpace());
-            Log.e("Framework","Could not save meta data.", ioe);
-        }
-    }
-
-    public static String getCurProcessName() {
-        return RuntimeVariables.getProcessName(RuntimeVariables.androidApplication);
-    }
-
-    /**
-     * restore a profile.
-     *
-     * @return the startlevel or -1 if the profile could not be restored.
-     */
-    private static int restoreProfile() {
-        try {
-            final File file = new File(STORAGE_LOCATION, "meta");
-            if (!file.exists()) {
-                return -1;
-            }
-
-            final DataInputStream in = new DataInputStream(new FileInputStream(file));
-            final int targetStartlevel = in.readInt();
-            String[] arr = StringUtils.split(in.readUTF(), ",");
-            if (arr != null) {
-                writeAheads.addAll(Arrays.asList(arr));
-            }
-            try {
-                in.close();
-            } catch (Throwable e) {
-            }
-
-            final File storageDir = new File(STORAGE_LOCATION);
-
-            // merge writeAheads to storage
-            MergeWirteAheads(storageDir);
-
-            return targetStartlevel;
-
-        } catch (Exception ioe) {
-//            throw new RuntimeException(ioe);
-            return -1;
-        }
-
-    }
-
-    private static void resetStorage() {
-        File storage = new File(STORAGE_LOCATION);
-
-        // Try to remove the directory by three times.
-        int count = 3;
-        while (count-- > 0) {
-            if (storage.exists()) {
-                try {
-                    deleteDirectory(storage);
-                } catch (Exception e) {
-                    if (count == 1) {
-//                        AtlasMonitor.getInstance().trace(AtlasMonitor.DELETE_STORAGE_FAIL,
-//                                "System", AtlasMonitor.DELETE_STORAGE_FAILED_MSG, FileUtils.getDataAvailableSpace());
-                        throw new RuntimeException("deleteDirectory failed", e);
-                    }
-                }
-            } else {
-                break;
-            }
-        }
-        // Still not removed yet, throw exception
-        if (storage.exists()) {
-//            AtlasMonitor.getInstance().trace(AtlasMonitor.DELETE_STORAGE_FAIL,
-//                    "System", AtlasMonitor.DELETE_STORAGE_FAILED_MSG, FileUtils.getDataAvailableSpace());
-            throw new RuntimeException("deleteDirectory failed");
-        }
-
-        try {
-            storage.mkdirs();
-        } catch (Throwable e) {
-        }
-
-        if (!storage.exists()) {
-            throw new RuntimeException("mkdirs failed");
-        }
-    }
-
-    private static void MergeWirteAheads(final File storageDir) {
-        try{
-            final File walsDir = new File(STORAGE_LOCATION, "wal");
-            String process = RuntimeVariables.getProcessName(RuntimeVariables.androidApplication);
-            Log.d("Framework","restoreProfile in process "+process);
-            if(process!=null) {
-                mergeWalsDir(walsDir, storageDir);
-            }
-        }catch(Throwable e){
-            if (android.os.Build.MODEL != null){
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private static void mergeWalsDir(File walsDir, File storageDir) {
-        if (writeAheads != null && writeAheads.size() > 0) {
-            for (int i = 0; i < writeAheads.size(); i++) {
-                if (writeAheads.get(i) == null) {
-                    continue;
-                }
-                File walDir = new File(walsDir, writeAheads.get(i));
-                try {
-                    if (walDir != null && walDir.exists()) {
-                        // merge wal dir to storage
-                        final File[] walBundleDirs = walDir.listFiles();
-                        if ((walBundleDirs != null) && (walBundleDirs.length > 0)) {
-                            for (File walBundleDir : walBundleDirs) {
-                                if (walBundleDir.isDirectory()) {
-                                    File bundleDir = new File(storageDir, walBundleDir.getName());
-//                                    if (bundleDir.exists()) {
-//                                        deleteDirectory(bundleDir);
-//                                    }
-                                    File newRevDir = new File(walBundleDir,"version.1");
-                                    if(!newRevDir.exists()){
-                                        return;
-                                    }
-                                    File[] revisions  = bundleDir.listFiles(new FilenameFilter() {
-                                        @Override
-                                        public boolean accept(File dir, String filename) {
-                                            return filename.startsWith(BundleArchive.REVISION_DIRECTORY);
-                                        }
-                                    });
-
-                                    int targetREV = 1;
-                                    List<String> useless = new ArrayList<>();
-                                    File latestRevision = null;
-                                    String targetVersion = BundleArchive.REVISION_DIRECTORY+".1";
-                                    int rev;
-                                    if(revisions!=null && revisions.length>0){
-                                        for(File revision : revisions){
-                                            if((rev=Integer.parseInt(revision.getName().substring(8)))>= targetREV){
-                                                targetREV = rev;
-                                                if(!new File(revision,BundleArchive.DEPRECATED_MARK).exists()) {
-                                                    if (latestRevision != null) {
-                                                        useless.add(latestRevision.getName());
-                                                    }
-                                                    latestRevision = revision;
-                                                }
-                                            }else{
-                                                useless.add(revision.getName());
-                                            }
-                                            if(new File(revision,BundleArchive.DEPRECATED_MARK).exists()){
-                                                useless.add(revision.getName());
-                                            }
-                                        }
-                                        if(!BaselineInfoManager.instance().isCachePreVersion()){
-                                            useless.add(latestRevision.getName());
-                                        }
-                                        targetVersion = BundleArchive.REVISION_DIRECTORY+"."+(++targetREV);
-                                    }
-                                    File targetDir = new File(bundleDir,targetVersion);
-                                    targetDir.mkdirs();
-                                    File meta = new File(bundleDir,"meta");
-                                    if(meta.exists()){
-                                        meta.delete();
-                                    }
-                                    new File(walBundleDir,"meta").renameTo(meta);
-                                    // move bundle to storage
-                                    boolean result = newRevDir.renameTo(targetDir);
-                                    if(!result || !targetDir.exists()){
-                                        targetDir.mkdirs();
-                                        result =  newRevDir.renameTo(targetDir);
-                                        new File(walBundleDir,"meta").renameTo(meta);
-                                        if(!result || !targetDir.exists() || !meta.exists()){
-                                            BaselineInfoManager.instance().rollbackHardly();
-                                            android.os.Process.killProcess(android.os.Process.myPid());
-                                        }
-                                    }else{
-                                        //remove old bundles
-                                        for(String uselessDir : useless){
-                                            File uselessFile = new File(bundleDir,uselessDir);
-                                            if(uselessFile.exists()){
-                                                deleteDirectory(uselessFile);
-                                            }
-                                            if(uselessFile.exists()){
-                                                new File(uselessFile,BundleArchive.DEPRECATED_MARK).createNewFile();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    writeAheads.set(i, null);
-                } catch (Exception e) {
-                    Log.e("Framework","Error while merge wal dir", e);
-                }
-            }
-        }
-        if (walsDir.exists()) {
-            deleteDirectory(walsDir);
-        }
     }
 
     /**
@@ -839,28 +360,6 @@ public final class Framework {
         path.delete();
     }
 
-    /*
-     * framework operations
-     */
-
-
-    /**
-     * install a bundle. if location starts with asset: then fetch file from the assets folder.
-     *
-     * @param location the bundle location.
-     * @return a Bundle object.
-     * @throws BundleException if the installation failed.
-     */
-    static Bundle installNewBundle(final String location) throws BundleException {
-        try{
-            final String location2 = location.indexOf(":") > -1 ? location : BUNDLE_LOCATION + File.separatorChar
-                    + location;
-            return installNewBundle(location2, new URL(location2).openConnection().getInputStream());
-        } catch (IOException e) {
-            throw new BundleException("Cannot retrieve bundle from " + location, e);
-        }
-    }
-
     /**
      * install a bundle from input stream.
      *
@@ -873,11 +372,7 @@ public final class Framework {
         File bundleDir = null;
         try{
             BundleLock.WriteLock(location);
-	        /*
-	         * <specs page="58">Every bundle is uniquely identified by its location string. If an installed bundle is using
-	         * the specified location, the installBundle method must return the Bundle object for that installed bundle and
-	         * not install a new bundle.</specs>
-	         */
+            installingBundles.put(location,0);
             bundleDir = new File(STORAGE_LOCATION, location);
             if(!bundleDir.exists()){
                 bundleDir.mkdirs();
@@ -888,16 +383,11 @@ public final class Framework {
                 return cached;
             }
 
-            Log.e("BundleInstaller","real install " + location);
             BundleImpl bundle = null;
-
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            String version = info!=null ? info.getVersion() : "-1";
-            bundle = new BundleImpl(bundleDir, location, new BundleContext(), in, null, version,true,-1);
-//            storeMetadata();
+            bundle = new BundleImpl(bundleDir, location, in, null, info.getUnique_tag(),true,-1);
             return bundle;
         } catch (IOException e) {
-
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
             if (bundleDir != null)
                 Framework.deleteDirectory(bundleDir);
@@ -911,6 +401,7 @@ public final class Framework {
                 Framework.deleteDirectory(bundleDir);
             throw e1;
         } finally {
+            installingBundles .remove(location);
             BundleLock.WriteUnLock(location);
             if (bundleDir != null) {
                 AtlasFileLock.getInstance().unLock(bundleDir);
@@ -931,18 +422,13 @@ public final class Framework {
         File bundleDir = null;
 
         try {
+            BundleLock.WriteLock(location);
+            installingBundles.put(location,0);
             bundleDir = new File(STORAGE_LOCATION, location);
             if(!bundleDir.exists()){
                 bundleDir.mkdirs();
             }
-
-            BundleLock.WriteLock(location);
             AtlasFileLock.getInstance().LockExclusive(bundleDir);
-	        /*
-	         * <specs page="58">Every bundle is uniquely identified by its location string. If an installed bundle is using
-	         * the specified location, the installBundle method must return the Bundle object for that installed bundle and
-	         * not install a new bundle.</specs>
-	         */
             final BundleImpl cached;
             if ((cached = (BundleImpl) getBundle(location)) != null) {
                 return cached;
@@ -951,9 +437,7 @@ public final class Framework {
             BundleImpl bundle = null;
 
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            String version = info!=null ? info.getVersion() : "-1";
-            bundle = new BundleImpl(bundleDir, location, new BundleContext(), null, file,version,true,-1);
-//            storeMetadata();
+            bundle = new BundleImpl(bundleDir, location, null, file,info.getUnique_tag(),true,-1);
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
@@ -969,6 +453,7 @@ public final class Framework {
                 Framework.deleteDirectory(bundleDir);
             throw e1;
         } finally {
+            installingBundles.remove(location);
             BundleLock.WriteUnLock(location);
             if (bundleDir != null) {
                 AtlasFileLock.getInstance().unLock(bundleDir);
@@ -976,92 +461,22 @@ public final class Framework {
         }
     }
 
-    static boolean restoreBundle(String[] locations) {
-        try {
-            for (String location : locations) {
-                if (isKernalBundle(location)) {
-                    final File bundleDir = new File(STORAGE_LOCATION, "com.taobao.maindex");
-                    if (!bundleDir.exists()) {
-                        return false;
-                    } else {
-                        Class KernalBundleClass = RuntimeVariables.getRawClassLoader().loadClass("android.taobao.atlas.startup.patch.KernalBundle");
-                        Method downgradeRevision = KernalBundleClass.getDeclaredMethod("downgradeRevision",File.class,boolean.class);
-                        boolean success = (Boolean)downgradeRevision.invoke(KernalBundleClass,bundleDir,false);
-                        if (!success) {
-                            return false;
-                        }
-                    }
-                } else {
-                    final File bundleDir = new File(STORAGE_LOCATION, location);
-                    if (!bundleDir.exists()) {
-                        return false;
-                    } else {
-                        if (!BundleArchive.downgradeRevision(location, bundleDir, false)) {
-                            return false;
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
-
-
-    /**
-     *         boolean lockSuccess = false;
-     try {
-     lockSuccess = BundleLock.ReadLock(location);
-     if (location == null){
-     return null;
-     }
-     Bundle bundle = bundles.get(location);
-     if(bundle==null) {
-     bundle = restoreFromExistedBundle(location);
-     }
-     return bundle;
-
-     }finally {
-     if(lockSuccess) {
-     try {
-     BundleLock.ReadUnLock(location);
-     }catch(Throwable e){}
-     }
-     }
-     * @param location
-     * @return
-     */
-
     public static BundleImpl restoreFromExistedBundle(final String location) {
         boolean lockSuccess = false;
         File bundleDir = new File(STORAGE_LOCATION, location);
         BundleImpl bundle = null;
-        // just restore
-        if(bundleDir.exists() && new File(bundleDir,"meta").exists()) {
+        String bundleUniqueTag = AtlasBundleInfoManager.instance().getBundleInfo(location).getUnique_tag();
+        long dexPatchVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(location);
+        if(!installingBundles.containsKey(location) && (new File(bundleDir,bundleUniqueTag).exists() || new File(bundleDir,BundleArchive.DEXPATCH_DIR+dexPatchVersion).exists())){
             try {
                 lockSuccess = BundleLock.ReadLock(location);
                 AtlasFileLock.getInstance().LockExclusive(bundleDir);
-                BundleContext impl = new BundleContext();
-                if(BaselineInfoManager.instance().dexPatchVersion()>0 && BaselineInfoManager.instance().isDexPatched(location)) {
-                    impl.dexPatchVersion = BaselineInfoManager.instance().dexPatchVersion();
-                    bundle = new BundleImpl(bundleDir, impl);
-                    if (bundle != null) {
-                        bundle.optDexFile();
-                    }
-                }else{
-                    String[] versions = bundleDir.list(new FilenameFilter() {
-                        @Override
-                        public boolean accept(File dir, String filename) {
-                            return filename.startsWith(BundleArchive.REVISION_DIRECTORY);
-                        }
-                    });
-                    if(versions!=null && versions.length>0){
-                        bundle = new BundleImpl(bundleDir, impl);
-                        if (bundle != null) {
-                            bundle.optDexFile();
-                        }
-                    }
+                BundleContext bcontext = new BundleContext();
+                bcontext.bundle_tag = bundleUniqueTag;
+                bcontext.location = location;
+                bundle = new BundleImpl(bundleDir, bcontext);
+                if (bundle != null) {
+                    bundle.optDexFile();
                 }
             } catch (Exception e) {
                 if (e instanceof BundleArchive.MisMatchException) {
@@ -1069,8 +484,6 @@ public final class Framework {
                         bundle = null;
                     }
                 }
-//                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL,
-//                        location, AtlasMonitor.RESTORED_FAILED_MSG, FileUtils.getDataAvailableSpace());
                 Log.e("Framework","restore bundle failed" + location, e);
             }finally {
                 if(lockSuccess) {
@@ -1084,107 +497,71 @@ public final class Framework {
         return bundle;
     }
 
-    static void installOrUpdate(final String[] locations, final File[] files, String[] newBundleVersions,long dexPatchVersion) throws BundleException {
+    // update or dexpatched
+    public static void update(boolean upgrade,final String[] locations, final File[] files, String[] newBundleTag,long[] dexPatchVersions,String newBaselineVersion) throws BundleException {
         if (locations == null || files == null || locations.length != files.length) {
             throw new IllegalArgumentException("locations and files must not be null and must be same length");
         }
-
-        String writeAhead = String.valueOf(System.currentTimeMillis());
-        File walsDir = new File(STORAGE_LOCATION, "wal");
-        File walDir = new File(walsDir, writeAhead);
-        walDir.mkdirs();
         Class KernalBundleClass = null;
-        Object kernalBundle = null;
-
+        HashMap<String,String> updateBundles = new HashMap<>();
         for (int i = 0; i < locations.length; i++) {
             if (locations[i] == null || files[i] == null) {
                 continue;
             }
+            //reset
+            if(upgrade && newBundleTag[i].equals("-1")){
+                continue;
+            }else if(!upgrade && dexPatchVersions[i]==-1){
+                updateBundles.put(locations[i],"-1");
+            }
+
             File bundleDir = null;
             try {
                 BundleLock.WriteLock(locations[i]);
                 if (isKernalBundle(locations[i])) {
                     KernalBundleClass = RuntimeVariables.getRawClassLoader().loadClass("android.taobao.atlas.startup.patch.KernalBundle");
-                    kernalBundle = KernalBundleClass.getDeclaredField("kernalBundle").get(KernalBundleClass);
-                    if (kernalBundle != null) {
-                        Method updateMethod = KernalBundleClass.getMethod("update",File.class,String.class,long.class);
-                        updateMethod.setAccessible(true);
-                        updateMethod.invoke(kernalBundle,files[i],Framework.containerVersion,dexPatchVersion);
-//                        bundle.update();
-                    } else {
-                        bundleDir = new File(STORAGE_LOCATION, "com.taobao.maindex");
-                        if (!bundleDir.exists()){
-                            bundleDir.mkdirs();
-                        }
-                        AtlasFileLock.getInstance().LockExclusive(bundleDir);
-                        Constructor cons = KernalBundleClass.getDeclaredConstructor(File.class,File.class,String.class,long.class);
-                        cons.setAccessible(true);
-                        Object b = cons.newInstance(bundleDir, files[i],Framework.containerVersion,dexPatchVersion);
-//                        KernalBundle b = new KernalBundle(bundleDir, files[i],Framework.containerVersion,dexPatchVersion);
-                        if (b != null) {
-                            Method getRevisionDir = b.getClass().getDeclaredMethod("getRevisionDir");
-                            File file = (File) getRevisionDir.invoke(b);
-                            FileUtils.createNewDirIfNotExist(file, UPDATED_MARK);
-                        }
+                    bundleDir = new File(STORAGE_LOCATION, "com.taobao.maindex");
+                    if (!bundleDir.exists()){
+                        bundleDir.mkdirs();
                     }
+                    AtlasFileLock.getInstance().LockExclusive(bundleDir);
+                    Constructor cons = KernalBundleClass.getDeclaredConstructor(File.class,File.class,String.class,long.class);
+                    cons.setAccessible(true);
+                    if(upgrade) {
+                        cons.newInstance(bundleDir, files[i], newBundleTag[i], -1);
+                    }else{
+                        cons.newInstance(bundleDir, files[i],null,dexPatchVersions[i]);                    }
                 } else {
                     Bundle bundle = Framework.getBundle(locations[i]);
                     if (bundle != null) {
-                        bundle.update(files[i],newBundleVersions[i],dexPatchVersion);
-                    } else {
-                        if(dexPatchVersion>0){
-                            bundleDir = new File(STORAGE_LOCATION, locations[i]);
-                        }else {
-                            bundleDir = new File(walDir, locations[i]);
+                        if(upgrade) {
+                            bundle.update(files[i], newBundleTag[i], -1);
+                        }else{
+                            bundle.update(files[i],null,dexPatchVersions[i]);
                         }
+                    } else {
+                        bundleDir = new File(STORAGE_LOCATION, locations[i]);
                         if (!bundleDir.exists()) {
                             bundleDir.mkdirs();
                         }
                         // Hold the storage file lock
                         AtlasFileLock.getInstance().LockExclusive(bundleDir);
-
-                        BundleImpl b = new BundleImpl(bundleDir, locations[i], new BundleContext(), null, files[i],newBundleVersions[i], false,dexPatchVersion);
-                        if (b != null) {
-                            FileUtils.createNewDirIfNotExist(b.archive.getCurrentRevision().getRevisionDir(), UPDATED_MARK);
+                        if(upgrade) {
+                            new BundleImpl(bundleDir, locations[i], null, files[i], newBundleTag[i], false, -1);
+                        }else{
+                            new BundleImpl(bundleDir, locations[i], null, files[i],null, false,dexPatchVersions[i]);
                         }
                     }
                 }
-            } catch (Exception e) {
-//                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL,
-//                        locations[i], AtlasMonitor.UPDATE_FAILED_MSG, FileUtils.getDataAvailableSpace());
-                /**
-                 * bundle 安装需要支持事务,失败时回滚已部署的bundle
-                 */
-                for (int x = 0; x <= i; x++) {
-                        if (isKernalBundle(locations[x])) {
-                            if (kernalBundle != null) {
-                                try {
-                                    Method downgradeRevision = kernalBundle.getClass().getDeclaredMethod("downgradeRevision",File.class,boolean.class);
-                                    downgradeRevision.setAccessible(true);
-                                    downgradeRevision.invoke(KernalBundleClass,new File(STORAGE_LOCATION, "com.taobao.maindex"), true);
-//                                    KernalBundle.downgradeRevision(new File(STORAGE_LOCATION, "com.taobao.maindex"), true);
-                                } catch (Throwable e2) {
-                                }
-                            } else {
-                                deleteDirectory(new File(STORAGE_LOCATION, "com.taobao.maindex"));
-                            }
-                        } else {
-                            try {
-                                BundleArchive.downgradeRevision(locations[x], new File(STORAGE_LOCATION, locations[x]), true);
-                            } catch (IOException e1) {
-                                e1.printStackTrace();
-                            }
-                            deleteDirectory(walDir);
-                            if (walDir.exists()) {
-                                try {
-                                    new File(walDir, DEPRECATED_MARK).createNewFile();
-                                } catch (IOException e1) {
-                                    e1.printStackTrace();
-                                }
-                            }
-                        }
+                if(upgrade){
+                    updateBundles.put(locations[i],newBundleTag[i]);
+                }else{
+                    updateBundles.put(locations[i],Long.toString(dexPatchVersions[i]));
                 }
-                throw new BundleException("failed to installOrUpdate bundles ", e);
+            } catch (Exception e) {
+                if(upgrade) {
+                    throw new BundleException("failed to installOrUpdate bundles ", e);
+                }
             } finally {
                 if (bundleDir != null) {
                     AtlasFileLock.getInstance().unLock(bundleDir);
@@ -1192,13 +569,29 @@ public final class Framework {
                 BundleLock.WriteUnLock(locations[i]);
             }
         }
-        bundleUpdated = true;
-        WrapperUtil.appendLog("installedVersionWhenUpdated", Framework.containerVersion);
-        WrapperUtil.appendLog("VersionWhenUpdated", WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).versionName);
+        if(upgrade) {
+            bundleUpdated = true;
+            try {
+                BaselineInfoManager.instance().saveBaselineInfo(newBaselineVersion,updateBundles);
+            } catch (IOException e) {
+                throw new BundleException("save baseline info fail");
+            }
+            WrapperUtil.appendLog("installedVersionWhenUpdated", Framework.containerVersion);
+            WrapperUtil.appendLog("VersionWhenUpdated", WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).versionName);
+            InstrumentationHook.notifyAppUpdated();
+        }else{
+            if(updateBundles.size()>0){
+                try {
+                    BaselineInfoManager.instance().saveDexPathInfo(updateBundles);
+                } catch (IOException e) {
+                    throw new BundleException("save dexpatch info fail");
+                }
+            }
+        }
+    }
 
-        writeAheads.add(writeAhead);
-        InstrumentationHook.notifyAppUpdated();
-        storeMetadata();
+    public static void rollback(){
+        BaselineInfoManager.instance().rollback();
     }
 
     static boolean isKernalBundle(String location) {
@@ -1267,197 +660,15 @@ public final class Framework {
             return;
         }
 
-        final FrameworkEvent event = new FrameworkEvent(state, bundle, throwable);
+        final FrameworkEvent event = new FrameworkEvent(state);
 
-        final FrameworkListener[] listeners = (FrameworkListener[]) frameworkListeners.toArray(new FrameworkListener[frameworkListeners.size()]);
+        final FrameworkListener[] listeners = frameworkListeners.toArray(new FrameworkListener[frameworkListeners.size()]);
 
         for (int i = 0; i < listeners.length; i++) {
             final FrameworkListener listener = listeners[i];
 
             listener.frameworkEvent(event);
         }
-    }
-
-    /**
-     * clear all traces of a bundle.
-     *
-     * @param bundle the bundle.
-     */
-    static void clearBundleTrace(final BundleImpl bundle) {
-        // remove all registered listeners
-        if (bundle.registeredFrameworkListeners != null) {
-            frameworkListeners.removeAll(bundle.registeredFrameworkListeners);
-            bundle.registeredFrameworkListeners = null;
-        }
-        if (bundle.registeredBundleListeners != null) {
-            bundleListeners.removeAll(bundle.registeredBundleListeners);
-            syncBundleListeners.removeAll(bundle.registeredBundleListeners);
-            bundle.registeredBundleListeners = null;
-        }
-    }
-
-    /**
-     * add a value to a value list in a Map.
-     *
-     * @param map the map.
-     * @param key the key.
-     * @param value the value to be added to the list.
-     */
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    static void addValue(final Map map, final Object key, final Object value) {
-        List values;
-        if ((values = (List) map.get(key)) == null) {
-            values = new ArrayList<Bundle>();
-        }
-
-        values.add(value);
-        map.put(key, values);
-    }
-
-    /*
-     * inner classes
-     */
-
-    /**
-     * The systemBundle.
-     */
-    private static final class SystemBundle implements Bundle {
-
-        /**
-         * the state
-         */
-        int state;
-
-        /**
-         * the properties.
-         */
-        private final Dictionary<String, String> props = new Hashtable<String, String>();
-
-        /**
-         * create the system bundle instance.
-         */
-        SystemBundle() {
-            props.put(Constants.BUNDLE_NAME, Constants.SYSTEM_BUNDLE_LOCATION);
-            props.put(Constants.BUNDLE_VERSION, FRAMEWORK_VERSION);
-            props.put(Constants.BUNDLE_VENDOR, "Atlas");
-        }
-
-        /**
-         * get the bundle id.
-         *
-         * @return 0.
-         * @category Bundle
-         * @see org.osgi.framework.Bundle#getBundleId()
-         */
-        public long getBundleId() {
-            return 0;
-        }
-
-        /**
-         * get the properties.
-         *
-         * @return the properties.
-         * @category Bundle
-         * @see org.osgi.framework.Bundle#getHeaders()
-         */
-        public Dictionary<String, String> getHeaders() {
-            return props;
-        }
-
-        /**
-         * get the location.
-         *
-         * @return "System Bundle"
-         * @category Bundle
-         * @see org.osgi.framework.Bundle#getLocation()
-         */
-        public String getLocation() {
-            return Constants.SYSTEM_BUNDLE_LOCATION;
-        }
-
-        /**
-         * get resources.
-         *
-         * @param name the name.
-         * @return the URL or null.
-         * @category Bundle
-         * @see org.osgi.framework.Bundle#getResource(java.lang.String)
-         */
-        public URL getResource(final String name) {
-            return getClass().getResource(name);
-        }
-
-        /**
-         * get the state.
-         *
-         * @return the state.
-         * @category Bundle
-         * @see org.osgi.framework.Bundle#getState()
-         */
-        public int getState() {
-            return state;
-        }
-
-        /**
-         * check if some permissions are granted.
-         *
-         * @param permission the permissions.
-         * @return true, if the permissions hold.
-         * @category Bundle
-         * @see org.osgi.framework.Bundle#hasPermission(java.lang.Object)
-         */
-        public boolean hasPermission(final Object permission) {
-            return true;
-        }
-
-        /**
-         * start the system bundle.
-         *
-         * @throws BundleException never.
-         * @category Bundle
-         * @see org.osgi.framework.Bundle#start()
-         */
-        public void start() throws BundleException {
-            // this method has no effect
-        }
-
-        /**
-         * stopping the system bundle means shutting down the framework.
-         *
-         * @throws BundleException never.
-         * @category Bundle
-         * @see org.osgi.framework.Bundle#stop()
-         */
-        public void stop() throws BundleException {
-        }
-
-        /**
-         * the system bundle cannot be uninstalled.
-         *
-         * @throws BundleException always.
-         * @category Bundle
-         * @see org.osgi.framework.Bundle#uninstall()
-         */
-        public void uninstall() throws BundleException {
-            throw new BundleException("Cannot uninstall the System Bundle");
-        }
-
-        public void update(final File in,String version,long dexPatchVersion) throws BundleException {
-            throw new BundleException("Cannot update the System Bundle");
-        }
-
-        /**
-         * get a string representation.
-         *
-         * @return the string representation.
-         * @category Object
-         * @see java.lang.Object#toString()
-         */
-        public String toString() {
-            return "SystemBundle";
-        }
-
-
     }
 
     public static ClassNotFoundInterceptorCallback getClassNotFoundCallback() {
@@ -1468,72 +679,11 @@ public final class Framework {
         Framework.classNotFoundCallback = classNotFoundCallback;
     }
 
-    /**
-     * for debug not release
-     */
-    static void checkInstallDebugBundle() {
-        File debugDirectory = new File(ATLAS_DEBUG_DIRECTORY);
-        if (debugDirectory.exists()) {
-            File[] bundles = debugDirectory.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String filename) {
-                    if (filename.endsWith(".so")) {
-                        return true;
-                    }
-                    return false;
-                }
-            });
-            if (bundles != null) {
-                String[] packageNames = new String[bundles.length];
-                String[] versions = new String[bundles.length];
-                for (int x = 0; x < bundles.length; x++) {
-                    versions[x] = "1.0.0";
-                    if (bundles[x].getName().startsWith("kernal") || bundles[x].getName().contains("com_taobao_mainDex")) {
-                        //主dexbundle
-                        packageNames[x] = "com.taobao.maindex";
-                    } else {
-                        //业务bundle
-                        PackageInfo info = RuntimeVariables.androidApplication.getPackageManager().getPackageArchiveInfo(bundles[x].getAbsolutePath(), 0);
-                        if (info != null) {
-                            packageNames[x] = info.applicationInfo.packageName;
-                        } else {
-                            String fileName = bundles[x].getName();
-                            fileName = fileName.substring(3, fileName.length() - 3);
-                            packageNames[x] = fileName.replace("_", ".");
-                        }
-                    }
-                }
-                try {
-                    Atlas.getInstance().installOrUpdate(packageNames, bundles,versions,-1);
-                    Log.d("Framework", "patch success and delete file");
-                    try {
-                        for (File installFile : bundles) {
-                            if (installFile.exists()) {
-                                installFile.delete();
-                            }
-                        }
-                    } catch (Exception e) {
-
-                    }
-                } catch (BundleException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-
-    /**
-     * 存在隐患 storelocation后期被更改
-     */
-
-
-    public static File getInstalledBundle(String location,String bundleVersion) {
+    public static File getInstalledBundle(String location,String bundleUniqueId) {
         try {
             if (new File(STORAGE_LOCATION + location).exists()) {
-                BundleArchive archive = new BundleArchive(location, new File(STORAGE_LOCATION + location),0,0);
-                String version = archive.getCurrentRevision().getVersion();
-                if(TextUtils.isEmpty(bundleVersion) || version.equals(bundleVersion)) {
+                BundleArchive archive = new BundleArchive(location, new File(STORAGE_LOCATION + location),bundleUniqueId,0);
+                if(archive != null) {
                     return archive.getArchiveFile();
                 }else{
                     return null;
@@ -1550,12 +700,6 @@ public final class Framework {
         return bundleUpdated;
     }
 
-    public static String getContainerVersion() {
-        return containerVersion;
-    }
-
-
-
     public static boolean isDeubgMode() {
         try {
             /**
@@ -1571,19 +715,4 @@ public final class Framework {
         }
         return false;
     }
-
-    public static boolean shouldSyncUpdateInThisProcess(){
-        String processName = getCurProcessName();
-        if(processName!=null &&
-                (processName.equals(RuntimeVariables.androidApplication.getPackageName()) ||
-                        processName.toLowerCase().contains(":safemode")
-                )){
-            return true;
-        }else{
-            return false;
-        }
-    }
-
-
-
 }

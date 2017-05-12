@@ -208,19 +208,14 @@
 
 package android.taobao.atlas.startup.patch;
 
-import android.app.PreVerifier;
 import android.content.Context;
 import android.os.Looper;
-import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.patch.releaser.BundleReleaser;
 import android.text.TextUtils;
-import android.util.Log;
 import dalvik.system.DexFile;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.zip.ZipFile;
 
 /**
@@ -229,192 +224,58 @@ import java.util.zip.ZipFile;
  class KernalBundleArchive {
 
     public static final String TAG = "KernalBundleArchive";
-    public static final int RETRY_COUNT = 3;
-    public final static String                           REVISION_DIRECTORY = "version";
-    private static final String DEX_PREFIX = "classes";
-    private static final String DEX_SUFFIX = ".dex";
-    private static final String EXTRACTED_SUFFIX = ".zip";
     private static final String BUNDLE_NAME = "com_taobao_maindex.zip";
-    private static final int MAX_EXTRACT_ATTEMPTS = 3;
     public final static String DEXPATCH_DIR = "dexpatch/";
-
-    private Object lock = new Object();
-
     /**
      * Size of reading buffers.
      */
     private static final int BUFFER_SIZE = 0x4000;
-
     private File bundleDir;
     /**
      * the bundle revision file location.
      */
-    private String containerVersion;
-
-    public SortedMap<Integer, KernalBundleArchive> getRevisions() {
-        return revisions;
-    }
-
-    // Maps a Long revision number to a BundleRevision.
-    private final SortedMap<Integer,KernalBundleArchive> revisions          = new TreeMap<Integer, KernalBundleArchive>();
     private File   revisionDir;
     private File   libraryDirectory;
     private DexFile[] odexFile;
     private boolean hasResources = false;
     private Context mContext;
 
-    public KernalBundleArchive(Context context, File bundleDir, String wantedRevisionDir,String process,String sInstalledVersioname
-    ,long dexPatchVersion) throws IOException {
-        if(Boolean.FALSE.booleanValue()){
-            String.valueOf(PreVerifier.class);
-        }
+    //reload
+    public KernalBundleArchive(Context context, File bundleDir,String version,long dexPatchVersion,String process) throws IOException {
         mContext = context;
-        final File[] f = bundleDir.listFiles();
-        String processName = process;
-        if(TextUtils.isEmpty(wantedRevisionDir)) {
-            if (f != null) {
-                for (final File element : f) {
-                    if (element.getName().startsWith(REVISION_DIRECTORY)) {
-                        if (!new File(element, "deprecated").exists()) {
-                            final int v = Integer.parseInt(substringAfter(element.getName(), "."));
-                            if (v > 0) {
-                                revisions.put(v, null);
-                            }
-                        } else {
-                            if (!TextUtils.isEmpty(processName) && processName.equals(context.getPackageName())) {
-                                deleteDirectory(element);
-                            }
-                        }
-                    }
-                }
-            }
-            if (revisions.isEmpty() && dexPatchVersion<=0) {
-                {
-                    if (!TextUtils.isEmpty(processName) && processName.equals(context.getPackageName())) {
-                        deleteDirectory(bundleDir);
-                    }
-                }
-                throw new IOException("No valid revisions in bundle archive directory: " + bundleDir);
-            }
-
-            int maxValidRevNum = KernalVersionManager.instance().isCachePreVersion() ? 2 : 1;
-            if (revisions.size() > maxValidRevNum) {
-                try {
-                    File old = new File(bundleDir, String.format("%s%s%s", REVISION_DIRECTORY, ".", revisions.firstKey()));
-                    if (old.exists()) {
-                        deleteDirectory(old);
-                    }
-                    if(old.exists()){
-                        new File(old,"deprecated").createNewFile();
-                    }
-                } catch (Exception e) {
-                }
-
-                try {
-                    File last = new File(bundleDir, String.format("%s%s%s", REVISION_DIRECTORY, ".", revisions.get(revisions.size()-2)));
-                    if (last.exists()) {
-                       //bundle.dex
-//                        File bundledex = new File(last,""})
-                       //lib
-
-                    }
-                } catch (Exception e) {
-                }
-            }
-
-            if(dexPatchVersion>0) {
-                revisionDir = new File(bundleDir,DEXPATCH_DIR+dexPatchVersion);
-            }else{
-                File dexPatchDir = new File(bundleDir,DEXPATCH_DIR);
-                if(dexPatchDir.exists()){
-                    deleteDirectory(dexPatchDir);
-                }
-                long rev = revisions.lastKey();
-                this.revisionDir = new File(bundleDir, REVISION_DIRECTORY + "." + String.valueOf(rev));
-            }
-
-        }else{
-            if(dexPatchVersion>0){
-                revisionDir = new File(bundleDir,DEXPATCH_DIR+dexPatchVersion);
-            }else {
-                this.revisionDir = new File(wantedRevisionDir);
-                if (new File(revisionDir, "deprecated").exists()) {
-                    throw new IOException("kernal bundle has been deprecated");
-                }
-            }
-        }
-
-        if(!revisionDir.exists()){
-            throw new IOException("no valid revision dir");
-        }
-
         this.bundleDir = bundleDir;
-        File metafile = new File(revisionDir, "meta");
-        if (metafile.exists()) {
-            DataInputStream in = new DataInputStream(new FileInputStream(metafile));
-            this.containerVersion = in.readUTF();
-            hasResources = in.readBoolean();
-            String appLocation = in.readUTF();
-            if(appLocation!=null && !appLocation.equals(mContext.getApplicationInfo().sourceDir)){
-                throw new IOException("appLocation is Changed");
-            }
-            in.close();
-            if(containerVersion==null || (!TextUtils.isEmpty(sInstalledVersioname) && !containerVersion.equals(sInstalledVersioname))){
-//                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_MISMATCH, "System", containerVersion+" " + RuntimeVariables.sInstalledVersionName, FileUtils.getDataAvailableSpace());
-                throw new IOException("bundle mismatch");
-            }
+        if(process.equals(KernalConstants.baseContext.getPackageName())) {
+            purge(version, dexPatchVersion);
+        }
+        if(dexPatchVersion>0){
+            revisionDir = new File(bundleDir,DEXPATCH_DIR+dexPatchVersion);
+        }
+        if(revisionDir==null || !revisionDir.exists()){
+            //dexpatch目录不存在可降级，dexpatch改动必须向前兼容
+            revisionDir = new File(bundleDir,version);
         }
 
+        if (revisionDir==null || !revisionDir.exists()) {
+            throw new IOException("can not find kernal bundle");
+        }
         libraryDirectory = new File(revisionDir,"lib");
         File bundleFile = new File(revisionDir, BUNDLE_NAME);
-//        final Boolean[] success = {true};
-//        final BundleReleaser bundleReleaser = new BundleReleaser(revisionDir);
-//        bundleReleaser.release(new BundleReleaser.ProcessCallBack() {
-//            @Override
-//            public void onFailed() throws IOException {
-//                success[0]= false;
-//                odexFile = null;
-//                bundleReleaser.close();
-//            }
-//
-//            @Override
-//            public void onFinish(int event) {
-//                if (event == BundleReleaser.MSG_ID_DEX_OPT_DONE){
-//                    odexFile = bundleReleaser.getDexFile();
-//                }
-//            }
-//
-//            @Override
-//            public void onAllFinish() {
-//                bundleReleaser.close();
-//
-//            }
-//        },bundleFile,true);
         boolean success = new KernalBundleRelease(revisionDir,true).release(bundleFile,true);
-
         if (!success||odexFile == null){
             throw new IOException("process patch failed!");
         }
     }
 
-    public KernalBundleArchive(File bundleDir, File file,String containerVersion,long dexPatchVersion) throws IOException{
-        this(bundleDir, file, 1,containerVersion,dexPatchVersion);
-    }
-
-    private KernalBundleArchive(final File bundleDir, File file, int revNum,String containerVersion,long dexPatchVersion) throws IOException {
+    //create
+    public KernalBundleArchive(final File bundleDir, File file,String version,long dexPatchVersion) throws IOException {
         this.bundleDir = bundleDir;
         if(dexPatchVersion>0) {
             revisionDir = new File(bundleDir, DEXPATCH_DIR+dexPatchVersion);
-            if (!revisionDir.exists()) {
-                revisionDir.mkdirs();
-            }
         }else{
-            int rev = revNum;
-            revisionDir = new File(bundleDir, REVISION_DIRECTORY + "." + String.valueOf(rev));
-            if (!revisionDir.exists()) {
-                revisionDir.mkdirs();
-            }
-            this.revisions.put(rev,null);
+            revisionDir = new File(bundleDir, version);
+        }
+        if (!revisionDir.exists()) {
+            revisionDir.mkdirs();
         }
         File bundleFile = new File(revisionDir, BUNDLE_NAME);
         if (!file.renameTo(bundleFile)) {
@@ -428,54 +289,39 @@ import java.util.zip.ZipFile;
         }
         zip.close();
         libraryDirectory = new File(revisionDir, "lib");
-//        final Boolean[] success = {true};
-//        final BundleReleaser bundleReleaser = new BundleReleaser(revisionDir);
-//        bundleReleaser.release(new BundleReleaser.ProcessCallBack() {
-//            @Override
-//            public void onFailed() throws IOException {
-//                success[0] = false;
-//                odexFile = null;
-//                bundleReleaser.close();
-//
-//            }
-//
-//            @Override
-//            public void onFinish(int event) {
-//                if (event == BundleReleaser.MSG_ID_DEX_OPT_DONE){
-//                    odexFile = bundleReleaser.getDexFile();
-//                }
-//            }
-//
-//            @Override
-//            public void onAllFinish() {
-//                bundleReleaser.close();
-//            }
-//        },bundleFile,false);
-//        Looper.loop();
         boolean success = new KernalBundleRelease(revisionDir,false).release(bundleFile,false);
         if (!success||odexFile == null){
             throw new IOException("process mainDex failed!");
         }
-        updateMetadata(containerVersion);
     }
 
-
-    public KernalBundleArchive newRevision(File file,String containerVersion,long dexPatchVersion) throws IOException{
-
-        if(dexPatchVersion>0){
-            KernalBundleArchive newRevision = new KernalBundleArchive(bundleDir,file,0,containerVersion,dexPatchVersion);
-            return newRevision;
-        }else {
-            int rev = revisions.lastKey();
-            while (true) {
-                rev++;
-                File revisionDir = new File(bundleDir, REVISION_DIRECTORY + "." + String.valueOf(rev));
-                if (revisionDir.exists()) {
-                    continue;
+    /**
+     * This method removes all old revisions associated with the archive and keeps only the current revision.
+     **/
+    public void purge(String uniqueTag, final long dexPatchVersion) {
+        // remove old dexpatch
+        File dexPatchDir = new File(bundleDir,DEXPATCH_DIR);
+        File[] dexPatchs = dexPatchDir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String filename) {
+                if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"")){
+                    return false;
+                }else{
+                    return true;
                 }
-                KernalBundleArchive archiveRevision = null;
-                archiveRevision = new KernalBundleArchive(bundleDir, file, rev,containerVersion,0);
-                return archiveRevision;
+            }
+        });
+        if(dexPatchs!=null){
+            for(File patch : dexPatchs){
+                deleteDirectory(patch);
+            }
+        }
+
+        // remove old update version
+        File[] dirs = bundleDir.listFiles();
+        for(File dir : dirs){
+            if(!dir.getName().contains("dexpatch") && !dir.getName().equals(uniqueTag)){
+                deleteDirectory(dir);
             }
         }
     }
@@ -508,94 +354,6 @@ import java.util.zip.ZipFile;
 
     public File getRevisionDir(){
         return revisionDir;
-    }
-
-    public static boolean downgradeRevision(File bundleDir,boolean forceDelete) throws IOException{
-        File[] revisionFiles = bundleDir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String filename) {
-                if (filename.startsWith(REVISION_DIRECTORY) && !new File(dir+File.separator+filename, "deprecated").exists()) {
-                    return true;
-                }
-                return false;
-            }
-        });
-        if (revisionFiles != null && revisionFiles.length > 0) {
-            File deprecatedDir = revisionFiles[revisionFiles.length - 1];
-            if(forceDelete){
-                try {
-                    KernalBundle impl = (KernalBundle)KernalBundle.kernalBundle;
-                    if (impl != null && impl.getArchive() != null) {
-                        if (impl.getArchive().getRevisionDir().equals(deprecatedDir)) {
-                            return true;
-                        }
-                    }
-                }catch(Throwable e){}
-
-                deleteDirectory(deprecatedDir);
-            }
-            if(deprecatedDir.exists()) {
-                File deprecatedFile = new File(deprecatedDir, "deprecated");
-                deprecatedFile.createNewFile();
-                if(!deprecatedFile.exists()){
-                    return false;
-                }
-            }
-            Log.d("BundleArchive","downgrade "+bundleDir);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * update the revision's metadata on the storage.
-     */
-    void updateMetadata(String containerVersion) throws IOException {
-        File file = new File(revisionDir, "meta");
-        DataOutputStream out = null;
-        try {
-            if (!file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-
-            FileOutputStream fos = new FileOutputStream(file);
-            out = new DataOutputStream(fos);
-            out.writeUTF(containerVersion);
-            out.writeBoolean(hasResources);
-            String appLocation = KernalConstants.APK_PATH;
-            out.writeUTF(appLocation!=null ? appLocation : "");
-            out.flush();
-            // fos.getFD().sync(); //this may be time-consuming
-        } catch (IOException e) {
-            throw new IOException("Could not save meta data " + file.getAbsolutePath(), e);
-        } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public boolean hasResources(){
-        ZipFile file = null;
-        try {
-            if (!hasResources && !new File(revisionDir, "meta").exists()) {
-                file = new ZipFile(getArchiveFile());
-                if (file.getEntry("resources.arsc") != null || new File(revisionDir,"newAssets/assets").exists()) {
-                    hasResources = true;
-                }
-            }
-        }catch(Throwable e){}finally {
-            if(file!=null){
-                try{
-                    file.close();
-                }catch(Throwable e){}
-            }
-        }
-        return hasResources;
     }
 
     public static void deleteDirectory(final File path) {

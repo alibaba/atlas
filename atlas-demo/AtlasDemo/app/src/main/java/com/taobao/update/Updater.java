@@ -231,8 +231,7 @@ public class Updater {
         String versionName = null;
         try {
             versionName = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-        }catch (Exception e){
-
+        }catch(Throwable e){
         }
         File updateInfo = new File(context.getExternalCacheDir(), "update-"+versionName+".json");
 

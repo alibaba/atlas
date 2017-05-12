@@ -258,7 +258,7 @@ public class AdditionalPackageManager {
     }
 
     public AdditionalPackageManager(){
-        if(BaselineInfoManager.instance().isChanged("com.taobao.maindex")) {
+        if(BaselineInfoManager.instance().isUpdated("com.taobao.maindex")) {
             boolean needRetry ;
             do {
                 try {
