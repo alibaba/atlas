@@ -268,7 +268,6 @@ public class AtlasDependencyManager extends DependencyManager {
 
         AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo).parseDependencyTree(
             variantDeps);
-        resolveDependencies(variantDeps, atlasDependencyTree);
 
         sLogger.info("[dependencyTree" + variantDeps.getName() + "] {}",
                      JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
@@ -280,6 +279,7 @@ public class AtlasDependencyManager extends DependencyManager {
         }
 
         Set<AndroidDependency> libsToExplode = super.resolveDependencies(variantDeps, testedProjectPath);
+        resolveDependencies(variantDeps, atlasDependencyTree);
         //return libsToExplode;
         return new HashSet<>(0);
     }
