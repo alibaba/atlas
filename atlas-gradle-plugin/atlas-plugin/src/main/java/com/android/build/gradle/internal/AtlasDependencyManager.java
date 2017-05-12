@@ -209,7 +209,12 @@
 
 package com.android.build.gradle.internal;
 
+import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.alibaba.fastjson.JSON;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -217,14 +222,17 @@ import com.android.builder.dependency.level2.AndroidDependency;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.parser.AtlasDepTreeParser;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.extension.TBuildType;
+import com.taobao.android.builder.tasks.PrepareAPTask;
+import com.taobao.android.builder.tasks.PrepareAPTask.ConfigAction2;
+import com.taobao.android.builder.tasks.incremental.CorrectAtlasDependenciesTask;
 import com.taobao.android.builder.tools.PluginTypeUtils;
-
 import org.gradle.api.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
+import static com.android.build.gradle.internal.api.ApContext.DEPENDENCIES_FILENAME;
 
 /**
  * A manager to resolve configuration dependencies.
@@ -233,14 +241,13 @@ import java.util.Set;
  */
 public class AtlasDependencyManager extends DependencyManager {
 
-    private static Logger sLogger = LoggerFactory.getLogger(AtlasDependencyManager.class);
+    private static final Logger sLogger = LoggerFactory.getLogger(AtlasDependencyManager.class);
 
-    private Project project;
+    private final Project project;
 
-    private ExtraModelInfo extraModelInfo;
+    private final ExtraModelInfo extraModelInfo;
 
-    public AtlasDependencyManager(@NonNull Project project,
-                                  @NonNull ExtraModelInfo extraModelInfo,
+    public AtlasDependencyManager(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo,
                                   @NonNull SdkHandler sdkHandler) {
         super(project, extraModelInfo, sdkHandler);
         this.project = project;
@@ -259,23 +266,52 @@ public class AtlasDependencyManager extends DependencyManager {
     public Set<AndroidDependency> resolveDependencies(@NonNull VariantDependencies variantDeps,
                                                       @Nullable String testedProjectPath) {
 
-        AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(project,
-                                                                         extraModelInfo).parseDependencyTree(
-                variantDeps);
+        AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo).parseDependencyTree(
+            variantDeps);
+        resolveDependencies(variantDeps, atlasDependencyTree);
 
         sLogger.info("[dependencyTree" + variantDeps.getName() + "] {}",
                      JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
 
         if (PluginTypeUtils.isAppProject(project)) {
-            AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(),
-                                                         atlasDependencyTree);
+            AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
         } else {
             AtlasBuildContext.libDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
         }
 
-        Set<AndroidDependency> libsToExplode = super.resolveDependencies(variantDeps,
-                                                                         testedProjectPath);
+        Set<AndroidDependency> libsToExplode = super.resolveDependencies(variantDeps, testedProjectPath);
         //return libsToExplode;
         return new HashSet<>(0);
+    }
+
+    private void resolveDependencies(@NonNull VariantDependencies variantDeps,
+                                     AtlasDependencyTree atlasDependencyTree) {
+        AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
+        if (!atlasExtension.getTBuildConfig().isIncremental()) {
+            return;
+        }
+
+        TBuildType tBuildType = (TBuildType)atlasExtension.getBuildTypes().findByName(variantDeps.getName());
+        if (tBuildType == null) {
+            return;
+        }
+
+        try {
+            ConfigAction2 configAction2 = new ConfigAction2(project, variantDeps.getName(), tBuildType);
+            PrepareAPTask prepareAPTask = project.getTasks().create(configAction2.getName(), configAction2.getType());
+            configAction2.execute(prepareAPTask);
+            prepareAPTask.execute();
+
+            File baseDependenciesFile = new File(prepareAPTask.getExplodedDir(), DEPENDENCIES_FILENAME);
+            if (baseDependenciesFile.exists()) {
+                CorrectAtlasDependenciesTask correctAtlasDependenciesTask = new CorrectAtlasDependenciesTask(project,
+                                                                                                             atlasDependencyTree,
+
+                                                                                                             baseDependenciesFile);
+                correctAtlasDependenciesTask.generate();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
