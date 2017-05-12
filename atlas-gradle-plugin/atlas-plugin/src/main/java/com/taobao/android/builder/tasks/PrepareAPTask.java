@@ -287,7 +287,7 @@ public class PrepareAPTask extends DefaultTask {
             new File(explodedDir, ANDROID_MANIFEST_XML));
     }
 
-    public static class ConfigAction2 implements TaskConfigAction<PrepareAPTask> {
+    public static class ExtractApConfigAction implements TaskConfigAction<PrepareAPTask> {
 
         private final Project project;
 
@@ -295,7 +295,7 @@ public class PrepareAPTask extends DefaultTask {
 
         private final TBuildType tBuildType;
 
-        public ConfigAction2(Project project, String variantName, TBuildType tBuildType) {
+        public ExtractApConfigAction(Project project, String variantName, TBuildType tBuildType) {
 
             this.project = project;
             this.variantName = variantName;

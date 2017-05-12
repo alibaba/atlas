@@ -231,6 +231,7 @@ import com.taobao.android.builder.dependency.parser.AtlasDepHelper;
 import com.taobao.android.builder.dependency.parser.CircleDependencyCheck;
 import com.taobao.android.builder.dependency.parser.DependencyLocationManager;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
+import com.taobao.android.builder.tasks.incremental.ApDependencies;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
@@ -246,22 +247,28 @@ import org.gradle.api.artifacts.result.ResolvedDependencyResult;
  */
 public class DependencyResolver {
 
-    private static ILogger logger = LoggerWrapper.getLogger(DependencyResolver.class);
+    private static final ILogger logger = LoggerWrapper.getLogger(DependencyResolver.class);
+
+    private final ApDependencies apDependencies;
 
     Project project;
+
     VariantDependencies variantDeps;
+
     Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts;
+
     Map<String, Set<String>> bundleProvidedMap;
 
     public Set<String> mainDependencies = new HashSet<>();
 
     public DependencyResolver(Project project, VariantDependencies variantDeps,
                               Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-                              Map<String, Set<String>> bundleProvidedMap) {
+                              Map<String, Set<String>> bundleProvidedMap, ApDependencies apDependencies) {
         this.project = project;
         this.variantDeps = variantDeps;
         this.artifacts = artifacts;
         this.bundleProvidedMap = bundleProvidedMap;
+        this.apDependencies = apDependencies;
     }
 
     public List<ResolvedDependencyInfo> resolve(List<DependencyResult> dependencyResults, boolean mainBundle) {
@@ -271,20 +278,14 @@ public class DependencyResolver {
         Set<String> resolveSets = new HashSet<>();
         for (DependencyResult dependencyResult : dependencyResults) {
             if (dependencyResult instanceof ResolvedDependencyResult) {
-                ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult)dependencyResult)
-                    .getSelected()
+                ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult)dependencyResult).getSelected()
                     .getModuleVersion();
-                CircleDependencyCheck circleDependencyCheck = new CircleDependencyCheck(
-                    moduleVersion);
+                CircleDependencyCheck circleDependencyCheck = new CircleDependencyCheck(moduleVersion);
 
                 if (!directDependencies.contains(moduleVersion)) {
                     directDependencies.add(moduleVersion);
-                    resolveDependency(null,
-                                      ((ResolvedDependencyResult)dependencyResult).getSelected(),
-                                      artifacts,
-                                      variantDeps,
-                                      0,
-                                      circleDependencyCheck,
+                    resolveDependency(null, ((ResolvedDependencyResult)dependencyResult).getSelected(), artifacts,
+                                      variantDeps, 0, circleDependencyCheck,
                                       circleDependencyCheck.getRootDependencyNode(), dependenciesMap, resolveSets);
                 }
             }
@@ -302,8 +303,7 @@ public class DependencyResolver {
 
     private void addMainDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo) {
 
-        this.mainDependencies.add(
-            resolvedDependencyInfo.getGroup() + ":" + resolvedDependencyInfo.getName());
+        this.mainDependencies.add(resolvedDependencyInfo.getGroup() + ":" + resolvedDependencyInfo.getName());
 
         for (ResolvedDependencyInfo child : resolvedDependencyInfo.getChildren()) {
             addMainDependencyInfo(child);
@@ -320,23 +320,19 @@ public class DependencyResolver {
      * @param configDependencies
      * @param indent
      */
-    private void resolveDependency(ResolvedDependencyInfo parent,
-                                   ResolvedComponentResult resolvedComponentResult,
+    private void resolveDependency(ResolvedDependencyInfo parent, ResolvedComponentResult resolvedComponentResult,
                                    Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-                                   VariantDependencies configDependencies,
-                                   int indent,
+                                   VariantDependencies configDependencies, int indent,
                                    CircleDependencyCheck circleDependencyCheck,
                                    CircleDependencyCheck.DependencyNode node,
                                    Multimap<String, ResolvedDependencyInfo> dependenciesMap,
                                    Set<String> resolvedDependencies) {
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
 
-        if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
-            return;
-        }
+        if (checkForExclusion(configDependencies, moduleVersion)) { return; }
 
-        if (moduleVersion.getName().equals("support-annotations") &&
-            moduleVersion.getGroup().equals("com.android.support")) {
+        if (moduleVersion.getName().equals("support-annotations") && moduleVersion.getGroup().equals(
+            "com.android.support")) {
             configDependencies.setAnnotationsPresent(true);
         }
 
@@ -361,18 +357,14 @@ public class DependencyResolver {
                 boolean isAwbBundle = bundleProvidedMap.containsKey(key);
                 Set<String> providedDirectDep = bundleProvidedMap.get(key);
 
-                ResolvedDependencyInfo resolvedDependencyInfo =
-                    new ResolvedDependencyInfo(moduleVersion.getVersion(),
-                                               moduleVersion
-                                                   .getGroup(),
-                                               moduleVersion
-                                                   .getName(),
-                                               isAwbBundle
-                                                   ? "awb" :
-                                                   resolvedArtifact
-                                                       .getType(),
-                                               resolvedArtifact
-                                                   .getClassifier());
+                ResolvedDependencyInfo resolvedDependencyInfo = new ResolvedDependencyInfo(moduleVersion.getVersion(),
+                                                                                           moduleVersion.getGroup(),
+                                                                                           moduleVersion.getName(),
+                                                                                           isAwbBundle ? "awb"
+                                                                                               : resolvedArtifact
+                                                                                                   .getType(),
+                                                                                           resolvedArtifact
+                                                                                               .getClassifier());
                 resolvedDependencyInfo.setIndent(indent);
                 resolvedDependencyInfo.setGradlePath(gradlePath);
                 resolvedDependencyInfo.setResolvedArtifact(resolvedArtifact);
@@ -408,28 +400,19 @@ public class DependencyResolver {
 
                             if (isAwbBundle && providedDirectDep.contains(
                                 childResolvedComponentResult.getModuleVersion().getGroup() + ":"
-                                    + childResolvedComponentResult
-                                    .getModuleVersion().getName())) {
+                                + childResolvedComponentResult.getModuleVersion().getName())) {
                                 continue;
                             }
 
                             CircleDependencyCheck.DependencyNode childNode = circleDependencyCheck.addDependency(
-                                childResolvedComponentResult.getModuleVersion(),
-                                node,
-                                indent + 1);
-                            CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(
-                                logger);
+                                childResolvedComponentResult.getModuleVersion(), node, indent + 1);
+                            CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(logger);
                             if (circleResult.hasCircle) {
-                                logger.warning("[CircleDependency]" +
-                                                   StringUtils.join(circleResult.detail, ";"));
+                                logger.warning("[CircleDependency]" + StringUtils.join(circleResult.detail, ";"));
                             } else {
-                                resolveDependency(parent,
-                                                  ((ResolvedDependencyResult)dep).getSelected(),
-                                                  artifacts,
-                                                  configDependencies,
-                                                  indent + 1,
-                                                  circleDependencyCheck,
-                                                  childNode, dependenciesMap, resolvedDependencies);
+                                resolveDependency(parent, ((ResolvedDependencyResult)dep).getSelected(), artifacts,
+                                                  configDependencies, indent + 1, circleDependencyCheck, childNode,
+                                                  dependenciesMap, resolvedDependencies);
                             }
                         }
                     }
@@ -441,14 +424,23 @@ public class DependencyResolver {
 
     }
 
+    private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion) {
+        if (configDependencies.getChecker().checkForExclusion(moduleVersion) || (apDependencies != null
+                                                                                 && apDependencies
+                                                                                     .hasSameResolvedDependency(
+                                                                                         moduleVersion))) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * 增加dependency
      *
      * @param resolvedDependencyInfo
      * @param parent                 这个parent为一级依赖
      */
-    private void addDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo,
-                                   ResolvedDependencyInfo parent,
+    private void addDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo, ResolvedDependencyInfo parent,
                                    Multimap<String, ResolvedDependencyInfo> dependenciesMap) {
 
         dependenciesMap.put(resolvedDependencyInfo.toString(), resolvedDependencyInfo);
@@ -474,8 +466,7 @@ public class DependencyResolver {
         List<ResolvedDependencyInfo> allResolvedDependencyInfos = new ArrayList<>();
 
         // 仲裁后的依赖关系.结构为父类-子类
-        Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap = LinkedHashMultimap
-            .create();
+        Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap = LinkedHashMultimap.create();
         Map<ModuleVersionIdentifier, ResolvedDependencyInfo> directDependencies
             = new HashMap<ModuleVersionIdentifier, ResolvedDependencyInfo>();
 
@@ -493,12 +484,10 @@ public class DependencyResolver {
                 resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo>newArrayList());
                 if (null != parent) {
                     //如果存在的父依赖,就把当前依赖加入到父依赖的子依赖中
-                    resolvedDependenciesMap.put(parent.getModuleVersionIdentifier(),
-                                                resolvedDependencyInfo);
+                    resolvedDependenciesMap.put(parent.getModuleVersionIdentifier(), resolvedDependencyInfo);
                 } else {
                     //如果没有父依赖,就是一级依赖
-                    directDependencies.put(resolvedDependencyInfo.getModuleVersionIdentifier(),
-                                           resolvedDependencyInfo);
+                    directDependencies.put(resolvedDependencyInfo.getModuleVersionIdentifier(), resolvedDependencyInfo);
                 }
             }
         }
@@ -528,8 +517,7 @@ public class DependencyResolver {
                                                resolvedDependenciesMap) {
         int indent = parentDependency.getIndent();
         ModuleVersionIdentifier identifier = parentDependency.getModuleVersionIdentifier();
-        Collection<ResolvedDependencyInfo> childDependencies = resolvedDependenciesMap.get(
-            identifier);
+        Collection<ResolvedDependencyInfo> childDependencies = resolvedDependenciesMap.get(identifier);
 
         //TODO here
         for (ResolvedDependencyInfo childDependency : childDependencies) {
