@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -20,6 +22,10 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
+import com.android.dex.DexException;
+import com.android.dx.command.dexer.DxContext;
+import com.android.dx.merge.CollisionPolicy;
+import com.android.dx.merge.DexMerger;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
 import com.android.ide.common.blame.parser.DexParser;
@@ -143,6 +149,19 @@ public class Dex extends BaseTask {
         inputDexFiles.addAll(getLibraries());
         getBuilder().convertByteCode(inputDexFiles, outFolder, getMultiDexEnabled(), getMainDexListFile(),
                                      getDexOptions(), outputHandler);
+        File dexBaseFile = getDexBaseFile();
+        if (dexBaseFile != null) {
+            ZipFile files = new ZipFile(dexBaseFile);
+            ZipEntry entry = files.getEntry("classes.dex");
+            if (entry == null) {
+                throw new DexException("Expected classes.dex in " + dexBaseFile);
+            }
+            DxContext context = new DxContext();
+            File file = new File(outFolder, "classes.dex");
+            com.android.dex.Dex merged = new DexMerger(new com.android.dex.Dex[] {new com.android.dex.Dex(file),
+                new com.android.dex.Dex(files.getInputStream(entry))}, CollisionPolicy.KEEP_FIRST, context).merge();
+            merged.writeTo(file);
+        }
     }
 
     @OutputDirectory
@@ -250,6 +269,14 @@ public class Dex extends BaseTask {
         this.mainDexListFile = mainDexListFile;
     }
 
+    public File getDexBaseFile() {
+        return dexBaseFile;
+    }
+
+    public void setDexBaseFile(File dexBaseFile) {
+        this.dexBaseFile = dexBaseFile;
+    }
+
     public File getTmpFolder() {
         return tmpFolder;
     }
@@ -286,6 +313,10 @@ public class Dex extends BaseTask {
 
     @Input
     private boolean optimize = true;
+
+    @InputFile
+    @Optional
+    private File dexBaseFile;
 
     @InputFile
     @Optional
@@ -351,11 +382,24 @@ public class Dex extends BaseTask {
             //                                 awbBundle.invokeMethod("getInputDirCallable", new Object[0]));
             // }
 
+            ConventionMappingHelper.map(dexTask, "inputDir", new Callable<File>() {
+                @Override
+                public File call() {
+                    AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName());
+                    return awbTransform.getInputDir();
+                }
+            });
             ConventionMappingHelper.map(dexTask, "inputFiles", new Callable<List<File>>() {
                 @Override
                 public List<File> call() {
                     AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName());
                     return awbTransform.getInputFiles();
+                }
+            });
+            ConventionMappingHelper.map(dexTask, "dexBaseFile", new Callable<File>() {
+                @Override
+                public File call() {
+                    return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
                 }
             });
             ConventionMappingHelper.map(dexTask, "libraries", new Callable<List<File>>() {
