@@ -272,7 +272,7 @@ public class ApDependencies /*extends BaseTask*/ {
         if (mainVersion == null) {
             return false;
         }
-        return versionComparator.compare(mainVersion, moduleVersion.getVersion()) <= 0;
+        return versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0;
     }
     // ----- PRIVATE TASK API -----
 
