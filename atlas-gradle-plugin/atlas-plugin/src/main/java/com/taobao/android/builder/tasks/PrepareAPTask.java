@@ -345,7 +345,7 @@ public class PrepareAPTask extends DefaultTask {
             prepareAPTask.setApBaseFile(apBaseFile);
             prepareAPTask.setExplodedDir(explodedDir);
             if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                prepareAPTask.setEnabled(false);
+                prepareAPTask.setDidWork(false);
             }
         }
     }
