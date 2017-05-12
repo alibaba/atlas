@@ -417,9 +417,7 @@ public class KernalVersionManager {
             if(bundles!=null && bundles.length>0){
                 for(String bundleInfo : bundles){
                     String[] infoItems = bundleInfo.split("@");
-                    if(infoItems.length>2){
-                        currentUpdateBundles.put(infoItems[0],infoItems[1]+"@"+infoItems[2]);
-                    }
+                    currentUpdateBundles.put(infoItems[0],infoItems[1]);
                 }
             }
         }

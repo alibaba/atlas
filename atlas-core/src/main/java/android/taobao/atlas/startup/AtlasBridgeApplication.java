@@ -437,10 +437,11 @@ public class AtlasBridgeApplication extends Application{
         KernalConstants.LASTUPDATETIME = packageInfo.lastUpdateTime;
         if(TextUtils.isEmpty(KernalConstants.INSTALLED_VERSIONNAME )){
             //不可能发生
+            Log.e("AtlasBridgeApplication","version name is empty ");
             android.os.Process.killProcess(android.os.Process.myPid());
         }
 
-        File metafile = new File(context.getFilesDir(), "meta");
+        File metafile = new File(context.getFilesDir(), "storage/meta");
         if (metafile.exists()) {
             try {
                 DataInputStream in = new DataInputStream(new FileInputStream(metafile));

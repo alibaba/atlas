@@ -250,12 +250,12 @@ import java.util.zip.ZipFile;
         if(dexPatchVersion>0){
             revisionDir = new File(bundleDir,DEXPATCH_DIR+dexPatchVersion);
         }
-        if(!revisionDir.exists()){
+        if(revisionDir==null || !revisionDir.exists()){
             //dexpatch目录不存在可降级，dexpatch改动必须向前兼容
             revisionDir = new File(bundleDir,version);
         }
 
-        if (!revisionDir.exists()) {
+        if (revisionDir==null || !revisionDir.exists()) {
             throw new IOException("can not find kernal bundle");
         }
         libraryDirectory = new File(revisionDir,"lib");

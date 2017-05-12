@@ -296,6 +296,7 @@ public class SoLoader {
     private static synchronized void extractSoFromApk(String soName){
         AtlasFileLock.getInstance().LockExclusive(LIB_DIR);
         if(findLocalLibrary(soName)!=null){
+            AtlasFileLock.getInstance().unLock(LIB_DIR);
             return;
         }
         try {
