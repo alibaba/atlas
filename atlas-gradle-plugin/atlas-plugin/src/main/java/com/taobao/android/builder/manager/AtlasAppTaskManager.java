@@ -276,7 +276,6 @@ import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
-import com.taobao.android.builder.tasks.incremental.CorrectAtlasDependenciesTask;
 import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
@@ -331,10 +330,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(LogDependenciesTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
-
-                if (atlasExtension.getTBuildConfig().isIncremental()) {
-                    mtlTaskContextList.add(new MtlTaskContext(CorrectAtlasDependenciesTask.ConfigAction.class, null));
-                }
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareDependenciesTask.class));
 
