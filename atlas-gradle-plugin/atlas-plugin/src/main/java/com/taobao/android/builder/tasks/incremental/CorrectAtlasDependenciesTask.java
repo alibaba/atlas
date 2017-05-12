@@ -209,32 +209,6 @@
 
 package com.taobao.android.builder.tasks.incremental;
 
-import com.alibaba.fastjson.JSON;
-import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.model.Library;
-import com.android.builder.model.MavenCoordinates;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.dependency.output.DependencyJson;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-
-import org.apache.commons.io.FileUtils;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.dsl.DependencyHandler;
-import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.DefaultVersionComparator;
-import org.gradle.api.tasks.TaskAction;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -245,24 +219,50 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.alibaba.fastjson.JSON;
+
+import com.android.annotations.NonNull;
+import com.android.builder.model.Library;
+import com.android.builder.model.MavenCoordinates;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.output.DependencyJson;
+import org.apache.commons.io.FileUtils;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.dsl.DependencyHandler;
+import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.DefaultVersionComparator;
+import org.gradle.api.tasks.TaskAction;
+
 /**
  * Created by chenhjohn on 2017/5/1.
  */
 
-public class CorrectAtlasDependenciesTask extends BaseTask {
+public class CorrectAtlasDependenciesTask /*extends BaseTask*/ {
 
     // ----- PUBLIC TASK API -----
     private final DependencyHandler dependencies;
 
     private final Comparator<String> versionComparator = new DefaultVersionComparator().asStringComparator();
 
-    private AtlasDependencyTree atlasDependencyTree;
+    @NonNull
+    private final Project project;
 
-    private File baseDependenciesFile;
+    private final AtlasDependencyTree atlasDependencyTree;
 
-    public CorrectAtlasDependenciesTask() {
-        dependencies = getProject().getDependencies();
+    private final File baseDependenciesFile;
+
+    public CorrectAtlasDependenciesTask(Project project, AtlasDependencyTree atlasDependencyTree,
+                                        File baseDependenciesFile) {
+        this.project = project;
+        this.dependencies = project.getDependencies();
+        this.baseDependenciesFile = baseDependenciesFile;
+        this.atlasDependencyTree = atlasDependencyTree;
     }
+
     // ----- PRIVATE TASK API -----
 
     // @InputFile
@@ -270,14 +270,10 @@ public class CorrectAtlasDependenciesTask extends BaseTask {
         return baseDependenciesFile;
     }
 
-    public void setBaseDependenciesFile(File baseDependenciesFile) {
-        this.baseDependenciesFile = baseDependenciesFile;
-    }
-
     @TaskAction
-    void generate() throws IOException {
-        DependencyJson apDependencyJson = JSON.parseObject(FileUtils.readFileToString(
-                getBaseDependenciesFile()), DependencyJson.class);
+    public void generate() throws IOException {
+        DependencyJson apDependencyJson = JSON.parseObject(FileUtils.readFileToString(getBaseDependenciesFile()),
+                                                           DependencyJson.class);
 
         final List<String> mainDexList = apDependencyJson.getMainDex();
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
@@ -310,12 +306,9 @@ public class CorrectAtlasDependenciesTask extends BaseTask {
                 }
             }
 
-            System.out.println("Removed " +
-                               librarysToRemove.size() +
-                               " useless librarys from " +
-                               awbBundle.getName() +
-                               ":\n  " +
-                               Joiner.on(", ").join(librarysToRemove));
+            System.out.println(
+                "Removed " + librarysToRemove.size() + " useless librarys from " + awbBundle.getName() + ":\n  "
+                + Joiner.on(", ").join(librarysToRemove));
             awbBundle.getAndroidLibraries().removeAll(librarysToRemove);
             awbBundle.getJavaLibraries().removeAll(librarysToRemove);
         }
@@ -323,11 +316,8 @@ public class CorrectAtlasDependenciesTask extends BaseTask {
 
     private List<String> getBaseAwbBundleLibraries(DependencyJson apDependencyJson, AwbBundle awbBundle) {
         Map<String, ArrayList<String>> baseAwbs = apDependencyJson.getAwbs();
-        List<Map.Entry<String, ArrayList<String>>> awbs = baseAwbs.entrySet()
-                .stream()
-                .filter(entry -> isSameGroupAndModule(awbBundle.getAndroidLibrary(),
-                                                      entry.getKey()))
-                .collect(Collectors.toList());
+        List<Map.Entry<String, ArrayList<String>>> awbs = baseAwbs.entrySet().stream().filter(
+            entry -> isSameGroupAndModule(awbBundle.getAndroidLibrary(), entry.getKey())).collect(Collectors.toList());
         Map.Entry<String, ArrayList<String>> baseAwb = Iterables.getOnlyElement(awbs, null);
         return baseAwb == null ? ImmutableList.<String>of() : baseAwb.getValue();
     }
@@ -335,54 +325,53 @@ public class CorrectAtlasDependenciesTask extends BaseTask {
     private boolean isSameResolvedDependency(Library library, String baseLibrary) {
         Dependency dependency = dependencies.create(baseLibrary);
         MavenCoordinates resolvedCoordinates = library.getResolvedCoordinates();
-        return dependency.getGroup().equals(resolvedCoordinates.getGroupId()) &&
-               dependency.getName().equals(resolvedCoordinates.getArtifactId()) &&
-               versionComparator.compare(resolvedCoordinates.getVersion(),
-                                         dependency.getVersion()) <= 0;
+        return dependency.getGroup().equals(resolvedCoordinates.getGroupId()) && dependency.getName().equals(
+            resolvedCoordinates.getArtifactId()) && versionComparator.compare(resolvedCoordinates.getVersion(),
+                                                                              dependency.getVersion()) <= 0;
     }
 
     private boolean isSameGroupAndModule(Library library, String dependencyString) {
         Dependency dependency = dependencies.create(dependencyString);
         MavenCoordinates resolvedCoordinates = library.getResolvedCoordinates();
-        return dependency.getGroup().equals(resolvedCoordinates.getGroupId()) &&
-               dependency.getName().equals(resolvedCoordinates.getArtifactId());
+        return dependency.getGroup().equals(resolvedCoordinates.getGroupId()) && dependency.getName().equals(
+            resolvedCoordinates.getArtifactId());
     }
 
-    // ----- Config Action -----
-    public static final class ConfigAction extends MtlBaseTaskAction<CorrectAtlasDependenciesTask> {
-        @NonNull
-        private final VariantScope scope;
-
-        public ConfigAction(VariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
-            super(variantContext, baseVariantOutputData);
-            this.scope = baseVariantOutputData.getScope().getVariantScope();
-        }
-
-        @Override
-        @NonNull
-        public String getName() {
-            return scope.getTaskName("correct", "AtlasDependencies");
-        }
-
-        @Override
-        @NonNull
-        public Class<CorrectAtlasDependenciesTask> getType() {
-            return CorrectAtlasDependenciesTask.class;
-        }
-
-        @Override
-        public void execute(@NonNull CorrectAtlasDependenciesTask correctDependencies) {
-            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-
-            final GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
-            correctDependencies.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-            correctDependencies.setVariantName(scope.getVariantConfiguration().getFullName());
-            correctDependencies.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                    correctDependencies.getVariantName());
-
-            ConventionMappingHelper.map(correctDependencies, "baseDependenciesFile", () -> {
-                return variantContext.apContext.getBaseDependenciesFile();
-            });
-        }
-    }
+    // // ----- Config Action -----
+    // public static final class ConfigAction extends MtlBaseTaskAction<CorrectAtlasDependenciesTask> {
+    //     @NonNull
+    //     private final VariantScope scope;
+    //
+    //     public ConfigAction(VariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+    //         super(variantContext, baseVariantOutputData);
+    //         this.scope = baseVariantOutputData.getScope().getVariantScope();
+    //     }
+    //
+    //     @Override
+    //     @NonNull
+    //     public String getName() {
+    //         return scope.getTaskName("correct", "AtlasDependencies");
+    //     }
+    //
+    //     @Override
+    //     @NonNull
+    //     public Class<CorrectAtlasDependenciesTask> getType() {
+    //         return CorrectAtlasDependenciesTask.class;
+    //     }
+    //
+    //     @Override
+    //     public void execute(@NonNull CorrectAtlasDependenciesTask correctDependencies) {
+    //         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+    //
+    //         final GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
+    //         // correctDependencies.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+    //         // correctDependencies.setVariantName(scope.getVariantConfiguration().getFullName());
+    //         // correctDependencies.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+    //         //     correctDependencies.getVariantName());
+    //         //
+    //         // ConventionMappingHelper.map(correctDependencies, "baseDependenciesFile", () -> {
+    //         //     return variantContext.apContext.getBaseDependenciesFile();
+    //         // });
+    //     }
+    // }
 }
