@@ -399,6 +399,9 @@ public class Dex extends BaseTask {
             ConventionMappingHelper.map(dexTask, "dexBaseFile", new Callable<File>() {
                 @Override
                 public File call() {
+                    if (!awbBundle.getManifest().exists()) {
+                        return null;
+                    }
                     return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
                 }
             });
