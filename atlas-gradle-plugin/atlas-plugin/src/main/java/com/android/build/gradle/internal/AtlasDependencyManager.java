@@ -224,8 +224,7 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.parser.AtlasDepTreeParser;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.TBuildType;
-import com.taobao.android.builder.tasks.PrepareAPTask;
-import com.taobao.android.builder.tasks.PrepareAPTask.ExtractApConfigAction;
+import com.taobao.android.builder.tasks.ExtractAPTask;
 import com.taobao.android.builder.tasks.incremental.ApDependencies;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import org.gradle.api.Project;
@@ -301,12 +300,13 @@ public class AtlasDependencyManager extends DependencyManager {
             return null;
         }
 
-        ExtractApConfigAction configAction = new ExtractApConfigAction(project, variantDeps.getName(), tBuildType);
-        PrepareAPTask prepareAPTask = project.getTasks().create(configAction.getName(), configAction.getType());
-        configAction.execute(prepareAPTask);
-        prepareAPTask.execute();
+        ExtractAPTask.ConfigAction configAction = new ExtractAPTask.ConfigAction(project, variantDeps.getName(),
+                                                                                 tBuildType);
+        ExtractAPTask extractAPTask = project.getTasks().create(configAction.getName(), configAction.getType());
+        configAction.execute(extractAPTask);
+        extractAPTask.execute();
 
-        return new ApDependencies(project, new File(prepareAPTask.getExplodedDir(), DEPENDENCIES_FILENAME));
+        return new ApDependencies(project, new File(extractAPTask.getExplodedDir(), DEPENDENCIES_FILENAME));
     }
 
     @Override

@@ -218,15 +218,13 @@ import java.io.IOException;
 
 import javax.annotation.Nullable;
 
-import com.android.build.gradle.internal.api.ApContext;
-import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.utils.FileUtils;
+import com.android.utils.StringHelper;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.taobao.android.builder.extension.TBuildType;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.dom4j.DocumentException;
@@ -247,7 +245,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
  */
-public class PrepareAPTask extends DefaultTask {
+public class ExtractAPTask extends DefaultTask {
 
     private File explodedDir;
 
@@ -285,39 +283,39 @@ public class PrepareAPTask extends DefaultTask {
             new File(explodedDir, ANDROID_MANIFEST_XML));
     }
 
-    public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {
+    public static class ConfigAction implements TaskConfigAction<ExtractAPTask> {
 
-        public ConfigAction(VariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
-            super(variantContext, baseVariantOutputData);
+        private final Project project;
+
+        private final String variantName;
+
+        private final TBuildType tBuildType;
+
+        public ConfigAction(Project project, String variantName, TBuildType tBuildType) {
+
+            this.project = project;
+            this.variantName = variantName;
+            this.tBuildType = tBuildType;
         }
 
         @Override
         public String getName() {
-            return scope.getTaskName("prepare", "AP");
+            return "prepare" + StringHelper.capitalize(variantName) + "AP2";
         }
 
         @Override
-        public Class<PrepareAPTask> getType() {
-            return PrepareAPTask.class;
+        public Class<ExtractAPTask> getType() {
+            return ExtractAPTask.class;
         }
 
         @Override
-        public void execute(PrepareAPTask prepareAPTask) {
-
-            super.execute(prepareAPTask);
-            ApContext apContext = variantContext.apContext;
-
-            //
-            Project project = variantContext.getProject();
-
+        public void execute(ExtractAPTask prepareAPTask) {
             File apBaseFile;
-            TBuildType tBuildType = variantContext.getBuildType();
             File buildTypeBaseApFile = tBuildType.getBaseApFile();
             if (null != buildTypeBaseApFile && buildTypeBaseApFile.exists()) {
                 apBaseFile = buildTypeBaseApFile;
             } else if (!isNullOrEmpty(tBuildType.getBaseApDependency())) {
                 String apDependency = tBuildType.getBaseApDependency();
-                apContext.setApDependency(tBuildType.getBaseApDependency());
                 // Preconditions.checkNotNull(apDependency,
                 //                            "You have to specify the baseApFile property or the baseApDependency
                 // dependency");
@@ -337,16 +335,11 @@ public class PrepareAPTask extends DefaultTask {
             }
 
             checkState(apBaseFile.exists());
-            apContext.setApFile(apBaseFile);
-            File explodedDir = variantContext.getProject().file(
-                variantContext.getProject().getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES + "/exploded-ap"
-                + "/");
-            apContext.setApExploredFolder(explodedDir);
+            File explodedDir = project.file(
+                project.getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES + "/exploded-ap" + "/");
             prepareAPTask.setApBaseFile(apBaseFile);
             prepareAPTask.setExplodedDir(explodedDir);
-            if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                prepareAPTask.setEnabled(false);
-            }
         }
     }
+
 }
