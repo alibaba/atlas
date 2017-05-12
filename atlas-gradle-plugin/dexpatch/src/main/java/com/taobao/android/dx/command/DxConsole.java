@@ -15,7 +15,8 @@
  */
 
 package com.taobao.android.dx.command;
-
+import java.io.OutputStream;
+import java.io.InputStream;
 import java.io.PrintStream;
 
 /**
@@ -25,13 +26,23 @@ import java.io.PrintStream;
  * PrintStream.
  */
 public class DxConsole {
-    /**
+
+    public DxConsole() {
+        this(out, err);
+    }
+
+    public DxConsole(OutputStream out, OutputStream err) {
+        this.out = new PrintStream(out);
+        this.err = new PrintStream(err);
+    }
+
+      /**
      * Standard output stream. Links to {@code System.out} by default.
      */
-    public PrintStream out = System.out;
+    public static PrintStream out = System.out;
 
     /**
      * Error output stream. Links to {@code System.err} by default.
      */
-    public PrintStream err = System.err;
+    public static PrintStream err = System.err;
 }

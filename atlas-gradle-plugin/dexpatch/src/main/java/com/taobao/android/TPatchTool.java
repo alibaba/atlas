@@ -237,6 +237,7 @@ import com.taobao.android.tpatch.utils.HttpClientUtils;
 import com.taobao.android.tpatch.utils.MD5Util;
 import com.taobao.android.tpatch.utils.PatchUtils;
 import com.taobao.android.tpatch.utils.PathUtils;
+import com.taobao.android.utils.CommandUtils;
 import com.taobao.android.utils.PathMatcher;
 import com.taobao.android.utils.SmaliCodeUtils;
 import com.taobao.android.utils.ZipUtils;
@@ -630,8 +631,8 @@ public class TPatchTool extends BasePatchTool {
                 diffBundleDex) {
             // 解压文件
             // 判断dex的差异性
-            ZipUtils.unzip(newBundleFile, newBundleUnzipFolder.getAbsolutePath());
-            ZipUtils.unzip(baseBundleFile, baseBundleUnzipFolder.getAbsolutePath());
+            CommandUtils.exec("unzip "+newBundleFile.getAbsolutePath()+" -d "+newBundleUnzipFolder.getAbsolutePath());
+            CommandUtils.exec("unzip "+baseBundleFile.getAbsolutePath()+" -d "+baseBundleUnzipFolder.getAbsolutePath());
             File destDex = new File(destPatchBundleDir, DEX_NAME);
             File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
             createBundleDexPatch(newBundleUnzipFolder,
@@ -1192,22 +1193,6 @@ public class TPatchTool extends BasePatchTool {
         return null;
     }
 
-
-
-    public static void main(String[] args) throws Exception {
-//        File file = new File("/Users/lilong/Downloads/tpatch-diff/lib/armeabi/libcom_alibaba_wdk_txd/classes.dex");
-        File file1 = new File("/Users/lilong/Downloads/10004583@taobao_android_6.6.0/lib/armeabi/libcom_etao_feimagesearch/classes.dex");
-        Dex dex = new Dex(file1);
-//        dex.getTableOfContents().typeLists.size
-//       TPatchDexTool.removeDebugInfo(file);
-//        TPatchDexTool.removeDebugInfo(file1);
-//        DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(file1,file);
-//        dexPatchGenerator.executeAndSaveTo(new File("/Users/lilong/Downloads/1.dex"));
-//        DexPatchApplier dexPatchApplier = new DexPatchApplier(file1,new File("/Users/lilong/Downloads/1.dex"));
-//        dexPatchApplier.executeAndSaveTo(new File("/Users/lilong/Downloads/2.dex"));
-
-
-    }
 
 
 
