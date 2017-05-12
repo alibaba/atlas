@@ -1080,7 +1080,7 @@ public class AtlasBuilder extends AndroidBuilder {
         String md5 = "";
         File dexFile = new File(outFile, "classes.dex");
 
-        if (!inputFile.getName().startsWith("combined")) {
+        if (!inputFile.getName().startsWith("combined")  && !inputFile.getName().equals("main.jar") ) {
 
 
             if (inputFile.isFile()) {
@@ -1111,15 +1111,16 @@ public class AtlasBuilder extends AndroidBuilder {
 
         //todo  设置dexOptions
         DefaultDexOptions defaultDexOptions = new DefaultDexOptions();
-        defaultDexOptions.setDexInProcess(true);
+
         defaultDexOptions.setJumboMode(dexOptions.getJumboMode());
-        defaultDexOptions.setDexInProcess(true);
         //外部已经启动了多线程，尽量少一点
         defaultDexOptions.setThreadCount(dexOptions.getThreadCount());
         defaultDexOptions.setAdditionalParameters(dexOptions.getAdditionalParameters());
         defaultDexOptions.setJumboMode(dexOptions.getJumboMode());
-        defaultDexOptions.setJavaMaxHeapSize("500m");
-
+        if (!multiDex){
+            defaultDexOptions.setJavaMaxHeapSize("500m");
+            defaultDexOptions.setDexInProcess(true);
+        }
         sLogger.info("[mtldex] pre dex for {} {}",
                      inputFile.getAbsolutePath(),
                      outFile.getAbsolutePath());
