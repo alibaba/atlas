@@ -244,6 +244,7 @@ import com.taobao.android.utils.ZipUtils;
 import com.taobao.common.dexpatcher.DexPatchApplier;
 import com.taobao.common.dexpatcher.DexPatchGenerator;
 import com.taobao.dex.Dex;
+import com.taobao.update.UpdateInfo;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -504,6 +505,12 @@ public class TPatchTool extends BasePatchTool {
 
         if (createPatchJson) {
             FileUtils.writeStringToFile(outPatchJson, JSON.toJSONString(buildPatchInfos));
+        }
+
+        for (PatchInfo patchInfo:buildPatchInfos.getPatches()) {
+            UpdateInfo updateInfo = new UpdateInfo(patchInfo,buildPatchInfos.getBaseVersion());
+            File updateJson = new File(outPatchDir, "update-"+patchInfo.getTargetVersion()+".json");
+            FileUtils.writeStringToFile(updateJson, JSON.toJSONString(updateInfo, true));
         }
 
         // 删除临时的目录

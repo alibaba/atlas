@@ -212,12 +212,10 @@
 // (powered by Fernflower decompiler)
 //
 
-package com.taobao.android.builder.tools.update;
+package com.taobao.update;
 
-import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.object.PatchBundleInfo;
 import com.taobao.android.object.PatchInfo;
-
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -243,6 +241,8 @@ public class UpdateInfo implements Serializable {
             items.add(item);
             item.dependency = patchBundleInfo.getDependency();
             item.isMainDex = patchBundleInfo.getMainBundle();
+            item.unitTag = patchBundleInfo.getUnitTag();
+            item.srcUnitTag = patchBundleInfo.getSrcUnitTag();
             if (item.isMainDex){
                 item.name = "com.taobao.maindex";
             }else {
@@ -259,6 +259,8 @@ public class UpdateInfo implements Serializable {
         public String name;
         public String version;
         public String srcVersion;
+        public String unitTag;
+        public String srcUnitTag;
         public List<String> dependency;
 
         public Item() {
