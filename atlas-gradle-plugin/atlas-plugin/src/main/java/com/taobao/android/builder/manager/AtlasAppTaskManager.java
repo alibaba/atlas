@@ -228,6 +228,7 @@ import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.AtlasExtendedContentType;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
+import com.android.build.gradle.internal.pipeline.OriginalStream.Builder;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.PackagingScope;
@@ -419,14 +420,22 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 VariantScope variantScope = appVariantContext.getVariantData().getScope();
 
                 // create the stream generated from this task
-                variantScope.getTransformManager().addStream(OriginalStream.builder().addContentType(
-                    ExtendedContentType.NATIVE_LIBS).addContentType(AtlasExtendedContentType.AWB_APKS).addScope(
-                    QualifiedContent.Scope.PROJECT).setFolders(new Supplier<Collection<File>>() {
-                    @Override
-                    public Collection<File> get() {
-                        return ImmutableList.of(appVariantContext.getAwbApkOutputDir());
-                    }
-                })
+                Builder builder = OriginalStream.builder();
+                if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() || (
+                    appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
+                        .getPatchConfig().isCreateTPatch())) {
+                    builder.addContentType(ExtendedContentType.NATIVE_LIBS);
+                }
+                ;
+                variantScope.getTransformManager().addStream(builder.addContentType(AtlasExtendedContentType.AWB_APKS)
+                                                                 .addScope(QualifiedContent.Scope.PROJECT)
+                                                                 .setFolders(new Supplier<Collection<File>>() {
+                                                                     @Override
+                                                                     public Collection<File> get() {
+                                                                         return ImmutableList.of(
+                                                                             appVariantContext.getAwbApkOutputDir());
+                                                                     }
+                                                                 })
                                                                  // .setFolder(variantScope
                                                                  // .getSourceFoldersJavaResDestinationDir())
                                                                  // .setDependency(processJavaResourcesTask.getName())
