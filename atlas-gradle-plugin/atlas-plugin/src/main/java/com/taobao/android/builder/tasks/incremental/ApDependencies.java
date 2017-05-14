@@ -219,6 +219,7 @@ import com.alibaba.fastjson.JSON;
 
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.output.DependencyJson;
+import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
@@ -239,7 +240,11 @@ public class ApDependencies /*extends BaseTask*/ {
 
     private final Comparator<String> versionComparator = new DefaultVersionComparator().asStringComparator();
 
-    private final Map<ModuleIdentifier, String> mMainDexMap = Maps.newHashMap();
+    private final Map<ModuleIdentifier, String> mFlatDependenciesMap = Maps.newHashMap();
+
+    private final Map<ModuleIdentifier, String> mMainDependenciesMap = Maps.newHashMap();
+
+    private final Map<ModuleIdentifier, String> mAwbDependenciesMap = Maps.newHashMap();
 
     private final DependencyJson apDependencyJson;
 
@@ -254,21 +259,26 @@ public class ApDependencies /*extends BaseTask*/ {
                                        e);
         }
         for (String mainDex : apDependencyJson.getMainDex()) {
-            addDependency(mainDex);
+            addDependency(mainDex, null);
         }
         for (Map.Entry<String, ArrayList<String>> entry : apDependencyJson.getAwbs().entrySet()) {
             String awb = entry.getKey();
-            addDependency(awb);
+            addDependency(awb, awb);
             ArrayList<String> dependenciesString = entry.getValue();
             for (String dependencyString : dependenciesString) {
-                addDependency(dependencyString);
+                addDependency(dependencyString, awb);
             }
         }
 
     }
 
+    public boolean isMainLibrary(ResolvedDependencyInfo dependencyInfo) {
+        return mMainDependenciesMap.containsKey(
+            DefaultModuleIdentifier.newId(dependencyInfo.getGroup(), dependencyInfo.getName()));
+    }
+
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {
-        String mainVersion = mMainDexMap.get(moduleVersion.getModule());
+        String mainVersion = mFlatDependenciesMap.get(moduleVersion.getModule());
         if (mainVersion == null) {
             return false;
         }
@@ -276,9 +286,11 @@ public class ApDependencies /*extends BaseTask*/ {
     }
     // ----- PRIVATE TASK API -----
 
-    private void addDependency(String mainDex) {
-        ModuleIdentifier moduleIdentifier = getModuleIdentifier(mainDex);
-        mMainDexMap.put(moduleIdentifier, getVersion(mainDex));
+    private void addDependency(String dependencyString, String awb) {
+        ModuleIdentifier moduleIdentifier = getModuleIdentifier(dependencyString);
+        String version = getVersion(dependencyString);
+        if (awb == null) { mMainDependenciesMap.put(moduleIdentifier, version);}
+        mFlatDependenciesMap.put(moduleIdentifier, version);
     }
 
     private ModuleIdentifier getModuleIdentifier(String dependencyString) {
