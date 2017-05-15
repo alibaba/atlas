@@ -275,22 +275,14 @@ public class BundleInstaller implements Callable{
                         BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
                         if (impl == null || !impl.checkValidate()) {
                             Log.d("BundleInstaller", "idle install bundle : " + bundleName);
-                            BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{bundleName});
-                            if (listener != null) {
-                                listener.onFinished();
-                            }
+                            BundleInstallerFetcher.obtainInstaller().installTransitivelyAsync(new String[]{bundleName},listener);
                             return true;
                         }
                     }
                     return true;
                 }
             };
-            sBundleHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Looper.myQueue().addIdleHandler(sIdleHandler);
-                }
-            });
+            Looper.myQueue().addIdleHandler(sIdleHandler);
         }
     }
 

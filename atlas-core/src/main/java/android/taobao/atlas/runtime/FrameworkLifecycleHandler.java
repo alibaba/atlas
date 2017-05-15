@@ -212,6 +212,8 @@ import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.os.Handler;
+import android.os.Looper;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.BundleInstaller;
@@ -327,36 +329,41 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
         } catch (Throwable e) {}
 
         if(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication).equals(RuntimeVariables.androidApplication.getPackageName())) {
-            String autoStartBundle = (String) RuntimeVariables.getFrameworkProperty("autoStartBundles");
+            final String autoStartBundle = (String) RuntimeVariables.getFrameworkProperty("autoStartBundles");
             if (autoStartBundle != null) {
-                String[] bundles = autoStartBundle.split(",");
-                if (bundles.length > 0) {
-                    for (int x = 0; x < bundles.length; x++) {
-                        final String bundleName = bundles[x];
-                        BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
-                        if (impl == null) {
-                            BundleInstaller.startDelayInstall(bundleName, new BundleInstaller.InstallListener() {
-                                @Override
-                                public void onFinished() {
-                                    BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
-                                    if (impl != null) {
-                                        try {
-                                            impl.start();
-                                        } catch (BundleException e) {
-                                            e.printStackTrace();
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        String[] bundles = autoStartBundle.split(",");
+                        if (bundles.length > 0) {
+                            for (int x = 0; x < bundles.length; x++) {
+                                final String bundleName = bundles[x];
+                                BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
+                                if (impl == null) {
+                                    BundleInstaller.startDelayInstall(bundleName, new BundleInstaller.InstallListener() {
+                                        @Override
+                                        public void onFinished() {
+                                            BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
+                                            if (impl != null) {
+                                                try {
+                                                    impl.start();
+                                                } catch (BundleException e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
                                         }
+                                    });
+                                } else {
+                                    try {
+                                        impl.start();
+                                    } catch (BundleException e) {
+                                        e.printStackTrace();
                                     }
                                 }
-                            });
-                        } else {
-                            try {
-                                impl.start();
-                            } catch (BundleException e) {
-                                e.printStackTrace();
                             }
                         }
                     }
-                }
+                },4000);
             }
         }
     }
