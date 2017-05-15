@@ -207,136 +207,148 @@
  *
  */
 
-package proguard;
+package com.taobao.android.builder.tools.bundleinfo;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.Set;
 
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.tools.ReflectUtils;
-import com.taobao.android.builder.tools.proguard.ClassRefPrinter;
-import org.apache.commons.io.FileUtils;
-import org.junit.Test;
-import proguard.classfile.ClassPool;
+import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 
 /**
- * Created by wuzhong on 2017/4/18.
+ * Created by wuzhong on 2017/5/15.
  */
-public class ProguardTest {
+public class BundleItem {
 
-    @Test
-    public void test() throws Exception {
+    public BundleInfo bundleInfo;
 
-        //File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest.cfg").getFile());
+    public Set<BundleInfo> circles = new HashSet<>();
 
-        File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/build/outputs/proguard.cfg");
-        Configuration configuration = new Configuration();
+    public Set<BundleItem> parents = new HashSet<>();
 
-        // Parse the options specified in the command line arguments.
-        ConfigurationParser parser = new ConfigurationParser(file,
-                                                             System.getProperties());
-        try {
-            parser.parse(configuration);
-        } finally {
-            parser.close();
+    public Set<BundleItem> children = new HashSet<>();
+
+    private boolean resolved;
+
+    public boolean canResolve() {
+
+        //System.out.println("test" + bundleInfo.getPkgName() );
+
+        if (this.resolved) {
+            return false;
         }
 
-        // Execute ProGuard with these options.
-        ProGuard proGuard = new ProGuard(configuration);
-        proGuard.execute();
+        if (parents.isEmpty()) {
+            return true;
+        }
 
-        ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
+        if (ifParentResolved()) {
+            return true;
+        }
 
-        ClassRefPrinter classRefPrinter = new ClassRefPrinter(Sets.newHashSet("com/taobao/wz/Util"));
-        classPool.classesAccept(classRefPrinter);
-
-        //for (String str : classRefPrinter.getRefClazzMap()){
-        //    System.out.println(str);
-        //}
-
+        return false;
     }
 
-    @Test
-    public void test2() throws IOException, ParseException {
-
-        File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main.cfg").getFile());
-
-        Configuration configuration = new Configuration();
-
-        // Parse the options specified in the command line arguments.
-        ConfigurationParser parser = new ConfigurationParser(file,
-                                                             System.getProperties());
-        try {
-            parser.parse(configuration);
-        } finally {
-            parser.close();
-        }
-
-        ConfigurationParser parser2 = new ConfigurationParser(new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main2.cfg").getFile()),
-                                                             System.getProperties());
-        try {
-            parser2.parse(configuration);
-        } finally {
-            parser2.close();
-        }
-
-        // Execute ProGuard with these options.
-        new ProGuard(configuration).execute();
-
-    }
-
-
-
-    @Test
-    public void testConfigLoad() throws IOException, ParseException {
-
-        String dir = "/Users/wuzhong/workspace/taobao_android/MainBuilder/build/intermediates/bundle_proguard/release";
-
-        File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/proguard.cfg");
-        List<File> files = FileUtils.listFiles(new File(dir), new String[]{"cfg"}, true).parallelStream().filter(
-            new Predicate<File>() {
-                @Override
-                public boolean test(File file) {
-                    return file.getName().equals("keep.cfg");
-                }
-            }).collect(Collectors.toList());
-
-        files.add(0,file);
-        System.out.println(1111);
-
-
-
-        Configuration configuration = new Configuration();
-
-
-
-        for (File f : files) {
-
-            System.err.println(">>>> " + f.getAbsolutePath());
-
-            ConfigurationParser parser = new ConfigurationParser(f,
-                                                                 System.getProperties());
-            try {
-                parser.parse(configuration);
-            } finally {
-                parser.close();
+    private boolean ifParentResolved() {
+        for (BundleItem parent : parents) {
+            if (!parent.isResolved()) {
+                return false;
+            }else {
+                //System.out.println(parent.bundleInfo.getPkgName() + " resolved");
             }
         }
+        return true;
+    }
 
-        //ConfigurationParser parser2 = new ConfigurationParser(new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main2.cfg").getFile()),
-        //                                                      System.getProperties());
-        //try {
-        //    parser2.parse(configuration);
-        //} finally {
-        //    parser2.close();
-        //}
-        //
-        //// Execute ProGuard with these options.
-        //new ProGuard(configuration).execute();
+    public boolean getCircles(Set<BundleItem> sets, BundleItem root){
+        if (this.isResolved()){
+            return false;
+        }
+        //如果是循环
+        if (sets.contains(this)){
+            return true;
+        }
 
+        sets.add(this);
+        for (BundleItem bundleItem : children){
+
+            if (canLoopTo( bundleItem, root)){
+                if(bundleItem.getCircles(sets,root)){
+                    return true;
+                }
+            }
+
+
+        }
+        return false;
+    }
+
+    public boolean isLoop(BundleItem bundleItem, Set<BundleItem> resolves){
+        for (BundleItem child : children){
+            if (resolves.contains(child)){
+                continue;
+            }
+            resolves.add(child);
+            if (child == bundleItem){
+                return true;
+            }
+            if(child.isLoop(bundleItem,resolves)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean canLoopTo(BundleItem from, BundleItem end){
+        //System.out.println(from.bundleInfo.getPkgName() + "->" + end.bundleInfo.getPkgName());
+        for (BundleItem child : from.children){
+            if (child == end){
+                return true;
+            }
+            if (child == from){
+                continue;
+            }
+            if(canLoopTo(child, end)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public void resolve() {
+        this.resolved = true;
+    }
+
+    public boolean isResolved() {
+        return resolved;
+    }
+
+    public void addBundleItem(BundleItem bundleItem) {
+        circles.add(bundleItem.bundleInfo);
+        this.parents.addAll(bundleItem.parents);
+        this.children.addAll(bundleItem.children);
+
+        for (BundleItem parent : bundleItem.parents){
+            parent.children.remove(bundleItem);
+            parent.children.add(this);
+        }
+
+        for (BundleItem child : bundleItem.children){
+            child.parents.remove(bundleItem);
+            child.parents.add(this);
+        }
+
+        this.parents.remove(this);
+        this.children.remove(this);
+
+    }
+
+    public List<BundleInfo> getBundleGroup(){
+        List<BundleInfo> bundleItems = new ArrayList<>(circles);
+        bundleItems.add(bundleInfo);
+        return bundleItems;
     }
 
 }

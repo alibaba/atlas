@@ -285,6 +285,7 @@ public class AtlasProguardHelper {
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("proguard-bundles", LoggerFactory
             .getLogger(AtlasProguardHelper.class), parallelCount);
         List<Runnable> runnables = new ArrayList<>();
+
         for (AwbTransform awbTransform : appVariantOutputContext.getAwbTransformMap().values()) {
 
             runnables.add(new Runnable() {

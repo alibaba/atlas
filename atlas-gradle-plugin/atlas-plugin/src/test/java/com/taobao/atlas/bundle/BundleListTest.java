@@ -207,136 +207,150 @@
  *
  */
 
-package proguard;
+package com.taobao.atlas.bundle;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.function.Consumer;
 
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.tools.ReflectUtils;
-import com.taobao.android.builder.tools.proguard.ClassRefPrinter;
+import com.alibaba.fastjson.JSON;
+
+import com.taobao.android.builder.tools.bundleinfo.BundleExecutor;
+import com.taobao.android.builder.tools.bundleinfo.BundleItem;
+import com.taobao.android.builder.tools.bundleinfo.BundleItemRunner;
+import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
-import proguard.classfile.ClassPool;
+import proguard.ProguardTest;
 
 /**
- * Created by wuzhong on 2017/4/18.
+ * Created by wuzhong on 2017/5/15.
  */
-public class ProguardTest {
+public class BundleListTest {
 
     @Test
-    public void test() throws Exception {
+    public void test() throws IOException, InterruptedException {
+        File file = new File(ProguardTest.class.getClassLoader().getResource("bundleInfoList.json").getFile());
+        String json = FileUtils.readFileToString(file);
+        List<BundleInfo> jsonArray = JSON.parseArray(json, BundleInfo.class);
 
-        //File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest.cfg").getFile());
-
-        File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/build/outputs/proguard.cfg");
-        Configuration configuration = new Configuration();
-
-        // Parse the options specified in the command line arguments.
-        ConfigurationParser parser = new ConfigurationParser(file,
-                                                             System.getProperties());
-        try {
-            parser.parse(configuration);
-        } finally {
-            parser.close();
-        }
-
-        // Execute ProGuard with these options.
-        ProGuard proGuard = new ProGuard(configuration);
-        proGuard.execute();
-
-        ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
-
-        ClassRefPrinter classRefPrinter = new ClassRefPrinter(Sets.newHashSet("com/taobao/wz/Util"));
-        classPool.classesAccept(classRefPrinter);
-
-        //for (String str : classRefPrinter.getRefClazzMap()){
-        //    System.out.println(str);
-        //}
-
-    }
-
-    @Test
-    public void test2() throws IOException, ParseException {
-
-        File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main.cfg").getFile());
-
-        Configuration configuration = new Configuration();
-
-        // Parse the options specified in the command line arguments.
-        ConfigurationParser parser = new ConfigurationParser(file,
-                                                             System.getProperties());
-        try {
-            parser.parse(configuration);
-        } finally {
-            parser.close();
-        }
-
-        ConfigurationParser parser2 = new ConfigurationParser(new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main2.cfg").getFile()),
-                                                             System.getProperties());
-        try {
-            parser2.parse(configuration);
-        } finally {
-            parser2.close();
-        }
-
-        // Execute ProGuard with these options.
-        new ProGuard(configuration).execute();
-
-    }
-
-
-
-    @Test
-    public void testConfigLoad() throws IOException, ParseException {
-
-        String dir = "/Users/wuzhong/workspace/taobao_android/MainBuilder/build/intermediates/bundle_proguard/release";
-
-        File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/proguard.cfg");
-        List<File> files = FileUtils.listFiles(new File(dir), new String[]{"cfg"}, true).parallelStream().filter(
-            new Predicate<File>() {
-                @Override
-                public boolean test(File file) {
-                    return file.getName().equals("keep.cfg");
-                }
-            }).collect(Collectors.toList());
-
-        files.add(0,file);
-        System.out.println(1111);
-
-
-
-        Configuration configuration = new Configuration();
-
-
-
-        for (File f : files) {
-
-            System.err.println(">>>> " + f.getAbsolutePath());
-
-            ConfigurationParser parser = new ConfigurationParser(f,
-                                                                 System.getProperties());
-            try {
-                parser.parse(configuration);
-            } finally {
-                parser.close();
+        Map<String, BundleInfo> bundleInfoMap = new HashMap<>();
+        jsonArray.forEach(new Consumer<BundleInfo>() {
+            @Override
+            public void accept(BundleInfo bundleInfo) {
+                bundleInfoMap.put(bundleInfo.getPkgName(), bundleInfo);
             }
-        }
+        });
 
-        //ConfigurationParser parser2 = new ConfigurationParser(new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main2.cfg").getFile()),
-        //                                                      System.getProperties());
-        //try {
-        //    parser2.parse(configuration);
-        //} finally {
-        //    parser2.close();
+        BundleExecutor.execute(new ArrayList<>(bundleInfoMap.values()), new BundleItemRunner() {
+            @Override
+            public void execute(BundleItem bundleItem) {
+                System.out.println(bundleItem.bundleInfo.getPkgName());
+            }
+        });
+
+        //
+        //
+        //Map<String, BundleItem> bundleItemMap = new HashMap<>();
+        //for (BundleInfo bundleInfo : jsonArray) {
+        //
+        //    BundleItem bundleItem = bundleItemMap.get(bundleInfo.getPkgName());
+        //
+        //    if (null == bundleItem) {
+        //        bundleItem = new BundleItem();
+        //        bundleItem.bundleInfo = bundleInfo;
+        //        bundleItemMap.put(bundleInfo.getPkgName(), bundleItem);
+        //    }
+        //
+        //    //计算依赖
+        //    for (String dependency : bundleInfo.getDependency()) {
+        //        if (StringUtils.isNotEmpty(dependency)) {
+        //            BundleItem child = bundleItemMap.get(dependency);
+        //            if (null == child) {
+        //                child = new BundleItem();
+        //                child.bundleInfo = bundleInfoMap.get(dependency);
+        //                bundleItemMap.put(dependency, child);
+        //            }
+        //
+        //            bundleItem.children.add(child);
+        //            child.parents.add(bundleItem);
+        //        }
+        //    }
+        //
         //}
         //
-        //// Execute ProGuard with these options.
-        //new ProGuard(configuration).execute();
+        //System.out.println("<<<<<>>>>>>>");
+        //
+        //Map<String, Set<BundleItem>> circleMap = new HashMap<>();
+        //for (BundleItem bundleItem : bundleItemMap.values()) {
+        //    Set<BundleItem> bundleItems = new HashSet<>();
+        //    if (bundleItem.isLoop(bundleItem, new HashSet<>())) {
+        //        bundleItem.getCircles(bundleItems, bundleItem);
+        //        List<String> list = new ArrayList<>();
+        //        for (BundleItem b : bundleItems) {
+        //            list.add(b.bundleInfo.getPkgName());
+        //        }
+        //        Collections.sort(list);
+        //        String key = StringUtils.join(list.toArray());
+        //        circleMap.put(key, bundleItems);
+        //    }
+        //}
+        //
+        //for (Set<BundleItem> sets : circleMap.values()) {
+        //    int i = 0;
+        //    BundleItem main = null;
+        //    for (BundleItem bundleItem : sets) {
+        //        if (i++ == 0) {
+        //            main = bundleItem;
+        //        } else {
+        //            bundleItemMap.remove(bundleItem.bundleInfo.getPkgName());
+        //            main.addBundleItem(bundleItem);
+        //        }
+        //    }
+        //}
+        //
+        //System.out.println(bundleItemMap.size());
+        //int size = bundleInfoMap.size();
+        //
+        //int index = 1;
+        //while (index <= size) {
+        //
+        //    List<String> keys = new ArrayList<>();
+        //
+        //    for (String key : bundleItemMap.keySet()) {
+        //
+        //        //System.out.println("test" + key);
+        //
+        //        BundleItem bundleItem = bundleItemMap.get(key);
+        //
+        //        if (bundleItem.canResolve()) {
+        //
+        //            System.out.println(">>>> " + index++ + bundleItem.bundleInfo.getPkgName());
+        //            //bundleItem.resolve();
+        //            keys.add(key);
+        //        }
+        //
+        //    }
+        //
+        //    if (keys.isEmpty()) {
+        //        break;
+        //    }
+        //
+        //    for (String key : keys) {
+        //        bundleItemMap.get(key).resolve();
+        //        bundleItemMap.remove(key);
+        //    }
+        //
+        //    System.out.println(">>>>>>>> ");
+        //}
+        //
+        //System.out.println("1111 ");
 
     }
 
 }
+
