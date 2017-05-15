@@ -786,7 +786,7 @@ public class DependencyManager {
             int indent) {
 
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
-        if (checkForExclusion(configDependencies, moduleVersion)) {
+        if (checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult)) {
             return;
         }
 
@@ -1236,7 +1236,8 @@ public class DependencyManager {
     }
 
     protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
-                                        ModuleVersionIdentifier moduleVersion) {return configDependencies.getChecker().checkForExclusion(moduleVersion);}
+                                        ModuleVersionIdentifier moduleVersion,
+                                        ResolvedComponentResult resolvedComponentResult) {return configDependencies.getChecker().checkForExclusion(moduleVersion);}
 
     @NonNull
     private static MavenCoordinatesImpl createMavenCoordinates(

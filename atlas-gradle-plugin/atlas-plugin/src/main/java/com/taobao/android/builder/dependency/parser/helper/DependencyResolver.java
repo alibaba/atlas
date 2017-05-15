@@ -329,7 +329,7 @@ public class DependencyResolver {
                                    Set<String> resolvedDependencies) {
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
 
-        if (checkForExclusion(configDependencies, moduleVersion)) { return; }
+        if (checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult)) { return; }
 
         if (moduleVersion.getName().equals("support-annotations") && moduleVersion.getGroup().equals(
             "com.android.support")) {
@@ -424,7 +424,8 @@ public class DependencyResolver {
 
     }
 
-    private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion) {
+    private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion,
+                                      ResolvedComponentResult resolvedComponentResult) {
         if (configDependencies.getChecker().checkForExclusion(moduleVersion) || (apDependencies != null
                                                                                  && apDependencies
                                                                                      .hasSameResolvedDependency(

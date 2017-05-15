@@ -229,6 +229,7 @@ import com.taobao.android.builder.tasks.incremental.ApDependencies;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.result.ResolvedComponentResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -311,8 +312,9 @@ public class AtlasDependencyManager extends DependencyManager {
 
     @Override
     protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
-                                        ModuleVersionIdentifier moduleVersion) {
-        return super.checkForExclusion(configDependencies, moduleVersion) || (apDependencies != null && apDependencies
+                                        ModuleVersionIdentifier moduleVersion,
+                                        ResolvedComponentResult resolvedComponentResult) {
+        return super.checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult) || (apDependencies != null && apDependencies
             .hasSameResolvedDependency(moduleVersion));
     }
 }
