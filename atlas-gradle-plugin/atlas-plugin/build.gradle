@@ -223,6 +223,7 @@ sourceSets {
         resources.srcDirs = ['src/main/resources']
     }
 }
+tasks.findByName("test").enabled=false
 
 dependencies {
     compile localGroovy()
@@ -244,5 +245,7 @@ dependencies {
 }
 
 
-version = '2.3.1.alpha48'
+version = '2.3.1.fastproguard2-SNAPSHOT'
+
+
 

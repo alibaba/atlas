@@ -207,29 +207,43 @@
  *
  */
 
-package proguard;
+package com.taobao.android.builder.tools.proguard;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import com.taobao.android.builder.tools.proguard.dto.Input;
+import com.taobao.android.builder.tools.proguard.dto.RefClazz;
+import com.taobao.android.builder.tools.proguard.dto.RefClazzContainer;
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -242,6 +256,146 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 public class AtlasProguardHelper {
 
     private static Logger sLogger = LoggerFactory.getLogger(AtlasProguardHelper.class);
+
+    public static void doBundleProguard(final AppVariantContext appVariantContext, List<File> mainDexJars)
+        throws Exception {
+
+        VariantScope variantScope = appVariantContext.getScope();
+        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+            variantScope.getVariantConfiguration().getFullName());
+
+        if (dependencyTree.getAwbBundles().isEmpty()) {
+            return;
+        }
+
+        List<File> libs = new ArrayList<>(appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true));
+        libs.addAll(mainDexJars);
+
+        Set<String> mainDexClazzSet = getMainDexClassList(mainDexJars);
+
+        //获取基础的proguard配置
+        List<File> defaultProguardFiles = new ArrayList<>(
+            appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>()));
+        Collections.sort(defaultProguardFiles);
+
+        BaseVariantOutputData vod = appVariantContext.getVariantData().getOutputs().get(0);
+        AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(vod);
+
+        int parallelCount = appVariantContext.getAtlasExtension().getTBuildConfig().getProguardParallelCount();
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("proguard-bundles", LoggerFactory
+            .getLogger(AtlasProguardHelper.class), parallelCount);
+        List<Runnable> runnables = new ArrayList<>();
+        for (AwbTransform awbTransform : appVariantOutputContext.getAwbTransformMap().values()) {
+
+            runnables.add(new Runnable() {
+                @Override
+                public void run() {
+
+                    Input input = new Input();
+                    input.getAwbBundles().add(awbTransform);
+                    input.getDefaultProguardFiles().addAll(defaultProguardFiles);
+                    input.getLibraries().addAll(libs);
+                    input.setMainDexClazzList(mainDexClazzSet);
+                    try {
+                        BundleProguarder.execute(appVariantContext, input);
+                    } catch (Exception e) {
+                        throw new GradleException("proguard " + awbTransform.getAwbBundle().getName(), e);
+                    }
+
+                }
+            });
+
+        }
+
+        executorServicesHelper.execute(runnables);
+
+    }
+
+    public static Set<String> getMainDexClassList(List<File> files) throws IOException {
+        Set<String> sets = new HashSet<>();
+        for (File file : files) {
+
+            JarFile jarFile = new JarFile(file);
+            Enumeration<JarEntry> entryEnumeration = jarFile.entries();
+
+            while (entryEnumeration.hasMoreElements()) {
+                JarEntry jarEntry = entryEnumeration.nextElement();
+                if (null == jarEntry) {
+                    continue;
+                }
+                String name = jarEntry.getName();
+                if (name.endsWith(".class")) {
+                    name = name.substring(0, name.length() - 6);
+                    sets.add(name);
+                }
+            }
+        }
+        return sets;
+    }
+
+    public static void applyBundleKeepsV2(final AppVariantContext appVariantContext,
+                                        ProGuardTransform proGuardTransform) throws IOException {
+
+        RefClazzContainer refClazzContainer = new RefClazzContainer();
+
+        GlobalScope globalScope = appVariantContext.getScope().getGlobalScope();
+        //增加awb的配置
+        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+            appVariantContext.getVariantConfiguration().getFullName());
+
+        for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
+            if (null != awbBundle.getKeepProguardFile() && awbBundle.getKeepProguardFile().exists()) {
+
+                String json = FileUtils.readFileToString(awbBundle.getKeepProguardFile());
+                Map<String,RefClazz> refClazzMap = JSON.parseObject(json, new TypeReference<Map<String,RefClazz>>(){});
+
+                refClazzContainer.addRefClazz(refClazzMap);
+
+            } else {
+                appVariantContext.getProject().getLogger().error(
+                    "missing " + awbBundle.getKeepProguardFile().getAbsolutePath());
+            }
+        }
+
+        File maindexkeep = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"maindexkeep.cfg");
+        FileUtils.writeLines(maindexkeep, refClazzContainer.convertToKeeplines());
+
+        proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
+            @Override
+            public Collection<File> get() {
+                return Lists.newArrayList(maindexkeep);
+            }
+        });
+
+    }
+
+    public static void applyBundleKeeps(final AppVariantContext appVariantContext,
+                                        ProGuardTransform proGuardTransform) {
+
+        Set<File> proguardFiles = new HashSet<File>();
+
+        GlobalScope globalScope = appVariantContext.getScope().getGlobalScope();
+        //增加awb的配置
+        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+            appVariantContext.getVariantConfiguration().getFullName());
+
+        for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
+            if (null != awbBundle.getKeepProguardFile() && awbBundle.getKeepProguardFile().exists()) {
+                proguardFiles.add(awbBundle.getKeepProguardFile());
+            } else {
+                appVariantContext.getProject().getLogger().error(
+                    "missing " + awbBundle.getKeepProguardFile().getAbsolutePath());
+            }
+        }
+
+        proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
+            @Override
+            public Collection<File> get() {
+                return proguardFiles;
+            }
+        });
+
+    }
 
     public static File applyBundleInOutConfigration(final AppVariantContext appVariantContext,
                                                     ProGuardTransform proGuardTransform) {
@@ -294,7 +448,8 @@ public class AtlasProguardHelper {
     public static void applyBundleProguardConfigration(final AppVariantContext appVariantContext,
                                                        ProGuardTransform proGuardTransform) {
 
-        Set<String> blackList = appVariantContext.getAtlasExtension().getTBuildConfig().getBundleProguardConfigBlackList();
+        Set<String> blackList = appVariantContext.getAtlasExtension().getTBuildConfig()
+            .getBundleProguardConfigBlackList();
 
         List<File> proguardFiles = new ArrayList<>();
         VariantScope variantScope = appVariantContext.getScope();
@@ -303,8 +458,9 @@ public class AtlasProguardHelper {
             for (AndroidLibrary androidDependency : awbBundle.getAllLibraryAars()) {
                 File proguardRules = androidDependency.getProguardRules();
 
-                String groupName = androidDependency.getResolvedCoordinates().getGroupId()+":"+androidDependency.getResolvedCoordinates().getArtifactId();
-                if (blackList.contains(groupName)){
+                String groupName = androidDependency.getResolvedCoordinates().getGroupId() + ":" + androidDependency
+                    .getResolvedCoordinates().getArtifactId();
+                if (blackList.contains(groupName)) {
                     sLogger.info("[proguard] skip proguard from " + androidDependency.getResolvedCoordinates());
                     continue;
                 }

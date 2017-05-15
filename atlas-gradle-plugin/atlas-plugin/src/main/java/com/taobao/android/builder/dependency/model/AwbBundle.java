@@ -226,6 +226,7 @@ import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.artifacts.ModuleIdentifier;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Created by shenghua.nish on 2016-05-06 下午5:46.
@@ -256,9 +257,20 @@ public class AwbBundle {
     private File mergedManifest;
 
     private Map<ModuleIdentifier, String> baseAwbDependencies;
+    /**
+     * 该bundle对应的依赖bundle，对应bundleInfo里配置的数据
+     */
+    private List<AwbBundle> bundleDependencies = new ArrayList<>();
+
+    private File keepProguardFile;
 
     public AwbBundle() {
         mainBundle = true;
+    }
+
+    @TestOnly
+    public AwbBundle(String name) {
+        this.name = name;
     }
 
     public AwbBundle(ResolvedDependencyInfo resolvedDependencyInfo, AndroidLibrary androidLibrary) {
@@ -317,6 +329,18 @@ public class AwbBundle {
             });
         }
         return _cacheManifestProviders;
+    }
+
+    public List<AwbBundle> getBundleDependencies() {
+        return bundleDependencies;
+    }
+
+    public File getKeepProguardFile() {
+        return keepProguardFile;
+    }
+
+    public void setKeepProguardFile(File keepProguardFile) {
+        this.keepProguardFile = keepProguardFile;
     }
 
     ////////////////////////////////////for outputs////////////////////////////////////////////////

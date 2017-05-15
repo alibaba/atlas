@@ -207,322 +207,76 @@
  *
  */
 
-package com.taobao.android.builder.extension;
+package com.taobao.android.builder.tools.proguard.dto;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
+import java.util.Map;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午10:15.
+ * Created by wuzhong on 2017/5/14.
  */
-public class TBuildConfig {
+public class RefClazzContainer {
 
-    @Config(message = "远程bundle清单, artifactId", advance = false, order = 1, group = "atlas")
-    private Set<String> outOfApkBundles = Sets.newHashSet();
+    private Map<String, RefClazz> refClazzMap = new HashMap<>();
 
-    @Config(title = "自启动的bundle列表", message = "值是 packageName", order = 1, advance = false, group = "atlas")
-    private List<String> autoStartBundles = new ArrayList<String>();
-
-    @Config(title = "提前启动列表",
-        message = "实现PreLaunch的类，多个类用 , 号分开", order = 1, advance = false, group = "atlas")
-    private String preLaunch = "";
-
-    @Config(title = "atlas 分包",
-        message = "atlas的主dex分包机制，第一个dex只放atlas对应的启动代码", order = 3, advance = false, group = "atlas")
-    private boolean atlasMultiDex = false;
-
-    @Config(message = "需要删除的so文件列表", order = 4, advance = true, group = "atlas")
-    private Set<String> removeSoFiles = Sets.newHashSet();
-
-    @Config(title = "bundle的packageId定义文件", message = "bundle的packageId定义文件，不定义会自动分配", group = "atlas")
-    private File packageIdFile = new File("");
-
-    @Config(message = "自动生成bundle的packageId", order = 6, advance = false, group = "atlas")
-    private boolean autoPackageId = true;
-
-    @Config(message = "自动分配的packageId 最小值", order = 6, advance = false, group = "atlas")
-    private int minPackageId = 35;
-
-    @Config(title = "构建基线包", message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0, group = "atlas_patch")
-    private Boolean createAP = true;
-
-    @Config(message = "合并bundle jar中的资源文件", order = 8, advance = true, group = "atlas")
-    private Boolean mergeAwbJavaRes = false;
-
-    @Config(message = "是否依赖冲突终止打包", order = 0, group = "check")
-    private boolean abortIfDependencyConflict = false;
-
-    @Config(message = "是否类冲突终止打包", order = 0, group = "check")
-    private boolean abortIfClassConflict = false;
-
-    @Config(title = "预处理manifest", message = "如果开启atlas，必须为true", order = 7, advance = true, group = "atlas")
-    private Boolean preProcessManifest = true;
-
-    @Config(title = "使用自定义的aapt", message = "如果开启atlas，必须为true", order = 8, advance = true, group = "atlas")
-    private Boolean useCustomAapt = false;
-
-    @Config(title = "aapt输出的R为常量", message = "建议值设置为false， 可以减少动态部署的patch包大小", order = 9, advance = true,
-        group = "atlas")
-    private Boolean aaptConstantId = true;
-
-    @Config(message = "注入核心的bundle信息", advance = true, order = 10, group = "atlas")
-    private Boolean classInject = true;
-
-    @Config(title = "主dex插桩", message = "老版本的主dex动态部署，已经废弃", advance = true, order = 11, group = "atlas")
-    private Boolean doPreverify = false;
-
-    @Deprecated
-    private Boolean resV4Enabled = true;
-
-    @Config(message = "class注入在proguard之前", advance = true, order = 12, group = "atlas")
-    private Boolean injectBeforeProguard = false;
-
-    @Config(title = "使用databinding的bundle列表", message = "需要进行databinding的bundle， 值为 packageName ", order = 13,
-        advance = true, group = "atlas")
-    private Set<String> dataBindingBundles = new HashSet<>();
-
-    @Config(message = "proguard是否需要读取bundle中的混淆配置", order = 14, advance = true, group = "atlas")
-    private boolean bundleProguardConfigEnabled = true;
-
-    @Config(message = "依赖中的混淆是否只读取keep规则", order = 15, advance = true, group = "atlas")
-    private boolean libraryProguardKeepOnly = true;
-
-    @Config(title = "proguard配置读取依赖黑名单", message = "group:name,group2:name2", order = 16, advance = true,
-        group = "atlas")
-    private Set<String> bundleProguardConfigBlackList = new HashSet<>();
-
-    @Deprecated
-    private Set<String> insideOfApkBundles = Sets.newHashSet();
-
-    private boolean incremental = false;
-
-    private boolean fastProguard = false;
-
-    private int proguardParallelCount = 8;
-
-    public Set<String> getRemoveSoFiles() {
-        return removeSoFiles;
+    public RefClazzContainer(
+        Map<String, RefClazz> refClazzMap) {
+        this.refClazzMap = refClazzMap;
     }
 
-    public void setRemoveSoFiles(Set<String> removeSoFiles) {
-        this.removeSoFiles = removeSoFiles;
+    public RefClazzContainer() {
     }
 
-    public File getPackageIdFile() {
-        return packageIdFile;
+    public void addRefClazz(Map<String, RefClazz> other) {
+
+        for (String key : other.keySet()) {
+
+            RefClazz otherClazz = other.get(key);
+            RefClazz clazz = refClazzMap.get(key);
+            if (null == clazz) {
+                refClazzMap.put(key, otherClazz);
+            } else {
+                clazz.getFields().addAll(otherClazz.getFields());
+                clazz.getMethods().addAll(otherClazz.getMethods());
+            }
+        }
+
     }
 
-    public void setPackageIdFile(File packageIdFile) {
-        this.packageIdFile = packageIdFile;
+    public List<String> convertToKeeplines() {
+
+        List<RefClazz> refClazzes = new ArrayList<>(refClazzMap.values());
+        Collections.sort(refClazzes, new Comparator<RefClazz>() {
+            @Override
+            public int compare(RefClazz o1, RefClazz o2) {
+                return o1.getClazzName().compareTo(o2.getClazzName());
+            }
+        });
+
+        List<String> lines = new ArrayList<>();
+        for (RefClazz refClazz : refClazzes) {
+            lines.add("-keep class " + refClazz.getClazzName().replace("/", ".") + " {");
+
+            List<String> methods = new ArrayList<>(refClazz.getMethods());
+            List<String> fields = new ArrayList<>(refClazz.getFields());
+            Collections.sort(methods);
+            Collections.sort(fields);
+
+            for (String name : methods) {
+                lines.add(" *** " + name + "(...);");
+            }
+
+            for (String name : fields) {
+                lines.add(" *** " + name + ";");
+            }
+
+            lines.add("}");
+        }
+        return lines;
     }
 
-    public boolean isAutoPackageId() {
-        return autoPackageId;
-    }
-
-    public void setAutoPackageId(boolean autoPackageId) {
-        this.autoPackageId = autoPackageId;
-    }
-
-    public Boolean getPreProcessManifest() {
-        return preProcessManifest;
-    }
-
-    public void setPreProcessManifest(Boolean preProcessManifest) {
-        this.preProcessManifest = preProcessManifest;
-    }
-
-    public Boolean getUseCustomAapt() {
-        return useCustomAapt;
-    }
-
-    public void setUseCustomAapt(Boolean useCustomAapt) {
-        this.useCustomAapt = useCustomAapt;
-    }
-
-    public Boolean getAaptConstantId() {
-        return aaptConstantId;
-    }
-
-    public void setAaptConstantId(Boolean aaptConstantId) {
-        this.aaptConstantId = aaptConstantId;
-    }
-
-    public Boolean getClassInject() {
-        return classInject;
-    }
-
-    public void setClassInject(Boolean classInject) {
-        this.classInject = classInject;
-    }
-
-    public Boolean getInjectBeforeProguard() {
-        return injectBeforeProguard;
-    }
-
-    public void setInjectBeforeProguard(Boolean injectBeforeProguard) {
-        this.injectBeforeProguard = injectBeforeProguard;
-    }
-
-    public Boolean getCreateAP() {
-        return createAP;
-    }
-
-    public Boolean getMergeAwbJavaRes() {
-        return mergeAwbJavaRes;
-    }
-
-    public void setMergeAwbJavaRes(Boolean mergeAwbJavaRes) {
-        this.mergeAwbJavaRes = mergeAwbJavaRes;
-    }
-
-    public Set<String> getOutOfApkBundles() {
-        return outOfApkBundles;
-    }
-
-    public void setOutOfApkBundles(Set<String> outOfApkBundles) {
-        this.outOfApkBundles = outOfApkBundles;
-    }
-
-    public Set<String> getInsideOfApkBundles() {
-        return insideOfApkBundles;
-    }
-
-    public void setInsideOfApkBundles(Set<String> insideOfApkBundles) {
-        this.insideOfApkBundles = insideOfApkBundles;
-    }
-
-    public List<String> getAutoStartBundles() {
-        return autoStartBundles;
-    }
-
-    public void setAutoStartBundles(List<String> autoStartBundles) {
-        this.autoStartBundles = autoStartBundles;
-    }
-
-    public String getPreLaunch() {
-        return preLaunch;
-    }
-
-    public void setPreLaunch(String preLaunch) {
-        this.preLaunch = preLaunch;
-    }
-
-    public Boolean getDoPreverify() {
-        return doPreverify;
-    }
-
-    public void setDoPreverify(Boolean doPreverify) {
-        this.doPreverify = doPreverify;
-    }
-
-    public Boolean getResV4Enabled() {
-        return resV4Enabled;
-    }
-
-    public void setResV4Enabled(Boolean resV4Enabled) {
-        this.resV4Enabled = resV4Enabled;
-    }
-
-    public boolean isAbortIfDependencyConflict() {
-        return abortIfDependencyConflict;
-    }
-
-    public void setAbortIfDependencyConflict(boolean abortIfDependencyConflict) {
-        this.abortIfDependencyConflict = abortIfDependencyConflict;
-    }
-
-    public boolean isAbortIfClassConflict() {
-        return abortIfClassConflict;
-    }
-
-    public void setAbortIfClassConflict(boolean abortIfClassConflict) {
-        this.abortIfClassConflict = abortIfClassConflict;
-    }
-
-    public Set<String> getDataBindingBundles() {
-        return dataBindingBundles;
-    }
-
-    public void setDataBindingBundles(Set<String> dataBindingBundles) {
-        this.dataBindingBundles = dataBindingBundles;
-    }
-
-    public boolean isAtlasMultiDex() {
-        return atlasMultiDex;
-    }
-
-    public void setAtlasMultiDex(boolean atlasMultiDex) {
-        this.atlasMultiDex = atlasMultiDex;
-    }
-
-    public Boolean isCreateAP() {
-        return createAP;
-    }
-
-    public void setCreateAP(Boolean createAP) {
-        this.createAP = createAP;
-    }
-
-    public boolean isIncremental() {
-        return incremental;
-    }
-
-    public void setIncremental(boolean incremental) {
-        this.incremental = incremental;
-    }
-
-    public boolean isBundleProguardConfigEnabled() {
-        return bundleProguardConfigEnabled;
-    }
-
-    public void setBundleProguardConfigEnabled(boolean bundleProguardConfigEnabled) {
-        this.bundleProguardConfigEnabled = bundleProguardConfigEnabled;
-    }
-
-    public boolean isLibraryProguardKeepOnly() {
-        return libraryProguardKeepOnly;
-    }
-
-    public void setLibraryProguardKeepOnly(boolean libraryProguardKeepOnly) {
-        this.libraryProguardKeepOnly = libraryProguardKeepOnly;
-    }
-
-    public Set<String> getBundleProguardConfigBlackList() {
-        return bundleProguardConfigBlackList;
-    }
-
-    public void setBundleProguardConfigBlackList(Set<String> bundleProguardConfigBlackList) {
-        this.bundleProguardConfigBlackList = bundleProguardConfigBlackList;
-    }
-
-    public int getMinPackageId() {
-        return minPackageId;
-    }
-
-    public void setMinPackageId(int minPackageId) {
-        this.minPackageId = minPackageId;
-    }
-
-    public boolean isFastProguard() {
-        return fastProguard;
-    }
-
-    public void setFastProguard(boolean fastProguard) {
-        this.fastProguard = fastProguard;
-    }
-
-    public int getProguardParallelCount() {
-        return proguardParallelCount;
-    }
-
-    public void setProguardParallelCount(int proguardParallelCount) {
-        this.proguardParallelCount = proguardParallelCount;
-    }
 }

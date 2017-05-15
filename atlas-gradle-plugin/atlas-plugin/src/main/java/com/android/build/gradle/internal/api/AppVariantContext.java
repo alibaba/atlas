@@ -497,11 +497,16 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public ApkFiles getApkFiles() {
 
-        if (null != apkFiles){
+        if (null != apkFiles) {
             return apkFiles;
         }
 
         apkFiles = ApkFileListUtils.recordApkFileInfos(this);
         return apkFiles;
+    }
+
+    public File getAwbProguardDir(AwbBundle awbBundle) {
+        return new File(scope.getGlobalScope().getIntermediatesDir(),
+                        "proguard-bundles/" + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
     }
 }
