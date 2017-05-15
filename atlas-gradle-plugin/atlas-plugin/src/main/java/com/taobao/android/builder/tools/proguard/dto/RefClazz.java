@@ -207,95 +207,46 @@
  *
  */
 
-package proguard;
+package com.taobao.android.builder.tools.proguard.dto;
 
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.api.AwbTransform;
-import com.google.common.collect.Lists;
-
-import org.apache.commons.io.FileUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-/**
- * 增加Awb的配置到混淆的配置中去
- * Created by shenghua.nish on 2016-06-12 上午9:23.
- */
-public class AwbProguardConfiguration {
+public class RefClazz {
 
-    public static final String INJARS_OPTION = "-injars";
+    private String clazzName;
 
-    public static final String OUTJARS_OPTION = "-outjars";
-
-    public static final String OBUSCATED_JAR = "obfuscated.jar";
-
-    private final Collection<AwbTransform> awbTransforms;
-
-    private final File awbObfuscatedDir;
-
-    private final AppVariantOutputContext appVariantOutputContext;
-
-    public AwbProguardConfiguration(Collection<AwbTransform> awbTransforms,
-                                    File awbObfuscatedDir,
-                                    AppVariantOutputContext appVariantOutputContext) {
-        this.awbTransforms = awbTransforms;
-        this.awbObfuscatedDir = awbObfuscatedDir;
-        this.appVariantOutputContext = appVariantOutputContext;
+    public RefClazz() {
     }
 
-    /**
-     * 打印proguard的config文件到指定文件
-     *
-     * @param outConfigFile
-     */
-    public void printConfigFile(File outConfigFile) throws IOException {
-        List<String> configs = Lists.newArrayList();
-        //awb对没个lib单独做proguard，方便predex
-        for (AwbTransform awbTransform : awbTransforms) {
+    public RefClazz(String clazzName) {
+        this.clazzName = clazzName;
+    }
 
-            List<File> inputLibraries = Lists.newArrayList();
+    private Set<String> methods = new HashSet<>();
+    private Set<String> fields = new HashSet<>();
 
-            String name = awbTransform.getAwbBundle().getName();
-            File obuscateDir = new File(awbObfuscatedDir, awbTransform.getAwbBundle().getName());
-            obuscateDir.mkdirs();
+    public String getClazzName() {
+        return clazzName;
+    }
 
-            //configs.add();
-            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
-                File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
-                inputLibraries.add(obsJar);
-                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-            }
+    public void setClazzName(String clazzName) {
+        this.clazzName = clazzName;
+    }
 
-            Set<String> classNames = new HashSet<>();
-            for (File inputLibrary : awbTransform.getInputLibraries()) {
-                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
+    public Set<String> getMethods() {
+        return methods;
+    }
 
-                String fileName = inputLibrary.getName();
+    public void setMethods(Set<String> methods) {
+        this.methods = methods;
+    }
 
-                if (classNames.contains(fileName)) {
-                    fileName = "a" + classNames.size() + "_" + fileName;
-                }
+    public Set<String> getFields() {
+        return fields;
+    }
 
-                classNames.add(fileName);
-
-                File obsJar = new File(obuscateDir, fileName);
-
-                inputLibraries.add(obsJar);
-                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-            }
-            //            configs.add();
-
-            awbTransform.setInputFiles(inputLibraries);
-            awbTransform.setInputDir(null);
-            awbTransform.getInputLibraries().clear();
-            appVariantOutputContext.getAwbTransformMap().put(name, awbTransform);
-        }
-        FileUtils.writeLines(outConfigFile, configs);
+    public void setFields(Set<String> fields) {
+        this.fields = fields;
     }
 }

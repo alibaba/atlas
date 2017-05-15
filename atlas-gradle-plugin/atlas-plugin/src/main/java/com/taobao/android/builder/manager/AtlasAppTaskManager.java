@@ -486,7 +486,16 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 List<BaseVariantOutputData> baseVariantOutputDataList = appVariantContext.getVariantOutputData();
                 for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
                     TransformManager.replaceTransformTask(appVariantContext, vod, ProGuardTransform.class,
-                                                          AtlasProguardTransform.class);
+                                                              AtlasProguardTransform.class);
+                }
+
+                try {
+                    hookFastMultiDex(appVariantContext);
+                } catch (Exception e) {
+                    throw new GradleException(e.getMessage(), e);
+                }
+
+                for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
                     if (atlasExtension.getTBuildConfig().isIncremental()) {
                         final VariantOutputScope variantOutputScope = vod.getScope();
                         InstantRunPatchingPolicy patchingPolicy = variantScope.getInstantRunBuildContext()
@@ -523,12 +532,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                         awoInstallTask.dependsOn(tasks, variantOutputScope.getVariantScope().getPackageApplicationTask()
                             .getName());
                     }
-                }
-
-                try {
-                    hookFastMultiDex(appVariantContext);
-                } catch (Exception e) {
-                    throw new GradleException(e.getMessage(), e);
                 }
 
             }
