@@ -696,6 +696,10 @@ public final class Framework {
         }
     }
 
+    public static String getCurProcessName(){
+        return RuntimeVariables.sCurrentProcessName;
+    }
+
     public static boolean isUpdated() {
         return bundleUpdated;
     }
