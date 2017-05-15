@@ -505,6 +505,8 @@ public class TPatchTask extends BaseTask {
                         .isTpatchWriteBuildInfo();
                     tPatchContext.diffBundleDex = tBuildType.getPatchConfig()
                         .isOnlyIncrementInAwb();
+                    tPatchContext.diffMainDex = tBuildType.getPatchConfig()
+                        .isOnlyIncrementInMain();
                     tPatchContext.appSignName = tBuildType.getPatchConfig().getAppSignName();
 
                     return tPatchContext;
@@ -541,6 +543,8 @@ public class TPatchTask extends BaseTask {
          * 判断是否对bundle的dex文件进行diff操作
          */
         public boolean diffBundleDex;
+
+        public boolean diffMainDex;
 
         //    @Parameter(property = "android.patch.mainBundleName", defaultValue = "libcom_taobao_maindex")
         public String mainBundleName;

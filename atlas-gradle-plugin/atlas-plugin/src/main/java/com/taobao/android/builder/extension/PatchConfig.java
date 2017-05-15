@@ -252,6 +252,8 @@ public class PatchConfig {
 
     private Boolean devlopMode = false;
 
+    private boolean onlyIncrementInMain = true;
+
     private boolean onlyIncrementInAwb = true;
 
     private boolean containMainBundleRes = true;
@@ -296,6 +298,14 @@ public class PatchConfig {
 
     public void setCreateTPatch(boolean createTPatch) {
         this.createTPatch = createTPatch;
+    }
+
+    public boolean isOnlyIncrementInMain() {
+        return onlyIncrementInMain;
+    }
+
+    public void setOnlyIncrementInMain(boolean onlyIncrementInMain) {
+        this.onlyIncrementInMain = onlyIncrementInMain;
     }
 
     public boolean isOnlyIncrementInAwb() {
