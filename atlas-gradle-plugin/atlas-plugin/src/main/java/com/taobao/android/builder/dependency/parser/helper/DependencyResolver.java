@@ -429,7 +429,9 @@ public class DependencyResolver {
         if (configDependencies.getChecker().checkForExclusion(moduleVersion) || (apDependencies != null
                                                                                  && apDependencies
                                                                                      .hasSameResolvedDependency(
-                                                                                         moduleVersion))) {
+                                                                                         moduleVersion)
+                                                                                 && !(resolvedComponentResult
+            .getId() instanceof ProjectComponentIdentifier))) {
             return true;
         }
         return false;
