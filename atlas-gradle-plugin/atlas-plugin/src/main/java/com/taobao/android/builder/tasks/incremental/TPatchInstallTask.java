@@ -209,66 +209,52 @@
 
 package com.taobao.android.builder.tasks.incremental;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.Callable;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.signing.SigningException;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.awo.utils.AwoInstaller;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.VersionUtils;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.Optional;
+import org.dom4j.DocumentException;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.concurrent.Callable;
 
 /**
  * 把 patch 安装到手机上的任务
  */
-public class AwoInstallTask extends BaseTask {
+public class TPatchInstallTask extends BaseTask {
 
-    private File mainDexFile;
+    File updateInfoFile;
 
-    private String packageName;
+    File tPatchFile;
 
-    private Collection<File> awbApkFiles;
+    String packageName;
 
-    // ----- PRIVATE TASK API -----
-
-    @InputFiles
-    @Optional
-    public Collection<File> getAwbApkFiles() {
-        return awbApkFiles;
+    public File getUpdateInfoFile() {
+        return updateInfoFile;
     }
 
-    @TaskAction
-    public void doTask() throws IOException, SigningException {
-
-        AwoInstaller.installAwoSos(getBuilder(),
-                                   getMainDexFile(),
-                                   getAwbApkFiles(),
-                                   getPackageName(),
-                                   getLogger());
+    public void setUpdateInfoFile(File updateInfoFile) {
+        this.updateInfoFile = updateInfoFile;
     }
 
-    @InputFile
-    public File getMainDexFile() {
-        return mainDexFile;
+    public File getTPatchFile() {
+        return tPatchFile;
     }
 
-    public void setMainDexFile(File maindexFile) {
-        this.mainDexFile = maindexFile;
+    public void setTPatchFile(File tPatchFile) {
+        this.tPatchFile = tPatchFile;
     }
 
-    @Input
     public String getPackageName() {
         return packageName;
     }
@@ -276,8 +262,15 @@ public class AwoInstallTask extends BaseTask {
     public void setPackageName(String packageName) {
         this.packageName = packageName;
     }
+    // ----- PRIVATE TASK API -----
 
-    public static class ConfigAction extends MtlBaseTaskAction<AwoInstallTask> {
+    @TaskAction
+    public void doTask() throws IOException, SigningException {
+
+        AwoInstaller.installTPatch(getBuilder(), getTPatchFile(), getUpdateInfoFile(), getPackageName(), getLogger());
+    }
+
+    public static class ConfigAction extends MtlBaseTaskAction<TPatchInstallTask> {
 
         private final AppVariantContext appVariantContext;
 
@@ -291,23 +284,20 @@ public class AwoInstallTask extends BaseTask {
 
         @Override
         public String getName() {
-            return appVariantContext.getScope().getTaskName("awoInstall");
+            return appVariantContext.getScope().getTaskName("tPatchInstall");
         }
 
         @Override
-        public Class<AwoInstallTask> getType() {
-            return AwoInstallTask.class;
+        public Class<TPatchInstallTask> getType() {
+            return TPatchInstallTask.class;
         }
 
         @Override
-        public void execute(AwoInstallTask task) {
+        public void execute(TPatchInstallTask task) {
 
             task.setVariantName(appVariantContext.getVariantName());
 
-            String buildType = appVariantContext.getScope()
-                    .getVariantConfiguration()
-                    .getBuildType()
-                    .getName();
+            String buildType = appVariantContext.getScope().getVariantConfiguration().getBuildType().getName();
             if (!atlasExtension.getBundleConfig().isAwoDynDeploy()) {
                 task.setEnabled(false);
                 return;
@@ -318,21 +308,39 @@ public class AwoInstallTask extends BaseTask {
                 @Override
                 public String call() {
                     //TODO  from config
-                    String packageName = ManifestFileUtils.getPackage(new File(appVariantContext.apContext
-                                                                                       .getApExploredFolder(),
-                                                                               "AndroidManifest.xml"));
+                    String packageName = ManifestFileUtils.getPackage(
+                        new File(appVariantContext.apContext.getApExploredFolder(), "AndroidManifest.xml"));
                     return packageName;
                 }
             });
+            final ApkVariantOutputData variantOutputData = (ApkVariantOutputData)scope.getVariantOutputData();
+            AppVariantOutputContext appVariantOutputContext = getAppVariantOutputContext();
 
-            ConventionMappingHelper.map(task, "mainDexFile", new Callable<File>() {
+            ConventionMappingHelper.map(task, "TPatchFile", new Callable<File>() {
+
+                @Override
+                public File call() throws IOException, DocumentException {
+                    String versionName = VersionUtils.getVersionName((ApkVariantOutputData)baseVariantOutputData,
+                                                                     variantOutputData.manifestProcessorTask
+                                                                         .getManifestOutputFile());
+                    return new File(appVariantOutputContext.getTPatchFolder(),
+                                    "patch-" + versionName + "@" + getBaseVersionName() + ".tpatch");
+                }
+
+                public String getBaseVersionName() throws IOException, DocumentException {
+                    File apManifestFile = new File(appVariantContext.apContext.getApExploredFolder(),
+                                                   "AndroidManifest.xml");
+                    String baseVersionName = ManifestFileUtils.getVersionName(apManifestFile);
+                    return baseVersionName;
+                }
+            });
+            ConventionMappingHelper.map(task, "updateInfoFile", new Callable<File>() {
 
                 @Override
                 public File call() {
-                    return getAppVariantOutputContext().getDiffApk();
+                    return new File(appVariantOutputContext.getTPatchFolder(), "update.json");
                 }
             });
-            ConventionMappingHelper.map(task, "awbApkFiles", appVariantContext::getAwbApkFiles);
         }
     }
 }
