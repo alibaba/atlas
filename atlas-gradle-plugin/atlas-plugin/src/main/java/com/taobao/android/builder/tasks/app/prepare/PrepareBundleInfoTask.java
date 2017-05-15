@@ -211,10 +211,12 @@ package com.taobao.android.builder.tasks.app.prepare;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -225,6 +227,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.bundleinfo.BundleInfoUtils;
+import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.io.FileUtils;
 import org.dom4j.DocumentException;
 import org.gradle.api.tasks.TaskAction;
@@ -256,12 +259,24 @@ public class PrepareBundleInfoTask extends BaseTask {
         FileUtils.writeLines(outputFile, bundleLists);
 
         appVariantContext.bundleListCfg = outputFile;
+        //设置bundle依赖关系
+
+        List<BundleInfo> bundleInfos = new ArrayList<>();
+        AtlasBuildContext.awbBundleMap.values().stream().forEach(new Consumer<AwbBundle>() {
+            @Override
+            public void accept(AwbBundle awbBundle) {
+                bundleInfos.add(awbBundle.bundleInfo);
+            }
+        });
+        //System.out.println(JSON.toJSONString(bundleInfos, true));
+        //System.out.println(">>>");
+
     }
 
     private Map<String, AwbBundle> collectBundleInfo(AppVariantOutputContext appVariantOutputContext) {
 
         List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
-                appVariantOutputContext.getVariantData().getName()).getAwbBundles();
+            appVariantOutputContext.getVariantData().getName()).getAwbBundles();
 
         Map<String, AwbBundle> map = new HashMap<String, AwbBundle>();
 
@@ -269,7 +284,7 @@ public class PrepareBundleInfoTask extends BaseTask {
 
             try {
                 map.put(awbBundle.getAwbSoName(), awbBundle);
-            }catch (Throwable e){
+            } catch (Throwable e) {
                 getProject().getLogger().error(awbBundle.getAndroidLibrary().toString(), e);
             }
         }

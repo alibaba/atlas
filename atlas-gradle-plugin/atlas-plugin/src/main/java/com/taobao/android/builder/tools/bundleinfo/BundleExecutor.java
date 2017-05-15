@@ -207,136 +207,155 @@
  *
  */
 
-package proguard;
+package com.taobao.android.builder.tools.bundleinfo;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
 
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.tools.ReflectUtils;
-import com.taobao.android.builder.tools.proguard.ClassRefPrinter;
-import org.apache.commons.io.FileUtils;
-import org.junit.Test;
-import proguard.classfile.ClassPool;
+import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import org.apache.commons.lang.StringUtils;
+import org.gradle.api.GradleException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Created by wuzhong on 2017/4/18.
+ * Created by wuzhong on 2017/5/15.
  */
-public class ProguardTest {
+public class BundleExecutor {
 
-    @Test
-    public void test() throws Exception {
+    private static Logger logger = LoggerFactory.getLogger(BundleExecutor.class);
 
-        //File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest.cfg").getFile());
+    public static void execute(List<BundleInfo> bundleInfos, BundleItemRunner bundleItemRunner) throws IOException, InterruptedException {
 
-        File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/build/outputs/proguard.cfg");
-        Configuration configuration = new Configuration();
+        Map<String, BundleInfo> bundleInfoMap = new HashMap<>();
+        bundleInfos.forEach(new Consumer<BundleInfo>() {
+            @Override
+            public void accept(BundleInfo bundleInfo) {
+                bundleInfoMap.put(bundleInfo.getPkgName(), bundleInfo);
+            }
+        });
 
-        // Parse the options specified in the command line arguments.
-        ConfigurationParser parser = new ConfigurationParser(file,
-                                                             System.getProperties());
-        try {
-            parser.parse(configuration);
-        } finally {
-            parser.close();
-        }
+        Map<String, BundleItem> bundleItemMap = getBundleItemMap(bundleInfoMap);
 
-        // Execute ProGuard with these options.
-        ProGuard proGuard = new ProGuard(configuration);
-        proGuard.execute();
+        handleCircleDependency(bundleItemMap);
 
-        ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
+        int size = bundleInfoMap.size();
 
-        ClassRefPrinter classRefPrinter = new ClassRefPrinter(Sets.newHashSet("com/taobao/wz/Util"));
-        classPool.classesAccept(classRefPrinter);
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("bundleGraph", logger, 0);
 
-        //for (String str : classRefPrinter.getRefClazzMap()){
-        //    System.out.println(str);
-        //}
+        int index = 1;
+        while (index <= size) {
 
-    }
+            List<String> keys = new ArrayList<>();
+            List<Runnable> runnables = new ArrayList<>();
 
-    @Test
-    public void test2() throws IOException, ParseException {
+            for (String key : bundleItemMap.keySet()) {
 
-        File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main.cfg").getFile());
+                //System.out.println("test" + key);
+                BundleItem bundleItem = bundleItemMap.get(key);
 
-        Configuration configuration = new Configuration();
+                if (bundleItem.canResolve()) {
 
-        // Parse the options specified in the command line arguments.
-        ConfigurationParser parser = new ConfigurationParser(file,
-                                                             System.getProperties());
-        try {
-            parser.parse(configuration);
-        } finally {
-            parser.close();
-        }
+                    logger.info("resolve bundle  >>>> " + index++ + bundleItem.bundleInfo.getPkgName());
+                    //bundleItem.resolve();
+                    keys.add(key);
 
-        ConfigurationParser parser2 = new ConfigurationParser(new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main2.cfg").getFile()),
-                                                             System.getProperties());
-        try {
-            parser2.parse(configuration);
-        } finally {
-            parser2.close();
-        }
+                    runnables.add(new Runnable() {
+                        @Override
+                        public void run() {
+                            bundleItemRunner.execute(bundleItem);
+                        }
+                    });
 
-        // Execute ProGuard with these options.
-        new ProGuard(configuration).execute();
-
-    }
-
-
-
-    @Test
-    public void testConfigLoad() throws IOException, ParseException {
-
-        String dir = "/Users/wuzhong/workspace/taobao_android/MainBuilder/build/intermediates/bundle_proguard/release";
-
-        File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/proguard.cfg");
-        List<File> files = FileUtils.listFiles(new File(dir), new String[]{"cfg"}, true).parallelStream().filter(
-            new Predicate<File>() {
-                @Override
-                public boolean test(File file) {
-                    return file.getName().equals("keep.cfg");
                 }
-            }).collect(Collectors.toList());
+            }
 
-        files.add(0,file);
-        System.out.println(1111);
+            executorServicesHelper.execute(runnables);
 
+            if (keys.isEmpty()) {
+                break;
+            }
 
-
-        Configuration configuration = new Configuration();
-
-
-
-        for (File f : files) {
-
-            System.err.println(">>>> " + f.getAbsolutePath());
-
-            ConfigurationParser parser = new ConfigurationParser(f,
-                                                                 System.getProperties());
-            try {
-                parser.parse(configuration);
-            } finally {
-                parser.close();
+            for (String key : keys) {
+                bundleItemMap.get(key).resolve();
+                bundleItemMap.remove(key);
             }
         }
 
-        //ConfigurationParser parser2 = new ConfigurationParser(new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main2.cfg").getFile()),
-        //                                                      System.getProperties());
-        //try {
-        //    parser2.parse(configuration);
-        //} finally {
-        //    parser2.close();
-        //}
-        //
-        //// Execute ProGuard with these options.
-        //new ProGuard(configuration).execute();
+        if (index != size){
+            throw new GradleException("bundleGraph is some thing wrong");
+        }
 
     }
 
+    private static Map<String, BundleItem> getBundleItemMap(Map<String, BundleInfo> bundleInfoMap) {
+        Map<String, BundleItem> bundleItemMap = new HashMap<>();
+        for (BundleInfo bundleInfo : bundleInfoMap.values()) {
+
+            BundleItem bundleItem = bundleItemMap.get(bundleInfo.getPkgName());
+
+            if (null == bundleItem) {
+                bundleItem = new BundleItem();
+                bundleItem.bundleInfo = bundleInfo;
+                bundleItemMap.put(bundleInfo.getPkgName(), bundleItem);
+            }
+
+            //计算依赖
+            for (String dependency : bundleInfo.getDependency()) {
+                if (StringUtils.isNotEmpty(dependency)) {
+                    BundleItem child = bundleItemMap.get(dependency);
+                    if (null == child) {
+                        child = new BundleItem();
+                        child.bundleInfo = bundleInfoMap.get(dependency);
+                        bundleItemMap.put(dependency, child);
+                    }
+
+                    bundleItem.children.add(child);
+                    child.parents.add(bundleItem);
+                }
+            }
+
+        }
+        return bundleItemMap;
+    }
+
+    private static void handleCircleDependency(Map<String, BundleItem> bundleItemMap) {
+        Map<String, Set<BundleItem>> circleMap = new HashMap<>();
+        for (BundleItem bundleItem : bundleItemMap.values()) {
+            Set<BundleItem> bundleItems = new HashSet<>();
+            if (bundleItem.isLoop(bundleItem, new HashSet<>())) {
+                bundleItem.getCircles(bundleItems, bundleItem);
+                List<String> list = new ArrayList<>();
+                for (BundleItem b : bundleItems) {
+                    list.add(b.bundleInfo.getPkgName());
+                }
+                Collections.sort(list);
+                String key = StringUtils.join(list.toArray());
+                circleMap.put(key, bundleItems);
+            }
+        }
+
+        for (Set<BundleItem> sets : circleMap.values()) {
+            int i = 0;
+            BundleItem main = null;
+            for (BundleItem bundleItem : sets) {
+                if (i++ == 0) {
+                    main = bundleItem;
+                } else {
+                    bundleItemMap.remove(bundleItem.bundleInfo.getPkgName());
+                    main.addBundleItem(bundleItem);
+                }
+            }
+        }
+    }
+
 }
+
