@@ -267,6 +267,7 @@ import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
+import com.taobao.android.builder.tasks.incremental.AwoInstallTask;
 import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
@@ -517,6 +518,12 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                             packageAwbsTask.setEnabled(false);
                             packageAwbsTask.dependsOn(packageAwb.get(tasks));
                         }
+                        AndroidTask<AwoInstallTask> awoInstallTask = androidTasks.create(tasks,
+                                                                                         new AwoInstallTask
+                                                                                             .ConfigAction(
+                                                                                             appVariantContext, vod));
+                        awoInstallTask.dependsOn(tasks, variantOutputScope.getVariantScope().getPackageApplicationTask()
+                            .getName());
                     }
                 }
 
