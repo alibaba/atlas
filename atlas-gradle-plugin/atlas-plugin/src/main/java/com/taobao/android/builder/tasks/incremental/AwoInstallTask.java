@@ -215,6 +215,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
@@ -303,6 +304,7 @@ public class AwoInstallTask extends BaseTask {
 
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             task.setVariantName(appVariantContext.getVariantName());
+            task.setGroup(TaskManager.INSTALL_GROUP);
 
             String buildType = appVariantContext.getScope().getVariantConfiguration().getBuildType().getName();
             if (!atlasExtension.getBundleConfig().isAwoDynDeploy()) {
