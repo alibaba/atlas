@@ -215,6 +215,7 @@ import java.util.Set;
 
 import com.taobao.android.builder.tools.proguard.dto.RefClazz;
 import org.jetbrains.annotations.NotNull;
+import proguard.classfile.ClassPool;
 import proguard.classfile.Clazz;
 import proguard.classfile.LibraryClass;
 import proguard.classfile.ProgramClass;
@@ -244,28 +245,20 @@ public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor {
 
     private Set<String> defaultClasses;
 
-    public LibClassRefVisitor(Set<String> defaultClasses) {
+    private ClassPool self;
+
+    public LibClassRefVisitor(Set<String> defaultClasses, ClassPool self) {
         this.defaultClasses = defaultClasses;
+        this.self = self;
     }
 
     @Override
     public void visitProgramClass(ProgramClass programClass) {
 
-        String superName = programClass.getSuperName();
-
-        if (isNotRefClazz(superName)) {
-            return;
-        }
-        RefClazz refClazz = getRefClazz(superName);
-        refClazz.setKeepAll(true);
+        addSuperClass(programClass);
 
         for (int i = 0; i < programClass.getInterfaceCount(); i++) {
-            String interfaceClazz = programClass.getInterfaceName(i);
-            if (isNotRefClazz(interfaceClazz)) {
-                return;
-            }
-            RefClazz refClazz2 = getRefClazz(interfaceClazz);
-            refClazz2.setKeepAll(true);
+            addInterface(programClass, i);
         }
 
         programClass.interfaceConstantsAccept(this);
@@ -273,13 +266,40 @@ public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor {
         programClass.constantPoolEntriesAccept(this);
     }
 
-    private boolean isNotRefClazz(String superName) {
-        if (defaultClasses.contains(superName)){
+    private void addInterface(ProgramClass programClass, int i) {
+        String interfaceClazz = programClass.getInterfaceName(i);
+        if (isNotRefClazz(interfaceClazz)) {
+            return;
+        }
+        RefClazz refClazz2 = getRefClazz(interfaceClazz);
+        refClazz2.setKeepAll(true);
+    }
+
+    private void addSuperClass(ProgramClass programClass) {
+        String superName = programClass.getSuperName();
+
+        if (isNotRefClazz(superName)) {
+            return;
+        }
+        RefClazz refClazz = getRefClazz(superName);
+        refClazz.setKeepAll(true);
+    }
+
+    private boolean isNotRefClazz(String className) {
+
+        System.out.println(className);
+
+        if (defaultClasses.contains(className)){
             return true;
         }
-        if (superName.contains("[")){
+        if (className.contains("[")){
             return true;
         }
+
+        if ( null != self.getClass(className)){
+            return true;
+        }
+
         return false;
     }
 
