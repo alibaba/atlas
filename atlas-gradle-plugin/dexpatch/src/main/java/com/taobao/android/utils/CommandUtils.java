@@ -1,5 +1,8 @@
 package com.taobao.android.utils;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 /**
  * @author lilong
  * @create 2017-05-12 下午2:16
@@ -11,11 +14,11 @@ public class CommandUtils {
         Runtime run = Runtime.getRuntime();
         try {
             Process process = run.exec(command);
-//            InputStream in = process.getInputStream();
-//            while (in.read() != 0) {
-////               System.out.println(line);
-//            }
-//            in.close();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line = null;
+            while ((line = bufferedReader.readLine())!= null){
+                System.out.println(line);
+            }
          process.waitFor();
           process.destroy();
         } catch (Exception e) {

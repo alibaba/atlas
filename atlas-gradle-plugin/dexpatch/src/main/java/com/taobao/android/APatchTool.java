@@ -310,6 +310,9 @@ public class APatchTool extends BasePatchTool {
         Collection<File> soFiles = FileUtils.listFiles(newApkUnzipFolder, new String[]{"so"}, true);
         if (splitDiffBundle!= null) {
             for (Pair<BundleBO, BundleBO> bundle : splitDiffBundle) {
+                if (bundle.getFirst() == null||bundle.getSecond() == null){
+                    continue;
+                }
                 List<File> aPatchFiles = processBundleFiles(bundle.getSecond().getBundleFile(), bundle.getFirst().getBundleFile(), patchTmpDir, adiffFile, adiffJsonFile);
                 if (null != aPatchFiles) {
                     for (File aPatchFile : aPatchFiles) {
