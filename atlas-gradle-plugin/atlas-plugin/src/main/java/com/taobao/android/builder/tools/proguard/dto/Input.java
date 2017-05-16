@@ -238,7 +238,7 @@ public class Input {
 
     private List<File> parentKeeps = new ArrayList<>();
 
-    private Set<String> mainDexClazzList = new HashSet<>();
+    private Set<String> defaultLibraryClasses = new HashSet<>();
 
     private Map<File, String> fileMd5s = new HashMap<>();
 
@@ -270,8 +270,8 @@ public class Input {
         return libraries;
     }
 
-    public Set<String> getMainDexClazzList() {
-        return mainDexClazzList;
+    public Set<String> getDefaultLibraryClasses() {
+        return defaultLibraryClasses;
     }
 
     public Map<File, String> getFileMd5s() {

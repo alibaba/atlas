@@ -216,6 +216,8 @@ public class RefClazz {
 
     private String clazzName;
 
+    private boolean keepAll;
+
     public RefClazz() {
     }
 
@@ -248,5 +250,13 @@ public class RefClazz {
 
     public void setFields(Set<String> fields) {
         this.fields = fields;
+    }
+
+    public boolean isKeepAll() {
+        return keepAll;
+    }
+
+    public void setKeepAll(boolean keepAll) {
+        this.keepAll = keepAll;
     }
 }

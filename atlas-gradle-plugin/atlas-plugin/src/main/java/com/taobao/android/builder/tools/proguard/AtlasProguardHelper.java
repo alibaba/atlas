@@ -241,6 +241,7 @@ import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tools.Profiler;
 import com.taobao.android.builder.tools.bundleinfo.BundleGraphExecutor;
 import com.taobao.android.builder.tools.bundleinfo.BundleItem;
 import com.taobao.android.builder.tools.bundleinfo.BundleItemRunner;
@@ -276,9 +277,13 @@ public class AtlasProguardHelper {
 
         List<File> libs = new ArrayList<>(
             appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true));
-        libs.addAll(mainDexJars);
 
-        Set<String> mainDexClazzSet = getMainDexClassList(mainDexJars);
+        //所有依赖的classes
+        Profiler.enter("getDefaultClasses");
+        Set<String> defaultLibClasses = getClassList(libs);
+        Profiler.release();
+
+        libs.addAll(mainDexJars);
 
         //获取基础的proguard配置
         List<File> defaultProguardFiles = new ArrayList<>(
@@ -314,7 +319,7 @@ public class AtlasProguardHelper {
 
                                                 input.getDefaultProguardFiles().addAll(defaultProguardFiles);
                                                 input.getLibraries().addAll(libs);
-                                                input.getMainDexClazzList().addAll(mainDexClazzSet);
+                                                input.getDefaultLibraryClasses().addAll(defaultLibClasses);
 
                                                 addLibraryProguardFiles(appVariantContext,input);
 
@@ -376,11 +381,6 @@ public class AtlasProguardHelper {
         List<AwbBundle> childBundles = new ArrayList<>();
         for (AwbTransform child : childTransforms) {
             input.getLibraries().addAll(child.getInputLibraries());
-            if (child.clazzSets.isEmpty()) {
-                child.clazzSets.addAll(
-                    getMainDexClassList(child.getInputLibraries()));
-            }
-            input.getMainDexClazzList().addAll(child.clazzSets);
             //join
             childBundles.add(child.getAwbBundle());
         }
@@ -411,7 +411,7 @@ public class AtlasProguardHelper {
         }
     }
 
-    public static Set<String> getMainDexClassList(List<File> files) throws IOException {
+    public static Set<String> getClassList(List<File> files) throws IOException {
         Set<String> sets = new HashSet<>();
         for (File file : files) {
 

@@ -215,9 +215,11 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import com.alibaba.fastjson.JSON;
+
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.tools.ReflectUtils;
-import com.taobao.android.builder.tools.proguard.ClassRefPrinter;
+import com.taobao.android.builder.tools.proguard.LibClassRefVisitor;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import proguard.classfile.ClassPool;
@@ -230,9 +232,9 @@ public class ProguardTest {
     @Test
     public void test() throws Exception {
 
-        //File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest.cfg").getFile());
+        File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest.cfg").getFile());
 
-        File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/build/outputs/proguard.cfg");
+        //File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/build/outputs/proguard.cfg");
         Configuration configuration = new Configuration();
 
         // Parse the options specified in the command line arguments.
@@ -250,12 +252,12 @@ public class ProguardTest {
 
         ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
 
-        ClassRefPrinter classRefPrinter = new ClassRefPrinter(Sets.newHashSet("com/taobao/wz/Util"));
+        //classPool.classesAccept(new MyClassPrinter());
+
+        LibClassRefVisitor classRefPrinter = new LibClassRefVisitor(Sets.newHashSet());
         classPool.classesAccept(classRefPrinter);
 
-        //for (String str : classRefPrinter.getRefClazzMap()){
-        //    System.out.println(str);
-        //}
+        System.out.println(JSON.toJSONString(classRefPrinter.getRefClazzMap(), true));
 
     }
 
