@@ -238,18 +238,38 @@ import proguard.classfile.visitor.ClassVisitor;
 /**
  * Created by wuzhong on 2017/5/12.
  */
-public class ClassRefPrinter implements ClassVisitor, ConstantVisitor {
+public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor {
 
     private Map<String, RefClazz> refClazzMap = new HashMap<>();
 
-    private Set<String> mainDexClazzList;
+    private Set<String> defaultClasses;
 
-    public ClassRefPrinter(Set<String> mainDexClazzList) {
-        this.mainDexClazzList = mainDexClazzList;
+    public LibClassRefVisitor(Set<String> defaultClasses) {
+        this.defaultClasses = defaultClasses;
     }
 
     @Override
     public void visitProgramClass(ProgramClass programClass) {
+
+        String superName = programClass.getSuperName();
+
+        if (defaultClasses.contains(superName)) {
+            return;
+        }
+        RefClazz refClazz = getRefClazz(superName);
+        refClazz.setKeepAll(true);
+
+        for (int i = 0; i < programClass.getInterfaceCount(); i++) {
+            String interfaceClazz = programClass.getInterfaceName(i);
+            if (defaultClasses.contains(interfaceClazz)) {
+                return;
+            }
+            RefClazz refClazz2 = getRefClazz(interfaceClazz);
+            refClazz2.setKeepAll(true);
+        }
+
+        programClass.interfaceConstantsAccept(this);
+
         programClass.constantPoolEntriesAccept(this);
     }
 
@@ -301,15 +321,13 @@ public class ClassRefPrinter implements ClassVisitor, ConstantVisitor {
     @Override
     public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
         String clazzName = clazz.getClassName(fieldrefConstant.u2classIndex);
-        if (mainDexClazzList.contains(clazzName)) {
-            RefClazz refClazz = getRefClazz(clazzName);
-            refClazz.getFields().add(clazz.getName(fieldrefConstant.u2nameAndTypeIndex));
+
+        if (defaultClasses.contains(clazzName)) {
+            return;
         }
 
-        //System.out.println(" FieldRef [" +
-        //                       clazz.getClassName(fieldrefConstant.u2classIndex) + "." +
-        //                       clazz.getName(fieldrefConstant.u2nameAndTypeIndex) + " " +
-        //                       clazz.getType(fieldrefConstant.u2nameAndTypeIndex) + "]");
+        RefClazz refClazz = getRefClazz(clazzName);
+        refClazz.getFields().add(clazz.getName(fieldrefConstant.u2nameAndTypeIndex));
     }
 
     @Override
@@ -322,10 +340,12 @@ public class ClassRefPrinter implements ClassVisitor, ConstantVisitor {
 
         String clazzName = clazz.getClassName(methodrefConstant.u2classIndex);
 
-        if (mainDexClazzList.contains(clazzName)) {
-            RefClazz refClazz = getRefClazz(clazzName);
-            refClazz.getMethods().add(clazz.getName(methodrefConstant.u2nameAndTypeIndex));
+        if (defaultClasses.contains(clazzName)) {
+            return;
         }
+
+        RefClazz refClazz = getRefClazz(clazzName);
+        refClazz.getMethods().add(clazz.getName(methodrefConstant.u2nameAndTypeIndex));
 
     }
 

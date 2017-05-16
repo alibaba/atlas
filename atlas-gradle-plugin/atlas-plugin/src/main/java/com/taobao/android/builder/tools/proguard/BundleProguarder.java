@@ -250,29 +250,31 @@ public class BundleProguarder {
 
     public static void execute(AppVariantContext appVariantContext, Input input) throws Exception {
 
-        Result result = loadProguardFromCache(appVariantContext, input);
+        String md5 = input.getMd5();
 
-        if (result.success) {
-            logger.warn("bundle proguard for " + input.getAwbBundles().get(0).getAwbBundle().getName() +
-                            " successfully load from  cache ");
-            return;
-        }
+        //Result result = loadProguardFromCache(appVariantContext, input);
+        //
+        //if (result.success) {
+        //    logger.warn("bundle proguard for " + input.getAwbBundles().get(0).getAwbBundle().getName() +
+        //                    " successfully load from  cache ");
+        //    return;
+        //}
 
         doProguard(appVariantContext, input);
 
         //cache
-        result.cacheDir.mkdirs();
-        for (AwbTransform awbTransform : input.getAwbBundles()) {
-            for (File file : awbTransform.getInputFiles()) {
-                if (file.exists()) {
-                    FileUtils.copyFileToDirectory(file, result.cacheDir);
-                } else {
-                    new File(result.cacheDir, file.getName()).createNewFile();
-                }
-            }
-        }
-        FileUtils.copyFileToDirectory(input.getAwbBundles().get(0).getAwbBundle().getKeepProguardFile(),
-                                      result.cacheDir);
+        //result.cacheDir.mkdirs();
+        //for (AwbTransform awbTransform : input.getAwbBundles()) {
+        //    for (File file : awbTransform.getInputFiles()) {
+        //        if (file.exists()) {
+        //            FileUtils.copyFileToDirectory(file, result.cacheDir);
+        //        } else {
+        //            new File(result.cacheDir, file.getName()).createNewFile();
+        //        }
+        //    }
+        //}
+        //FileUtils.copyFileToDirectory(input.getAwbBundles().get(0).getAwbBundle().getKeepProguardFile(),
+        //                              result.cacheDir);
 
     }
 
@@ -369,19 +371,18 @@ public class BundleProguarder {
         ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
         //ClassPool libraryClassPool = (ClassPool)ReflectUtils.getField(proGuard, "libraryClassPool");
 
-        ClassRefPrinter classRefPrinter = new ClassRefPrinter(input.getMainDexClazzList());
+        LibClassRefVisitor classRefPrinter = new LibClassRefVisitor(input.getDefaultLibraryClasses());
         classPool.classesAccept(classRefPrinter);
 
         //Fileoutputs
         for (AwbTransform awbTransform : input.getAwbBundles()) {
-            AwbBundle awbBundle = awbTransform.getAwbBundle();
 
+            AwbBundle awbBundle = awbTransform.getAwbBundle();
             File fileOut = new File(appVariantContext.getAwbProguardDir(awbBundle), "keep.json");
             fileOut.delete();
             fileOut.getParentFile().mkdirs();
             FileUtils.write(fileOut, JSON.toJSONString(classRefPrinter.getRefClazzMap()));
             awbBundle.setKeepProguardFile(fileOut);
-
             //File json = new File(appVariantContext.getAwbProguardDir(awbBundle), "mainDexClazzRef.json");
         }
 
@@ -433,8 +434,6 @@ public class BundleProguarder {
             for (File inputLibrary : awbTransform.getInputLibraries()) {
 
                 configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
-
-                String fileName = inputLibrary.getName();
                 File obsJar = new File(proguardDir, input.getFileMd5s().get(inputLibrary) + ".jar");
 
                 inputLibraries.add(obsJar);

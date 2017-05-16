@@ -242,6 +242,7 @@ public class RefClazzContainer {
             } else {
                 clazz.getFields().addAll(otherClazz.getFields());
                 clazz.getMethods().addAll(otherClazz.getMethods());
+                clazz.setKeepAll(clazz.isKeepAll() || otherClazz.isKeepAll());
             }
         }
 
@@ -261,17 +262,19 @@ public class RefClazzContainer {
         for (RefClazz refClazz : refClazzes) {
             lines.add("-keep class " + refClazz.getClazzName().replace("/", ".") + " {");
 
-            List<String> methods = new ArrayList<>(refClazz.getMethods());
-            List<String> fields = new ArrayList<>(refClazz.getFields());
-            Collections.sort(methods);
-            Collections.sort(fields);
-
-            for (String name : methods) {
-                lines.add(" *** " + name + "(...);");
-            }
-
-            for (String name : fields) {
-                lines.add(" *** " + name + ";");
+            if (refClazz.isKeepAll()) {
+                lines.add(" *;");
+            } else {
+                List<String> methods = new ArrayList<>(refClazz.getMethods());
+                List<String> fields = new ArrayList<>(refClazz.getFields());
+                Collections.sort(methods);
+                Collections.sort(fields);
+                for (String name : methods) {
+                    lines.add(" *** " + name + "(...);");
+                }
+                for (String name : fields) {
+                    lines.add(" *** " + name + ";");
+                }
             }
 
             lines.add("}");
