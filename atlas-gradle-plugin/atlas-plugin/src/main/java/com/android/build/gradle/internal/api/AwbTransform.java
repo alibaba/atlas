@@ -209,13 +209,15 @@
 
 package com.android.build.gradle.internal.api;
 
+import java.io.File;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-
-import java.io.File;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Awb的依赖文件的传递
@@ -230,6 +232,8 @@ public class AwbTransform {
     private Map<String, File> inputLibrariesMap = Maps.newHashMap();
     private File              javaResourcesInputDir;
     private File              inputDir;
+
+    public Set<String> clazzSets = new HashSet<>();
 
     public AwbTransform(AwbBundle awbBundle){
         this.awbBundle = awbBundle;

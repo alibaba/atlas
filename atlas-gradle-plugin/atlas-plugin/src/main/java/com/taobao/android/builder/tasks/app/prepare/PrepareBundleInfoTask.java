@@ -268,8 +268,6 @@ public class PrepareBundleInfoTask extends BaseTask {
                 bundleInfos.add(awbBundle.bundleInfo);
             }
         });
-        //System.out.println(JSON.toJSONString(bundleInfos, true));
-        //System.out.println(">>>");
 
     }
 

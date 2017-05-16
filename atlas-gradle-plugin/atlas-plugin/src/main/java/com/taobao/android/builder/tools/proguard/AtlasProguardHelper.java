@@ -214,7 +214,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -239,12 +241,16 @@ import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import com.taobao.android.builder.tools.bundleinfo.BundleGraphExecutor;
+import com.taobao.android.builder.tools.bundleinfo.BundleItem;
+import com.taobao.android.builder.tools.bundleinfo.BundleItemRunner;
+import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.proguard.dto.Input;
 import com.taobao.android.builder.tools.proguard.dto.RefClazz;
 import com.taobao.android.builder.tools.proguard.dto.RefClazzContainer;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -268,7 +274,8 @@ public class AtlasProguardHelper {
             return;
         }
 
-        List<File> libs = new ArrayList<>(appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true));
+        List<File> libs = new ArrayList<>(
+            appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true));
         libs.addAll(mainDexJars);
 
         Set<String> mainDexClazzSet = getMainDexClassList(mainDexJars);
@@ -282,34 +289,126 @@ public class AtlasProguardHelper {
         AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(vod);
 
         int parallelCount = appVariantContext.getAtlasExtension().getTBuildConfig().getProguardParallelCount();
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("proguard-bundles", LoggerFactory
-            .getLogger(AtlasProguardHelper.class), parallelCount);
-        List<Runnable> runnables = new ArrayList<>();
+        ////FIXME
+        //parallelCount = 1;
 
+        Map<BundleInfo, AwbTransform> bundleInfoAwbTransformMap = new HashMap<>();
         for (AwbTransform awbTransform : appVariantOutputContext.getAwbTransformMap().values()) {
-
-            runnables.add(new Runnable() {
-                @Override
-                public void run() {
-
-                    Input input = new Input();
-                    input.getAwbBundles().add(awbTransform);
-                    input.getDefaultProguardFiles().addAll(defaultProguardFiles);
-                    input.getLibraries().addAll(libs);
-                    input.setMainDexClazzList(mainDexClazzSet);
-                    try {
-                        BundleProguarder.execute(appVariantContext, input);
-                    } catch (Exception e) {
-                        throw new GradleException("proguard " + awbTransform.getAwbBundle().getName(), e);
-                    }
-
-                }
-            });
-
+            bundleInfoAwbTransformMap.put(awbTransform.getAwbBundle().bundleInfo, awbTransform);
         }
 
-        executorServicesHelper.execute(runnables);
+        BundleGraphExecutor.execute(new ArrayList<>(bundleInfoAwbTransformMap.keySet()), parallelCount,
+                                    new BundleItemRunner() {
+                                        @Override
+                                        public void execute(BundleItem bundleItem) {
 
+                                            try {
+
+                                                Input input = new Input();
+                                                AwbTransform awbTransform = bundleInfoAwbTransformMap.get(
+                                                    bundleItem.bundleInfo);
+                                                input.getAwbBundles().add(awbTransform);
+                                                for (BundleInfo sub : bundleItem.circles) {
+                                                    input.getAwbBundles().add(bundleInfoAwbTransformMap.get(sub));
+                                                }
+
+                                                input.getDefaultProguardFiles().addAll(defaultProguardFiles);
+                                                input.getLibraries().addAll(libs);
+                                                input.getMainDexClazzList().addAll(mainDexClazzSet);
+
+                                                addLibraryProguardFiles(appVariantContext,input);
+
+                                                addChildDependency(bundleItem, input, bundleInfoAwbTransformMap);
+
+                                                addParentKeeps(bundleItem, input, awbTransform,
+                                                               bundleInfoAwbTransformMap, appVariantContext);
+
+                                                BundleProguarder.execute(appVariantContext, input);
+
+                                            } catch (Exception e) {
+                                                throw new GradleException(
+                                                    "proguard " + bundleItem.bundleInfo.getPkgName(), e);
+                                            }
+                                        }
+                                    });
+
+    }
+
+    @NotNull
+    private static void addLibraryProguardFiles(AppVariantContext appVariantContext, Input input) {
+
+        if (!appVariantContext.getAtlasExtension().getTBuildConfig().isBundleProguardConfigEnabled()) {
+            return;
+        }
+
+        Set<String> blackList = appVariantContext.getAtlasExtension().getTBuildConfig()
+            .getBundleProguardConfigBlackList();
+        for (AwbTransform awbTransform : input.getAwbBundles()) {
+            AwbBundle awbBundle = awbTransform.getAwbBundle();
+            for (AndroidLibrary androidDependency : awbBundle.getAllLibraryAars()) {
+                File proguardRules = androidDependency.getProguardRules();
+                String groupName = androidDependency.getResolvedCoordinates().getGroupId() + ":" + androidDependency
+                    .getResolvedCoordinates().getArtifactId();
+                if (blackList.contains(groupName)) {
+                    sLogger.info("[proguard] skip proguard from " + androidDependency.getResolvedCoordinates());
+                    continue;
+                }
+                if (proguardRules.exists() && proguardRules.isFile()) {
+                    input.getLibraryProguardFiles().add(proguardRules);
+                    sLogger.warn("[proguard] load proguard from " + androidDependency.getResolvedCoordinates());
+                } else {
+                    sLogger.info("[proguard] missing proguard from " + androidDependency.getResolvedCoordinates());
+                }
+            }
+        }
+    }
+
+    private static void addChildDependency(BundleItem bundleItem, Input input,
+                                           Map<BundleInfo, AwbTransform> bundleInfoAwbTransformMap) throws IOException {
+        List<AwbTransform> childTransforms = new ArrayList<>();
+        for (BundleItem child : bundleItem.children) {
+            childTransforms.add(bundleInfoAwbTransformMap.get(child.bundleInfo));
+            for (BundleInfo sub : child.circles) {
+                childTransforms.add(bundleInfoAwbTransformMap.get(sub));
+            }
+        }
+
+        List<AwbBundle> childBundles = new ArrayList<>();
+        for (AwbTransform child : childTransforms) {
+            input.getLibraries().addAll(child.getInputLibraries());
+            if (child.clazzSets.isEmpty()) {
+                child.clazzSets.addAll(
+                    getMainDexClassList(child.getInputLibraries()));
+            }
+            input.getMainDexClazzList().addAll(child.clazzSets);
+            //join
+            childBundles.add(child.getAwbBundle());
+        }
+    }
+
+    private static void addParentKeeps(BundleItem bundleItem, Input input, AwbTransform awbTransform,
+                                       Map<BundleInfo, AwbTransform> bundleInfoAwbTransformMap,
+                                       AppVariantContext appVariantContext) throws IOException {
+        Set<AwbBundle> parentBundles = new HashSet<>();
+        for (BundleItem parent : bundleItem.parents) {
+            parentBundles.add(bundleInfoAwbTransformMap.get(parent.bundleInfo).getAwbBundle());
+            for (BundleInfo sub : parent.circles) {
+                parentBundles.add(bundleInfoAwbTransformMap.get(sub).getAwbBundle());
+            }
+        }
+        if (!parentBundles.isEmpty()) {
+            List<AwbBundle> bundles = new ArrayList<>(parentBundles);
+            Collections.sort(bundles, new Comparator<AwbBundle>() {
+                @Override
+                public int compare(AwbBundle o1, AwbBundle o2) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+            });
+            File keepFile = generateKeepFile(bundles,
+                                             appVariantContext.getAwbProguardDir(
+                                                 awbTransform.getAwbBundle()));
+            input.getParentKeeps().add(keepFile);
+        }
     }
 
     public static Set<String> getMainDexClassList(List<File> files) throws IOException {
@@ -335,31 +434,12 @@ public class AtlasProguardHelper {
     }
 
     public static void applyBundleKeepsV2(final AppVariantContext appVariantContext,
-                                        ProGuardTransform proGuardTransform) throws IOException {
+                                          ProGuardTransform proGuardTransform) throws IOException {
 
-        RefClazzContainer refClazzContainer = new RefClazzContainer();
-
-        GlobalScope globalScope = appVariantContext.getScope().getGlobalScope();
-        //增加awb的配置
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
             appVariantContext.getVariantConfiguration().getFullName());
-
-        for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
-            if (null != awbBundle.getKeepProguardFile() && awbBundle.getKeepProguardFile().exists()) {
-
-                String json = FileUtils.readFileToString(awbBundle.getKeepProguardFile());
-                Map<String,RefClazz> refClazzMap = JSON.parseObject(json, new TypeReference<Map<String,RefClazz>>(){});
-
-                refClazzContainer.addRefClazz(refClazzMap);
-
-            } else {
-                appVariantContext.getProject().getLogger().error(
-                    "missing " + awbBundle.getKeepProguardFile().getAbsolutePath());
-            }
-        }
-
-        File maindexkeep = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"maindexkeep.cfg");
-        FileUtils.writeLines(maindexkeep, refClazzContainer.convertToKeeplines());
+        File maindexkeep = generateKeepFile(dependencyTree.getAwbBundles(),
+                                            appVariantContext.getScope().getGlobalScope().getOutputsDir());
 
         proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
             @Override
@@ -368,6 +448,30 @@ public class AtlasProguardHelper {
             }
         });
 
+    }
+
+    @NotNull
+    private static File generateKeepFile(List<AwbBundle> awbBundles, File dir) throws IOException {
+
+        RefClazzContainer refClazzContainer = new RefClazzContainer();
+        for (AwbBundle awbBundle : awbBundles) {
+            if (null != awbBundle.getKeepProguardFile() && awbBundle.getKeepProguardFile().exists()) {
+
+                String json = FileUtils.readFileToString(awbBundle.getKeepProguardFile());
+                Map<String, RefClazz> refClazzMap = JSON.parseObject(json,
+                                                                     new TypeReference<Map<String, RefClazz>>() {});
+
+                refClazzContainer.addRefClazz(refClazzMap);
+
+            } else {
+                sLogger.error(
+                    "missing " + awbBundle.getKeepProguardFile().getAbsolutePath());
+            }
+        }
+
+        File maindexkeep = new File(dir, "maindexkeep.cfg");
+        FileUtils.writeLines(maindexkeep, refClazzContainer.convertToKeeplines());
+        return maindexkeep;
     }
 
     public static void applyBundleKeeps(final AppVariantContext appVariantContext,

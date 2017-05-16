@@ -219,6 +219,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import com.taobao.android.builder.tools.Profiler;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.apache.commons.lang.StringUtils;
@@ -229,11 +230,12 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by wuzhong on 2017/5/15.
  */
-public class BundleExecutor {
+public class BundleGraphExecutor {
 
-    private static Logger logger = LoggerFactory.getLogger(BundleExecutor.class);
+    private static Logger logger = LoggerFactory.getLogger(BundleGraphExecutor.class);
 
-    public static void execute(List<BundleInfo> bundleInfos, BundleItemRunner bundleItemRunner) throws IOException, InterruptedException {
+    public static void execute(List<BundleInfo> bundleInfos, int parableCount, BundleItemRunner bundleItemRunner)
+        throws IOException, InterruptedException {
 
         Map<String, BundleInfo> bundleInfoMap = new HashMap<>();
         bundleInfos.forEach(new Consumer<BundleInfo>() {
@@ -247,11 +249,12 @@ public class BundleExecutor {
 
         handleCircleDependency(bundleItemMap);
 
-        int size = bundleInfoMap.size();
+        int size = bundleItemMap.size();
 
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("bundleGraph", logger, 0);
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("bundleGraph", logger, parableCount);
 
-        int index = 1;
+        int index = 0;
+        int j = 0;
         while (index <= size) {
 
             List<String> keys = new ArrayList<>();
@@ -268,17 +271,22 @@ public class BundleExecutor {
                     //bundleItem.resolve();
                     keys.add(key);
 
+                    final String name = index + bundleItem.bundleInfo.getPkgName();
                     runnables.add(new Runnable() {
                         @Override
                         public void run() {
+                            logger.warn("start to do bundle proguard for " + name);
                             bundleItemRunner.execute(bundleItem);
+                            logger.warn("end do bundle proguard for " + name);
                         }
                     });
 
                 }
             }
 
+            Profiler.enter("execute step " + j++ + " runnables " + runnables.size());
             executorServicesHelper.execute(runnables);
+            Profiler.release();
 
             if (keys.isEmpty()) {
                 break;
@@ -290,7 +298,7 @@ public class BundleExecutor {
             }
         }
 
-        if (index != size){
+        if (index != size) {
             throw new GradleException("bundleGraph is some thing wrong");
         }
 

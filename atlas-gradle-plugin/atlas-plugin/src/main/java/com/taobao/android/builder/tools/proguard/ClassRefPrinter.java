@@ -300,7 +300,6 @@ public class ClassRefPrinter implements ClassVisitor, ConstantVisitor {
 
     @Override
     public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
-
         String clazzName = clazz.getClassName(fieldrefConstant.u2classIndex);
         if (mainDexClazzList.contains(clazzName)) {
             RefClazz refClazz = getRefClazz(clazzName);
@@ -322,8 +321,6 @@ public class ClassRefPrinter implements ClassVisitor, ConstantVisitor {
     public void visitMethodrefConstant(Clazz clazz, MethodrefConstant methodrefConstant) {
 
         String clazzName = clazz.getClassName(methodrefConstant.u2classIndex);
-
-        System.out.println(clazzName);
 
         if (mainDexClazzList.contains(clazzName)) {
             RefClazz refClazz = getRefClazz(clazzName);

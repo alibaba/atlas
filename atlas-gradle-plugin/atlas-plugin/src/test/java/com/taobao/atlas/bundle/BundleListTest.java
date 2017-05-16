@@ -219,7 +219,8 @@ import java.util.function.Consumer;
 
 import com.alibaba.fastjson.JSON;
 
-import com.taobao.android.builder.tools.bundleinfo.BundleExecutor;
+import com.taobao.android.builder.tools.Profiler;
+import com.taobao.android.builder.tools.bundleinfo.BundleGraphExecutor;
 import com.taobao.android.builder.tools.bundleinfo.BundleItem;
 import com.taobao.android.builder.tools.bundleinfo.BundleItemRunner;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
@@ -234,10 +235,16 @@ public class BundleListTest {
 
     @Test
     public void test() throws IOException, InterruptedException {
+
+        Profiler.start("start execute");
+
+        Profiler.enter("load json");
         File file = new File(ProguardTest.class.getClassLoader().getResource("bundleInfoList.json").getFile());
         String json = FileUtils.readFileToString(file);
         List<BundleInfo> jsonArray = JSON.parseArray(json, BundleInfo.class);
+        Profiler.release();
 
+        Profiler.enter("map");
         Map<String, BundleInfo> bundleInfoMap = new HashMap<>();
         jsonArray.forEach(new Consumer<BundleInfo>() {
             @Override
@@ -245,13 +252,19 @@ public class BundleListTest {
                 bundleInfoMap.put(bundleInfo.getPkgName(), bundleInfo);
             }
         });
+        Profiler.release();
 
-        BundleExecutor.execute(new ArrayList<>(bundleInfoMap.values()), new BundleItemRunner() {
+        Profiler.enter("execute");
+        BundleGraphExecutor.execute(new ArrayList<>(bundleInfoMap.values()), 0, new BundleItemRunner() {
             @Override
             public void execute(BundleItem bundleItem) {
                 System.out.println(bundleItem.bundleInfo.getPkgName());
             }
         });
+        Profiler.release();
+
+        Profiler.release();
+        System.out.println(Profiler.dump());
 
         //
         //
