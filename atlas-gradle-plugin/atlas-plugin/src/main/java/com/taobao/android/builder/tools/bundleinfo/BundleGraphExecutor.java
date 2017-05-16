@@ -267,7 +267,7 @@ public class BundleGraphExecutor {
 
                 if (bundleItem.canResolve()) {
 
-                    logger.info("resolve bundle  >>>> " + index++ + bundleItem.bundleInfo.getPkgName());
+                    index++;
                     //bundleItem.resolve();
                     keys.add(key);
 

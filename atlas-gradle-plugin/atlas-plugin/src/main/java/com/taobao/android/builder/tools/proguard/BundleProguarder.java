@@ -248,7 +248,7 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
-    public static final String CACHE_TYPE = "proguard-bundles-v1";
+    public static final String CACHE_TYPE = "proguard-bundles-v1.1";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
 
@@ -360,9 +360,7 @@ public class BundleProguarder {
             }
         }
 
-        for (AwbTransform awbTransform : input.getAwbBundles())
-
-        {
+        for (AwbTransform awbTransform : input.getAwbBundles()){
             awbTransform.setInputFiles(transformListMap.get(awbTransform));
             awbTransform.setInputDir(null);
             awbTransform.getInputLibraries().clear();
@@ -402,7 +400,7 @@ public class BundleProguarder {
         ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
         //ClassPool libraryClassPool = (ClassPool)ReflectUtils.getField(proGuard, "libraryClassPool");
 
-        LibClassRefVisitor classRefPrinter = new LibClassRefVisitor(input.getDefaultLibraryClasses());
+        LibClassRefVisitor classRefPrinter = new LibClassRefVisitor(input.getDefaultLibraryClasses(),classPool);
         classPool.classesAccept(classRefPrinter);
 
         //Fileoutputs
@@ -462,9 +460,12 @@ public class BundleProguarder {
         File inoutConfigs = new File(proguardDir, INOUT_CFG);
         List<String> configs = new ArrayList<>();
 
-        List<File> inputLibraries = Lists.newArrayList();
+
 
         for (AwbTransform awbTransform : input.getAwbBundles()) {
+
+            List<File> inputLibraries = Lists.newArrayList();
+
             for (File inputLibrary : awbTransform.getInputLibraries()) {
 
                 configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());

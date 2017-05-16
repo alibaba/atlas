@@ -252,9 +252,10 @@ public class ProguardTest {
 
         ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
 
-        //classPool.classesAccept(new MyClassPrinter());
+        classPool.classesAccept(new MyClassPrinter());
 
-        LibClassRefVisitor classRefPrinter = new LibClassRefVisitor(Sets.newHashSet());
+        LibClassRefVisitor classRefPrinter = new LibClassRefVisitor(
+            Sets.newHashSet("java/lang/Object", "java/lang/System", "java/io/PrintStream"), classPool);
         classPool.classesAccept(classRefPrinter);
 
         System.out.println(JSON.toJSONString(classRefPrinter.getRefClazzMap(), true));
