@@ -228,6 +228,7 @@ import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.extension.TBuildConfig;
+import com.taobao.android.builder.tools.Profiler;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.proguard.AtlasProguardHelper;
 import com.taobao.android.builder.tools.proguard.KeepOnlyConfigurationParser;
@@ -312,17 +313,24 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
         try {
 
+            Profiler.start("start");
+
             List<File> mainJars = new ArrayList<>();
             for (TransformInput transformInput : invocation.getInputs()){
                 for (JarInput jarInput : transformInput.getJarInputs()){
                     mainJars.add(jarInput.getFile());
                 }
             }
+
+            Profiler.enter("bundleproguard");
             //先做bundle的并发proguard，cache优先
             AtlasProguardHelper.doBundleProguard(appVariantContext, mainJars);
+            Profiler.release();
 
             //apply bundle Inout
+            Profiler.enter("bundleKeep");
             AtlasProguardHelper.applyBundleKeepsV2(appVariantContext, this);
+            Profiler.release();
 
             //apply mapping TODO ，不混淆，没有效果的
             AtlasProguardHelper.applyMapping(appVariantContext, this);
@@ -347,7 +355,15 @@ public class AtlasProguardTransform extends ProGuardTransform {
             File proguardOutFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
             this.printconfiguration(proguardOutFile);
 
+            Profiler.enter("mainproguard");
             super.transform(invocation);
+            Profiler.release();
+
+            Profiler.release();
+
+            if (appVariantContext.getProject().getGradle().getStartParameter().isProfile()){
+                appVariantContext.getProject().getLogger().warn(Profiler.dump());
+            }
 
         } catch (Exception e) {
             throw new GradleException(e.getMessage(), e);

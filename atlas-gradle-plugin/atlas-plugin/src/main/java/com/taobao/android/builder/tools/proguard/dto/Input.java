@@ -211,12 +211,17 @@ package com.taobao.android.builder.tools.proguard.dto;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.android.build.gradle.internal.api.AwbTransform;
+import com.taobao.android.builder.tools.MD5Util;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by wuzhong on 2017/5/13.
@@ -225,13 +230,15 @@ public class Input {
 
     private List<AwbTransform> awbBundles = new ArrayList<>();
 
-    private List<File> defaultProguardFiles = new ArrayList<>();
+    private Set<File> defaultProguardFiles = new HashSet<>();
 
-    private List<File> libraries = new ArrayList<>();
+    private Set<File> libraryProguardFiles = new HashSet<>();
+
+    private Set<File> libraries = new HashSet<>();
 
     private List<File> parentKeeps = new ArrayList<>();
 
-    private Set<String> mainDexClazzList;
+    private Set<String> mainDexClazzList = new HashSet<>();
 
     private Map<File, String> fileMd5s = new HashMap<>();
 
@@ -243,11 +250,11 @@ public class Input {
         this.awbBundles = awbBundles;
     }
 
-    public List<File> getDefaultProguardFiles() {
+    public Set<File> getDefaultProguardFiles() {
         return defaultProguardFiles;
     }
 
-    public void setDefaultProguardFiles(List<File> defaultProguardFiles) {
+    public void setDefaultProguardFiles(Set<File> defaultProguardFiles) {
         this.defaultProguardFiles = defaultProguardFiles;
     }
 
@@ -259,24 +266,60 @@ public class Input {
         this.parentKeeps = parentKeeps;
     }
 
-    public List<File> getLibraries() {
+    public Set<File> getLibraries() {
         return libraries;
-    }
-
-    public void setLibraries(List<File> libraries) {
-        this.libraries = libraries;
     }
 
     public Set<String> getMainDexClazzList() {
         return mainDexClazzList;
     }
 
-    public void setMainDexClazzList(Set<String> mainDexClazzList) {
-        this.mainDexClazzList = mainDexClazzList;
-    }
-
     public Map<File, String> getFileMd5s() {
         return fileMd5s;
+    }
+
+    public Set<File> getLibraryProguardFiles() {
+        return libraryProguardFiles;
+    }
+
+    String md5;
+
+    public String getMd5() throws Exception {
+        if (StringUtils.isNotEmpty(md5)) {
+            return md5;
+        }
+
+        List<File> files = new ArrayList<>();
+        files.addAll(getParentKeeps());
+        files.addAll(getDefaultProguardFiles());
+        files.addAll(getLibraryProguardFiles());
+        for (AwbTransform awbTransform : this.getAwbBundles()) {
+            for (File file : awbTransform.getInputLibraries()) {
+                files.add(file);
+            }
+            //configs.add();
+            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
+                files.add(awbTransform.getInputDir());
+            }
+        }
+
+        for (File file : files) {
+            if (file.isFile()) {
+                String md5 = MD5Util.getFileMD5(file);
+                fileMd5s.put(file, md5);
+            } else {
+                String md5 = MD5Util.getFileMd5(FileUtils.listFiles(file,
+                                                                    new String[] {"class"},
+                                                                    true));
+                fileMd5s.put(file, md5);
+            }
+        }
+
+        List<String> mds = new ArrayList<>(fileMd5s.values());
+        Collections.sort(mds);
+
+        md5 = MD5Util.getMD5(StringUtils.join(mds.toArray(new String[0])));
+        return md5;
     }
 
 }

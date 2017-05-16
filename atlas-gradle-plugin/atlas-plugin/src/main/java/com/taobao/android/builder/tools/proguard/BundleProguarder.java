@@ -212,27 +212,22 @@ package com.taobao.android.builder.tools.proguard;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.alibaba.fastjson.JSON;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AwbTransform;
-import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
 import com.taobao.android.builder.tools.proguard.dto.Input;
 import com.taobao.android.builder.tools.proguard.dto.Result;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -267,16 +262,17 @@ public class BundleProguarder {
 
         //cache
         result.cacheDir.mkdirs();
-        for (AwbTransform awbTransform : input.getAwbBundles()){
-            for (File file : awbTransform.getInputFiles()){
+        for (AwbTransform awbTransform : input.getAwbBundles()) {
+            for (File file : awbTransform.getInputFiles()) {
                 if (file.exists()) {
                     FileUtils.copyFileToDirectory(file, result.cacheDir);
-                }else {
+                } else {
                     new File(result.cacheDir, file.getName()).createNewFile();
                 }
             }
         }
-        FileUtils.copyFileToDirectory(input.getAwbBundles().get(0).getAwbBundle().getKeepProguardFile(),result.cacheDir);
+        FileUtils.copyFileToDirectory(input.getAwbBundles().get(0).getAwbBundle().getKeepProguardFile(),
+                                      result.cacheDir);
 
     }
 
@@ -284,38 +280,7 @@ public class BundleProguarder {
 
         Result result = new Result();
 
-        List<File> proguardFiles = new ArrayList<>();
-        proguardFiles.addAll(input.getDefaultProguardFiles());
-        proguardFiles.addAll(input.getParentKeeps());
-        proguardFiles.addAll(getLibraryProguardFiles(appVariantContext, input));
-        Collections.sort(proguardFiles);
-
-        Map<File, String> fileMd5s = input.getFileMd5s();
-        Map<AwbTransform, List<String>> awbMd5Map = new HashMap<>();
-        for (AwbTransform awbTransform : input.getAwbBundles()) {
-            List<String> md5List = new ArrayList<>();
-            for (File file : awbTransform.getInputLibraries()) {
-                String md5 = MD5Util.getFileMD5(file);
-                fileMd5s.put(file, md5);
-                md5List.add(md5);
-            }
-
-            //configs.add();
-            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                String md5 = MD5Util.getFileMd5(FileUtils.listFiles(awbTransform.getInputDir(),
-                                                                    new String[] {"class"},
-                                                                    true));
-                fileMd5s.put(awbTransform.getInputDir(), md5);
-                md5List.add(md5);
-            }
-            awbMd5Map.put(awbTransform, md5List);
-        }
-
-        String proguardMd5 = MD5Util.getFileMd5(proguardFiles);
-        List<String> md5List = new ArrayList<>(fileMd5s.values());
-        md5List.add(proguardMd5);
-        Collections.sort(md5List);
-        String md5 = MD5Util.getMD5(StringUtils.join(md5List, ""));
+        String md5 = input.getMd5();
 
         result.key = md5;
 
@@ -338,15 +303,24 @@ public class BundleProguarder {
             FileUtils.deleteDirectory(cacheDir);
             return result;
         }
+
         Map<AwbTransform, List<File>> transformListMap = new HashMap<>();
         for (AwbTransform awbTransform : input.getAwbBundles()) {
             List<File> inputFiles = new ArrayList<>();
             transformListMap.put(awbTransform, inputFiles);
-            List<String> inputFilemd5s = awbMd5Map.get(awbTransform);
-            for (String fileMd5 : inputFilemd5s) {
-                File file = new File(cacheDir, fileMd5 + ".jar");
+
+            List<File> files = new ArrayList<>();
+            files.addAll(awbTransform.getInputLibraries());
+
+            //configs.add();
+            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
+                files.add(awbTransform.getInputDir());
+            }
+
+            for (File oldFile : files) {
+                File file = new File(cacheDir, input.getFileMd5s().get(oldFile) + ".jar");
                 if (file.exists()) {
-                    if(ZipUtils.isZipFile(file)){
+                    if (ZipUtils.isZipFile(file)) {
                         inputFiles.add(file);
                     }
                 } else {
@@ -358,7 +332,9 @@ public class BundleProguarder {
             }
         }
 
-        for (AwbTransform awbTransform : input.getAwbBundles()) {
+        for (AwbTransform awbTransform : input.getAwbBundles())
+
+        {
             awbTransform.setInputFiles(transformListMap.get(awbTransform));
             awbTransform.setInputDir(null);
             awbTransform.getInputLibraries().clear();
@@ -418,9 +394,7 @@ public class BundleProguarder {
 
         List<File> proguardFiles = new ArrayList<>();
 
-        for (AwbTransform awbTransform : input.getAwbBundles()) {
-            proguardFiles.add(printInOut(appVariantContext, awbTransform, input));
-        }
+        proguardFiles.add(printInOut(appVariantContext, input));
 
         proguardFiles.addAll(input.getDefaultProguardFiles());
         proguardFiles.addAll(input.getParentKeeps());
@@ -433,8 +407,7 @@ public class BundleProguarder {
             }
         }
 
-        List<File> libProguardFiles = getLibraryProguardFiles(appVariantContext, input);
-        for (File file : libProguardFiles) {
+        for (File file : input.getLibraryProguardFiles()) {
             KeepOnlyConfigurationParser parser = new KeepOnlyConfigurationParser(file, System.getProperties());
             try {
                 parser.parse(configuration);
@@ -445,42 +418,10 @@ public class BundleProguarder {
         return configuration;
     }
 
-    @NotNull
-    private static List<File> getLibraryProguardFiles(AppVariantContext appVariantContext, Input input) {
-
-        List<File> libProguardFiles = new ArrayList<>();
-
-        if (!appVariantContext.getAtlasExtension().getTBuildConfig().isBundleProguardConfigEnabled()) {
-            return libProguardFiles;
-        }
-
-        Set<String> blackList = appVariantContext.getAtlasExtension().getTBuildConfig()
-            .getBundleProguardConfigBlackList();
-        for (AwbTransform awbTransform : input.getAwbBundles()) {
-            AwbBundle awbBundle = awbTransform.getAwbBundle();
-            for (AndroidLibrary androidDependency : awbBundle.getAllLibraryAars()) {
-                File proguardRules = androidDependency.getProguardRules();
-                String groupName = androidDependency.getResolvedCoordinates().getGroupId() + ":" + androidDependency
-                    .getResolvedCoordinates().getArtifactId();
-                if (blackList.contains(groupName)) {
-                    logger.info("[proguard] skip proguard from " + androidDependency.getResolvedCoordinates());
-                    continue;
-                }
-                if (proguardRules.exists() && proguardRules.isFile()) {
-                    libProguardFiles.add(proguardRules);
-                    logger.warn("[proguard] load proguard from " + androidDependency.getResolvedCoordinates());
-                } else {
-                    logger.info("[proguard] missing proguard from " + androidDependency.getResolvedCoordinates());
-                }
-            }
-        }
-        return libProguardFiles;
-    }
-
-    private static File printInOut(AppVariantContext appVariantContext, AwbTransform awbTransform, Input input)
+    private static File printInOut(AppVariantContext appVariantContext, Input input)
         throws IOException {
 
-        File proguardDir = appVariantContext.getAwbProguardDir(awbTransform.getAwbBundle());
+        File proguardDir = appVariantContext.getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle());
         proguardDir.mkdirs();
 
         File inoutConfigs = new File(proguardDir, INOUT_CFG);
@@ -488,28 +429,30 @@ public class BundleProguarder {
 
         List<File> inputLibraries = Lists.newArrayList();
 
-        for (File inputLibrary : awbTransform.getInputLibraries()) {
+        for (AwbTransform awbTransform : input.getAwbBundles()) {
+            for (File inputLibrary : awbTransform.getInputLibraries()) {
 
-            configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
+                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
 
-            String fileName = inputLibrary.getName();
-            File obsJar = new File(proguardDir, input.getFileMd5s().get(inputLibrary) + ".jar");
+                String fileName = inputLibrary.getName();
+                File obsJar = new File(proguardDir, input.getFileMd5s().get(inputLibrary) + ".jar");
 
-            inputLibraries.add(obsJar);
-            configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+                inputLibraries.add(obsJar);
+                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+            }
+
+            //configs.add();
+            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
+                configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
+                File obsJar = new File(proguardDir, input.getFileMd5s().get(awbTransform.getInputDir()) + ".jar");
+                inputLibraries.add(obsJar);
+                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+            }
+
+            awbTransform.setInputFiles(inputLibraries);
+            awbTransform.setInputDir(null);
+            awbTransform.getInputLibraries().clear();
         }
-
-        //configs.add();
-        if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-            configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
-            File obsJar = new File(proguardDir, input.getFileMd5s().get(awbTransform.getInputDir()) + ".jar");
-            inputLibraries.add(obsJar);
-            configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-        }
-
-        awbTransform.setInputFiles(inputLibraries);
-        awbTransform.setInputDir(null);
-        awbTransform.getInputLibraries().clear();
 
         for (File library : input.getLibraries()) {
             configs.add("-libraryjars " + library.getAbsolutePath());

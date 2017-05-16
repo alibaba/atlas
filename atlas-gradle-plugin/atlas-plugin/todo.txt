@@ -1,3 +1,28 @@
 1. 多模块
 2. atlasPlugin
 3. jdk，builder， gradle 等版本的校验
+
+
+ "com.taobao.weex.devtools.inspector.network.NetworkEventReporter$InspectorHeaders" on path: DexPathList[[zip file "/data/app/com.taobao.taobao-1/base.apk
+
+                    E  PurchaseActivity  LoadingTime : 417 ms , onCreate : true, FirstOpen : true
+        BundleInstaller  E  com.taobao.taobao.alipay-->[com.taobao.dynamic, com.taobao.taobao.alipay]
+                         E  find valid bundle : /data/user/0/com.taobao.taobao/lib/libcom_taobao_taobao_alipay.so
+                         E  real install com.taobao.taobao.alipay
+  BundleArchiveRevision  E  /data/user/0/com.taobao.taobao/files/storage/com.taobao.taobao.alipay/version.1
+      BundleClassLoader  E  nativeLibPath : /data/user/0/com.taobao.taobao/files/storage/com.taobao.taobao.alipay/version.1/lib:/data/app/com.taobao.taobao-1/lib/arm:/system/li
+                            b:/vendor/lib:/data/user/0/com.taobao.taobao/files/storage/com.taobao.dynamic/version.1/lib
+              Framework  E  bundle archieve dexopt bundle /data/user/0/com.taobao.taobao/lib/libcom_taobao_taobao_alipay.so cost time = 1482 ms
+        BundleInstaller  E  notify finish [com.taobao.taobao.alipay]
+        BundleLifeCycle  E  start com.taobao.tao.TaoApplication
+                         E  start finishcom.taobao.tao.TaoApplication
+    InstrumentationHook  E  async startActivity
+        BundleLifeCycle  E  start com.taobao.cainiao.CainiaoApplication
+                         E  start finishcom.taobao.cainiao.CainiaoApplication
+       ifaa_fingerprint  E  java.lang.ClassNotFoundException: org.ifaa.android.manager.IFAAManagerFactory
+                         E      at java.lang.Class.classForName(Native Method)
+                         E      at java.lang.Class.forName(Class.java:400)
+                         E      at java.lang.Class.forName(Class.java:326)
+                         E      at com.alipay.security.mobile.alipayauthenticatorservice.fingerprint.manager.IFAAFingerprintManagerFactory.getIFAAManager(IFAAFingerprintManager
+                            Factory.java:31)
+
