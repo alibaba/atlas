@@ -225,16 +225,23 @@ public class FileLockUtils {
 
     public static boolean lock(File file, Runnable runnable) {
         try {
-            final RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rxw");
+
+            File lockFile = file;
+            if (lockFile.isDirectory()) {
+                lockFile = new File(lockFile, ".atlaslock");
+            }
+
+            final RandomAccessFile randomAccessFile = new RandomAccessFile(lockFile, "rw");
             final FileLock fileLock = randomAccessFile.getChannel().tryLock();
             if (fileLock != null) {
+                File finalLockFile = lockFile;
                 Runtime.getRuntime().addShutdownHook(new Thread() {
                     @Override
                     public void run() {
                         try {
                             fileLock.release();
                             randomAccessFile.close();
-                            file.delete();
+                            finalLockFile.delete();
                         } catch (Exception e) {
                             log.error("Unable to remove lock file: " + file.getAbsolutePath(), e);
                         }
@@ -243,10 +250,13 @@ public class FileLockUtils {
 
                 runnable.run();
 
+                lockFile.delete();
                 return true;
             }
         } catch (Exception e) {
             log.error("Unable to create and/or lock file: " + file.getAbsolutePath(), e);
+        }finally {
+
         }
         return false;
     }

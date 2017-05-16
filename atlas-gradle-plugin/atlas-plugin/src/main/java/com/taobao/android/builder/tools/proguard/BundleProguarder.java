@@ -224,10 +224,12 @@ import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
+import com.taobao.android.builder.tools.cache.FileLockUtils;
 import com.taobao.android.builder.tools.proguard.dto.Input;
 import com.taobao.android.builder.tools.proguard.dto.Result;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
+import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -246,35 +248,48 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
+    public static final String CACHE_TYPE = "proguard-bundles-v1";
+
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
 
     public static void execute(AppVariantContext appVariantContext, Input input) throws Exception {
 
         String md5 = input.getMd5();
 
-        //Result result = loadProguardFromCache(appVariantContext, input);
-        //
-        //if (result.success) {
-        //    logger.warn("bundle proguard for " + input.getAwbBundles().get(0).getAwbBundle().getName() +
-        //                    " successfully load from  cache ");
-        //    return;
-        //}
+        Result result = loadProguardFromCache(appVariantContext, input);
+
+        if (result.success) {
+            logger.warn("bundle proguard for " + input.getAwbBundles().get(0).getAwbBundle().getName() +
+                            " successfully load from  cache ");
+            return;
+        }
 
         doProguard(appVariantContext, input);
 
         //cache
-        //result.cacheDir.mkdirs();
-        //for (AwbTransform awbTransform : input.getAwbBundles()) {
-        //    for (File file : awbTransform.getInputFiles()) {
-        //        if (file.exists()) {
-        //            FileUtils.copyFileToDirectory(file, result.cacheDir);
-        //        } else {
-        //            new File(result.cacheDir, file.getName()).createNewFile();
-        //        }
-        //    }
-        //}
-        //FileUtils.copyFileToDirectory(input.getAwbBundles().get(0).getAwbBundle().getKeepProguardFile(),
-        //                              result.cacheDir);
+        result.cacheDir.mkdirs();
+        FileLockUtils.lock(result.cacheDir, new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    for (AwbTransform awbTransform : input.getAwbBundles()) {
+                        for (File file : awbTransform.getInputFiles()) {
+                            if (file.exists()) {
+                                FileUtils.copyFileToDirectory(file, result.cacheDir);
+                            } else {
+                                new File(result.cacheDir, file.getName()).createNewFile();
+                            }
+                        }
+                    }
+                    FileUtils.copyFileToDirectory(input.getAwbBundles().get(0).getAwbBundle().getKeepProguardFile(),
+                                                  result.cacheDir);
+
+                } catch (Exception e) {
+                    throw new GradleException(e.getMessage());
+                }
+            }
+        });
 
     }
 
@@ -291,7 +306,7 @@ public class BundleProguarder {
 
         //TODO 先简单实现以下
         SimpleFileCache simpleFileCache = new SimpleFileCache();
-        File cacheDir = simpleFileCache.getCacheFile(md5, "proguard-bundle");
+        File cacheDir = simpleFileCache.getCacheFile(md5, CACHE_TYPE);
         result.cacheDir = cacheDir;
         if (!cacheDir.exists()) {
             logger.warn("bundle proguard for " + name + " miss  cache ");
@@ -303,6 +318,17 @@ public class BundleProguarder {
         if (!keepJson.exists()) {
             logger.error("bundle proguard for " + name + " missing keep.json  ");
             FileUtils.deleteDirectory(cacheDir);
+            return result;
+        }
+
+        if (input.getAwbBundles().get(0).getAwbBundle().isMainBundle()) {
+            for (File file : cacheDir.listFiles()) {
+                if (file.getName().endsWith("jar") && ZipUtils.isZipFile(file)) {
+                    FileUtils.copyFileToDirectory(file, input.proguardOutputDir);
+                }
+            }
+
+            result.success = true;
             return result;
         }
 
@@ -352,12 +378,17 @@ public class BundleProguarder {
 
         Configuration configuration = parseConfiguration(appVariantContext, input);
 
-        configuration.dump = null;
-        configuration.printConfiguration = new File(
-            appVariantContext.getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle()), "proguard.cfg");
-        configuration.printSeeds = null;
-        configuration.printUsage = null;
-        configuration.printMapping = null;
+        configuration.dump = input.dump;
+        if (null == input.printConfiguration) {
+            configuration.printConfiguration = new File(
+                appVariantContext.getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle()), "proguard.cfg");
+        } else {
+            configuration.printConfiguration = input.printConfiguration;
+        }
+
+        configuration.printSeeds = input.printSeeds;
+        configuration.printUsage = input.printUsage;
+        configuration.printMapping = input.printMapping;
 
         // Execute ProGuard with these options.
         ProGuard proGuard = new ProGuard(configuration);
@@ -422,7 +453,10 @@ public class BundleProguarder {
     private static File printInOut(AppVariantContext appVariantContext, Input input)
         throws IOException {
 
-        File proguardDir = appVariantContext.getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle());
+        File proguardDir = input.proguardOutputDir;
+        if (null == proguardDir) {
+            proguardDir = appVariantContext.getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle());
+        }
         proguardDir.mkdirs();
 
         File inoutConfigs = new File(proguardDir, INOUT_CFG);

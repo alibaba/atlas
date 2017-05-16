@@ -207,163 +207,55 @@
  *
  */
 
-package com.taobao.android.builder.tools.bundleinfo;
+package com.taobao.atlas.cache;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
+import java.io.File;
 
-import com.taobao.android.builder.tools.Profiler;
-import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-import org.apache.commons.lang.StringUtils;
-import org.gradle.api.GradleException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.taobao.android.builder.tools.cache.FileLockUtils;
+import org.junit.Test;
 
 /**
- * Created by wuzhong on 2017/5/15.
+ * Created by wuzhong on 2017/5/16.
  */
-public class BundleGraphExecutor {
+public class FileLockTest {
 
-    private static Logger logger = LoggerFactory.getLogger(BundleGraphExecutor.class);
+    @Test
+    public void test(){
 
-    public static void execute(List<BundleInfo> bundleInfos, int parableCount, BundleItemRunner bundleItemRunner)
-        throws IOException, InterruptedException {
+        File dir = new File("build/test/lock");
+        System.out.println(dir.getAbsolutePath());
 
-        Map<String, BundleInfo> bundleInfoMap = new HashMap<>();
-        bundleInfos.forEach(new Consumer<BundleInfo>() {
+        dir.mkdirs();
+
+        FileLockUtils.lock(dir, new Runnable() {
             @Override
-            public void accept(BundleInfo bundleInfo) {
-                bundleInfoMap.put(bundleInfo.getPkgName(), bundleInfo);
+            public void run() {
+                System.out.println("1111");
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
             }
         });
 
-        Map<String, BundleItem> bundleItemMap = getBundleItemMap(bundleInfoMap);
+        FileLockUtils.lock(dir, new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("2222");
 
-        handleCircleDependency(bundleItemMap);
-
-        int size = bundleItemMap.size();
-
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("bundleGraph", logger, parableCount);
-
-        int index = 0;
-        int j = 0;
-        while (index <= size) {
-
-            List<String> keys = new ArrayList<>();
-            List<Runnable> runnables = new ArrayList<>();
-
-            for (String key : bundleItemMap.keySet()) {
-
-                //System.out.println("test" + key);
-                BundleItem bundleItem = bundleItemMap.get(key);
-
-                if (bundleItem.canResolve()) {
-
-                    logger.info("resolve bundle  >>>> " + index++ + bundleItem.bundleInfo.getPkgName());
-                    //bundleItem.resolve();
-                    keys.add(key);
-
-                    final String name = index + bundleItem.bundleInfo.getPkgName();
-                    runnables.add(new Runnable() {
-                        @Override
-                        public void run() {
-                            logger.warn("start to do bundle proguard for " + name);
-                            bundleItemRunner.execute(bundleItem);
-                            logger.warn("end do bundle proguard for " + name);
-                        }
-                    });
-
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
+
             }
+        });
 
-            Profiler.enter("execute stage " + j++ + " runnables " + runnables.size());
-            executorServicesHelper.execute(runnables);
-            Profiler.release();
 
-            if (keys.isEmpty()) {
-                break;
-            }
-
-            for (String key : keys) {
-                bundleItemMap.get(key).resolve();
-                bundleItemMap.remove(key);
-            }
-        }
-
-        if (index != size) {
-            throw new GradleException("bundleGraph is some thing wrong");
-        }
-
-    }
-
-    private static Map<String, BundleItem> getBundleItemMap(Map<String, BundleInfo> bundleInfoMap) {
-        Map<String, BundleItem> bundleItemMap = new HashMap<>();
-        for (BundleInfo bundleInfo : bundleInfoMap.values()) {
-
-            BundleItem bundleItem = bundleItemMap.get(bundleInfo.getPkgName());
-
-            if (null == bundleItem) {
-                bundleItem = new BundleItem();
-                bundleItem.bundleInfo = bundleInfo;
-                bundleItemMap.put(bundleInfo.getPkgName(), bundleItem);
-            }
-
-            //计算依赖
-            for (String dependency : bundleInfo.getDependency()) {
-                if (StringUtils.isNotEmpty(dependency)) {
-                    BundleItem child = bundleItemMap.get(dependency);
-                    if (null == child) {
-                        child = new BundleItem();
-                        child.bundleInfo = bundleInfoMap.get(dependency);
-                        bundleItemMap.put(dependency, child);
-                    }
-
-                    bundleItem.children.add(child);
-                    child.parents.add(bundleItem);
-                }
-            }
-
-        }
-        return bundleItemMap;
-    }
-
-    private static void handleCircleDependency(Map<String, BundleItem> bundleItemMap) {
-        Map<String, Set<BundleItem>> circleMap = new HashMap<>();
-        for (BundleItem bundleItem : bundleItemMap.values()) {
-            Set<BundleItem> bundleItems = new HashSet<>();
-            if (bundleItem.isLoop(bundleItem, new HashSet<>())) {
-                bundleItem.getCircles(bundleItems, bundleItem);
-                List<String> list = new ArrayList<>();
-                for (BundleItem b : bundleItems) {
-                    list.add(b.bundleInfo.getPkgName());
-                }
-                Collections.sort(list);
-                String key = StringUtils.join(list.toArray());
-                circleMap.put(key, bundleItems);
-            }
-        }
-
-        for (Set<BundleItem> sets : circleMap.values()) {
-            int i = 0;
-            BundleItem main = null;
-            for (BundleItem bundleItem : sets) {
-                if (i++ == 0) {
-                    main = bundleItem;
-                } else {
-                    bundleItemMap.remove(bundleItem.bundleInfo.getPkgName());
-                    main.addBundleItem(bundleItem);
-                }
-            }
-        }
     }
 
 }
-

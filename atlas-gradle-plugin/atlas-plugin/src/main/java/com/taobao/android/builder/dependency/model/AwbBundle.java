@@ -266,9 +266,9 @@ public class AwbBundle {
 
     public AwbBundle() {
         mainBundle = true;
+        this.name = "mainbundle";
     }
 
-    @TestOnly
     public AwbBundle(String name) {
         this.name = name;
     }

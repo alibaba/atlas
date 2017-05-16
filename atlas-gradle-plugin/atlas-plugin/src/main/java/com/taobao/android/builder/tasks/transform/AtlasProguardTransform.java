@@ -217,21 +217,27 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.BaseProguardAction;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.Profiler;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.proguard.AtlasProguardHelper;
+import com.taobao.android.builder.tools.proguard.BundleProguarder;
 import com.taobao.android.builder.tools.proguard.KeepOnlyConfigurationParser;
+import com.taobao.android.builder.tools.proguard.dto.Input;
 import org.gradle.api.GradleException;
 import proguard.Configuration;
 import proguard.ParseException;
@@ -264,7 +270,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
     @Override
     public void transform(TransformInvocation invocation) throws TransformException {
 
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()){
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()) {
             fastTransform(invocation);
             return;
         }
@@ -316,8 +322,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
             Profiler.start("start");
 
             List<File> mainJars = new ArrayList<>();
-            for (TransformInput transformInput : invocation.getInputs()){
-                for (JarInput jarInput : transformInput.getJarInputs()){
+            for (TransformInput transformInput : invocation.getInputs()) {
+                for (JarInput jarInput : transformInput.getJarInputs()) {
                     mainJars.add(jarInput.getFile());
                 }
             }
@@ -327,41 +333,13 @@ public class AtlasProguardTransform extends ProGuardTransform {
             AtlasProguardHelper.doBundleProguard(appVariantContext, mainJars);
             Profiler.release();
 
-            //apply bundle Inout
-            Profiler.enter("bundleKeep");
-            AtlasProguardHelper.applyBundleKeepsV2(appVariantContext, this);
-            Profiler.release();
-
-            //apply mapping TODO ，不混淆，没有效果的
-            AtlasProguardHelper.applyMapping(appVariantContext, this);
-
-            List oldConfigList = (List)ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
-                                                             "configurationFiles");
-
-            List configList = (List)ReflectUtils.getField(ProguardConfigurable.class, this, "configurationFiles");
-
-            configList.addAll(oldConfigList);
-
-            Configuration configuration = (Configuration)ReflectUtils.getField(BaseProguardAction.class,
-                                                                               oldTransform, "configuration");
-            if (null == this.configuration.keep) {
-                this.configuration.keep = new ArrayList();
-            }
-            if (null != configuration.keep) {
-                this.configuration.keep.addAll(configuration.keep);
-            }
-
-            //set output
-            File proguardOutFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
-            this.printconfiguration(proguardOutFile);
-
             Profiler.enter("mainproguard");
-            super.transform(invocation);
+            doMainBundleProguard(invocation);
             Profiler.release();
 
             Profiler.release();
 
-            if (appVariantContext.getProject().getGradle().getStartParameter().isProfile()){
+            if (appVariantContext.getProject().getGradle().getStartParameter().isProfile()) {
                 appVariantContext.getProject().getLogger().warn(Profiler.dump());
             }
 
@@ -370,6 +348,51 @@ public class AtlasProguardTransform extends ProGuardTransform {
         }
     }
 
+    private void doMainBundleProguard(TransformInvocation invocation) throws Exception {
+
+        //apply bundle Inout
+        Profiler.enter("bundleKeep");
+        File bundleKeep = AtlasProguardHelper.generateBundleKeepCfg(appVariantContext);
+        Profiler.release();
+
+
+        Input input = new Input();
+        AwbTransform awbTransform = new AwbTransform(new AwbBundle());
+        input.getAwbBundles().add(awbTransform);
+
+        //输入input
+        for (TransformInput transformInput : invocation.getInputs()) {
+            for (JarInput jarInput : transformInput.getJarInputs()) {
+                awbTransform.getInputLibraries().add(jarInput.getFile());
+            }
+            for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
+                awbTransform.getInputLibraries().add(directoryInput.getFile());
+            }
+        }
+
+        //输入 librarys
+        input.getLibraries().addAll(
+            appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true));
+
+        //默认proguard 配置
+        input.getDefaultProguardFiles().addAll(defaultProguardFiles);
+
+        //bundle keeps
+        input.getParentKeeps().add(bundleKeep);
+
+        File outFile = invocation.getOutputProvider().getContentLocation("main", getOutputTypes(), getScopes(),
+                                                                         Format.JAR);
+        outFile.delete();
+        input.proguardOutputDir = outFile.getParentFile();
+        input.printMapping = (File)ReflectUtils.getField(oldTransform, "printMapping");
+        input.dump = (File)ReflectUtils.getField(oldTransform, "dump");
+        input.printSeeds = (File)ReflectUtils.getField(oldTransform, "printSeeds");
+        input.printUsage = (File)ReflectUtils.getField(oldTransform, "printUsage");
+        input.printConfiguration = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
+
+        BundleProguarder.execute(appVariantContext, input);
+
+    }
 
     //TODO include bundles's configuration
     @Override
