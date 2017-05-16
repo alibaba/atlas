@@ -436,10 +436,7 @@ public class AtlasProguardHelper {
     public static void applyBundleKeepsV2(final AppVariantContext appVariantContext,
                                           ProGuardTransform proGuardTransform) throws IOException {
 
-        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-            appVariantContext.getVariantConfiguration().getFullName());
-        File maindexkeep = generateKeepFile(dependencyTree.getAwbBundles(),
-                                            appVariantContext.getScope().getGlobalScope().getOutputsDir());
+        File maindexkeep = generateBundleKeepCfg(appVariantContext);
 
         proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
             @Override
@@ -448,6 +445,14 @@ public class AtlasProguardHelper {
             }
         });
 
+    }
+
+    @NotNull
+    public static File generateBundleKeepCfg(AppVariantContext appVariantContext) throws IOException {
+        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+            appVariantContext.getVariantConfiguration().getFullName());
+        return generateKeepFile(dependencyTree.getAwbBundles(),
+                                            appVariantContext.getScope().getGlobalScope().getOutputsDir());
     }
 
     @NotNull

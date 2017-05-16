@@ -260,11 +260,11 @@ public class RefClazzContainer {
 
         List<String> lines = new ArrayList<>();
         for (RefClazz refClazz : refClazzes) {
-            lines.add("-keep class " + refClazz.getClazzName().replace("/", ".") + " {");
 
             if (refClazz.isKeepAll()) {
-                lines.add(" *;");
+                lines.add("-keep class " + refClazz.getClazzName().replace("/", ".") + " { *; }");
             } else {
+                lines.add("-keep class " + refClazz.getClazzName().replace("/", ".") + " {");
                 List<String> methods = new ArrayList<>(refClazz.getMethods());
                 List<String> fields = new ArrayList<>(refClazz.getFields());
                 Collections.sort(methods);
@@ -275,11 +275,10 @@ public class RefClazzContainer {
                 for (String name : fields) {
                     lines.add(" *** " + name + ";");
                 }
+                lines.add("}");
             }
-
-            lines.add("}");
         }
         return lines;
-    }
 
+    }
 }

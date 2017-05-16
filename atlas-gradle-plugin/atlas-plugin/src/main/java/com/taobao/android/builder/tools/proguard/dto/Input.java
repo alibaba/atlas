@@ -242,6 +242,14 @@ public class Input {
 
     private Map<File, String> fileMd5s = new HashMap<>();
 
+    public File dump;
+    public File printMapping;
+    public File printUsage;
+    public File printSeeds;
+    public File printConfiguration;
+
+    public File proguardOutputDir;
+
     public List<AwbTransform> getAwbBundles() {
         return awbBundles;
     }
@@ -318,7 +326,7 @@ public class Input {
         List<String> mds = new ArrayList<>(fileMd5s.values());
         Collections.sort(mds);
 
-        md5 = MD5Util.getMD5(StringUtils.join(mds.toArray(new String[0])));
+        md5 =  MD5Util.getMD5(StringUtils.join(mds.toArray(new String[0])));
         return md5;
     }
 

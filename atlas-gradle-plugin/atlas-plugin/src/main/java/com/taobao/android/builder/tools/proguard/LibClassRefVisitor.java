@@ -253,7 +253,7 @@ public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor {
 
         String superName = programClass.getSuperName();
 
-        if (defaultClasses.contains(superName)) {
+        if (isNotRefClazz(superName)) {
             return;
         }
         RefClazz refClazz = getRefClazz(superName);
@@ -261,7 +261,7 @@ public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor {
 
         for (int i = 0; i < programClass.getInterfaceCount(); i++) {
             String interfaceClazz = programClass.getInterfaceName(i);
-            if (defaultClasses.contains(interfaceClazz)) {
+            if (isNotRefClazz(interfaceClazz)) {
                 return;
             }
             RefClazz refClazz2 = getRefClazz(interfaceClazz);
@@ -271,6 +271,16 @@ public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor {
         programClass.interfaceConstantsAccept(this);
 
         programClass.constantPoolEntriesAccept(this);
+    }
+
+    private boolean isNotRefClazz(String superName) {
+        if (defaultClasses.contains(superName)){
+            return true;
+        }
+        if (superName.contains("[")){
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -322,7 +332,7 @@ public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor {
     public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
         String clazzName = clazz.getClassName(fieldrefConstant.u2classIndex);
 
-        if (defaultClasses.contains(clazzName)) {
+        if (isNotRefClazz(clazzName)) {
             return;
         }
 
@@ -340,7 +350,7 @@ public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor {
 
         String clazzName = clazz.getClassName(methodrefConstant.u2classIndex);
 
-        if (defaultClasses.contains(clazzName)) {
+        if (isNotRefClazz(clazzName)) {
             return;
         }
 
