@@ -255,7 +255,17 @@ public class AwoInstallTask extends BaseTask {
     @TaskAction
     public void doTask() throws IOException, SigningException {
 
-        AwoInstaller.installAwoSo(getBuilder(), getMainDexFile(), getAwbApkFiles(), getPackageName(), getLogger());
+        File mainDexFile = getMainDexFile();
+        Collection<File> awbApkFiles = getAwbApkFiles();
+        int size = awbApkFiles.size();
+        if (mainDexFile != null) {
+            size++;
+        }
+
+        if (size > 1) {
+            throw new IllegalStateException("Multi bundle is not supported yet.");
+        }
+        AwoInstaller.installAwoSo(getBuilder(), mainDexFile, awbApkFiles, getPackageName(), getLogger());
     }
 
     @InputFile
