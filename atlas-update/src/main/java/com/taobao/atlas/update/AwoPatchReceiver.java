@@ -266,6 +266,7 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                         });
                         return;
                     }
+                    tpatchFile = tpatchs[0];
                     File updateInfofile = new File(tpatchs[0].getParent(),tpatchs[0].getName().substring(0,tpatchs[0].getName().length()-7)+".json");
                     String jsonStr = getFromFile(updateInfofile.getAbsolutePath());
                     info = parseObject(jsonStr);
