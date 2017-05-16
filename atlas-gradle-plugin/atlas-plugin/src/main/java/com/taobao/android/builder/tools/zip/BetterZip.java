@@ -209,12 +209,11 @@
 
 package com.taobao.android.builder.tools.zip;
 
-import com.android.ide.common.process.CmdExecutor;
-
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.io.IOException;
+
+import com.android.ide.common.process.CmdExecutor;
+import org.apache.commons.io.FileUtils;
 
 /**
  * Created by wuzhong on 2017/2/15.
@@ -228,12 +227,7 @@ public class BetterZip {
         new File(destDir, path).delete();
 
         //unzip -j taobao-android-debug.apk  res/drawable/abc_wb_textfield_cdf.jpg -d .
-        boolean success = CmdExecutor.execute("",
-                                              "unzip",
-                                              "-j",
-                                              zipFile.getAbsolutePath(),
-                                              path,
-                                              "-d",
+        boolean success = CmdExecutor.execute("", "unzip", "-o", "-j", zipFile.getAbsolutePath(), path, "-d",
                                               destDir.getAbsolutePath());
 
         if (success) {
@@ -255,11 +249,7 @@ public class BetterZip {
         FileUtils.copyFile(file, new File(rootDir, path));
 
         //zip -r taobao-android-debug.apk zzzz
-        boolean success = CmdExecutor.execute(rootDir.getAbsolutePath(),
-                                              "zip",
-                                              "-r",
-                                              zipFile.getAbsolutePath(),
-                                              path);
+        boolean success = CmdExecutor.execute(rootDir.getAbsolutePath(), "zip", "-r", zipFile.getAbsolutePath(), path);
 
         rootDir.delete();
         if (success) {
@@ -281,11 +271,7 @@ public class BetterZip {
         }
 
         //zip -r taobao-android-debug.apk zzzz
-        boolean success = CmdExecutor.execute(folder.getAbsolutePath(),
-                                              "zip",
-                                              "-r",
-                                              dest.getAbsolutePath(),
-                                              ".");
+        boolean success = CmdExecutor.execute(folder.getAbsolutePath(), "zip", "-r", dest.getAbsolutePath(), ".");
 
         if (success) {
             return true;
@@ -310,10 +296,7 @@ public class BetterZip {
         }
 
         //zip -r taobao-android-debug.apk zzzz
-        boolean success = CmdExecutor.execute(dest.getAbsolutePath(),
-                                              "unzip",
-                                              zipFile.getAbsolutePath(),
-                                              "-d",
+        boolean success = CmdExecutor.execute(dest.getAbsolutePath(), "unzip", "-o", zipFile.getAbsolutePath(), "-d",
                                               dest.getAbsolutePath());
 
         if (success) {
