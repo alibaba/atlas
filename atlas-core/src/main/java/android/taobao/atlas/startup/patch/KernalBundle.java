@@ -234,7 +234,7 @@ public class KernalBundle{
     /**
      * the storage location.
      */
-    final File bundleDir;
+    File bundleDir;
 
     /**
      * the bundle archive file.
@@ -247,11 +247,23 @@ public class KernalBundle{
     public static KernalBundle kernalBundle = null;
 
     public static boolean checkloadKernalBundle(Application application,String currentProcessName) {
-        File storageDir = new File(KernalConstants.baseContext.getFilesDir(),"storage");
-        final File kernalDir = new File(storageDir, KERNAL_BUNDLE_NAME);
-        if (kernalDir.exists()) {
+        File updateDir = null;
+        File dexPatchDir = null;
+        if(!TextUtils.isEmpty(KernalVersionManager.instance().DEXPATCH_STORAGE_LOCATION)){
+            dexPatchDir = new File(KernalVersionManager.instance().DEXPATCH_STORAGE_LOCATION);
+        }
+
+        if(!TextUtils.isEmpty(KernalVersionManager.instance().CURRENT_STORAGE_LOCATION)){
+            updateDir = new File(KernalVersionManager.instance().CURRENT_STORAGE_LOCATION);
+        }
+        dexPatchDir = updateDir = new File(KernalConstants.baseContext.getFilesDir(), "storage");
+
+        final File kernalUpdateDir = new File(updateDir, KERNAL_BUNDLE_NAME);
+        final File kernalDexPatchDir = new File(dexPatchDir,KERNAL_BUNDLE_NAME);
+
+        if (kernalUpdateDir.exists() || kernalDexPatchDir.exists()) {
             try {
-                kernalBundle = new KernalBundle(kernalDir,KernalVersionManager.instance().getBaseBundleVersion(KERNAL_BUNDLE_NAME),currentProcessName);
+                kernalBundle = new KernalBundle(kernalUpdateDir,kernalDexPatchDir,KernalVersionManager.instance().getBaseBundleVersion(KERNAL_BUNDLE_NAME),currentProcessName);
                 kernalBundle.patchKernalDex();
                 kernalBundle.replacePathClassLoaderIfNeed(application);
                 kernalBundle.patchKernalResource(application);
@@ -259,7 +271,10 @@ public class KernalBundle{
             } catch (Exception e) {
                 e.printStackTrace();
                 kernalBundle = null;
-                deleteDirectory(kernalDir);
+                deleteDirectory(kernalUpdateDir);
+                if(kernalDexPatchDir.exists()) {
+                    deleteDirectory(kernalDexPatchDir);
+                }
                 return false;
             }
         }
@@ -294,20 +309,19 @@ public class KernalBundle{
     }
 
     //reload
-    public KernalBundle(final File bundleDir,String version,String process) throws Exception {
-        KernalFileLock.getInstance().LockExclusive(bundleDir);
-        this.bundleDir = bundleDir;
+    public KernalBundle(final File updateDir,final File dexPatchDir,String version,String process) throws Exception {
         long dexPatchVersion = KernalVersionManager.instance().getDexPatchBundleVersion(KERNAL_BUNDLE_NAME);
-        try {
+        if(dexPatchVersion>0) {
             try {
-                archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, version, dexPatchVersion, process);
+                bundleDir = dexPatchDir;
+                archive = new KernalBundleArchive(KernalConstants.baseContext, dexPatchDir, version, dexPatchVersion, process);
             }catch(Throwable e){
-                if(dexPatchVersion>0){
-                    archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, version, -1, process);
-                }
+                bundleDir = updateDir;
+                archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, version, dexPatchVersion, process);
             }
-        } finally {
-            KernalFileLock.getInstance().unLock(bundleDir);
+        }else{
+            bundleDir = updateDir;
+            archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, version, dexPatchVersion, process);
         }
     }
 
@@ -323,7 +337,7 @@ public class KernalBundle{
             Field versionField = FrameworkPropertiesClazz.getDeclaredField("version");
             versionField.setAccessible(true);
             String version = (String)versionField.get(FrameworkPropertiesClazz.newInstance());
-            if(!KernalVersionManager.instance().CURRENT_VERSIONAME.equals(version)){
+            if(!KernalVersionManager.instance().currentVersionName().equals(version)){
                 if(isDeubgMode()){
                     Log.e("KernalBundle","main dex is not match, awo test?");
                 }else {

@@ -217,6 +217,9 @@ import android.text.TextUtils;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
+
+import com.taobao.android.runtime.AndroidRuntime;
+
 import dalvik.system.DexClassLoader;
 import dalvik.system.DexFile;
 
@@ -255,6 +258,7 @@ public class BundleArchiveRevision {
 
     //There is no DexFile on yunos 2.x, so we use DexClassLoader;
     private ClassLoader  dexClassLoader;
+    private boolean externalStorage = false;
 
     //create
     BundleArchiveRevision(String location, File revisionDir, InputStream inputStream) throws IOException{
@@ -262,6 +266,11 @@ public class BundleArchiveRevision {
         this.location = location;
         if (!this.revisionDir.exists()) {
             this.revisionDir.mkdirs();
+        }
+        if(revisionDir.getAbsolutePath().startsWith(RuntimeVariables.androidApplication.getFilesDir().getAbsolutePath())){
+            externalStorage = false;
+        }else{
+            externalStorage = true;
         }
         this.revisionLocation = FILE_PROTOCOL;
         this.bundleFile = new File(revisionDir, BUNDLE_FILE_NAME);
@@ -441,7 +450,8 @@ public class BundleArchiveRevision {
             }
 
             if (dexFile == null){
-                dexFile = com.taobao.android.runtime.RuntimeUtils.loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+                boolean interpretOnly = externalStorage ? true : false;
+                dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0,interpretOnly);
             }
             //9月份版本明天发布先不集成
 //            isDexOptDone = checkDexValid(dexFile);

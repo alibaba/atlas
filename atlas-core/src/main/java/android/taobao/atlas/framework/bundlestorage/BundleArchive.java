@@ -344,7 +344,7 @@ public class BundleArchive {
     /**
      * This method removes all old revisions associated with the archive and keeps only the current revision.
      **/
-    public void purge(String uniqueTag, final long dexPatchVersion) {
+    public synchronized void purge(String uniqueTag, final long dexPatchVersion) {
         // remove old dexpatch
         File dexPatchDir = new File(bundleDir,DEXPATCH_DIR);
         File[] dexPatchs = dexPatchDir.listFiles(new FilenameFilter() {

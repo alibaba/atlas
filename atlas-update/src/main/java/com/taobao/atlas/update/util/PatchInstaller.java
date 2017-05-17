@@ -73,7 +73,7 @@ public class PatchInstaller {
                 throw new BundleException("bundle  " + bundle.name + " is error");
             }
         }
-        Framework.update(!updateInfo.dexPatch,bundleNameList,bundleFilePathList,upgradeVersions,dexPatchVersions,updateInfo.updateVersion);
+        Framework.update(!updateInfo.dexPatch,bundleNameList,bundleFilePathList,upgradeVersions,dexPatchVersions,updateInfo.updateVersion,updateInfo.lowDisk);
 
     }
 }

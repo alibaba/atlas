@@ -23,6 +23,8 @@ public class UpdateInfo implements Serializable{
 
     public boolean dexPatch;
 
+    public boolean lowDisk = false;
+
     /**
      * 更新的模块列表信息
      */

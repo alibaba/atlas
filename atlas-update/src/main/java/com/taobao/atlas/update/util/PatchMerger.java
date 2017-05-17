@@ -41,6 +41,7 @@ public class PatchMerger {
     public Map<String, Pair<String,UpdateInfo.Item>> mergeOutputs = new HashMap<>();
     private static boolean supportMerge;
     private static String MAIN_DEX = "com.taobao.maindex";
+    private boolean lowDisk = false;
     static {
         supportMerge = Build.VERSION.SDK_INT < 21;
     }
@@ -50,7 +51,11 @@ public class PatchMerger {
         this.updateInfo = updateInfo;
         this.patchFile = patchFile;
         this.mergeCallback = mergeCallback;
-
+        if(updateInfo.lowDisk){
+            lowDisk = true;
+        }else{
+            lowDisk = false;
+        }
         try {
             this.apkZip = new ZipFile(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
         } catch (IOException e) {
@@ -160,7 +165,7 @@ public class PatchMerger {
                 String currentVersionName = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).versionName;
                 if(currentVersionName.equals(updateInfo.baseVersion)) {
                     if (!TextUtils.isEmpty(maindexVersion)) {
-                        File old = new File(RuntimeVariables.androidApplication.getFilesDir(), "storage/com.taobao.maindex/" + maindexVersion + "/com_taobao_maindex.zip");
+                        File old = Framework.getInstalledBundle("com.taobao.maindex",maindexVersion);
                         if (old.exists()) {
                             return old;
                         }
@@ -233,7 +238,7 @@ public class PatchMerger {
 
     private boolean supportMerge(String bundleName) {
 
-        return supportMerge&&bundleName.equals(MAIN_DEX);
+        return (lowDisk || supportMerge)&&bundleName.equals(MAIN_DEX);
 
     }
 

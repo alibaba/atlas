@@ -441,7 +441,7 @@ public class AtlasBridgeApplication extends Application{
             android.os.Process.killProcess(android.os.Process.myPid());
         }
 
-        File metafile = new File(context.getFilesDir(), "storage/meta");
+        File metafile = new File(context.getFilesDir(), "storage/version_meta");
         if (metafile.exists()) {
             try {
                 DataInputStream in = new DataInputStream(new FileInputStream(metafile));
@@ -467,7 +467,7 @@ public class AtlasBridgeApplication extends Application{
     }
 
     private void storePackageVersion(Context base){
-        File file = new File(base.getFilesDir(), "storage/meta");
+        File file = new File(base.getFilesDir(), "storage/version_meta");
         DataOutputStream out = null;
         try {
             if (!file.getParentFile().exists()) {

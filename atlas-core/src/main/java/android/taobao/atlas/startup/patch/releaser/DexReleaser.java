@@ -228,13 +228,13 @@ public class DexReleaser {
 
     private static final String CLASS_SUFFIX = "classes";
 
-    public static boolean releaseDexes(File bundleFile, File reversionDir) throws IOException {
+    public static boolean releaseDexes(File bundleFile, File reversionDir,boolean externalStorage) throws IOException {
         ZipFile zipFile = new ZipFile(bundleFile);
         boolean hasDexFile = hasDexFile(zipFile);
         if (!hasDexFile) {
             return true;
         }
-        if (!isArt()) {
+        if (externalStorage || !isArt()) {
             Enumeration entryEnumeration = zipFile.entries();
             while (entryEnumeration.hasMoreElements()) {
                 ZipEntry zipEntry = (ZipEntry) entryEnumeration.nextElement();
@@ -261,7 +261,6 @@ public class DexReleaser {
                 zipFile.close();
             } catch (Throwable e) {
             }
-
         }
         return true;
     }

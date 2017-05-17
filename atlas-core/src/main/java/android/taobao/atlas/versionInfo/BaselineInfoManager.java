@@ -231,6 +231,8 @@ public class BaselineInfoManager{
     private static BaselineInfoManager sBaseInfoManager;
 
     private Object mVersionManager;
+    private String dexPatchStorageLocation;
+    private String updateBundleStorageLocation;
 
     public synchronized static BaselineInfoManager instance(){
         if(sBaseInfoManager==null){
@@ -270,6 +272,28 @@ public class BaselineInfoManager{
             e.printStackTrace();
         }
         return null;
+    }
+
+    public String getDexPatchStorageLocation(){
+        if(dexPatchStorageLocation==null) {
+            try {
+                dexPatchStorageLocation = (String) mVersionManager.getClass().getDeclaredField("DEXPATCH_STORAGE_LOCATION").get(mVersionManager);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        return dexPatchStorageLocation;
+    }
+
+    public String getUpdateStorageLocation(){
+        if(updateBundleStorageLocation==null) {
+            try {
+                updateBundleStorageLocation = (String) mVersionManager.getClass().getDeclaredField("CURRENT_STORAGE_LOCATION").get(mVersionManager);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        return updateBundleStorageLocation;
     }
 
     public long getDexPatchBundleVersion(String bundleName){
@@ -375,7 +399,7 @@ public class BaselineInfoManager{
         }
     }
 
-    public void saveBaselineInfo(String newBaselineVersion, HashMap<String,String> infos) throws IOException{
+    public void saveBaselineInfo(String newBaselineVersion, HashMap<String,String> infos,String storageLocation) throws IOException{
         try {
             mVersionManager.getClass().getDeclaredMethod("saveUpdateInfo",String.class,HashMap.class,boolean.class).invoke(
                     mVersionManager,newBaselineVersion,infos,RuntimeVariables.sCachePreVersionBundles
@@ -391,7 +415,7 @@ public class BaselineInfoManager{
         WrapperUtil.persisitKeyPointLog(newBaselineVersion);
     }
 
-    public void saveDexPathInfo(HashMap<String,String> infos) throws IOException{
+    public void saveDexPathInfo(HashMap<String,String> infos,String storageLocation) throws IOException{
         try {
             mVersionManager.getClass().getDeclaredMethod("saveDexPatchInfo",HashMap.class).invoke(
                     mVersionManager,infos);

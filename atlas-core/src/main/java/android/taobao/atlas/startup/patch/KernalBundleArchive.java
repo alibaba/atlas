@@ -250,10 +250,6 @@ import java.util.zip.ZipFile;
         if(dexPatchVersion>0){
             revisionDir = new File(bundleDir,DEXPATCH_DIR+dexPatchVersion);
         }
-        if(revisionDir==null || !revisionDir.exists()){
-            //dexpatch目录不存在可降级，dexpatch改动必须向前兼容
-            revisionDir = new File(bundleDir,version);
-        }
 
         if (revisionDir==null || !revisionDir.exists()) {
             throw new IOException("can not find kernal bundle");
@@ -300,29 +296,33 @@ import java.util.zip.ZipFile;
      **/
     public void purge(String uniqueTag, final long dexPatchVersion) {
         // remove old dexpatch
-        File dexPatchDir = new File(bundleDir,DEXPATCH_DIR);
-        File[] dexPatchs = dexPatchDir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String filename) {
-                if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"")){
-                    return false;
-                }else{
-                    return true;
+        try {
+            File dexPatchDir = new File(bundleDir, DEXPATCH_DIR);
+            File[] dexPatchs = dexPatchDir.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String filename) {
+                    if (dexPatchVersion > 0 && !filename.equals(dexPatchVersion + "")) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                }
+            });
+            if (dexPatchs != null) {
+                for (File patch : dexPatchs) {
+                    deleteDirectory(patch);
                 }
             }
-        });
-        if(dexPatchs!=null){
-            for(File patch : dexPatchs){
-                deleteDirectory(patch);
-            }
-        }
 
-        // remove old update version
-        File[] dirs = bundleDir.listFiles();
-        for(File dir : dirs){
-            if(!dir.getName().contains("dexpatch") && !dir.getName().equals(uniqueTag)){
-                deleteDirectory(dir);
+            // remove old update version
+            File[] dirs = bundleDir.listFiles();
+            for (File dir : dirs) {
+                if (!dir.getName().contains("dexpatch") && !dir.getName().equals(uniqueTag)) {
+                    deleteDirectory(dir);
+                }
             }
+        }catch(Throwable e){
+            e.printStackTrace();
         }
     }
 

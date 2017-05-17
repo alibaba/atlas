@@ -208,6 +208,8 @@
 
 package android.taobao.atlas.framework;
 
+import java.io.File;
+
 /**
  * The bundle context implementation.
  */
@@ -217,4 +219,7 @@ public class BundleContext {
 
     String location;
 
+    File bundleDir;
+
+    File dexPatchDir;
 }
