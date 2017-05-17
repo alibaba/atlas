@@ -207,209 +207,91 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard;
+package com.taobao.android.builder.tools.proguard.domain;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import com.taobao.android.builder.tools.proguard.dto.RefClazz;
-import org.jetbrains.annotations.NotNull;
-import proguard.classfile.ClassPool;
-import proguard.classfile.Clazz;
-import proguard.classfile.LibraryClass;
-import proguard.classfile.ProgramClass;
-import proguard.classfile.constant.ClassConstant;
-import proguard.classfile.constant.DoubleConstant;
-import proguard.classfile.constant.FieldrefConstant;
-import proguard.classfile.constant.FloatConstant;
-import proguard.classfile.constant.IntegerConstant;
-import proguard.classfile.constant.InterfaceMethodrefConstant;
-import proguard.classfile.constant.InvokeDynamicConstant;
-import proguard.classfile.constant.LongConstant;
-import proguard.classfile.constant.MethodHandleConstant;
-import proguard.classfile.constant.MethodTypeConstant;
-import proguard.classfile.constant.MethodrefConstant;
-import proguard.classfile.constant.NameAndTypeConstant;
-import proguard.classfile.constant.StringConstant;
-import proguard.classfile.constant.Utf8Constant;
-import proguard.classfile.constant.visitor.ConstantVisitor;
-import proguard.classfile.visitor.ClassVisitor;
 
 /**
- * Created by wuzhong on 2017/5/12.
+ * Created by wuzhong on 2017/5/14.
  */
-public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor {
+public class RefClazzContainer {
 
-    private Map<String, RefClazz> refClazzMap = new HashMap<>();
+    private Map<String, ClazzRefInfo> refClazzMap = new HashMap<>();
 
-    private Set<String> defaultClasses;
-
-    private ClassPool self;
-
-    public LibClassRefVisitor(Set<String> defaultClasses, ClassPool self) {
-        this.defaultClasses = defaultClasses;
-        this.self = self;
-    }
-
-    @Override
-    public void visitProgramClass(ProgramClass programClass) {
-
-        addSuperClass(programClass);
-
-        for (int i = 0; i < programClass.getInterfaceCount(); i++) {
-            addInterface(programClass, i);
-        }
-
-        programClass.interfaceConstantsAccept(this);
-
-        programClass.constantPoolEntriesAccept(this);
-    }
-
-    private void addInterface(ProgramClass programClass, int i) {
-        String interfaceClazz = programClass.getInterfaceName(i);
-        if (isNotRefClazz(interfaceClazz)) {
-            return;
-        }
-        RefClazz refClazz2 = getRefClazz(interfaceClazz);
-        refClazz2.setKeepAll(true);
-    }
-
-    private void addSuperClass(ProgramClass programClass) {
-        String superName = programClass.getSuperName();
-
-        if (isNotRefClazz(superName)) {
-            return;
-        }
-        RefClazz refClazz = getRefClazz(superName);
-        refClazz.setKeepAll(true);
-    }
-
-    private boolean isNotRefClazz(String className) {
-
-        System.out.println(className);
-
-        if (defaultClasses.contains(className)){
-            return true;
-        }
-        if (className.contains("[")){
-            return true;
-        }
-
-        if ( null != self.getClass(className)){
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public void visitLibraryClass(LibraryClass libraryClass) {
-
-    }
-
-    @Override
-    public void visitIntegerConstant(Clazz clazz, IntegerConstant integerConstant) {
-
-    }
-
-    @Override
-    public void visitLongConstant(Clazz clazz, LongConstant longConstant) {
-
-    }
-
-    @Override
-    public void visitFloatConstant(Clazz clazz, FloatConstant floatConstant) {
-
-    }
-
-    @Override
-    public void visitDoubleConstant(Clazz clazz, DoubleConstant doubleConstant) {
-
-    }
-
-    @Override
-    public void visitStringConstant(Clazz clazz, StringConstant stringConstant) {
-
-    }
-
-    @Override
-    public void visitUtf8Constant(Clazz clazz, Utf8Constant utf8Constant) {
-
-    }
-
-    @Override
-    public void visitInvokeDynamicConstant(Clazz clazz, InvokeDynamicConstant invokeDynamicConstant) {
-
-    }
-
-    @Override
-    public void visitMethodHandleConstant(Clazz clazz, MethodHandleConstant methodHandleConstant) {
-
-    }
-
-    @Override
-    public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
-        String clazzName = clazz.getClassName(fieldrefConstant.u2classIndex);
-
-        if (isNotRefClazz(clazzName)) {
-            return;
-        }
-
-        RefClazz refClazz = getRefClazz(clazzName);
-        refClazz.getFields().add(clazz.getName(fieldrefConstant.u2nameAndTypeIndex));
-    }
-
-    @Override
-    public void visitInterfaceMethodrefConstant(Clazz clazz, InterfaceMethodrefConstant interfaceMethodrefConstant) {
-
-    }
-
-    @Override
-    public void visitMethodrefConstant(Clazz clazz, MethodrefConstant methodrefConstant) {
-
-        String clazzName = clazz.getClassName(methodrefConstant.u2classIndex);
-
-        if (isNotRefClazz(clazzName)) {
-            return;
-        }
-
-        RefClazz refClazz = getRefClazz(clazzName);
-        refClazz.getMethods().add(clazz.getName(methodrefConstant.u2nameAndTypeIndex));
-
-    }
-
-    @NotNull
-    private RefClazz getRefClazz(String clazzName) {
-        RefClazz refClazz = refClazzMap.get(clazzName);
-        if (null == refClazz) {
-            refClazz = new RefClazz(clazzName);
-            refClazzMap.put(clazzName, refClazz);
-        }
-        return refClazz;
-    }
-
-    @Override
-    public void visitClassConstant(Clazz clazz, ClassConstant classConstant) {
-
-    }
-
-    @Override
-    public void visitMethodTypeConstant(Clazz clazz, MethodTypeConstant methodTypeConstant) {
-
-    }
-
-    @Override
-    public void visitNameAndTypeConstant(Clazz clazz, NameAndTypeConstant nameAndTypeConstant) {
-
-    }
-
-    public Map<String, RefClazz> getRefClazzMap() {
-        return refClazzMap;
-    }
-
-    public void setRefClazzMap(
-        Map<String, RefClazz> refClazzMap) {
+    public RefClazzContainer(
+        Map<String, ClazzRefInfo> refClazzMap) {
         this.refClazzMap = refClazzMap;
+    }
+
+    public RefClazzContainer() {
+    }
+
+    public void addRefClazz(Map<String, ClazzRefInfo> other) {
+
+        for (String key : other.keySet()) {
+
+            ClazzRefInfo otherClazz = other.get(key);
+            ClazzRefInfo clazz = refClazzMap.get(key);
+            if (null == clazz) {
+                refClazzMap.put(key, otherClazz);
+            } else {
+                clazz.getFields().addAll(otherClazz.getFields());
+                clazz.getMethods().addAll(otherClazz.getMethods());
+                clazz.setKeepAll(clazz.isKeepAll() || otherClazz.isKeepAll());
+                clazz.setNeedExtend(clazz.isNeedExtend() || otherClazz.isNeedExtend());
+            }
+        }
+
+    }
+
+    public List<String> convertToKeeplines() {
+
+        List<ClazzRefInfo> refClazzes = new ArrayList<>(refClazzMap.values());
+        Collections.sort(refClazzes, new Comparator<ClazzRefInfo>() {
+            @Override
+            public int compare(ClazzRefInfo o1, ClazzRefInfo o2) {
+                return o1.getClazzName().compareTo(o2.getClazzName());
+            }
+        });
+
+        List<String> lines = new ArrayList<>();
+        for (ClazzRefInfo refClazz : refClazzes) {
+
+            String line = "-keep class ";
+            addKeepLines(lines, refClazz, line);
+
+            if (refClazz.isNeedExtend()){
+                line += " * extends ";
+                addKeepLines(lines, refClazz, line);
+            }
+
+        }
+        return lines;
+
+    }
+
+    private void addKeepLines(List<String> lines, ClazzRefInfo refClazz, String line) {
+        line += refClazz.getClazzName().replace("/", ".");
+        if (refClazz.isKeepAll()) {
+            lines.add(line + " { *; }");
+        } else {
+            lines.add(line + " {");
+            List<String> methods = new ArrayList<>(refClazz.getMethods());
+            List<String> fields = new ArrayList<>(refClazz.getFields());
+            Collections.sort(methods);
+            Collections.sort(fields);
+            for (String name : methods) {
+                lines.add(" *** " + name + "(...);");
+            }
+            for (String name : fields) {
+                lines.add(" *** " + name + ";");
+            }
+            lines.add("}");
+        }
     }
 }

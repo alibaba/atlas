@@ -207,56 +207,277 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.dto;
+package com.taobao.android.builder.tools.proguard.domain;
 
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
-public class RefClazz {
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import proguard.classfile.ClassPool;
+import proguard.classfile.Clazz;
+import proguard.classfile.LibraryClass;
+import proguard.classfile.LibraryField;
+import proguard.classfile.LibraryMethod;
+import proguard.classfile.ProgramClass;
+import proguard.classfile.ProgramField;
+import proguard.classfile.ProgramMethod;
+import proguard.classfile.constant.ClassConstant;
+import proguard.classfile.constant.DoubleConstant;
+import proguard.classfile.constant.FieldrefConstant;
+import proguard.classfile.constant.FloatConstant;
+import proguard.classfile.constant.IntegerConstant;
+import proguard.classfile.constant.InterfaceMethodrefConstant;
+import proguard.classfile.constant.InvokeDynamicConstant;
+import proguard.classfile.constant.LongConstant;
+import proguard.classfile.constant.MethodHandleConstant;
+import proguard.classfile.constant.MethodTypeConstant;
+import proguard.classfile.constant.MethodrefConstant;
+import proguard.classfile.constant.NameAndTypeConstant;
+import proguard.classfile.constant.StringConstant;
+import proguard.classfile.constant.Utf8Constant;
+import proguard.classfile.constant.visitor.ConstantVisitor;
+import proguard.classfile.visitor.ClassVisitor;
+import proguard.classfile.visitor.MemberVisitor;
 
-    private String clazzName;
+/**
+ * Created by wuzhong on 2017/5/12.
+ */
+public class LibClassRefVisitor implements ClassVisitor, ConstantVisitor, MemberVisitor {
 
-    private boolean keepAll;
+    private Map<String, ClazzInfo> clazzInfoMap = new HashMap<>();
 
-    public RefClazz() {
+    private Map<String, ClazzRefInfo> refClazzMap = new HashMap<>();
+
+    private Set<String> defaultClasses;
+
+    private ClassPool self;
+
+    public LibClassRefVisitor(Set<String> defaultClasses, ClassPool self) {
+        this.defaultClasses = defaultClasses;
+        this.self = self;
     }
 
-    public RefClazz(String clazzName) {
-        this.clazzName = clazzName;
+    @Override
+    public void visitProgramClass(ProgramClass programClass) {
+
+        addSuperClass(programClass);
+
+        for (int i = 0; i < programClass.getInterfaceCount(); i++) {
+            addInterface(programClass, i);
+        }
+
+        programClass.methodsAccept(this);
+
+        programClass.interfaceConstantsAccept(this);
+
+        programClass.constantPoolEntriesAccept(this);
     }
 
-    private Set<String> methods = new HashSet<>();
-    private Set<String> fields = new HashSet<>();
-
-    public String getClazzName() {
-        return clazzName;
+    private void addInterface(ProgramClass programClass, int i) {
+        String interfaceClazz = programClass.getInterfaceName(i);
+        if (isNotRefClazz(interfaceClazz)) {
+            return;
+        }
+        ClazzRefInfo refClazz2 = getRefInfo(interfaceClazz);
+        refClazz2.setKeepAll(true);
     }
 
-    public void setClazzName(String clazzName) {
-        this.clazzName = clazzName;
+    private void addSuperClass(ProgramClass programClass) {
+        String superName = programClass.getSuperName();
+        if (isNotRefClazz(superName)) {
+            return;
+        }
+        ClazzRefInfo refClazz = getRefInfo(superName);
+        refClazz.setNeedExtend(true);
+        //TODO
+        //refClazz.setKeepAll(true);
+        ClazzInfo clazzInfo = getClazzInfo(programClass.getName());
+        clazzInfo.setSuperClazzName(superName);
     }
 
-    public Set<String> getMethods() {
-        return methods;
+    @NotNull
+    private ClazzRefInfo getRefInfo(String clazzName) {
+        ClazzRefInfo refClazz = refClazzMap.get(clazzName);
+        if (null == refClazz) {
+            refClazz = new ClazzRefInfo(clazzName);
+            refClazzMap.put(clazzName, refClazz);
+        }
+        return refClazz;
     }
 
-    public void setMethods(Set<String> methods) {
-        this.methods = methods;
+    @NotNull
+    private ClazzInfo getClazzInfo(String clazzName) {
+        ClazzInfo clazzInfo = clazzInfoMap.get(clazzName);
+        if (null == clazzInfo) {
+            clazzInfo = new ClazzInfo(clazzName);
+            clazzInfoMap.put(clazzName, clazzInfo);
+        }
+        return clazzInfo;
     }
 
-    public Set<String> getFields() {
-        return fields;
+    private boolean isNotRefClazz(String className) {
+
+        //System.out.println(className);
+
+        if (defaultClasses.contains(className)) {
+            return true;
+        }
+        if (className.contains("[")) {
+            return true;
+        }
+
+        if (null != self.getClass(className)) {
+            return true;
+        }
+
+        return false;
     }
 
-    public void setFields(Set<String> fields) {
-        this.fields = fields;
+    private void addRefMethod(String className, String methodName) {
+
+        if (isNotRefClazz(className)) {
+            return;
+        }
+
+        getRefInfo(className).getMethods().add(methodName);
+
     }
 
-    public boolean isKeepAll() {
-        return keepAll;
+    @Override
+    public void visitLibraryClass(LibraryClass libraryClass) {
+
     }
 
-    public void setKeepAll(boolean keepAll) {
-        this.keepAll = keepAll;
+    @Override
+    public void visitIntegerConstant(Clazz clazz, IntegerConstant integerConstant) {
+
     }
+
+    @Override
+    public void visitLongConstant(Clazz clazz, LongConstant longConstant) {
+
+    }
+
+    @Override
+    public void visitFloatConstant(Clazz clazz, FloatConstant floatConstant) {
+
+    }
+
+    @Override
+    public void visitDoubleConstant(Clazz clazz, DoubleConstant doubleConstant) {
+
+    }
+
+    @Override
+    public void visitStringConstant(Clazz clazz, StringConstant stringConstant) {
+
+    }
+
+    @Override
+    public void visitUtf8Constant(Clazz clazz, Utf8Constant utf8Constant) {
+
+    }
+
+    @Override
+    public void visitInvokeDynamicConstant(Clazz clazz, InvokeDynamicConstant invokeDynamicConstant) {
+
+    }
+
+    @Override
+    public void visitMethodHandleConstant(Clazz clazz, MethodHandleConstant methodHandleConstant) {
+
+    }
+
+    @Override
+    public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
+        String clazzName = clazz.getClassName(fieldrefConstant.u2classIndex);
+
+        if (isNotRefClazz(clazzName)) {
+            return;
+        }
+
+        ClazzRefInfo refClazz = getRefInfo(clazzName);
+        refClazz.getFields().add(clazz.getName(fieldrefConstant.u2nameAndTypeIndex));
+    }
+
+    @Override
+    public void visitInterfaceMethodrefConstant(Clazz clazz, InterfaceMethodrefConstant interfaceMethodrefConstant) {
+
+    }
+
+    @Override
+    public void visitMethodrefConstant(Clazz clazz, MethodrefConstant methodrefConstant) {
+
+        String clazzName = clazz.getClassName(methodrefConstant.u2classIndex);
+        String methodName = clazz.getName(methodrefConstant.u2nameAndTypeIndex);
+
+        //当前class不包含该方法的话
+        ClazzInfo clazzInfo = getClazzInfo(clazzName);
+        if (!clazzInfo.getMethods().contains(methodName)) {
+            if (StringUtils.isNotEmpty(clazzInfo.getSuperClazzName())) {
+                addRefMethod(clazzInfo.getSuperClazzName(),methodName);
+            }
+        }
+
+        if (isNotRefClazz(clazzName)) {
+            return;
+        }
+
+        ClazzRefInfo refClazz = getRefInfo(clazzName);
+        refClazz.getMethods().add(methodName);
+
+    }
+
+    @Override
+    public void visitClassConstant(Clazz clazz, ClassConstant classConstant) {
+
+    }
+
+    @Override
+    public void visitMethodTypeConstant(Clazz clazz, MethodTypeConstant methodTypeConstant) {
+
+    }
+
+    @Override
+    public void visitNameAndTypeConstant(Clazz clazz, NameAndTypeConstant nameAndTypeConstant) {
+
+    }
+
+    @Override
+    public void visitProgramField(ProgramClass programClass, ProgramField programField) {
+
+    }
+
+    @Override
+    public void visitProgramMethod(ProgramClass programClass, ProgramMethod programMethod) {
+        String className = programClass.getName();
+        ClazzInfo clazzInfo = getClazzInfo(className);
+        clazzInfo.getMethods().add(programMethod.getName(programClass));
+    }
+
+    @Override
+    public void visitLibraryField(LibraryClass libraryClass, LibraryField libraryField) {
+
+    }
+
+    @Override
+    public void visitLibraryMethod(LibraryClass libraryClass, LibraryMethod libraryMethod) {
+
+    }
+
+    public Map<String, ClazzRefInfo> getRefClazzMap() {
+        return refClazzMap;
+    }
+
+    public void setRefClazzMap(
+        Map<String, ClazzRefInfo> refClazzMap) {
+        this.refClazzMap = refClazzMap;
+    }
+
+    private void println(String message) {
+        //System.out.println(message);
+    }
+
 }

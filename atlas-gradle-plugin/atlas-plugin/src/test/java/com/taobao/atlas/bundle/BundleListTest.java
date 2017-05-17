@@ -215,7 +215,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import com.alibaba.fastjson.JSON;
 
@@ -363,6 +365,22 @@ public class BundleListTest {
         //
         //System.out.println("1111 ");
 
+    }
+
+    @Test
+    public void testJava8() throws IOException {
+        File file = new File(ProguardTest.class.getClassLoader().getResource("bundleInfoList.json").getFile());
+        String json = FileUtils.readFileToString(file);
+        List<BundleInfo> bundleInfos = JSON.parseArray(json, BundleInfo.class);
+
+        Set<String> collect = bundleInfos.stream().map(BundleInfo::getPkgName).collect(Collectors.toSet());
+
+        collect.stream().forEach(p -> System.out.println(p));
+        collect.forEach(System.out::println);
+
+        bundleInfos.stream().map( bundleInfo -> {
+            return "aaaa" + bundleInfo.getPkgName();
+        }).forEachOrdered(System.out::println);
     }
 
 }

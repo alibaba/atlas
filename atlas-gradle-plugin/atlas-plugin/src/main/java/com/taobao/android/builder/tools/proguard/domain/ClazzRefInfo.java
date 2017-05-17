@@ -207,143 +207,72 @@
  *
  */
 
-package com.taobao.android.builder.tasks.tpatch;
+package com.taobao.android.builder.tools.proguard.domain;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.zip.ZipEntry;
-
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.taobao.android.builder.extension.PatchConfig;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.zip.ZipUtils;
-import org.apache.commons.io.FileUtils;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.TaskAction;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * Created by wuzhong on 2016/9/27.
+ * 引用的类信息
  */
-public class TPatchDiffApkBuildTask extends BaseTask {
+public class ClazzRefInfo {
 
-    private File resourceFile;
-    private File apkFile;
-    private File diffAPkFile;
+    private String clazzName;
 
-    @TaskAction
-    public void doApkBuild() throws Exception {
+    private boolean keepAll;
 
-        //TODO 合并2个zip包
-        apkFile = getApkFile();
-        diffAPkFile = getDiffAPkFile();
+    /**
+     * 需要继承类都keep的
+     */
+    private boolean needExtend;
 
-        File tmpWorkDir = new File(diffAPkFile.getParentFile(), "tmp-apk");
-        if (tmpWorkDir.exists()) {
-            FileUtils.deleteDirectory(tmpWorkDir);
-        }
-        if (!tmpWorkDir.exists()) {
-            tmpWorkDir.mkdirs();
-        }
-
-        Map zipEntityMap = new HashMap();
-        ZipUtils.unzip(apkFile, tmpWorkDir.getAbsolutePath(), "UTF-8", zipEntityMap, true);
-
-        FileUtils.deleteDirectory(new File(tmpWorkDir, "assets"));
-        FileUtils.deleteDirectory(new File(tmpWorkDir, "res"));
-        FileUtils.forceDelete(new File(tmpWorkDir, "resources.arsc"));
-        FileUtils.forceDelete(new File(tmpWorkDir, "AndroidManifest.xml"));
-
-        File resdir = new File(diffAPkFile.getParentFile(), "tmp-diffResAp");
-        resdir.mkdirs();
-        ZipUtils.unzip(getResourceFile(), resdir.getAbsolutePath(), "UTF-8", new HashMap<String, ZipEntry>(), true);
-
-        FileUtils.copyDirectory(resdir, tmpWorkDir);
-        ZipUtils.rezip(diffAPkFile, tmpWorkDir, zipEntityMap);
-
-        FileUtils.deleteDirectory(tmpWorkDir);
-        FileUtils.deleteDirectory(resdir);
-
-
-
+    public ClazzRefInfo() {
     }
 
-
-    @InputFile
-    public File getResourceFile() {
-        return resourceFile;
+    public ClazzRefInfo(String clazzName) {
+        this.clazzName = clazzName;
     }
 
-    @InputFile
-    public File getApkFile() {
-        return apkFile;
+    private Set<String> methods = new HashSet<>();
+    private Set<String> fields = new HashSet<>();
+
+    public String getClazzName() {
+        return clazzName;
     }
 
-    @OutputFile
-    public File getDiffAPkFile() {
-        return diffAPkFile;
+    public void setClazzName(String clazzName) {
+        this.clazzName = clazzName;
     }
 
-    public static class ConfigAction extends MtlBaseTaskAction<TPatchDiffApkBuildTask> {
-
-
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
-            super(appVariantContext, baseVariantOutputData);
-        }
-
-        @Override
-        public String getName() {
-            return scope.getTaskName("createTPatchDiffApk");
-        }
-
-        @Override
-        public Class<TPatchDiffApkBuildTask> getType() {
-            return TPatchDiffApkBuildTask.class;
-        }
-
-        @Override
-        public void execute(TPatchDiffApkBuildTask packageApp) {
-
-            super.execute(packageApp);
-
-            PatchConfig patchConfig = variantContext.getBuildType().getPatchConfig();
-
-            if (null == patchConfig || !patchConfig.isCreateTPatch()) {
-                packageApp.setEnabled(false);
-                return;
-            }
-
-            ConventionMappingHelper.map(packageApp, "resourceFile", new Callable<File>() {
-                @Override
-                public File call() {
-                    return getAppVariantOutputContext().getDiffResourceAp();
-                }
-            });
-
-            ConventionMappingHelper.map(packageApp, "apkFile", new Callable<File>() {
-                @Override
-                public File call() {
-                    return getAppVariantOutputContext().getApkOutputFile(true);
-                }
-            });
-
-
-            ConventionMappingHelper.map(packageApp, "diffAPkFile", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    File apkFile = getAppVariantOutputContext().getDiffApk();
-                    apkFile.getParentFile().mkdirs();
-                    return apkFile;
-                }
-            });
-
-        }
-
+    public Set<String> getMethods() {
+        return methods;
     }
 
+    public void setMethods(Set<String> methods) {
+        this.methods = methods;
+    }
+
+    public Set<String> getFields() {
+        return fields;
+    }
+
+    public void setFields(Set<String> fields) {
+        this.fields = fields;
+    }
+
+    public boolean isKeepAll() {
+        return keepAll;
+    }
+
+    public void setKeepAll(boolean keepAll) {
+        this.keepAll = keepAll;
+    }
+
+    public boolean isNeedExtend() {
+        return needExtend;
+    }
+
+    public void setNeedExtend(boolean needExtend) {
+        this.needExtend = needExtend;
+    }
 }

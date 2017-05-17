@@ -207,127 +207,44 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.dto;
+package com.taobao.android.builder.tools.proguard.domain;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import com.android.build.gradle.internal.api.AwbTransform;
-import com.taobao.android.builder.tools.MD5Util;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-
 /**
- * Created by wuzhong on 2017/5/13.
+ * 当前类信息
  */
-public class Input {
+public class ClazzInfo {
 
-    private List<AwbTransform> awbBundles = new ArrayList<>();
+    private String clazzName;
 
-    private Set<File> defaultProguardFiles = new HashSet<>();
+    private String superClazzName;
 
-    private Set<File> libraryProguardFiles = new HashSet<>();
+    private Set<String> methods = new HashSet<>();
 
-    private Set<File> libraries = new HashSet<>();
-
-    private List<File> parentKeeps = new ArrayList<>();
-
-    private Set<String> defaultLibraryClasses = new HashSet<>();
-
-    private Map<File, String> fileMd5s = new HashMap<>();
-
-    public File dump;
-    public File printMapping;
-    public File printUsage;
-    public File printSeeds;
-    public File printConfiguration;
-
-    public File proguardOutputDir;
-
-    public List<AwbTransform> getAwbBundles() {
-        return awbBundles;
+    public ClazzInfo(String clazzName) {
+        this.clazzName = clazzName;
     }
 
-    public void setAwbBundles(List<AwbTransform> awbBundles) {
-        this.awbBundles = awbBundles;
+    public String getClazzName() {
+        return clazzName;
     }
 
-    public Set<File> getDefaultProguardFiles() {
-        return defaultProguardFiles;
+    public void setClazzName(String clazzName) {
+        this.clazzName = clazzName;
     }
 
-    public void setDefaultProguardFiles(Set<File> defaultProguardFiles) {
-        this.defaultProguardFiles = defaultProguardFiles;
+    public String getSuperClazzName() {
+        return superClazzName;
     }
 
-    public List<File> getParentKeeps() {
-        return parentKeeps;
+    public void setSuperClazzName(String superClazzName) {
+        this.superClazzName = superClazzName;
     }
 
-    public void setParentKeeps(List<File> parentKeeps) {
-        this.parentKeeps = parentKeeps;
-    }
-
-    public Set<File> getLibraries() {
-        return libraries;
-    }
-
-    public Set<String> getDefaultLibraryClasses() {
-        return defaultLibraryClasses;
-    }
-
-    public Map<File, String> getFileMd5s() {
-        return fileMd5s;
-    }
-
-    public Set<File> getLibraryProguardFiles() {
-        return libraryProguardFiles;
-    }
-
-    String md5;
-
-    public String getMd5() throws Exception {
-        if (StringUtils.isNotEmpty(md5)) {
-            return md5;
-        }
-
-        List<File> files = new ArrayList<>();
-        files.addAll(getParentKeeps());
-        files.addAll(getDefaultProguardFiles());
-        files.addAll(getLibraryProguardFiles());
-        for (AwbTransform awbTransform : this.getAwbBundles()) {
-            for (File file : awbTransform.getInputLibraries()) {
-                files.add(file);
-            }
-            //configs.add();
-            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                files.add(awbTransform.getInputDir());
-            }
-        }
-
-        for (File file : files) {
-            if (file.isFile()) {
-                String md5 = MD5Util.getFileMD5(file);
-                fileMd5s.put(file, md5);
-            } else {
-                String md5 = MD5Util.getFileMd5(FileUtils.listFiles(file,
-                                                                    new String[] {"class"},
-                                                                    true));
-                fileMd5s.put(file, md5);
-            }
-        }
-
-        List<String> mds = new ArrayList<>(fileMd5s.values());
-        Collections.sort(mds);
-
-        md5 =  MD5Util.getMD5(StringUtils.join(mds.toArray(new String[0])));
-        return md5;
+    public Set<String> getMethods() {
+        return methods;
     }
 
 }

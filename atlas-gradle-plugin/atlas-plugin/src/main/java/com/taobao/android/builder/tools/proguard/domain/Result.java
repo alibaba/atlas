@@ -207,7 +207,7 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.dto;
+package com.taobao.android.builder.tools.proguard.domain;
 
 import java.io.File;
 
