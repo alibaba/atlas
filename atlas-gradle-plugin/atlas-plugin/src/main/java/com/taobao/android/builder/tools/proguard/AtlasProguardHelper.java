@@ -246,9 +246,9 @@ import com.taobao.android.builder.tools.bundleinfo.BundleGraphExecutor;
 import com.taobao.android.builder.tools.bundleinfo.BundleItem;
 import com.taobao.android.builder.tools.bundleinfo.BundleItemRunner;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
-import com.taobao.android.builder.tools.proguard.dto.Input;
-import com.taobao.android.builder.tools.proguard.dto.RefClazz;
-import com.taobao.android.builder.tools.proguard.dto.RefClazzContainer;
+import com.taobao.android.builder.tools.proguard.domain.Input;
+import com.taobao.android.builder.tools.proguard.domain.ClazzRefInfo;
+import com.taobao.android.builder.tools.proguard.domain.RefClazzContainer;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
@@ -463,8 +463,8 @@ public class AtlasProguardHelper {
             if (null != awbBundle.getKeepProguardFile() && awbBundle.getKeepProguardFile().exists()) {
 
                 String json = FileUtils.readFileToString(awbBundle.getKeepProguardFile());
-                Map<String, RefClazz> refClazzMap = JSON.parseObject(json,
-                                                                     new TypeReference<Map<String, RefClazz>>() {});
+                Map<String, ClazzRefInfo> refClazzMap = JSON.parseObject(json,
+                                                                         new TypeReference<Map<String, ClazzRefInfo>>() {});
 
                 refClazzContainer.addRefClazz(refClazzMap);
 

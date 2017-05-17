@@ -207,78 +207,127 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.dto;
+package com.taobao.android.builder.tools.proguard.domain;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import com.android.build.gradle.internal.api.AwbTransform;
+import com.taobao.android.builder.tools.MD5Util;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 
 /**
- * Created by wuzhong on 2017/5/14.
+ * Created by wuzhong on 2017/5/13.
  */
-public class RefClazzContainer {
+public class Input {
 
-    private Map<String, RefClazz> refClazzMap = new HashMap<>();
+    private List<AwbTransform> awbBundles = new ArrayList<>();
 
-    public RefClazzContainer(
-        Map<String, RefClazz> refClazzMap) {
-        this.refClazzMap = refClazzMap;
+    private Set<File> defaultProguardFiles = new HashSet<>();
+
+    private Set<File> libraryProguardFiles = new HashSet<>();
+
+    private Set<File> libraries = new HashSet<>();
+
+    private List<File> parentKeeps = new ArrayList<>();
+
+    private Set<String> defaultLibraryClasses = new HashSet<>();
+
+    private Map<File, String> fileMd5s = new HashMap<>();
+
+    public File dump;
+    public File printMapping;
+    public File printUsage;
+    public File printSeeds;
+    public File printConfiguration;
+
+    public File proguardOutputDir;
+
+    public List<AwbTransform> getAwbBundles() {
+        return awbBundles;
     }
 
-    public RefClazzContainer() {
+    public void setAwbBundles(List<AwbTransform> awbBundles) {
+        this.awbBundles = awbBundles;
     }
 
-    public void addRefClazz(Map<String, RefClazz> other) {
+    public Set<File> getDefaultProguardFiles() {
+        return defaultProguardFiles;
+    }
 
-        for (String key : other.keySet()) {
+    public void setDefaultProguardFiles(Set<File> defaultProguardFiles) {
+        this.defaultProguardFiles = defaultProguardFiles;
+    }
 
-            RefClazz otherClazz = other.get(key);
-            RefClazz clazz = refClazzMap.get(key);
-            if (null == clazz) {
-                refClazzMap.put(key, otherClazz);
-            } else {
-                clazz.getFields().addAll(otherClazz.getFields());
-                clazz.getMethods().addAll(otherClazz.getMethods());
-                clazz.setKeepAll(clazz.isKeepAll() || otherClazz.isKeepAll());
+    public List<File> getParentKeeps() {
+        return parentKeeps;
+    }
+
+    public void setParentKeeps(List<File> parentKeeps) {
+        this.parentKeeps = parentKeeps;
+    }
+
+    public Set<File> getLibraries() {
+        return libraries;
+    }
+
+    public Set<String> getDefaultLibraryClasses() {
+        return defaultLibraryClasses;
+    }
+
+    public Map<File, String> getFileMd5s() {
+        return fileMd5s;
+    }
+
+    public Set<File> getLibraryProguardFiles() {
+        return libraryProguardFiles;
+    }
+
+    String md5;
+
+    public String getMd5() throws Exception {
+        if (StringUtils.isNotEmpty(md5)) {
+            return md5;
+        }
+
+        List<File> files = new ArrayList<>();
+        files.addAll(getParentKeeps());
+        files.addAll(getDefaultProguardFiles());
+        files.addAll(getLibraryProguardFiles());
+        for (AwbTransform awbTransform : this.getAwbBundles()) {
+            for (File file : awbTransform.getInputLibraries()) {
+                files.add(file);
+            }
+            //configs.add();
+            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
+                files.add(awbTransform.getInputDir());
             }
         }
 
-    }
-
-    public List<String> convertToKeeplines() {
-
-        List<RefClazz> refClazzes = new ArrayList<>(refClazzMap.values());
-        Collections.sort(refClazzes, new Comparator<RefClazz>() {
-            @Override
-            public int compare(RefClazz o1, RefClazz o2) {
-                return o1.getClazzName().compareTo(o2.getClazzName());
-            }
-        });
-
-        List<String> lines = new ArrayList<>();
-        for (RefClazz refClazz : refClazzes) {
-
-            if (refClazz.isKeepAll()) {
-                lines.add("-keep class " + refClazz.getClazzName().replace("/", ".") + " { *; }");
+        for (File file : files) {
+            if (file.isFile()) {
+                String md5 = MD5Util.getFileMD5(file);
+                fileMd5s.put(file, md5);
             } else {
-                lines.add("-keep class " + refClazz.getClazzName().replace("/", ".") + " {");
-                List<String> methods = new ArrayList<>(refClazz.getMethods());
-                List<String> fields = new ArrayList<>(refClazz.getFields());
-                Collections.sort(methods);
-                Collections.sort(fields);
-                for (String name : methods) {
-                    lines.add(" *** " + name + "(...);");
-                }
-                for (String name : fields) {
-                    lines.add(" *** " + name + ";");
-                }
-                lines.add("}");
+                String md5 = MD5Util.getFileMd5(FileUtils.listFiles(file,
+                                                                    new String[] {"class"},
+                                                                    true));
+                fileMd5s.put(file, md5);
             }
         }
-        return lines;
 
+        List<String> mds = new ArrayList<>(fileMd5s.values());
+        Collections.sort(mds);
+
+        md5 =  MD5Util.getMD5(StringUtils.join(mds.toArray(new String[0])));
+        return md5;
     }
+
 }

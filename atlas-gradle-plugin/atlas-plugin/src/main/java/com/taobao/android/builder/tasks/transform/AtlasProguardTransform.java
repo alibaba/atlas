@@ -237,7 +237,7 @@ import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.proguard.AtlasProguardHelper;
 import com.taobao.android.builder.tools.proguard.BundleProguarder;
 import com.taobao.android.builder.tools.proguard.KeepOnlyConfigurationParser;
-import com.taobao.android.builder.tools.proguard.dto.Input;
+import com.taobao.android.builder.tools.proguard.domain.Input;
 import org.gradle.api.GradleException;
 import proguard.Configuration;
 import proguard.ParseException;
