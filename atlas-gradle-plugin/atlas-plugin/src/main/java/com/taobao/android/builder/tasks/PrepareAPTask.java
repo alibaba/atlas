@@ -214,18 +214,25 @@ package com.taobao.android.builder.tasks;
  */
 
 import java.io.File;
+import java.util.concurrent.Callable;
 
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.lang.StringUtils;
+import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
@@ -236,6 +243,42 @@ public class PrepareAPTask extends BaseTask {
 
     private ApContext apContext;
 
+    private File apFile;
+
+    private String apDependency;
+
+    private File explodedDir;
+
+    @InputFile
+    @Optional
+    @Nullable
+    public File getApFile() {
+        return apFile;
+    }
+
+    public void setApFile(File apFile) {
+        this.apFile = apFile;
+    }
+
+    @Input
+    @Optional
+    public String getApDependency() {
+        return apDependency;
+    }
+
+    public void setApDependency(String apDependency) {
+        this.apDependency = apDependency;
+    }
+
+    @OutputDirectory
+    public File getExplodedDir() {
+        return explodedDir;
+    }
+
+    public void setExplodedDir(File explodedDir) {
+        this.explodedDir = explodedDir;
+    }
+
     /**
      * 生成so的目录
      */
@@ -245,25 +288,26 @@ public class PrepareAPTask extends BaseTask {
         Project project = getProject();
         File apBaseFile = null;
 
-        if (null != apContext.getApFile() && apContext.getApFile().exists()) {
-            apBaseFile = apContext.getApFile();
-        } else if (StringUtils.isNotBlank(apContext.getApDependency())) {
-            Dependency dependency = project.getDependencies().create(apContext.getApDependency());
-            Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
-            configuration.setTransitive(false);
-            for (File file : configuration.getFiles()) {
-                if (file.getName().endsWith(".ap")) {
-                    apBaseFile = file;
-                    break;
+        File apFile = getApFile();
+        if (null != apFile && apFile.exists()) {
+            apBaseFile = apFile;
+        } else {
+            String apDependency = getApDependency();
+            if (StringUtils.isNotBlank(apContext.getApDependency())) {
+                Dependency dependency = project.getDependencies().create(apDependency);
+                Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
+                configuration.setTransitive(false);
+                for (File file : configuration.getFiles()) {
+                    if (file.getName().endsWith(".ap")) {
+                        apBaseFile = file;
+                        break;
+                    }
                 }
             }
         }
 
         if (null != apBaseFile && apBaseFile.exists()) {
-
-            File explodedDir = project.file(
-                project.getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES + "/exploded-ap" + "/");
-
+            explodedDir = getExplodedDir();
             ZipUtils.unzip(apBaseFile, explodedDir.getAbsolutePath());
 
             apContext.setApExploredFolder(explodedDir);
@@ -313,6 +357,31 @@ public class PrepareAPTask extends BaseTask {
             variantContext.apContext.setApExploredFolder(explodedDir);
             // variantContext.apContext.setBaseApk(new File(explodedDir,
             //                                              ApContext.AP_INLINE_APK_FILENAME));
+
+            ConventionMappingHelper.map(prepareAPTask, "apFile", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    File apFile = variantContext.apContext.getApFile();
+                    if (apFile != null) {
+                        return apFile.exists() ? apFile : null;
+                    } else {
+                        return null;
+                    }
+                }
+            });
+            ConventionMappingHelper.map(prepareAPTask, "apDependency", new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    return variantContext.apContext.getApDependency();
+                }
+            });
+            ConventionMappingHelper.map(prepareAPTask, "explodedDir", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return explodedDir;
+                }
+            });
+
         }
     }
 }
