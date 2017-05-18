@@ -342,7 +342,7 @@ public class KernalVersionManager {
                 if(!TextUtils.isEmpty(dexPatchBundles) && !TextUtils.isEmpty(dexpatchStorageLocation)){
                     //external dexpatch
                     File storage = new File(dexpatchStorageLocation);
-                    if(!storage.exists() || getStorageState(storage)!=Environment.MEDIA_MOUNTED){
+                    if(!storage.exists() || !getStorageState(storage).equals(Environment.MEDIA_MOUNTED)){
                         dexPatchBundles="";
                         dexpatchStorageLocation = "";
                     }
@@ -351,7 +351,7 @@ public class KernalVersionManager {
                 if(!TextUtils.isEmpty(updateBundles) && !TextUtils.isEmpty(currentStorageLocation)){
                     //no dexpatch,but external bundle update
                     File storage = new File(currentStorageLocation);
-                    if(!storage.exists() || getStorageState(storage)!=Environment.MEDIA_MOUNTED){
+                    if(!storage.exists() || !getStorageState(storage).equals(Environment.MEDIA_MOUNTED)){
                         throw new IOException("update bundle location storage is not usable");
                     }
                 }

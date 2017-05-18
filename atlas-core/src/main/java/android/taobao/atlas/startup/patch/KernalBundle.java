@@ -249,6 +249,8 @@ public class KernalBundle{
     public static boolean checkloadKernalBundle(Application application,String currentProcessName) {
         File updateDir = null;
         File dexPatchDir = null;
+        dexPatchDir = updateDir = new File(KernalConstants.baseContext.getFilesDir(), "storage");
+
         if(!TextUtils.isEmpty(KernalVersionManager.instance().DEXPATCH_STORAGE_LOCATION)){
             dexPatchDir = new File(KernalVersionManager.instance().DEXPATCH_STORAGE_LOCATION);
         }
@@ -256,7 +258,6 @@ public class KernalBundle{
         if(!TextUtils.isEmpty(KernalVersionManager.instance().CURRENT_STORAGE_LOCATION)){
             updateDir = new File(KernalVersionManager.instance().CURRENT_STORAGE_LOCATION);
         }
-        dexPatchDir = updateDir = new File(KernalConstants.baseContext.getFilesDir(), "storage");
 
         final File kernalUpdateDir = new File(updateDir, KERNAL_BUNDLE_NAME);
         final File kernalDexPatchDir = new File(dexPatchDir,KERNAL_BUNDLE_NAME);

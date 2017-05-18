@@ -356,8 +356,8 @@ public class BundleArchive {
                 }catch(Throwable e){}
                 if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"") && dexPatchVersion>version){
                     return true;
-                }else{
-                    if(System.currentTimeMillis()-dir.lastModified()>10*1000) {
+                }else if(dexPatchVersion<=0){
+                    if(System.currentTimeMillis()-dir.lastModified()>30*1000) {
                         return true;
                     }
                 }
@@ -366,14 +366,16 @@ public class BundleArchive {
         });
         if(dexPatchs!=null){
             for(File patch : dexPatchs){
-                Framework.deleteDirectory(patch);
+                if(patch.isDirectory()) {
+                    Framework.deleteDirectory(patch);
+                }
             }
         }
 
         // remove old update version
         File[] dirs = bundleDir.listFiles();
         for(File dir : dirs){
-            if(!dir.getName().contains("dexpatch") && !dir.getName().equals(uniqueTag)){
+            if(dir.isDirectory() && !dir.getName().contains("dexpatch") && !dir.getName().equals(uniqueTag)){
                 Framework.deleteDirectory(dir);
             }
         }

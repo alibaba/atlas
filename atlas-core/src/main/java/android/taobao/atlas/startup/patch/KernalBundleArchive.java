@@ -249,8 +249,9 @@ import java.util.zip.ZipFile;
         }
         if(dexPatchVersion>0){
             revisionDir = new File(bundleDir,DEXPATCH_DIR+dexPatchVersion);
+        }else {
+            revisionDir = new File(bundleDir, version);
         }
-
         if (revisionDir==null || !revisionDir.exists()) {
             throw new IOException("can not find kernal bundle");
         }
@@ -301,7 +302,7 @@ import java.util.zip.ZipFile;
             File[] dexPatchs = dexPatchDir.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String filename) {
-                    if (dexPatchVersion > 0 && !filename.equals(dexPatchVersion + "")) {
+                    if (dexPatchVersion > 0 && filename.equals(dexPatchVersion + "")) {
                         return false;
                     } else {
                         return true;
@@ -310,14 +311,16 @@ import java.util.zip.ZipFile;
             });
             if (dexPatchs != null) {
                 for (File patch : dexPatchs) {
-                    deleteDirectory(patch);
+                    if(patch.isDirectory()) {
+                        deleteDirectory(patch);
+                    }
                 }
             }
 
             // remove old update version
             File[] dirs = bundleDir.listFiles();
             for (File dir : dirs) {
-                if (!dir.getName().contains("dexpatch") && !dir.getName().equals(uniqueTag)) {
+                if (dir.isDirectory() && !dir.getName().contains("dexpatch") && !dir.getName().equals(uniqueTag)) {
                     deleteDirectory(dir);
                 }
             }

@@ -401,8 +401,8 @@ public class BaselineInfoManager{
 
     public void saveBaselineInfo(String newBaselineVersion, HashMap<String,String> infos,String storageLocation) throws IOException{
         try {
-            mVersionManager.getClass().getDeclaredMethod("saveUpdateInfo",String.class,HashMap.class,boolean.class).invoke(
-                    mVersionManager,newBaselineVersion,infos,RuntimeVariables.sCachePreVersionBundles
+            mVersionManager.getClass().getDeclaredMethod("saveUpdateInfo",String.class,HashMap.class,boolean.class,String.class).invoke(
+                    mVersionManager,newBaselineVersion,infos,RuntimeVariables.sCachePreVersionBundles,storageLocation
             );
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -417,8 +417,8 @@ public class BaselineInfoManager{
 
     public void saveDexPathInfo(HashMap<String,String> infos,String storageLocation) throws IOException{
         try {
-            mVersionManager.getClass().getDeclaredMethod("saveDexPatchInfo",HashMap.class).invoke(
-                    mVersionManager,infos);
+            mVersionManager.getClass().getDeclaredMethod("saveDexPatchInfo",HashMap.class,String.class).invoke(
+                    mVersionManager,infos,storageLocation);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {

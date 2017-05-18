@@ -524,7 +524,7 @@ public final class Framework {
             File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
             if(externalStorages!=null && externalStorages.length>0){
                 for(File externalStorage : externalStorages){
-                    if(getStorageState(externalStorage)==Environment.MEDIA_MOUNTED && externalStorage.getUsableSpace()>50*1024*1024) {
+                    if(getStorageState(externalStorage).equals(Environment.MEDIA_MOUNTED) && externalStorage.getUsableSpace()>50*1024*1024) {
                         updateStorageDir = externalStorage;
                     }
                 }

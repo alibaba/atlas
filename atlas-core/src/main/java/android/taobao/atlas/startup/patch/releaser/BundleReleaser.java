@@ -445,7 +445,7 @@ public class BundleReleaser {
                         }else{
                             //interpretOnly
                             optimizedPath = KernalConstants.baseContext.getFilesDir()+File.separator+"fake.dex";
-                            AndroidRuntime.getInstance().loadDex(KernalConstants.baseContext, validDexes[j].getPath(), optimizedPath, 0, true);
+                            dexFiles[j] = AndroidRuntime.getInstance().loadDex(KernalConstants.baseContext, validDexes[j].getPath(), optimizedPath, 0, true);
                         }
                         boolean result = verifyDexFile(dexFiles[j],optimizedPath);
                         if (!result) {

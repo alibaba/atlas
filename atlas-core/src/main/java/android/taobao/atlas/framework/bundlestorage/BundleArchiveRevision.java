@@ -286,7 +286,11 @@ public class BundleArchiveRevision {
         if (!this.revisionDir.exists()) {
             this.revisionDir.mkdirs();
         }
-
+        if(revisionDir.getAbsolutePath().startsWith(RuntimeVariables.androidApplication.getFilesDir().getAbsolutePath())){
+            externalStorage = false;
+        }else{
+            externalStorage = true;
+        }
         if(shouldCopyInstallFile(file)){
             if (isSameDriver(revisionDir, file)) {
                 this.revisionLocation = FILE_PROTOCOL;
@@ -312,6 +316,11 @@ public class BundleArchiveRevision {
     //reload
     BundleArchiveRevision(String location, File revisionDir) throws IOException{
         this.location = location;
+        if(revisionDir.getAbsolutePath().startsWith(RuntimeVariables.androidApplication.getFilesDir().getAbsolutePath())){
+            externalStorage = false;
+        }else{
+            externalStorage = true;
+        }
         File metafile = new File(revisionDir, "meta");
         if (metafile.exists()) {
             DataInputStream in = new DataInputStream(new FileInputStream(metafile));
