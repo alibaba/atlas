@@ -319,6 +319,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
     private File shareResourceFile;
 
+    private File shareResourceFile2;
+
     private File rtxtFile;
 
     private File baselineFile;
@@ -341,8 +343,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         // If are in instant run mode and we have an instant run enabled manifest
         File instantRunManifest = getInstantRunManifestFile();
         File manifestFileToPackage = instantRunBuildContext.isInInstantRunMode() &&
-                instantRunManifest != null &&
-                instantRunManifest.exists() ? instantRunManifest : getManifestFile();
+                                     instantRunManifest != null &&
+                                     instantRunManifest.exists() ? instantRunManifest : getManifestFile();
 
         //增加awb模块编译所需要的额外参数
         addAaptOptions();
@@ -439,10 +441,15 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             options.add("-I");
             options.add(getShareResourceFile().getAbsolutePath());
         }
-        //if (null != getBaselineFile()) {
-        //    options.add("-B");
-        //    options.add(getBaselineFile().getAbsolutePath());
-        //}
+        if (null != getShareResourceFile2() && getShareResourceFile2().exists()) {
+            options.add("-I");
+            options.add(getShareResourceFile2().getAbsolutePath());
+        }
+        if (null != getBaselineFile()) {
+            options.add("-B");
+            options.add(getBaselineFile().getAbsolutePath());
+            options.add("--merge");
+        }
 
         aaptOptions.additionalParameters(options.toArray(new String[0]));
     }
@@ -477,12 +484,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
         private final AppVariantOutputContext appVariantOutputContext;
 
-        public ConfigAction(VariantOutputScope scope,
-                            File symbolLocation,
-                            boolean generateResourcePackage,
-                            AwbBundle awbBundle,
-                            AtlasBuilder tAndroidBuilder,
-                            AppVariantOutputContext appVariantOutputContext) {
+        public ConfigAction(VariantOutputScope scope, File symbolLocation, boolean generateResourcePackage, AwbBundle awbBundle, AtlasBuilder tAndroidBuilder, AppVariantOutputContext appVariantOutputContext) {
             this.scope = scope;
             this.symbolLocation = symbolLocation;
             this.generateResourcePackage = generateResourcePackage;
@@ -516,7 +518,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             processResources.setVariantName(config.getFullName());
 
             if (variantData.getSplitHandlingPolicy() ==
-                    SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
+                SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
                 Set<String> allFilters = new HashSet<String>();
                 allFilters.addAll(variantData.getFilters(com.android.build.OutputFile.FilterType.DENSITY));
                 allFilters.addAll(variantData.getFilters(com.android.build.OutputFile.FilterType.LANGUAGE));
@@ -545,13 +547,13 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                                                 String value = AtlasBuildContext.customPackageIdMaps
                                                         .get(awbBundle.getResolvedCoordinates()
                                                                      .getGroupId() +
-                                                                     ":" +
-                                                                     awbBundle.getResolvedCoordinates()
-                                                                             .getArtifactId());
+                                                             ":" +
+                                                             awbBundle.getResolvedCoordinates()
+                                                                     .getArtifactId());
                                                 if (org.apache.commons.lang.StringUtils.isEmpty(
                                                         value)) {
                                                     throw new GradleException("package id is empaty" +
-                                                                                      awbBundle);
+                                                                              awbBundle);
                                                 }
                                                 return value;
                                             }
@@ -682,14 +684,28 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                     return appVariantOutputContext.getVariantContext().getMergeAssets(awbBundle);
                 }
             });
-            ConventionMappingHelper.map(processResources, "baselineFile", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
-                            awbBundle.getAwbSoName());
-                    return baseAwb;
-                }
-            });
+            if (appVariantOutputContext.getVariantContext()
+                    .getAtlasExtension()
+                    .getTBuildConfig()
+                    .isIncremental()) {
+                ConventionMappingHelper.map(processResources, "baselineFile", new Callable<File>() {
+                    @Override
+                    public File call() throws Exception {
+                        return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
+                                awbBundle.getAwbSoName());
+                    }
+                });
+
+                ConventionMappingHelper.map(processResources,
+                                            "shareResourceFile2",
+                                            new Callable<File>() {
+                                                @Override
+                                                public File call() throws Exception {
+                                                    return appVariantOutputContext.getVariantContext().apContext
+                                                            .getBaseApk();
+                                                }
+                                            });
+            }
 
             if (generateResourcePackage) {
                 processResources.setPackageOutputFile(appVariantOutputContext.getAwbProcessResourcePackageOutputFile(
@@ -719,14 +735,14 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                                                 Collection<String> resConfigs = config.getMergedFlavor()
                                                         .getResourceConfigurations();
                                                 if (resConfigs.size() == 1 &&
-                                                        Iterators.getOnlyElement(resConfigs.iterator())
-                                                                .equals("auto")) {
+                                                    Iterators.getOnlyElement(resConfigs.iterator())
+                                                            .equals("auto")) {
                                                     if (scope.getGlobalScope()
-                                                            .getAndroidBuilder()
-                                                            .getTargetInfo()
-                                                            .getBuildTools()
-                                                            .getRevision()
-                                                            .getMajor() >= 21) {
+                                                                .getAndroidBuilder()
+                                                                .getTargetInfo()
+                                                                .getBuildTools()
+                                                                .getRevision()
+                                                                .getMajor() >= 21) {
                                                         return variantData.discoverListOfResourceConfigsNotDensities();
                                                     } else {
                                                         return variantData.discoverListOfResourceConfigs();
@@ -766,17 +782,17 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         public File getInstantRunSupportDir(GradleVariantConfiguration config) {
             return new File(scope.getGlobalScope().getIntermediatesDir(),
                             "/awb-instant-run-support/" +
-                                    config.getDirName() +
-                                    "/" +
-                                    awbBundle.getName());
+                            config.getDirName() +
+                            "/" +
+                            awbBundle.getName());
         }
 
         public File getResourceBlameLogDir(GradleVariantConfiguration config) {
             return new File(scope.getGlobalScope().getIntermediatesDir(),
                             "awb-blame/res/" +
-                                    config.getDirectorySegments() +
-                                    "/" +
-                                    awbBundle.getName());
+                            config.getDirectorySegments() +
+                            "/" +
+                            awbBundle.getName());
         }
     }
 
@@ -1021,6 +1037,16 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
     public void setShareResourceFile(File shareResourceFile) {
         this.shareResourceFile = shareResourceFile;
+    }
+
+    @InputFile
+    @Optional
+    public File getShareResourceFile2() {
+        return shareResourceFile2;
+    }
+
+    public void setShareResourceFile2(File shareResourceFile2) {
+        this.shareResourceFile2 = shareResourceFile2;
     }
 
     @InputFile

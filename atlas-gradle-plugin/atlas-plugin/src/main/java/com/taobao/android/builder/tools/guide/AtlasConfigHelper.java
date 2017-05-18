@@ -222,6 +222,7 @@ import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.annotation.Config;
 import com.taobao.android.builder.extension.annotation.ConfigGroup;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.NamedDomainObjectContainer;
 
 /**
@@ -331,13 +332,23 @@ public class AtlasConfigHelper {
                 configField.order = config.order();
                 configField.desc = config.message();
                 Object obj = field.get(object);
-                configField.value = (null == obj ? null : String.valueOf(obj));
+                String value = "";
+                if (obj != null && !(obj instanceof Map) && !(obj instanceof List)) {
+                    value = String.valueOf(obj);
+                }
+                configField.value = value;
                 configField.groupOrder = groupOrder;
                 configField.variantName = variantName;
                 configField.type = field.getType().getSimpleName();
                 configField.advanced = config.advance();
                 configField.group = config.group();
+
+                String variant = StringUtils.isEmpty(variantName) ? "" : ("[" + variantName + "]");
+                String title = StringUtils.isEmpty(config.title()) ? config.message() : config.title();
+                configField.title = variant + title;
+
                 configFieldList.add(configField);
+
                 continue;
             }
 

@@ -216,6 +216,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 
 import static com.android.SdkConstants.DOT_JAR;
@@ -297,6 +298,15 @@ public class FileNameUtils {
         }
 
         return null;
+    }
+
+    public static String getJarVersionName(Class clazz) {
+        String name = FilenameUtils.getBaseName(clazz.getProtectionDomain().getCodeSource().getLocation().getFile());
+        int index = name.indexOf("-");
+        if (index == -1) {
+            return "";
+        }
+        return name.substring(index + 1);
     }
 
 }

@@ -237,7 +237,6 @@ import javassist.ClassPool;
 import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.dom4j.DocumentException;
 import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.StopExecutionException;
@@ -302,11 +301,13 @@ public class ClassInjectTransform extends MtlInjectTransform {
 
         InjectParam injectParam = null;
         try {
+
             injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
 
-            injectParam.outputFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/atlasFrameworkProperties.json");
+            injectParam.outputFile = new File(appVariantContext.getProject().getBuildDir(),
+                                              "outputs/atlasFrameworkProperties.json");
 
-        } catch (DocumentException e) {
+        } catch (Exception e) {
             throw new TransformException(e);
         }
 

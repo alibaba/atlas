@@ -223,10 +223,12 @@ public class TBuildType {
 
     private File baseApFile;
 
-    @Config(message = "基线的依赖坐标， 如： com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
+    @Config(title = "基线的依赖坐标",message = "如： com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
     private String baseApDependency;
 
     private PatchConfig patchConfig;
+
+    private MultiDexConfig multiDexConfig;
 
     private DefaultSigningConfig signingConfig;
 
@@ -272,5 +274,13 @@ public class TBuildType {
 
     public void setSigningConfig(DefaultSigningConfig signingConfig) {
         this.signingConfig = signingConfig;
+    }
+
+    public MultiDexConfig getMultiDexConfig() {
+        return multiDexConfig;
+    }
+
+    public void setMultiDexConfig(MultiDexConfig multiDexConfig) {
+        this.multiDexConfig = multiDexConfig;
     }
 }

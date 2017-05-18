@@ -414,8 +414,10 @@ public class StandardizeLibManifestTask extends DefaultTask {
             baseVariantOutputData.manifestProcessorTask.doFirst(
                 new PreProcessManifestAction(appVariantContext, baseVariantOutputData));
 
-            baseVariantOutputData.manifestProcessorTask.doLast(
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+                baseVariantOutputData.manifestProcessorTask.doLast(
                 new PostProcessManifestAction(appVariantContext, baseVariantOutputData));
+            }
 
         }
 

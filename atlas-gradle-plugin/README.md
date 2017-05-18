@@ -2,6 +2,20 @@
 
 ## changelog
 
+### TODO
+
+1. bundleInfo 增加unique_tag
+2. 去除classInjectTransform
+
+### 2.3.1.rc15
+
+1. bundleInfo 增加unique_tag
+2. 增加fastMultiDex功能，该功能需要关闭android里的multidexEnabled，充分利用predex和dexcache。配置开关 `atlas.multiDexConfigs.debug.fastMultiDex=true`
+
+### 2.3.1.rc11
+
+1. 支持bundle配置proguard规则，仅支持keep和dontwarn
+
 ### 2.3.0.alpha15
 
 1. 支持手淘灰度版本

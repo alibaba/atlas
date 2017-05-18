@@ -212,13 +212,13 @@ package com.taobao.android.builder.tasks.awo;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.signing.SigningException;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.awo.utils.AwoInstaller;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.TaskAction;
@@ -233,13 +233,17 @@ import java.util.concurrent.Callable;
 public class AwoInstallTask extends BaseTask {
 
     private File awoFile;
+
     private String packageName;
 
     @TaskAction
     public void doTask() throws IOException, SigningException {
 
-        AwoInstaller.installAwoSo( getBuilder(), getAwoFile(), getPackageName(), getLogger());
-
+        AwoInstaller.installAwoSo(getBuilder(),
+                                  getAwoFile(),
+                                  getPackageName(),
+                                  getLogger(),
+                                  getAwoFile().getName());
     }
 
     @InputFile
@@ -263,6 +267,7 @@ public class AwoInstallTask extends BaseTask {
     public static class ConfigAction extends MtlBaseTaskAction<AwoInstallTask> {
 
         private final LibVariantContext libVariantContext;
+
         private final AtlasExtension atlasExtension;
 
         public ConfigAction(LibVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
@@ -270,7 +275,6 @@ public class AwoInstallTask extends BaseTask {
             this.libVariantContext = variantContext;
             this.atlasExtension = this.libVariantContext.getAtlasExtension();
         }
-
 
         @Override
         public String getName() {
@@ -287,7 +291,10 @@ public class AwoInstallTask extends BaseTask {
 
             task.setVariantName(libVariantContext.getVariantName());
 
-            String buildType = libVariantContext.getScope().getVariantConfiguration().getBuildType().getName();
+            String buildType = libVariantContext.getScope()
+                    .getVariantConfiguration()
+                    .getBuildType()
+                    .getName();
             if (!atlasExtension.getBundleConfig().isAwoDynDeploy()) {
                 task.setEnabled(false);
                 return;
@@ -298,11 +305,11 @@ public class AwoInstallTask extends BaseTask {
                 @Override
                 public String call() {
                     //TODO  from config
-                    String packageName = ManifestFileUtils.getPackage(new File(libVariantContext.apContext.getApExploredFolder(),
-                            "AndroidManifest.xml"));
+                    String packageName = ManifestFileUtils.getPackage(new File(libVariantContext.apContext
+                                                                                       .getApExploredFolder(),
+                                                                               "AndroidManifest.xml"));
                     return packageName;
                 }
-
             });
 
             ConventionMappingHelper.map(task, "awoFile", new Callable<File>() {
@@ -312,8 +319,6 @@ public class AwoInstallTask extends BaseTask {
                     return libVariantContext.getPackageFile();
                 }
             });
-
         }
     }
-
 }

@@ -301,6 +301,7 @@ public class ApBuildTask extends DefaultAndroidTask {
         addFile(appBuildInfo.getDependenciesFile());
         addFile(appBuildInfo.getBuildInfoFile());
         addFile(appBuildInfo.getVersionPropertiesFile());
+        addFile(new File(this.getProject().getBuildDir(),"outputs/atlasFrameworkProperties.json"));
         //addFile( appBuildInfo.getBundleInfoFile());
 
         for (File file : appBuildInfo.getOtherFiles()) {

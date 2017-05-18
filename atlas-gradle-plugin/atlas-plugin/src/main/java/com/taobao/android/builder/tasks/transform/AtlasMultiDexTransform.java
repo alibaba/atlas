@@ -238,6 +238,8 @@ public class AtlasMultiDexTransform extends MultiDexTransform {
         super(variantScope, dexOptions, includeInMainDexJarFile);
     }
 
+
+
     /**
      * add a couple of rules that cannot be easily parsed from the manifest.
      * keep("public class * extends android.app.Instrumentation { <init>(); }");

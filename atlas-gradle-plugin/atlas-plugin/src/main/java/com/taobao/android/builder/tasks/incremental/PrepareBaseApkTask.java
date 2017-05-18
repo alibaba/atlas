@@ -1,4 +1,4 @@
-package com.taobao.android.builder.tasks;
+package com.taobao.android.builder.tasks.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.api.VariantContext;
@@ -51,7 +51,9 @@ public class PrepareBaseApkTask extends IncrementalTask {
     protected void doFullTaskAction() throws IOException {
         File baseApk = getBaseApk();
         File outputDir = getOutputDir();
+        FileUtils.deleteDirectoryContents(outputDir);
         ZipUtils.unzip(baseApk, outputDir.getAbsolutePath());
+        FileUtils.deleteDirectoryContents(FileUtils.join(outputDir, "META-INF/"));
         int dexFilesCount = getDexFilesCount();
         Set<File> baseDexFileSet = getProject().fileTree(ImmutableMap.of("dir",
                                                                          outputDir,

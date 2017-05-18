@@ -207,95 +207,149 @@
  *
  */
 
-package com.taobao.android.builder.tasks.app.bundle;
-
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.api.AwbTransform;
-import com.google.common.collect.Lists;
-
-import org.apache.commons.io.FileUtils;
+package com.taobao.android.builder.tasks.app;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
-/**
- * 增加Awb的配置到混淆的配置中去
- * Created by shenghua.nish on 2016-06-12 上午9:23.
- */
-public class AwbProguardConfiguration {
+import com.alibaba.fastjson.JSON;
 
-    public static final String INJARS_OPTION = "-injars";
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.classinject.InjectParam;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.TaskAction;
 
-    public static final String OUTJARS_OPTION = "-outjars";
+public class GenerateAtlasSourceTask extends BaseTask {
 
-    public static final String OBUSCATED_JAR = "obfuscated.jar";
+    private AppVariantContext appVariantContext;
 
-    private final Collection<AwbTransform> awbTransforms;
+    private File outputDir;
 
-    private final File awbObfuscatedDir;
-
-    private final AppVariantOutputContext appVariantOutputContext;
-
-    public AwbProguardConfiguration(Collection<AwbTransform> awbTransforms,
-                                    File awbObfuscatedDir,
-                                    AppVariantOutputContext appVariantOutputContext) {
-        this.awbTransforms = awbTransforms;
-        this.awbObfuscatedDir = awbObfuscatedDir;
-        this.appVariantOutputContext = appVariantOutputContext;
+    @OutputDirectory
+    public File getOutputDir() {
+        return outputDir;
     }
 
-    /**
-     * 打印proguard的config文件到指定文件
-     *
-     * @param outConfigFile
-     */
-    public void printConfigFile(File outConfigFile) throws IOException {
-        List<String> configs = Lists.newArrayList();
-        //awb对没个lib单独做proguard，方便predex
-        for (AwbTransform awbTransform : awbTransforms) {
+    private InjectParam injectParam;
 
-            List<File> inputLibraries = Lists.newArrayList();
-
-            String name = awbTransform.getAwbBundle().getName();
-            File obuscateDir = new File(awbObfuscatedDir, awbTransform.getAwbBundle().getName());
-            obuscateDir.mkdirs();
-
-            //            configs.add();
-            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
-                File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
-                inputLibraries.add(obsJar);
-                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-            }
-
-            Set<String> classNames = new HashSet<>();
-            for (File inputLibrary : awbTransform.getInputLibraries()) {
-                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
-
-                String fileName = inputLibrary.getName();
-
-                if (classNames.contains(fileName)) {
-                    fileName = "a" + classNames.size() + "_" + fileName;
-                }
-
-                classNames.add(fileName);
-
-                File obsJar = new File(obuscateDir, fileName);
-
-                inputLibraries.add(obsJar);
-                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-            }
-            //            configs.add();
-
-            awbTransform.setInputFiles(inputLibraries);
-            awbTransform.setInputDir(null);
-            awbTransform.getInputLibraries().clear();
-            appVariantOutputContext.getAwbTransformMap().put(name, awbTransform);
+    @Input
+    public InjectParam getInput() {
+        if (null != injectParam) {
+            return injectParam;
         }
-        FileUtils.writeLines(outConfigFile, configs);
+        try {
+            injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return injectParam;
+    }
+
+    @TaskAction
+    void generate() {
+
+        InjectParam injectParam = getInput();
+
+        File outputFile = new File(outputDir, "android/taobao/atlas/framework/FrameworkProperties.java");
+
+        List<String> lines = new ArrayList<>();
+
+        lines.add("package android.taobao.atlas.framework;");
+        lines.add("public class FrameworkProperties {");
+
+        lines.add("private String version = \"" + injectParam.version + "\";");
+        lines.add("public String getVersion() {return version;}");
+        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
+        //lines.add("public static String bunleInfo = \"\";");
+        if (StringUtils.isNotEmpty(injectParam.autoStartBundles)) {
+            lines.add("public static String autoStartBundles = \"" + injectParam.autoStartBundles + "\";");
+        }
+        if (StringUtils.isNotEmpty(injectParam.preLaunch)) {
+            lines.add("public static String preLaunch = \"" + injectParam.preLaunch + "\";");
+        }
+        if (StringUtils.isNotEmpty(injectParam.group)) {
+            lines.add("public static String group = \"" + injectParam.group + "\";");
+        }
+        lines.add("public static String outApp = \"" + injectParam.outApp + "\";");
+
+        lines.add("}");
+
+        outputFile.getParentFile().mkdirs();
+        try {
+
+            FileUtils.writeLines(outputFile, lines);
+
+            Map output = new HashMap();
+            output.put("bundleInfo", JSON.parseArray(injectParam.bundleInfo));
+            output.put("autoStartBundles", injectParam.autoStartBundles);
+            output.put("preLaunch", injectParam.preLaunch);
+            output.put("group", injectParam.group);
+            output.put("outApp", injectParam.outApp);
+            output.put("unit_tag", injectParam.unit_tag);
+
+            FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),
+                                     "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
+
+        } catch (Exception e) {
+            throw new GradleException(e.getMessage(), e);
+        }
+
+    }
+
+    private String escapeExprSpecialWord(String keyword) {
+        if (StringUtils.isNotBlank(keyword)) {
+            String[] fbsArr = {"\""};
+            for (String key : fbsArr) {
+                if (keyword.contains(key)) {
+                    keyword = keyword.replace(key, "\\" + key);
+                }
+            }
+        }
+        return keyword;
+    }
+
+    public static class ConfigAction extends MtlBaseTaskAction<GenerateAtlasSourceTask> {
+
+        private AppVariantContext appVariantContext;
+
+        public ConfigAction(AppVariantContext appVariantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName("generate", "AtlasSources");
+        }
+
+        @Override
+        public Class<GenerateAtlasSourceTask> getType() {
+            return GenerateAtlasSourceTask.class;
+        }
+
+        @Override
+        public void execute(GenerateAtlasSourceTask atlasSourceTask) {
+
+            super.execute(atlasSourceTask);
+
+            File srcDir = appVariantContext.getAtlaSourceDir();
+            appVariantContext.getVariantData().javacTask.source(srcDir);
+
+            atlasSourceTask.outputDir = srcDir;
+            atlasSourceTask.appVariantContext = appVariantContext;
+
+        }
     }
 }

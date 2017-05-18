@@ -207,135 +207,132 @@
  *
  */
 
-package com.taobao.android.builder.tasks.transform.hook;
+package com.taobao.android.builder.tasks.incremental;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.pipeline.TransformTask;
-import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.transforms.ProGuardTransform;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.core.VariantConfiguration;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.tasks.app.bundle.AwbProguardConfiguration;
-import org.gradle.api.Action;
-import org.gradle.api.GradleException;
-import org.gradle.api.Task;
-import org.gradle.api.tasks.StopExecutionException;
-import org.gradle.api.tasks.TaskCollection;
+import com.android.builder.signing.SigningException;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tasks.awo.utils.AwoInstaller;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
-import java.util.function.Supplier;
-
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+import java.util.Collection;
+import java.util.concurrent.Callable;
 
 /**
- * Created by wuzhong on 2016/12/9.
+ * 把 patch 安装到手机上的任务
  */
-public class AwbProguradHook {
+public class AwoInstallTask extends BaseTask {
 
-    /**
-     * hook混淆的任务,加入awb的混淆配置
-     *
-     * @param appVariantContext
-     */
-    public void hookProguardTask(final AppVariantContext appVariantContext) {
-        final VariantScope variantScope = appVariantContext.getScope();
-        List<TransformTask> proguaradTransformTasks = getTransformTaskByTransformType(appVariantContext, ProGuardTransform.class);
-        for (TransformTask proguaradTransformTask : proguaradTransformTasks) {
-            final ProGuardTransform proGuardTransform = (ProGuardTransform) proguaradTransformTask.getTransform();
-            if (null != proGuardTransform) {
+    private File mainDexFile;
 
-                proguaradTransformTask.doFirst(new Action<Task>() {
-                    @Override
-                    public void execute(Task task) {
-                        GlobalScope globalScope = variantScope.getGlobalScope();
-                        File proguardOut = new File(Joiner.on(File.separatorChar).join(String.valueOf(globalScope.getBuildDir()), FD_OUTPUTS, "mapping", variantScope.getVariantConfiguration().getDirName()));
-                        //为了方便排查,先把configuration打印到目录
-                        proGuardTransform.printconfiguration(new File(proguardOut, "tmp_config.cfg"));
-                        final File outConfigFile = new File(proguardOut, "awb_config.cfg");
+    private String packageName;
 
-                        //增加awb的配置
-                        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantScope.getVariantConfiguration().getFullName());
-                        if (null == dependencyTree) {
-                            throw new StopExecutionException("DependencyTree cannot be null!");
-                        }
+    private Collection<File> awbApkFiles;
 
-                        if (dependencyTree.getAwbBundles().size() > 0) {
+    // ----- PRIVATE TASK API -----
 
-                            BaseVariantOutputData vod = appVariantContext.getVariantData().getOutputs().get(0);
-                            AppVariantOutputContext appVariantOutputContext = getAppVariantOutputContext(appVariantContext, vod);
-                            File awbObfuscatedDir = new File(globalScope.getIntermediatesDir(), "/classes-proguard/" + variantScope.getVariantConfiguration().getDirName());
-                            AwbProguardConfiguration awbProguardConfiguration = new AwbProguardConfiguration(appVariantOutputContext.getAwbTransformMap().values(), awbObfuscatedDir, appVariantOutputContext);
-                            try {
-                                awbProguardConfiguration.printConfigFile(outConfigFile);
-                            } catch (IOException e) {
-                                throw new GradleException("", e);
-                            }
-                            proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
-                                @Override
-                                public Collection<File> get() {
-                                    Set<File> proguardFiles = new HashSet<File>();
-                                    ((HashSet<File>) proguardFiles).add(outConfigFile);
-                                    return proguardFiles;
-                                }
-                            });
-                        }
+    @InputFiles
+    @Optional
+    public Collection<File> getAwbApkFiles() {
+        return awbApkFiles;
+    }
 
-                        File mappingFile = null;
-                        if (null != appVariantContext.apContext.getApExploredFolder() && appVariantContext.apContext.getApExploredFolder().exists()) {
-                            mappingFile = new File(appVariantContext.apContext.getApExploredFolder(), "mapping.txt");
-                        } else {
-                            mappingFile = new File(appVariantContext.getScope().getGlobalScope().getProject().getProjectDir(), "mapping.txt");
-                        }
+    @TaskAction
+    public void doTask() throws IOException, SigningException {
 
-                        if (null != mappingFile && mappingFile.exists()) {
-                            proGuardTransform.applyTestedMapping(mappingFile);
-                        }
-                    }
+        AwoInstaller.installAwoSos(getBuilder(),
+                                   getMainDexFile(),
+                                   getAwbApkFiles(),
+                                   getPackageName(),
+                                   getLogger());
+    }
 
-                });
+    @InputFile
+    public File getMainDexFile() {
+        return mainDexFile;
+    }
+
+    public void setMainDexFile(File maindexFile) {
+        this.mainDexFile = maindexFile;
+    }
+
+    @Input
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
+
+    public static class ConfigAction extends MtlBaseTaskAction<AwoInstallTask> {
+
+        private final AppVariantContext appVariantContext;
+
+        private final AtlasExtension atlasExtension;
+
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
+            this.atlasExtension = this.appVariantContext.getAtlasExtension();
+        }
+
+        @Override
+        public String getName() {
+            return appVariantContext.getScope().getTaskName("awoInstall");
+        }
+
+        @Override
+        public Class<AwoInstallTask> getType() {
+            return AwoInstallTask.class;
+        }
+
+        @Override
+        public void execute(AwoInstallTask task) {
+
+            task.setVariantName(appVariantContext.getVariantName());
+
+            String buildType = appVariantContext.getScope()
+                    .getVariantConfiguration()
+                    .getBuildType()
+                    .getName();
+            if (!atlasExtension.getBundleConfig().isAwoDynDeploy()) {
+                task.setEnabled(false);
+                return;
             }
 
-        }
+            ConventionMappingHelper.map(task, "packageName", new Callable<String>() {
 
-
-    }
-
-    private AppVariantOutputContext getAppVariantOutputContext(AppVariantContext appVariantContext, BaseVariantOutputData vod) {
-
-        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) appVariantContext.getOutputContextMap().get(vod.getFullName());
-
-        if (null == appVariantOutputContext) {
-            appVariantOutputContext =
-                    new AppVariantOutputContext(vod.getFullName(), appVariantContext, vod.getScope(), vod.variantData);
-            appVariantContext.getOutputContextMap().put(vod.getFullName(), appVariantOutputContext);
-        }
-
-        return appVariantOutputContext;
-    }
-
-    private List<TransformTask> getTransformTaskByTransformType(AppVariantContext appVariantContext, Class<?> transformClass) {
-        List<TransformTask> transformTasksList = Lists.newArrayList();
-        VariantConfiguration config = appVariantContext.getVariantConfiguration();
-        TaskCollection<TransformTask> transformTasks = appVariantContext.getProject().getTasks().withType(TransformTask.class);
-        SortedMap<String, TransformTask> transformTaskSortedMap = transformTasks.getAsMap();
-        String variantName = config.getFullName();
-        for (String taskName : transformTaskSortedMap.keySet()) {
-            TransformTask transformTask = transformTaskSortedMap.get(taskName);
-            if (variantName.equals(transformTask.getVariantName())) {
-                if (transformTask.getTransform().getClass().equals(transformClass)) {
-                    transformTasksList.add(transformTask);
+                @Override
+                public String call() {
+                    //TODO  from config
+                    String packageName = ManifestFileUtils.getPackage(new File(appVariantContext.apContext
+                                                                                       .getApExploredFolder(),
+                                                                               "AndroidManifest.xml"));
+                    return packageName;
                 }
-            }
-        }
-        return transformTasksList;
-    }
+            });
 
+            ConventionMappingHelper.map(task, "mainDexFile", new Callable<File>() {
+
+                @Override
+                public File call() {
+                    return getAppVariantOutputContext().getDiffApk();
+                }
+            });
+            ConventionMappingHelper.map(task, "awbApkFiles", appVariantContext::getAwbApkFiles);
+        }
+    }
 }

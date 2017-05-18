@@ -207,156 +207,28 @@
  *
  */
 
-package com.taobao.android.builder.tools;
-
-import org.apache.commons.io.FileUtils;
-import org.gradle.BuildListener;
-import org.gradle.BuildResult;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.api.execution.TaskExecutionListener;
-import org.gradle.api.initialization.Settings;
-import org.gradle.api.invocation.Gradle;
-import org.gradle.api.tasks.TaskState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package com.taobao.android.builder.tools.multidex;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import org.apache.commons.io.comparator.NameFileComparator;
 
 /**
- * Created by wuzhong on 16/8/16.
- *
- *
- *  use --profile replace
+ * Created by wuzhong on 2017/5/9.
  */
-@Deprecated
-public class PerfMonitor {
+public class NameComparator extends NameFileComparator {
 
-    private static Logger logger = LoggerFactory.getLogger(PerfMonitor.class);
+    @Override
+    public int compare(File file1, File file2) {
 
-    public static File perfProp;
-
-    public static List<String> keyPoints = new ArrayList<String>();
-
-    public static void monitor(Project project) {
-        project.getGradle().addListener(new TimingRecorder());
-        if (null == perfProp) {
-            perfProp = new File(project.getBuildDir(), "outputs/perf.properties");
+        if (file1.getName().startsWith("combined")) {
+            return 1;
         }
+
+        if (file2.getName().startsWith("combined")) {
+            return -1;
+        }
+
+        return super.compare(file1, file2);
     }
-
-
-    public static class TimeDuring implements Serializable {
-        public String threadName;
-        public String taskName;
-        public long startTime;
-        public long endTime;
-
-        public long getDuring() {
-            return endTime - startTime;
-        }
-
-        @Override
-        public String toString() {
-            return "TimeDuring{" +
-                    "threadName='" + threadName + '\'' +
-                    ", taskName='" + taskName + '\'' +
-                    ", startTime=" + startTime +
-                    ", endTime=" + endTime +
-                    ", during=" + getDuring() +
-                    '}';
-        }
-    }
-
-    public static class TimingRecorder implements TaskExecutionListener, BuildListener {
-
-        public static long startTime = System.currentTimeMillis();
-        static List<TimeDuring> list = new ArrayList<TimeDuring>();
-        static final Map<String, TimeDuring> map = new HashMap<String, TimeDuring>();
-
-        private TimeDuring getTimeDuring(Task task) {
-            String path = task.getPath();
-            if (map.containsKey(path)) {
-                return map.get(path);
-            }
-            TimeDuring timeDuring = new TimeDuring();
-            map.put(path, timeDuring);
-            return timeDuring;
-        }
-
-        @Override
-        public void beforeExecute(Task task) {
-            TimeDuring timeDuring = getTimeDuring(task);
-            timeDuring.startTime = System.currentTimeMillis() - startTime;
-            list.add(timeDuring);
-        }
-
-        @Override
-        public void afterExecute(Task task, TaskState taskState) {
-            TimeDuring timeDuring = getTimeDuring(task);
-            timeDuring.endTime = System.currentTimeMillis() - startTime;
-            timeDuring.taskName = task.getPath();
-            timeDuring.threadName = Thread.currentThread().getName();
-            logger.debug("[PerfMonitor]" + timeDuring.toString());
-
-        }
-
-        @Override
-        public void buildStarted(Gradle gradle) {
-
-        }
-
-        @Override
-        public void settingsEvaluated(Settings settings) {
-
-        }
-
-        @Override
-        public void projectsLoaded(Gradle gradle) {
-
-        }
-
-        @Override
-        public void projectsEvaluated(Gradle gradle) {
-
-        }
-
-        @Override
-        public void buildFinished(BuildResult result) {
-
-            perfProp.getParentFile().mkdirs();
-
-            String format = "[PerfMonitor] startTime: %10s  endTime: %10s  during: %10s taskName: %s";
-            for (int i = 1; i < list.size(); i++) {
-                TimeDuring timeDuring = list.get(i);
-//                String paralle = String.valueOf(list.get(i - 1).endTime > timeDuring.startTime);
-                String startTime = String.valueOf(timeDuring.startTime / 1000);
-                String endTime = String.valueOf(timeDuring.endTime / 1000);
-                long during = timeDuring.getDuring() / 1000;
-                String output = String.format(format, startTime, endTime, String.valueOf(during), timeDuring.taskName);
-                keyPoints.add(output);
-                if (during > 10) {
-                    System.err.println(output);
-                } else {
-                    System.out.println(output);
-                }
-            }
-
-            try {
-                FileUtils.writeLines(perfProp, keyPoints);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            keyPoints.clear();
-
-        }
-
-    }
-
 }
