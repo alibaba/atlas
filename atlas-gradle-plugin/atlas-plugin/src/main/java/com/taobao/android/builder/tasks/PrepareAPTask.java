@@ -214,6 +214,7 @@ package com.taobao.android.builder.tasks;
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 import com.android.build.gradle.internal.api.ApContext;
@@ -223,7 +224,7 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.zip.ZipUtils;
+import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
@@ -283,7 +284,7 @@ public class PrepareAPTask extends BaseTask {
      * 生成so的目录
      */
     @TaskAction
-    void generate() {
+    void generate() throws IOException {
 
         Project project = getProject();
         File apBaseFile = null;
@@ -308,7 +309,7 @@ public class PrepareAPTask extends BaseTask {
 
         if (null != apBaseFile && apBaseFile.exists()) {
             explodedDir = getExplodedDir();
-            ZipUtils.unzip(apBaseFile, explodedDir.getAbsolutePath());
+            BetterZip.unzipDirectory(apBaseFile, explodedDir);
 
             apContext.setApExploredFolder(explodedDir);
             // apContext.setBaseApk(new File(explodedDir, ApContext.AP_INLINE_APK_FILENAME));
