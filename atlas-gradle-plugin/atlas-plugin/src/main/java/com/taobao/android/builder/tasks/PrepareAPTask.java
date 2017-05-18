@@ -334,7 +334,6 @@ public class PrepareAPTask extends BaseTask {
         if (null != apBaseFile && apBaseFile.exists()) {
             explodedDir = getExplodedDir();
             BetterZip.unzipDirectory(apBaseFile, explodedDir);
-
             apContext.setApExploredFolder(explodedDir);
             // apContext.setBaseApk(new File(explodedDir, ApContext.AP_INLINE_APK_FILENAME));
             // apContext.setBaseManifest(new File(explodedDir, "AndroidManifest.xml"));
@@ -342,10 +341,12 @@ public class PrepareAPTask extends BaseTask {
             //                       "lib/armeabi/*",
             //                       new File(explodedDir, ApContext.AP_INLINE_AWB_FILENAME));
             if (awbBundles != null) {
+                // 解压基线Bundle
                 for (String awbBundle : awbBundles) {
                     BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME), "lib/armeabi/" + awbBundle,
                                           new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
                 }
+                // 预处理增量AndroidManifest.xml
                 ManifestFileUtils.updatePreProcessBaseManifestFile(
                     FileUtils.join(explodedDir, "manifest-modify", ANDROID_MANIFEST_XML),
                     new File(explodedDir, ANDROID_MANIFEST_XML));
