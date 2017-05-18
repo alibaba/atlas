@@ -556,7 +556,7 @@ public class TPatchTool extends BasePatchTool {
         if (FileUtils.listFiles(mainBundleFoder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
                 .size() > 0) {
             hasMainBundle = true;
-            zipBundle(mainBundleFoder, mainBundleFile);
+            CommandUtils.exec(mainBundleFoder,"zip -r "+mainBundleFile.getAbsolutePath()+" . -x .*");
         }
         FileUtils.deleteDirectory(mainBundleFoder);
 
@@ -566,7 +566,8 @@ public class TPatchTool extends BasePatchTool {
         if (patchFile.exists()) {
             FileUtils.deleteQuietly(patchFile);
         }
-        zipBundle(patchTmpDir, patchFile);
+//        zipBundle(patchTmpDir, patchFile);
+        CommandUtils.exec(patchTmpDir,"zip -r "+patchFile.getAbsolutePath()+" . -x .*");
         FileUtils.deleteDirectory(patchTmpDir);
         return patchFile;
     }
@@ -631,8 +632,8 @@ public class TPatchTool extends BasePatchTool {
                 diffBundleDex) {
             // 解压文件
             // 判断dex的差异性
-            CommandUtils.exec("unzip "+newBundleFile.getAbsolutePath()+" -d "+newBundleUnzipFolder.getAbsolutePath());
-            CommandUtils.exec("unzip "+baseBundleFile.getAbsolutePath()+" -d "+baseBundleUnzipFolder.getAbsolutePath());
+            CommandUtils.exec(patchTmpDir,"unzip "+newBundleFile.getAbsolutePath()+" -d "+newBundleUnzipFolder.getAbsolutePath());
+            CommandUtils.exec(patchTmpDir,"unzip "+baseBundleFile.getAbsolutePath()+" -d "+baseBundleUnzipFolder.getAbsolutePath());
             File destDex = new File(destPatchBundleDir, DEX_NAME);
             File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
             createBundleDexPatch(newBundleUnzipFolder,
@@ -1192,6 +1193,13 @@ public class TPatchTool extends BasePatchTool {
 
         return null;
     }
+
+
+//public static void main(String []args){
+//        String aa = "\"*/\\.*\" -x \"\\.*\"";
+//        CommandUtils.exec(new File("/Users/lilong/Downloads/111/scan-tmp/apk"),
+//                "zip -r /Users/lilong/Downloads/1.zip . -x .*");
+//}
 
 
 

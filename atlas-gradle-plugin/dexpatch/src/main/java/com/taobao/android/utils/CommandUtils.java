@@ -1,6 +1,7 @@
 package com.taobao.android.utils;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 
 /**
@@ -10,17 +11,18 @@ import java.io.InputStreamReader;
 
 public class CommandUtils {
 
-    public static void exec(String command) {
-        Runtime run = Runtime.getRuntime();
+    public static void exec(File workingDir,String command) {
         try {
-            Process process = run.exec(command);
+            ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
+            processBuilder.directory(workingDir);
+            Process process = processBuilder.start();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = null;
             while ((line = bufferedReader.readLine())!= null){
                 System.out.println(line);
             }
-         process.waitFor();
-          process.destroy();
+            process.waitFor();
+            process.destroy();
         } catch (Exception e) {
             e.printStackTrace();
         }
