@@ -215,6 +215,7 @@ package com.taobao.android.builder.tasks;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import com.android.build.gradle.internal.api.ApContext;
@@ -222,10 +223,18 @@ import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.utils.FileUtils;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.lang.StringUtils;
+import org.dom4j.DocumentException;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -236,6 +245,9 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
+import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_APK_FILENAME;
+import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_AWB_EXTRACT_DIRECTORY;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
@@ -249,6 +261,8 @@ public class PrepareAPTask extends BaseTask {
     private String apDependency;
 
     private File explodedDir;
+
+    Set<String> awbBundles;
 
     @InputFile
     @Optional
@@ -280,11 +294,21 @@ public class PrepareAPTask extends BaseTask {
         this.explodedDir = explodedDir;
     }
 
+    @Input
+    @Optional
+    public Set<String> getAwbBundles() {
+        return awbBundles;
+    }
+
+    public void setAwbBundles(Set<String> awbBundles) {
+        this.awbBundles = awbBundles;
+    }
+
     /**
      * 生成so的目录
      */
     @TaskAction
-    void generate() throws IOException {
+    void generate() throws IOException, DocumentException {
 
         Project project = getProject();
         File apBaseFile = null;
@@ -317,6 +341,15 @@ public class PrepareAPTask extends BaseTask {
             // BetterZip.extractFile(apContext.getBaseApk(),
             //                       "lib/armeabi/*",
             //                       new File(explodedDir, ApContext.AP_INLINE_AWB_FILENAME));
+            if (awbBundles != null) {
+                for (String awbBundle : awbBundles) {
+                    BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME), "lib/armeabi/" + awbBundle,
+                                          new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
+                }
+                ManifestFileUtils.updatePreProcessBaseManifestFile(
+                    FileUtils.join(explodedDir, "manifest-modify", ANDROID_MANIFEST_XML),
+                    new File(explodedDir, ANDROID_MANIFEST_XML));
+            }
         }
     }
 
@@ -383,6 +416,13 @@ public class PrepareAPTask extends BaseTask {
                 }
             });
 
+            if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+                AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                    variantContext.getVariantName());
+                Set<String> awbBundles = Sets.newHashSet(
+                    Iterables.transform(dependencyTree.getAwbBundles(), AwbBundle::getAwbSoName));
+                prepareAPTask.setAwbBundles(awbBundles);
+            }
         }
     }
 }
