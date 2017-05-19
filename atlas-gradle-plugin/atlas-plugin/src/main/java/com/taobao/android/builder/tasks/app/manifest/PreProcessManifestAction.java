@@ -209,31 +209,29 @@
 
 package com.taobao.android.builder.tasks.app.manifest;
 
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.ManifestProcessorTask;
-import com.android.build.gradle.tasks.MergeManifests;
-import com.android.manifmerger.ManifestProvider;
-import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import com.taobao.android.builder.tools.manifest.ManifestHelper;
-
-import org.gradle.api.Action;
-import org.gradle.api.Task;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.tasks.ManifestProcessorTask;
+import com.android.build.gradle.tasks.MergeManifests;
+import com.android.manifmerger.ManifestProvider;
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tools.manifest.ManifestHelper;
+import org.gradle.api.Action;
+import org.gradle.api.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 设置awb 的bundle依赖
@@ -262,61 +260,25 @@ public class PreProcessManifestAction implements Action<Task> {
 
         Set<String> notMergedArtifacts = Sets.newHashSet();
 
-        if (null != atlasExtension.getManifestOptions() &&
-            null != atlasExtension.getManifestOptions().getNotMergedBundles()) {
+        if (null != atlasExtension.getManifestOptions() && null != atlasExtension.getManifestOptions()
+            .getNotMergedBundles()) {
             notMergedArtifacts = atlasExtension.getManifestOptions().getNotMergedBundles();
         }
 
         if (manifestProcessorTask instanceof MergeManifests) {
 
-            MergeManifests mergeManifests = (MergeManifests) manifestProcessorTask;
+            MergeManifests mergeManifests = (MergeManifests)manifestProcessorTask;
 
             VariantScope variantScope = appVariantContext.getScope();
             GradleVariantConfiguration config = variantScope.getVariantConfiguration();
             AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
 
-            List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(
-                    appVariantContext,
-                    dependencyTree,
-                    atlasExtension);
+            List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(appVariantContext, dependencyTree,
+                                                                                      atlasExtension);
 
             List<ManifestProvider> allManifest = new ArrayList<>();
-            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                File baseModifyManifest = appVariantContext.apContext.getBaseModifyManifest();
-                allManifest.add(new ManifestHelper.MainManifestProvider(baseModifyManifest,
-                                                                        "Base sub-manifest"));
-                if (baseVariantOutputData instanceof ApkVariantOutputData) {
-                    // TODO 提升性能
-                    ApkVariantOutputData variantOutputData = (ApkVariantOutputData) baseVariantOutputData;
-                    String versionName = variantOutputData.getVersionName();
-                    if (Strings.isNullOrEmpty(versionName)) {
-                        try {
-                            String versionNameOverride = ManifestFileUtils.getVersionName(
-                                    baseModifyManifest);
-                            if (!Strings.isNullOrEmpty(versionNameOverride)) {
-                                variantOutputData.setVersionNameOverride(versionNameOverride);
-                            }
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    int versionCode = variantOutputData.getVersionCode();
-                    if (versionCode == -1) {
-                        try {
-                            String versionCodeOverride = ManifestFileUtils.getVersionCode(
-                                    baseModifyManifest);
-                            if (!Strings.isNullOrEmpty(versionCodeOverride)) {
-                                variantOutputData.setVersionCodeOverride(Integer.parseInt(
-                                        versionCodeOverride));
-                            }
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            }
-            allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(),
-                                                      appVariantContext));
+            modifyForIncremental(mergeManifests, allManifest);
+            allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
             allManifest.addAll(bundleProviders);
 
             //if (sLogger.isInfoEnabled()) {
@@ -327,6 +289,19 @@ public class PreProcessManifestAction implements Action<Task> {
 
             // 不加这一步,每次的getLibraries 都会从mapping里去重新计算
             mergeManifests.setProviders(allManifest);
+        }
+    }
+
+    private void modifyForIncremental(MergeManifests mergeManifests, List<ManifestProvider> allManifest) {
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+            File mainManifest = mergeManifests.getMainManifest();
+            allManifest.add(new ManifestHelper.MainManifestProvider(mainManifest, "main-manifest"));
+            ConventionMappingHelper.map(mergeManifests, "mainManifest", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return appVariantContext.apContext.getBaseModifyManifest();
+                }
+            });
         }
     }
 }
