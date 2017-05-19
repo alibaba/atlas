@@ -583,7 +583,7 @@ public class FastMultiDexer implements MultiDexer {
 
     }
 
-    private static class DexDto {
+    public static class DexDto {
 
         public List<Dex> dexs = new ArrayList<>();
         public int methods = 0;
@@ -594,7 +594,7 @@ public class FastMultiDexer implements MultiDexer {
             int ms = dex.getTableOfContents().methodIds.size;
             int fs = dex.getTableOfContents().fieldIds.size;
 
-            if (methods + ms >= 65535 || fields + fs >= 65535) {
+            if (methods + ms >= 63000 || fields + fs >= 64000) {
                 return false;
             }
 
@@ -619,6 +619,27 @@ public class FastMultiDexer implements MultiDexer {
                 sets.add(filedId.toString());
             }
             return sets;
+        }
+
+    }
+
+    public static class DexWrapper {
+
+        public Dex dex;
+
+        public boolean addDex(Dex newDex, int count) {
+
+            int ms = dex.getTableOfContents().methodIds.size;
+            int fs = dex.getTableOfContents().fieldIds.size;
+
+            int ms2 = newDex.getTableOfContents().methodIds.size;
+            int fs2 = newDex.getTableOfContents().fieldIds.size;
+
+            if (ms + ms >= count || ms2 + fs >= count) {
+                return false;
+            }
+
+            return true;
         }
 
     }
