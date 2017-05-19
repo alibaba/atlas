@@ -295,7 +295,7 @@ public class PreProcessManifestAction implements Action<Task> {
     private void modifyForIncremental(MergeManifests mergeManifests, List<ManifestProvider> allManifest) {
         if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
             File mainManifest = mergeManifests.getMainManifest();
-            allManifest.add(new ManifestHelper.MainManifestProvider(mainManifest, "main-manifest"));
+            // allManifest.add(new ManifestHelper.MainManifestProvider(mainManifest, "main-manifest"));
             ConventionMappingHelper.map(mergeManifests, "mainManifest", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
