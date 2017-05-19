@@ -167,14 +167,14 @@ public class PatchFileBuilder {
                 if (soFile.exists() || bundleInfo.getVersion().equals(ROLLBACK_VERSION)) {
                     continue;
                 }
-                CommandUtils.exec(bundleFolder,"zip -r "+soFile.getAbsolutePath()+" . -x .*");
+                CommandUtils.exec(bundleFolder,"zip -r "+soFile.getAbsolutePath()+" . -x */ -x .*");
 //                zipBunldeSo(bundleFolder, soFile);
                 FileUtils.deleteDirectory(bundleFolder);
             }
         }
         File tPatchFile = new File(patchsFolder, newPatchInfo.getFileName());
         if (tPatchFile.exists()) FileUtils.deleteQuietly(tPatchFile);
-        CommandUtils.exec(destTPathTmpFolder,"zip -r "+tPatchFile.getAbsolutePath()+" . -x .*");
+        CommandUtils.exec(destTPathTmpFolder,"zip -r "+tPatchFile.getAbsolutePath()+" . -x */ -x .*");
         if (null != logger) {
             logger.info("[TPatchFile]" + tPatchFile.getAbsolutePath());
         }

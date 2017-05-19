@@ -434,4 +434,16 @@ public class APatchTool extends BasePatchTool {
         return apatchs;
     }
 
+
+//    public static void main(String []args){
+//        ApkBO apkBO = new ApkBO(new File("/Users/lilong/Downloads/xiamimusic-6.0.0-20170518.084443-4-release/android.apk"),"1.0.0","aaa");
+//        ApkBO newApkBO = new ApkBO(new File("/Users/lilong/Downloads/xiamiv5-release.apk"),"2.0.0","aaa");
+//        APatchTool aPatchTool = new APatchTool(apkBO,newApkBO);
+//        try {
+//            aPatchTool.doPatch(new File("/Users/lilong/Downloads/ccc"),"vvv");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
+
 }

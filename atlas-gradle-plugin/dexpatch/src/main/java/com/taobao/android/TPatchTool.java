@@ -556,7 +556,7 @@ public class TPatchTool extends BasePatchTool {
         if (FileUtils.listFiles(mainBundleFoder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
                 .size() > 0) {
             hasMainBundle = true;
-            CommandUtils.exec(mainBundleFoder,"zip -r "+mainBundleFile.getAbsolutePath()+" . -x .*");
+            CommandUtils.exec(mainBundleFoder,"zip -r "+mainBundleFile.getAbsolutePath()+" . -x */ -x .*");
         }
         FileUtils.deleteDirectory(mainBundleFoder);
 
@@ -567,7 +567,7 @@ public class TPatchTool extends BasePatchTool {
             FileUtils.deleteQuietly(patchFile);
         }
 //        zipBundle(patchTmpDir, patchFile);
-        CommandUtils.exec(patchTmpDir,"zip -r "+patchFile.getAbsolutePath()+" . -x .*");
+        CommandUtils.exec(patchTmpDir,"zip -r "+patchFile.getAbsolutePath()+" . -x */ -x .*");
         FileUtils.deleteDirectory(patchTmpDir);
         return patchFile;
     }
@@ -934,6 +934,16 @@ public class TPatchTool extends BasePatchTool {
 
         }
         historyBuildPatchInfos = JSON.parseObject(response, BuildPatchInfos.class);
+        if (historyBuildPatchInfos == null){
+            return new BuildPatchInfos();
+        }
+            Iterator<PatchInfo> patchInfos = historyBuildPatchInfos.getPatches().iterator();
+            while (patchInfos.hasNext()) {
+                PatchInfo patchInfo = patchInfos.next();
+                if (!patchInfo.getTargetVersion().equals(baseApkBO.getVersionName())) {
+                    patchInfos.remove();
+                }
+            }
 
 
         Map<String, File> awbBundleMap = new HashMap<String, File>();
@@ -1195,11 +1205,11 @@ public class TPatchTool extends BasePatchTool {
     }
 
 
-//public static void main(String []args){
+public static void main(String []args){
 //        String aa = "\"*/\\.*\" -x \"\\.*\"";
-//        CommandUtils.exec(new File("/Users/lilong/Downloads/111/scan-tmp/apk"),
-//                "zip -r /Users/lilong/Downloads/1.zip . -x .*");
-//}
+        CommandUtils.exec(new File("/Users/lilong/Downloads/111/scan-tmp/apk"),
+                "zip -r /Users/lilong/Downloads/1.zip . -x */ -x .*");
+}
 
 
 
