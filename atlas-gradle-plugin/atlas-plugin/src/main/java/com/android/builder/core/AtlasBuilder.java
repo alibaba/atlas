@@ -500,6 +500,7 @@ public class AtlasBuilder extends AndroidBuilder {
                     aaptConfig.getBaseFeature() != null) {
                 finalIds = false;
             }
+            SymbolIo.write(mainSymbols, mainRTxt);
             SymbolIo.exportToJava(mainSymbols, sourceOut, finalIds);
             RGeneration.generateRForLibraries(mainSymbols, depSymbolTables, sourceOut, finalIds);
         }
@@ -1064,7 +1065,7 @@ public class AtlasBuilder extends AndroidBuilder {
         String md5 = "";
         File dexFile = new File(outFile, "classes.dex");
 
-        if (!inputFile.getName().startsWith("combined")) {
+        if (!inputFile.getName().startsWith("combined")  && !(inputFile.getName().startsWith("main") && inputFile.getName().endsWith("jar")) ) {
 
             if (inputFile.isFile()) {
                 md5 = MD5Util.getFileMD5(inputFile);
@@ -1094,15 +1095,16 @@ public class AtlasBuilder extends AndroidBuilder {
 
         //todo  设置dexOptions
         DefaultDexOptions defaultDexOptions = new DefaultDexOptions();
-        defaultDexOptions.setDexInProcess(true);
+
         defaultDexOptions.setJumboMode(dexOptions.getJumboMode());
-        defaultDexOptions.setDexInProcess(true);
         //外部已经启动了多线程，尽量少一点
         defaultDexOptions.setThreadCount(dexOptions.getThreadCount());
         defaultDexOptions.setAdditionalParameters(dexOptions.getAdditionalParameters());
         defaultDexOptions.setJumboMode(dexOptions.getJumboMode());
-        defaultDexOptions.setJavaMaxHeapSize("500m");
-
+        if (!multiDex){
+            defaultDexOptions.setJavaMaxHeapSize("500m");
+            defaultDexOptions.setDexInProcess(true);
+        }
         sLogger.info("[mtldex] pre dex for {} {}",
                      inputFile.getAbsolutePath(),
                      outFile.getAbsolutePath());

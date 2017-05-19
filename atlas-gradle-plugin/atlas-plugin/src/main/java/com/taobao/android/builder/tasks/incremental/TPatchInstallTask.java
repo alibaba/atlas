@@ -207,223 +207,140 @@
  *
  */
 
-package com.taobao.android.builder.tasks;
-
-/**
- * Created by wuzhong on 16/6/13.
- */
+package com.taobao.android.builder.tasks.incremental;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
-import com.android.build.gradle.internal.api.ApContext;
-import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.utils.FileUtils;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.extension.TBuildType;
+import com.android.builder.signing.SigningException;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tasks.awo.utils.AwoInstaller;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.VersionUtils;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import com.taobao.android.builder.tools.zip.BetterZip;
-import org.apache.commons.lang.StringUtils;
 import org.dom4j.DocumentException;
-import org.gradle.api.Nullable;
-import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_APK_FILENAME;
-import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_AWB_EXTRACT_DIRECTORY;
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
-
 /**
+ * 把 patch 安装到手机上的任务
  */
-public class PrepareAPTask extends BaseTask {
+public class TPatchInstallTask extends BaseTask {
 
-    private ApContext apContext;
+    File updateInfoFile;
 
-    private File apFile;
+    File tPatchFile;
 
-    private String apDependency;
+    String packageName;
 
-    private File explodedDir;
-
-    Set<String> awbBundles;
-
-    @InputFile
-    @Optional
-    @Nullable
-    public File getApFile() {
-        return apFile;
+    public File getUpdateInfoFile() {
+        return updateInfoFile;
     }
 
-    public void setApFile(File apFile) {
-        this.apFile = apFile;
+    public void setUpdateInfoFile(File updateInfoFile) {
+        this.updateInfoFile = updateInfoFile;
     }
 
-    @Input
-    @Optional
-    public String getApDependency() {
-        return apDependency;
+    public File getTPatchFile() {
+        return tPatchFile;
     }
 
-    public void setApDependency(String apDependency) {
-        this.apDependency = apDependency;
+    public void setTPatchFile(File tPatchFile) {
+        this.tPatchFile = tPatchFile;
     }
 
-    @OutputDirectory
-    public File getExplodedDir() {
-        return explodedDir;
+    public String getPackageName() {
+        return packageName;
     }
 
-    public void setExplodedDir(File explodedDir) {
-        this.explodedDir = explodedDir;
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
     }
+    // ----- PRIVATE TASK API -----
 
-    @Input
-    @Optional
-    public Set<String> getAwbBundles() {
-        return awbBundles;
-    }
-
-    public void setAwbBundles(Set<String> awbBundles) {
-        this.awbBundles = awbBundles;
-    }
-
-    /**
-     * 生成so的目录
-     */
     @TaskAction
-    void generate() throws IOException, DocumentException {
+    public void doTask() throws IOException, SigningException {
 
-        Project project = getProject();
-        File apBaseFile = null;
-
-        File apFile = getApFile();
-        if (null != apFile && apFile.exists()) {
-            apBaseFile = apFile;
-        } else {
-            String apDependency = getApDependency();
-            if (StringUtils.isNotBlank(apContext.getApDependency())) {
-                Dependency dependency = project.getDependencies().create(apDependency);
-                Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
-                configuration.setTransitive(false);
-                for (File file : configuration.getFiles()) {
-                    if (file.getName().endsWith(".ap")) {
-                        apBaseFile = file;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (null != apBaseFile && apBaseFile.exists()) {
-            explodedDir = getExplodedDir();
-            BetterZip.unzipDirectory(apBaseFile, explodedDir);
-            apContext.setApExploredFolder(explodedDir);
-            // apContext.setBaseApk(new File(explodedDir, ApContext.AP_INLINE_APK_FILENAME));
-            // apContext.setBaseManifest(new File(explodedDir, "AndroidManifest.xml"));
-            // BetterZip.extractFile(apContext.getBaseApk(),
-            //                       "lib/armeabi/*",
-            //                       new File(explodedDir, ApContext.AP_INLINE_AWB_FILENAME));
-            if (awbBundles != null) {
-                // 解压基线Bundle
-                for (String awbBundle : awbBundles) {
-                    BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME), "lib/armeabi/" + awbBundle,
-                                          new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
-                }
-                // 预处理增量AndroidManifest.xml
-                ManifestFileUtils.updatePreProcessBaseManifestFile(
-                    FileUtils.join(explodedDir, "manifest-modify", ANDROID_MANIFEST_XML),
-                    new File(explodedDir, ANDROID_MANIFEST_XML));
-            }
-        }
+        AwoInstaller.installTPatch(getBuilder(), getTPatchFile(), getUpdateInfoFile(), getPackageName(), getLogger());
     }
 
-    public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {
+    public static class ConfigAction extends MtlBaseTaskAction<TPatchInstallTask> {
 
-        public ConfigAction(VariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
-            super(variantContext, baseVariantOutputData);
+        private final AppVariantContext appVariantContext;
+
+        private final AtlasExtension atlasExtension;
+
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
+            this.atlasExtension = this.appVariantContext.getAtlasExtension();
         }
 
         @Override
         public String getName() {
-            return scope.getTaskName("prepare", "AP");
+            return appVariantContext.getScope().getTaskName("tPatchInstall");
         }
 
         @Override
-        public Class<PrepareAPTask> getType() {
-            return PrepareAPTask.class;
+        public Class<TPatchInstallTask> getType() {
+            return TPatchInstallTask.class;
         }
 
         @Override
-        public void execute(PrepareAPTask prepareAPTask) {
+        public void execute(TPatchInstallTask task) {
 
-            super.execute(prepareAPTask);
+            task.setVariantName(appVariantContext.getVariantName());
 
-            //
-            TBuildType tBuildType = variantContext.getBuildType();
-
-            if (StringUtils.isNotEmpty(tBuildType.getBaseApDependency())) {
-                variantContext.apContext.setApDependency(tBuildType.getBaseApDependency());
+            String buildType = appVariantContext.getScope().getVariantConfiguration().getBuildType().getName();
+            if (!atlasExtension.getBundleConfig().isAwoDynDeploy()) {
+                task.setEnabled(false);
+                return;
             }
 
-            variantContext.apContext.setApFile(tBuildType.getBaseApFile());
+            ConventionMappingHelper.map(task, "packageName", new Callable<String>() {
 
-            prepareAPTask.apContext = variantContext.apContext;
-
-            File explodedDir = variantContext.getProject().file(
-                variantContext.getProject().getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES + "/exploded-ap"
-                + "/");
-            variantContext.apContext.setApExploredFolder(explodedDir);
-            // variantContext.apContext.setBaseApk(new File(explodedDir,
-            //                                              ApContext.AP_INLINE_APK_FILENAME));
-
-            ConventionMappingHelper.map(prepareAPTask, "apFile", new Callable<File>() {
                 @Override
-                public File call() throws Exception {
-                    File apFile = variantContext.apContext.getApFile();
-                    if (apFile != null) {
-                        return apFile.exists() ? apFile : null;
-                    } else {
-                        return null;
-                    }
+                public String call() {
+                    //TODO  from config
+                    String packageName = ManifestFileUtils.getPackage(
+                        new File(appVariantContext.apContext.getApExploredFolder(), "AndroidManifest.xml"));
+                    return packageName;
                 }
             });
-            ConventionMappingHelper.map(prepareAPTask, "apDependency", new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return variantContext.apContext.getApDependency();
-                }
-            });
-            ConventionMappingHelper.map(prepareAPTask, "explodedDir", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return explodedDir;
-                }
-            });
+            final ApkVariantOutputData variantOutputData = (ApkVariantOutputData)scope.getVariantOutputData();
+            AppVariantOutputContext appVariantOutputContext = getAppVariantOutputContext();
 
-            if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                    variantContext.getVariantName());
-                Set<String> awbBundles = Sets.newHashSet(
-                    Iterables.transform(dependencyTree.getAwbBundles(), AwbBundle::getAwbSoName));
-                prepareAPTask.setAwbBundles(awbBundles);
-            }
+            ConventionMappingHelper.map(task, "TPatchFile", new Callable<File>() {
+
+                @Override
+                public File call() throws IOException, DocumentException {
+                    String versionName = VersionUtils.getVersionName((ApkVariantOutputData)baseVariantOutputData,
+                                                                     variantOutputData.manifestProcessorTask
+                                                                         .getManifestOutputFile());
+                    return new File(appVariantOutputContext.getTPatchFolder(),
+                                    "patch-" + versionName + "@" + getBaseVersionName() + ".tpatch");
+                }
+
+                public String getBaseVersionName() throws IOException, DocumentException {
+                    File apManifestFile = new File(appVariantContext.apContext.getApExploredFolder(),
+                                                   "AndroidManifest.xml");
+                    String baseVersionName = ManifestFileUtils.getVersionName(apManifestFile);
+                    return baseVersionName;
+                }
+            });
+            ConventionMappingHelper.map(task, "updateInfoFile", new Callable<File>() {
+
+                @Override
+                public File call() {
+                    return new File(appVariantOutputContext.getTPatchFolder(), "update.json");
+                }
+            });
         }
     }
 }

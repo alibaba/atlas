@@ -244,12 +244,12 @@ public class AwbBundle {
     //当前模块本身, 主bundle为空， 否则为awb本身
     private AndroidLibrary androidLibrary;
 
-    private List<AndroidLibrary> androidLibraries = new ArrayList<>();
+    private final List<AndroidLibrary> androidLibraries = new ArrayList<>();
 
-    private List<JavaLibrary> javaLibraries = new ArrayList<>();
+    private final List<JavaLibrary> javaLibraries = new ArrayList<>();
 
     //兼容老的模式，逐步废弃到 androidLibrary
-    private List<SoLibrary> soLibraries = new ArrayList<>();
+    private final List<SoLibrary> soLibraries = new ArrayList<>();
 
     private File mergedManifest;
 
@@ -344,6 +344,8 @@ public class AwbBundle {
         }
         return soFileName;
     }
+
+    public File getManifest() {return androidLibrary.getManifest();}
 
     /**
      * 获取所有的相关jar
