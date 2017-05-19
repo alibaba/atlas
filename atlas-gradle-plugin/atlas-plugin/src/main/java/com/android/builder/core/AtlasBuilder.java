@@ -1065,7 +1065,7 @@ public class AtlasBuilder extends AndroidBuilder {
         String md5 = "";
         File dexFile = new File(outFile, "classes.dex");
 
-        if (!inputFile.getName().startsWith("combined")  && !inputFile.getName().equals("main.jar") ) {
+        if (!inputFile.getName().startsWith("combined")  && !(inputFile.getName().startsWith("main") && inputFile.getName().endsWith("jar")) ) {
 
             if (inputFile.isFile()) {
                 md5 = MD5Util.getFileMD5(inputFile);
