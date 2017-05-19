@@ -249,7 +249,7 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
-    public static final String CACHE_TYPE = "proguard-bundles-v1.5";
+    public static final String CACHE_TYPE = "proguard-bundles-v1.6";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
 
@@ -273,6 +273,7 @@ public class BundleProguarder {
             @Override
             public void run() {
 
+                AwbBundle awbBundle = input.getAwbBundles().get(0).getAwbBundle();
                 try {
                     for (AwbTransform awbTransform : input.getAwbBundles()) {
                         for (File file : awbTransform.getInputFiles()) {
@@ -285,19 +286,30 @@ public class BundleProguarder {
                     }
 
                     //缓存keep.json
-                    FileUtils.copyFileToDirectory(input.getAwbBundles().get(0).getAwbBundle().getKeepProguardFile(),
-                                                  result.cacheDir);
+                    File keepFile = awbBundle.getKeepProguardFile();
+                    if (null != keepFile && keepFile.exists()){
+                        FileUtils.copyFileToDirectory(keepFile,result.cacheDir);
+                    }
 
                     File proguardCfg = new File(null != input.proguardOutputDir ? input.proguardOutputDir
                                                     : appVariantContext
-                                                        .getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle()),
+                                                        .getAwbProguardDir(awbBundle),
                                                 "proguard.cfg");
                     if (proguardCfg.exists()) {
                         FileUtils.copyFileToDirectory(proguardCfg, result.cacheDir);
                     }
 
+                    File usageCfg = new File(null != input.proguardOutputDir ? input.proguardOutputDir
+                                                    : appVariantContext
+                                                        .getAwbProguardDir(awbBundle),
+                                                "usage.cfg");
+                    if (usageCfg.exists()) {
+                        FileUtils.copyFileToDirectory(usageCfg, result.cacheDir);
+                    }
+
                 } catch (Exception e) {
-                    throw new GradleException(e.getMessage());
+                    e.printStackTrace();
+                    throw new GradleException(awbBundle.getName(), e);
                 }
             }
         });
@@ -327,12 +339,9 @@ public class BundleProguarder {
 
         File keepJson = new File(cacheDir, "keep.json");
         File proguardCfg = new File(cacheDir, "proguard.cfg");
+        File usageCfg = new File(cacheDir, "usage.cfg");
 
-        if (!keepJson.exists()) {
-            logger.error("bundle proguard for " + name + " missing keep.json  ");
-            FileUtils.deleteDirectory(cacheDir);
-            return result;
-        }
+
 
         if (input.getAwbBundles().get(0).getAwbBundle().isMainBundle()) {
             for (File file : cacheDir.listFiles()) {
@@ -347,8 +356,18 @@ public class BundleProguarder {
                 FileUtils.copyFileToDirectory(proguardCfg,
                                               awbProguardDir);
             }
+            if (usageCfg.exists()) {
+                FileUtils.copyFileToDirectory(usageCfg,
+                                              awbProguardDir);
+            }
 
             result.success = true;
+            return result;
+        }
+
+        if (!keepJson.exists()) {
+            logger.error("bundle proguard for " + name + " missing keep.json  ");
+            FileUtils.deleteDirectory(cacheDir);
             return result;
         }
 

@@ -321,6 +321,12 @@ public class AtlasProguardHelper {
                                                 input.getLibraries().addAll(libs);
                                                 input.getDefaultLibraryClasses().addAll(defaultLibClasses);
 
+                                                input.printConfiguration = new File(
+                                                    appVariantContext.getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle()), "proguard.cfg");
+                                                input.printUsage = new File(
+                                                    appVariantContext.getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle()), "usage.cfg");
+
+
                                                 addLibraryProguardFiles(appVariantContext,input);
 
                                                 addChildDependency(bundleItem, input, bundleInfoAwbTransformMap);
