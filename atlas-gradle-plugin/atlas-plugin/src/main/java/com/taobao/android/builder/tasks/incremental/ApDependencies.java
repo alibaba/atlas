@@ -286,7 +286,6 @@ public class ApDependencies /*extends BaseTask*/ {
                 addDependency(dependencyString, awb);
             }
         }
-
     }
 
     private File getBaseApFile(Project project, TBuildType tBuildType) {
@@ -329,16 +328,11 @@ public class ApDependencies /*extends BaseTask*/ {
     // ----- PRIVATE TASK API -----
 
     private void addDependency(String dependencyString, String awb) {
-        ModuleIdentifier moduleIdentifier = getModuleIdentifier(dependencyString);
-        String version = getVersion(dependencyString);
+        ParsedModuleStringNotation parsedNotation = new ParsedModuleStringNotation(dependencyString);
+        ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(parsedNotation.getGroup(),
+                                                                          parsedNotation.getName());
+        String version = parsedNotation.getVersion();
         if (awb == null) { mMainDependenciesMap.put(moduleIdentifier, version);}
         mFlatDependenciesMap.put(moduleIdentifier, version);
     }
-
-    private ModuleIdentifier getModuleIdentifier(String dependencyString) {
-        Dependency dependency = dependencies.create(dependencyString);
-        return DefaultModuleIdentifier.newId(dependency.getGroup(), dependency.getName());
-    }
-
-    private String getVersion(String baseLibrary) {return baseLibrary.substring(baseLibrary.lastIndexOf(':') + 1);}
 }
