@@ -99,7 +99,7 @@ public class PatchMerger {
                         mergeOutputs.put(bundleName, new Pair<>("", item));
                     }else {
                         //差量部署
-                        File baselineBundle = findOriginalBundleFile(bundleName, oringnalDir.getAbsolutePath(), item);
+//                        File baselineBundle = findOriginalBundleFile(bundleName, oringnalDir.getAbsolutePath(), item);
                         File originalBundle = findOriginalBundleFile(bundleName, oringnalDir.getAbsolutePath(), item);
                         if (originalBundle != null && originalBundle.exists()) {
                             updateBundles[x] = new Pair<File, String>(originalBundle, bundleName);

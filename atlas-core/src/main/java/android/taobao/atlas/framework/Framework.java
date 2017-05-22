@@ -293,6 +293,7 @@ public final class Framework {
     static ClassLoader systemClassLoader;
 
     private static boolean bundleUpdated = false;
+    public static boolean DEBUG = false;
 
     static {
         File fileDir = RuntimeVariables.androidApplication.getFilesDir();
@@ -306,6 +307,13 @@ public final class Framework {
         }
         BASEDIR = fileDir.getAbsolutePath();
         STORAGE_LOCATION = BASEDIR + File.separatorChar + "storage" + File.separatorChar;
+
+        try {
+            ApplicationInfo app_info = RuntimeVariables.androidApplication.getApplicationInfo();
+            DEBUG = (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        } catch (final Exception e) {
+            DEBUG = true;
+        }
     }
 
     /**
@@ -768,18 +776,6 @@ public final class Framework {
     }
 
     public static boolean isDeubgMode() {
-        try {
-            /**
-             * enable patch debug if in debug mode
-             */
-            final ApplicationInfo app_info = RuntimeVariables.androidApplication.getApplicationInfo();
-            boolean DEBUG = (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-            if (DEBUG) {
-                return true;
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return false;
+        return DEBUG;
     }
 }

@@ -213,10 +213,15 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.NClassLoader;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
+
+import com.taobao.android.runtime.AndroidRuntime;
+
 import dalvik.system.DexFile;
 import dalvik.system.PathClassLoader;
 import java.io.*;
@@ -282,6 +287,32 @@ public class KernalBundle{
         return false;
     }
 
+    public static boolean checkLoadKernalDebugPatch(Application application){
+        boolean loadKernalPatch = false;
+        try {
+            ApplicationInfo app_info = application.getApplicationInfo();
+            boolean debug = (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+            if(debug){
+                File debugBundleDir = new File(KernalConstants.baseContext.getExternalFilesDir("debug_storage"),KERNAL_BUNDLE_NAME);
+                File patchFile = new File(debugBundleDir,"patch.zip");
+                if(patchFile.exists()){
+                    loadKernalPatch = true;
+                    KernalBundle bundle = new KernalBundle();
+                    DexFile dexFile = AndroidRuntime.getInstance().loadDex(KernalConstants.baseContext,patchFile.getAbsolutePath(),
+                            new File(patchFile.getParent(),"patch.dex").getAbsolutePath(),0,true);
+                    bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(),patchFile,new DexFile[]{dexFile},null);
+                    bundle.replacePathClassLoaderIfNeed(application);
+                    Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
+                    DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
+                            .invoke(DelegateResourcesClazz, patchFile.getAbsolutePath());
+                    Toast.makeText(KernalConstants.baseContext,"当前处于DEBUG调试状态，不支持动态更新，清除数据可恢复",Toast.LENGTH_LONG).show();
+                }
+            }
+        } finally {
+            return loadKernalPatch;
+        }
+    }
+
     public static boolean hasKernalPatch(){
         return KernalVersionManager.instance().isUpdated(KERNAL_BUNDLE_NAME) || KernalVersionManager.instance().isDexPatched(KERNAL_BUNDLE_NAME);
     }
@@ -292,6 +323,10 @@ public class KernalBundle{
         if(kernalDir.exists()){
             deleteDirectory(kernalDir);
         }
+    }
+
+    //DEBUG
+    private KernalBundle(){
     }
 
     //create
@@ -329,7 +364,7 @@ public class KernalBundle{
     public void patchKernalDex() throws Exception {
         DexFile[] dexFile = archive.getOdexFile();
         if ((dexFile != null&&dexFile.length>0) || archive.getLibraryDirectory().exists()) {
-            installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive);
+            installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive.getArchiveFile(),archive.getOdexFile(),archive.getLibraryDirectory());
             FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length-1].loadClass("android.taobao.atlas.framework.FrameworkProperties",ClassLoader.getSystemClassLoader());
             if(FrameworkPropertiesClazz==null && isDeubgMode()){
                 Log.e("KernalBundle","main dex is not match, library awo test?");
@@ -532,15 +567,15 @@ public class KernalBundle{
         return dexRawFile;
     }
 
-    public static boolean installKernalBundle(ClassLoader updateClassLoader, KernalBundleArchive archive) throws IOException, NoSuchFieldException, IllegalAccessException {
+    public boolean installKernalBundle(ClassLoader updateClassLoader,File archiveFile, DexFile[] odexFiles,File libraryDirectory) throws IOException, NoSuchFieldException, IllegalAccessException {
         Object[] element = null;
         boolean success = false;
         try {
             ClassLoader loader = updateClassLoader;
             Field pathListField = findField(loader, "pathList");
             Object dexPathList = pathListField.get(loader);
-            if (archive.getOdexFile() != null) {
-                element = makeDexElement(archive.getArchiveFile(), archive.getOdexFile());
+            if (odexFiles != null) {
+                element = makeDexElement(archiveFile, odexFiles);
                 if (element == null||element.length == 0) {
                     throw new IOException("makeDexElement failed");
                 }
@@ -556,8 +591,7 @@ public class KernalBundle{
                 }
             }
             //增加kernal bundle library
-            File libraryDirectory = archive.getLibraryDirectory();
-            if (!TextUtils.isEmpty(libraryDirectory.getAbsolutePath()) && libraryDirectory.exists()) {
+            if (libraryDirectory!=null && !TextUtils.isEmpty(libraryDirectory.getAbsolutePath()) && libraryDirectory.exists()) {
                 if(Build.VERSION.SDK_INT<23){
                     expandFieldArray(dexPathList, "nativeLibraryDirectories", new Object[]{libraryDirectory});
                 }else{

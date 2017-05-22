@@ -243,7 +243,7 @@ public class Updater {
 
         String jsonStr = new String(FileUtils.readFile(updateInfo));
         UpdateInfo info = JSON.parseObject(jsonStr, UpdateInfo.class);
-
+        info.lowDisk = false;
         File patchFile = new File(context.getExternalCacheDir(), "patch-" + info.updateVersion + "@" + info.baseVersion + ".tpatch");
 
         try {

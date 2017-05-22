@@ -243,6 +243,7 @@ public class BundleArchiveRevision {
     final static String  REFERENCE_PROTOCOL = "reference:";
     final static String  FILE_PROTOCOL      = "file:";
     final static String  BUNDLE_FILE_NAME   = "bundle.zip";
+    private DexFile patchDexFileForDebug;
     /**
      * the bundle revision file location.
      */
@@ -617,8 +618,13 @@ public class BundleArchiveRevision {
             }
 
             if (dexFile == null){
-//                loadDex(new File(revisionDir, BUNDLE_ODEX_FILE));
                 optDexFile();
+            }
+            if(Framework.isDeubgMode()){
+                clazz = findPatchClass(className,cl);
+                if(clazz!=null){
+                    return clazz;
+                }
             }
             clazz = dexFile.loadClass(className, cl);
             return clazz;
@@ -632,6 +638,34 @@ public class BundleArchiveRevision {
             } else {
                 Log.e("Framework","Exception while find class in archive revision: " + bundleFile.getAbsolutePath(), e);
             }
+        }
+        return null;
+    }
+
+    private Class findPatchClass(String clazz,ClassLoader cl){
+        if(patchDexFileForDebug==null){
+            File debugBundleDir = new File(RuntimeVariables.androidApplication.getExternalFilesDir("debug_storage"),location);
+            File patchFile = new File(debugBundleDir,"patch.zip");
+            if(patchFile.exists()){
+                try {
+                    patchDexFileForDebug = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication,
+                            patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        if(patchDexFileForDebug!=null){
+            patchDexFileForDebug.loadClass(clazz,cl);
+        }
+        return null;
+    }
+
+    public String getDebugPatchFilePath(){
+        File debugBundleDir = new File(RuntimeVariables.androidApplication.getExternalFilesDir("debug_storage"),location);
+        File patchFile = new File(debugBundleDir,"patch.zip");
+        if(patchFile.exists()){
+            return patchFile.getAbsolutePath();
         }
         return null;
     }

@@ -281,21 +281,22 @@ public class AtlasBridgeApplication extends Application{
             System.setProperty("APK_INSTALLED", "true");
         }else{
             KernalVersionManager.instance().init();
-
-            if(KernalBundle.hasKernalPatch()) {
-                //has patch ? true -> must load successed
-                hasKernalPatched = KernalBundle.checkloadKernalBundle(this, KernalConstants.PROCESS);
-                if (!hasKernalPatched) {
-                    // load failed
-                    if(isMainProcess) {
-                        KernalVersionManager.instance().rollbackHardly();
+            if(!KernalBundle.checkLoadKernalDebugPatch(this)){
+                if(KernalBundle.hasKernalPatch()) {
+                    //has patch ? true -> must load successed
+                    hasKernalPatched = KernalBundle.checkloadKernalBundle(this, KernalConstants.PROCESS);
+                    if (!hasKernalPatched) {
+                        // load failed
+                        if(isMainProcess) {
+                            KernalVersionManager.instance().rollbackHardly();
+                        }
+                        android.os.Process.killProcess(android.os.Process.myPid());
                     }
-                    android.os.Process.killProcess(android.os.Process.myPid());
-                }
-            }else{
-                //remove deprecated info
-                if(isMainProcess) {
-                    KernalBundle.clear();
+                }else{
+                    //remove deprecated info
+                    if(isMainProcess) {
+                        KernalBundle.clear();
+                    }
                 }
             }
         }

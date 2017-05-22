@@ -214,6 +214,7 @@ import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
+import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
@@ -260,9 +261,17 @@ public class DelegateResources extends Resources {
         sAssetsPatchDir = null;
     }
 
-    public static void addBundleResources(String assetPath)  throws Exception{
+    public static void addBundleResources(String assetPath,String debugPath)  throws Exception{
         synchronized (DelegateResources.class) {
+            if(debugPath!=null && !findResByAssetIndexDescending()){
+                updateResources(RuntimeVariables.delegateResources, debugPath, BUNDLE_RES);
+
+            }
             updateResources(RuntimeVariables.delegateResources, assetPath, BUNDLE_RES);
+            if(debugPath!=null && findResByAssetIndexDescending()){
+                updateResources(RuntimeVariables.delegateResources, debugPath, BUNDLE_RES);
+
+            }
         }
     }
 
@@ -329,6 +338,18 @@ public class DelegateResources extends Resources {
             return id;
         }else {
             return sResourcesFetcher.getIdentifier(name, defType, defPackage);
+        }
+    }
+
+    /**
+     * 是否已assetpatch索引降序的方式查找资源
+     * @return
+     */
+    private static boolean findResByAssetIndexDescending(){
+        if(Build.VERSION.SDK_INT>20){
+            return false;
+        }else {
+            return true;
         }
     }
 
@@ -500,19 +521,6 @@ public class DelegateResources extends Resources {
             return newAssetManager;
         }
 
-
-        /**
-         * 是否已assetpatch索引降序的方式查找资源
-         * @return
-         */
-        private boolean findResByAssetIndexDescending(){
-            if(Build.VERSION.SDK_INT>20){
-                return false;
-            }else {
-                return true;
-            }
-        }
-
         private boolean hasCreatedAssetsManager = false;
         private synchronized boolean supportExpandAssetManager(){
             if(Build.VERSION.SDK_INT>=24){
@@ -536,12 +544,10 @@ public class DelegateResources extends Resources {
 
             if(sKernalPathPath!=null) {
                 if(sFailedAsssetPath.contains(sKernalPathPath)){
-//                    AtlasMonitor.getInstance().trace(AtlasMonitor.KERNAL_RESOLVE_FAIL,"com.taobao.maindex",AtlasMonitor.ADD_RESOURCES_FAIL_MSG,"maindex arsc inject fail");
                     throw new RuntimeException("maindex arsc inject fail");
                 }
                 if(sAssetsPatchDir!=null) {
                     if(sFailedAsssetPath.contains(sAssetsPatchDir)){
-//                        AtlasMonitor.getInstance().trace(AtlasMonitor.KERNAL_RESOLVE_FAIL,"com.taobao.maindex",AtlasMonitor.ADD_RESOURCES_FAIL_MSG,"maindex assets inject fail");
                         throw new RuntimeException("maindex assets inject fail");
                     }
                 }
