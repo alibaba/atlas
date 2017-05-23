@@ -257,7 +257,7 @@ public class ApDependencies /*extends BaseTask*/ {
 
     private final Map<ModuleIdentifier, String> mMainDependenciesMap = Maps.newHashMap();
 
-    private final Map<ModuleIdentifier, String> mAwbDependenciesMap = Maps.newHashMap();
+    private final Map<ModuleIdentifier, Map<ModuleIdentifier, String>> mAwbDependenciesMap = Maps.newHashMap();
 
     private final DependencyJson apDependencyJson;
 
@@ -276,16 +276,36 @@ public class ApDependencies /*extends BaseTask*/ {
         }
 
         for (String mainDex : apDependencyJson.getMainDex()) {
-            addDependency(mainDex, null);
+            addDependency(mainDex, mMainDependenciesMap);
         }
         for (Map.Entry<String, ArrayList<String>> entry : apDependencyJson.getAwbs().entrySet()) {
             String awb = entry.getKey();
-            addDependency(awb, awb);
+            Map<ModuleIdentifier, String> awbDependencies = getAwbDependencies(awb);
+            addDependency(awb, awbDependencies);
             ArrayList<String> dependenciesString = entry.getValue();
             for (String dependencyString : dependenciesString) {
-                addDependency(dependencyString, awb);
+                addDependency(dependencyString, awbDependencies);
             }
         }
+    }
+
+    private Map<ModuleIdentifier, String> getAwbDependencies(String awb) {
+        ParsedModuleStringNotation parsedNotation = new ParsedModuleStringNotation(awb);
+        String group = parsedNotation.getGroup();
+        String name = parsedNotation.getName();
+        ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(group, name);
+        Map<ModuleIdentifier, String> awbDependencies = mAwbDependenciesMap.get(moduleIdentifier);
+        if (awbDependencies == null) {
+            awbDependencies = Maps.newHashMap();
+            mAwbDependenciesMap.put(moduleIdentifier, awbDependencies);
+        }
+        return awbDependencies;
+    }
+
+    public Map<ModuleIdentifier, String> getAwbDependencies(String group, String name) {
+        ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(group, name);
+        Map<ModuleIdentifier, String> awbDependencies = mAwbDependenciesMap.get(moduleIdentifier);
+        return awbDependencies;
     }
 
     private File getBaseApFile(Project project, TBuildType tBuildType) {
@@ -327,12 +347,12 @@ public class ApDependencies /*extends BaseTask*/ {
     }
     // ----- PRIVATE TASK API -----
 
-    private void addDependency(String dependencyString, String awb) {
+    private void addDependency(String dependencyString, Map<ModuleIdentifier, String> awb) {
         ParsedModuleStringNotation parsedNotation = new ParsedModuleStringNotation(dependencyString);
         ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(parsedNotation.getGroup(),
                                                                           parsedNotation.getName());
         String version = parsedNotation.getVersion();
-        if (awb == null) { mMainDependenciesMap.put(moduleIdentifier, version);}
+        awb.put(moduleIdentifier, version);
         mFlatDependenciesMap.put(moduleIdentifier, version);
     }
 }
