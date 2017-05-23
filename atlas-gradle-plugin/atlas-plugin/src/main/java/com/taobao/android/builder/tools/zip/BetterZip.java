@@ -214,6 +214,7 @@ import java.io.IOException;
 
 import com.android.ide.common.process.CmdExecutor;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * Created by wuzhong on 2017/2/15.
@@ -231,7 +232,7 @@ public class BetterZip {
                                               destDir.getAbsolutePath());
 
         if (success) {
-            return new File(destDir, path);
+            return new File(destDir, FilenameUtils.getName(path));
         }
 
         return ZipUtils.extractZipFileToFolder(zipFile, path, destDir);
