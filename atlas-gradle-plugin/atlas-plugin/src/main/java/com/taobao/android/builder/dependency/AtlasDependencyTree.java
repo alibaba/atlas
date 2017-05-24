@@ -373,18 +373,24 @@ public class AtlasDependencyTree {
                 }
             }
 
+            // 合并基线依赖关系
             if (apDependencies != null) {
+                // 合并mainDex
                 DependencyJson apDependencyJson = apDependencies.getApDependencyJson();
-                for (String dependency : apDependencyJson.getMainDex()) {
-                    if (!dependencyJson.getMainDex().contains(dependency)) {
+                List<String> apMainDex = apDependencyJson.getMainDex();
+                for (String dependency : apMainDex) {
+                    List<String> mainDex = dependencyJson.getMainDex();
+                    if (!mainDex.contains(dependency)) {
                         dependencyJson.getMainDex().add(dependency);
                     }
                 }
 
+                // 合并awb
                 for (Entry<String, ArrayList<String>> entry : apDependencyJson.getAwbs().entrySet()) {
                     String awb = entry.getKey();
                     ArrayList<String> awbDeps = dependencyJson.getAwbs().get(awb);
-                    ArrayList<String> apAwbDeps =entry.getValue();   if (null == awbDeps) {
+                    ArrayList<String> apAwbDeps = entry.getValue();
+                    if (null == awbDeps) {
                         dependencyJson.getAwbs().put(awb, apAwbDeps);
                     } else {
                         for (String dependency : apAwbDeps) {
