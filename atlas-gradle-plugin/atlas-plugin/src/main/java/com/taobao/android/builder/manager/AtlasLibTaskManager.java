@@ -301,34 +301,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                 if (null != list) {
 
                     for (LibVariantOutputData libVariantOutputData : list) {
-                        VariantScope scope = libVariantOutputData.getScope().getVariantScope();
-                        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-                        MergeResources mergeResources = libVariantOutputData.getScope().getVariantScope()
-                            .getMergeResourcesTask().get(tasks);
-                        ConventionMappingHelper.map(mergeResources, "inputResourceSets",
-                                                    new Callable<List<ResourceSet>>() {
-                                                        @Override
-                                                        public List<ResourceSet> call() throws Exception {
-                                                            List<File> generatedResFolders = Lists.newArrayList(
-                                                                scope.getRenderscriptResOutputDir(),
-                                                                scope.getGeneratedResOutputDir());
-                                                            if (variantData.getExtraGeneratedResFolders() != null) {
-                                                                generatedResFolders.addAll(
-                                                                    variantData.getExtraGeneratedResFolders());
-                                                            }
-                                                            if (scope.getMicroApkTask() != null && variantData
-                                                                .getVariantConfiguration().getBuildType()
-                                                                .isEmbedMicroApp()) {
-                                                                generatedResFolders.add(
-                                                                    scope.getMicroApkResDirectory());
-                                                            }
-
-                                                            return variantData.getVariantConfiguration()
-                                                                .getResourceSets(generatedResFolders, false
-                                                                                                 /*includeDependencies*/,
-                                                                                 mergeResources.isValidateEnabled());
-                                                        }
-                                                    });
+                        createIncrementalAllActionsTasks(libVariantOutputData);
                         Zip zipTask = libVariantOutputData.packageLibTask;
 
                         if (atlasExtension.getBundleConfig().isJarEnabled()) {
@@ -364,6 +337,33 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                         }
                     }
                 }
+            }
+        });
+    }
+
+    private void createIncrementalAllActionsTasks(LibVariantOutputData libVariantOutputData) {
+        VariantScope scope = libVariantOutputData.getScope().getVariantScope();
+        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+        MergeResources mergeResourcesTask = libVariantOutputData.getScope().getVariantScope().getMergeResourcesTask()
+            .get(tasks);
+        atlasExtension.getTBuildConfig().setUseCustomAapt(true);
+        mergeResourcesTask.setAndroidBuilder(tAndroidBuilder);
+        ConventionMappingHelper.map(mergeResourcesTask, "inputResourceSets", new Callable<List<ResourceSet>>() {
+            @Override
+            public List<ResourceSet> call() throws Exception {
+                List<File> generatedResFolders = Lists.newArrayList(scope.getRenderscriptResOutputDir(),
+                                                                    scope.getGeneratedResOutputDir());
+                if (variantData.getExtraGeneratedResFolders() != null) {
+                    generatedResFolders.addAll(variantData.getExtraGeneratedResFolders());
+                }
+                if (scope.getMicroApkTask() != null && variantData.getVariantConfiguration().getBuildType()
+                    .isEmbedMicroApp()) {
+                    generatedResFolders.add(scope.getMicroApkResDirectory());
+                }
+
+                return variantData.getVariantConfiguration().getResourceSets(generatedResFolders, false
+                                                                                 /*includeDependencies*/,
+                                                                             mergeResourcesTask.isValidateEnabled());
             }
         });
     }
