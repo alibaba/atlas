@@ -307,6 +307,7 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
     private File getBaseApFile(Project project, TBuildType tBuildType) {
+        //上一次构建baseAp文件
         File apBaseFile = Iterables.getOnlyElement(
             FileUtils.find(FileUtils.join(project.getBuildDir(), FD_OUTPUTS), Pattern.compile("\\.ap$")), null);
         if (apBaseFile == null) {
