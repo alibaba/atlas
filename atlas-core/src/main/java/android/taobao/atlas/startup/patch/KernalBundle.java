@@ -213,15 +213,12 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
-import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.NClassLoader;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
-
 import com.taobao.android.runtime.AndroidRuntime;
-
 import dalvik.system.DexFile;
 import dalvik.system.PathClassLoader;
 import java.io.*;
