@@ -263,17 +263,9 @@ public class ApDependencies /*extends BaseTask*/ {
 
     public ApDependencies(Project project, TBuildType tBuildType) {
         this.dependencies = project.getDependencies();
-        File apBaseFile;
-        apBaseFile = getBaseApFile(project, tBuildType);
 
-        try (ZipFile zip = new ZipFile(apBaseFile)) {
-            ZipEntry entry = zip.getEntry(DEPENDENCIES_FILENAME);
-            try (InputStream in = zip.getInputStream(entry)) {
-                apDependencyJson = JSON.parseObject(IOUtils.toString(in, StandardCharsets.UTF_8), DependencyJson.class);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to read dependencies.txt from " + apBaseFile.getAbsolutePath(), e);
-        }
+        File baseApFile = getBaseApFile(project, tBuildType);
+        apDependencyJson = getDependencyJson(baseApFile);
 
         for (String mainDex : apDependencyJson.getMainDex()) {
             addDependency(mainDex, mMainDependenciesMap);
@@ -287,6 +279,19 @@ public class ApDependencies /*extends BaseTask*/ {
                 addDependency(dependencyString, awbDependencies);
             }
         }
+    }
+
+    private DependencyJson getDependencyJson(File apBaseFile) {
+        DependencyJson apDependencyJson;
+        try (ZipFile zip = new ZipFile(apBaseFile)) {
+            ZipEntry entry = zip.getEntry(DEPENDENCIES_FILENAME);
+            try (InputStream in = zip.getInputStream(entry)) {
+                apDependencyJson = JSON.parseObject(IOUtils.toString(in, StandardCharsets.UTF_8), DependencyJson.class);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read dependencies.txt from " + apBaseFile.getAbsolutePath(), e);
+        }
+        return apDependencyJson;
     }
 
     private Map<ModuleIdentifier, String> getAwbDependencies(String awb) {
@@ -344,6 +349,10 @@ public class ApDependencies /*extends BaseTask*/ {
             return false;
         }
         return versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0;
+    }
+
+    public DependencyJson getApDependencyJson() {
+        return apDependencyJson;
     }
     // ----- PRIVATE TASK API -----
 
