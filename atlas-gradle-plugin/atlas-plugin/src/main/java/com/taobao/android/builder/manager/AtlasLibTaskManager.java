@@ -366,6 +366,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                                                                              mergeResourcesTask.isValidateEnabled());
             }
         });
+        libVariantOutputData.getScope().getProcessResourcesTask().get(tasks).setAndroidBuilder(tAndroidBuilder);
     }
 
     private void createAwoTask(LibVariantContext libVariantContext, Zip bundleTask) {
