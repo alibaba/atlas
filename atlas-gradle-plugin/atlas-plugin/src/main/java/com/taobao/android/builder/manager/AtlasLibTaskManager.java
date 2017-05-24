@@ -209,20 +209,31 @@
 
 package com.taobao.android.builder.manager;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.LibraryVariant;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.api.LibraryVariantImpl;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibVariantOutputData;
+import com.android.build.gradle.tasks.MergeResources;
 import com.android.builder.core.AtlasBuilder;
+import com.android.ide.common.res2.ResourceSet;
+import com.google.common.collect.Lists;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.PrepareAPTask;
+import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbAssetConfigAction;
+import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbResourceConfigAction;
 import com.taobao.android.builder.tasks.awo.AssemblePatchTask;
 import com.taobao.android.builder.tasks.awo.AwbDexTask;
 import com.taobao.android.builder.tasks.awo.AwoInstallTask;
@@ -236,8 +247,6 @@ import com.taobao.android.builder.tasks.awo.ProcessAwoAndroidResources;
 import com.taobao.android.builder.tasks.awo.maindex.DexBuildTask;
 import com.taobao.android.builder.tasks.awo.maindex.DexInstallTask;
 import com.taobao.android.builder.tasks.awo.maindex.PrepareMainDexJarsTask;
-import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbAssetConfigAction;
-import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbResourceConfigAction;
 import com.taobao.android.builder.tasks.library.AwbGenerator;
 import com.taobao.android.builder.tasks.library.JarExtractTask;
 import com.taobao.android.builder.tasks.library.publish.UpdatePomTask;
@@ -257,9 +266,7 @@ import org.gradle.api.tasks.bundling.Zip;
  */
 public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
-    public AtlasLibTaskManager(AtlasBuilder androidBuilder,
-                               LibraryExtension libraryExtension,
-                               Project project,
+    public AtlasLibTaskManager(AtlasBuilder androidBuilder, LibraryExtension libraryExtension, Project project,
                                AtlasExtension atlasExtension) {
         super(androidBuilder, libraryExtension, project, atlasExtension);
         this.libraryExtension = libraryExtension;
@@ -275,16 +282,13 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
             @Override
             public void accept(LibraryVariant libraryVariant) {
 
-                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant,
-                                                                            project,
-                                                                            atlasExtension,
-                                                                            libraryExtension);
+                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant, project,
+                                                                            atlasExtension, libraryExtension);
 
                 TBuildType tBuildType = libVariantContext.getBuildType();
                 if (null != tBuildType) {
                     try {
-                        new AwoPropHandler().process(tBuildType,
-                                                     atlasExtension.getBundleConfig());
+                        new AwoPropHandler().process(tBuildType, atlasExtension.getBundleConfig());
                     } catch (Exception e) {
                         throw new GradleException("process awo exception", e);
                     }
@@ -297,7 +301,34 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                 if (null != list) {
 
                     for (LibVariantOutputData libVariantOutputData : list) {
+                        VariantScope scope = libVariantOutputData.getScope().getVariantScope();
+                        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+                        MergeResources mergeResources = libVariantOutputData.getScope().getVariantScope()
+                            .getMergeResourcesTask().get(tasks);
+                        ConventionMappingHelper.map(mergeResources, "inputResourceSets",
+                                                    new Callable<List<ResourceSet>>() {
+                                                        @Override
+                                                        public List<ResourceSet> call() throws Exception {
+                                                            List<File> generatedResFolders = Lists.newArrayList(
+                                                                scope.getRenderscriptResOutputDir(),
+                                                                scope.getGeneratedResOutputDir());
+                                                            if (variantData.getExtraGeneratedResFolders() != null) {
+                                                                generatedResFolders.addAll(
+                                                                    variantData.getExtraGeneratedResFolders());
+                                                            }
+                                                            if (scope.getMicroApkTask() != null && variantData
+                                                                .getVariantConfiguration().getBuildType()
+                                                                .isEmbedMicroApp()) {
+                                                                generatedResFolders.add(
+                                                                    scope.getMicroApkResDirectory());
+                                                            }
 
+                                                            return variantData.getVariantConfiguration()
+                                                                .getResourceSets(generatedResFolders, false
+                                                                                                 /*includeDependencies*/,
+                                                                                 mergeResources.isValidateEnabled());
+                                                        }
+                                                    });
                         Zip zipTask = libVariantOutputData.packageLibTask;
 
                         if (atlasExtension.getBundleConfig().isJarEnabled()) {
@@ -306,11 +337,11 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
                         //构建awb 和 extension
                         if (atlasExtension.getBundleConfig().isAwbBundle()) {
-                            awbGenerator.generateAwbArtifict(zipTask,libVariantOutputData);
+                            awbGenerator.generateAwbArtifict(zipTask, libVariantOutputData);
                         }
 
                         if (null != tBuildType && (StringUtils.isNotEmpty(tBuildType.getBaseApDependency())
-                            || null != tBuildType.getBaseApFile()) &&
+                                                   || null != tBuildType.getBaseApFile()) &&
 
                             libraryVariant.getName().equals("debug")) {
 
@@ -331,11 +362,8 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                                 createDexTask(libVariantContext, zipTask);
                             }
                         }
-
                     }
-
                 }
-
             }
         });
     }
@@ -365,8 +393,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
         mtlTaskContexts.add(new MtlTaskContext(MergeAwbResourceConfigAction.class, null));
 
         //Awb processRes
-        mtlTaskContexts.add(new MtlTaskContext(ProcessAwoAndroidResources.ConfigAction.class,
-                                               null));
+        mtlTaskContexts.add(new MtlTaskContext(ProcessAwoAndroidResources.ConfigAction.class, null));
 
         mtlTaskContexts.add(new MtlTaskContext(AwoJavaCompileConfigAction.class, null));
 
@@ -410,5 +437,5 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
         new MtlTaskInjector(libVariantContext).injectTasks(mtlTaskContexts, tAndroidBuilder);
     }
 
-    private LibraryExtension libraryExtension;
+    private final LibraryExtension libraryExtension;
 }
