@@ -209,12 +209,12 @@
 package android.taobao.atlas.runtime;
 
 
-import android.app.PreVerifier;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.content.res.XmlResourceParser;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
@@ -240,6 +240,7 @@ public class DelegateResources extends Resources {
 
     private static String sKernalPathPath = null;
     private static String sAssetsPatchDir = null;
+    private Resources origin;
 
 
     /**
@@ -251,9 +252,50 @@ public class DelegateResources extends Resources {
      */
     public DelegateResources(AssetManager assets, Resources res) {
         super(assets, res.getDisplayMetrics(), res.getConfiguration());
-        if(Boolean.FALSE.booleanValue()){
-            String.valueOf(PreVerifier.class);
+        origin = res;
+    }
+
+    @Override
+    public XmlResourceParser getLayout(int id) throws NotFoundException {
+        XmlResourceParser result = null;
+        NotFoundException exception = null;
+        try{
+            result = super.getLayout(id);
+        }catch(NotFoundException e){
+            exception = e;
+            if(origin!=null) {
+                try {
+                    result = origin.getLayout(id);
+                } catch (Throwable e2) {
+                }
+            }
+
         }
+        if(result==null){
+            throw exception;
+        }
+        return result;
+    }
+
+    public Drawable getDrawable(int id, Theme theme) throws NotFoundException {
+        Drawable result = null;
+        NotFoundException exception = null;
+        try{
+            result = super.getDrawable(id,theme);
+        }catch(NotFoundException e){
+            exception = e;
+            if(origin!=null) {
+                try {
+                    result = origin.getDrawable(id,theme);
+                } catch (Throwable e2) {
+                }
+            }
+
+        }
+        if(result==null){
+            throw exception;
+        }
+        return result;
     }
 
     public static void reset(){

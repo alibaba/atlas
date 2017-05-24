@@ -209,6 +209,7 @@
 package android.taobao.atlas.framework.bundlestorage;
 
 import android.os.Build;
+import android.support.multidex.MultiDex;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.util.*;
@@ -460,13 +461,17 @@ public class BundleArchiveRevision {
             }
 
             if (dexFile == null){
-                boolean interpretOnly = externalStorage ? true : false;
-                dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0,interpretOnly);
+                if(!externalStorage || (externalStorage && Build.VERSION.SDK_INT>=21 && MultiDex.IS_VM_MULTIDEX_CAPABLE)) {
+                    boolean interpretOnly = externalStorage ? true : false;
+                    dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
+                }else{
+                    dexFile = DexFileCompat.loadDex(RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+                }
             }
             //9月份版本明天发布先不集成
 //            isDexOptDone = checkDexValid(dexFile);
             isDexOptDone = true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             if (odexFile.exists()) {
                 odexFile.delete();
             }

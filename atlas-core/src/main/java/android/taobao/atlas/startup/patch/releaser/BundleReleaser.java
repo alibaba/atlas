@@ -213,10 +213,12 @@ package android.taobao.atlas.startup.patch.releaser;
  */
 
 import android.app.PreVerifier;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.taobao.atlas.startup.patch.KernalConstants;
+import android.taobao.atlas.util.DexFileCompat;
 import android.util.Log;
 
 import com.taobao.android.runtime.AndroidRuntime;
@@ -225,12 +227,13 @@ import dalvik.system.DexFile;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BundleReleaser {
     private static final int MSG_ID_DEX_RELEASE_DONE = 1;
@@ -444,14 +447,18 @@ public class BundleReleaser {
                             dexFiles[j] = DexFile.loadDex(validDexes[j].getPath(), optimizedPath, 0);
                         }else{
                             //interpretOnly
-                            optimizedPath = KernalConstants.baseContext.getFilesDir()+File.separator+"fake.dex";
-                            dexFiles[j] = AndroidRuntime.getInstance().loadDex(KernalConstants.baseContext, validDexes[j].getPath(), optimizedPath, 0, true);
+                            if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {
+                                optimizedPath = KernalConstants.baseContext.getFilesDir()+File.separator+"fake.dex";
+                                dexFiles[j] = AndroidRuntime.getInstance().loadDex(KernalConstants.baseContext, validDexes[j].getPath(), optimizedPath, 0, true);
+                            }else{
+                                dexFiles[j] = DexFileCompat.loadDex(KernalConstants.baseContext,validDexes[j].getPath(), optimizedPath,0);
+                            }
                         }
                         boolean result = verifyDexFile(dexFiles[j],optimizedPath);
                         if (!result) {
                             handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                         handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
                     } finally {
@@ -551,6 +558,35 @@ public class BundleReleaser {
         handler.removeCallbacksAndMessages(null);
         handler = null;
         service.shutdown();
+    }
+
+    /**
+     * Identifies if the current VM has a native support for multidex, meaning there is no need for
+     * additional installation by this library.
+     * @return true if the VM handles multidex
+     */
+    /* package visible for test */
+    static boolean isVMMultidexCapable(String versionString) {
+        boolean isMultidexCapable = false;
+        if (versionString != null) {
+            Matcher matcher = Pattern.compile("(\\d+)\\.(\\d+)(\\.\\d+)?").matcher(versionString);
+            if (matcher.matches()) {
+                try {
+                    int major = Integer.parseInt(matcher.group(1));
+                    int minor = Integer.parseInt(matcher.group(2));
+                    isMultidexCapable = (major > 2)
+                            || ((major == 2)
+                            && (minor >= 1));
+                } catch (NumberFormatException e) {
+                    // let isMultidexCapable be false
+                }
+            }
+        }
+        Log.i(TAG, "VM with version " + versionString +
+                (isMultidexCapable ?
+                        " has multidex support" :
+                        " does not have multidex support"));
+        return isMultidexCapable;
     }
 
     public interface ProcessCallBack{
