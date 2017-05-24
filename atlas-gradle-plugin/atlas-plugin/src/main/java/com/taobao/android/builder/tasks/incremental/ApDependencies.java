@@ -216,11 +216,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import com.alibaba.fastjson.JSON;
 
+import com.android.utils.FileUtils;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
@@ -240,6 +242,7 @@ import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.DefaultVersionComparator;
 
 import static com.android.build.gradle.internal.api.ApContext.DEPENDENCIES_FILENAME;
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
@@ -304,26 +307,35 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
     private File getBaseApFile(Project project, TBuildType tBuildType) {
-        File apBaseFile;
-        File buildTypeBaseApFile = tBuildType.getBaseApFile();
-        if (null != buildTypeBaseApFile && buildTypeBaseApFile.exists()) {
-            apBaseFile = buildTypeBaseApFile;
-        } else if (!isNullOrEmpty(tBuildType.getBaseApDependency())) {
-            String apDependency = tBuildType.getBaseApDependency();
-            // Preconditions.checkNotNull(apDependency,
-            //                            "You have to specify the baseApFile property or the baseApDependency
-            // dependency");
-            Dependency dependency = project.getDependencies().create(apDependency);
-            Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
-            configuration.setTransitive(false);
-            apBaseFile = Iterables.getOnlyElement(Collections2.filter(configuration.getFiles(), new Predicate<File>() {
-                @Override
-                public boolean apply(@Nullable File file) {
-                    return file.getName().endsWith(".ap");
+        File apBaseFile = Iterables.getOnlyElement(
+            FileUtils.find(FileUtils.join(project.getBuildDir(), FD_OUTPUTS), Pattern.compile("\\.ap$")), null);
+        if (apBaseFile == null) {
+            File buildTypeBaseApFile = tBuildType.getBaseApFile();
+            if (buildTypeBaseApFile != null) {
+                if (!buildTypeBaseApFile.isFile()) {
+                    throw new IllegalStateException("AP is missing on '" + buildTypeBaseApFile + "'");
                 }
-            }));
+                apBaseFile = buildTypeBaseApFile;
+            } else if (!isNullOrEmpty(tBuildType.getBaseApDependency())) {
+                String apDependency = tBuildType.getBaseApDependency();
+                // Preconditions.checkNotNull(apDependency,
+                //                            "You have to specify the baseApFile property or the baseApDependency
+                // dependency");
+                Dependency dependency = project.getDependencies().create(apDependency);
+                Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
+                configuration.setTransitive(false);
+                apBaseFile = Iterables.getOnlyElement(
+                    Collections2.filter(configuration.getFiles(), new Predicate<File>() {
+                        @Override
+                        public boolean apply(@Nullable File file) {
+                            return file.getName().endsWith(".ap");
+                        }
+                    }));
+            } else {
+                throw new IllegalStateException("AP is missing");
+            }
         } else {
-            throw new IllegalStateException("AP is missing");
+            tBuildType.setBaseApFile(apBaseFile);
         }
         return apBaseFile;
     }
