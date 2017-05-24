@@ -278,7 +278,7 @@ public class AtlasDepTreeParser {
 
         String name = variantDeps.getName().toLowerCase();
         if (!name.endsWith("debug") && !name.endsWith("release")) {
-            return new AtlasDependencyTree(new ArrayList<>());
+            return new AtlasDependencyTree(new ArrayList<>(), null);
         }
 
         Configuration compileClasspath = variantDeps.getCompileConfiguration();
@@ -351,7 +351,7 @@ public class AtlasDepTreeParser {
 
     private AtlasDependencyTree toAtlasDependencyTree() {
 
-        AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies);
+        AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies, apDependencies);
 
         //设置依赖关系
         for (ResolvedDependencyInfo dependencyInfo : mResolvedDependencies) {

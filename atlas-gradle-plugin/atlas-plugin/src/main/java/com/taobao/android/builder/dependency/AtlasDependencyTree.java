@@ -213,6 +213,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.android.builder.model.AndroidLibrary;
@@ -221,6 +222,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
+import com.taobao.android.builder.tasks.incremental.ApDependencies;
 
 /**
  * Android的编译的依赖库
@@ -249,8 +251,11 @@ public class AtlasDependencyTree {
 
     private List<AndroidLibrary> allAndroidLibrarys;
 
-    public AtlasDependencyTree(List<ResolvedDependencyInfo> mResolvedDependencies) {
+    private final ApDependencies apDependencies;
+
+    public AtlasDependencyTree(List<ResolvedDependencyInfo> mResolvedDependencies, ApDependencies apDependencies) {
         this.mResolvedDependencies = mResolvedDependencies;
+        this.apDependencies = apDependencies;
     }
 
     private void addChildDependency(List<String> deps, ResolvedDependencyInfo dependencyInfo) {
@@ -367,6 +372,29 @@ public class AtlasDependencyTree {
                     addChildDependency(dependencyJson.getMainDex(), dep);
                 }
             }
+
+            if (apDependencies != null) {
+                DependencyJson apDependencyJson = apDependencies.getApDependencyJson();
+                for (String dependency : apDependencyJson.getMainDex()) {
+                    if (!dependencyJson.getMainDex().contains(dependency)) {
+                        dependencyJson.getMainDex().add(dependency);
+                    }
+                }
+
+                for (Entry<String, ArrayList<String>> entry : apDependencyJson.getAwbs().entrySet()) {
+                    String awb = entry.getKey();
+                    ArrayList<String> awbDeps = dependencyJson.getAwbs().get(awb);
+                    ArrayList<String> apAwbDeps =entry.getValue();   if (null == awbDeps) {
+                        dependencyJson.getAwbs().put(awb, apAwbDeps);
+                    } else {
+                        for (String dependency : apAwbDeps) {
+                            if (!awbDeps.contains(dependency)) {
+                                awbDeps.add(dependency);
+                            }
+                        }
+                    }
+                }
+            }
         }
         return dependencyJson;
     }
@@ -374,5 +402,4 @@ public class AtlasDependencyTree {
     public List<ResolvedDependencyInfo> getResolvedDependencies() {
         return mResolvedDependencies;
     }
-
 }
