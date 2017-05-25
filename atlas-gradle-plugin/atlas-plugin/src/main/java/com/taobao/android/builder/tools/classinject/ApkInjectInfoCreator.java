@@ -209,17 +209,7 @@
 
 package com.taobao.android.builder.tools.classinject;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.alibaba.fastjson.JSON;
-
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -229,6 +219,12 @@ import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by wuzhong on 2016/12/1.
@@ -250,8 +246,14 @@ public class ApkInjectInfoCreator {
 
         List<BasicBundleInfo> basicBundleInfos = new ArrayList<BasicBundleInfo>();
         Map<String, BasicBundleInfo> basicBundleInfoMap = new HashMap<>();
-
-        String mainMd5 = MD5Util.getMD5(StringUtils.join(atlasDependencyTree.getMainBundle().getAllDependencies()));
+        List<String>mainDexDependencies = atlasDependencyTree.getMainBundle().getAllDependencies();
+        Collections.sort(mainDexDependencies, new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                return o1.compareTo(o2);
+            }
+        });
+        String mainMd5 = MD5Util.getMD5(StringUtils.join(mainDexDependencies));
         injectParam.unit_tag = mainMd5;
         appVariantContext.unit_tag = mainMd5;
 
@@ -266,7 +268,14 @@ public class ApkInjectInfoCreator {
             basicBundleInfo.setPkgName(bundleInfo.getPkgName());
 
             //set unique_tag
-            String bundleMd5 = MD5Util.getMD5(StringUtils.join(awbBundle.getAllDependencies()));
+            List<String>bundleDependencies = awbBundle.getAllDependencies();
+            Collections.sort(bundleDependencies, new Comparator<String>() {
+                @Override
+                public int compare(String o1, String o2) {
+                    return o1.compareTo(o2);
+                }
+            });
+            String bundleMd5 = MD5Util.getMD5(StringUtils.join(bundleDependencies));
             basicBundleInfo.setUnique_tag(MD5Util.getMD5(mainMd5+bundleMd5));
             bundleInfo.setUnique_tag(basicBundleInfo.getUnique_tag());
 
