@@ -216,13 +216,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import com.alibaba.fastjson.JSON;
 
-import com.android.utils.FileUtils;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
@@ -242,7 +240,6 @@ import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.DefaultVersionComparator;
 
 import static com.android.build.gradle.internal.api.ApContext.DEPENDENCIES_FILENAME;
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
@@ -308,8 +305,9 @@ public class ApDependencies /*extends BaseTask*/ {
 
     private File getBaseApFile(Project project, TBuildType tBuildType) {
         //上一次构建baseAp文件
-        File apBaseFile = Iterables.getOnlyElement(
-            FileUtils.find(FileUtils.join(project.getBuildDir(), FD_OUTPUTS), Pattern.compile("\\.ap$")), null);
+        //File apBaseFile = Iterables.getOnlyElement(
+        //    FileUtils.find(FileUtils.join(project.getBuildDir(), FD_OUTPUTS), Pattern.compile("\\.ap$")), null);
+        File apBaseFile = null;
         if (apBaseFile == null) {
             File buildTypeBaseApFile = tBuildType.getBaseApFile();
             if (buildTypeBaseApFile != null) {
