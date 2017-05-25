@@ -243,4 +243,4 @@ dependencies {
     testCompile "junit:junit:4.11"
 }
 
-version = '2.3.1.beta24'
+version = '2.3.1.beta24-incremental-SNAPSHOT'
