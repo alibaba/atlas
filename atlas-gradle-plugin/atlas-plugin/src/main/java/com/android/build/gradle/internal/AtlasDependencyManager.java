@@ -270,8 +270,15 @@ public class AtlasDependencyManager extends DependencyManager {
         AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo, this.apDependencies)
             .parseDependencyTree(variantDeps);
 
-        sLogger.info("[dependencyTree" + variantDeps.getName() + "] {}",
-                     JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
+        AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
+
+        if (atlasExtension.getTBuildConfig().isIncremental()) {
+            sLogger.warn("[dependencyTree" + variantDeps.getName() + "] {}",
+                         JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
+        } else {
+            sLogger.info("[dependencyTree" + variantDeps.getName() + "] {}",
+                         JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
+        }
 
         if (PluginTypeUtils.isAppProject(project)) {
             AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
