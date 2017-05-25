@@ -265,7 +265,7 @@ public class Updater {
         File patchFile = new File(context.getExternalCacheDir(), "patch-" + info.updateVersion + "@" + info.baseVersion + ".tpatch");
 
         try {
-            AtlasUpdater.dexpatchUpdate(info, patchFile, new AtlasUpdater.IDexpatchMonitor() {
+            AtlasUpdater.dexpatchUpdate(context,info, patchFile, new AtlasUpdater.IDexpatchMonitor() {
                 @Override
                 public void merge(boolean success, String bundleName, long version, String errMsg) {
                     Log.d(TAG, "merge: " + success + " " + bundleName + " " + version + " " + errMsg);

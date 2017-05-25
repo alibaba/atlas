@@ -2,6 +2,8 @@ package android.taobao.atlas.util;
 
 import android.content.Context;
 import android.os.Build;
+
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import dalvik.system.DexFile;
@@ -10,7 +12,7 @@ import dalvik.system.DexFile;
  * Created by guanjie on 2017/5/24.
  */
 
-public class DexFileCompat {
+public class DexFileCompat implements Serializable{
 
     public static Method openDexFile;
     public static Field  mCookie;

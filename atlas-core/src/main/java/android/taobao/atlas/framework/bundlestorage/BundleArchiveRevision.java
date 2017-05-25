@@ -208,6 +208,8 @@
 
 package android.taobao.atlas.framework.bundlestorage;
 
+import android.app.PreVerifier;
+import android.content.Context;
 import android.os.Build;
 import android.support.multidex.MultiDex;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
@@ -226,6 +228,7 @@ import dalvik.system.DexFile;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -264,6 +267,10 @@ public class BundleArchiveRevision {
 
     //create
     BundleArchiveRevision(String location, File revisionDir, InputStream inputStream) throws IOException{
+        if (Boolean.FALSE.booleanValue()){
+            String.valueOf(PreVerifier.class);
+        }
+
         this.revisionDir = revisionDir;
         this.location = location;
         if (!this.revisionDir.exists()) {
@@ -465,7 +472,10 @@ public class BundleArchiveRevision {
                     boolean interpretOnly = externalStorage ? true : false;
                     dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
                 }else{
-                    dexFile = DexFileCompat.loadDex(RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+                    Method m=Class.forName("android.taobao.atlas.util.DexFileCompat")
+                            .getDeclaredMethod("loadDex", Context.class,String.class,String.class,int.class);
+                    dexFile= (DexFile) m.invoke(null,RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+                    //dexFile = DexFileCompat.loadDex(RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
                 }
             }
             //9月份版本明天发布先不集成
