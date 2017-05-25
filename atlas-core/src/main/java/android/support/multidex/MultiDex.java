@@ -59,7 +59,7 @@ public final class MultiDex {
 
     private static final Set<String> installedApk = new HashSet<String>();
 
-    private static final boolean IS_VM_MULTIDEX_CAPABLE =
+    public static final boolean IS_VM_MULTIDEX_CAPABLE =
             isVMMultidexCapable(System.getProperty("java.vm.version"));
 
     private MultiDex() {}

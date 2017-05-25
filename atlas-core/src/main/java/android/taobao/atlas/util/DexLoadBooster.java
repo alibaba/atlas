@@ -209,10 +209,12 @@
 package android.taobao.atlas.util;
 
 import android.content.Context;
-import android.taobao.atlas.util.log.impl.AtlasAlarmer;
+import android.util.Log;
 
-import com.taobao.android.runtime.RuntimeUtils;
+import com.taobao.android.runtime.AndroidRuntime;
+import com.taobao.android.runtime.Dex2OatService;
 import com.uc.browser.aerie.DalvikPatch;
+import java.lang.reflect.Method;
 
 /**
  * Created by guanjie on 2017/2/14.
@@ -221,43 +223,39 @@ import com.uc.browser.aerie.DalvikPatch;
 public class DexLoadBooster {
 
     public static void init(Context context){
-        int init = RuntimeUtils.init(context);
-
-        if (!RuntimeUtils.isEnable()) {
-            AtlasAlarmer.getInstance().commitFail("Runtime",
-                    "init",
-                    String.valueOf(-1000),
-                    null);
+        boolean isTaobao = "com.taobao.taobao".equals(context.getPackageName());
+        if(isYunOS()) {
+            Log.d("RuntimeUtils", "- RuntimeUtils init: isYunOS. Invalid disable");
+            return ;
+        } else {
+            if(isTaobao) {
+                boolean isAppDebuggable = (context.getApplicationInfo().flags & 2) != 0;
+                AndroidRuntime.getInstance().init(context, !isAppDebuggable);
+                Dex2OatService.setBootCompleted(false);
+            } else {
+                AndroidRuntime.getInstance().init(context);
+            }
+        }
+        if (!AndroidRuntime.getInstance().isEnabled()) {
             return;
         }
-
-
-        if (init == 0) {
-            AtlasAlarmer.getInstance().commitSuccess("Runtime",
-                    "init");
-        } else {
-            AtlasAlarmer.getInstance().commitFail("Runtime",
-                    "init",
-                    String.valueOf(init),
-                    null);
+        if(isTaobao) {
+            AndroidRuntime.getInstance().setVerificationEnabled(false);
         }
-        RuntimeUtils.presetOptions();
-        int patchIfPossible = DalvikPatch.patchIfPossible();
-        if (patchIfPossible == 0) {
-            AtlasAlarmer.getInstance().commitSuccess("Runtime",
-                    "LinearAlloc");
-        } else if (patchIfPossible == -303) {
-//            AtlasAlarmer.getInstance().commitFail("Runtime",
-//                    "LinearAlloc",
-//                    String.valueOf(init),
-//                    null);
-        } else {
-            AtlasAlarmer.getInstance().commitFail("Runtime",
-                    "LinearAlloc",
-                    String.valueOf(init),
-                    null);
-        }
+        DalvikPatch.patchIfPossible();
     }
 
+    private static boolean isYunOS() {
+        String version = null;
+        String vmName = null;
+        try {
+            Method m = Class.forName("android.os.SystemProperties").getMethod("get", new Class[]{String.class});
+            version = (String)m.invoke((Object)null, new Object[]{"ro.yunos.version"});
+            vmName = (String)m.invoke((Object)null, new Object[]{"java.vm.name"});
+        } catch (Exception var3) {
+            ;
+        }
+        return vmName != null && vmName.toLowerCase().contains("lemur") || version != null && version.trim().length() > 0;
+    }
 
 }

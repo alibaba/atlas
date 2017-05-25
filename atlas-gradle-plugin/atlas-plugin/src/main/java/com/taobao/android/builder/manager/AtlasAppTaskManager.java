@@ -209,12 +209,6 @@
 
 package com.taobao.android.builder.manager;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
-
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.AppExtension;
@@ -239,11 +233,7 @@ import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.GenerateBuildConfig;
-import com.android.build.gradle.tasks.MergeManifests;
-import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.build.gradle.tasks.*;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.DefaultDexOptions;
 import com.google.common.base.Supplier;
@@ -299,6 +289,12 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
+
 /**
  * MTL插件编译apk的任务管理
  * Created by shenghua.nish on 2016-05-09 下午3:55.
@@ -322,8 +318,17 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             @Override
             public void accept(ApplicationVariant applicationVariant) {
 
+
                 AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
                     .getAppVariantContext(project, applicationVariant);
+
+                //if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()) {
+                //    throw new GradleException(
+                //        "atlas plgin is not compatible with instant run， plese turn it off in your ide！");
+                //}
+
+                tAndroidBuilder.setBuildType(appVariantContext.getBuildType().getName());
+//                new AwbProguradHook().hookProguardTask(appVariantContext);
 
                 List<MtlTaskContext> mtlTaskContextList = new ArrayList<MtlTaskContext>();
 

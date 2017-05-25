@@ -253,12 +253,7 @@ import com.android.dex.Dex;
 import com.android.dx.command.dexer.DxContext;
 import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
-import com.android.ide.common.process.JavaProcessExecutor;
-import com.android.ide.common.process.ProcessException;
-import com.android.ide.common.process.ProcessExecutor;
-import com.android.ide.common.process.ProcessInfo;
-import com.android.ide.common.process.ProcessOutputHandler;
-import com.android.ide.common.process.ProcessResult;
+import com.android.ide.common.process.*;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.signing.KeytoolException;
 import com.android.io.FileWrapper;
@@ -276,6 +271,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.hook.dex.DexByteCodeConverterHook;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.Profiler;
@@ -290,7 +286,12 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.StopExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.*;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -308,6 +309,14 @@ public class AtlasBuilder extends AndroidBuilder {
     public MultiDexer multiDexer;
 
     protected AndroidBuilder defaultBuilder;
+
+    private DexByteCodeConverter dexByteCodeConverter;
+
+    private JavaProcessExecutor javaProcessExecutor;
+
+    private boolean verboseExec;
+
+    private String buildType;
 
     /**
      * Creates an AndroidBuilder.
@@ -337,6 +346,8 @@ public class AtlasBuilder extends AndroidBuilder {
               errorReporter,
               logger,
               verboseExec);
+        this.javaProcessExecutor = javaProcessExecutor;
+        this.verboseExec = verboseExec;
     }
 
     public AtlasExtension getAtlasExtension() {
@@ -813,6 +824,10 @@ public class AtlasBuilder extends AndroidBuilder {
         return defaultBuilder.getTargetInfo();
     }
 
+    public void setBuildType(String buildType) {
+        this.buildType = buildType;
+    }
+
     static class TProcessInfo implements ProcessInfo {
 
         private ProcessInfo origin;
@@ -1278,6 +1293,16 @@ public class AtlasBuilder extends AndroidBuilder {
 
     }
 
+    @NonNull
+    public DexByteCodeConverter getDexByteCodeConverter() {
+        if (!buildType.equals("release")){
+            return super.getDexByteCodeConverter();
+        }
+        if (dexByteCodeConverter == null){
+            dexByteCodeConverter = new DexByteCodeConverterHook(getLogger(), defaultBuilder.getTargetInfo(), javaProcessExecutor, verboseExec);
+        }
+        return dexByteCodeConverter;
+    }
     public static interface MultiDexer {
 
         public Collection<File> repackageJarList(Collection<File> files) throws IOException;

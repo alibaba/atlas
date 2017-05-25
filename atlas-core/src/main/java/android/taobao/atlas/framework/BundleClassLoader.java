@@ -210,17 +210,11 @@ package android.taobao.atlas.framework;
 
 import android.os.Build;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
-import android.taobao.atlas.framework.bundlestorage.Archive;
+import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.util.FileUtils;
 import android.util.Log;
-
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.Constants;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -230,12 +224,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
 import dalvik.system.BaseDexClassLoader;
 
@@ -244,12 +236,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
     /**
      * the archive file.
      */
-    final Archive archive;
-
-    /**
-     * the exports of this bundle.
-     */
-    String[] exports = new String[0];
+    final BundleArchive archive;
 
     List<String> dependencies = null;
 
@@ -297,15 +284,6 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         this.location = bundle.location;
 
         this.dependencies = dependencies;
-
-        try {
-            processManifest(archive.getManifest());
-        } catch (IOException ioe) {
-//    		AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, bundle.location, AtlasMonitor.OSGI_FAILED_MSG,
-//    				FileUtils.getDataAvailableSpace());
-            ioe.printStackTrace();
-            throw new BundleException("Not a valid bundle: " + bundle.location);
-        }
     }
 
     public boolean validateClasses(){
@@ -327,44 +305,6 @@ public final class BundleClassLoader extends BaseDexClassLoader {
 
     public BundleImpl getBundle() {
         return this.bundle;
-    }
-
-    public String[] getExports() {
-        return exports;
-    }
-
-    /**
-     * process the bundle manifest.
-     *
-     * @param manifest the Manifest.
-     * @throws BundleException in case of parse errors.
-     */
-    private void processManifest(final Manifest manifest) throws BundleException {
-
-        final Attributes attrs = (manifest != null) ? manifest.getMainAttributes() : new Attributes();
-
-        checkEE(readProperty(attrs, Constants.BUNDLE_REQUIREDEXECUTIONENVIRONMENT),
-                splitString(System.getProperty(Constants.FRAMEWORK_EXECUTIONENVIRONMENT)));
-
-        // get the exports
-        exports = readProperty(attrs, Constants.EXPORT_PACKAGE);
-        if(exports!=null){
-            int pos = 0;
-            for(int x=0; x<exports.length; x++){
-                if((pos = exports[x].indexOf("*"))>-1){
-                    exports[x] = exports[x].substring(0,pos);
-                }
-                Log.d("BundleClassLoader",String.format("%s dependency: %s",location,exports[x]));
-            }
-        }
-
-        // set the bundle headers
-        final Hashtable<String, String> headers = new Hashtable<String, String>(attrs.size());
-        final Object[] entries = attrs.keySet().toArray(new Object[attrs.keySet().size()]);
-        for (int i = 0; i < entries.length; i++) {
-            headers.put(entries[i].toString(), attrs.get(entries[i]).toString());
-        }
-        bundle.headers = headers;
     }
 
     private void checkEE(final String[] req, final String[] having) throws BundleException {
@@ -443,25 +383,12 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                 try {
                     BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
                     impl.startBundle();
-                    String[] exports = ((BundleClassLoader) impl.getClassLoader()).getExports();
-                    if (exports != null && exports.length > 0) {
-                        //if has ,only loadclass when className in exports
-                        for(String export : exports){
-                            if(classname.startsWith(export)){
-                                clazz = ((BundleClassLoader) impl.getClassLoader()).loadOwnClass(classname);
-                                if(clazz!=null){
-                                    return clazz;
-                                }
-                            }
-                        }
-                    } else {
-                        clazz = ((BundleClassLoader) impl.getClassLoader()).loadOwnClass(classname);
-                        if(clazz!=null){
-                            return clazz;
-                        }
+                    clazz = ((BundleClassLoader) impl.getClassLoader()).loadOwnClass(classname);
+                    if(clazz!=null){
+                        return clazz;
                     }
                 } catch (Throwable e) {
-                    //e.printStackTrace();
+                    e.printStackTrace();
                 }
             }
         }
@@ -563,30 +490,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @return a <code>List</code> of <code>URL</code> elements.
      */
     private List<URL> findImportedResources(final String name, final boolean multiple) {
-        if (bundle.state == Bundle.INSTALLED) {
-            return EMPTY_LIST;
-        }
-        BundleClassLoader delegation = null;
-        String packageName = packageOf(pseudoClassname(name));
-        if (dependencies != null) {
-            for (String dependencyBundle : dependencies) {
-                BundleClassLoader loader = (BundleClassLoader)((BundleImpl)Atlas.getInstance().getBundle(dependencyBundle)).getClassLoader();
-                String[] exports = loader.getExports();
-                if (exports != null && exports.length > 0) {
-                    for (String export : exports) {
-                        if (packageName.startsWith(export)) {
-                            delegation = loader;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (delegation == null) {
-            return EMPTY_LIST;
-        } else {
-            return delegation.findOwnResources(name, multiple);
-        }
+        return EMPTY_LIST;
     }
 
     /**

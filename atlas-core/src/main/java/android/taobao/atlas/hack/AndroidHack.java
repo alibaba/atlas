@@ -229,6 +229,7 @@ import android.util.ArrayMap;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -440,36 +441,59 @@ public class AndroidHack {
                 Object sResourcesManager = sgetInstanceMethod.invoke(sResourcesManagerClazz);
                 ArrayMap<?,WeakReference<Resources>> activeResources = (ArrayMap<?,WeakReference<Resources>>)sActiveResourcesField.get(sResourcesManager);
                 references = activeResources.values();
+            }else{
+                Object sResourcesManager = sgetInstanceMethod.invoke(sResourcesManagerClazz);
+                references = (Collection<WeakReference<Resources>>)sActiveResourcesField.get(sResourcesManager);
             }
-            if(Build.VERSION.SDK_INT<24) {
-                for (WeakReference<Resources> wr : references) {
-                    Resources res = wr.get();
+            for (WeakReference<Resources> wr : references) {
+                Resources res = wr.get();
+                if(Build.VERSION.SDK_INT<24) {
                     if (res != null) {
                         sAssetsField.set(res, resources.getAssets());
-                        res.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
+                    }
+                }else{
+                    Field resourcesImplField = Resources.class.getDeclaredField("mResourcesImpl");
+                    resourcesImplField.setAccessible(true);
+                    Object resourceImpl = resourcesImplField.get(res);
+                    Field implAssets = findField(resourceImpl, "mAssets");
+                    implAssets.setAccessible(true);
+                    implAssets.set(resourceImpl, resources.getAssets());
+                }
+
+                if(Build.VERSION.SDK_INT>19 && Build.VERSION.SDK_INT<24) {
+                    try {
+                        Field typedArrayPoolField = findField(Resources.class, "mTypedArrayPool");
+                        final Object origTypedArrayPool = typedArrayPoolField.get(resources);
+                        Field poolField = findField(origTypedArrayPool, "mPool");
+                        final Constructor<?> typedArrayConstructor = origTypedArrayPool.getClass().getConstructor(int.class);
+                        typedArrayConstructor.setAccessible(true);
+                        final int poolSize = ((Object[]) poolField.get(origTypedArrayPool)).length;
+                        final Object newTypedArrayPool = typedArrayConstructor.newInstance(poolSize);
+                        typedArrayPoolField.set(resources, newTypedArrayPool);
+                    } catch (Throwable ignored) {
+                        ignored.printStackTrace();
+                    }
+                }
+                res.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
+
+                Class TintContextWrapper = Class.forName("android.support.v7.widget.TintContextWrapper");
+                Field tintWrapperField = TintContextWrapper.getDeclaredField("sCache");
+                tintWrapperField.setAccessible(true);
+                ArrayList<WeakReference<Object>> sCache = (ArrayList<WeakReference<Object>>)tintWrapperField.get(TintContextWrapper);
+
+                if(sCache!=null){
+                    for(int n=0; n<sCache.size();n++){
+                        final WeakReference<Object> wrappRef = sCache.get(n);
+                        final Object wrapper = wrappRef != null ? wrappRef.get() : null;
+                        Field mTintResourcesField = TintContextWrapper.getDeclaredField("mResources");
+                        mTintResourcesField.setAccessible(true);
+                        Field mTintThemeField = TintContextWrapper.getDeclaredField("mTheme");
+                        mTintThemeField.setAccessible(true);
+                        mTintThemeField.set(wrapper,null);
+                        mTintResourcesField.set(wrapper,null);
                     }
                 }
             }
-
-//            if(Build.VERSION.SDK_INT>=24){
-//                Object sResourcesManager = sgetInstanceMethod.invoke(sResourcesManagerClazz);
-//                WeakHashMap<IBinder, Object> activityResourceReferences ;
-//                activityResourceReferences= (WeakHashMap<IBinder, Object> )sActiveResourcesField.get(sResourcesManager);
-//                Collection<Object> mActivityResourcesReferences = activityResourceReferences.values();
-//                if(mActivityResourcesReferences!=null){
-//                    for(Object activityResourceReference : mActivityResourcesReferences){
-//                        ArrayList<WeakReference<Resources>> resList= (ArrayList<WeakReference<Resources>>)activityResourceReference.getClass().getDeclaredField("activityResources")
-//                                .get(activityResourceReference);
-//                        if(resList!=null){
-//                            for(WeakReference<Resources> ref : resList){
-//
-//                            }
-//                        }
-//                    }
-//                }
-//
-//
-//            }
 
         }catch(Throwable e){
             e.printStackTrace();
@@ -478,10 +502,7 @@ public class AndroidHack {
     }
 
     static Field sActiveResourcesField =null;
-//    static Class sResourcesKeyClazz = null;
-//    static Field sResDirField = null;
     static Class sResourcesManagerClazz = null;
-//    static Field sResourcesManagerField = null;
     static Method sgetInstanceMethod = null;
     static Field sAssetsField = null;
     static{
@@ -490,29 +511,20 @@ public class AndroidHack {
                 Class ActivityThreadClazz = Class.forName("android.app.ActivityThread");
                 sActiveResourcesField = ActivityThreadClazz.getDeclaredField("mActiveResources");
                 sActiveResourcesField.setAccessible(true);
-//                sResourcesKeyClazz = Class.forName("android.app.ActivityThread$ResourcesKey");
-//                sResDirField = sResourcesKeyClazz.getDeclaredField("mResDir");
                 sAssetsField = Resources.class.getDeclaredField("mAssets");
                 sAssetsField.setAccessible(true);
             } else if (Build.VERSION.SDK_INT < 24) {
                 sResourcesManagerClazz = Class.forName("android.app.ResourcesManager");
-//                sResourcesManagerField = sResourcesManagerClazz.getDeclaredField("sResourcesManager");
-//                sResourcesManagerField.setAccessible(true);
                 sActiveResourcesField = sResourcesManagerClazz.getDeclaredField("mActiveResources");
                 sActiveResourcesField.setAccessible(true);
-//                sResourcesKeyClazz = Class.forName("android.content.res.ResourcesKey");
-//                sResDirField = sResourcesKeyClazz.getDeclaredField("mResDir");
-//                sResDirField.setAccessible(true);
                 sgetInstanceMethod = sResourcesManagerClazz.getDeclaredMethod("getInstance");
                 sgetInstanceMethod.setAccessible(true);
                 sAssetsField = Resources.class.getDeclaredField("mAssets");
                 sAssetsField.setAccessible(true);
             } else {
                 sResourcesManagerClazz = Class.forName("android.app.ResourcesManager");
-                sActiveResourcesField = sResourcesManagerClazz.getDeclaredField("mActivityResourceReferences");
+                sActiveResourcesField = sResourcesManagerClazz.getDeclaredField("mResourceReferences");
                 sActiveResourcesField.setAccessible(true);
-//                sResourcesKeyClazz = Class.forName("android.content.res.ResourcesKey");
-//                sResDirField = sResourcesKeyClazz.getDeclaredField("mResDir");
                 sgetInstanceMethod = sResourcesManagerClazz.getDeclaredMethod("getInstance");
                 sgetInstanceMethod.setAccessible(true);
             }

@@ -238,11 +238,9 @@ dependencies {
     compile 'org.javassist:javassist:3.19.0-GA'
     compile "com.taobao.android:preverify:1.0.0"
     compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:dex_patch:1.4.0.8-rc7"
+    compile "com.taobao.android:dex_patch:1.4.0.8-rc21"
 
     testCompile "junit:junit:4.11"
 }
 
-
-version = '2.3.1.beta21'
-
+version = '2.3.1.1.rc34'

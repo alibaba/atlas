@@ -209,42 +209,26 @@
 package android.taobao.atlas.framework;
 
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
-import android.taobao.atlas.framework.bundlestorage.Archive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
-import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.runtime.DelegateResources;
-import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.util.Log;
-
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.BundleListener;
 import org.osgi.framework.FrameworkEvent;
-import org.osgi.framework.FrameworkListener;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
-import java.util.SortedMap;
+import java.util.Map;
 
 public final class BundleImpl implements Bundle {
 
-    final static String UPDATED_MARK="markUpdated";
     /**
      * the bundle location.
      */
@@ -253,19 +237,12 @@ public final class BundleImpl implements Bundle {
     /**
      * the storage location.
      */
-    final File                      bundleDir;
-
-    /**
-     * the bundle revision.
-     */
-    long                      revisionNUM = 0;
-
-    long                      dexPatchVersion = 0;
+    File                      bundleDir;
 
     /**
      * the bundle archive file.
      */
-    Archive                         archive;
+    BundleArchive                         archive;
 
     /**
      * the bundle state.
@@ -273,41 +250,10 @@ public final class BundleImpl implements Bundle {
     int                             state;
 
     /**
-     * the headers from the manifest.
-     */
-    Hashtable<String, String>       headers;
-
-    /**
      * the bundle classloader.
      */
     BundleClassLoader               classloader;
-
-    /**
-     * the bundle context.
-     */
-    private final BundleContext context;
-
-    /**
-     * the protection domain of this bundle.
-     */
-    ProtectionDomain                domain                       = null;
-
-    /**
-     * List of framework listeners registered by this bundle. Is initialized in a lazy way.
-     */
-    List<FrameworkListener>         registeredFrameworkListeners = null;
-
-    /**
-     * List of bundle listeners registered by this bundle. Is initialized in a lazy way.
-     */
-    List<BundleListener>            registeredBundleListeners    = null;
-
-    AdditionalPackageManager packageManager = null;
-
-    boolean                         updated        = false;
-
     boolean disabled = false;
-
     /**
      * create a new bundle object from InputStream. This is used when a new bundle is installed.
      *
@@ -316,86 +262,59 @@ public final class BundleImpl implements Bundle {
      * @throws BundleException if something goes wrong.
      * @throws IOException
      */
-    BundleImpl(final File bundleDir, final String location, final BundleContext context, final InputStream stream,
-               final File file, String version, boolean autoload, long dexPatchVersion) throws BundleException, IOException{
-        long start = System.currentTimeMillis();
-
+    BundleImpl(final File bundleDir, final String location, final InputStream stream,
+               final File file, String unique_tag, boolean installForCurrentVersion, long dexPatchVersion) throws BundleException, IOException{
         this.location = location;
-        context.bundle = this;
-        this.context = context;
         this.bundleDir = bundleDir;
-        Framework.notifyBundleListeners(BundleEvent.BEFORE_INSTALL, this);
-        if (stream != null) {
-            this.archive = new BundleArchive(location,bundleDir, stream,version, dexPatchVersion);
-        } else if (file != null) {
-            this.archive = new BundleArchive(location,bundleDir, file,version, dexPatchVersion);
+        if(installForCurrentVersion) {
+            Framework.notifyBundleListeners(BundleEvent.BEFORE_INSTALL, this);
         }
-        if(dexPatchVersion>0) {
-            dexPatchVersion = archive.getCurrentRevision().getRevisionNum();
-        }else{
-            revisionNUM = archive.getCurrentRevision().getRevisionNum();
+        if (stream != null) {
+            this.archive = new BundleArchive(location,bundleDir, stream,unique_tag, dexPatchVersion);
+        } else if (file != null) {
+            this.archive = new BundleArchive(location,bundleDir, file,unique_tag, dexPatchVersion);
         }
         this.state = INSTALLED;
-        updateMetadata();
-
-        if (autoload) {
+        if (installForCurrentVersion) {
             resolveBundle();
             Framework.bundles.put(location, this);
             // notify the listeners
             Framework.notifyBundleListeners(BundleEvent.INSTALLED, this);
         }
-
-        if (Framework.DEBUG_BUNDLES) {
-            Log.i("Framework","Bundle " + toString() + " created. " + (System.currentTimeMillis() - start) + " ms");
-        }
     }
 
     /**
-     * Create a new bundle object from a storage location. Used after framework restarts.
+     * reload a new bundle object from a storage location. Used after framework restarts.
      *
-     * @param bundleDir the bundle's directory on the storage.
      * @param bcontext the bundle context.
      * @throws Exception if something goes wrong.
      */
-    BundleImpl(final File bundleDir, final BundleContext bcontext) throws Exception{
+    BundleImpl(final BundleContext bcontext) throws Exception{
         long start = System.currentTimeMillis();
-
-    	final File metafile = new File(bundleDir, "meta");
-        DataInputStream in = new DataInputStream(new FileInputStream(metafile));
-        this.location = in.readUTF();
-        this.revisionNUM = in.readLong();
-        in.close();
+        this.location = bcontext.location;
+        long dexPatchVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(location);
         Framework.notifyBundleListeners(BundleEvent.BEFORE_INSTALL, this);
-
-        bcontext.bundle = this;
-        this.context = bcontext;
-        this.bundleDir = bundleDir;
         this.state = Bundle.INSTALLED;
         try {
-            if(bcontext.dexPatchVersion>0){
-                dexPatchVersion = bcontext.dexPatchVersion;
-                this.archive = new BundleArchive(location, bundleDir, 0,dexPatchVersion);
-            }else {
-                if (Framework.shouldSyncUpdateInThisProcess()) {
-                    this.archive = new BundleArchive(location, bundleDir, 0,-1);
-                    if (revisionNUM != archive.getCurrentRevision().getRevisionNum()) {
-                        this.revisionNUM = archive.getCurrentRevision().getRevisionNum();
-                        updateMetadata();
-                    }
-                } else {
-                    if (revisionNUM != 0) {
-                        this.archive = new BundleArchive(location, bundleDir, revisionNUM,-1);
-                    } else {
-                        throw new BundleException("Could not load bundle becuase of wrong revisionNUM");
-                    }
+            if(dexPatchVersion>0){
+                try {
+                    bundleDir = bcontext.dexPatchDir;
+                    this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, dexPatchVersion);
+                }catch(Throwable e){
+                    bundleDir = bcontext.bundleDir;
+                    this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, -1);
                 }
+            }else {
+                bundleDir = bcontext.bundleDir;
+                this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag,-1);
             }
         } catch (Exception e) {
             if(e instanceof BundleArchive.MisMatchException){
                 this.archive = null;
                 BaselineInfoManager.instance().rollbackHardly();
-                AtlasMonitor.getInstance().trace(AtlasMonitor.DD_BUNDLE_MISMATCH,
-                        false, "0", e==null?"":e.getMessage(), "");
+                Map<String, Object> detail = new HashMap<>();
+                detail.put("BundleImpl", "BundleImpl create failed!");
+                AtlasMonitor.getInstance().report(AtlasMonitor.DD_BUNDLE_MISMATCH, detail, e);
                 throw e;
             }else {
                 throw new BundleException("Could not load bundle " + location, e.getCause());
@@ -459,17 +378,6 @@ public final class BundleImpl implements Bundle {
     }
 
     /**
-     * get the manifest headers.
-     *
-     * @return the Dictionary of the headers.
-     * @see org.osgi.framework.Bundle#getHeaders()
-     * @category Bundle
-     */
-    public Dictionary<String, String> getHeaders() {
-        return headers;
-    }
-
-    /**
      * get the bundle location.
      *
      * @return the bundle location.
@@ -480,7 +388,7 @@ public final class BundleImpl implements Bundle {
         return location;
     }
 
-    public Archive getArchive() {
+    public BundleArchive getArchive() {
         return archive;
     }
 
@@ -515,22 +423,6 @@ public final class BundleImpl implements Bundle {
     }
 
     /**
-     * check if the bundle has a certain permission.
-     *
-     * @param permission the permission object
-     * @return true if the bundle has the permission.
-     * @see org.osgi.framework.Bundle#hasPermission(java.lang.Object)
-     * @category Bundle
-     */
-    public boolean hasPermission(final Object permission) {
-        if (state == UNINSTALLED) {
-            throw new IllegalStateException("Bundle " + toString() + "has been unregistered.");
-        }
-
-        return true;
-    }
-
-    /**
      * start the bundle.
      *
      * @throws BundleException if the bundle cannot be resolved or the Activator throws an exception.
@@ -543,30 +435,11 @@ public final class BundleImpl implements Bundle {
 
     @Override
     public void stop() throws BundleException {
-        if (state == UNINSTALLED) {
-            throw new IllegalStateException("Cannot stop uninstalled bundle " + toString());
-        }
-        if (state != ACTIVE) {
-            return;
-        }
-
-        state = STOPPING;
-        try {
-            if (Framework.DEBUG_BUNDLES) {
-                Log.i("Framework","Bundle " + toString() + " stopped.");
-            }
-        } catch (Throwable t) {
-            throw new BundleException("Error stopping bundle " + toString(), t);
-        } finally {
-            Framework.clearBundleTrace(this);
-            state = RESOLVED;
-            Framework.notifyBundleListeners(BundleEvent.STOPPED, this);
-            context.isValid = false;
-        }
+        throw new IllegalStateException("Cannot stop bundle now");
     }
 
     /**
-     * the actual starting happens here. This method does not modify the persistent metadata.
+     * the actual starting happens here.
      *
      * @throws BundleException if the bundle cannot be resolved or the Activator throws an exception.
      */
@@ -581,7 +454,6 @@ public final class BundleImpl implements Bundle {
             throw new RuntimeException("can not start bundle which is not resolved");
         }
         state = STARTING;
-        context.isValid = true;
         Framework.notifyBundleListeners(BundleEvent.BEFORE_STARTED, this);
         Framework.notifyBundleListeners(BundleEvent.STARTED, this);
         if (Framework.DEBUG_BUNDLES) {
@@ -626,14 +498,6 @@ public final class BundleImpl implements Bundle {
                 return false;
             }
         }
-//        if(classloader.dependencies!=null){
-//            for(String bundle : classloader.dependencies){
-//                BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundle);
-//                if(impl==null || !impl.checkResources()){
-//                    return false;
-//                }
-//            }
-//        }
 
         return true;
     }
@@ -665,210 +529,15 @@ public final class BundleImpl implements Bundle {
 
         state = UNINSTALLED;
 
-        File metaFile = new File(bundleDir, "meta");
-	    metaFile.delete();
-
         classloader.cleanup(true);
         classloader = null;
 
         Framework.bundles.remove(getLocation());
         Framework.notifyBundleListeners(BundleEvent.UNINSTALLED, this);
-
-        context.isValid = false;
-        context.bundle = null;
     }
-
-    /**
-     * update the bundle from its update location or the location from where it was originally installed.
-     * 
-     * @throws BundleException if something goes wrong.
-     * @see org.osgi.framework.Bundle#update()
-     * @category Bundle
-     */
-//    public synchronized void update() throws BundleException {
-//        final String updateLocation = (String) headers.get(Constants.BUNDLE_UPDATELOCATION);
-//        try {
-//            update(new URL(updateLocation == null ? location : updateLocation).openConnection().getInputStream());
-//            markBundleUpdated((BundleArchive)archive);
-//        } catch (IOException ioe) {
-//            throw new BundleException("Could not update " + toString() + " from " + updateLocation, ioe);
-//        }
-//    }
-
-    /**
-     * update the bundle from an input stream.
-     * 
-     * @param stream the stream.
-     * @throws BundleException if something goes wrong.
-     * @see org.osgi.framework.Bundle#update(java.io.InputStream)
-     * @category Bundle
-     */
-//    public synchronized void update(final InputStream stream) throws BundleException {
-//
-//        if (state == UNINSTALLED) {
-//            throw new IllegalStateException("Cannot update uninstalled bundle " + toString());
-//        }
-//
-//        try {
-//            archive.newRevision(location, bundleDir, stream);
-//            markBundleUpdated((BundleArchive)archive);
-//        } catch (Exception e) {
-//            throw new BundleException("Could not update bundle " + toString(), e);
-//        }
-//    }
-
-    /**
-     * update the bundle from an input stream.
-     *
-     * @param file the revision file.
-     * @throws BundleException if something goes wrong.
-     * @category Bundle
-     */
-    @Override
-    public synchronized void update(final File file,String version,long dexPatchVersion) throws BundleException {
-
-        if (state == UNINSTALLED) {
-            throw new IllegalStateException("Cannot update uninstalled bundle " + toString());
-        }
-
-        try {
-            archive.newRevision(location, bundleDir, file,version,dexPatchVersion);
-            markBundleUpdated((BundleArchive)archive);
-        } catch (Exception e) {
-            throw new BundleException("Could not update bundle " + toString(), e);
-        }
-    }
-    private void markBundleUpdated(BundleArchive arc){
-        if(arc!=null&&arc.getBundleArchiveRevisions()!=null&&arc.getBundleArchiveRevisions().size()>0){
-            SortedMap<Long, BundleArchiveRevision> map=arc.getBundleArchiveRevisions();
-            BundleArchiveRevision bar=map.get(map.lastKey());
-            if(bar!=null){
-                FileUtils.createNewDirIfNotExist(bar.getRevisionDir(),UPDATED_MARK);
-            }
-        }
-    }
-//    public synchronized void refresh() throws BundleException {
-//        if (state == UNINSTALLED) {
-//            throw new IllegalStateException("Cannot refresh uninstalled bundle " + toString());
-//        }
-//        boolean wasActive = false;
-//        if (state == ACTIVE) {
-//            // so we have to restart it after update
-//            wasActive = true;
-//            stopBundle();
-//        }
-//
-//        try {
-//            this.archive = new BundleArchive(location,bundleDir);
-//
-//            BundleClassLoader updated = new BundleClassLoader(this);
-//
-//            // did the original bundle export packages ?
-//            final String[] exports = classloader.exports;
-//
-//            if (exports.length > 0) {
-//                // are some of them in use ?
-//                boolean inUse = false;
-//                for (int i = 0; i < exports.length; i++) {
-//                    final Package p = (Package) Framework.exportedPackages.get(new Package(exports[i], null, false));
-//                    if (p.importingBundles != null) {
-//                        if (p.classloader == classloader) {
-//                            // set removal pending for this package, since the
-//                            // exporting bundle is going to be updates
-//                            p.removalPending = true;
-//                            inUse = true;
-//                        }
-//                    }
-//                }
-//
-//                if (inUse) {
-//                    // did the last version already have an older version
-//                    // exporting the packages ?
-//                    if (classloader.originalExporter != null) {
-//                        updated.originalExporter = classloader.originalExporter;
-//                    } else {
-//                        // so the last version exported
-//                        updated.originalExporter = classloader;
-//                    }
-//                }
-//            }
-//
-//            classloader.cleanup(true);
-//            // exchange the classloaders
-//            classloader = updated;
-//
-//            if (classloader.resolveBundle(false, null)) {
-//                state = RESOLVED;
-//            } else {
-//                state = INSTALLED;
-//            }
-//            Framework.notifyBundleListeners(BundleEvent.UPDATED, this);
-//            if (wasActive) {
-//                // restart it
-//                startBundle();
-//            }
-//            // if (!Framework.frameworkStartupShutdown) {
-//            // updateMetadata();
-//            // }
-//
-//        } catch (BundleException be) {
-//            throw be;
-//        } catch (Exception e) {
-//            throw new BundleException("Could not refresh bundle " + toString(), e);
-//        }
-//    }
     
     public synchronized void optDexFile() {
     	this.getArchive().optDexFile();
-    }
-    
-    /**
-     * rollback the bundle for updated.
-     */
-    public synchronized void purge() throws BundleException{
-        try {
-            this.getArchive().purge();
-        } catch (Exception e) {
-            throw new BundleException("Could not purge bundle " + toString(), e);
-        }
-    }
-    
-    /**
-     * update the bundle's metadata on the storage.
-     */
-    void updateMetadata() {
-        File file = new File(bundleDir, "meta");
-        DataOutputStream out = null;
-        try {
-            if (!file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            FileOutputStream fos = new FileOutputStream(file);
-            out = new DataOutputStream(fos);
-            out.writeUTF(location);
-            if(revisionNUM>0) {
-                out.writeLong(revisionNUM);
-            }
-            out.flush();
-        } catch (IOException e) {
-            Log.e("Framework","Could not save meta data " + file.getAbsolutePath(), e);
-        } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public boolean isUpdated(){
-        return getArchive().isUpdated();
-    }
-
-    public boolean isDexPatch(){
-        return dexPatchVersion>0;
     }
 
     /**

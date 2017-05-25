@@ -231,30 +231,6 @@ public class WrapperUtil {
 
     static HashMap<String,Object> keyPointLog = new HashMap<String,Object>();
 
-    public static String getProcessName(Context context) {
-        return RuntimeVariables.getProcessName(context);
-    }
-
-    public static boolean inMainProcess(Context context,String processName){
-        return context.getPackageName().equals(processName);
-    }
-
-    public static void killChildProcesses(Context context) {
-        try {
-            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-            List<ActivityManager.RunningAppProcessInfo> a = am.getRunningAppProcesses();
-            for (int i = 0; i < a.size(); i++) {
-                ActivityManager.RunningAppProcessInfo b = a.get(i);
-                if (b.processName.contains(context.getPackageName() + ":")) {
-                    android.os.Process.killProcess(b.pid);
-                    continue;
-                }
-            }
-        } catch (Exception e) {
-
-        }
-    }
-
     public static boolean isDebugMode(Application application){
         final ApplicationInfo app_info = application.getApplicationInfo();
         return (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;

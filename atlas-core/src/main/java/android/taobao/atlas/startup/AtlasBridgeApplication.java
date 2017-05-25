@@ -224,12 +224,16 @@ import android.os.Process;
 import android.taobao.atlas.startup.patch.KernalBundle;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.text.TextUtils;
+import android.util.Log;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-
-import dalvik.system.PathClassLoader;
 
 /**
  * Created by guanjie on 16/10/20.
@@ -247,8 +251,6 @@ import dalvik.system.PathClassLoader;
  */
 public class AtlasBridgeApplication extends Application{
 
-    public  String mCurrentProcessName;
-    public  String mInstalledVersionName;
     public  Object mBridgeApplicationDelegate;
     @Override
     protected void attachBaseContext(Context base) {
@@ -260,11 +262,9 @@ public class AtlasBridgeApplication extends Application{
         boolean isUpdated = isUpdated(getBaseContext());
         KernalConstants.baseContext = getBaseContext();
         KernalConstants.APK_PATH = getBaseContext().getApplicationInfo().sourceDir;
-        KernalConstants.PROCESS = getProcessName(getBaseContext());
-        KernalConstants.INSTALLED_VERSIONNAME = mInstalledVersionName;
         KernalConstants.RAW_APPLICATION_NAME = getClass().getName();
         boolean hasKernalPatched  = false;
-        boolean isMainProcess = getBaseContext().getPackageName().equals(getProcessName(getBaseContext()));
+        boolean isMainProcess = getBaseContext().getPackageName().equals(KernalConstants.PROCESS);
         if(isUpdated){
             if (!isMainProcess) {
                 android.os.Process.killProcess(android.os.Process.myPid());
@@ -276,25 +276,27 @@ public class AtlasBridgeApplication extends Application{
             if(storageDir.exists() || bundleBaseline.exists()){
                 android.os.Process.killProcess(Process.myPid());
             }
+            storePackageVersion(base);
             KernalVersionManager.instance().init();
             System.setProperty("APK_INSTALLED", "true");
         }else{
             KernalVersionManager.instance().init();
-
-            if(KernalBundle.hasKernalPatch()) {
-                //has patch ? true -> must load successed
-                hasKernalPatched = KernalBundle.checkloadKernalBundle(this,mInstalledVersionName, getProcessName(getBaseContext()));
-                if (!hasKernalPatched) {
-                    // load failed
-                    if(isMainProcess) {
-                        KernalVersionManager.instance().rollbackHardly();
+            if(!KernalBundle.checkLoadKernalDebugPatch(this)){
+                if(KernalBundle.hasKernalPatch()) {
+                    //has patch ? true -> must load successed
+                    hasKernalPatched = KernalBundle.checkloadKernalBundle(this, KernalConstants.PROCESS);
+                    if (!hasKernalPatched) {
+                        // load failed
+                        if(isMainProcess) {
+                            KernalVersionManager.instance().rollbackHardly();
+                        }
+                        android.os.Process.killProcess(android.os.Process.myPid());
                     }
-                    android.os.Process.killProcess(android.os.Process.myPid());
-                }
-            }else{
-                //remove deprecated info
-                if(isMainProcess) {
-                    KernalBundle.clear();
+                }else{
+                    //remove deprecated info
+                    if(isMainProcess) {
+                        KernalBundle.clear();
+                    }
                 }
             }
         }
@@ -309,13 +311,17 @@ public class AtlasBridgeApplication extends Application{
             mVersionManager.set(instance,KernalVersionManager.instance());
 
             Class BridgeApplicationDelegateClazz = getBaseContext().getClassLoader().loadClass("android.taobao.atlas.bridge.BridgeApplicationDelegate");
-            Class<?>[] parTypes=new Class<?>[4];
+            Class<?>[] parTypes=new Class<?>[7];
             parTypes[0]= Application.class;
             parTypes[1]= String.class;
             parTypes[2]= String.class;
-            parTypes[3]= boolean.class;
+            parTypes[3]= long.class;
+            parTypes[4]= long.class;
+            parTypes[5]= String.class;
+            parTypes[6]= boolean.class;
             Constructor<?> con = BridgeApplicationDelegateClazz.getConstructor(parTypes);
-            mBridgeApplicationDelegate = con.newInstance(this,getProcessName(getBaseContext()),mInstalledVersionName,isUpdated);
+            mBridgeApplicationDelegate = con.newInstance(this,KernalConstants.PROCESS,KernalConstants.INSTALLED_VERSIONNAME,
+                    KernalConstants.INSTALLED_VERSIONCODE,KernalConstants.LASTUPDATETIME,KernalConstants.APK_PATH,isUpdated);
             Method method = BridgeApplicationDelegateClazz.getDeclaredMethod("attachBaseContext");
             method.invoke(mBridgeApplicationDelegate);
         } catch (Throwable e) {
@@ -375,6 +381,21 @@ public class AtlasBridgeApplication extends Application{
             checkShowErrorNotification("InvalidLibPath");
             return false;
         }
+
+        int pid = android.os.Process.myPid();
+        try {
+            ActivityManager mActivityManager = (ActivityManager) base.getSystemService(Context.ACTIVITY_SERVICE);
+            for (ActivityManager.RunningAppProcessInfo appProcess : mActivityManager.getRunningAppProcesses()) {
+                if (appProcess.pid == pid) {
+                    KernalConstants.PROCESS =  appProcess.processName;
+                }
+            }
+        } catch (Exception e) {
+        }
+        if(TextUtils.isEmpty(KernalConstants.PROCESS)){
+            Log.e("AtlasBridgeApplication","getProcess failed");
+            return false;
+        }
         return true;
     }
 
@@ -412,34 +433,62 @@ public class AtlasBridgeApplication extends Application{
             // 不可能发生
             android.os.Process.killProcess(android.os.Process.myPid());
         }
-        mInstalledVersionName = packageInfo.versionName;
-        // 检测之前的版本记录
-        SharedPreferences prefs = context.getSharedPreferences("atlas_configs", Context.MODE_PRIVATE);
-        int lastVersionCode = prefs.getInt("last_version_code", 0);
-        String lastVersionName = prefs.getString("last_version_name", "");
-        long lastupdatetime = prefs.getLong("lastupdatetime",-1);
-        if(packageInfo.versionCode==lastVersionCode && TextUtils.equals(packageInfo.versionName,
-                lastVersionName) && lastupdatetime==packageInfo.lastUpdateTime && !needRollback()){
-            return false;
+        KernalConstants.INSTALLED_VERSIONNAME = packageInfo.versionName;
+        KernalConstants.INSTALLED_VERSIONCODE = packageInfo.versionCode;
+        KernalConstants.LASTUPDATETIME = packageInfo.lastUpdateTime;
+        if(TextUtils.isEmpty(KernalConstants.INSTALLED_VERSIONNAME )){
+            //不可能发生
+            Log.e("AtlasBridgeApplication","version name is empty ");
+            android.os.Process.killProcess(android.os.Process.myPid());
         }
 
+        File metafile = new File(context.getFilesDir(), "storage/version_meta");
+        if (metafile.exists()) {
+            try {
+                DataInputStream in = new DataInputStream(new FileInputStream(metafile));
+                String storedVersionName = in.readUTF();
+                long   storedVersionCode = in.readLong();
+                long   storedLastUpdateTime = in.readLong();
+                String storedApkPath     = in.readUTF();
+
+                System.setProperty("APP_VERSION_TAG",KernalConstants.INSTALLED_VERSIONNAME);
+                // 检测之前的版本记录
+                if(packageInfo.versionCode == storedVersionCode &&
+                        TextUtils.equals(packageInfo.versionName, storedVersionName) &&
+                        packageInfo.lastUpdateTime == storedLastUpdateTime &&
+                        context.getApplicationInfo().sourceDir.equals(storedApkPath) &&
+                        !needRollback()){
+                    return false;
+                }
+            }catch(Throwable e){
+                throw new RuntimeException(e);
+            }
+        }
         return true;
     }
 
-    public synchronized String getProcessName(Context context) {
-        if(TextUtils.isEmpty(mCurrentProcessName)) {
-            int pid = android.os.Process.myPid();
-            try {
-                ActivityManager mActivityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-                for (ActivityManager.RunningAppProcessInfo appProcess : mActivityManager.getRunningAppProcesses()) {
-                    if (appProcess.pid == pid) {
-                        mCurrentProcessName =  appProcess.processName;
-                    }
-                }
-            } catch (Exception e) {
+    private void storePackageVersion(Context base){
+        File file = new File(base.getFilesDir(), "storage/version_meta");
+        DataOutputStream out = null;
+        try {
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
             }
+
+            FileOutputStream fos = new FileOutputStream(file);
+            out = new DataOutputStream(fos);
+            out.writeUTF(KernalConstants.INSTALLED_VERSIONNAME);
+            out.writeLong(KernalConstants.INSTALLED_VERSIONCODE);
+            out.writeLong(KernalConstants.LASTUPDATETIME);
+            out.writeUTF(KernalConstants.APK_PATH);
+            out.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try{
+                out.close();
+            }catch (Throwable e){}
         }
-        return mCurrentProcessName;
     }
 
     public boolean needRollback(){
