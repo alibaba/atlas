@@ -23,8 +23,8 @@ android {
     }
 
 
-    dataBinding{
-       enabled=true
+    dataBinding {
+        enabled = true
     }
 
 
@@ -35,15 +35,15 @@ android {
         }
     }
 
-//    productFlavors {
-//        dev {
-//            minSdkVersion 14
-//        }
-//
-//        beta {
-//            minSdkVersion 21
-//        }
-//    }
+    //    productFlavors {
+    //        dev {
+    //            minSdkVersion 14
+    //        }
+    //
+    //        beta {
+    //            minSdkVersion 21
+    //        }
+    //    }
 }
 
 atlas {
@@ -53,9 +53,10 @@ atlas {
         autoStartBundles = ['com.taobao.firstbundle'] //自启动bundle配置
         outOfApkBundles = ['remotebundle']
         preLaunch = 'com.taobao.demo.DemoPreLaunch'
+        classInject false
     }
 
-    manifestOptions{
+    manifestOptions {
         addAtlasProxyComponents true
     }
 
@@ -94,7 +95,7 @@ dependencies {
     bundleCompile project(':secondbundle')
     bundleCompile project(':remotebundle')
     bundleCompile project(':publicbundle')
-//    bundleCompile project(':databindbundle')
+    //    bundleCompile project(':databindbundle')
 
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
