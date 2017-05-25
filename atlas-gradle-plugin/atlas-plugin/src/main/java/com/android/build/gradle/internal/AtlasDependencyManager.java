@@ -272,7 +272,7 @@ public class AtlasDependencyManager extends DependencyManager {
 
         AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
 
-        if (atlasExtension.getTBuildConfig().isIncremental()) {
+        if (atlasExtension.getTBuildConfig().isIncremental() && this.apDependencies != null) {
             sLogger.warn("[dependencyTree" + variantDeps.getName() + "] {}",
                          JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
         } else {
