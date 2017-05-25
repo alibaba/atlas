@@ -3,6 +3,7 @@ package com.taobao.android.tpatch.builder;
 import com.android.utils.ILogger;
 import com.taobao.android.BasePatchTool;
 import com.taobao.android.TPatchDexTool;
+import com.taobao.android.TPatchTool;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.object.PatchBundleInfo;
@@ -19,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.net.URL;
@@ -222,7 +224,9 @@ public class PatchFileBuilder {
             bundlePatch.dependency = curBundleInfo.getDependency();
             bundlePatch.pkgName = curBundleInfo.getPkgName();
             bundlePatch.artifactId = curBundleInfo.getArtifactId();
+            bundlePatch.unitTag = curBundleInfo.getUnitTag();
             bundlePatch.version = curBundleInfo.getVersion();
+            bundlePatch.srcUnitTag = curBundleInfo.getSrcUnitTag();
             bundlePatch.newBundle = curBundleInfo.getNewBundle();
             bundlePatch.hisPatchUrl = hisPatchInfo.getDownloadUrl();
             bundlePatch.mainBundle = curBundleInfo.getMainBundle();
@@ -248,11 +252,14 @@ public class PatchFileBuilder {
             PatchBundleInfo hisBundleInfo = entry.getValue();
             BundlePatch bundlePatch = new BundlePatch();
             bundlePatch.name = hisBundleInfo.getName();
+            bundlePatch.unitTag = hisBundleInfo.getUnitTag();
+            bundlePatch.srcUnitTag = hisBundleInfo.getSrcUnitTag();
             bundlePatch.dependency = hisBundleInfo.getDependency();
             bundlePatch.pkgName = hisBundleInfo.getPkgName();
             bundlePatch.artifactId = hisBundleInfo.getArtifactId();
             bundlePatch.bundlePolicy = BundlePolicy.ROLLBACK;
             bundlePatch.version = ROLLBACK_VERSION;
+            bundlePatch.reset = true;
             bundlePatch.baseVersion = hisBundleInfo.getVersion();
             list.add(bundlePatch);
         }
@@ -320,6 +327,8 @@ public class PatchFileBuilder {
                 patchBundleInfo.setApplicationName(bundlePatch.applicationName);
                 patchBundleInfo.setArtifactId(bundlePatch.artifactId);
                 patchBundleInfo.setMainBundle(false);
+                patchBundleInfo.setSrcUnitTag(bundlePatch.srcUnitTag);
+                patchBundleInfo.setUnitTag(bundlePatch.unitTag);
                 patchBundleInfo.setNewBundle(bundlePatch.newBundle);
                 patchBundleInfo.setName(bundleName);
                 patchBundleInfo.setPkgName(bundlePatch.pkgName);
@@ -335,7 +344,10 @@ public class PatchFileBuilder {
             PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
             patchBundleInfo.setApplicationName(bundlePatch.applicationName);
             patchBundleInfo.setArtifactId(bundlePatch.artifactId);
+            patchBundleInfo.setSrcUnitTag(bundlePatch.srcUnitTag);
             patchBundleInfo.setMainBundle(false);
+            patchBundleInfo.setUnitTag(bundlePatch.unitTag);
+            patchBundleInfo.setReset(bundlePatch.reset);
             patchBundleInfo.setNewBundle(bundlePatch.newBundle);
             patchBundleInfo.setName(bundleName);
             patchBundleInfo.setPkgName(bundlePatch.pkgName);
@@ -353,7 +365,16 @@ public class PatchFileBuilder {
                 case ROLLBACK:// donothing
                     break;
                 case MERGE:
-                    downloadTPathAndUnzip(hisPatchInfo.getDownloadUrl(), hisTPatchFile, hisTPatchUnzipFolder);
+                    if (StringUtils.isBlank(hisPatchInfo.getDownloadUrl()) && new File(TPatchTool.hisTpatchFolder,hisPatchInfo.getFileName()).exists()){
+                        File hisPatchFile = new File(TPatchTool.hisTpatchFolder,hisPatchInfo.getFileName());
+                        System.out.println("hisPatchFile:"+hisPatchFile.getAbsolutePath());
+                        if (hisPatchFile.exists()) {
+                            FileUtils.copyFile(new File(TPatchTool.hisTpatchFolder, hisPatchInfo.getFileName()), hisTPatchFile);
+                            ZipUtils.unzip(hisTPatchFile, hisTPatchUnzipFolder.getAbsolutePath());
+                        }
+                    }else {
+                        downloadTPathAndUnzip(hisPatchInfo.getDownloadUrl(), hisTPatchFile, hisTPatchUnzipFolder);
+                    }
                     File hisBundleFolder = new File(hisTPatchUnzipFolder, bundleName);
                     if (!hisBundleFolder.exists()) { //如果历史的文件不存在,就直接覆盖
                         throw new PatchException("The bundle:" + bundleName + " does not existed in tpatch:"
@@ -644,6 +665,9 @@ public class PatchFileBuilder {
         String hisPatchUrl;
         boolean mainBundle;
         String baseVersion;
+        String unitTag;
+        String srcUnitTag;
+        boolean reset;
     }
 
     /**

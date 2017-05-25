@@ -216,7 +216,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.google.common.collect.Lists;
-import com.taobao.android.builder.AtlasBuildContext;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Document;
@@ -309,8 +308,8 @@ public class AtlasProxy {
 
         for (String processName : processNames) {
 
-            //boolean isMainPkg = packageName.equals(processName);
-            boolean isMainPkg = true;
+            boolean isMainPkg = packageName.equals(processName);
+            //boolean isMainPkg = true;
             String processClazzName = processName.replace(":", "").replace(".", "_");
 
             for (String elementName : elementNames) {

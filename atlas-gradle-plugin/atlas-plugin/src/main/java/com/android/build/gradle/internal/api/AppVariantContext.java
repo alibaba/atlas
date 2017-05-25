@@ -247,6 +247,7 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
      * buildCache 目录的manifest不能变更， 所以保存修改后的manifest引用
      */
     public Map<String, File> manifestMap = new HashMap<>();
+    public String unit_tag = "";
 
     public AppVariantContext(ApplicationVariantImpl applicationVariant, Project project, AtlasExtension atlasExtension, AppExtension appExtension) {
         super(applicationVariant, project, atlasExtension, appExtension);

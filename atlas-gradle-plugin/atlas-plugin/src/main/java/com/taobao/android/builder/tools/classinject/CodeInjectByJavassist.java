@@ -291,6 +291,7 @@ public class CodeInjectByJavassist {
                 output.put("preLaunch", injectParam.preLaunch);
                 output.put("group", injectParam.group);
                 output.put("outApp", injectParam.outApp);
+                output.put("unit_tag", injectParam.unit_tag);
                 FileUtils.write(injectParam.outputFile, JSON.toJSONString(output, true));
             }
 

@@ -1,0 +1,18 @@
+@startuml
+autonumber
+
+-> Atlas : startup
+Atlas -> DexLoadBooster : init
+DexLoadBooster -> AndroidRuntime : init
+DexLoadBooster -> DalvikPatch : patchIfPossible
+Atlas -> Framework : startup
+Framework -> AtlasBundleInfoManager : getBundleInfo
+AtlasBundleInfoManager -> AtlasBundleInfoManager : InitBundleInfo\nByVersionIfNeed
+
+Framework-> Framework : startup
+Framework -> FrameworkLifecycleHandler : started
+
+FrameworkLifecycleHandler -> BundleInstalller : installBundleInternal
+FrameworkLifecycleHandler --> BundleImpl : start
+
+@enduml

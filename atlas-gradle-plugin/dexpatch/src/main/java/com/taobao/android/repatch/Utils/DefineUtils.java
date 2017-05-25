@@ -425,7 +425,7 @@ public class DefineUtils {
         if (className.startsWith("[")){
             className = className.substring(1);
         }
-        if (className.charAt(0) != 'L' || className.charAt(className.length() - 1) != ';') {
+        if (className.charAt(0) != 'L'||!className.endsWith(";")) {
             return className;
         }
         return StringUtils.replace(className.substring(1, className.length() - 1), "/", ".");
@@ -438,4 +438,27 @@ public class DefineUtils {
         }
         return "L"+type.replace(".","/")+";";
     }
+
+    public static String getDotDalvikClassName(String className) {
+        if (className.startsWith("[")) {
+            className = className.substring(1);
+        }
+        if (className.charAt(0) != 'L') {
+            return className;
+        }
+        if (!className.endsWith(";")) {
+            return StringUtils.replace(className.substring(1), "/", ".");
+        }
+
+        return className;
+    }
+    public static String getDotDefineClassName(String type,boolean isArray){
+        if (isArray){
+            return "[L"+type.replace(".","/");
+        }
+        return "L"+type.replace(".","/");
+    }
+
+
+
 }

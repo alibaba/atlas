@@ -23,8 +23,8 @@ android {
     }
 
 
-    dataBinding{
-       enabled=true
+    dataBinding {
+        enabled = true
     }
 
 
@@ -35,15 +35,15 @@ android {
         }
     }
 
-//    productFlavors {
-//        dev {
-//            minSdkVersion 14
-//        }
-//
-//        beta {
-//            minSdkVersion 21
-//        }
-//    }
+    //    productFlavors {
+    //        dev {
+    //            minSdkVersion 14
+    //        }
+    //
+    //        beta {
+    //            minSdkVersion 21
+    //        }
+    //    }
 }
 
 atlas {
@@ -53,9 +53,10 @@ atlas {
         autoStartBundles = ['com.taobao.firstbundle'] //自启动bundle配置
         outOfApkBundles = ['remotebundle']
         preLaunch = 'com.taobao.demo.DemoPreLaunch'
+        classInject false
     }
 
-    manifestOptions{
+    manifestOptions {
         addAtlasProxyComponents true
     }
 
@@ -94,7 +95,7 @@ dependencies {
     bundleCompile project(':secondbundle')
     bundleCompile project(':remotebundle')
     bundleCompile project(':publicbundle')
-//    bundleCompile project(':databindbundle')
+    //    bundleCompile project(':databindbundle')
 
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
@@ -104,6 +105,7 @@ dependencies {
 
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
+    compile 'com.taobao.android:atlas_core:5.0.6-rc92@aar'
     compile 'com.android.support:recyclerview-v7:25.3.0'
 }
 
@@ -119,9 +121,27 @@ String getEnvValue(key, defValue) {
     return defValue;
 }
 
-tasks.whenTaskAdded {task ->
+tasks.whenTaskAdded { task ->
     if (task.name.contains("DebugAndroidTest")) {
         task.setEnabled(false);
+    }
+    if (task.name.contains("assemble")) {
+        def files = null;
+        def file = new File(task.project.getBuildDir(), "outputs");
+        if (file.exists() && new File(file, "tpatch-debug").exists()) {
+            files = new File(file, "tpatch-debug").listFiles();
+        }
+        if (files != null) {
+            for (File file1 : files) {
+                if (file1.getName().endsWith(".json") || file1.getName().endsWith(".tpatch")) {
+
+                    if (!new File(task.project.getRootDir(), "hisTpatch").exists()) {
+                        new File(task.project.getRootDir(), "hisTpatch").mkdirs();
+                    }
+                    org.apache.commons.io.FileUtils.copyFileToDirectory(file1, new File(task.project.getRootDir(), "hisTpatch"));
+                }
+            }
+        }
     }
 }
 
