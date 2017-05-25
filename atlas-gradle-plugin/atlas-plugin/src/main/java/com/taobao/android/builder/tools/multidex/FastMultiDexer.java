@@ -262,7 +262,7 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
  */
 public class FastMultiDexer implements MultiDexer {
 
-    public static final int MAX_FIELD_IDS = 64000;
+    public static final int MAX_FIELD_IDS = 65000;
 
     private static final Logger logger = LoggerFactory.getLogger(FastMultiDexer.class);
 
