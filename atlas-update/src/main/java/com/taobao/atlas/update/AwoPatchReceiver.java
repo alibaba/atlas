@@ -77,13 +77,6 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                     if(!TextUtils.isEmpty(tpatchLocation) && !TextUtils.isEmpty(tpatchInfo)){
                         UpdateInfo info = parseObject(tpatchInfo);
                         try {
-                            info.dexPatchVersion = Integer.parseInt(info.updateVersion);
-                        }catch(Throwable e){
-                        }
-                        if(info.dexPatchVersion==0){
-                            return null;
-                        }
-                        try {
                             AtlasUpdater.update(info,new File(tpatchLocation));
                         } catch (MergeException e) {
                             e.printStackTrace();
@@ -151,10 +144,9 @@ public class AwoPatchReceiver extends BroadcastReceiver{
 
         private void wrapperPatchAndInstall(String action){
             if(action.equals(ROLLBACK_ACTION)){
-                BaselineInfoManager.instance().rollback(false);
+                BaselineInfoManager.instance().rollback();
                 return;
             }else if(action.equals(DEXROLLBACK_ACTION)){
-                BaselineInfoManager.instance().rollback(true);
                 return;
             }
             File debugDirectory = new File(ATLAS_DEBUG_DIRECTORY);
@@ -258,7 +250,7 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                     info = parseObject(realJSON);
                     tpatchFile = tPatch;
                     if(action.equals(DEX_PATCH_ACTION)) {
-                        info.dexPatchVersion = System.currentTimeMillis();
+                        info.dexPatch = true;
                     }
                 }else if(tpatchs!=null && tpatchs.length>0){
                     // tpatch
@@ -274,6 +266,7 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                         });
                         return;
                     }
+                    tpatchFile = tpatchs[0];
                     File updateInfofile = new File(tpatchs[0].getParent(),tpatchs[0].getName().substring(0,tpatchs[0].getName().length()-7)+".json");
                     String jsonStr = getFromFile(updateInfofile.getAbsolutePath());
                     info = parseObject(jsonStr);
@@ -341,7 +334,7 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                 UpdateInfo.Item item = new UpdateInfo.Item();
                 item.isMainDex = updateBundleInfo.getBoolean("isMainDex");
                 item.name = updateBundleInfo.getString("name");
-                item.version = updateBundleInfo.getString("version");
+                item.unitTag = updateBundleInfo.getString("unitTag");
                 JSONArray array = updateBundleInfo.optJSONArray("dependency");
                 if(array!=null && array.length()>0) {
                     List<String> dependencies = new ArrayList<String>();

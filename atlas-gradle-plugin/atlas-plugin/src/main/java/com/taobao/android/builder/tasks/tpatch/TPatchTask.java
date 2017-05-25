@@ -236,7 +236,6 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.BuildHelper;
 import com.taobao.android.builder.tools.VersionUtils;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import com.taobao.android.builder.tools.update.UpdateInfo;
 import com.taobao.android.object.PatchInfo;
 import com.taobao.android.object.ApkFileList;
 import com.taobao.android.object.ArtifactBundleInfo;
@@ -368,14 +367,7 @@ public class TPatchTask extends BaseTask {
                                patchContext.appSignName);
             getLogger().info("finish  do patch");
 
-            File patchJson = new File(getOutPatchFolder(), "patchs.json");
-            String json = FileUtils.readFileToString(patchJson);
-            BuildPatchInfos patchInfos = JSON.parseObject(json, BuildPatchInfos.class);
-            for (PatchInfo patchInfo:patchInfos.getPatches()) {
-                UpdateInfo updateInfo = new UpdateInfo(patchInfo,patchInfos.getBaseVersion());
-                File updateJson = new File(getOutPatchFolder(), "update-"+patchInfo.getTargetVersion()+".json");
-                FileUtils.writeStringToFile(updateJson, JSON.toJSONString(updateInfo, true));
-            }
+
 
             File baseVesrionApk = new File(patchContext.newApk.getParentFile(),
                                            patchContext.newApk.getName()

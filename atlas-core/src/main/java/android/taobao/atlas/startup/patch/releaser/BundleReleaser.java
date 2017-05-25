@@ -214,11 +214,12 @@ package android.taobao.atlas.startup.patch.releaser;
 
 import android.app.PreVerifier;
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.taobao.atlas.startup.patch.KernalConstants;
+import android.taobao.atlas.util.DexFileCompat;
 import android.util.Log;
 import dalvik.system.DexFile;
 import java.io.File;
@@ -229,6 +230,8 @@ import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BundleReleaser {
     private static final int MSG_ID_DEX_RELEASE_DONE = 1;
@@ -247,6 +250,7 @@ public class BundleReleaser {
     private ProcessCallBack processCallBack;
     private File apkFile;
     private boolean hasReleased;
+    private boolean externalStorage = false;
 
     public DexFile[] getDexFile() {
         return dexFiles;
@@ -260,6 +264,9 @@ public class BundleReleaser {
         }
         this.hasReleased = hasReleased;
         this.reversionDir = reversionDir;
+        if(!reversionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())){
+            externalStorage = true;
+        }
         if (!(Looper.getMainLooper() == Looper.myLooper())) {
             Looper.prepare();
         }
@@ -355,19 +362,17 @@ public class BundleReleaser {
                     case DEX:
                         try {
                             Log.e(TAG, "DexReleaser start!");
-                            boolean result = DexReleaser.releaseDexes(apkFile, reversionDir);
+                            boolean result = DexReleaser.releaseDexes(apkFile, reversionDir,externalStorage);
                             Log.e(TAG, "DexReleaser done!----->"+result);
                             Message message = handler.obtainMessage();
                             if (result) {
                                 message.what = MSG_ID_DEX_RELEASE_DONE;
                             } else {
                                 message.what = MSG_ID_RELEASE_FAILED;
-                                updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL, apkFile.getAbsolutePath());
                             }
                             handler.sendMessage(message);
                         } catch (IOException e) {
                             e.printStackTrace();
-                            updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL, e==null?"":e.getMessage());
                         }
                         break;
                     case RESOURCE:
@@ -397,12 +402,10 @@ public class BundleReleaser {
                                 message.what = MSG_ID_RELEASE_DONE;
                             } else {
                                 message.what = MSG_ID_RELEASE_FAILED;
-                                updateMonitor(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, apkFile.getAbsolutePath());
                             }
                             handler.sendMessage(message);
                         } catch (IOException e) {
                             e.printStackTrace();
-                            updateMonitor(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, e==null?"":e.getMessage());
                         }
                         break;
                     default:
@@ -412,12 +415,16 @@ public class BundleReleaser {
 
     }
 
+    Class AndroidRuntimeClass = null;
+    Object androidRuntimeInstance = null;
+    Method loadDexMethod = null;
+
     private void dexOptimization() {
         Log.e(TAG, "dexOptimization start");
         final File[] validDexes = reversionDir.listFiles(new FileFilter() {
             @Override
             public boolean accept(File pathname) {
-                if (!DexReleaser.isArt()) {
+                if (!DexReleaser.isArt() || externalStorage) {
                     return pathname.getName().endsWith(DEX_SUFFIX);
                 } else {
                     return pathname.getName().endsWith(".zip");
@@ -425,6 +432,28 @@ public class BundleReleaser {
             }
         });
          dexFiles = new DexFile[validDexes.length];
+
+        if(Build.VERSION.SDK_INT>=21){
+            try {
+                AndroidRuntimeClass = Class.forName("com.taobao.android.runtime.AndroidRuntime");
+                Method getInstanceMethod = AndroidRuntimeClass.getDeclaredMethod("getInstance");
+                androidRuntimeInstance = getInstanceMethod.invoke(null);
+                if(hasReleased){
+                    Method initMethod = AndroidRuntimeClass.getDeclaredMethod("init",Context.class);
+                    initMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext);
+                }
+                loadDexMethod = AndroidRuntimeClass.getDeclaredMethod("loadDex",Context.class,String.class,String.class,int.class,boolean.class);
+            }catch (Throwable e){
+                throw new RuntimeException(e);
+            }
+        }
+
+        if(!externalStorage && Build.VERSION.SDK_INT>=21) {
+            try {
+                Method setVerificationEnabledMethod = AndroidRuntimeClass.getDeclaredMethod("setVerificationEnabled", boolean.class);
+                setVerificationEnabledMethod.invoke(androidRuntimeInstance, true);
+            }catch(Throwable e){}
+        }
         final CountDownLatch countDownLatch = new CountDownLatch(validDexes.length);
         for (int i = 0;i < validDexes.length;i++) {
             final int j = i;
@@ -434,26 +463,25 @@ public class BundleReleaser {
                     long startTime = System.currentTimeMillis();
                     String optimizedPath = optimizedPathFor(validDexes[j], dexOptDir());
                     try {
-                        dexFiles[j] = DexFile.loadDex(validDexes[j].getPath(), optimizedPath, 0);
+                        if(!externalStorage) {
+                            dexFiles[j] = DexFile.loadDex(validDexes[j].getPath(), optimizedPath, 0);
+                        }else{
+                            //interpretOnly
+                            if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {
+                                optimizedPath = KernalConstants.baseContext.getFilesDir()+File.separator+"fake.dex";
+                                dexFiles[j] = (DexFile) loadDexMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext, validDexes[j].getPath(), optimizedPath, 0, true);
+                            }else{
+                                dexFiles[j] = DexFileCompat.loadDex(KernalConstants.baseContext,validDexes[j].getPath(), optimizedPath,0);
+                            }
+                        }
                         boolean result = verifyDexFile(dexFiles[j],optimizedPath);
                         if (!result) {
                             handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
-                            updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL, validDexes[j].getAbsolutePath());
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                         handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
-                        updateMonitor(KernalConstants.DD_INSTALL_DEXOPT_FAIL,
-                                validDexes[j].getAbsolutePath() + " and IOException : " + e==null?"null":e.getMessage());
                     } finally {
-                        //后面需要loadclass,这里不能close
-//                        if (dexFile != null) {
-//                            try {
-//                                dexFile.close();
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
-//                        }
                     }
                     Log.e(TAG, String.format("dex %s consume %d ms", validDexes[j].getAbsolutePath(),
                             System.currentTimeMillis() - startTime));
@@ -467,21 +495,30 @@ public class BundleReleaser {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        if(!externalStorage && Build.VERSION.SDK_INT>=21) {
+            try {
+                Method setVerificationEnabledMethod = AndroidRuntimeClass.getDeclaredMethod("setVerificationEnabled", boolean.class);
+                setVerificationEnabledMethod.setAccessible(true);
+                setVerificationEnabledMethod.invoke(androidRuntimeInstance, false);
+            }catch(Throwable e){}
+        }
         Log.e(TAG, "dex opt done");
         handler.sendMessage(handler.obtainMessage(MSG_ID_DEX_OPT_DONE));
     }
 
     private boolean verifyDexFile(DexFile dexFile,String optimizedPath) throws IOException {
         if (dexFile != null) {
+            if(externalStorage){
+                return true;
+            }
             if (!checkDexValid(dexFile)) {
                 return false;
             }
-            if(!hasReleased) {
+            if(!hasReleased && Build.VERSION.SDK_INT>=21) {
                 try {
-                    Class OdexVerifierClass = getClass().getClassLoader().loadClass("android.taobao.atlas.util.OdexVerifier");
-                    Method isOdexValidMethod = OdexVerifierClass.getDeclaredMethod("isOdexValid", String.class);
+                    Method isOdexValidMethod = AndroidRuntimeClass.getDeclaredMethod("isOdexValid", String.class);
                     isOdexValidMethod.setAccessible(true);
-                    boolean result = (Boolean) isOdexValidMethod.invoke(OdexVerifierClass,optimizedPath);
+                    boolean result = (Boolean) isOdexValidMethod.invoke(androidRuntimeInstance,optimizedPath);
                     if(!result){
                         return false;
                     }
@@ -546,10 +583,33 @@ public class BundleReleaser {
         service.shutdown();
     }
 
-    private void updateMonitor(String stage, String detail) {
-        SharedPreferences sharedPreferences = KernalConstants.baseContext.getSharedPreferences(KernalConstants.ATLAS_MONITOR, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(stage, detail).commit();
+    /**
+     * Identifies if the current VM has a native support for multidex, meaning there is no need for
+     * additional installation by this library.
+     * @return true if the VM handles multidex
+     */
+    /* package visible for test */
+    static boolean isVMMultidexCapable(String versionString) {
+        boolean isMultidexCapable = false;
+        if (versionString != null) {
+            Matcher matcher = Pattern.compile("(\\d+)\\.(\\d+)(\\.\\d+)?").matcher(versionString);
+            if (matcher.matches()) {
+                try {
+                    int major = Integer.parseInt(matcher.group(1));
+                    int minor = Integer.parseInt(matcher.group(2));
+                    isMultidexCapable = (major > 2)
+                            || ((major == 2)
+                            && (minor >= 1));
+                } catch (NumberFormatException e) {
+                    // let isMultidexCapable be false
+                }
+            }
+        }
+        Log.i(TAG, "VM with version " + versionString +
+                (isMultidexCapable ?
+                        " has multidex support" :
+                        " does not have multidex support"));
+        return isMultidexCapable;
     }
 
     public interface ProcessCallBack{

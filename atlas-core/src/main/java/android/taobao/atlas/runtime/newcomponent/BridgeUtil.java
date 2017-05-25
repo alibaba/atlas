@@ -16,42 +16,42 @@ import android.text.TextUtils;
  *  <activity
         android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_Activity"/>
     <activity
-        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_remote_Activity"
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_remote_Activity"
         android:process=":remote"/>
     <activity
-        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_single_Activity"
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_com_taobao_single_Activity"
         android:process="com.taobao.single"/>
 
     <service
         android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_Service"/>
     <service
-        android:name="android.taobao.atlas.runtime.newcomponent.android.taobao.atlas.runtime.newcomponentATLASPROXY_remote_Service"
+        android:name="android.taobao.atlas.runtime.newcomponent.android.taobao.atlas.runtime.newcomponentATLASPROXY_com_taobao_demo_remote_Service"
         android:process=":remote"/>
     <service
-        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_single_Service"
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_com_taobao_single_Service"
         android:process="com.taobao.single"/>
 
     <provider
         android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_Provider"
         android:authorities="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_Provider"/>
     <provider
-        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_remote_Provider"
-        android:authorities="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_remote_Provider"
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_remote_Provider"
+        android:authorities="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_remote_Provider"
         android:process=":remote"/>
     <provider
-        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_single_Provider"
-        android:authorities="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_single_Provider"
+        android:name="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_com_taobao_single_Provider"
+        android:authorities="android.taobao.atlas.runtime.newcomponent.ATLASPROXY_com_taobao_demo_com_taobao_single_Provider"
         android:process="com.taobao.single"/>
 
  * and also apk will add the classses below
  *
  *  class ATLASPROXY_com_taobao_demo_Service   extends android.taobao.atlas.runtime.newcomponent.service.BaseDelegateService
- *  class ATLASPROXY_remote_Service            extends android.taobao.atlas.runtime.newcomponent.service.BaseDelegateService
- *  class ATLASPROXY_com_taobao_single_Service extends android.taobao.atlas.runtime.newcomponent.service.BaseDelegateService
+ *  class ATLASPROXY_com_taobao_demo_remote_Service            extends android.taobao.atlas.runtime.newcomponent.service.BaseDelegateService
+ *  class ATLASPROXY_com_taobao_demo_com_taobao_single_Service extends android.taobao.atlas.runtime.newcomponent.service.BaseDelegateService
  *
  *  class ATLASPROXY_com_taobao_demo_Provider    extends android.taobao.atlas.runtime.newcomponent.provider.ContentProviderBridge
- *  class ATLASPROXY_remote_Service              extends android.taobao.atlas.runtime.newcomponent.provider.ContentProviderBridge
- *  class ATLASPROXY_com_taobao_single_Provider  extends android.taobao.atlas.runtime.newcomponent.provider.ContentProviderBridge
+ *  class ATLASPROXY_com_taobao_demo_remote_Service              extends android.taobao.atlas.runtime.newcomponent.provider.ContentProviderBridge
+ *  class ATLASPROXY_com_taobao_demo_com_taobao_single_Provider  extends android.taobao.atlas.runtime.newcomponent.provider.ContentProviderBridge
  *
  */
 public class BridgeUtil {
@@ -78,10 +78,15 @@ public class BridgeUtil {
     public static String fixProcess(String processName){
         processName = TextUtils.isEmpty(processName) ? RuntimeVariables.androidApplication.getPackageName() : processName;
         String prefix = RuntimeVariables.androidApplication.getPackageName()+":";
-        if(processName.startsWith(prefix)){
-            return processName.substring(prefix.length(),processName.length());
-        }else{
-            return processName.replace(".","_");
+        if(processName.equals(RuntimeVariables.androidApplication.getPackageName())){
+            return processName.replace(".", "_");
+        }else {
+            String childProcessPrefix = RuntimeVariables.androidApplication.getPackageName().replace(".","_")+"_";
+            if (processName.startsWith(prefix)) {
+                return childProcessPrefix+processName.substring(prefix.length(), processName.length());
+            } else {
+                return childProcessPrefix+processName.replace(".", "_");
+            }
         }
     }
 }

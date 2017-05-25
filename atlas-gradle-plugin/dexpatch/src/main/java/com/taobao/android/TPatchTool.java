@@ -237,6 +237,7 @@ import com.taobao.android.tpatch.utils.HttpClientUtils;
 import com.taobao.android.tpatch.utils.MD5Util;
 import com.taobao.android.tpatch.utils.PatchUtils;
 import com.taobao.android.tpatch.utils.PathUtils;
+import com.taobao.android.utils.CommandUtils;
 import com.taobao.android.utils.PathMatcher;
 import com.taobao.android.utils.SmaliCodeUtils;
 import com.taobao.android.utils.ZipUtils;
@@ -244,6 +245,7 @@ import com.taobao.android.utils.ZipUtils;
 import com.taobao.common.dexpatcher.DexPatchApplier;
 import com.taobao.common.dexpatcher.DexPatchGenerator;
 import com.taobao.dex.Dex;
+import com.taobao.update.UpdateInfo;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -506,6 +508,12 @@ public class TPatchTool extends BasePatchTool {
             FileUtils.writeStringToFile(outPatchJson, JSON.toJSONString(buildPatchInfos));
         }
 
+        for (PatchInfo patchInfo:buildPatchInfos.getPatches()) {
+            UpdateInfo updateInfo = new UpdateInfo(patchInfo,buildPatchInfos.getBaseVersion());
+            File updateJson = new File(outPatchDir, "update-"+patchInfo.getTargetVersion()+".json");
+            FileUtils.writeStringToFile(updateJson, JSON.toJSONString(updateInfo, true));
+        }
+
         // 删除临时的目录
         FileUtils.deleteDirectory(patchTmpDir);
         apkDiff.setBaseApkVersion(baseApkBO.getVersionName());
@@ -548,7 +556,7 @@ public class TPatchTool extends BasePatchTool {
         if (FileUtils.listFiles(mainBundleFoder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
                 .size() > 0) {
             hasMainBundle = true;
-            zipBundle(mainBundleFoder, mainBundleFile);
+            CommandUtils.exec(mainBundleFoder,"zip -r "+mainBundleFile.getAbsolutePath()+" . -x */ -x .*");
         }
         FileUtils.deleteDirectory(mainBundleFoder);
 
@@ -558,7 +566,8 @@ public class TPatchTool extends BasePatchTool {
         if (patchFile.exists()) {
             FileUtils.deleteQuietly(patchFile);
         }
-        zipBundle(patchTmpDir, patchFile);
+//        zipBundle(patchTmpDir, patchFile);
+        CommandUtils.exec(patchTmpDir,"zip -r "+patchFile.getAbsolutePath()+" . -x */ -x .*");
         FileUtils.deleteDirectory(patchTmpDir);
         return patchFile;
     }
@@ -623,8 +632,8 @@ public class TPatchTool extends BasePatchTool {
                 diffBundleDex) {
             // 解压文件
             // 判断dex的差异性
-            ZipUtils.unzip(newBundleFile, newBundleUnzipFolder.getAbsolutePath());
-            ZipUtils.unzip(baseBundleFile, baseBundleUnzipFolder.getAbsolutePath());
+            CommandUtils.exec(patchTmpDir,"unzip "+newBundleFile.getAbsolutePath()+" -d "+newBundleUnzipFolder.getAbsolutePath());
+            CommandUtils.exec(patchTmpDir,"unzip "+baseBundleFile.getAbsolutePath()+" -d "+baseBundleUnzipFolder.getAbsolutePath());
             File destDex = new File(destPatchBundleDir, DEX_NAME);
             File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
             createBundleDexPatch(newBundleUnzipFolder,
@@ -925,6 +934,16 @@ public class TPatchTool extends BasePatchTool {
 
         }
         historyBuildPatchInfos = JSON.parseObject(response, BuildPatchInfos.class);
+        if (historyBuildPatchInfos == null){
+            return new BuildPatchInfos();
+        }
+            Iterator<PatchInfo> patchInfos = historyBuildPatchInfos.getPatches().iterator();
+            while (patchInfos.hasNext()) {
+                PatchInfo patchInfo = patchInfos.next();
+                if (!patchInfo.getTargetVersion().equals(baseApkBO.getVersionName())) {
+                    patchInfos.remove();
+                }
+            }
 
 
         Map<String, File> awbBundleMap = new HashMap<String, File>();
@@ -1186,21 +1205,12 @@ public class TPatchTool extends BasePatchTool {
     }
 
 
+public static void main(String []args){
+//        String aa = "\"*/\\.*\" -x \"\\.*\"";
+        CommandUtils.exec(new File("/Users/lilong/Downloads/111/scan-tmp/apk"),
+                "zip -r /Users/lilong/Downloads/1.zip . -x */ -x .*");
+}
 
-    public static void main(String[] args) throws Exception {
-//        File file = new File("/Users/lilong/Downloads/tpatch-diff/lib/armeabi/libcom_alibaba_wdk_txd/classes.dex");
-        File file1 = new File("/Users/lilong/Downloads/10004583@taobao_android_6.6.0/lib/armeabi/libcom_etao_feimagesearch/classes.dex");
-        Dex dex = new Dex(file1);
-//        dex.getTableOfContents().typeLists.size
-//       TPatchDexTool.removeDebugInfo(file);
-//        TPatchDexTool.removeDebugInfo(file1);
-//        DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(file1,file);
-//        dexPatchGenerator.executeAndSaveTo(new File("/Users/lilong/Downloads/1.dex"));
-//        DexPatchApplier dexPatchApplier = new DexPatchApplier(file1,new File("/Users/lilong/Downloads/1.dex"));
-//        dexPatchApplier.executeAndSaveTo(new File("/Users/lilong/Downloads/2.dex"));
-
-
-    }
 
 
 

@@ -216,7 +216,7 @@ import com.taobao.android.object.DiffType;
 import com.taobao.android.tpatch.model.ApkBO;
 import com.taobao.android.tpatch.model.BundleBO;
 import com.taobao.android.tpatch.utils.HttpClientUtils;
-import com.taobao.android.utils.ZipUtils;
+import com.taobao.android.utils.CommandUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -342,10 +342,13 @@ public class BasePatchTool {
      */
     protected File unzipApk(File outPatchDir) {
         File unzipFolder = new File(outPatchDir, "unzip");
+        if (!unzipFolder.exists()){
+            unzipFolder.mkdirs();
+        }
         File baseApkUnzipFolder = new File(unzipFolder, BASE_APK_UNZIP_NAME);
         File newApkUnzipFolder = new File(unzipFolder, NEW_APK_UNZIP_NAME);
-        ZipUtils.unzip(baseApkBO.getApkFile(), baseApkUnzipFolder.getAbsolutePath());
-        ZipUtils.unzip(newApkBO.getApkFile(), newApkUnzipFolder.getAbsolutePath());
+        CommandUtils.exec(outPatchDir,"unzip "+baseApkBO.getApkFile().getAbsolutePath()+" -d "+baseApkUnzipFolder.getAbsolutePath());
+        CommandUtils.exec(outPatchDir,"unzip "+newApkBO.getApkFile().getAbsolutePath()+" -d "+ newApkUnzipFolder.getAbsolutePath());
         return unzipFolder;
     }
 

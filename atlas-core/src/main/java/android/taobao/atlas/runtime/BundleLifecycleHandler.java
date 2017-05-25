@@ -251,16 +251,6 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
             		}
                     started(event.getBundle());
             	}else{
-//            		if(Framework.isFrameworkStartupShutdown()){
-//            			BundleStartTask task = new BundleStartTask();
-//    					if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB) {
-//    						task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,event.getBundle());
-//    					} else {
-//    						task.execute(event.getBundle());
-//    					}
-//            		}else{
-//                        started(event.getBundle());
-//            		}
                     started(event.getBundle());
             	}  
             	break;
@@ -271,52 +261,15 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
     }
     
     private void loaded(Bundle bundle) {
-        long time = System.currentTimeMillis();
         BundleImpl b = (BundleImpl) bundle;
 
         try {
-
-//            DelegateResources.newDelegateResources(RuntimeVariables.androidApplication,
-//                    RuntimeVariables.delegateResources, b.getArchive().getArchiveFile().getAbsolutePath());
-              DelegateResources.addBundleResources(b.getArchive().getArchiveFile().getAbsolutePath());
+              DelegateResources.addBundleResources(b.getArchive().getArchiveFile().getAbsolutePath(),
+                      b.getArchive().getCurrentRevision().getDebugPatchFilePath());
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
-//        if (DelegateComponent.getPackage(bundle.getLocation()) == null) {
-//        	PackageLite pkg = parseByBundleInfoList(bundle.getLocation());
-//        	if (pkg == null){
-//        		AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, bundle.getLocation(),
-//        				AtlasMonitor.PACKAGE_LITE_NULL_FROM_BUNDLEINFOLIST, FileUtils.getDataAvailableSpace());
-//                File archiveFile = b.getArchive().getArchiveFile();
-//                pkg = PackageLite.parse(archiveFile);
-//        	}
-//            if (pkg!=null){
-//	            log.info("Bundle installation info " + bundle.getLocation()  + ":" + pkg.components);
-//	            DelegateComponent.putPackage(bundle.getLocation(), pkg);
-//            } else {
-//        		AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, bundle.getLocation(),
-//        				AtlasMonitor.PACKAGE_LITE_NULL_FROM_SYSTEM_METHOD, FileUtils.getDataAvailableSpace());
-//        		log.error( "" + bundle.getLocation() + "packageLite null even after get from packageLite method");
-//            }
-//        }
-//
-//        final long timediff = System.currentTimeMillis() - time;
-//        log.info("loaded()" + bundle.getLocation() + " spend " + timediff + " milliseconds");
     }
-
-//    public static PackageLite parseByBundleInfoList(String location) {
-//    	PackageLite pl = null;
-//
-//    	BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(location);
-//    	if (bi != null){
-//    		pl = new PackageLite();
-//    		pl.applicationClassName = bi.getApplicationName();
-//    		pl.components.addAll(bi.getComponents());
-//    	}
-//
-//        return pl;
-//    }
     
     private void installed(Bundle bundle) {
     	// TODO:
@@ -327,7 +280,6 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
     }
 
     private void uninstalled(Bundle bundle) {
-//        DelegateComponent.removePackage(bundle.getLocation());
     }
 
     private void started(Bundle bundle){
@@ -336,8 +288,6 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
             return;
         }
         long time = System.currentTimeMillis();
-        // load application from AndroidManifest.xml
-//        PackageLite packageLite = DelegateComponent.getPackage(b.getLocation());
         BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(b.getLocation());
         if (info != null) {
             String appClassName = info.getApplicationName();
@@ -352,9 +302,6 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
                     if(b.getArchive()!=null && b.getArchive().isDexOpted()){
                         throw new RuntimeException(e);
                     }
-//                    AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_APPLICATION_FAIL,
-//                            bundle.getLocation(),e.getMessage(),FileUtils.getAvailableDisk());
-
                     Log.e("BundleLifeCycle","started application crash | "+(Looper.getMainLooper().getThread().getId()==Thread.currentThread().getId()));
 
                 }
