@@ -533,6 +533,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
     }
 
     private void hookFastMultiDex(AppVariantContext appVariantContext) throws Exception {
+
+        if (null == appVariantContext.getAtlasExtension().getMultiDexConfigs()){
+            return;
+        }
+
         FastMultiDexer fastMultiDexer = new FastMultiDexer(appVariantContext);
         if (fastMultiDexer.isFastMultiDexEnabled()) {
             List<TransformTask> list = TransformManager.findTransformTaskByTransformType(appVariantContext,

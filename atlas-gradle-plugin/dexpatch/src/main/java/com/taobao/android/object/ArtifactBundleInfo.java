@@ -431,6 +431,26 @@ public class ArtifactBundleInfo implements Serializable{
     private String       baseVersion;
     private String       depVersions;
     private String       baseDepVersions;
+
+    public String getUnitTag() {
+        return unitTag;
+    }
+
+    public void setUnitTag(String unitTag) {
+        this.unitTag = unitTag;
+    }
+
+    private String       unitTag;
+
+    public String getSrcUnitTag() {
+        return srcUnitTag;
+    }
+
+    public void setSrcUnitTag(String srcUnitTag) {
+        this.srcUnitTag = srcUnitTag;
+    }
+
+    private String       srcUnitTag;
     private List<String> dependency;
     private DiffType     diffType;
 

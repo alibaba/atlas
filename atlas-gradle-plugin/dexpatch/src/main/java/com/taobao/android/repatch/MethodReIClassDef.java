@@ -416,13 +416,13 @@ package com.taobao.android.repatch;
 
 import com.taobao.android.repatch.Utils.DefineUtils;
 import com.taobao.android.repatch.processor.ClassProcessor;
-
 import org.apache.commons.lang3.StringUtils;
 import org.jf.dexlib2.iface.Method;
 import org.jf.dexlib2.iface.MethodImplementation;
 import org.jf.dexlib2.iface.MethodParameter;
 import org.jf.dexlib2.immutable.ImmutableMethod;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -439,20 +439,23 @@ public abstract class MethodReIClassDef extends ClassReIClassDef {
         String newType = null;
         boolean isBasic = false;
         boolean isInit = false;
+        boolean changeOpcode = false;
         String methodName = method.getName();
+        String returnType = method.getReturnType();
+        MethodImplementation methodImplementation = method.getImplementation();
+        List<? extends MethodParameter> paramters = method.getParameters();
         if (methodName.equals("<init>") || methodName.equals("<cinit>")) {
             isInit = true;
         }
 
-        String returnType = method.getReturnType();
+
         if (basicType.containsKey(returnType)) {
             newType = returnType;
             isBasic = true;
         } else {
             newType = classProcessor.classProcess(DefineUtils.getDalvikClassName(returnType)).className;
         }
-        MethodImplementation methodImplementation = method.getImplementation();
-        List<? extends MethodParameter> paramters = method.getParameters();
+
         String[] argsOringn = new String[paramters.size()];
         String[] args = new String[paramters.size()];
         for (int i = 0; i < paramters.size(); i++) {
@@ -473,10 +476,18 @@ public abstract class MethodReIClassDef extends ClassReIClassDef {
                 reParameters(paramters),
                 isBasic ? newType:
                         DefineUtils.getDefineClassName(newType,type.startsWith("[")),
-                method.getAccessFlags(),
+                    method.getAccessFlags(),
                 getAnnotation(method.getAnnotations()),
                 reMethodImpl(methodImplementation));
 
+    }
+
+    private List<String> toTypes(List<? extends MethodParameter> paramters) {
+        List<String>types = new ArrayList<>();
+        for (MethodParameter methodParameter:paramters){
+            types.add(methodParameter.getType());
+        }
+        return types;
     }
 
     protected abstract MethodImplementation reMethodImpl(MethodImplementation methodImplementation);

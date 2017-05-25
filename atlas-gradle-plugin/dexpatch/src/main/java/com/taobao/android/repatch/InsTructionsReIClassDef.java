@@ -414,9 +414,9 @@ package com.taobao.android.repatch;
  *
  */
 
+import com.taobao.android.DexObfuscatedTool;
 import com.taobao.android.repatch.Utils.DefineUtils;
 import com.taobao.android.repatch.processor.ClassProcessor;
-
 import org.apache.commons.lang3.StringUtils;
 import org.jf.dexlib2.Opcode;
 import org.jf.dexlib2.ReferenceType;
@@ -425,12 +425,7 @@ import org.jf.dexlib2.iface.TryBlock;
 import org.jf.dexlib2.iface.debug.DebugItem;
 import org.jf.dexlib2.iface.instruction.Instruction;
 import org.jf.dexlib2.iface.instruction.ReferenceInstruction;
-import org.jf.dexlib2.iface.instruction.formats.Instruction20bc;
-import org.jf.dexlib2.iface.instruction.formats.Instruction21c;
-import org.jf.dexlib2.iface.instruction.formats.Instruction22c;
-import org.jf.dexlib2.iface.instruction.formats.Instruction31c;
-import org.jf.dexlib2.iface.instruction.formats.Instruction35c;
-import org.jf.dexlib2.iface.instruction.formats.Instruction3rc;
+import org.jf.dexlib2.iface.instruction.formats.*;
 import org.jf.dexlib2.iface.reference.FieldReference;
 import org.jf.dexlib2.iface.reference.MethodReference;
 import org.jf.dexlib2.iface.reference.StringReference;
@@ -439,13 +434,7 @@ import org.jf.dexlib2.immutable.ImmutableTryBlock;
 import org.jf.dexlib2.immutable.debug.ImmutableEndLocal;
 import org.jf.dexlib2.immutable.debug.ImmutableRestartLocal;
 import org.jf.dexlib2.immutable.debug.ImmutableStartLocal;
-import org.jf.dexlib2.immutable.instruction.ImmutableInstruction;
-import org.jf.dexlib2.immutable.instruction.ImmutableInstruction20bc;
-import org.jf.dexlib2.immutable.instruction.ImmutableInstruction21c;
-import org.jf.dexlib2.immutable.instruction.ImmutableInstruction22c;
-import org.jf.dexlib2.immutable.instruction.ImmutableInstruction31c;
-import org.jf.dexlib2.immutable.instruction.ImmutableInstruction35c;
-import org.jf.dexlib2.immutable.instruction.ImmutableInstruction3rc;
+import org.jf.dexlib2.immutable.instruction.*;
 import org.jf.dexlib2.immutable.reference.ImmutableFieldReference;
 import org.jf.dexlib2.immutable.reference.ImmutableMethodReference;
 import org.jf.dexlib2.immutable.reference.ImmutableStringReference;
@@ -473,23 +462,45 @@ public class InsTructionsReIClassDef extends MethodImplReIClassDef {
                 if (opcode.referenceType == ReferenceType.METHOD) {
                     boolean isBasic = false;
                     MethodReference methodReference = null;
+
                     try {
                         methodReference = (MethodReference) ((ReferenceInstruction) instruction).getReference();
+                        if (DexObfuscatedTool.aliProguard && methodReference.getName().equals("getName") && methodReference.getDefiningClass().equals("Ljava/lang/Class;")&&opcode.equals(Opcode.INVOKE_VIRTUAL)){
+                            opcode = Opcode.INVOKE_STATIC;
+                            List<CharSequence>list = new ArrayList<>();
+                            list.add("Ljava/lang/Class;");
+                            Iterable iterable = new Iterable() {
+                                @Override
+                                public Iterator iterator() {
+                                    return list.iterator();
+                                }
+                            };
+                            ImmutableMethodReference immutableMethodReference = new ImmutableMethodReference("Lcom/ali/mobisecenhance/ReflectMap;","getName",iterable,"Ljava/lang/String;");
+                            reinstructions.add(new ImmutableInstruction35c(opcode,
+                                    ((Instruction35c) instruction).getRegisterCount(),
+                                    ((Instruction35c) instruction).getRegisterC(),
+                                    ((Instruction35c) instruction).getRegisterD(),
+                                    ((Instruction35c) instruction).getRegisterE(),
+                                    ((Instruction35c) instruction).getRegisterF(),
+                                    ((Instruction35c) instruction).getRegisterG(),
+                                    immutableMethodReference));
+                            continue;
+
+                        }
                         if (methodReference.getDefiningClass().contains("Ljava/lang") ||
                                 methodReference.getDefiningClass().startsWith("Ljava/util/")||
                                 methodReference.getDefiningClass().startsWith("[Ljava/lang")) {
                             reinstructions.add(ImmutableInstruction.of(instruction));
                             continue;
                         }
+
                         String returnType = methodReference.getReturnType();
                         boolean isArray = false;
                         if (returnType.startsWith("[")){
                             isArray = true;
                         }
                         String methodName = methodReference.getName();
-                        if (methodName.equals("InitBundleInfoByVersionIfNeed")){
-                            System.out.println("InitBundleInfoByVersionIfNeed");
-                        }
+
                         if (basicType.containsKey(returnType)) {
                             isBasic = true;
                         }

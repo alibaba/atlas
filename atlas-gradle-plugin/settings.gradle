@@ -1,5 +1,4 @@
 include 'atlas-plugin'
+//include 'dexpatch'
 findProject(':atlas-plugin')?.name = 'atlasplugin'
-
-include 'dexpatch'
-findProject(':dexpatch')?.name = 'dex_patch'
+//findProject(':dexpatch')?.name = 'dex_patch'

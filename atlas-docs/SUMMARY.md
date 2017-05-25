@@ -14,5 +14,9 @@
     * [技术原理](update/principle.md)
     * [一些限制](update/guide.md)
 * FAQ
+	 * [gradle配置](atlas_gradle_apk/atlas_atlas_gradle_apk.md)
+	 * [启动代码分析1](atlas_start/atlas_start_1.md)
+	 * [启动代码分析2](atlas_start/atlas_start_2.md)
+	 * [问答](faq/question.md)
     * [故障排查](faq/help.md)
 
