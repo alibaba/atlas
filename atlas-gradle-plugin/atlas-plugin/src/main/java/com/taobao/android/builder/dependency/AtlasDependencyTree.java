@@ -372,37 +372,40 @@ public class AtlasDependencyTree {
                     addChildDependency(dependencyJson.getMainDex(), dep);
                 }
             }
+            // mergeApDependencies();
+        }
+        return dependencyJson;
+    }
 
-            // 合并基线依赖关系
-            if (apDependencies != null) {
-                // 合并mainDex
-                DependencyJson apDependencyJson = apDependencies.getApDependencyJson();
-                List<String> apMainDex = apDependencyJson.getMainDex();
-                for (String dependency : apMainDex) {
-                    List<String> mainDex = dependencyJson.getMainDex();
-                    if (!mainDex.contains(dependency)) {
-                        dependencyJson.getMainDex().add(dependency);
-                    }
+    // 合并基线依赖关系
+    private void mergeApDependencies() {
+        if (apDependencies != null) {
+            // 合并mainDex
+            DependencyJson apDependencyJson = apDependencies.getApDependencyJson();
+            List<String> apMainDex = apDependencyJson.getMainDex();
+            for (String dependency : apMainDex) {
+                List<String> mainDex = dependencyJson.getMainDex();
+                if (!mainDex.contains(dependency)) {
+                    dependencyJson.getMainDex().add(dependency);
                 }
+            }
 
-                // 合并awb
-                for (Entry<String, ArrayList<String>> entry : apDependencyJson.getAwbs().entrySet()) {
-                    String awb = entry.getKey();
-                    ArrayList<String> awbDeps = dependencyJson.getAwbs().get(awb);
-                    ArrayList<String> apAwbDeps = entry.getValue();
-                    if (null == awbDeps) {
-                        dependencyJson.getAwbs().put(awb, apAwbDeps);
-                    } else {
-                        for (String dependency : apAwbDeps) {
-                            if (!awbDeps.contains(dependency)) {
-                                awbDeps.add(dependency);
-                            }
+            // 合并awb
+            for (Entry<String, ArrayList<String>> entry : apDependencyJson.getAwbs().entrySet()) {
+                String awb = entry.getKey();
+                ArrayList<String> awbDeps = dependencyJson.getAwbs().get(awb);
+                ArrayList<String> apAwbDeps = entry.getValue();
+                if (null == awbDeps) {
+                    dependencyJson.getAwbs().put(awb, apAwbDeps);
+                } else {
+                    for (String dependency : apAwbDeps) {
+                        if (!awbDeps.contains(dependency)) {
+                            awbDeps.add(dependency);
                         }
                     }
                 }
             }
         }
-        return dependencyJson;
     }
 
     public List<ResolvedDependencyInfo> getResolvedDependencies() {

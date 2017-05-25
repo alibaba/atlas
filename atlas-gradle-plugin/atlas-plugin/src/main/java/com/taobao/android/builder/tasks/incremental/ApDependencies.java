@@ -373,7 +373,12 @@ public class ApDependencies /*extends BaseTask*/ {
         if (mainVersion == null) {
             return false;
         }
-        return versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0;
+
+        if (versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public DependencyJson getApDependencyJson() {
