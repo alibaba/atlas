@@ -213,18 +213,19 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
+import android.os.Process;
 import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.NClassLoader;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
-import com.taobao.android.runtime.AndroidRuntime;
 import dalvik.system.DexFile;
 import dalvik.system.PathClassLoader;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -285,6 +286,10 @@ public class KernalBundle{
     }
 
     public static boolean checkLoadKernalDebugPatch(Application application){
+        if(Build.VERSION.SDK_INT<21) {
+            return false;
+        }
+
         boolean loadKernalPatch = false;
         try {
             ApplicationInfo app_info = application.getApplicationInfo();
@@ -295,7 +300,13 @@ public class KernalBundle{
                 if(patchFile.exists()){
                     loadKernalPatch = true;
                     KernalBundle bundle = new KernalBundle();
-                    DexFile dexFile = AndroidRuntime.getInstance().loadDex(KernalConstants.baseContext,patchFile.getAbsolutePath(),
+                    Class AndroidRuntimeClass = Class.forName("com.taobao.android.runtime.AndroidRuntime");
+                    Method getInstanceMethod = AndroidRuntimeClass.getDeclaredMethod("getInstance");
+                    Object androidRuntimeInstance = getInstanceMethod.invoke(null);
+                    Method initMethod = AndroidRuntimeClass.getDeclaredMethod("init",Context.class);
+                    initMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext);
+                    Method loadDexMethod = AndroidRuntimeClass.getDeclaredMethod("loadDex",Context.class,String.class,String.class,int.class,boolean.class);
+                    DexFile dexFile = (DexFile) loadDexMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext,patchFile.getAbsolutePath(),
                             new File(patchFile.getParent(),"patch.dex").getAbsolutePath(),0,true);
                     bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(),patchFile,new DexFile[]{dexFile},null);
                     bundle.replacePathClassLoaderIfNeed(application);

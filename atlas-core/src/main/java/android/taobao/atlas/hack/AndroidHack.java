@@ -474,7 +474,9 @@ public class AndroidHack {
                         ignored.printStackTrace();
                     }
                 }
-                res.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
+                if(res!=null) {
+                    res.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
+                }
 
                 Class TintContextWrapper = Class.forName("android.support.v7.widget.TintContextWrapper");
                 Field tintWrapperField = TintContextWrapper.getDeclaredField("sCache");
@@ -490,7 +492,9 @@ public class AndroidHack {
                         Field mTintThemeField = TintContextWrapper.getDeclaredField("mTheme");
                         mTintThemeField.setAccessible(true);
                         mTintThemeField.set(wrapper,null);
-                        mTintResourcesField.set(wrapper,null);
+                        Object obj = mTintResourcesField.get(wrapper);
+                        Field mResourceField = findField(obj,"mResources");
+                        mResourceField.set(obj,resources);
                     }
                 }
             }
