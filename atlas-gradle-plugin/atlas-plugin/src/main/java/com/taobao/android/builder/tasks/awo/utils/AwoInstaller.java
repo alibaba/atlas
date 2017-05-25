@@ -256,6 +256,10 @@ public class AwoInstaller {
         }
     }
 
+    public static void setAdbInitialized(boolean adbInitialized) {
+        AwoInstaller.adbInitialized = adbInitialized;
+    }
+
     public static void installAwoSo(AndroidBuilder androidBuilder, File maindexFile, Collection<File> awoSoFiles,
                                     String packageName, Logger logger) {
         try {
