@@ -341,6 +341,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
         });
     }
 
+    // 资源不合并
     private void createIncrementalAllActionsTasks(LibVariantOutputData libVariantOutputData) {
         VariantScope scope = libVariantOutputData.getScope().getVariantScope();
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
@@ -362,7 +363,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                 }
 
                 return variantData.getVariantConfiguration().getResourceSets(generatedResFolders, false
-                                                                                 /*includeDependencies*/,
+                                                                                 /*includeDependencies*/,//资源不合并
                                                                              mergeResourcesTask.isValidateEnabled());
             }
         });
