@@ -233,6 +233,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.transforms.JarMerger;
 import com.android.builder.core.AtlasBuilder.MultiDexer;
 import com.android.dex.Dex;
+import com.android.dex.DexIndexOverflowException;
 import com.android.dex.FieldId;
 import com.android.dex.MethodId;
 import com.android.dx.command.dexer.DxContext;
@@ -261,10 +262,13 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
  */
 public class FastMultiDexer implements MultiDexer {
 
-    private static Logger logger = LoggerFactory.getLogger(FastMultiDexer.class);
+    public static final int MAX_FIELD_IDS = 64000;
 
-    private AppVariantContext appVariantContext;
-    private MultiDexConfig multiDexConfig;
+    private static final Logger logger = LoggerFactory.getLogger(FastMultiDexer.class);
+
+    private final AppVariantContext appVariantContext;
+
+    private final MultiDexConfig multiDexConfig;
 
     public FastMultiDexer(AppVariantContext appVariantContext) {
         this.appVariantContext = appVariantContext;
@@ -356,7 +360,6 @@ public class FastMultiDexer implements MultiDexer {
         result.add(0, maindexJar);
 
         return result;
-
     }
 
     protected void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
@@ -370,7 +373,6 @@ public class FastMultiDexer implements MultiDexer {
             jos.putNextEntry(newEntry);
             IOUtils.copy(inputStream, jos);
             IOUtils.closeQuietly(inputStream);
-
         } catch (Exception e) {
             throw new GradleException("copy stream exception", e);
         }
@@ -408,9 +410,7 @@ public class FastMultiDexer implements MultiDexer {
 
         addRefClazz(classPool, applicationName, mainDexList, handleList);
 
-        String preLaunchStr = appVariantContext.getAtlasExtension()
-            .getTBuildConfig()
-            .getPreLaunch();
+        String preLaunchStr = appVariantContext.getAtlasExtension().getTBuildConfig().getPreLaunch();
 
         if (!org.apache.commons.lang3.StringUtils.isEmpty(preLaunchStr)) {
             String[] launchArray = preLaunchStr.split("\\|");
@@ -444,11 +444,9 @@ public class FastMultiDexer implements MultiDexer {
     private Map<String, String> getClassObfMap(GradleVariantConfiguration config) {
         Map<String, String> classMap = new HashMap<String, String>();
         boolean isMinifyEnabled = config.isMinifyEnabled();
-        File proguardOut = new File(
-            Joiner.on(File.separatorChar)
-                .join(String.valueOf(appVariantContext.getScope().getGlobalScope().getBuildDir()),
-                      FD_OUTPUTS, "mapping",
-                      appVariantContext.getScope().getVariantConfiguration().getDirName()));
+        File proguardOut = new File(Joiner.on(File.separatorChar).join(
+            String.valueOf(appVariantContext.getScope().getGlobalScope().getBuildDir()), FD_OUTPUTS, "mapping",
+            appVariantContext.getScope().getVariantConfiguration().getDirName()));
         File mappingFile = new File(proguardOut, "mapping.txt");
         // 解析mapping文件,生成新的mainDexListFile
         if (isMinifyEnabled && mappingFile.exists()) {
@@ -473,8 +471,7 @@ public class FastMultiDexer implements MultiDexer {
         return realClazz;
     }
 
-    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList,
-                             Set<String> handleList) {
+    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, Set<String> handleList) {
 
         if (handleList.contains(clazz)) {
             return;
@@ -508,9 +505,7 @@ public class FastMultiDexer implements MultiDexer {
                 for (String clazz2 : references) {
                     addRefClazz(classPool, clazz2, classList, handleList);
                 }
-
             }
-
         } catch (Throwable e) {
         }
     }
@@ -568,9 +563,7 @@ public class FastMultiDexer implements MultiDexer {
 
     private void mergeDex(File outDexFolder, List<Dex> tmpList, int index, Dex[] mergedList) throws IOException {
 
-        DexMerger dexMerger = new DexMerger(tmpList.toArray(new Dex[0]),
-                                            CollisionPolicy.KEEP_FIRST,
-                                            new DxContext());
+        DexMerger dexMerger = new DexMerger(tmpList.toArray(new Dex[0]), CollisionPolicy.KEEP_FIRST, new DxContext());
         Dex dex = dexMerger.merge();
 
         mergedList[index] = dex;
@@ -580,13 +573,14 @@ public class FastMultiDexer implements MultiDexer {
         File dexFile = new File(outDexFolder, name);
 
         dex.writeTo(dexFile);
-
     }
 
     public static class DexDto {
 
         public List<Dex> dexs = new ArrayList<>();
+
         public int methods = 0;
+
         public int fields = 0;
 
         public boolean addDex(Dex dex) {
@@ -594,7 +588,10 @@ public class FastMultiDexer implements MultiDexer {
             int ms = dex.getTableOfContents().methodIds.size;
             int fs = dex.getTableOfContents().fieldIds.size;
 
-            if (methods + ms >= 63000 || fields + fs >= 64000) {
+            if (fs >= MAX_FIELD_IDS) {
+                throw new DexIndexOverflowException("field ID not in [0, 0xffff]: " + fs);
+            }
+            if (methods + ms >= 63000 || fields + fs >= MAX_FIELD_IDS) {
                 return false;
             }
 
@@ -620,7 +617,6 @@ public class FastMultiDexer implements MultiDexer {
             }
             return sets;
         }
-
     }
 
     public static class DexWrapper {
@@ -641,7 +637,5 @@ public class FastMultiDexer implements MultiDexer {
 
             return true;
         }
-
     }
-
 }
