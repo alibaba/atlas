@@ -301,7 +301,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                 if (null != list) {
 
                     for (LibVariantOutputData libVariantOutputData : list) {
-                        createIncrementalAllActionsTasks(libVariantOutputData);
+                        // createIncrementalAllActionsTasks(libVariantOutputData);
                         Zip zipTask = libVariantOutputData.packageLibTask;
 
                         if (atlasExtension.getBundleConfig().isJarEnabled()) {
