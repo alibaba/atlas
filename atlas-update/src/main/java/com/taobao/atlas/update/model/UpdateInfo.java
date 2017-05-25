@@ -60,7 +60,7 @@ public class UpdateInfo implements Serializable{
          */
         public List<String> dependency;
 
-        public long dexPatchVersion = -1;
+        public long dexpatchVersion = -1;
 
         public boolean reset = false;
     }

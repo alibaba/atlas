@@ -227,23 +227,13 @@ import java.io.File;
 
 public class Updater {
 
+    public static final String TAG = "Updater";
+
+
     public static void update(Context context) {
-        String versionName = null;
-        try {
-            versionName = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-        }catch(Throwable e){
-        }
-        File updateInfo = new File(context.getExternalCacheDir(), "update-"+versionName+".json");
+        UpdateInfo info = loadUpdateInfo(context);
+        if (null == info) return;
 
-        if (!updateInfo.exists()) {
-            Log.e("update", "更新信息不存在，请先 执行 buildTpatch.sh");
-            toast("更新信息不存在，请先 执行 buildTpatch.sh", context);
-            return;
-        }
-
-        String jsonStr = new String(FileUtils.readFile(updateInfo));
-        UpdateInfo info = JSON.parseObject(jsonStr, UpdateInfo.class);
-        info.lowDisk = false;
         File patchFile = new File(context.getExternalCacheDir(), "patch-" + info.updateVersion + "@" + info.baseVersion + ".tpatch");
 
         try {
@@ -258,6 +248,7 @@ public class Updater {
 
     }
 
+
     private static void toast(final String msg, final Context context) {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
@@ -267,5 +258,45 @@ public class Updater {
         });
     }
 
+    public static void dexPatchUpdate(Context context) {
+        UpdateInfo info = loadUpdateInfo(context);
+        if (null == info) return;
+
+        File patchFile = new File(context.getExternalCacheDir(), "patch-" + info.updateVersion + "@" + info.baseVersion + ".tpatch");
+
+        try {
+            AtlasUpdater.dexpatchUpdate(info, patchFile, new AtlasUpdater.IDexpatchMonitor() {
+                @Override
+                public void merge(boolean success, String bundleName, long version, String errMsg) {
+                    Log.d(TAG, "merge: " + success + " " + bundleName + " " + version + " " + errMsg);
+                }
+
+                @Override
+                public void install(boolean success, String bundleName, long version, String errMsg) {
+                    Log.d(TAG, "install: " + success + " " + bundleName + " " + version + " " + errMsg);
+                }
+            });
+            Log.d(TAG, "update success");
+        } catch (Throwable e) {
+            Log.e(TAG, "更新失败", e);
+        }
+    }
+
+    public static UpdateInfo loadUpdateInfo(Context context) {
+        String versionName = null;
+        try {
+            versionName = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+        } catch (Throwable e) {
+        }
+        File updateInfo = new File(context.getExternalCacheDir(), "update-" + versionName + ".json");
+
+        if (!updateInfo.exists()) {
+            Log.e(TAG, "更新信息不存在，请先 执行 buildTpatch.sh");
+            return null;
+        }
+
+        String jsonStr = new String(FileUtils.readFile(updateInfo));
+        return JSON.parseObject(jsonStr, UpdateInfo.class);
+    }
 
 }

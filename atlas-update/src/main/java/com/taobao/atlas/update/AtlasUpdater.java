@@ -34,6 +34,11 @@ public class AtlasUpdater {
      */
     public static void update(UpdateInfo updateInfo, File patchFile) throws MergeException, BundleException {
 
+        if (null == updateInfo || updateInfo.dexPatch){
+            //with dexPatch,please call "dexPatchUpdate"
+            return;
+        }
+
         MergeCallback mergeCallback = new MergeCallback() {
             @Override
             public void onMergeResult(boolean result, String bundleName) {
@@ -66,6 +71,10 @@ public class AtlasUpdater {
 
     public static void dexpatchUpdate(UpdateInfo updateInfo, File patchFile, final IDexpatchMonitor monitor){
 
+        if (null == updateInfo || !updateInfo.dexPatch){
+            return;
+        }
+
         PatchMerger patchMerger = null;
         try {
             patchMerger = new PatchMerger(updateInfo, patchFile, null);
@@ -82,13 +91,12 @@ public class AtlasUpdater {
                 UpdateInfo.Item item = updateInfo.updateBundles.get(i);
                 if (patchMerger.mergeOutputs.containsKey(item.name)) {//对于merge成功的bundle列表进行更新
                     Pair<String, UpdateInfo.Item> pair = patchMerger.mergeOutputs.get(item.name);
-                    if (new File(pair.first).exists()) {
+                    boolean succeed = new File(pair.first).exists();
+                    if (succeed){
                         result.add(item);
-                        monitor.merge(true, item.name, item.dexPatchVersion, "");
-                    } else {
-                        if (monitor != null) {
-                            monitor.merge(false, item.name, item.dexPatchVersion, "");
-                        }
+                    }
+                    if (monitor != null) {
+                        monitor.merge(succeed, item.name, item.dexpatchVersion, "");
                     }
                 }
             }
@@ -106,18 +114,12 @@ public class AtlasUpdater {
         ConcurrentHashMap<String, Long> installList = BaselineInfoManager.instance().getDexPatchBundles();
         if (installList == null || installList.size() == 0) {
             return;
-        } else {
-            for (int j = 0; j < updateInfo.updateBundles.size(); j++) {
-                UpdateInfo.Item item = updateInfo.updateBundles.get(j);
-                if (installList.containsKey(item.name)) {
-                    if (item.dexPatchVersion == installList.get(item.name)) {
-                        if (monitor != null) monitor.install(true, item.name, item.dexPatchVersion, "");
-                    } else {
-                        if (monitor != null) monitor.install(false, item.name, item.dexPatchVersion, "");
-                    }
-                } else {
-                    if (monitor != null) monitor.install(false, item.name, item.dexPatchVersion, "");
-                }
+        }
+
+        if (null != monitor){
+            for (UpdateInfo.Item item : updateInfo.updateBundles){
+                boolean succeed = installList.containsKey(item.name) && item.dexpatchVersion == installList.get(item.name);
+                monitor.install(succeed,item.name, item.dexpatchVersion, "");
             }
         }
 

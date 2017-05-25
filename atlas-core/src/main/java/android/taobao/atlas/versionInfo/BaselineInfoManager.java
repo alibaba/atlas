@@ -216,6 +216,7 @@ import android.text.TextUtils;
 import android.util.Pair;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -307,7 +308,11 @@ public class BaselineInfoManager{
 
     public ConcurrentHashMap<String,Long> getDexPatchBundles(){
         try {
-            return (ConcurrentHashMap<String,Long>) mVersionManager.getClass().getDeclaredField("dexPatchBundles").get(mVersionManager);
+            Field dexPatchBundles = mVersionManager.getClass().getDeclaredField("dexPatchBundles");
+            if (!dexPatchBundles.isAccessible()){
+                dexPatchBundles.setAccessible(true);
+            }
+            return (ConcurrentHashMap<String,Long>) dexPatchBundles.get(mVersionManager);
         } catch (Throwable e) {
             e.printStackTrace();
         }

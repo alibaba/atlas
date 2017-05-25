@@ -3,6 +3,7 @@ package com.taobao.demo;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -22,6 +23,7 @@ import android.view.ViewGroup;
 
 import com.middleware.dialog.Dialog;
 import com.taobao.android.ActivityGroupDelegate;
+import com.taobao.update.Updater;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -145,6 +147,19 @@ public class MainActivity extends AppCompatActivity
             dialog.show();
 
 
+        } else if (id == R.id.nav_dex_patch) {
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... voids) {
+                    Updater.dexPatchUpdate(getBaseContext());
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Void aVoid) {
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                }
+            }.execute();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);

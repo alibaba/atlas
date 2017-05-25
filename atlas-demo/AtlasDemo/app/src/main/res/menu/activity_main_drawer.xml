@@ -14,6 +14,9 @@
         <item
             android:id="@+id/awo_manager"
             android:title="单模块调试模拟" />
+        <item
+            android:id="@+id/nav_dex_patch"
+            android:title="dex_patch模拟" />
     </group>
 
     <item android:title="Communicate">

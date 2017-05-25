@@ -723,7 +723,7 @@ public final class Framework {
                         return mainBundle;
                     }
                 }else {
-                    BundleArchive archive = new BundleArchive(location, new File(storageLocation + location), bundleUniqueId, 0);
+                    BundleArchive archive = new BundleArchive(location, new File(storageLocation,location), bundleUniqueId, 0);
                     if (archive != null) {
                         return archive.getArchiveFile();
                     } else {

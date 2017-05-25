@@ -61,7 +61,7 @@ public class PatchInstaller {
                 if (!updateInfo.dexPatch) {
                     upgradeVersions[index] = bundlePair.second.unitTag;
                 } else {
-                    dexPatchVersions[index] = bundlePair.second.dexPatchVersion;
+                    dexPatchVersions[index] = bundlePair.second.dexpatchVersion;
                 }
             }
             index++;

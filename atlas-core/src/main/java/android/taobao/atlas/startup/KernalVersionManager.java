@@ -580,6 +580,7 @@ public class KernalVersionManager {
         //dexpatch 部分
         out.writeUTF(bundleListStr);
         out.writeUTF(storageLocation!=null ? storageLocation : "");
+        out.writeBoolean(cachePreVersion);
         out.flush();
         out.close();
     }
