@@ -44,7 +44,6 @@ import org.gradle.api.tasks.TaskAction;
 import static com.taobao.android.builder.tasks.awo.utils.AwoInstaller.setAdbInitialized;
 
 /**
- *
  * @author chenhjohn
  * @date 2017/5/25
  */

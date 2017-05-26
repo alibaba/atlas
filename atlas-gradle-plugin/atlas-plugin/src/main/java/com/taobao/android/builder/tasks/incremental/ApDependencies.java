@@ -245,7 +245,6 @@ import static com.android.build.gradle.internal.api.ApContext.DEPENDENCIES_FILEN
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
- *
  * @author chenhjohn
  * @date 2017/5/1
  */
@@ -255,6 +254,7 @@ public class ApDependencies /*extends BaseTask*/ {
     private static final Logger LOGGER = Logging.getLogger(ApDependencies.class);
 
     // ----- PUBLIC TASK API -----
+    //不适用Ap依赖解析
     private final DependencyHandler dependencies;
 
     private final Comparator<String> versionComparator = new DefaultVersionComparator().asStringComparator();
