@@ -377,8 +377,8 @@ public class ApDependencies /*extends BaseTask*/ {
         }
 
         if (versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
-            LOGGER.quiet("{} ({}) is larger than ({}), skipping", moduleVersion.getModule(), mainVersion,
-                         moduleVersion.getVersion());
+            LOGGER.quiet("{} apVersion({}) is larger than yourVersion({}), skipping", moduleVersion.getModule(),
+                         mainVersion, moduleVersion.getVersion());
             return true;
         } else {
             return false;
