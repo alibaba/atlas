@@ -213,10 +213,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import com.android.build.api.transform.QualifiedContent.DefaultContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
+import com.android.build.gradle.internal.pipeline.OriginalStream;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -278,19 +282,15 @@ public class JavacAwbsTask extends BaseTask {
                             awbBundle.getName());
 
                         awbTransform.setInputDir(awbJavaCompile.getDestinationDir());
-
                     } catch (Throwable e) {
                         e.printStackTrace();
                         throw new GradleException("javac " + awbBundle.getName() + " failed");
                     }
-
                 }
             });
-
         }
 
         executorServicesHelper.execute(runnables);
-
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<JavacAwbsTask> {
@@ -313,10 +313,22 @@ public class JavacAwbsTask extends BaseTask {
         public void execute(JavacAwbsTask javacAwbsTask) {
 
             super.execute(javacAwbsTask);
+            AppVariantOutputContext appVariantOutputContext = getAppVariantOutputContext();
+            javacAwbsTask.appVariantOutputContext = appVariantOutputContext;
+            AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                javacAwbsTask.getVariantName());
 
-            javacAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
-
+            if (null == atlasDependencyTree) {
+                return;
+            }
+            for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+                TransformManager transformManager = appVariantOutputContext.getAwbTransformManagerMap().get(
+                    awbBundle.getName());
+                transformManager.addStream(OriginalStream.builder().addContentType(DefaultContentType.CLASSES).addScope(
+                    Scope.PROJECT).setFolder(appVariantOutputContext.getJAwbavaOutputDir(awbBundle)).setDependency(
+                    /*scope.getTaskName("compileAwb", "JavaWithJavac[" + awbBundle.getName() + "]")*/getName())
+                                               .build());
+            }
         }
     }
-
 }

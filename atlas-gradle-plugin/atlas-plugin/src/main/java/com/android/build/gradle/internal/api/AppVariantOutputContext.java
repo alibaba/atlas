@@ -211,17 +211,23 @@ package com.android.build.gradle.internal.api;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.internal.pipeline.TransformTask.ConfigActionCallback;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
-import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.TransformGlobalScope;
+import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
@@ -229,16 +235,13 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.builder.profile.ThreadRecorder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
 import com.taobao.android.object.ArtifactBundleInfo;
-import groovy.lang.Closure;
-import org.gradle.api.Action;
-import org.gradle.api.DefaultTask;
-import org.gradle.api.Task;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
@@ -358,47 +361,45 @@ public class AppVariantOutputContext {
             AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
-                TransformManager transformManager = new TransformManager(new AndroidTaskRegistry() {
+                TransformManager transformManager = new TransformManager(new AndroidTaskRegistry(),
+                                                                         outputScope.getVariantScope().getGlobalScope()
+                                                                             .getAndroidBuilder().getErrorReporter(),
+                                                                         ThreadRecorder.get()) {
                     @Override
-                    public synchronized <T extends Task> AndroidTask<T> create(TaskFactory taskFactory, String taskName,
-                                                                               Class<T> taskClass,
-                                                                               Action<? super T> configAction) {
-                        return super.create(taskFactory, getTaskName(getTaskName(taskName)), taskClass, configAction);
-                    }
+                    public <T extends Transform> Optional<AndroidTask<TransformTask>> addTransform(
+                        TaskFactory taskFactory, TransformVariantScope scope, T transform,
+                        ConfigActionCallback<T> callback) {
+                        return super.addTransform(taskFactory, new TransformVariantScope() {
 
-                    @Override
-                    public synchronized AndroidTask<Task> create(TaskFactory taskFactory, String taskName,
-                                                                 Closure configAction) {
-                        return super.create(taskFactory, getTaskName(taskName), configAction);
-                    }
+                            @Override
+                            public String getFullVariantName() {return scope.getFullVariantName();}
 
-                    private String getTaskName(String taskName) {return taskName + awbBundle.getName();}
+                            @Override
+                            public TransformGlobalScope getGlobalScope() {return scope.getGlobalScope();}
 
-                    @Override
-                    public synchronized AndroidTask<DefaultTask> create(TaskFactory taskFactory, String taskName,
-                                                                        Action<Task> configAction) {
-                        return super.create(taskFactory, getTaskName(taskName), configAction);
-                    }
+                            @Override
+                            public String getTaskName(String prefix) {
+                                return scope.getTaskName(prefix) + awbBundle.getName();
+                            }
 
-                    @Override
-                    public synchronized <T extends Task> AndroidTask<T> create(TaskFactory taskFactory, String taskName,
-                                                                               Class<T> taskClass,
-                                                                               Closure configAction) {
-                        return super.create(taskFactory, getTaskName(taskName), taskClass, configAction);
-                    }
+                            @Override
+                            public String getTaskName(String prefix, String suffix) {
+                                return scope.getTaskName(prefix, suffix) + awbBundle.getName();
+                            }
 
-                    @Override
-                    public <T extends Task> AndroidTask<T> create(TaskFactory taskFactory,
-                                                                  TaskConfigAction<T> configAction) {
-                        return super.create(taskFactory, configAction);
-                    }
+                            @Override
+                            public String getDirName() {return scope.getDirName();}
 
-                    @Override
-                    public AndroidTask<?> get(String name) {
-                        return super.get(getTaskName(name));
+                            @Override
+                            public Collection<String> getDirectorySegments() {
+                                ImmutableList.Builder<String> builder = ImmutableList.builder();
+                                builder.addAll(scope.getDirectorySegments());
+                                builder.add(awbBundle.getName());
+                                return builder.build();
+                            }
+                        }, transform, callback);
                     }
-                }, outputScope.getVariantScope().getGlobalScope().getAndroidBuilder().getErrorReporter(),
-                                                                         ThreadRecorder.get());
+                };
                 awbTransformManagerMap.put(awbBundle.getName(), transformManager);
             }
         }

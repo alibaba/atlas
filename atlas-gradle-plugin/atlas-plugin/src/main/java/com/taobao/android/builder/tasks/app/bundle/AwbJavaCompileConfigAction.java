@@ -216,14 +216,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import com.android.build.api.transform.QualifiedContent.DefaultContentType;
-import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.dsl.CoreAnnotationProcessorOptions;
-import com.android.build.gradle.internal.pipeline.OriginalStream;
-import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -364,12 +360,12 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
 
         javacTask.getOptions().getCompilerArgs().add("-s");
         javacTask.getOptions().getCompilerArgs().add(variantScope.getAnnotationProcessorOutputDir().getAbsolutePath());
-        TransformManager transformManager = appVariantOutputContext.getAwbTransformManagerMap().get(
-            awbBundle.getName());
-        transformManager.addStream(OriginalStream.builder().addContentType(DefaultContentType.CLASSES).addScope(
-            Scope.PROJECT).setFolder(appVariantOutputContext.getJAwbavaOutputDir(awbBundle)).setDependency(javacTask.getName())
-                                       .build());
-                                                                                                           //修改
+        //TransformManager transformManager = appVariantOutputContext.getAwbTransformManagerMap().get(
+        //    awbBundle.getName());
+        //transformManager.addStream(OriginalStream.builder().addContentType(DefaultContentType.CLASSES).addScope(
+        //    Scope.PROJECT).setFolder(appVariantOutputContext.getJAwbavaOutputDir(awbBundle))
+        //                              .setDependency(javacTask.getName()).build());
+        //修改
     }
 
     private FileCollection getInputJars() {
