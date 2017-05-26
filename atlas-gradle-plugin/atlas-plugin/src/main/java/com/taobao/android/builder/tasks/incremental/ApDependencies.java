@@ -226,7 +226,6 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.output.DependencyJson;
-import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.extension.TBuildType;
 import org.apache.commons.io.IOUtils;
 import org.gradle.api.Nullable;
@@ -367,9 +366,8 @@ public class ApDependencies /*extends BaseTask*/ {
         mFlatDependenciesMap.put(moduleIdentifier, version);
     }
 
-    public boolean isMainLibrary(ResolvedDependencyInfo dependencyInfo) {
-        return mMainDependenciesMap.containsKey(
-            DefaultModuleIdentifier.newId(dependencyInfo.getGroup(), dependencyInfo.getName()));
+    public boolean isMainLibrary(ModuleIdentifier moduleIdentifier) {
+        return mMainDependenciesMap.containsKey(moduleIdentifier);
     }
 
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {

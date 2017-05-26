@@ -377,12 +377,6 @@ public class AtlasDepTreeParser {
     }
 
     private void collect(ResolvedDependencyInfo dependencyInfo, AwbBundle awbBundle) {
-
-        if (apDependencies != null && !awbBundle.isMainBundle()) {
-            if (apDependencies.isMainLibrary(dependencyInfo)) {
-                return;
-            }
-        }
         switch (DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
             case AAR:
                 //添加到主dex中去

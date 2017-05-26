@@ -298,7 +298,6 @@ public class DependencyResolver {
             }
         }
         return mainResolvdInfo;
-
     }
 
     private void addMainDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo) {
@@ -308,7 +307,6 @@ public class DependencyResolver {
         for (ResolvedDependencyInfo child : resolvedDependencyInfo.getChildren()) {
             addMainDependencyInfo(child);
         }
-
     }
 
     /**
@@ -347,6 +345,10 @@ public class DependencyResolver {
         if (null != moduleArtifacts) {
             for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
                 String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
+                if (apDependencies != null && parent != null && parent.getType().equals("awb") && apDependencies
+                    .isMainLibrary(moduleVersion.getModule())) {
+                    continue;
+                }
                 if (mainDependencies.contains(key)) {
                     continue;
                 }
@@ -421,7 +423,6 @@ public class DependencyResolver {
                 addDependencyInfo(resolvedDependencyInfo, null, dependenciesMap);
             }
         }
-
     }
 
     private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion,
@@ -506,7 +507,6 @@ public class DependencyResolver {
         }
 
         return allResolvedDependencyInfos;
-
     }
 
     /**
@@ -534,5 +534,4 @@ public class DependencyResolver {
             }
         }
     }
-
 }
