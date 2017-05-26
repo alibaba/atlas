@@ -219,6 +219,7 @@ import java.util.function.Consumer;
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.SecondaryFile;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.AppExtension;
@@ -327,8 +328,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             @Override
             public void accept(ApplicationVariant applicationVariant) {
 
-                AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
-                    .getAppVariantContext(project, applicationVariant);
+                AppVariantContext appVariantContext
+                    = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory.getAppVariantContext(project,
+                                                                                                      applicationVariant);
 
                 //if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()) {
                 //    throw new GradleException(
@@ -375,12 +377,12 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(MergeAssetAwbsConfigAction.class, null));
 
                 if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled()) {
-                    mtlTaskContextList.add(
-                        new MtlTaskContext(AwbDataBindingProcessLayoutTask.ConfigAction.class, null));
-                    mtlTaskContextList.add(
-                        new MtlTaskContext(AwbDataBindingExportBuildInfoTask.ConfigAction.class, null));
-                    mtlTaskContextList.add(
-                        new MtlTaskContext(AwbDataBindingMergeArtifactsTask.ConfigAction.class, null));
+                    mtlTaskContextList.add(new MtlTaskContext(AwbDataBindingProcessLayoutTask.ConfigAction.class,
+                                                              null));
+                    mtlTaskContextList.add(new MtlTaskContext(AwbDataBindingExportBuildInfoTask.ConfigAction.class,
+                                                              null));
+                    mtlTaskContextList.add(new MtlTaskContext(AwbDataBindingMergeArtifactsTask.ConfigAction.class,
+                                                              null));
                 }
 
                 mtlTaskContextList.add(new MtlTaskContext(MergeManifests.class));
@@ -405,7 +407,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 // 增量整包编译
                 if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && (
                     appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                        .getPatchConfig().isCreateTPatch())) {
+                                                                                                   .getPatchConfig()
+                                                                                                   .isCreateTPatch())) {
                     createIncrementalPrepareBaseApkTask(appVariantContext, mtlTaskContextList);
                 }
 
@@ -418,23 +421,23 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() || (
                     // 动态部署增量编译;
                     appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                        .getPatchConfig().isCreateTPatch())) {
+                                                                                                   .getPatchConfig()
+                                                                                                   .isCreateTPatch())) {
                     builder.addContentType(ExtendedContentType.NATIVE_LIBS);
                 }
 
                 variantScope.getTransformManager().addStream(builder.addContentType(AtlasExtendedContentType.AWB_APKS)
-                                                                 .addScope(QualifiedContent.Scope.PROJECT)
-                                                                 .setFolders(new Supplier<Collection<File>>() {
-                                                                     @Override
-                                                                     public Collection<File> get() {
-                                                                         return ImmutableList.of(
-                                                                             appVariantContext.getAwbApkOutputDir());
-                                                                     }
-                                                                 })
-                                                                 // .setFolder(variantScope
-                                                                 // .getSourceFoldersJavaResDestinationDir())
-                                                                 // .setDependency(processJavaResourcesTask.getName())
-                                                                 .build());
+                                                                    .addScope(QualifiedContent.Scope.PROJECT)
+                                                                    .setFolders(new Supplier<Collection<File>>() {
+                                                                        @Override
+                                                                        public Collection<File> get() {
+                                                                            return ImmutableList.of(appVariantContext.getAwbApkOutputDir());
+                                                                        }
+                                                                    })
+                                                                    // .setFolder(variantScope
+                                                                    // .getSourceFoldersJavaResDestinationDir())
+                                                                    // .setDependency(processJavaResourcesTask.getName())
+                                                                    .build());
 
                 mtlTaskContextList.add(new MtlTaskContext("package"));
 
@@ -460,9 +463,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 List<MtlTransformContext> mtlTransformContextList = new ArrayList<MtlTransformContext>();
 
                 if (atlasExtension.getTBuildConfig().getClassInject()) {
-                    mtlTransformContextList.add(
-                        new MtlTransformContext(ClassInjectTransform.class, ProGuardTransform.class,
-                                                DexTransform.class));
+                    mtlTransformContextList.add(new MtlTransformContext(ClassInjectTransform.class,
+                                                                        ProGuardTransform.class,
+                                                                        DexTransform.class));
                 }
 
                 if (!mtlTransformContextList.isEmpty()) {
@@ -472,14 +475,18 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 if (atlasExtension.getTBuildConfig().isAtlasMultiDex()) {
                     List<BaseVariantOutputData> baseVariantOutputDataList = appVariantContext.getVariantOutputData();
                     for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
-                        TransformManager.replaceTransformTask(appVariantContext, vod, MultiDexTransform.class,
+                        TransformManager.replaceTransformTask(appVariantContext,
+                                                              vod,
+                                                              MultiDexTransform.class,
                                                               AtlasMultiDexTransform.class);
                     }
                 }
 
                 List<BaseVariantOutputData> baseVariantOutputDataList = appVariantContext.getVariantOutputData();
                 for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
-                    TransformManager.replaceTransformTask(appVariantContext, vod, ProGuardTransform.class,
+                    TransformManager.replaceTransformTask(appVariantContext,
+                                                          vod,
+                                                          ProGuardTransform.class,
                                                           AtlasProguardTransform.class);
                     // 增量编译
                     if (atlasExtension.getTBuildConfig().isIncremental()) {
@@ -501,22 +508,25 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         final VariantOutputScope variantOutputScope = vod.getScope();
         InstantRunPatchingPolicy patchingPolicy = variantScope.getInstantRunBuildContext().getPatchingPolicy();
         AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(vod);
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-            appVariantOutputContext.getVariantContext().
-                getVariantConfiguration().getFullName());
+        AtlasDependencyTree atlasDependencyTree
+            = AtlasBuildContext.androidDependencyTrees.get(appVariantOutputContext.getVariantContext().
+            getVariantConfiguration().getFullName());
 
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
             final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope.getVariantData();
             final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
-            com.android.build.gradle.internal.pipeline.TransformManager transformManager = appVariantOutputContext
-                .getAwbTransformManagerMap().get(awbBundle.getName());
-            transformManager.addStream(OriginalStream.builder().addContentTypes(
-                com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_JARS).addScope(
-                Scope.EXTERNAL_LIBRARIES).setJars(
-                () -> appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName()).getInputLibraries())
-                                           .build());
+            com.android.build.gradle.internal.pipeline.TransformManager transformManager
+                = appVariantOutputContext.getAwbTransformManagerMap().get(awbBundle.getName());
             //  dex任务
+            //依赖库
+            transformManager.addStream(OriginalStream.builder()
+                                                     .addContentTypes(com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_JARS)
+                                                     .addScope(Scope.EXTERNAL_LIBRARIES)
+                                                     .setJars(() -> appVariantOutputContext.getAwbTransformMap()
+                                                                                           .get(awbBundle.getName())
+                                                                                           .getInputLibraries())
+                                                     .build());
             boolean isMultiDexEnabled = config.isMultiDexEnabled();
             AndroidConfig extension = variantScope.getGlobalScope().getExtension();
             // Switch to native multidex if possible when using instant run.
@@ -525,16 +535,28 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             // create dex transform
             DefaultDexOptions dexOptions = DefaultDexOptions.copyOf(extension.getDexOptions());
 
-            DexTransform dexTransform = new DexTransform(dexOptions, config.getBuildType().isDebuggable(),
+            DexTransform dexTransform = new DexTransform(dexOptions,
+                                                         config.getBuildType().isDebuggable(),
                                                          isMultiDexEnabled,
-                                                         isMultiDexEnabled && isLegacyMultiDexMode ? variantScope
-                                                             .getMainDexListFile() : null,
+                                                         isMultiDexEnabled && isLegacyMultiDexMode
+                                                             ? variantScope.getMainDexListFile() : null,
                                                          variantScope.getPreDexOutputDir(),
                                                          variantScope.getGlobalScope().getAndroidBuilder(),
-                                                         project.getLogger(), variantScope.getInstantRunBuildContext(),
-                                                         AndroidGradleOptions.getBuildCache(
-                                                             variantScope.getGlobalScope().getProject()));
-            Optional<AndroidTask<TransformTask>> dexTask = transformManager.addTransform(tasks, variantScope,
+                                                         project.getLogger(),
+                                                         variantScope.getInstantRunBuildContext(),
+                                                         AndroidGradleOptions.getBuildCache(variantScope.getGlobalScope()
+                                                                                                        .getProject())) {
+                @Override
+                public Collection<SecondaryFile> getSecondaryFiles() {
+
+                    ImmutableList.Builder<SecondaryFile> builder = ImmutableList.builder();
+                    builder.addAll(super.getSecondaryFiles());
+                    builder.add(SecondaryFile.nonIncremental(appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName())));
+                    return builder.build();
+                }
+            };
+            Optional<AndroidTask<TransformTask>> dexTask = transformManager.addTransform(tasks,
+                                                                                         variantScope,
                                                                                          dexTransform);
             //最终打包
             PackagingScope packagingScope = new AwbPackagingScope(variantOutputScope, appVariantContext, awbBundle);
@@ -547,17 +569,22 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 packageAwb.dependsOn(tasks, stream.getDependencies());
             }
             // 合并任务
-            PackageAwbsTask packageAwbsTask = Iterators.getOnlyElement(
-                TaskQueryHelper.findTask(project, PackageAwbsTask.class, vod.variantData).iterator());
+            PackageAwbsTask packageAwbsTask = Iterators.getOnlyElement(TaskQueryHelper.findTask(project,
+                                                                                                PackageAwbsTask.class,
+                                                                                                vod.variantData)
+                                                                                      .iterator());
             packageAwbsTask.setEnabled(false);
             packageAwbsTask.dependsOn(packageAwb.get(tasks));
         }
+        // 安装
         AndroidTask<IncrementalInstallVariantTask> incrementalInstallVariantTask = androidTasks.create(tasks,
                                                                                                        new IncrementalInstallVariantTask.ConfigAction(
                                                                                                            appVariantContext,
                                                                                                            vod));
-        incrementalInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().getPackageApplicationTask()
-            .getName());
+        incrementalInstallVariantTask.dependsOn(tasks,
+                                                variantOutputScope.getVariantScope()
+                                                                  .getPackageApplicationTask()
+                                                                  .getName());
     }
 
     private boolean isLegacyMultidexMode(@NonNull VariantScope variantScope) {
@@ -582,20 +609,22 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         VariantScope variantScope = appVariantContext.getVariantData().getScope();
 
         // create the stream generated from this task
-        variantScope.getTransformManager().addStream(OriginalStream.builder().addContentType(
-            QualifiedContent.DefaultContentType.RESOURCES).addScope(QualifiedContent.Scope.PROJECT)
-                                                         .setFolders(new Supplier<Collection<File>>() {
-                                                             @Override
-                                                             public Collection<File> get() {
-                                                                 return ImmutableList.of(new File(
-                                                                     appVariantContext.apContext.getBaseApk() + "_"));
-                                                             }
-                                                         })
-                                                         // .setFolder(variantScope
-                                                         // .getSourceFoldersJavaResDestinationDir())
-                                                         // .setDependency(processJavaResourcesTask
-                                                         // .getName())
-                                                         .build());
+        variantScope.getTransformManager().addStream(OriginalStream.builder()
+                                                                   .addContentType(QualifiedContent.DefaultContentType.RESOURCES)
+                                                                   .addScope(QualifiedContent.Scope.PROJECT)
+                                                                   .setFolders(new Supplier<Collection<File>>() {
+                                                                       @Override
+                                                                       public Collection<File> get() {
+                                                                           return ImmutableList.of(new File(
+                                                                               appVariantContext.apContext.getBaseApk()
+                                                                               + "_"));
+                                                                       }
+                                                                   })
+                                                                   // .setFolder(variantScope
+                                                                   // .getSourceFoldersJavaResDestinationDir())
+                                                                   // .setDependency(processJavaResourcesTask
+                                                                   // .getName())
+                                                                   .build());
     }
 
     private void hookFastMultiDex(AppVariantContext appVariantContext) throws Exception {
@@ -617,14 +646,16 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 VariantScope variantScope = appVariantContext.getScope();
                 GradleVariantConfiguration config = appVariantContext.getVariantData().getVariantConfiguration();
 
-                DexTransform newDexTransform = new DexTransform(dexOptions, config.getBuildType().isDebuggable(), false,
-                                                                null, variantScope.getPreDexOutputDir(),
-                                                                AtlasBuildContext.androidBuilderMap
-                                                                    .get(transformTask.getProject()),
+                DexTransform newDexTransform = new DexTransform(dexOptions,
+                                                                config.getBuildType().isDebuggable(),
+                                                                false,
+                                                                null,
+                                                                variantScope.getPreDexOutputDir(),
+                                                                AtlasBuildContext.androidBuilderMap.get(transformTask.getProject()),
                                                                 appVariantContext.getProject().getLogger(),
                                                                 variantScope.getInstantRunBuildContext(),
-                                                                AndroidGradleOptions.getBuildCache(
-                                                                    variantScope.getGlobalScope().getProject()));
+                                                                AndroidGradleOptions.getBuildCache(variantScope.getGlobalScope()
+                                                                                                               .getProject()));
 
                 TransformManager.replaceTransformTask(transformTask, newDexTransform);
 
