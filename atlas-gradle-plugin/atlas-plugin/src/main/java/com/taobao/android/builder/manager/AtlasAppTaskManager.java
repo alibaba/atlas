@@ -218,6 +218,7 @@ import java.util.function.Consumer;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.AppExtension;
@@ -510,7 +511,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
             com.android.build.gradle.internal.pipeline.TransformManager transformManager = appVariantOutputContext
                 .getAwbTransformManagerMap().get(awbBundle.getName());
-
+            transformManager.addStream(OriginalStream.builder().addContentTypes(
+                com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_JARS).addScope(
+                Scope.EXTERNAL_LIBRARIES).setJars(
+                () -> appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName()).getInputLibraries())
+                                           .build());
             //  dex任务
             boolean isMultiDexEnabled = config.isMultiDexEnabled();
             AndroidConfig extension = variantScope.getGlobalScope().getExtension();
