@@ -327,7 +327,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 //        "atlas plgin is not compatible with instant run， plese turn it off in your ide！");
                 //}
 
-                tAndroidBuilder.setBuildType(appVariantContext.getBuildType().getName());
+                tAndroidBuilder.setBuildType(applicationVariant.getBuildType().getName());
 //                new AwbProguradHook().hookProguardTask(appVariantContext);
 
                 List<MtlTaskContext> mtlTaskContextList = new ArrayList<MtlTaskContext>();
