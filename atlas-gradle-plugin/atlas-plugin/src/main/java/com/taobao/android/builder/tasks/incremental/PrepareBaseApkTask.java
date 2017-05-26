@@ -155,12 +155,11 @@ public class PrepareBaseApkTask extends IncrementalTask {
                     return dexFilesCount;
                 }
             });
-            ConventionMappingHelper.map(prepareBaseApkTask, "outputDir", new Callable<File>()
 
-            {
+            ConventionMappingHelper.map(prepareBaseApkTask, "outputDir", new Callable<File>() {
                 @Override
                 public File call() {
-                    return new File(variantContext.apContext.getBaseApk() + "_");
+                    return variantContext.apContext.getBaseApkDirectory();
                 }
             });
         }
