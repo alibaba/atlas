@@ -216,10 +216,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import com.android.build.api.transform.QualifiedContent.DefaultContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.dsl.CoreAnnotationProcessorOptions;
+import com.android.build.gradle.internal.pipeline.OriginalStream;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -252,8 +256,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
 
     private VariantOutputScope scope;
 
-    public AwbJavaCompileConfigAction(AwbBundle awbBundle,
-                                      AppVariantOutputContext appVariantOutputContext) {
+    public AwbJavaCompileConfigAction(AwbBundle awbBundle, AppVariantOutputContext appVariantOutputContext) {
         this.awbBundle = awbBundle;
         this.appVariantOutputContext = appVariantOutputContext;
         this.scope = appVariantOutputContext.getOutputScope();
@@ -277,14 +280,13 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
     @Override
     public void execute(JavaCompile javacTask) {
         appVariantOutputContext.getAwbJavacTasks().put(awbBundle.getName(), javacTask);
-        ProcessAwbAndroidResources processAwbAndroidResources = appVariantOutputContext.getAwbAndroidResourcesMap()
-            .get(awbBundle.getName());
+        ProcessAwbAndroidResources processAwbAndroidResources = appVariantOutputContext.getAwbAndroidResourcesMap().get(
+            awbBundle.getName());
         assert null != processAwbAndroidResources;
 
         javacTask.source(processAwbAndroidResources.getSourceOutputDir());
         if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled() && awbBundle.isDataBindEnabled()) {
-            javacTask.source(appVariantOutputContext.getVariantContext()
-                                 .getAwbClassOutputForDataBinding(awbBundle));
+            javacTask.source(appVariantOutputContext.getVariantContext().getAwbClassOutputForDataBinding(awbBundle));
         }
 
         ConventionMappingHelper.map(javacTask, "classpath", new Callable<FileCollection>() {
@@ -298,19 +300,13 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         javacTask.setDestinationDir(appVariantOutputContext.getJAwbavaOutputDir(awbBundle));
         //javacTask.setDependencyCacheDir(appVariantOutputContext.getAwbJavaDependencyCache(awbBundle));
         CompileOptions compileOptions = scope.getGlobalScope().getExtension().getCompileOptions();
-        AbstractCompilesUtil.configureLanguageLevel(javacTask,
-                                                    compileOptions,
-                                                    scope.getGlobalScope()
-                                                        .getExtension()
-                                                        .getCompileSdkVersion(),
+        AbstractCompilesUtil.configureLanguageLevel(javacTask, compileOptions,
+                                                    scope.getGlobalScope().getExtension().getCompileSdkVersion(),
                                                     false);
         javacTask.getOptions().setEncoding(compileOptions.getEncoding());
 
-        javacTask.getOptions()
-            .setBootClasspath(Joiner.on(File.pathSeparator)
-                                  .join(scope.getGlobalScope()
-                                            .getAndroidBuilder()
-                                            .getBootClasspathAsStrings(false)));
+        javacTask.getOptions().setBootClasspath(Joiner.on(File.pathSeparator).join(
+            scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings(false)));
         GlobalScope globalScope = scope.getGlobalScope();
         Project project = globalScope.getProject();
 
@@ -318,17 +314,16 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
 
         VariantScope variantScope = scope.getVariantScope();
 
-        CoreAnnotationProcessorOptions annotationProcessorOptions =
-            variantScope.getVariantConfiguration().getJavaCompileOptions()
-                .getAnnotationProcessorOptions();
+        CoreAnnotationProcessorOptions annotationProcessorOptions = variantScope.getVariantConfiguration()
+            .getJavaCompileOptions().getAnnotationProcessorOptions();
 
         checkNotNull(annotationProcessorOptions.getIncludeCompileClasspath());
-        Collection<File> processorPath =
-            Lists.newArrayList(
-                variantScope.getVariantData().getVariantDependency()
-                    .resolveAndGetAnnotationProcessorClassPath(
-                        annotationProcessorOptions.getIncludeCompileClasspath(),
-                        scope.getGlobalScope().getAndroidBuilder().getErrorReporter()));
+        Collection<File> processorPath = Lists.newArrayList(variantScope.getVariantData().getVariantDependency()
+                                                                .resolveAndGetAnnotationProcessorClassPath(
+                                                                    annotationProcessorOptions
+                                                                        .getIncludeCompileClasspath(),
+                                                                    scope.getGlobalScope().getAndroidBuilder()
+                                                                        .getErrorReporter()));
 
         if (!processorPath.isEmpty()) {
             if (Boolean.TRUE.equals(annotationProcessorOptions.getIncludeCompileClasspath())) {
@@ -344,8 +339,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         }
 
         if (!annotationProcessorOptions.getArguments().isEmpty()) {
-            for (Map.Entry<String, String> arg :
-                annotationProcessorOptions.getArguments().entrySet()) {
+            for (Map.Entry<String, String> arg : annotationProcessorOptions.getArguments().entrySet()) {
 
                 String key = arg.getKey();
                 String value = arg.getValue();
@@ -364,17 +358,18 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
                     value = value + "-" + awbBundle.getName();
                 }
 
-                javacTask.getOptions().getCompilerArgs().add(
-                    "-A" + key + "=" + value);
+                javacTask.getOptions().getCompilerArgs().add("-A" + key + "=" + value);
             }
         }
 
         javacTask.getOptions().getCompilerArgs().add("-s");
-        javacTask.getOptions().getCompilerArgs().add(
-            variantScope.getAnnotationProcessorOutputDir().getAbsolutePath());
-
-        //修改
-
+        javacTask.getOptions().getCompilerArgs().add(variantScope.getAnnotationProcessorOutputDir().getAbsolutePath());
+        TransformManager transformManager = appVariantOutputContext.getAwbTransformManagerMap().get(
+            awbBundle.getName());
+        transformManager.addStream(OriginalStream.builder().addContentType(DefaultContentType.CLASSES).addScope(
+            Scope.PROJECT).setFolder(appVariantOutputContext.getJAwbavaOutputDir(awbBundle)).setDependency(javacTask.getName())
+                                       .build());
+                                                                                                           //修改
     }
 
     private FileCollection getInputJars() {
@@ -385,9 +380,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
 
         dependencies.addAll(awbBundle.getLibraryJars());
 
-        FileCollection allClassPatch = appVariantOutputContext.getVariantContext()
-            .getProject()
-            .files(dependencies);
+        FileCollection allClassPatch = appVariantOutputContext.getVariantContext().getProject().files(dependencies);
         return allClassPatch;
     }
 }
