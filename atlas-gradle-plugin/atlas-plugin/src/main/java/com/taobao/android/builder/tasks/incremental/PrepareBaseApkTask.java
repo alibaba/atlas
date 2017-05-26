@@ -25,7 +25,9 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputDirectory;
 
 /**
- * Created by chenhjohn on 2017/4/24.
+ *
+ * @author chenhjohn
+ * @date 2017/4/24
  */
 
 public class PrepareBaseApkTask extends IncrementalTask {
