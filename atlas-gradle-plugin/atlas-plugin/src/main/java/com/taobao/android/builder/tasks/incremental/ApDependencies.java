@@ -238,6 +238,8 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.DefaultVersionComparator;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 
 import static com.android.build.gradle.internal.api.ApContext.DEPENDENCIES_FILENAME;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -247,6 +249,8 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  */
 
 public class ApDependencies /*extends BaseTask*/ {
+
+    private static final Logger LOGGER = Logging.getLogger(ApDependencies.class);
 
     // ----- PUBLIC TASK API -----
     private final DependencyHandler dependencies;
@@ -373,6 +377,8 @@ public class ApDependencies /*extends BaseTask*/ {
         }
 
         if (versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
+            LOGGER.quiet("{} ({}) is larger than ({}), skipping", moduleVersion.getModule(), mainVersion,
+                         moduleVersion.getVersion());
             return true;
         } else {
             return false;
