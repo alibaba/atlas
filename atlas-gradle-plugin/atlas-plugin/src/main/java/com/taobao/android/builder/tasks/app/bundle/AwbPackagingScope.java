@@ -1,7 +1,6 @@
 package com.taobao.android.builder.tasks.app.bundle;
 
 import java.io.File;
-import java.util.HashSet;
 import java.util.Set;
 
 import com.android.annotations.NonNull;
@@ -14,6 +13,7 @@ import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -115,10 +115,8 @@ public class AwbPackagingScope implements PackagingScope {
     @NonNull
     @Override
     public Set<File> getDexFolders() {
-        File dexOutputFile = appVariantContext.getAwbDexOutput(awbBundle.getName());
-        Set<File> dexFolders = new HashSet<File>();
-        dexFolders.add(dexOutputFile);
-        return dexFolders;
+        return appVariantOutputContext.getAwbTransformManagerMap().get(awbBundle.getName()).getPipelineOutput(
+            StreamFilter.DEX).keySet();
     }
 
     @NonNull
