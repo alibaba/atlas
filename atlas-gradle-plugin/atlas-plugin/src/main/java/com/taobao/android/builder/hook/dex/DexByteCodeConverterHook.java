@@ -215,9 +215,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
     @VisibleForTesting
     synchronized boolean shouldDexInProcess(
             @NonNull DexOptions dexOptions) {
-        if (mIsDexInProcess != null) {
-            return mIsDexInProcess;
-        }
+
         if (!dexOptions.getDexInProcess()) {
             mIsDexInProcess = false;
             return false;
