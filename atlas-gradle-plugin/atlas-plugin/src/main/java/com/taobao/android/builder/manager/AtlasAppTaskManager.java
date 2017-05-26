@@ -278,7 +278,7 @@ import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
 import com.taobao.android.builder.tasks.incremental.IncrementalInstallVariantTask;
-import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
+import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTaskConfigAction;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tasks.manager.TaskQueryHelper;
@@ -528,7 +528,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
     // 配置基线包
     private void createIncrementalPrepareBaseApkTask(final AppVariantContext appVariantContext,
                                                      List<MtlTaskContext> mtlTaskContextList) {
-        mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTask.ConfigAction.class, null));
+        mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTaskConfigAction.class, null));// .
         final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
         VariantScope variantScope = appVariantContext.getVariantData().getScope();
 
