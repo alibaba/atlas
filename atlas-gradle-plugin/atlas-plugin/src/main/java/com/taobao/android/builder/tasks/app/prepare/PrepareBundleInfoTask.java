@@ -209,6 +209,14 @@
 
 package com.taobao.android.builder.tasks.app.prepare;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
@@ -217,15 +225,9 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.bundleinfo.BundleInfoUtils;
-
+import org.apache.commons.io.FileUtils;
 import org.dom4j.DocumentException;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 public class PrepareBundleInfoTask extends BaseTask {
 
@@ -236,8 +238,24 @@ public class PrepareBundleInfoTask extends BaseTask {
 
         AtlasBuildContext.awbBundleMap = collectBundleInfo(appVariantOutputContext);
 
-        BundleInfoUtils.setupAwbBundleInfos(appVariantOutputContext.getVariantContext());
+        AppVariantContext appVariantContext = appVariantOutputContext.getVariantContext();
+        BundleInfoUtils.setupAwbBundleInfos(appVariantContext);
 
+        //生成bundle清单文件
+        generateBundleListCfg(appVariantContext);
+
+    }
+
+    private void generateBundleListCfg(AppVariantContext appVariantContext) throws IOException {
+        List<String> bundleLists = AtlasBuildContext.awbBundleMap.keySet().stream().map(key -> {
+            return "lib/armeabi/" + key;
+        }).sorted().collect(Collectors.toList());
+        File outputFile = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(), "bundleList.cfg");
+        FileUtils.deleteQuietly(outputFile);
+        outputFile.getParentFile().mkdirs();
+        FileUtils.writeLines(outputFile, bundleLists);
+
+        appVariantContext.bundleListCfg = outputFile;
     }
 
     private Map<String, AwbBundle> collectBundleInfo(AppVariantOutputContext appVariantOutputContext) {
