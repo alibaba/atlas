@@ -210,22 +210,43 @@
 package com.taobao.android.builder.dependency.model;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+
+import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.android.manifmerger.ManifestProvider;
+import com.android.manifmerger.PlaceholderHandler;
+import com.android.utils.XmlUtils;
+import com.android.xml.AndroidManifest;
+import com.android.xml.AndroidXPathFactory;
+import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.gradle.api.UncheckedIOException;
 import org.gradle.api.artifacts.ModuleIdentifier;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 /**
  * Created by shenghua.nish on 2016-05-06 下午5:46.
@@ -335,12 +356,34 @@ public class AwbBundle {
     public String getPackageName() {
 
         if (StringUtils.isEmpty(packageName)) {
-            File manifest = androidLibrary.getManifest();
-            if (!manifest.exists()) {
-                return null;
-            }
+            File bundle = androidLibrary.getBundle();
 
-            packageName = ManifestFileUtils.getPackage(manifest);
+            try {
+                try (JarFile jarFile = new JarFile(bundle)) {
+                    ZipEntry entry = jarFile.getEntry(SdkConstants.ANDROID_MANIFEST_XML);
+                    try (InputStream inputStream = jarFile.getInputStream(entry)) {
+                        final byte[] bytes = ByteStreams.toByteArray(inputStream);
+                        String xml = new String(bytes, Charsets.UTF_8);
+                        try {
+                            Document document = XmlUtils.parseDocument(xml, true);
+                            XPath xpath = AndroidXPathFactory.newXPath();
+                            Node node = (Node)xpath.evaluate(AndroidManifest.getPackageXPath(),
+                                                             document,
+                                                             XPathConstants.NODE);
+                            String nodeValue = null;
+                            if (node != null && !Strings.isNullOrEmpty(node.getNodeValue())
+                                && !PlaceholderHandler.isPlaceHolder(node.getNodeValue())) {
+                                // if the node's value exists, and is not a placeholder, get the value
+                                packageName = node.getNodeValue();
+                            }
+                        } catch (XPathExpressionException | SAXException | ParserConfigurationException | IOException e) {
+                            throw new DefaultManifestParserException(bundle, e);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         return packageName;
@@ -349,16 +392,15 @@ public class AwbBundle {
     public String getAwbSoName() {
         if (org.apache.commons.lang3.StringUtils.isEmpty(soFileName)) {
             String packageName = getPackageName();
-            if (packageName == null) {
-                return null;
-            }
 
             soFileName = "lib" + StringUtils.replace(packageName, ".", "_") + ".so";
         }
         return soFileName;
     }
 
-    public File getManifest() {return androidLibrary.getManifest();}
+    public File getManifest() {
+        return androidLibrary.getManifest();
+    }
 
     /**
      * 获取所有的相关jar
@@ -448,5 +490,14 @@ public class AwbBundle {
 
     public void setBaseAwbDependencies(Map<ModuleIdentifier, String> baseAwbDependencies) {
         this.baseAwbDependencies = baseAwbDependencies;
+    }
+
+    /**
+     * Runtime exception thrown when something went bad with the manifest parsing
+     */
+    private static class DefaultManifestParserException extends RuntimeException {
+        DefaultManifestParserException(@NonNull File file, @NonNull Throwable cause) {
+            super("Exception while parsing the supplied manifest file " + file.getAbsolutePath(), cause);
+        }
     }
 }

@@ -210,16 +210,26 @@
 package com.taobao.android.builder.manager;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.Format;
+import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.SecondaryFile;
+import com.android.build.api.transform.TransformException;
+import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformInvocation;
+import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.AppExtension;
@@ -254,9 +264,16 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.DefaultDexOptions;
+import com.android.dex.DexException;
+import com.android.dex.DexFormat;
+import com.android.dx.command.dexer.DxContext;
+import com.android.dx.merge.CollisionPolicy;
+import com.android.dx.merge.DexMerger;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -284,7 +301,7 @@ import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
 import com.taobao.android.builder.tasks.incremental.IncrementalInstallVariantTask;
-import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTaskConfigAction;
+import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tasks.manager.TaskQueryHelper;
@@ -535,11 +552,13 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             // create dex transform
             DefaultDexOptions dexOptions = DefaultDexOptions.copyOf(extension.getDexOptions());
 
+            File mainDexListFile = variantScope.getMainDexListFile();
+            boolean multiDex = isMultiDexEnabled;
             DexTransform dexTransform = new DexTransform(dexOptions,
                                                          config.getBuildType().isDebuggable(),
-                                                         isMultiDexEnabled,
-                                                         isMultiDexEnabled && isLegacyMultiDexMode
-                                                             ? variantScope.getMainDexListFile() : null,
+                                                         multiDex,
+                                                         isMultiDexEnabled && isLegacyMultiDexMode ? mainDexListFile
+                                                             : null,
                                                          variantScope.getPreDexOutputDir(),
                                                          variantScope.getGlobalScope().getAndroidBuilder(),
                                                          project.getLogger(),
@@ -551,15 +570,83 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                     ImmutableList.Builder<SecondaryFile> builder = ImmutableList.builder();
                     builder.addAll(super.getSecondaryFiles());
-                    builder.add(SecondaryFile.nonIncremental(appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName())));
+                    // builder.add(SecondaryFile.nonIncremental(appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
+                    //     awbBundle.getAwbSoName())));
                     return builder.build();
                 }
+
+                @Override
+                public void transform(TransformInvocation transformInvocation)
+                    throws TransformException, IOException, InterruptedException {
+                    super.transform(transformInvocation);
+                    File baseAwb
+                        = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
+                    boolean isIncremental = transformInvocation.isIncremental();
+                    TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
+                    Preconditions.checkNotNull(outputProvider, "Missing output object for transform " + getName());
+                    // Gather a full list of all inputs.
+                    List<JarInput> jarInputs = Lists.newArrayList();
+                    List<DirectoryInput> directoryInputs = Lists.newArrayList();
+                    for (TransformInput input : transformInvocation.getInputs()) {
+                        jarInputs.addAll(input.getJarInputs());
+                        directoryInputs.addAll(input.getDirectoryInputs());
+                        try {
+                            // if only one scope or no per-scope dexing, just do a single pass that
+                            // runs dx on everything.
+                            if ((jarInputs.size() + directoryInputs.size()) == 1 || !dexOptions.getPreDexLibraries()) {
+                                // since there is only one dex file, we can merge all the scopes into the full
+                                // application one.
+                                File outputDir = outputProvider.getContentLocation("main",
+                                                                                   getOutputTypes(),
+                                                                                   com.android.build.gradle.internal.pipeline.TransformManager.SCOPE_FULL_PROJECT,
+                                                                                   Format.DIRECTORY);
+                                mergeDex(outputDir, baseAwb);
+                            } else {
+                                // Figure out if we need to do a dx merge.
+                                // The ony case we don't need it is in native multi-dex mode when doing debug
+                                // builds. This saves build time at the expense of too many dex files which is fine.
+                                // FIXME dx cannot receive dex files to merge inside a folder. They have to be in a
+                                // jar. Need to fix in dx.
+                                boolean needMerge = !multiDex || mainDexListFile != null;// || !debugMode;
+                                if (needMerge) {
+                                    File outputDir = outputProvider.getContentLocation("main",
+                                                                                       com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_DEX,
+                                                                                       com.android.build.gradle.internal.pipeline.TransformManager.SCOPE_FULL_PROJECT,
+                                                                                       Format.DIRECTORY);
+                                    mergeDex(outputDir, baseAwb);
+                                }
+                            }
+                        } catch (Exception e) {
+                            throw new TransformException(e);
+                        }
+                    }
+                }
+
+                private void mergeDex(File outputDir, File baseAwb) throws IOException {
+                    File file = new File(outputDir, "classes.dex");
+                    ZipFile zipFile = new ZipFile(baseAwb);
+                    ZipEntry entry = zipFile.getEntry(DexFormat.DEX_IN_JAR_NAME);
+                    if (entry != null) {
+                        DxContext context = new DxContext();
+                        com.android.dex.Dex merged = new DexMerger(new com.android.dex.Dex[] {
+                            new com.android.dex.Dex(file), new com.android.dex.Dex(zipFile.getInputStream(entry))},
+                                                                   CollisionPolicy.KEEP_FIRST,
+                                                                   context).merge();
+                        merged.writeTo(file);
+                        zipFile.close();
+                    } else {
+                        throw new DexException("Expected " + DexFormat.DEX_IN_JAR_NAME + " in " + file);
+                    }
+                }
             };
+
             Optional<AndroidTask<TransformTask>> dexTask = transformManager.addTransform(tasks,
                                                                                          variantScope,
                                                                                          dexTransform);
+
             //最终打包
             PackagingScope packagingScope = new AwbPackagingScope(variantOutputScope, appVariantContext, awbBundle);
+
             AndroidTask<PackageAwb> packageAwb = androidTasks.create(tasks,
                                                                      new PackageAwb.StandardConfigAction(packagingScope,
                                                                                                          patchingPolicy));
@@ -568,6 +655,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 // TODO Optimize to avoid creating too many actions
                 packageAwb.dependsOn(tasks, stream.getDependencies());
             }
+
             // 合并任务
             PackageAwbsTask packageAwbsTask = Iterators.getOnlyElement(TaskQueryHelper.findTask(project,
                                                                                                 PackageAwbsTask.class,
@@ -576,15 +664,17 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             packageAwbsTask.setEnabled(false);
             packageAwbsTask.dependsOn(packageAwb.get(tasks));
         }
+
         // 安装
         AndroidTask<IncrementalInstallVariantTask> incrementalInstallVariantTask = androidTasks.create(tasks,
                                                                                                        new IncrementalInstallVariantTask.ConfigAction(
                                                                                                            appVariantContext,
                                                                                                            vod));
-        incrementalInstallVariantTask.dependsOn(tasks,
-                                                variantOutputScope.getVariantScope()
-                                                                  .getPackageApplicationTask()
-                                                                  .getName());
+        incrementalInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().
+
+            getPackageApplicationTask().
+
+                                                                             getName());
     }
 
     private boolean isLegacyMultidexMode(@NonNull VariantScope variantScope) {
@@ -604,7 +694,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
     // 配置基线包
     private void createIncrementalPrepareBaseApkTask(final AppVariantContext appVariantContext,
                                                      List<MtlTaskContext> mtlTaskContextList) {
-        mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTaskConfigAction.class, null));// .
+        mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTask.ConfigAction.class, null));// .
         final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
         VariantScope variantScope = appVariantContext.getVariantData().getScope();
 
