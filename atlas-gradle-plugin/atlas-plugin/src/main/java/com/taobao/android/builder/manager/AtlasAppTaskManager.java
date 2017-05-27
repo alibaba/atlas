@@ -436,10 +436,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 // create the stream generated from this task
                 Builder builder = OriginalStream.builder();
                 if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() || (
-                    // 动态部署增量编译;
                     appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
                                                                                                    .getPatchConfig()
                                                                                                    .isCreateTPatch())) {
+                    // 动态部署增量编译不打包awb;
                     builder.addContentType(ExtendedContentType.NATIVE_LIBS);
                 }
 
