@@ -266,7 +266,8 @@ public class BundleReleaser {
             externalStorage = true;
         }
         if (!(Looper.getMainLooper() == Looper.myLooper())) {
-            Looper.prepare();
+            if (Looper.myLooper() != null)
+                Looper.prepare();
         }
         handler = new Handler(new Handler.Callback() {
             @Override
