@@ -266,11 +266,10 @@ public class ApDependencies /*extends BaseTask*/ {
 
     private final DependencyJson apDependencyJson;
 
-    public ApDependencies(Project project, TBuildType tBuildType) {
+    public ApDependencies(Project project, File baseApFile) {
         this.dependencies = project.getDependencies();
 
         //获取baseAp文件
-        File baseApFile = getBaseApFile(project, tBuildType);
         apDependencyJson = getDependencyJson(baseApFile);
 
         //mainDex
@@ -328,13 +327,14 @@ public class ApDependencies /*extends BaseTask*/ {
                 Dependency dependency = project.getDependencies().create(apDependency);
                 Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
                 configuration.setTransitive(false);
-                apBaseFile = Iterables.getOnlyElement(
-                    Collections2.filter(configuration.getFiles(), new Predicate<File>() {
-                        @Override
-                        public boolean apply(@Nullable File file) {
-                            return file.getName().endsWith(".ap");
-                        }
-                    }));
+                apBaseFile = Iterables.getOnlyElement(Collections2.filter(configuration.getFiles(),
+                                                                          new Predicate<File>() {
+                                                                              @Override
+                                                                              public boolean apply(
+                                                                                  @Nullable File file) {
+                                                                                  return file.getName().endsWith(".ap");
+                                                                              }
+                                                                          }));
             } else {
                 throw new IllegalStateException("AP is missing");
             }
@@ -377,8 +377,10 @@ public class ApDependencies /*extends BaseTask*/ {
         }
 
         if (versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
-            LOGGER.quiet("{} apVersion({}) is larger than yourVersion({}), skipping", moduleVersion.getModule(),
-                         mainVersion, moduleVersion.getVersion());
+            LOGGER.quiet("{} apVersion({}) is larger than yourVersion({}), skipping",
+                         moduleVersion.getModule(),
+                         mainVersion,
+                         moduleVersion.getVersion());
             return true;
         } else {
             return false;
