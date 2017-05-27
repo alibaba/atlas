@@ -249,7 +249,7 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
-    public static final String CACHE_TYPE = "proguard-bundles-v1.6";
+    public static final String CACHE_TYPE = "proguard-bundles-v1.8";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
 
@@ -341,8 +341,6 @@ public class BundleProguarder {
         File proguardCfg = new File(cacheDir, "proguard.cfg");
         File usageCfg = new File(cacheDir, "usage.cfg");
 
-
-
         if (input.getAwbBundles().get(0).getAwbBundle().isMainBundle()) {
             for (File file : cacheDir.listFiles()) {
                 if (file.getName().endsWith("jar") && ZipUtils.isZipFile(file)) {
@@ -351,7 +349,7 @@ public class BundleProguarder {
             }
 
             File awbProguardDir = input.proguardOutputDir;
-            FileUtils.copyFileToDirectory(keepJson, awbProguardDir);
+            //FileUtils.copyFileToDirectory(keepJson, awbProguardDir);
             if (proguardCfg.exists()) {
                 FileUtils.copyFileToDirectory(proguardCfg,
                                               awbProguardDir);

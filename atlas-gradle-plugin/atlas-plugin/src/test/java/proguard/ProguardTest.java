@@ -220,6 +220,7 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.proguard.domain.LibClassRefVisitor;
+import com.taobao.android.builder.tools.proguard.domain.LibMethodFieldsVisitor;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import proguard.classfile.ClassPool;
@@ -257,8 +258,12 @@ public class ProguardTest {
         LibClassRefVisitor classRefPrinter = new LibClassRefVisitor(
             Sets.newHashSet("java/lang/Object", "java/lang/System", "java/io/PrintStream"), classPool);
         classPool.classesAccept(classRefPrinter);
+        LibMethodFieldsVisitor libMethodFieldsVisitor = new LibMethodFieldsVisitor(Sets.newHashSet("java/lang/Object", "java/lang/System", "java/io/PrintStream"), classPool);
+        libMethodFieldsVisitor.setRefClazzMap(classRefPrinter.getRefClazzMap());
+        libMethodFieldsVisitor.setClazzInfoMap(classRefPrinter.getClazzInfoMap());
+        classPool.classesAccept(libMethodFieldsVisitor);
 
-        System.out.println(JSON.toJSONString(classRefPrinter.getRefClazzMap(), true));
+        System.out.println(JSON.toJSONString(libMethodFieldsVisitor.getRefClazzMap(), true));
 
     }
 
