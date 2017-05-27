@@ -216,7 +216,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -315,6 +317,8 @@ public class ManifestFileUtils {
 
         XmlHelper.saveDocument(document, mainManifest);
 
+        printlnPermissions(document);
+
         return result;
     }
 
@@ -407,7 +411,7 @@ public class ManifestFileUtils {
                         bundleDepValue = StringUtils.join(bundleInfo.getDependency(), "|");
                     }
                     String value = libBundleInfo.applicationName + "," + !remoteBundles.contains(libBundleInfo.libName)
-                                   + "," + bundleDepValue;
+                        + "," + bundleDepValue;
                     logger.info("[bundleInfo] add bundle value : " + value + " to manifest");
                     metaData.addAttribute("android:name", "bundle_" + bundlePackageName);
                     metaData.addAttribute("android:value", value);
@@ -558,8 +562,7 @@ public class ManifestFileUtils {
             for (Node node : nodes) {
                 Element element = (Element)node;
                 String name = element.attributeValue("name");
-
-                if (whiteList.contains(name)) {
+                if (!whiteList.contains(name)) {
                     logger.warn("[permission] remove " + name);
                     element.getParent().remove(element);
                 }
@@ -610,6 +613,28 @@ public class ManifestFileUtils {
                 }
             }
         }
+    }
+
+    public static void printlnPermissions(Document document) throws IOException {
+        Element root = document.getRootElement();// 得到根节点
+        List<Node> nodes = new ArrayList<>();
+        nodes.addAll(root.selectNodes("//permission"));
+        nodes.addAll(root.selectNodes("//uses-permission"));
+
+        Set<String> permissons = new HashSet<>();
+        for (Node node : nodes) {
+            Element element = (Element)node;
+            String name = element.attributeValue("name");
+            permissons.add(name);
+        }
+
+        logger.warn("[permission] start >>>>>>>> ");
+        List<String> lines = new ArrayList<>(permissons);
+        Collections.sort(lines);
+        for (String name : lines){
+            logger.warn(name);
+        }
+        logger.warn("[permission] end <<<<<<<<< ");
     }
 
     /**
@@ -686,7 +711,7 @@ public class ManifestFileUtils {
         if (null != applicationElement) {
             applicationElement.addAttribute("tools:replace",
                                             "android:name,android:icon,android:allowBackup,android:label,"
-                                            + "android:supportsRtl");
+                                                + "android:supportsRtl");
         }
 
         XmlHelper.saveDocument(document, modifyManifest);

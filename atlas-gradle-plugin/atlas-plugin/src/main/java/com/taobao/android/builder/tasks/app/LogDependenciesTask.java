@@ -213,17 +213,7 @@ package com.taobao.android.builder.tasks.app;
  * Created by wuzhong on 16/6/13.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
 import com.alibaba.fastjson.JSON;
-
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
@@ -238,6 +228,15 @@ import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 /**
  * 记录构建的依赖信息，便于排查分析
  */
@@ -250,6 +249,7 @@ public class LogDependenciesTask extends BaseTask {
     @TaskAction
     void generate() {
 
+        AtlasBuildContext.appVariantContext = appVariantContext;
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
             getVariantName());
 

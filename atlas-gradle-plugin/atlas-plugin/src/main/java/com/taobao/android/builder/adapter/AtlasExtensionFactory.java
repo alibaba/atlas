@@ -210,8 +210,10 @@
 package com.taobao.android.builder.adapter;
 
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.extension.DexConfig;
 import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.extension.TBuildType;
+import com.taobao.android.builder.extension.factory.DexConfigFactory;
 import com.taobao.android.builder.extension.factory.PatchConfigFactory;
 import com.taobao.android.builder.extension.factory.TBuildTypeFactory;
 import org.gradle.api.NamedDomainObjectContainer;
@@ -240,9 +242,10 @@ public class AtlasExtensionFactory {
                                                                                                    instantiator,
                                                                                                    project, project
                                                                                                        .getLogger()));
+        final NamedDomainObjectContainer<DexConfig>dexConfigContainer = project.container(DexConfig.class,new DexConfigFactory(instantiator,project,project.getLogger()));
 
         return project.getExtensions().create("atlas", AtlasExtension.class, project, instantiator,
-                                              buildTypeContainer, patchConfigContainer);
+                                              buildTypeContainer, patchConfigContainer,dexConfigContainer);
 
     }
 
