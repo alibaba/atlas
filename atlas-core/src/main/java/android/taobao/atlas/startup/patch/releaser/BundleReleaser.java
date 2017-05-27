@@ -261,7 +261,8 @@ public class BundleReleaser {
         this.hasReleased = hasReleased;
         this.reversionDir = reversionDir;
         if (!(Looper.getMainLooper() == Looper.myLooper())) {
-            Looper.prepare();
+            if (Looper.myLooper() != null)
+                Looper.prepare();
         }
         handler = new Handler(new Handler.Callback() {
             @Override
