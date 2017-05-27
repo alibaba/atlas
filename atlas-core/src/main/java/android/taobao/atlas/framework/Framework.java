@@ -433,7 +433,7 @@ public final class Framework {
             init = true;
         }
         if (init) {
-            resetStorage();
+//            resetStorage();
         } else if (RuntimeVariables.getProcessName(RuntimeVariables.androidApplication).equals(RuntimeVariables.androidApplication.getPackageName())) {
             restoreProfile();
         }
