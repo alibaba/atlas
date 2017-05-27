@@ -554,6 +554,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
             File mainDexListFile = variantScope.getMainDexListFile();
             boolean multiDex = isMultiDexEnabled;
+            File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
             DexTransform dexTransform = new DexTransform(dexOptions,
                                                          config.getBuildType().isDebuggable(),
                                                          multiDex,
@@ -570,8 +571,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                     ImmutableList.Builder<SecondaryFile> builder = ImmutableList.builder();
                     builder.addAll(super.getSecondaryFiles());
-                    // builder.add(SecondaryFile.nonIncremental(appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
-                    //     awbBundle.getAwbSoName())));
+                    builder.add(SecondaryFile.nonIncremental(baseAwb));
                     return builder.build();
                 }
 
@@ -579,8 +579,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 public void transform(TransformInvocation transformInvocation)
                     throws TransformException, IOException, InterruptedException {
                     super.transform(transformInvocation);
-                    File baseAwb
-                        = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
                     boolean isIncremental = transformInvocation.isIncremental();
                     TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
                     Preconditions.checkNotNull(outputProvider, "Missing output object for transform " + getName());

@@ -323,14 +323,14 @@ public class AppVariantOutputContext {
 
     public File getJAwbavaOutputDir(AwbBundle awbBundle) {
         return new File(outputScope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-classes/" + variantData.getVariantConfiguration().getDirName() + "/" + awbBundle
-                            .getName());
+                        "/awb-classes/" + variantData.getVariantConfiguration().getDirName() + "/"
+                        + awbBundle.getName());
     }
 
     public File getAwbJavaDependencyCache(AwbBundle awbBundle) {
         return new File(outputScope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-dependency-cache/" + variantData.getVariantConfiguration().getDirName() + "/" + awbBundle
-                            .getName());
+                        "/awb-dependency-cache/" + variantData.getVariantConfiguration().getDirName() + "/"
+                        + awbBundle.getName());
     }
 
     public File getAwbSolib(AwbBundle awbBundle) {
@@ -341,8 +341,8 @@ public class AppVariantOutputContext {
     public synchronized Map<String, AwbTransform> getAwbTransformMap() {
         //TODO
         if (awbTransformMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                variantContext.getVariantName());
+            AtlasDependencyTree dependencyTree
+                = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 //生成AwbTransform对象
                 AwbTransform awbTransform = new AwbTransform(awbBundle);
@@ -356,14 +356,17 @@ public class AppVariantOutputContext {
         return awbTransformMap;
     }
 
+    //生成Awb TransformManager防止冲突
     public Map<String, TransformManager> getAwbTransformManagerMap() {
         if (awbTransformManagerMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                variantContext.getVariantName());
+            AtlasDependencyTree dependencyTree
+                = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 TransformManager transformManager = new TransformManager(new AndroidTaskRegistry(),
-                                                                         outputScope.getVariantScope().getGlobalScope()
-                                                                             .getAndroidBuilder().getErrorReporter(),
+                                                                         outputScope.getVariantScope()
+                                                                                    .getGlobalScope()
+                                                                                    .getAndroidBuilder()
+                                                                                    .getErrorReporter(),
                                                                          ThreadRecorder.get()) {
                     @Override
                     public <T extends Transform> Optional<AndroidTask<TransformTask>> addTransform(
@@ -372,10 +375,14 @@ public class AppVariantOutputContext {
                         return super.addTransform(taskFactory, new TransformVariantScope() {
 
                             @Override
-                            public String getFullVariantName() {return scope.getFullVariantName();}
+                            public String getFullVariantName() {
+                                return scope.getFullVariantName();
+                            }
 
                             @Override
-                            public TransformGlobalScope getGlobalScope() {return scope.getGlobalScope();}
+                            public TransformGlobalScope getGlobalScope() {
+                                return scope.getGlobalScope();
+                            }
 
                             @Override
                             public String getTaskName(String prefix) {
@@ -388,13 +395,15 @@ public class AppVariantOutputContext {
                             }
 
                             @Override
-                            public String getDirName() {return scope.getDirName();}
+                            public String getDirName() {
+                                return scope.getDirName();
+                            }
 
                             @Override
                             public Collection<String> getDirectorySegments() {
                                 ImmutableList.Builder<String> builder = ImmutableList.builder();
-                                builder.addAll(scope.getDirectorySegments());
                                 builder.add(awbBundle.getName());
+                                builder.addAll(scope.getDirectorySegments());
                                 return builder.build();
                             }
                         }, transform, callback);
@@ -406,7 +415,9 @@ public class AppVariantOutputContext {
         return awbTransformManagerMap;
     }
 
-    private String getTaskName(String taskName) {return taskName;}
+    private String getTaskName(String taskName) {
+        return taskName;
+    }
 
     public Map<String, PackageApplication> getAwbPackageMap() {
         return awbPackageMap;
