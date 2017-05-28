@@ -226,8 +226,10 @@ import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
 import com.taobao.android.builder.tools.cache.FileLockUtils;
 import com.taobao.android.builder.tools.proguard.domain.Input;
-import com.taobao.android.builder.tools.proguard.domain.LibClassRefVisitor;
 import com.taobao.android.builder.tools.proguard.domain.Result;
+import com.taobao.android.builder.tools.proguard.visitor.ClassDetailVisitor;
+import com.taobao.android.builder.tools.proguard.visitor.ClassStructVisitor;
+import com.taobao.android.builder.tools.proguard.visitor.VisitorDTO;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
@@ -249,7 +251,7 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
-    public static final String CACHE_TYPE = "proguard-bundles-v1.8";
+    public static final String CACHE_TYPE = "proguard-bundles-v1.10";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
 
@@ -443,10 +445,15 @@ public class BundleProguarder {
         System.out.println("<<< end proguard");
 
         ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
-        //ClassPool libraryClassPool = (ClassPool)ReflectUtils.getField(proGuard, "libraryClassPool");
 
-        LibClassRefVisitor classRefPrinter = new LibClassRefVisitor(input.getDefaultLibraryClasses(), classPool);
-        classPool.classesAccept(classRefPrinter);
+        VisitorDTO visitorDTO = new VisitorDTO(input.getDefaultLibraryClasses(), classPool);
+        ClassStructVisitor classStructVisitor = new ClassStructVisitor(visitorDTO);
+        ClassDetailVisitor classDetailVisitor = new ClassDetailVisitor(visitorDTO);
+
+        classPool.classesAccept(classStructVisitor);
+        classPool.classesAccept(classDetailVisitor);
+
+        visitorDTO.addSuperRefInfo();
 
         //Fileoutputs
         for (AwbTransform awbTransform : input.getAwbBundles()) {
@@ -455,7 +462,7 @@ public class BundleProguarder {
                 File fileOut = new File(appVariantContext.getAwbProguardDir(awbBundle), "keep.json");
                 fileOut.delete();
                 fileOut.getParentFile().mkdirs();
-                FileUtils.write(fileOut, JSON.toJSONString(classRefPrinter.getRefClazzMap()));
+                FileUtils.write(fileOut, JSON.toJSONString(visitorDTO.clazzRefInfoMap));
                 awbBundle.setKeepProguardFile(fileOut);
             }
         }

@@ -207,147 +207,56 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.domain;
+package com.taobao.android.builder.tools.proguard.visitor;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import proguard.classfile.ClassPool;
+import com.taobao.android.builder.tools.proguard.domain.ClazzRefInfo;
 import proguard.classfile.Clazz;
-import proguard.classfile.LibraryClass;
 import proguard.classfile.ProgramClass;
-import proguard.classfile.visitor.ClassVisitor;
+import proguard.classfile.constant.FieldrefConstant;
+import proguard.classfile.constant.MethodrefConstant;
 
 /**
  * Created by wuzhong on 2017/5/12.
  */
-public class LibClassRefVisitor implements ClassVisitor {
+public class ClassDetailVisitor extends AbstractClasslVisitor {
 
-    protected Map<String, ClazzInfo> clazzInfoMap = new HashMap<>();
+    private VisitorDTO visitorDTO;
 
-    protected Map<String, ClazzRefInfo> refClazzMap = new HashMap<>();
-
-    protected Set<String> defaultClasses;
-
-    protected ClassPool self;
-
-    public LibClassRefVisitor(Set<String> defaultClasses, ClassPool self) {
-        this.defaultClasses = defaultClasses;
-        this.self = self;
+    public ClassDetailVisitor(VisitorDTO visitorDTO) {
+        this.visitorDTO = visitorDTO;
     }
 
     //class 的顺序不确定有很大的问题
     @Override
     public void visitProgramClass(ProgramClass programClass) {
-
-        addSuperClass(programClass);
-
-        for (int i = 0; i < programClass.getInterfaceCount(); i++) {
-            addInterface(programClass, i);
-        }
-
+        programClass.constantPoolEntriesAccept(this);
     }
 
-    private void addInterface(ProgramClass programClass, int i) {
-        String interfaceClazz = programClass.getInterfaceName(i);
-        if (isNotRefClazz(interfaceClazz)) {
-            return;
-        }
-        ClazzRefInfo refClazz2 = getRefInfo(interfaceClazz);
-        refClazz2.setKeepAll(true);
-    }
+    @Override
+    public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
 
-    private void addSuperClass(ProgramClass programClass) {
-        String superName = findRefSuperClazz(programClass);
-        if (StringUtils.isEmpty(superName)) {
-            return;
-        }
-        ClazzRefInfo refClazz = getRefInfo(superName);
-        refClazz.setNeedExtend(true);
-        //refClazz.setKeepAll(true);
-        ClazzInfo clazzInfo = getClazzInfo(programClass.getName());
-        clazzInfo.setSuperClazzName(superName);
-    }
+        String clazzName = clazz.getClassName(fieldrefConstant.u2classIndex);
 
-    private String findRefSuperClazz(Clazz programClass) {
-        String className = programClass.getSuperName();
-        if (defaultClasses.contains(className) || className.contains("[")) {
-            return "";
-        }
-        Clazz superClazz = self.getClass(className);
-        if (null == superClazz) {
-            return className;
-        }
-        return findRefSuperClazz(superClazz);
-    }
+        ClazzRefInfo clazzRefInfo = visitorDTO.getClazzRefInfo(clazzName);
 
-    @NotNull
-    protected ClazzRefInfo getRefInfo(String clazzName) {
-        ClazzRefInfo refClazz = refClazzMap.get(clazzName);
-        if (null == refClazz) {
-            refClazz = new ClazzRefInfo(clazzName);
-            refClazzMap.put(clazzName, refClazz);
+        String fieldName = clazz.getName(fieldrefConstant.u2nameAndTypeIndex);
+        if (null != clazzRefInfo) {
+            clazzRefInfo.getFields().add(fieldName);
         }
-        return refClazz;
-    }
-
-    @NotNull
-    protected ClazzInfo getClazzInfo(String clazzName) {
-        ClazzInfo clazzInfo = clazzInfoMap.get(clazzName);
-        if (null == clazzInfo) {
-            clazzInfo = new ClazzInfo(clazzName);
-            clazzInfoMap.put(clazzName, clazzInfo);
-        }
-        return clazzInfo;
-    }
-
-    protected boolean isNotRefClazz(String className) {
-        //System.out.println(className);
-        if (defaultClasses.contains(className)) {
-            return true;
-        }
-        if (className.contains("[")) {
-            return true;
-        }
-        if (null != self.getClass(className)) {
-            return true;
-        }
-        return false;
-    }
-
-    private void addRefMethod(String className, String methodName) {
-
-        if (isNotRefClazz(className)) {
-            return;
-        }
-
-        getRefInfo(className).getMethods().add(methodName);
 
     }
 
     @Override
-    public void visitLibraryClass(LibraryClass libraryClass) {
+    public void visitMethodrefConstant(Clazz clazz, MethodrefConstant methodrefConstant) {
 
-    }
+        String clazzName = clazz.getClassName(methodrefConstant.u2classIndex);
+        ClazzRefInfo clazzRefInfo = visitorDTO.getClazzRefInfo(clazzName);
 
-    public Map<String, ClazzRefInfo> getRefClazzMap() {
-        return refClazzMap;
-    }
+        String methodName = clazz.getName(methodrefConstant.u2nameAndTypeIndex);
+        if (null != clazzRefInfo) {
+            clazzRefInfo.getMethods().add(methodName);
+        }
 
-    public Map<String, ClazzInfo> getClazzInfoMap() {
-        return clazzInfoMap;
-    }
-
-    public void setClazzInfoMap(
-        Map<String, ClazzInfo> clazzInfoMap) {
-        this.clazzInfoMap = clazzInfoMap;
-    }
-
-    private void println(String message) {
-        //System.out.println(message);
     }
 
 }

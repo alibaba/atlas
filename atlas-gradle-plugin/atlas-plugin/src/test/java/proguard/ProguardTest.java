@@ -219,8 +219,9 @@ import com.alibaba.fastjson.JSON;
 
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.tools.ReflectUtils;
-import com.taobao.android.builder.tools.proguard.domain.LibClassRefVisitor;
-import com.taobao.android.builder.tools.proguard.domain.LibMethodFieldsVisitor;
+import com.taobao.android.builder.tools.proguard.visitor.ClassDetailVisitor;
+import com.taobao.android.builder.tools.proguard.visitor.ClassStructVisitor;
+import com.taobao.android.builder.tools.proguard.visitor.VisitorDTO;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import proguard.classfile.ClassPool;
@@ -255,16 +256,22 @@ public class ProguardTest {
 
         //classPool.classesAccept(new MyClassPrinter());
 
-        LibClassRefVisitor classRefPrinter = new LibClassRefVisitor(
-            Sets.newHashSet("java/lang/Object", "java/lang/System", "java/io/PrintStream"), classPool);
+        VisitorDTO visitorDTO = new VisitorDTO(Sets.newHashSet("java/lang/Object", "java/lang/System", "java/io/PrintStream"), classPool);
+
+        ClassStructVisitor classRefPrinter = new ClassStructVisitor(visitorDTO);
         classPool.classesAccept(classRefPrinter);
-        LibMethodFieldsVisitor libMethodFieldsVisitor = new LibMethodFieldsVisitor(Sets.newHashSet("java/lang/Object", "java/lang/System", "java/io/PrintStream"), classPool);
-        libMethodFieldsVisitor.setRefClazzMap(classRefPrinter.getRefClazzMap());
-        libMethodFieldsVisitor.setClazzInfoMap(classRefPrinter.getClazzInfoMap());
-        classPool.classesAccept(libMethodFieldsVisitor);
 
-        System.out.println(JSON.toJSONString(libMethodFieldsVisitor.getRefClazzMap(), true));
+        ClassDetailVisitor classDetailVisitor = new ClassDetailVisitor(visitorDTO);
+        classPool.classesAccept(classDetailVisitor);
 
+        visitorDTO.addSuperRefInfo();
+
+        System.out.println(JSON.toJSONString(visitorDTO.clazzRefInfoMap, true));
+
+        //LibMethodFieldsVisitor libMethodFieldsVisitor = new LibMethodFieldsVisitor(Sets.newHashSet("java/lang/Object", "java/lang/System", "java/io/PrintStream"), classPool);
+        //libMethodFieldsVisitor.setRefClazzMap(classRefPrinter.getRefClazzMap());
+        //libMethodFieldsVisitor.setClazzInfoMap(classRefPrinter.getClazzInfoMap());
+        //classPool.classesAccept(libMethodFieldsVisitor)
     }
 
     @Test
