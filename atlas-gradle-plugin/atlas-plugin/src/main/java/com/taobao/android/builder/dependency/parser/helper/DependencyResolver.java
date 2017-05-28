@@ -242,6 +242,7 @@ import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.ResolvedComponentResult;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
+import org.gradle.api.internal.artifacts.result.DefaultResolvedComponentResult;
 
 /**
  * Created by wuzhong on 2017/4/17.
@@ -285,7 +286,8 @@ public class DependencyResolver {
 
                 if (!directDependencies.contains(moduleVersion)) {
                     directDependencies.add(moduleVersion);
-                    resolveDependency(null,dependencyResult,
+                    resolveDependency(null,
+                                      dependencyResult,
                                       ((ResolvedDependencyResult)dependencyResult).getSelected(),
                                       artifacts,
                                       variantDeps,
@@ -318,7 +320,8 @@ public class DependencyResolver {
 
     /**
      * 解析依赖
-     *  @param parent
+     *
+     * @param parent
      * @param dependencyResult
      * @param resolvedComponentResult
      * @param artifacts
@@ -329,8 +332,7 @@ public class DependencyResolver {
                                    ResolvedComponentResult resolvedComponentResult,
                                    Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
                                    VariantDependencies configDependencies, int indent,
-                                   CircleDependencyCheck circleDependencyCheck,
-                                   DependencyNode node,
+                                   CircleDependencyCheck circleDependencyCheck, DependencyNode node,
                                    Multimap<String, ResolvedDependencyInfo> dependenciesMap,
                                    Set<String> resolvedDependencies) {
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
@@ -360,6 +362,14 @@ public class DependencyResolver {
                     if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                         continue;
                     } else {
+                        ((DefaultResolvedComponentResult)variantDeps.getCompileConfiguration()
+                                                                    .getIncoming()
+                                                                    .getResolutionResult()
+                                                                    .getRoot()).addDependency(dependencyResult);
+                        ((DefaultResolvedComponentResult)variantDeps.getPackageConfiguration()
+                                                                    .getIncoming()
+                                                                    .getResolutionResult()
+                                                                    .getRoot()).addDependency(dependencyResult);
                         parent = null;
                     }
                 }
