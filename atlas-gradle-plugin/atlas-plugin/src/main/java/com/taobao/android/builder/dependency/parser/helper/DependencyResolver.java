@@ -229,6 +229,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.taobao.android.builder.dependency.parser.AtlasDepHelper;
 import com.taobao.android.builder.dependency.parser.CircleDependencyCheck;
+import com.taobao.android.builder.dependency.parser.CircleDependencyCheck.DependencyNode;
 import com.taobao.android.builder.dependency.parser.DependencyLocationManager;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.tasks.incremental.ApDependencies;
@@ -284,7 +285,7 @@ public class DependencyResolver {
 
                 if (!directDependencies.contains(moduleVersion)) {
                     directDependencies.add(moduleVersion);
-                    resolveDependency(null,
+                    resolveDependency(null,dependencyResult,
                                       ((ResolvedDependencyResult)dependencyResult).getSelected(),
                                       artifacts,
                                       variantDeps,
@@ -317,18 +318,19 @@ public class DependencyResolver {
 
     /**
      * 解析依赖
-     *
-     * @param parent
+     *  @param parent
+     * @param dependencyResult
      * @param resolvedComponentResult
      * @param artifacts
      * @param configDependencies
      * @param indent
      */
-    private void resolveDependency(ResolvedDependencyInfo parent, ResolvedComponentResult resolvedComponentResult,
+    private void resolveDependency(ResolvedDependencyInfo parent, DependencyResult dependencyResult,
+                                   ResolvedComponentResult resolvedComponentResult,
                                    Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
                                    VariantDependencies configDependencies, int indent,
                                    CircleDependencyCheck circleDependencyCheck,
-                                   CircleDependencyCheck.DependencyNode node,
+                                   DependencyNode node,
                                    Multimap<String, ResolvedDependencyInfo> dependenciesMap,
                                    Set<String> resolvedDependencies) {
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
@@ -426,6 +428,7 @@ public class DependencyResolver {
                                 logger.warning("[CircleDependency]" + StringUtils.join(circleResult.detail, ";"));
                             } else {
                                 resolveDependency(parent,
+                                                  dep,
                                                   ((ResolvedDependencyResult)dep).getSelected(),
                                                   artifacts,
                                                   configDependencies,
