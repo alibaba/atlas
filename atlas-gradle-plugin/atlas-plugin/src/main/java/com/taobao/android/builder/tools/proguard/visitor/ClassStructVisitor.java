@@ -207,73 +207,96 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.domain;
+package com.taobao.android.builder.tools.proguard.visitor;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.taobao.android.builder.tools.proguard.visitor.VisitorDTO.ClassStruct;
+import com.taobao.android.builder.tools.proguard.visitor.VisitorDTO.LibraryClazzInfo;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import proguard.classfile.ProgramClass;
+import proguard.classfile.ProgramField;
+import proguard.classfile.ProgramMethod;
+import proguard.classfile.visitor.ClassVisitor;
 
 /**
- * 引用的类信息
+ * Created by wuzhong on 2017/5/12.
+ *
+ * 查找所有类的父子关系， 是 当前类 -> root library class
  */
-public class ClazzRefInfo {
+public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVisitor {
 
-    private String clazzName;
+    private VisitorDTO visitorDTO;
 
-    private boolean keepAll;
-
-    /**
-     * 需要继承类都keep的
-     */
-    private boolean needExtend;
-
-    //for json serizable
-    public ClazzRefInfo() {
+    public ClassStructVisitor(VisitorDTO visitorDTO) {
+        this.visitorDTO = visitorDTO;
     }
 
-    public ClazzRefInfo(String clazzName) {
-        this.clazzName = clazzName;
+    //class 的顺序不确定有很大的问题
+    @Override
+    public void visitProgramClass(ProgramClass programClass) {
+
+        addSuperClass(programClass);
+
+        for (int i = 0; i < programClass.getInterfaceCount(); i++) {
+            addInterface(programClass, i);
+        }
+
+        programClass.methodsAccept(this);
+
+        programClass.fieldsAccept(this);
+
     }
 
-    private Set<String> methods = new HashSet<>();
-    private Set<String> fields = new HashSet<>();
-
-    public String getClazzName() {
-        return clazzName;
+    private void addInterface(ProgramClass programClass, int i) {
+        String interfaceClazz = programClass.getInterfaceName(i);
+        //简化处理
+        if (visitorDTO.isLibClazz(interfaceClazz)) {
+            ClassStruct classStruct = getOrCreateClassStruct(programClass);
+            classStruct.libInterfaces.add(interfaceClazz);
+        }
     }
 
-    public void setClazzName(String clazzName) {
-        this.clazzName = clazzName;
+    @NotNull
+    private ClassStruct getOrCreateClassStruct(ProgramClass programClass) {
+        ClassStruct classStruct = visitorDTO.classStructMap.get(programClass.getName());
+        if (null == classStruct) {
+            classStruct = new ClassStruct();
+            visitorDTO.classStructMap.put(programClass.getName(), classStruct);
+        }
+        return classStruct;
     }
 
-    public Set<String> getMethods() {
-        return methods;
+    private void addSuperClass(ProgramClass programClass) {
+        String superName = visitorDTO.findRootLibClazz(programClass);
+        if (StringUtils.isEmpty(superName)) {
+            return;
+        }
+        ClassStruct classStruct = getOrCreateClassStruct(programClass);
+        classStruct.libClazzName = superName;
+
     }
 
-    public void setMethods(Set<String> methods) {
-        this.methods = methods;
+    @Override
+    public void visitProgramField(ProgramClass programClass, ProgramField programField) {
+
+        LibraryClazzInfo libraryClazzInfo = getOrCreateLibraryClazzInfo(programClass);
+        if (null != libraryClazzInfo) {
+            libraryClazzInfo.appFields.add(programField.getName(programClass));
+        }
     }
 
-    public Set<String> getFields() {
-        return fields;
+    @Override
+    public void visitProgramMethod(ProgramClass programClass, ProgramMethod programMethod) {
+        LibraryClazzInfo libraryClazzInfo = getOrCreateLibraryClazzInfo(programClass);
+        if (null != libraryClazzInfo) {
+            libraryClazzInfo.appMethods.add(programMethod.getName(programClass));
+        }
     }
 
-    public void setFields(Set<String> fields) {
-        this.fields = fields;
+    private LibraryClazzInfo getOrCreateLibraryClazzInfo(ProgramClass programClass) {
+
+        return visitorDTO.getLibraryClazzInfo(programClass.getName());
+
     }
 
-    public boolean isKeepAll() {
-        return keepAll;
-    }
-
-    public void setKeepAll(boolean keepAll) {
-        this.keepAll = keepAll;
-    }
-
-    public boolean isNeedExtend() {
-        return needExtend;
-    }
-
-    public void setNeedExtend(boolean needExtend) {
-        this.needExtend = needExtend;
-    }
 }

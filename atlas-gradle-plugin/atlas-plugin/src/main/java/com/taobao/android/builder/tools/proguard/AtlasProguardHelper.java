@@ -248,7 +248,7 @@ import com.taobao.android.builder.tools.bundleinfo.BundleItemRunner;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.proguard.domain.Input;
 import com.taobao.android.builder.tools.proguard.domain.ClazzRefInfo;
-import com.taobao.android.builder.tools.proguard.domain.RefClazzContainer;
+import com.taobao.android.builder.tools.proguard.domain.ClazzRefInfoContainer;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
@@ -464,7 +464,7 @@ public class AtlasProguardHelper {
     @NotNull
     private static File generateKeepFile(List<AwbBundle> awbBundles, File dir) throws IOException {
 
-        RefClazzContainer refClazzContainer = new RefClazzContainer();
+        ClazzRefInfoContainer refClazzContainer = new ClazzRefInfoContainer();
         for (AwbBundle awbBundle : awbBundles) {
             if (null != awbBundle.getKeepProguardFile() && awbBundle.getKeepProguardFile().exists()) {
 
