@@ -214,6 +214,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
@@ -353,7 +354,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 //    throw new GradleException(
                 //        "atlas plgin is not compatible with instant run， plese turn it off in your ide！");
                 //}
-//                new AwbProguradHook().hookProguardTask(appVariantContext);
+                //                new AwbProguradHook().hookProguardTask(appVariantContext);
 
                 List<MtlTaskContext> mtlTaskContextList = new ArrayList<MtlTaskContext>();
 
@@ -552,7 +553,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
             File mainDexListFile = variantScope.getMainDexListFile();
             boolean multiDex = isMultiDexEnabled;
-            File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
             DexTransform dexTransform = new DexTransform(dexOptions,
                                                          config.getBuildType().isDebuggable(),
                                                          multiDex,
@@ -569,8 +569,17 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                     ImmutableList.Builder<SecondaryFile> builder = ImmutableList.builder();
                     builder.addAll(super.getSecondaryFiles());
-                    builder.add(SecondaryFile.nonIncremental(baseAwb));
+                    String awbSoName = awbBundle.getAwbSoName();
+                    if (awbSoName != null) {
+                        builder.add(SecondaryFile.nonIncremental(appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
+                            awbSoName)));
+                    }
                     return builder.build();
+                }
+
+                @Override
+                public Map<String, Object> getParameterInputs() {
+                    return super.getParameterInputs();
                 }
 
                 @Override
@@ -596,7 +605,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                                    getOutputTypes(),
                                                                                    com.android.build.gradle.internal.pipeline.TransformManager.SCOPE_FULL_PROJECT,
                                                                                    Format.DIRECTORY);
-                                mergeDex(outputDir, baseAwb);
+                                mergeDex(outputDir,
+                                         appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName()));
                             } else {
                                 // Figure out if we need to do a dx merge.
                                 // The ony case we don't need it is in native multi-dex mode when doing debug
@@ -609,7 +619,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                                        com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_DEX,
                                                                                        com.android.build.gradle.internal.pipeline.TransformManager.SCOPE_FULL_PROJECT,
                                                                                        Format.DIRECTORY);
-                                    mergeDex(outputDir, baseAwb);
+                                    mergeDex(outputDir,
+                                             appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName()));
                                 }
                             }
                         } catch (Exception e) {

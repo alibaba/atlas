@@ -265,7 +265,9 @@ public class PrepareAPTask extends BaseTask {
 
     private File explodedDir;
 
-    Set<String> awbBundles;
+    private AtlasDependencyTree dependencyTree;
+
+    private Set<String> awbBundles;
 
     @InputFile
     @Optional
@@ -341,20 +343,22 @@ public class PrepareAPTask extends BaseTask {
             Set<String> awbBundles = getAwbBundles();
             if (awbBundles != null) {
                 // 解压基线Bundle
-                for (String awbBundle : awbBundles) {
+                for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
+                    String awbSoName = awbBundle.getAwbSoName();
                     File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
-                                                         "lib/armeabi/" + awbBundle,
+                                                         "lib/armeabi/" + awbSoName,
                                                          new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
                     File awbExplodedDir = new File(new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY),
-                                                   FilenameUtils.getBaseName(awbBundle));
+                                                   FilenameUtils.getBaseName(awbSoName));
                     BetterZip.unzipDirectory(awbFile, awbExplodedDir);
                     FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
                                        new File(awbExplodedDir, "classes2.dex"));
                 }
                 // 预处理增量AndroidManifest.xml
-                ManifestFileUtils.updatePreProcessBaseManifestFile(
-                    FileUtils.join(explodedDir, "manifest-modify", ANDROID_MANIFEST_XML),
-                    new File(explodedDir, ANDROID_MANIFEST_XML));
+                ManifestFileUtils.updatePreProcessBaseManifestFile(FileUtils.join(explodedDir,
+                                                                                  "manifest-modify",
+                                                                                  ANDROID_MANIFEST_XML),
+                                                                   new File(explodedDir, ANDROID_MANIFEST_XML));
             }
         }
     }
@@ -421,14 +425,14 @@ public class PrepareAPTask extends BaseTask {
             });
 
             if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+                AtlasDependencyTree dependencyTree
+                    = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
+                prepareAPTask.dependencyTree = dependencyTree;
                 ConventionMappingHelper.map(prepareAPTask, "awbBundles", new Callable<Set<String>>() {
                     @Override
                     public Set<String> call() throws Exception {
-                        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                            variantContext.getVariantName());
-                        Set<String> awbBundles = Sets.newHashSet(
-                            Iterables.transform(dependencyTree.getAwbBundles(), AwbBundle::getAwbSoName));
-                        return awbBundles;
+                        return Sets.newHashSet(Iterables.transform(dependencyTree.getAwbBundles(),
+                                                                   AwbBundle::getAwbSoName));
                     }
                 });
             }

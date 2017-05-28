@@ -314,7 +314,7 @@ public class AtlasDependencyManager extends DependencyManager {
         }
 
         File baseApFile = getBaseApFile(project, tBuildType);
-        if (baseApFile== null) {
+        if (baseApFile == null) {
             return null;
         }
         return new ApDependencies(project, baseApFile);
@@ -349,7 +349,7 @@ public class AtlasDependencyManager extends DependencyManager {
                                                                               }
                                                                           }));
             } else {
-                throw new IllegalStateException("AP is missing");
+                // throw new IllegalStateException("AP is missing");
             }
         } else {
             tBuildType.setBaseApFile(apBaseFile);

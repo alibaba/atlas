@@ -221,17 +221,10 @@ import java.util.zip.ZipFile;
 
 import com.alibaba.fastjson.JSON;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.output.DependencyJson;
-import com.taobao.android.builder.extension.TBuildType;
 import org.apache.commons.io.IOUtils;
-import org.gradle.api.Nullable;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
@@ -241,7 +234,6 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 
 import static com.android.build.gradle.internal.api.ApContext.DEPENDENCIES_FILENAME;
-import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
  * @author chenhjohn
@@ -303,45 +295,7 @@ public class ApDependencies /*extends BaseTask*/ {
 
     public Map<ModuleIdentifier, String> getAwbDependencies(String group, String name) {
         ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(group, name);
-        Map<ModuleIdentifier, String> awbDependencies = mAwbDependenciesMap.get(moduleIdentifier);
-        return awbDependencies;
-    }
-
-    private File getBaseApFile(Project project, TBuildType tBuildType) {
-        //上一次构建baseAp文件
-        //File apBaseFile = Iterables.getOnlyElement(
-        //    FileUtils.find(FileUtils.join(project.getBuildDir(), FD_OUTPUTS), Pattern.compile("\\.ap$")), null);
-        File apBaseFile = null;
-        if (apBaseFile == null) {
-            File buildTypeBaseApFile = tBuildType.getBaseApFile();
-            if (buildTypeBaseApFile != null) {
-                if (!buildTypeBaseApFile.isFile()) {
-                    throw new IllegalStateException("AP is missing on '" + buildTypeBaseApFile + "'");
-                }
-                apBaseFile = buildTypeBaseApFile;
-            } else if (!isNullOrEmpty(tBuildType.getBaseApDependency())) {
-                String apDependency = tBuildType.getBaseApDependency();
-                // Preconditions.checkNotNull(apDependency,
-                //                            "You have to specify the baseApFile property or the baseApDependency
-                // dependency");
-                Dependency dependency = project.getDependencies().create(apDependency);
-                Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
-                configuration.setTransitive(false);
-                apBaseFile = Iterables.getOnlyElement(Collections2.filter(configuration.getFiles(),
-                                                                          new Predicate<File>() {
-                                                                              @Override
-                                                                              public boolean apply(
-                                                                                  @Nullable File file) {
-                                                                                  return file.getName().endsWith(".ap");
-                                                                              }
-                                                                          }));
-            } else {
-                throw new IllegalStateException("AP is missing");
-            }
-        } else {
-            tBuildType.setBaseApFile(apBaseFile);
-        }
-        return apBaseFile;
+        return mAwbDependenciesMap.get(moduleIdentifier);
     }
 
     private Map<ModuleIdentifier, String> getAwbDependencies(String awb) {

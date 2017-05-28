@@ -358,6 +358,10 @@ public class AwbBundle {
         if (StringUtils.isEmpty(packageName)) {
             File bundle = androidLibrary.getBundle();
 
+            if (!bundle.exists()) {
+                return null;
+            }
+
             try {
                 try (JarFile jarFile = new JarFile(bundle)) {
                     ZipEntry entry = jarFile.getEntry(SdkConstants.ANDROID_MANIFEST_XML);
