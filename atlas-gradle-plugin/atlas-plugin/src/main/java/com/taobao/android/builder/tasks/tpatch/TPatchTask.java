@@ -236,10 +236,8 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.BuildHelper;
 import com.taobao.android.builder.tools.VersionUtils;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import com.taobao.android.object.PatchInfo;
 import com.taobao.android.object.ApkFileList;
 import com.taobao.android.object.ArtifactBundleInfo;
-import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.tpatch.model.ApkBO;
 import com.taobao.android.tpatch.model.BundleBO;
 import org.apache.commons.io.FileUtils;
@@ -264,12 +262,19 @@ public class TPatchTask extends BaseTask {
 
     private File outPatchFolder;
 
+    private AppVariantContext appVariantContext;
+
     @TaskAction
     public void doTPatch() throws Exception {
 
         patchContext = getPatchContext();
         signingConfig = getSigningConfig();
         outPatchFolder = getOutPatchFolder();
+
+        //把 bundle List 复制到 outpatchFoulder
+        new File(outPatchFolder,appVariantContext.bundleListCfg.getName()).delete();
+        outPatchFolder.mkdirs();
+        FileUtils.copyFileToDirectory(appVariantContext.bundleListCfg, outPatchFolder);
 
         // 获取容器版本
         String baseApkVersion = patchContext.getBaseVersionName();
@@ -445,6 +450,9 @@ public class TPatchTask extends BaseTask {
             }
 
             final ApkVariantOutputData variantOutputData = (ApkVariantOutputData)scope.getVariantOutputData();
+
+            tPatchTask.appVariantContext = appVariantContext;
+
 
             ConventionMappingHelper.map(tPatchTask, "outPatchFolder", new Callable<File>() {
 
