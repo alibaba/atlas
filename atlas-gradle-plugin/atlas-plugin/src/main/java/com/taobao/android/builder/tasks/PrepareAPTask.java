@@ -325,31 +325,11 @@ public class PrepareAPTask extends BaseTask {
         }
 
         if (null != apBaseFile && apBaseFile.exists()) {
-            explodedDir = getExplodedDir();
-            BetterZip.unzipDirectory(apBaseFile, explodedDir);
-            apContext.setApExploredFolder(explodedDir);
-            Set<String> awbBundles = getAwbBundles();
-            if (awbBundles != null) {
-                // 解压基线Bundle
-                for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
-                    String awbSoName = awbBundle.getAwbSoName();
-                    File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
-                                                         "lib/armeabi/" + awbSoName,
-                                                         new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
-                    File awbExplodedDir = new File(new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY),
-                                                   FilenameUtils.getBaseName(awbSoName));
-                    BetterZip.unzipDirectory(awbFile, awbExplodedDir);
-                    FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
-                                       new File(awbExplodedDir, "classes2.dex"));
-                }
-                // 预处理增量AndroidManifest.xml
-                ManifestFileUtils.updatePreProcessBaseManifestFile(FileUtils.join(explodedDir,
-                                                                                  "manifest-modify",
-                                                                                  ANDROID_MANIFEST_XML),
-                                                                   new File(explodedDir, ANDROID_MANIFEST_XML));
-            }
+            BetterZip.unzipDirectory(apBaseFile, getExplodedDir());
+            extractBaseBundles();
         }
     }
+
 
     private File getApBaseFile(Project project) {
         File apBaseFile = null;
@@ -372,6 +352,28 @@ public class PrepareAPTask extends BaseTask {
             }
         }
         return apBaseFile;
+    }
+    private void extractBaseBundles() throws IOException, DocumentException {
+        Set<String> awbBundles = getAwbBundles();
+        if (awbBundles != null) {
+            // 解压基线Bundle
+            for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
+                String awbSoName = awbBundle.getAwbSoName();
+                File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
+                                                     "lib/armeabi/" + awbSoName,
+                                                     new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
+                File awbExplodedDir = new File(new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY),
+                                               FilenameUtils.getBaseName(awbSoName));
+                BetterZip.unzipDirectory(awbFile, awbExplodedDir);
+                FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
+                                   new File(awbExplodedDir, "classes2.dex"));
+            }
+            // 预处理增量AndroidManifest.xml
+            ManifestFileUtils.updatePreProcessBaseManifestFile(FileUtils.join(explodedDir,
+                                                                              "manifest-modify",
+                                                                              ANDROID_MANIFEST_XML),
+                                                               new File(explodedDir, ANDROID_MANIFEST_XML));
+        }
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {
