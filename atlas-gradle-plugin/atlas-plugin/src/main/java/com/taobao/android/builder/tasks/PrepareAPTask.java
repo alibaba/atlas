@@ -327,9 +327,13 @@ public class PrepareAPTask extends BaseTask {
         if (null != apBaseFile && apBaseFile.exists()) {
             BetterZip.unzipDirectory(apBaseFile, getExplodedDir());
             extractBaseBundles();
+            // 预处理增量AndroidManifest.xml
+            ManifestFileUtils.updatePreProcessBaseManifestFile(FileUtils.join(explodedDir,
+                                                                              "manifest-modify",
+                                                                              ANDROID_MANIFEST_XML),
+                                                               new File(explodedDir, ANDROID_MANIFEST_XML));
         }
     }
-
 
     private File getApBaseFile(Project project) {
         File apBaseFile = null;
@@ -353,6 +357,7 @@ public class PrepareAPTask extends BaseTask {
         }
         return apBaseFile;
     }
+
     private void extractBaseBundles() throws IOException, DocumentException {
         Set<String> awbBundles = getAwbBundles();
         if (awbBundles != null) {
@@ -368,11 +373,6 @@ public class PrepareAPTask extends BaseTask {
                 FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
                                    new File(awbExplodedDir, "classes2.dex"));
             }
-            // 预处理增量AndroidManifest.xml
-            ManifestFileUtils.updatePreProcessBaseManifestFile(FileUtils.join(explodedDir,
-                                                                              "manifest-modify",
-                                                                              ANDROID_MANIFEST_XML),
-                                                               new File(explodedDir, ANDROID_MANIFEST_XML));
         }
     }
 
