@@ -315,26 +315,7 @@ public class PrepareAPTask extends BaseTask {
     @TaskAction
     void generate() throws IOException, DocumentException {
 
-        Project project = getProject();
-        File apBaseFile = null;
-
-        File apFile = getApFile();
-        if (null != apFile && apFile.exists()) {
-            apBaseFile = apFile;
-        } else {
-            String apDependency = getApDependency();
-            if (StringUtils.isNotBlank(apContext.getApDependency())) {
-                Dependency dependency = project.getDependencies().create(apDependency);
-                Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
-                configuration.setTransitive(false);
-                for (File file : configuration.getFiles()) {
-                    if (file.getName().endsWith(".ap")) {
-                        apBaseFile = file;
-                        break;
-                    }
-                }
-            }
-        }
+        File apBaseFile = getApBaseFile(getProject());
 
         if (null != apBaseFile && apBaseFile.exists()) {
             explodedDir = getExplodedDir();
@@ -361,6 +342,29 @@ public class PrepareAPTask extends BaseTask {
                                                                    new File(explodedDir, ANDROID_MANIFEST_XML));
             }
         }
+    }
+
+    private File getApBaseFile(Project project) {
+        File apBaseFile = null;
+
+        File apFile = getApFile();
+        if (null != apFile && apFile.exists()) {
+            apBaseFile = apFile;
+        } else {
+            String apDependency = getApDependency();
+            if (StringUtils.isNotBlank(apContext.getApDependency())) {
+                Dependency dependency = project.getDependencies().create(apDependency);
+                Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
+                configuration.setTransitive(false);
+                for (File file : configuration.getFiles()) {
+                    if (file.getName().endsWith(".ap")) {
+                        apBaseFile = file;
+                        break;
+                    }
+                }
+            }
+        }
+        return apBaseFile;
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {
