@@ -269,6 +269,8 @@ public class PrepareAPTask extends BaseTask {
 
     private Set<String> awbBundles;
 
+    private VariantContext variantContext;
+
     @InputFile
     @Optional
     @Nullable
@@ -316,6 +318,11 @@ public class PrepareAPTask extends BaseTask {
     void generate() throws IOException, DocumentException {
 
         File apBaseFile = getApBaseFile(getProject());
+
+        if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental() && apBaseFile == null
+            || !apBaseFile.isFile()) {
+            throw new IllegalStateException("apBaseFile is missing");
+        }
 
         if (null != apBaseFile && apBaseFile.exists()) {
             explodedDir = getExplodedDir();
@@ -397,6 +404,7 @@ public class PrepareAPTask extends BaseTask {
 
             variantContext.apContext.setApFile(tBuildType.getBaseApFile());
 
+            prepareAPTask.variantContext = variantContext;
             prepareAPTask.apContext = variantContext.apContext;
 
             File explodedDir = variantContext.getProject().file(
