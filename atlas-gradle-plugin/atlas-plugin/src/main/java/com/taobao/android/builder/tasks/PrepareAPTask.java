@@ -319,19 +319,22 @@ public class PrepareAPTask extends BaseTask {
 
         File apBaseFile = getApBaseFile(getProject());
 
-        if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental() && apBaseFile == null
-            || !apBaseFile.isFile()) {
+        boolean incremental = variantContext.getAtlasExtension().getTBuildConfig().isIncremental();
+        if (incremental && apBaseFile == null || !apBaseFile.isFile()) {
             throw new IllegalStateException("apBaseFile is missing");
         }
 
         if (null != apBaseFile && apBaseFile.exists()) {
+            File explodedDir = getExplodedDir();
             BetterZip.unzipDirectory(apBaseFile, getExplodedDir());
             extractBaseBundles();
-            // 预处理增量AndroidManifest.xml
-            ManifestFileUtils.updatePreProcessBaseManifestFile(FileUtils.join(explodedDir,
-                                                                              "manifest-modify",
-                                                                              ANDROID_MANIFEST_XML),
-                                                               new File(explodedDir, ANDROID_MANIFEST_XML));
+            if (incremental) {
+                // 预处理增量AndroidManifest.xml
+                ManifestFileUtils.updatePreProcessBaseManifestFile(FileUtils.join(explodedDir,
+                                                                                  "manifest-modify",
+                                                                                  ANDROID_MANIFEST_XML),
+                                                                   new File(explodedDir, ANDROID_MANIFEST_XML));
+            }
         }
     }
 
