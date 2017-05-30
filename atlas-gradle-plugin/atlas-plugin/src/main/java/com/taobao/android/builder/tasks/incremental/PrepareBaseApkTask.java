@@ -210,8 +210,7 @@ public class PrepareBaseApkTask extends IncrementalTask {
                                             .setFolders(new Supplier<Collection<File>>() {
                                                 @Override
                                                 public Collection<File> get() {
-                                                    return ImmutableList.of(
-                                                        variantContext.apContext.getBaseApkDirectory());
+                                                    return ImmutableList.of(variantContext.apContext.getBaseApkDirectory());
                                                 }
                                             })
                 // .setFolder(variantScope

@@ -364,6 +364,7 @@ public class PrepareAPTask extends BaseTask {
     private void extractBaseBundles() throws IOException, DocumentException {
         if (getAwbBundles() != null) {
             // 解压基线Bundle
+            File explodedDir = getExplodedDir();
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 String awbSoName = awbBundle.getAwbSoName();
                 File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
