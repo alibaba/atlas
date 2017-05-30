@@ -362,8 +362,7 @@ public class PrepareAPTask extends BaseTask {
     }
 
     private void extractBaseBundles() throws IOException, DocumentException {
-        Set<String> awbBundles = getAwbBundles();
-        if (awbBundles != null) {
+        if (getAwbBundles() != null) {
             // 解压基线Bundle
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 String awbSoName = awbBundle.getAwbSoName();

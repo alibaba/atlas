@@ -421,10 +421,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(TransformTask.class));
                 // 增量整包编译
-                if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && (
-                    appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                                                                                                   .getPatchConfig()
-                                                                                                   .isCreateTPatch())) {
+                if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
                     createIncrementalPrepareBaseApkTask(appVariantContext, mtlTaskContextList);
                 }
 
@@ -704,24 +701,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTask.ConfigAction.class, null));// .
         final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
         VariantScope variantScope = appVariantContext.getVariantData().getScope();
-
-        // create the stream generated from this task
-        variantScope.getTransformManager().addStream(OriginalStream.builder()
-                                                                   .addContentType(QualifiedContent.DefaultContentType.RESOURCES)
-                                                                   .addScope(QualifiedContent.Scope.PROJECT)
-                                                                   .setFolders(new Supplier<Collection<File>>() {
-                                                                       @Override
-                                                                       public Collection<File> get() {
-                                                                           return ImmutableList.of(new File(
-                                                                               appVariantContext.apContext.getBaseApk()
-                                                                               + "_"));
-                                                                       }
-                                                                   })
-                                                                   // .setFolder(variantScope
-                                                                   // .getSourceFoldersJavaResDestinationDir())
-                                                                   // .setDependency(processJavaResourcesTask
-                                                                   // .getName())
-                                                                   .build());
     }
 
     private void hookFastMultiDex(AppVariantContext appVariantContext) throws Exception {

@@ -2,13 +2,19 @@ package com.taobao.android.builder.tasks.incremental;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.QualifiedContent.DefaultContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.pipeline.OriginalStream;
+import com.android.build.gradle.internal.pipeline.OriginalStream.Builder;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
@@ -16,10 +22,14 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
 import com.android.ide.common.res2.FileStatus;
 import com.android.utils.FileUtils;
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.zip.BetterZip;
+import groovy.lang.Closure;
+import org.gradle.api.Project;
+import org.gradle.api.file.CopySpec;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputDirectory;
@@ -38,6 +48,7 @@ public class PrepareBaseApkTask extends IncrementalTask {
 
     private File outputDir;
 
+    private boolean createTPatch;
     // ----- PRIVATE TASK API -----
 
     @Override
@@ -51,12 +62,31 @@ public class PrepareBaseApkTask extends IncrementalTask {
         File baseApk = getBaseApk();
         File outputDir = getOutputDir();
         FileUtils.deleteDirectoryContents(outputDir);
-        BetterZip.unzipDirectory(baseApk, outputDir);
-        FileUtils.deleteDirectoryContents(FileUtils.join(outputDir, "META-INF/"));
+        Project project = getProject();
+        if (isCreateTPatch()) {
+            project.copy(new Closure(PrepareBaseApkTask.class) {
+                public Object doCall(CopySpec cs) {
+                    cs.from(project.zipTree(baseApk));
+                    cs.into(outputDir);
+                    cs.include("classes*.dex");
+
+                    return cs;
+                }
+            });
+        } else {
+            BetterZip.unzipDirectory(baseApk, outputDir);
+            FileUtils.deleteDirectoryContents(FileUtils.join(outputDir, "META-INF/"));
+        }
+
         int dexFilesCount = getDexFilesCount();
-        Set<File> baseDexFileSet = getProject().fileTree(
-            ImmutableMap.of("dir", outputDir, "includes", ImmutableList.of("classes*.dex"))).getFiles();
+
+        Set<File> baseDexFileSet = getProject().fileTree(ImmutableMap.of("dir",
+                                                                         outputDir,
+                                                                         "includes",
+                                                                         ImmutableList.of("classes*.dex"))).getFiles();
+
         File[] baseDexFiles = baseDexFileSet.toArray(new File[baseDexFileSet.size()]);
+
         int j = baseDexFileSet.size() + dexFilesCount;
         for (int i = baseDexFiles.length - 1; i >= 0; i--) {
             FileUtils.renameTo(baseDexFiles[i], new File(outputDir, "classes" + j + ".dex"));
@@ -89,6 +119,11 @@ public class PrepareBaseApkTask extends IncrementalTask {
 
     public void setOutputDir(File outputDir) {
         this.outputDir = outputDir;
+    }
+
+    @Input
+    public boolean isCreateTPatch() {
+        return createTPatch;
     }
 
     @Override
@@ -141,17 +176,22 @@ public class PrepareBaseApkTask extends IncrementalTask {
                     return variantContext.apContext.getBaseApk();
                 }
             });
+            Set<File> dexFolders = scope.getTransformManager().getPipelineOutput(StreamFilter.DEX).keySet();
             ConventionMappingHelper.map(prepareBaseApkTask, "dexFilesCount", new Callable<Integer>() {
                 @Override
                 public Integer call() {
                     int dexFilesCount = 0;
-                    Set<File> dexFolders = scope.getTransformManager().getPipelineOutput(StreamFilter.DEX).keySet();
                     // Preconditions.checkState(dexFolders.size() == 1,
                     //                          "There must be exactly one output");
                     for (File dexFolder : dexFolders) {
-                        dexFilesCount += scope.getGlobalScope().getProject().fileTree(
-                            ImmutableMap.of("dir", dexFolder, "includes", ImmutableList.of("classes*.dex"))).getFiles()
-                            .size();
+                        dexFilesCount += scope.getGlobalScope()
+                                              .getProject()
+                                              .fileTree(ImmutableMap.of("dir",
+                                                                        dexFolder,
+                                                                        "includes",
+                                                                        ImmutableList.of("classes*.dex")))
+                                              .getFiles()
+                                              .size();
                     }
                     return dexFilesCount;
                 }
@@ -163,6 +203,32 @@ public class PrepareBaseApkTask extends IncrementalTask {
                     return variantContext.apContext.getBaseApkDirectory();
                 }
             });
+
+            // create the stream generated from this task
+            Builder builder = OriginalStream.builder()
+                                            .addScope(Scope.PROJECT)
+                                            .setFolders(new Supplier<Collection<File>>() {
+                                                @Override
+                                                public Collection<File> get() {
+                                                    return ImmutableList.of(
+                                                        variantContext.apContext.getBaseApkDirectory());
+                                                }
+                                            })
+                // .setFolder(variantScope
+                // .getSourceFoldersJavaResDestinationDir())
+                // .setDependency(processJavaResourcesTask
+                // .getName())
+                ;
+            boolean createTPatch = variantContext.getBuildType() != null
+                                   && variantContext.getBuildType().getPatchConfig() != null
+                                   && variantContext.getBuildType().getPatchConfig().isCreateTPatch();
+            prepareBaseApkTask.createTPatch = createTPatch;
+            if (createTPatch) {
+                builder.addContentTypes(TransformManager.CONTENT_DEX);
+            } else {
+                builder.addContentType(DefaultContentType.RESOURCES);
+            }
+            scope.getTransformManager().addStream(builder.build());
         }
     }
 }
