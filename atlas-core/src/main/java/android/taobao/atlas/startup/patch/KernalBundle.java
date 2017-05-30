@@ -208,20 +208,12 @@
 
 package android.taobao.atlas.startup.patch;
 
-import android.app.Application;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
-import android.os.Build;
-import android.os.Process;
-import android.taobao.atlas.startup.KernalVersionManager;
-import android.taobao.atlas.startup.NClassLoader;
-import android.text.TextUtils;
-import android.util.Log;
-import android.widget.Toast;
-import dalvik.system.DexFile;
-import dalvik.system.PathClassLoader;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -229,6 +221,19 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.os.Build;
+import android.taobao.atlas.startup.KernalVersionManager;
+import android.taobao.atlas.startup.NClassLoader;
+import android.text.TextUtils;
+import android.util.Log;
+import android.widget.Toast;
+import dalvik.system.DexFile;
+import dalvik.system.PathClassLoader;
 
 /**
  * Created by guanjie on 15/6/4.
@@ -308,7 +313,7 @@ public class KernalBundle{
                     Method loadDexMethod = AndroidRuntimeClass.getDeclaredMethod("loadDex",Context.class,String.class,String.class,int.class,boolean.class);
                     DexFile dexFile = (DexFile) loadDexMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext,patchFile.getAbsolutePath(),
                             new File(patchFile.getParent(),"patch.dex").getAbsolutePath(),0,true);
-                    bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(),patchFile,new DexFile[]{dexFile},null);
+                    bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(),patchFile,new DexFile[]{dexFile},null,true);
                     bundle.replacePathClassLoaderIfNeed(application);
                     Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
                     DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
@@ -576,6 +581,11 @@ public class KernalBundle{
     }
 
     public boolean installKernalBundle(ClassLoader updateClassLoader,File archiveFile, DexFile[] odexFiles,File libraryDirectory) throws IOException, NoSuchFieldException, IllegalAccessException {
+        return installKernalBundle(updateClassLoader,archiveFile,odexFiles,libraryDirectory,false);
+    }
+
+
+    public boolean installKernalBundle(ClassLoader updateClassLoader,File archiveFile, DexFile[] odexFiles,File libraryDirectory,boolean vmSafeMode) throws IOException, NoSuchFieldException, IllegalAccessException {
         Object[] element = null;
         boolean success = false;
         try {
@@ -589,7 +599,7 @@ public class KernalBundle{
                 }
 
                 //增加kernal bundle
-                if (Build.VERSION.SDK_INT > 20) {
+                if (Build.VERSION.SDK_INT > 20 && !vmSafeMode) {
                      success = replaceElement(dexPathList, "dexElements", element[0]);
                     if(!success){
                         throw new IOException("replaceElement failed");
