@@ -27,7 +27,6 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.utils.ILogger;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.tasks.awo.utils.AwoInstaller;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.command.CommandExecutor;
 import com.taobao.android.builder.tools.command.ExecutionException;
@@ -110,12 +109,17 @@ public class IncrementalInstallVariantTask extends BaseTask {
         }
         if (mainDexFile != null) {
             installPatch(mainDexFile, "com.taobao.maindex");
-            AwoInstaller.installAwoSo(getBuilder(),
-                                      mainDexFile,
-                                      getAppPackageName(),
-                                      getLogger(),
-                                      "libcom_taobao_maindex.so");
+            // AwoInstaller.installAwoSo(getBuilder(),
+            //                           mainDexFile,
+            //                           getAppPackageName(),
+            //                           getLogger(),
+            //                           "libcom_taobao_maindex.so");
         }
+        runCommand(Arrays.asList("shell", "am force-stop " + getAppPackageName()));
+        runCommand(Arrays.asList("shell",
+                                 "monkey" + " -p " + getAppPackageName() + " -c android.intent.category.LAUNCHER 1"));
+        // runCommand(Arrays.asList("shell" ,"am start" + " -n " + getAppPackageName() + " -a android.intent.action.MAIN"
+        //                          + " -c android.intent.category.LAUNCHER"));
         if (successfulInstallCount == 0) {
             throw new GradleException("Failed to install on any devices.");
         } else {
@@ -141,11 +145,15 @@ public class IncrementalInstallVariantTask extends BaseTask {
 
         String PATCH_INSTALL_DIRECTORY = PATCH_INSTALL_DIRECTORY_PREFIX + getAppPackageName()
                                          + PATCH_INSTALL_DIRECTORY_SUFFIX;
+        List<String> cmd = Arrays.asList("push", patch.getAbsolutePath(), PATCH_INSTALL_DIRECTORY + name + PATCH_NAME);
+        return runCommand(cmd);
+    }
+
+    private boolean runCommand(List<String> cmd) {
         CommandExecutor executor = CommandExecutor.Factory.createDefaultCommmandExecutor();
         executor.setLogger(getLogger());
         executor.setCaptureStdOut(true);
         executor.setCaptureStdErr(true);
-        List<String> cmd = Arrays.asList("push", patch.getAbsolutePath(), PATCH_INSTALL_DIRECTORY + name + PATCH_NAME);
         try {
             executor.executeCommand(getAdbExe().getAbsolutePath(), cmd, false);
             return true;
@@ -297,8 +305,7 @@ public class IncrementalInstallVariantTask extends BaseTask {
                     return getAppVariantOutputContext().getApkOutputFile(true);
                 }
             });
-            ConventionMappingHelper.map(incrementalInstallVariantTask,
-                                        "awbApkFiles",
+            ConventionMappingHelper.map(incrementalInstallVariantTask, "awbApkFiles",
                                         appVariantContext::getAwbApkFiles);
         }
     }
