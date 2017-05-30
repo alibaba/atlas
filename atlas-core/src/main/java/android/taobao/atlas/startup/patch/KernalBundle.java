@@ -313,7 +313,8 @@ public class KernalBundle{
                     Method loadDexMethod = AndroidRuntimeClass.getDeclaredMethod("loadDex",Context.class,String.class,String.class,int.class,boolean.class);
                     DexFile dexFile = (DexFile) loadDexMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext,patchFile.getAbsolutePath(),
                             new File(patchFile.getParent(),"patch.dex").getAbsolutePath(),0,true);
-                    bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(),patchFile,new DexFile[]{dexFile},null,true);
+                    bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(), patchFile, new DexFile[]{dexFile}, null,
+                                               (app_info.flags & ApplicationInfo.FLAG_VM_SAFE_MODE) != 0);
                     bundle.replacePathClassLoaderIfNeed(application);
                     Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
                     DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
