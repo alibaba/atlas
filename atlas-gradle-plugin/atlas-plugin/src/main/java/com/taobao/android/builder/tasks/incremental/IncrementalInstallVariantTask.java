@@ -25,6 +25,7 @@ import com.android.builder.testing.api.DeviceProvider;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.utils.ILogger;
+import com.google.common.collect.Iterables;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
@@ -100,14 +101,27 @@ public class IncrementalInstallVariantTask extends BaseTask {
         }
         successfulInstallCount = 1;
         setAdbInitialized(true);
+        DeviceConnector device = Iterables.getOnlyElement(devices);
         File mainDexFile = getMainDexFile();
         Collection<File> awbApkFiles = getAwbApkFiles();
         if (awbApkFiles != null) {
             for (File awbApkFile : awbApkFiles) {
+                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}",
+                                      awbApkFile,
+                                      device.getName(),
+                                      projectName,
+                                      variantName);
+
                 installPatch(awbApkFile, getAwbPackageName(awbApkFile));
             }
         }
         if (mainDexFile != null) {
+            getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}",
+                                  mainDexFile,
+                                  device.getName(),
+                                  projectName,
+                                  variantName);
+
             installPatch(mainDexFile, "com.taobao.maindex");
             // AwoInstaller.installAwoSo(getBuilder(),
             //                           mainDexFile,
