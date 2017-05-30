@@ -116,6 +116,7 @@ public class IncrementalInstallVariantTask extends BaseTask {
             }
         }
         if (mainDexFile != null) {
+
             getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}",
                                   mainDexFile,
                                   device.getName(),
@@ -129,6 +130,11 @@ public class IncrementalInstallVariantTask extends BaseTask {
             //                           getLogger(),
             //                           "libcom_taobao_maindex.so");
         }
+        getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}",
+                              getAppPackageName(),
+                              device.getName(),
+                              projectName,
+                              variantName);
         runCommand(Arrays.asList("shell", "am force-stop " + getAppPackageName()));
         runCommand(Arrays.asList("shell",
                                  "monkey" + " -p " + getAppPackageName() + " -c android.intent.category.LAUNCHER 1"));
@@ -319,7 +325,8 @@ public class IncrementalInstallVariantTask extends BaseTask {
                     return getAppVariantOutputContext().getApkOutputFile(true);
                 }
             });
-            ConventionMappingHelper.map(incrementalInstallVariantTask, "awbApkFiles",
+            ConventionMappingHelper.map(incrementalInstallVariantTask,
+                                        "awbApkFiles",
                                         appVariantContext::getAwbApkFiles);
         }
     }
