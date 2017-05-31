@@ -375,6 +375,9 @@ public class AtlasDependencyManager extends DependencyManager {
             }
         }
         if (apDependencies != null) {
+            if (!apDependencies.isMainLibrary(moduleVersion.getModule())) {
+                return true;
+            }
             if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                 return true;
             }
