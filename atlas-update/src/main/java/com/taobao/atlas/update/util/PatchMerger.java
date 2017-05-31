@@ -157,6 +157,9 @@ public class PatchMerger {
      * @return
      */
     public File findOriginalBundleFile(String bundleName, String bundleDirIfNeedCreate, UpdateInfo.Item item) throws IOException {
+        if("com.taobao.dynamic.test".equals(bundleName)){
+            return getOriginalBundleFromApk(bundleName,bundleDirIfNeedCreate);
+        }
         if (bundleName.equals(MAIN_DEX)){
             if(!updateInfo.dexPatch) {
                 return new File(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
