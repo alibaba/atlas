@@ -322,11 +322,7 @@ public class ProguardTest {
         files.add(0,file);
         System.out.println(1111);
 
-
-
         Configuration configuration = new Configuration();
-
-
 
         for (File f : files) {
 

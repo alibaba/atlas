@@ -251,7 +251,7 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
-    public static final String CACHE_TYPE = "proguard-bundles-v1.10";
+    public static final String CACHE_TYPE = "proguard-bundles-0.01";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
 
@@ -378,6 +378,10 @@ public class BundleProguarder {
             FileUtils.copyFileToDirectory(keepJson, awbProguardDir);
             if (proguardCfg.exists()) {
                 FileUtils.copyFileToDirectory(proguardCfg,
+                                              awbProguardDir);
+            }
+            if (usageCfg.exists()) {
+                FileUtils.copyFileToDirectory(usageCfg,
                                               awbProguardDir);
             }
 
