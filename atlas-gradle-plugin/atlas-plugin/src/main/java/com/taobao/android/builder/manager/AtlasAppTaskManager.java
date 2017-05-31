@@ -302,6 +302,7 @@ import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
 import com.taobao.android.builder.tasks.incremental.IncrementalInstallVariantTask;
+import com.taobao.android.builder.tasks.incremental.PreIncrementalInstallVariantTask;
 import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
@@ -674,11 +675,14 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                                                        new IncrementalInstallVariantTask.ConfigAction(
                                                                                                            appVariantContext,
                                                                                                            vod));
+
+        AndroidTask<PreIncrementalInstallVariantTask> preIncrementalInstallVariantTask = androidTasks.create(tasks,
+                                                                                                             new PreIncrementalInstallVariantTask.ConfigAction(
+                                                                                                                 appVariantContext,
+                                                                                                                 vod));
+        incrementalInstallVariantTask.dependsOn(tasks, preIncrementalInstallVariantTask);
         incrementalInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().
-
-            getPackageApplicationTask().
-
-                                                                             getName());
+            getPackageApplicationTask().getName());
     }
 
     private boolean isLegacyMultidexMode(@NonNull VariantScope variantScope) {
