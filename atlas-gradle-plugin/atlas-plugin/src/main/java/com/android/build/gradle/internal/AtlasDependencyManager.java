@@ -363,9 +363,22 @@ public class AtlasDependencyManager extends DependencyManager {
     protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
                                         ModuleVersionIdentifier moduleVersion, List<ResolvedArtifact> moduleArtifacts,
                                         ResolvedComponentResult resolvedComponentResult) {
-        return super.checkForExclusion(configDependencies, moduleVersion, moduleArtifacts, resolvedComponentResult) || (
-            apDependencies != null && apDependencies.hasSameResolvedDependency(moduleVersion)
-            && !(resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) && moduleArtifacts != null
-            && !Iterables.getOnlyElement(moduleArtifacts).getType().equals("awb"));
+        if (super.checkForExclusion(configDependencies, moduleVersion, moduleArtifacts, resolvedComponentResult)) {
+            return true;
+        }
+        if (!(resolvedComponentResult.getId() instanceof ProjectComponentIdentifier)) {
+            return false;
+        }
+        if (moduleArtifacts != null) {
+            if (!Iterables.getOnlyElement(moduleArtifacts).getType().equals("awb")) {
+                return false;
+            }
+        }
+        if (apDependencies != null) {
+            if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
