@@ -12,6 +12,7 @@
     * [awo编译](guide-for-use/guide_for_compile.md)
 * [动态部署](update/README.md)
     * [技术原理](update/principle.md)
+    * [dexpatch](update/dexpatch.md)
     * [一些限制](update/guide.md)
 * FAQ
 	 * [gradle配置](atlas_gradle_apk/atlas_atlas_gradle_apk.md)

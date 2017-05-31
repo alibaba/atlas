@@ -271,7 +271,7 @@ public class DelegateResources extends Resources {
             }
 
         }
-        if(result==null){
+        if(result==null && exception!=null){
             throw exception;
         }
         return result;
@@ -292,7 +292,7 @@ public class DelegateResources extends Resources {
             }
 
         }
-        if(result==null){
+        if(result==null && exception!=null){
             throw exception;
         }
         return result;
