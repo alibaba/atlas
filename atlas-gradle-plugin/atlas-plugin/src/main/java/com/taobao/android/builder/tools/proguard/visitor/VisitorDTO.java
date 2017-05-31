@@ -217,8 +217,10 @@ import java.util.Set;
 import com.taobao.android.builder.tools.proguard.domain.ClazzRefInfo;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import proguard.classfile.ClassConstants;
 import proguard.classfile.ClassPool;
 import proguard.classfile.Clazz;
+import proguard.classfile.LibraryClass;
 
 /**
  * Created by wuzhong on 2017/5/27.
@@ -235,8 +237,10 @@ public class VisitorDTO {
      */
     public ClassPool currentClassPool;
 
+    public Set<String> abstractClasses = new HashSet<>();
+
     /**
-     * 当前 classpool 下所有类的结构，其中 super 执行的是 library 的类
+     * 当前 classpool 下所有类的结构，其中 super 指向的是 library 的类
      */
     public Map<String, ClassStruct> classStructMap = new HashMap<>();
 
@@ -259,15 +263,22 @@ public class VisitorDTO {
      * @return
      */
     public String findRootLibClazz(Clazz programClass) {
-        String className = programClass.getSuperName();
-        if (this.defaultClasses.contains(className) || className.contains("[")) {
+        Clazz superClass = programClass.getSuperClass();
+        if (null == superClass){
             return "";
         }
-        Clazz clazzInPool = currentClassPool.getClass(className);
-        if (null == clazzInPool) {
-            return className;
+        if(superClass instanceof LibraryClass){
+            LibraryClass libraryClass = (LibraryClass)superClass;
+            String className = libraryClass.getName();
+            if (isLibClazz(className)){
+                if ((libraryClass.getAccessFlags() & ClassConstants.ACC_ABSTRACT) == ClassConstants.ACC_ABSTRACT){
+                    abstractClasses.add(className);
+                }
+                return className;
+            }
+            return "";
         }
-        return findRootLibClazz(clazzInPool);
+        return findRootLibClazz(superClass);
     }
 
     public String findRootLibClazz(String className) {
@@ -331,8 +342,12 @@ public class VisitorDTO {
 
     public void addSuperRefInfo() {
         for (ClassStruct classStruct : classStructMap.values()) {
-            if (StringUtils.isNotEmpty(classStruct.libClazzName)) {
-                getClazzRefInfoByName(classStruct.libClazzName).setNeedExtend(true);
+            if (StringUtils.isNotEmpty(classStruct.superClazzName)) {
+                if (abstractClasses.contains(classStruct.superClazzName)){
+                    getClazzRefInfoByName(classStruct.superClazzName).setKeepAll(true);
+                }else {
+                    getClazzRefInfoByName(classStruct.superClazzName).setNeedExtend(true);
+                }
             }
             for (String inter : classStruct.libInterfaces) {
                 getClazzRefInfoByName(inter).setKeepAll(true);
@@ -342,7 +357,9 @@ public class VisitorDTO {
 
     public static class ClassStruct {
 
-        public String libClazzName;
+        public String superAbsClazzName;
+
+        public String superClazzName;
 
         public Set<String> libInterfaces = new HashSet<>();
 

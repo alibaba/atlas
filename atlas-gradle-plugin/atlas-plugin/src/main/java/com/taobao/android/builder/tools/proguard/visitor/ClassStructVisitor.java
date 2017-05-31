@@ -272,13 +272,11 @@ public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVi
             return;
         }
         ClassStruct classStruct = getOrCreateClassStruct(programClass);
-        classStruct.libClazzName = superName;
-
+        classStruct.superClazzName = superName;
     }
 
     @Override
     public void visitProgramField(ProgramClass programClass, ProgramField programField) {
-
         LibraryClazzInfo libraryClazzInfo = getOrCreateLibraryClazzInfo(programClass);
         if (null != libraryClazzInfo) {
             libraryClazzInfo.appFields.add(programField.getName(programClass));
