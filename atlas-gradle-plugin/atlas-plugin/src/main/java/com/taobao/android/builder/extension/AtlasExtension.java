@@ -212,7 +212,6 @@ package com.taobao.android.builder.extension;
 import com.android.annotations.NonNull;
 import com.taobao.android.builder.extension.annotation.Config;
 import com.taobao.android.builder.extension.annotation.ConfigGroup;
-
 import com.taobao.android.builder.extension.factory.MultiDexConfigFactory;
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
@@ -233,7 +232,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     @ConfigGroup(order = 12, advance = false)
     public NamedDomainObjectContainer<PatchConfig> patchConfigs;
 
-    public NamedDomainObjectContainer<DexConfig>dexConfigs;
+    public NamedDomainObjectContainer<DexConfig> dexConfigs;
 
     public BundleConfig bundleConfig;
 
@@ -254,11 +253,10 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     public AtlasExtension() {
     }
 
-    public AtlasExtension(@NonNull final ProjectInternal project,
-                          @NonNull Instantiator instantiator,
+    public AtlasExtension(@NonNull final ProjectInternal project, @NonNull Instantiator instantiator,
                           @NonNull NamedDomainObjectContainer<T> buildTypes,
                           @NonNull NamedDomainObjectContainer<PatchConfig> patchConfigs,
-                          @NonNull NamedDomainObjectContainer<DexConfig>dexConfigs) {
+                          @NonNull NamedDomainObjectContainer<DexConfig> dexConfigs) {
 
         logger = Logging.getLogger(this.getClass());
         this.project = project;
@@ -266,10 +264,10 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         this.patchConfigs = patchConfigs;
         this.dexConfigs = dexConfigs;
         this.buildTypes = buildTypes;
-        this.multiDexConfigs = project.container(MultiDexConfig.class, new MultiDexConfigFactory(
-            instantiator,project, project.getLogger()));
+        this.multiDexConfigs = project.container(MultiDexConfig.class,
+                                                 new MultiDexConfigFactory(instantiator, project, project.getLogger()));
 
-        tBuildConfig = (Z) instantiator.newInstance(TBuildConfig.class);
+        tBuildConfig = (Z)instantiator.newInstance(TBuildConfig.class);
         manifestOptions = instantiator.newInstance(ManifestOptions.class);
         bundleConfig = instantiator.newInstance(BundleConfig.class);
     }
@@ -286,7 +284,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         action.execute(tBuildConfig);
     }
 
-    public void dexConfigs(Action<? super NamedDomainObjectContainer<DexConfig>>action){
+    public void dexConfigs(Action<? super NamedDomainObjectContainer<DexConfig>> action) {
         action.execute(dexConfigs);
     }
 
@@ -321,7 +319,8 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     public TBuildConfig getTBuildConfig() {
         return tBuildConfig;
     }
-    public NamedDomainObjectContainer<DexConfig> getDexConfig(){
+
+    public NamedDomainObjectContainer<DexConfig> getDexConfig() {
         return dexConfigs;
     }
 
@@ -340,12 +339,12 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     public Project getProject() {
         return project;
     }
+
     public NamedDomainObjectContainer<MultiDexConfig> getMultiDexConfigs() {
         return multiDexConfigs;
     }
 
-    public void setMultiDexConfigs(
-        NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs) {
+    public void setMultiDexConfigs(NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs) {
         this.multiDexConfigs = multiDexConfigs;
     }
 }

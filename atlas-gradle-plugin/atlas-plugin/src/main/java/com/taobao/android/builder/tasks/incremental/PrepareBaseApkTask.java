@@ -80,17 +80,20 @@ public class PrepareBaseApkTask extends IncrementalTask {
 
         int dexFilesCount = getDexFilesCount();
 
-        Set<File> baseDexFileSet = getProject().fileTree(ImmutableMap.of("dir",
-                                                                         outputDir,
-                                                                         "includes",
-                                                                         ImmutableList.of("classes*.dex"))).getFiles();
+        if (dexFilesCount > 0) {
+            Set<File> baseDexFileSet = getProject().fileTree(ImmutableMap.of("dir",
+                                                                             outputDir,
+                                                                             "includes",
+                                                                             ImmutableList.of("classes*.dex")))
+                                                   .getFiles();
 
-        File[] baseDexFiles = baseDexFileSet.toArray(new File[baseDexFileSet.size()]);
+            File[] baseDexFiles = baseDexFileSet.toArray(new File[baseDexFileSet.size()]);
 
-        int j = baseDexFileSet.size() + dexFilesCount;
-        for (int i = baseDexFiles.length - 1; i >= 0; i--) {
-            FileUtils.renameTo(baseDexFiles[i], new File(outputDir, "classes" + j + ".dex"));
-            j--;
+            int j = baseDexFileSet.size() + dexFilesCount;
+            for (int i = baseDexFiles.length - 1; i >= 0; i--) {
+                FileUtils.renameTo(baseDexFiles[i], new File(outputDir, "classes" + j + ".dex"));
+                j--;
+            }
         }
     }
 
