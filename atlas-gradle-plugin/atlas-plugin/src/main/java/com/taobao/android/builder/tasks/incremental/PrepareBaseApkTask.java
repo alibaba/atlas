@@ -14,7 +14,6 @@ import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.OriginalStream.Builder;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
-import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
@@ -179,10 +178,10 @@ public class PrepareBaseApkTask extends IncrementalTask {
                     return variantContext.apContext.getBaseApk();
                 }
             });
-            Set<File> dexFolders = scope.getTransformManager().getPipelineOutput(StreamFilter.DEX).keySet();
             ConventionMappingHelper.map(prepareBaseApkTask, "dexFilesCount", new Callable<Integer>() {
                 @Override
                 public Integer call() {
+                    Set<File> dexFolders = scope.getTransformManager().getPipelineOutput(StreamFilter.DEX).keySet();
                     int dexFilesCount = 0;
                     // Preconditions.checkState(dexFolders.size() == 1,
                     //                          "There must be exactly one output");
@@ -225,11 +224,11 @@ public class PrepareBaseApkTask extends IncrementalTask {
                                    && variantContext.getBuildType().getPatchConfig() != null
                                    && variantContext.getBuildType().getPatchConfig().isCreateTPatch();
             prepareBaseApkTask.createTPatch = createTPatch;
-            if (createTPatch) {
-                builder.addContentTypes(TransformManager.CONTENT_DEX);
-            } else {
-                builder.addContentType(DefaultContentType.RESOURCES);
-            }
+            // if (createTPatch) {
+            // builder.addContentTypes(TransformManager.CONTENT_DEX);
+            // } else {
+            builder.addContentType(DefaultContentType.RESOURCES);
+            // }
             scope.getTransformManager().addStream(builder.build());
         }
     }
