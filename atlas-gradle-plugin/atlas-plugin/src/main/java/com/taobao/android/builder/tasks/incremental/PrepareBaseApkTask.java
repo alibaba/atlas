@@ -220,10 +220,17 @@ public class PrepareBaseApkTask extends IncrementalTask {
                 // .setDependency(processJavaResourcesTask
                 // .getName())
                 ;
-            boolean createTPatch = variantContext.getBuildType() != null
-                                   && variantContext.getBuildType().getPatchConfig() != null
-                                   && variantContext.getBuildType().getPatchConfig().isCreateTPatch();
-            prepareBaseApkTask.createTPatch = createTPatch;
+            // prepareBaseApkTask.createTPatch = createTPatch;
+            ConventionMappingHelper.map(prepareBaseApkTask, "createTPatch", new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return variantContext.getBuildType() != null
+                           && variantContext.getBuildType().getPatchConfig() != null && variantContext.getBuildType()
+                                                                                                      .getPatchConfig()
+                                                                                                      .isCreateTPatch();
+                }
+            });
+
             // if (createTPatch) {
             // builder.addContentTypes(TransformManager.CONTENT_DEX);
             // } else {
