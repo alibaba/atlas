@@ -224,6 +224,7 @@ import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
 import com.android.builder.model.MavenCoordinates;
 import com.android.utils.ILogger;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -460,10 +461,21 @@ public class DependencyResolver {
     private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion,
                                       List<ResolvedArtifact> moduleArtifacts,
                                       ResolvedComponentResult resolvedComponentResult) {
-        if (configDependencies.getChecker().checkForExclusion(moduleVersion) || (apDependencies != null
-                                                                                 && apDependencies.hasSameResolvedDependency(
-            moduleVersion) && !(resolvedComponentResult.getId() instanceof ProjectComponentIdentifier))) {
+        if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
             return true;
+        }
+        if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
+            return false;
+        }
+        if (moduleArtifacts != null) {
+            if (Iterables.getOnlyElement(moduleArtifacts).getType().equals("awb")) {
+                return false;
+            }
+        }
+        if (apDependencies != null) {
+            if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
+                return true;
+            }
         }
         return false;
     }
