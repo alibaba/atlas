@@ -62,7 +62,8 @@ public class PrepareBaseApkTask extends IncrementalTask {
         File outputDir = getOutputDir();
         FileUtils.deleteDirectoryContents(outputDir);
         Project project = getProject();
-        if (isCreateTPatch()) {
+        int dexFilesCount = getDexFilesCount();
+        if (isCreateTPatch() && dexFilesCount > 0) {
             project.copy(new Closure(PrepareBaseApkTask.class) {
                 public Object doCall(CopySpec cs) {
                     cs.from(project.zipTree(baseApk));
@@ -76,8 +77,6 @@ public class PrepareBaseApkTask extends IncrementalTask {
             BetterZip.unzipDirectory(baseApk, outputDir);
             FileUtils.deleteDirectoryContents(FileUtils.join(outputDir, "META-INF/"));
         }
-
-        int dexFilesCount = getDexFilesCount();
 
         if (dexFilesCount > 0) {
             Set<File> baseDexFileSet = getProject().fileTree(ImmutableMap.of("dir",
