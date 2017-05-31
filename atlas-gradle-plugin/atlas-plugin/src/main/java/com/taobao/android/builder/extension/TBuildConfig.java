@@ -297,7 +297,7 @@ public class TBuildConfig {
     @Deprecated
     private Set<String> insideOfApkBundles = Sets.newHashSet();
 
-    private boolean incremental = false;
+    private boolean incremental = true;
 
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;

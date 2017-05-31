@@ -245,7 +245,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     //如果atlas开关开启了，自动会打开一些默认的开关
     @Config(title = "是否启用atlas", message = "是否启用atlas , true/false", order = 0, group = "atlas")
-    private boolean atlasEnabled;
+    private boolean atlasEnabled = true;
 
     protected Project project;
 
