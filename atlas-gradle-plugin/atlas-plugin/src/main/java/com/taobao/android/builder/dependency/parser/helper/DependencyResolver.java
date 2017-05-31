@@ -336,8 +336,9 @@ public class DependencyResolver {
                                    Multimap<String, ResolvedDependencyInfo> dependenciesMap,
                                    Set<String> resolvedDependencies) {
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
+        List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
 
-        if (checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult)) {
+        if (checkForExclusion(configDependencies, moduleVersion, moduleArtifacts, resolvedComponentResult)) {
             return;
         }
 
@@ -347,7 +348,6 @@ public class DependencyResolver {
         }
 
         // now loop on all the artifact for this modules.
-        List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
 
         ComponentIdentifier id = resolvedComponentResult.getId();
         String gradlePath = (id instanceof ProjectComponentIdentifier)
@@ -458,6 +458,7 @@ public class DependencyResolver {
     }
 
     private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion,
+                                      List<ResolvedArtifact> moduleArtifacts,
                                       ResolvedComponentResult resolvedComponentResult) {
         if (configDependencies.getChecker().checkForExclusion(moduleVersion) || (apDependencies != null
                                                                                  && apDependencies.hasSameResolvedDependency(

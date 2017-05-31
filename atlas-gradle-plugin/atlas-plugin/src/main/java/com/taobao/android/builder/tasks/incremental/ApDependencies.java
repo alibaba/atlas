@@ -227,6 +227,7 @@ import org.apache.commons.io.IOUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.DefaultVersionComparator;
@@ -322,6 +323,10 @@ public class ApDependencies /*extends BaseTask*/ {
 
     public boolean isMainLibrary(ModuleIdentifier moduleIdentifier) {
         return mMainDependenciesMap.containsKey(moduleIdentifier);
+    }
+
+    public boolean hasSameResolvedDependency(ResolvedArtifact artifact) {
+        return hasSameResolvedDependency(artifact.getModuleVersion().getId());
     }
 
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {

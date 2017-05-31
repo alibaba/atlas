@@ -211,6 +211,7 @@ package com.android.build.gradle.internal;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.alibaba.fastjson.JSON;
@@ -233,6 +234,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedComponentResult;
 import org.slf4j.Logger;
@@ -359,9 +361,9 @@ public class AtlasDependencyManager extends DependencyManager {
 
     @Override
     protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
-                                        ModuleVersionIdentifier moduleVersion,
+                                        ModuleVersionIdentifier moduleVersion, List<ResolvedArtifact> moduleArtifacts,
                                         ResolvedComponentResult resolvedComponentResult) {
-        return super.checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult) || (
+        return super.checkForExclusion(configDependencies, moduleVersion,moduleArtifacts, resolvedComponentResult) || (
             apDependencies != null && apDependencies.hasSameResolvedDependency(moduleVersion)
             && !(resolvedComponentResult.getId() instanceof ProjectComponentIdentifier));
     }

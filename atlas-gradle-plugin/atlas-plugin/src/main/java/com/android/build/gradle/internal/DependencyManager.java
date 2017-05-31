@@ -286,59 +286,59 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
  * A manager to resolve configuration dependencies.
- *
- *  1. not warning awb & solib
- *  2. public apis
- *  3. jar 依赖aar 的检查
- *
+ * 1. not warning awb & solib
+ * 2. public apis
+ * 3. jar 依赖aar 的检查
  */
 public class DependencyManager {
 
     private static final boolean DEBUG_DEPENDENCY = false;
+
     private static final String EXPLODED_AAR = "exploded-aar";
+
     private final Project project;
+
     private final ExtraModelInfo extraModelInfo;
+
     private final ILogger logger;
+
     private final SdkHandler sdkHandler;
-    private SdkLibData sdkLibData =  SdkLibData.dontDownload();
+
+    private SdkLibData sdkLibData = SdkLibData.dontDownload();
+
     private boolean repositoriesUpdated = false;
 
     private final Map<String, PrepareLibraryTask> prepareLibTaskMap = Maps.newHashMap();
 
-    public DependencyManager(
-            @NonNull Project project,
-            @NonNull ExtraModelInfo extraModelInfo,
-            @NonNull SdkHandler sdkHandler) {
+    public DependencyManager(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo,
+                             @NonNull SdkHandler sdkHandler) {
         this.project = project;
         this.extraModelInfo = extraModelInfo;
         this.sdkHandler = sdkHandler;
         logger = new LoggerWrapper(Logging.getLogger(DependencyManager.class));
     }
 
-    public void addDependenciesToPrepareTask(
-            @NonNull TaskFactory tasks,
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull AndroidTask<PrepareDependenciesTask> prepareDependenciesTask) {
+    public void addDependenciesToPrepareTask(@NonNull TaskFactory tasks,
+                                             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+                                             @NonNull AndroidTask<PrepareDependenciesTask> prepareDependenciesTask) {
         VariantDependencies variantDeps = variantData.getVariantDependency();
 
         final AndroidTask<DefaultTask> preBuildTask = variantData.getScope().getPreBuildTask();
 
-        final ImmutableList<AndroidDependency> compileLibraries = variantDeps
-                .getCompileDependencies().getAllAndroidDependencies();
-        final ImmutableList<AndroidDependency> packageLibraries = variantDeps
-                .getPackageDependencies().getAllAndroidDependencies();
-
+        final ImmutableList<AndroidDependency> compileLibraries = variantDeps.getCompileDependencies()
+                                                                             .getAllAndroidDependencies();
+        final ImmutableList<AndroidDependency> packageLibraries = variantDeps.getPackageDependencies()
+                                                                             .getAllAndroidDependencies();
 
         // gather all the libraries first, then make the task depend on the list in a single
         // pass.
-        List<PrepareLibraryTask> prepareLibraryTasks = Lists
-                .newArrayListWithCapacity(compileLibraries.size() + packageLibraries.size());
+        List<PrepareLibraryTask> prepareLibraryTasks = Lists.newArrayListWithCapacity(
+            compileLibraries.size() + packageLibraries.size());
 
         for (AndroidDependency dependency : Iterables.concat(compileLibraries, packageLibraries)) {
             // skip sub-module since we don't extract them anymore.
             if (dependency.getProjectPath() == null) {
-                PrepareLibraryTask prepareLibTask = prepareLibTaskMap
-                        .get(dependency.getCoordinates().toString());
+                PrepareLibraryTask prepareLibTask = prepareLibTaskMap.get(dependency.getCoordinates().toString());
                 if (prepareLibTask != null) {
                     prepareLibraryTasks.add(prepareLibTask);
                     prepareLibTask.dependsOn(preBuildTask.getName());
@@ -351,9 +351,8 @@ public class DependencyManager {
         }
     }
 
-    public Set<AndroidDependency> resolveDependencies(
-            @NonNull VariantDependencies variantDeps,
-            @Nullable String testedProjectPath) {
+    public Set<AndroidDependency> resolveDependencies(@NonNull VariantDependencies variantDeps,
+                                                      @Nullable String testedProjectPath) {
         // set of Android Libraries to explode. This only concerns remote libraries, as modules
         // are now used through their staging folders rather than their bundled AARs.
         // Therefore there is no dependency on these exploded tasks since remote AARs are
@@ -362,15 +361,12 @@ public class DependencyManager {
         // an identity set.
         Set<AndroidDependency> libsToExplode = Sets.newIdentityHashSet();
 
-        resolveDependencies(
-                variantDeps,
-                testedProjectPath,
-                libsToExplode);
+        resolveDependencies(variantDeps, testedProjectPath, libsToExplode);
         return libsToExplode;
     }
 
     public void processLibraries(@NonNull Set<AndroidDependency> libsToExplode) {
-        for (AndroidDependency lib: libsToExplode) {
+        for (AndroidDependency lib : libsToExplode) {
             maybeCreatePrepareLibraryTask(lib, project);
         }
     }
@@ -383,9 +379,8 @@ public class DependencyManager {
      * @param project the project
      * @return the prepare task.
      */
-    private PrepareLibraryTask maybeCreatePrepareLibraryTask(
-            @NonNull AndroidDependency library,
-            @NonNull Project project) {
+    private PrepareLibraryTask maybeCreatePrepareLibraryTask(@NonNull AndroidDependency library,
+                                                             @NonNull Project project) {
         if (library.isSubModule()) {
             throw new RuntimeException("Creating PrepareLib task for submodule: " + library.getCoordinates());
         }
@@ -405,16 +400,15 @@ public class DependencyManager {
         if (prepareLibraryTask == null) {
             String bundleName = GUtil.toCamelCase(library.getName().replaceAll("\\:", " "));
 
-            prepareLibraryTask = project.getTasks().create(
-                    "prepare" + bundleName + "Library", PrepareLibraryTask.class);
+            prepareLibraryTask = project.getTasks().create("prepare" + bundleName + "Library",
+                                                           PrepareLibraryTask.class);
 
             prepareLibraryTask.setDescription("Prepare " + library.getName());
             prepareLibraryTask.setVariantName("");
-            prepareLibraryTask.init(
-                    library.getArtifactFile(),
-                    library.getExtractedFolder(),
-                    AndroidGradleOptions.getBuildCache(project),
-                    library.getCoordinates());
+            prepareLibraryTask.init(library.getArtifactFile(),
+                                    library.getExtractedFolder(),
+                                    AndroidGradleOptions.getBuildCache(project),
+                                    library.getCoordinates());
 
             prepareLibTaskMap.put(key, prepareLibraryTask);
         }
@@ -422,10 +416,9 @@ public class DependencyManager {
         return prepareLibraryTask;
     }
 
-    protected void resolveDependencies(
-            @NonNull final VariantDependencies variantDeps,
-            @Nullable String testedProjectPath,
-            @NonNull Set<AndroidDependency> libsToExplodeOut) {
+    protected void resolveDependencies(@NonNull final VariantDependencies variantDeps,
+                                       @Nullable String testedProjectPath,
+                                       @NonNull Set<AndroidDependency> libsToExplodeOut) {
         boolean needPackageScope = true;
         if (AndroidGradleOptions.buildModelOnly(project)) {
             // if we're only syncing (building the model), then we only need the package
@@ -445,10 +438,7 @@ public class DependencyManager {
 
         if (DEBUG_DEPENDENCY) {
             System.out.println(">>>>>>>>>>");
-            System.out.println(
-                    project.getName() + ":" +
-                            compileClasspath.getName() + "/" +
-                            packageClasspath.getName());
+            System.out.println(project.getName() + ":" + compileClasspath.getName() + "/" + packageClasspath.getName());
         }
 
         Set<String> currentUnresolvedDependencies = Sets.newHashSet();
@@ -459,14 +449,13 @@ public class DependencyManager {
         // start with package dependencies, record the artifacts
         DependencyGraph packagedGraph;
         if (needPackageScope) {
-            packagedGraph = resolveConfiguration(
-                    packageClasspath,
-                    variantDeps,
-                    libsToExplodeOut,
-                    currentUnresolvedDependencies,
-                    testedProjectPath,
-                    artifactSet,
-                    ScopeType.PACKAGE);
+            packagedGraph = resolveConfiguration(packageClasspath,
+                                                 variantDeps,
+                                                 libsToExplodeOut,
+                                                 currentUnresolvedDependencies,
+                                                 testedProjectPath,
+                                                 artifactSet,
+                                                 ScopeType.PACKAGE);
         } else {
             packagedGraph = DependencyGraph.getEmpty();
         }
@@ -477,24 +466,19 @@ public class DependencyManager {
         // provided bits. This disables the checks on impossible provided libs (provided aar in
         // apk project).
         ScopeType scopeType = needPackageScope ? ScopeType.COMPILE : ScopeType.COMPILE_ONLY;
-        DependencyGraph compileDependencies = resolveConfiguration(
-                compileClasspath,
-                variantDeps,
-                libsToExplodeOut,
-                currentUnresolvedDependencies,
-                testedProjectPath,
-                artifactSet,
-                scopeType);
+        DependencyGraph compileDependencies = resolveConfiguration(compileClasspath,
+                                                                   variantDeps,
+                                                                   libsToExplodeOut,
+                                                                   currentUnresolvedDependencies,
+                                                                   testedProjectPath,
+                                                                   artifactSet,
+                                                                   scopeType);
 
-        if (extraModelInfo.getMode() != STANDARD &&
-                compileClasspath.getResolvedConfiguration().hasError()) {
+        if (extraModelInfo.getMode() != STANDARD && compileClasspath.getResolvedConfiguration().hasError()) {
             for (String dependency : currentUnresolvedDependencies) {
-                extraModelInfo.handleSyncError(
-                        dependency,
-                        SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
-                        String.format(
-                                "Unable to resolve dependency '%s'",
-                                dependency));
+                extraModelInfo.handleSyncError(dependency,
+                                               SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
+                                               String.format("Unable to resolve dependency '%s'", dependency));
             }
         }
 
@@ -527,7 +511,7 @@ public class DependencyManager {
             }
             System.out.println("***");
             */
-            System.out.println(project.getName() + ":" + compileClasspath.getName() + "/" +packageClasspath.getName());
+            System.out.println(project.getName() + ":" + compileClasspath.getName() + "/" + packageClasspath.getName());
             System.out.println("<<<<<<<<<<");
         }
     }
@@ -539,14 +523,12 @@ public class DependencyManager {
     }
 
     @NonNull
-    private DependencyGraph resolveConfiguration(
-            @NonNull Configuration configuration,
-            @NonNull final VariantDependencies variantDeps,
-            @NonNull Set<AndroidDependency> libsToExplodeOut,
-            @NonNull Set<String> currentUnresolvedDependencies,
-            @Nullable String testedProjectPath,
-            @NonNull Set<String> artifactSet,
-            @NonNull ScopeType scopeType) {
+    private DependencyGraph resolveConfiguration(@NonNull Configuration configuration,
+                                                 @NonNull final VariantDependencies variantDeps,
+                                                 @NonNull Set<AndroidDependency> libsToExplodeOut,
+                                                 @NonNull Set<String> currentUnresolvedDependencies,
+                                                 @Nullable String testedProjectPath, @NonNull Set<String> artifactSet,
+                                                 @NonNull ScopeType scopeType) {
 
         // collect the artifacts first.
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
@@ -563,35 +545,36 @@ public class DependencyManager {
         List<DependencyNode> dependencies = Lists.newArrayList();
 
         Set<? extends DependencyResult> dependencyResultSet = configuration.getIncoming()
-                .getResolutionResult().getRoot().getDependencies();
+                                                                           .getResolutionResult()
+                                                                           .getRoot()
+                                                                           .getDependencies();
 
         // create a container for all the dependency related mutable data, only when creating
         // the package dependencies for a test project.
         MutableDependencyDataMap mutableDependencyContainer = MutableDependencyDataMap.newInstance();
-                //scopeType == ScopeType.PACKAGE
-                //    ? MutableDependencyDataMap.newInstance()
-                //    : MutableDependencyDataMap.EMPTY;
+        //scopeType == ScopeType.PACKAGE
+        //    ? MutableDependencyDataMap.newInstance()
+        //    : MutableDependencyDataMap.EMPTY;
 
         for (DependencyResult dependencyResult : dependencyResultSet) {
             if (dependencyResult instanceof ResolvedDependencyResult) {
-                addDependency(
-                        mutableDependencyContainer,
-                        ((ResolvedDependencyResult) dependencyResult).getSelected(),
-                        variantDeps,
-                        dependencyMap,
-                        dependencies,
-                        foundNodes,
-                        artifacts,
-                        libsToExplodeOut,
-                        currentUnresolvedDependencies,
-                        testedProjectPath,
-                        Collections.emptyList(),
-                        artifactSet,
-                        scopeType,
-                        false, /*forceProvided*/
-                        0);
+                addDependency(mutableDependencyContainer,
+                              ((ResolvedDependencyResult)dependencyResult).getSelected(),
+                              variantDeps,
+                              dependencyMap,
+                              dependencies,
+                              foundNodes,
+                              artifacts,
+                              libsToExplodeOut,
+                              currentUnresolvedDependencies,
+                              testedProjectPath,
+                              Collections.emptyList(),
+                              artifactSet,
+                              scopeType,
+                              false, /*forceProvided*/
+                              0);
             } else if (dependencyResult instanceof UnresolvedDependencyResult) {
-                ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
+                ComponentSelector attempted = ((UnresolvedDependencyResult)dependencyResult).getAttempted();
                 if (attempted != null) {
                     currentUnresolvedDependencies.add(attempted.toString());
                 }
@@ -601,22 +584,21 @@ public class DependencyManager {
         // also need to process local jar files, as they are not processed by the
         // resolvedConfiguration result. This only includes the local jar files for this project.
         for (org.gradle.api.artifacts.Dependency dependency : configuration.getAllDependencies()) {
-            if (dependency instanceof SelfResolvingDependency &&
-                    !(dependency instanceof ProjectDependency)) {
-                Set<File> files = ((SelfResolvingDependency) dependency).resolve();
+            if (dependency instanceof SelfResolvingDependency && !(dependency instanceof ProjectDependency)) {
+                Set<File> files = ((SelfResolvingDependency)dependency).resolve();
                 for (File localJarFile : files) {
                     if (DEBUG_DEPENDENCY) {
                         System.out.println("LOCAL " + configuration.getName() + ": " + localJarFile.getName());
                     }
                     // only accept local jar, no other types.
                     if (!localJarFile.getName().toLowerCase(Locale.getDefault()).endsWith(DOT_JAR)) {
-                        variantDeps.getChecker().handleIssue(
-                                localJarFile.getAbsolutePath(),
-                                SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
-                                SyncIssue.SEVERITY_ERROR,
-                                String.format(
-                                        "Project %s: Only Jar-type local dependencies are supported. Cannot handle: %s",
-                                        project.getName(), localJarFile.getAbsolutePath()));
+                        variantDeps.getChecker().handleIssue(localJarFile.getAbsolutePath(),
+                                                             SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
+                                                             SyncIssue.SEVERITY_ERROR,
+                                                             String.format(
+                                                                 "Project %s: Only Jar-type local dependencies are supported. Cannot handle: %s",
+                                                                 project.getName(),
+                                                                 localJarFile.getAbsolutePath()));
                     } else {
                         JavaDependency localJar = new JavaDependency(localJarFile);
                         switch (scopeType) {
@@ -624,8 +606,7 @@ public class DependencyManager {
                                 artifactSet.add(localJar.getCoordinates().getVersionlessId());
                                 break;
                             case COMPILE:
-                                if (!artifactSet
-                                        .contains(localJar.getCoordinates().getVersionlessId())) {
+                                if (!artifactSet.contains(localJar.getCoordinates().getVersionlessId())) {
                                     mutableDependencyContainer.setProvided(localJar);
                                 }
                                 break;
@@ -640,21 +621,18 @@ public class DependencyManager {
                         // add the Dependency to the map
                         dependencyMap.put(localJar.getAddress(), localJar);
                         // and add the node to the graph
-                        DependencyNode node = new DependencyNode(
-                                localJar.getAddress(),
-                                NodeType.JAVA,
-                                ImmutableList.of(), // no dependencies
-                                null /*requested coord*/);
+                        DependencyNode node = new DependencyNode(localJar.getAddress(),
+                                                                 NodeType.JAVA,
+                                                                 ImmutableList.of(),
+                                                                 // no dependencies
+                                                                 null /*requested coord*/);
                         dependencies.add(node);
                     }
                 }
             }
         }
 
-        return new DependencyGraph(
-                dependencyMap,
-                dependencies,
-                mutableDependencyContainer);
+        return new DependencyGraph(dependencyMap, dependencies, mutableDependencyContainer);
     }
 
     /**
@@ -664,25 +642,22 @@ public class DependencyManager {
      * the resolution is retried with a fresh copy of the configuration, that will contain the newly
      * updated repositories. If this passes, we return the correct configuration and we fill the
      * artifacts map.
+     *
      * @param configuration the configuration from which we get the artifacts
-     * @param artifacts the map of artifacts that are being collected
+     * @param artifacts     the map of artifacts that are being collected
      * @return a valid configuration that has only resolved dependencies.
      */
-    private Configuration collectArtifacts(
-            Configuration configuration,
-            Map<ModuleVersionIdentifier,
-            List<ResolvedArtifact>> artifacts) {
+    private Configuration collectArtifacts(Configuration configuration,
+                                           Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
 
         Set<ResolvedArtifact> allArtifacts;
         // Make a copy because Gradle keeps a per configuration state of resolution that we
         // need to reset.
         Configuration configurationCopy = configuration.copyRecursive();
 
-        Set<UnresolvedDependency> unresolvedDependencies =
-                configuration
-                        .getResolvedConfiguration()
-                        .getLenientConfiguration()
-                        .getUnresolvedModuleDependencies();
+        Set<UnresolvedDependency> unresolvedDependencies = configuration.getResolvedConfiguration()
+                                                                        .getLenientConfiguration()
+                                                                        .getUnresolvedModuleDependencies();
 
         if (unresolvedDependencies.isEmpty()) {
             allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
@@ -696,8 +671,9 @@ public class DependencyManager {
                     }
                 }
                 sdkLibData.setNeedsCacheReset(sdkHandler.checkResetCache());
-                List<File> updatedRepositories = sdkHandler.getSdkLoader()
-                        .updateRepositories(repositoryPaths, sdkLibData, logger);
+                List<File> updatedRepositories = sdkHandler.getSdkLoader().updateRepositories(repositoryPaths,
+                                                                                              sdkLibData,
+                                                                                              logger);
 
                 // Adding the updated local maven repositories to the project in order to
                 // bypass the fact that the old repositories contain the unresolved
@@ -716,13 +692,10 @@ public class DependencyManager {
                 repositoriesUpdated = true;
             }
             if (extraModelInfo.getMode() != STANDARD) {
-                allArtifacts = configurationCopy.getResolvedConfiguration()
-                        .getLenientConfiguration()
-                        .getArtifacts(Specs.satisfyAll());
+                allArtifacts = configurationCopy.getResolvedConfiguration().getLenientConfiguration().getArtifacts(Specs
+                                                                                                                       .satisfyAll());
             } else {
-                allArtifacts = configurationCopy.getResolvedConfiguration()
-                        .getResolvedArtifacts();
-
+                allArtifacts = configurationCopy.getResolvedConfiguration().getResolvedArtifacts();
             }
             // Modify the configuration to the one that passed.
             configuration = configurationCopy;
@@ -746,18 +719,19 @@ public class DependencyManager {
 
     /**
      * Returns the path of an artifact SDK repository.
+     *
      * @param selector the selector of an artifact.
      * @return a {@code String} containing the path.
      */
     private static String getRepositoryPath(ModuleVersionSelector selector) {
-        return DetailsTypes.MavenType.getRepositoryPath(
-                selector.getGroup(), selector.getName(), selector.getVersion());
+        return DetailsTypes.MavenType.getRepositoryPath(selector.getGroup(), selector.getName(), selector.getVersion());
     }
 
     private boolean isGoogleOwnedDependency(ModuleVersionSelector selector) {
-        return selector.getGroup().startsWith(SdkConstants.ANDROID_SUPPORT_ARTIFACT_PREFIX)
-                || selector.getGroup().startsWith(SdkConstants.GOOGLE_SUPPORT_ARTIFACT_PREFIX)
-                || selector.getGroup().startsWith(SdkConstants.FIREBASE_ARTIFACT_PREFIX);
+        return selector.getGroup().startsWith(SdkConstants.ANDROID_SUPPORT_ARTIFACT_PREFIX) || selector.getGroup()
+                                                                                                       .startsWith(
+                                                                                                           SdkConstants.GOOGLE_SUPPORT_ARTIFACT_PREFIX)
+               || selector.getGroup().startsWith(SdkConstants.FIREBASE_ARTIFACT_PREFIX);
     }
 
     private static void printIndent(int indent, @NonNull String message) {
@@ -768,30 +742,26 @@ public class DependencyManager {
         //System.out.println(message);
     }
 
-    private void addDependency(
-            @NonNull MutableDependencyDataMap mutableDependencyDataMap,
-            @NonNull ResolvedComponentResult resolvedComponentResult,
-            @NonNull VariantDependencies configDependencies,
-            @NonNull Map<Object, Dependency> outDependencyMap,
-            @NonNull List<DependencyNode> outDependencies,
-            @NonNull Map<ModuleVersionIdentifier, List<DependencyNode>> alreadyFoundNodes,
-            @NonNull Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-            @NonNull Set<AndroidDependency> libsToExplodeOut,
-            @NonNull Set<String> currentUnresolvedDependencies,
-            @Nullable String testedProjectPath,
-            @NonNull List<String> projectChain,
-            @NonNull Set<String> artifactSet,
-            @NonNull ScopeType scopeType,
-            boolean forceProvided,
-            int indent) {
+    private void addDependency(@NonNull MutableDependencyDataMap mutableDependencyDataMap,
+                               @NonNull ResolvedComponentResult resolvedComponentResult,
+                               @NonNull VariantDependencies configDependencies,
+                               @NonNull Map<Object, Dependency> outDependencyMap,
+                               @NonNull List<DependencyNode> outDependencies,
+                               @NonNull Map<ModuleVersionIdentifier, List<DependencyNode>> alreadyFoundNodes,
+                               @NonNull Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
+                               @NonNull Set<AndroidDependency> libsToExplodeOut,
+                               @NonNull Set<String> currentUnresolvedDependencies, @Nullable String testedProjectPath,
+                               @NonNull List<String> projectChain, @NonNull Set<String> artifactSet,
+                               @NonNull ScopeType scopeType, boolean forceProvided, int indent) {
 
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
-        if (checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult)) {
+        List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
+        if (checkForExclusion(configDependencies, moduleVersion, moduleArtifacts, resolvedComponentResult)) {
             return;
         }
 
-        if (moduleVersion.getName().equals("support-annotations") &&
-                moduleVersion.getGroup().equals("com.android.support")) {
+        if (moduleVersion.getName().equals("support-annotations") && moduleVersion.getGroup().equals(
+            "com.android.support")) {
             configDependencies.setAnnotationsPresent(true);
         }
 
@@ -802,7 +772,6 @@ public class DependencyManager {
                 printIndent(indent, "FOUND DEP: " + moduleVersion.getName());
             }
             outDependencies.addAll(nodesForThisModule);
-
         } else {
             if (DEBUG_DEPENDENCY) {
                 printIndent(indent, "NOT FOUND: " + moduleVersion.getName());
@@ -811,14 +780,13 @@ public class DependencyManager {
 
             // get the associated gradlepath
             ComponentIdentifier id = resolvedComponentResult.getId();
-            String gradlePath = (id instanceof ProjectComponentIdentifier) ?
-                    ((ProjectComponentIdentifier) id).getProjectPath() : null;
+            String gradlePath = (id instanceof ProjectComponentIdentifier)
+                ? ((ProjectComponentIdentifier)id).getProjectPath() : null;
 
             // check if this is a tested app project (via a separate test module).
             // In which case, all the dependencies must become provided.
             boolean childForceProvided = forceProvided;
-            if (scopeType == ScopeType.COMPILE &&
-                    testedProjectPath != null && testedProjectPath.equals(gradlePath)) {
+            if (scopeType == ScopeType.COMPILE && testedProjectPath != null && testedProjectPath.equals(gradlePath)) {
                 childForceProvided = true;
             }
 
@@ -828,25 +796,20 @@ public class DependencyManager {
 
             for (DependencyResult dependencyResult : dependencies) {
                 if (dependencyResult instanceof ResolvedDependencyResult) {
-                    ResolvedComponentResult selected =
-                            ((ResolvedDependencyResult) dependencyResult).getSelected();
+                    ResolvedComponentResult selected = ((ResolvedDependencyResult)dependencyResult).getSelected();
 
                     List<String> newProjectChain = projectChain;
 
                     ComponentIdentifier identifier = selected.getId();
                     if (identifier instanceof ProjectComponentIdentifier) {
-                        String projectPath =
-                                ((ProjectComponentIdentifier) identifier).getProjectPath();
+                        String projectPath = ((ProjectComponentIdentifier)identifier).getProjectPath();
 
                         int index = projectChain.indexOf(projectPath);
                         if (index != -1) {
                             projectChain.add(projectPath);
-                            String path = Joiner
-                                    .on(" -> ")
-                                    .join(projectChain.subList(index, projectChain.size()));
+                            String path = Joiner.on(" -> ").join(projectChain.subList(index, projectChain.size()));
 
-                            throw new CircularReferenceException(
-                                    "Circular reference between projects: " + path);
+                            throw new CircularReferenceException("Circular reference between projects: " + path);
                         }
 
                         newProjectChain = Lists.newArrayList();
@@ -854,24 +817,23 @@ public class DependencyManager {
                         newProjectChain.add(projectPath);
                     }
 
-                    addDependency(
-                            mutableDependencyDataMap,
-                            selected,
-                            configDependencies,
-                            outDependencyMap,
-                            transitiveDependencies,
-                            alreadyFoundNodes,
-                            artifacts,
-                            libsToExplodeOut,
-                            currentUnresolvedDependencies,
-                            testedProjectPath,
-                            newProjectChain,
-                            artifactSet,
-                            scopeType,
-                            childForceProvided,
-                            indent + 1);
+                    addDependency(mutableDependencyDataMap,
+                                  selected,
+                                  configDependencies,
+                                  outDependencyMap,
+                                  transitiveDependencies,
+                                  alreadyFoundNodes,
+                                  artifacts,
+                                  libsToExplodeOut,
+                                  currentUnresolvedDependencies,
+                                  testedProjectPath,
+                                  newProjectChain,
+                                  artifactSet,
+                                  scopeType,
+                                  childForceProvided,
+                                  indent + 1);
                 } else if (dependencyResult instanceof UnresolvedDependencyResult) {
-                    ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
+                    ComponentSelector attempted = ((UnresolvedDependencyResult)dependencyResult).getAttempted();
                     if (attempted != null) {
                         currentUnresolvedDependencies.add(attempted.toString());
                     }
@@ -884,7 +846,6 @@ public class DependencyManager {
             }
 
             // now loop on all the artifact for this modules.
-            List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
 
             if (moduleArtifacts != null) {
                 for (ResolvedArtifact artifact : moduleArtifacts) {
@@ -903,7 +864,6 @@ public class DependencyManager {
                         } else {
                             throw new RuntimeException("Unknown type of Dependency");
                         }
-
                     } else {
                         boolean provided = forceProvided;
                         String coordKey = mavenCoordinates.getVersionlessId();
@@ -940,11 +900,8 @@ public class DependencyManager {
 
                                 // this could be a simple project wrapping an aar file, so we check the
                                 // presence of the android plugin to make sure it's an android module.
-                                isSubProject =
-                                        subProject.getPlugins().hasPlugin("com.android.library")
-                                                ||
-                                                subProject.getPlugins()
-                                                        .hasPlugin("com.android.model.library");
+                                isSubProject = subProject.getPlugins().hasPlugin("com.android.library")
+                                               || subProject.getPlugins().hasPlugin("com.android.model.library");
                             }
 
                             if (isSubProject) {
@@ -955,61 +912,51 @@ public class DependencyManager {
                                 // and the location was set to default.
                                 String pathLeaf = variantName != null ? variantName : "default";
 
-                                File stagingDir = FileUtils.join(
-                                        subProject.getBuildDir(),
-                                        FD_INTERMEDIATES, DIR_BUNDLES,
-                                        pathLeaf);
+                                File stagingDir = FileUtils.join(subProject.getBuildDir(),
+                                                                 FD_INTERMEDIATES,
+                                                                 DIR_BUNDLES,
+                                                                 pathLeaf);
 
-                                androidDependency = AndroidDependency.createStagedAarLibrary(
-                                        artifact.getFile(),
-                                        mavenCoordinates,
-                                        name,
-                                        gradlePath,
-                                        stagingDir,
-                                        variantName);
-
+                                androidDependency = AndroidDependency.createStagedAarLibrary(artifact.getFile(),
+                                                                                             mavenCoordinates,
+                                                                                             name,
+                                                                                             gradlePath,
+                                                                                             stagingDir,
+                                                                                             variantName);
                             } else {
                                 // If the build cache is used, we create and cache the exploded aar
                                 // inside the build cache directory; otherwise, we explode the aar
                                 // to a location inside the project's build directory.
-                                Optional<FileCache> buildCache =
-                                        AndroidGradleOptions.getBuildCache(project);
+                                Optional<FileCache> buildCache = AndroidGradleOptions.getBuildCache(project);
                                 File explodedDir;
-                                if (PrepareLibraryTask.shouldUseBuildCache(
-                                        buildCache.isPresent(), mavenCoordinates)) {
+                                if (PrepareLibraryTask.shouldUseBuildCache(buildCache.isPresent(), mavenCoordinates)) {
                                     try {
-                                        explodedDir = buildCache.get().getFileInCache(
-                                                PrepareLibraryTask.getBuildCacheInputs(
-                                                        artifact.getFile()));
+                                        explodedDir = buildCache.get()
+                                                                .getFileInCache(PrepareLibraryTask.getBuildCacheInputs(
+                                                                    artifact.getFile()));
                                     } catch (IOException e) {
                                         throw new UncheckedIOException(e);
                                     }
                                 } else {
-                                    Preconditions.checkState(
-                                            !AndroidGradleOptions
-                                                    .isImprovedDependencyResolutionEnabled(project),
-                                            "Improved dependency resolution must be used with "
-                                                    + "build cache.");
+                                    Preconditions.checkState(!AndroidGradleOptions.isImprovedDependencyResolutionEnabled(
+                                        project), "Improved dependency resolution must be used with " + "build cache.");
 
-                                    explodedDir = FileUtils.join(
-                                            project.getBuildDir(),
-                                            FD_INTERMEDIATES,
-                                            EXPLODED_AAR,
-                                            path);
+                                    explodedDir = FileUtils.join(project.getBuildDir(),
+                                                                 FD_INTERMEDIATES,
+                                                                 EXPLODED_AAR,
+                                                                 path);
                                 }
 
-                                androidDependency = AndroidDependency.createExplodedAarLibrary(
-                                        artifact.getFile(),
-                                        mavenCoordinates,
-                                        name,
-                                        null /*gradlePath*/,
-                                        explodedDir);
+                                androidDependency = AndroidDependency.createExplodedAarLibrary(artifact.getFile(),
+                                                                                               mavenCoordinates,
+                                                                                               name,
+                                                                                               null /*gradlePath*/,
+                                                                                               explodedDir);
                             }
 
                             alreadyCreatedDependency = androidDependency;
                             nodeType = NodeType.ANDROID;
-                            outDependencyMap.put(
-                                    androidDependency.getAddress(), androidDependency);
+                            outDependencyMap.put(androidDependency.getAddress(), androidDependency);
 
                             // only record the libraries to explode if they are remote and not
                             // sub-modules.
@@ -1020,25 +967,21 @@ public class DependencyManager {
                             // check this aar does not have a dependency on an atom, as this would
                             // not work.
                             if (containsDirectDependency(transitiveDependencies, NodeType.ATOM)) {
-                                configDependencies.getChecker()
-                                        .handleIssue(
-                                                createMavenCoordinates(artifact).toString(),
-                                                SyncIssue.TYPE_AAR_DEPEND_ON_ATOM,
-                                                SyncIssue.SEVERITY_ERROR,
-                                                String.format(
-                                                        "Module '%s' depends on one or more Android Atoms but is a library",
-                                                        moduleVersion));
+                                configDependencies.getChecker().handleIssue(createMavenCoordinates(artifact).toString(),
+                                                                            SyncIssue.TYPE_AAR_DEPEND_ON_ATOM,
+                                                                            SyncIssue.SEVERITY_ERROR,
+                                                                            String.format(
+                                                                                "Module '%s' depends on one or more Android Atoms but is a library",
+                                                                                moduleVersion));
                             }
                         } else if (EXT_ATOMBUNDLE_ARCHIVE.equals(artifact.getExtension())) {
                             if (provided) {
-                                configDependencies.getChecker()
-                                        .handleIssue(
-                                                createMavenCoordinates(artifact).toString(),
-                                                SyncIssue.TYPE_ATOM_DEPENDENCY_PROVIDED,
-                                                SyncIssue.SEVERITY_ERROR,
-                                                String.format(
-                                                        "Module '%s' is an Atom, which cannot be a provided dependency",
-                                                        moduleVersion));
+                                configDependencies.getChecker().handleIssue(createMavenCoordinates(artifact).toString(),
+                                                                            SyncIssue.TYPE_ATOM_DEPENDENCY_PROVIDED,
+                                                                            SyncIssue.SEVERITY_ERROR,
+                                                                            String.format(
+                                                                                "Module '%s' is an Atom, which cannot be a provided dependency",
+                                                                                moduleVersion));
                             }
                             if (DEBUG_DEPENDENCY) {
                                 printIndent(indent, "TYPE: ATOM");
@@ -1046,12 +989,11 @@ public class DependencyManager {
 
                             // if this is a package scope, then skip the dependencies.
                             if (scopeType == ScopeType.PACKAGE) {
-                                recursiveSkip(
-                                        mutableDependencyDataMap,
-                                        transitiveDependencies,
-                                        outDependencyMap,
-                                        true /*skipAndroidDep*/,
-                                        true /*skipJavaDep*/);
+                                recursiveSkip(mutableDependencyDataMap,
+                                              transitiveDependencies,
+                                              outDependencyMap,
+                                              true /*skipAndroidDep*/,
+                                              true /*skipJavaDep*/);
                             }
 
                             String path = computeArtifactPath(moduleVersion, artifact);
@@ -1072,31 +1014,29 @@ public class DependencyManager {
                             String pathLeaf = variantName != null ? variantName : "default";
 
                             Project subProject = project.findProject(gradlePath);
-                            File stagingDir = FileUtils.join(
-                                    subProject.getBuildDir(),
-                                    FD_INTERMEDIATES, DIR_ATOMBUNDLES,
-                                    pathLeaf);
+                            File stagingDir = FileUtils.join(subProject.getBuildDir(),
+                                                             FD_INTERMEDIATES,
+                                                             DIR_ATOMBUNDLES,
+                                                             pathLeaf);
 
-                            AtomDependency atomDependency = new AtomDependency(
-                                    artifact.getFile(),
-                                    mavenCoordinates,
-                                    name,
-                                    gradlePath,
-                                    stagingDir,
-                                    moduleVersion.getName() /* atomName */,
-                                    variantName);
+                            AtomDependency atomDependency = new AtomDependency(artifact.getFile(),
+                                                                               mavenCoordinates,
+                                                                               name,
+                                                                               gradlePath,
+                                                                               stagingDir,
+                                                                               moduleVersion.getName() /* atomName */,
+                                                                               variantName);
 
                             alreadyCreatedDependency = atomDependency;
                             nodeType = NodeType.ATOM;
 
                             outDependencyMap.put(atomDependency.getAddress(), atomDependency);
-
                         } else if (EXT_JAR.equals(artifact.getExtension())) {
                             if (DEBUG_DEPENDENCY) {
                                 printIndent(indent, "TYPE: JAR");
                             }
-                            boolean isRootOfSeparateTestedApp = testedProjectPath != null
-                                    && testedProjectPath.equals(gradlePath);
+                            boolean isRootOfSeparateTestedApp = testedProjectPath != null && testedProjectPath.equals(
+                                gradlePath);
                             // check this jar does not have a dependency on an library, as this would not work.
                             if (containsDirectDependency(transitiveDependencies, NodeType.ANDROID)) {
                                 // there is one case where it's ok to have a jar depend on aars:
@@ -1119,21 +1059,19 @@ public class DependencyManager {
 
                             // check this jar does not have a dependency on an atom, as this would not work.
                             if (containsDirectDependency(transitiveDependencies, NodeType.ATOM)) {
-                                configDependencies.getChecker()
-                                        .handleIssue(
-                                                createMavenCoordinates(artifact).toString(),
-                                                SyncIssue.TYPE_JAR_DEPEND_ON_ATOM,
-                                                SyncIssue.SEVERITY_ERROR,
-                                                String.format(
-                                                        "Module '%s' depends on one or more Android Atoms but is a jar",
-                                                        moduleVersion));
+                                configDependencies.getChecker().handleIssue(createMavenCoordinates(artifact).toString(),
+                                                                            SyncIssue.TYPE_JAR_DEPEND_ON_ATOM,
+                                                                            SyncIssue.SEVERITY_ERROR,
+                                                                            String.format(
+                                                                                "Module '%s' depends on one or more Android Atoms but is a jar",
+                                                                                moduleVersion));
                             }
 
-                            JavaDependency javaDependency = new JavaDependency(
-                                    artifact.getFile(),
-                                    mavenCoordinates,
-                                    computeArtifactName(moduleVersion, artifact),
-                                    gradlePath);
+                            JavaDependency javaDependency = new JavaDependency(artifact.getFile(),
+                                                                               mavenCoordinates,
+                                                                               computeArtifactName(moduleVersion,
+                                                                                                   artifact),
+                                                                               gradlePath);
 
                             alreadyCreatedDependency = javaDependency;
                             nodeType = NodeType.JAVA;
@@ -1145,21 +1083,19 @@ public class DependencyManager {
                                 // compile scope as provided.
                                 if (scopeType == ScopeType.PACKAGE) {
                                     mutableDependencyDataMap.skip(javaDependency);
-                                    recursiveSkip(
-                                            mutableDependencyDataMap,
-                                            transitiveDependencies,
-                                            outDependencyMap,
-                                            true /*skipAndroidDep*/,
-                                            true /*skipJavaDep*/);
+                                    recursiveSkip(mutableDependencyDataMap,
+                                                  transitiveDependencies,
+                                                  outDependencyMap,
+                                                  true /*skipAndroidDep*/,
+                                                  true /*skipJavaDep*/);
                                 } else {
                                     // the current one is done below, so we only need to do the
                                     // recursive ones.
-                                    recursiveProvided(
-                                            mutableDependencyDataMap,
-                                            transitiveDependencies,
-                                            outDependencyMap,
-                                            true /*skipAndroidDep*/,
-                                            true /*skipJavaDep*/);
+                                    recursiveProvided(mutableDependencyDataMap,
+                                                      transitiveDependencies,
+                                                      outDependencyMap,
+                                                      true /*skipAndroidDep*/,
+                                                      true /*skipJavaDep*/);
 
                                     provided = true;
                                 }
@@ -1168,41 +1104,38 @@ public class DependencyManager {
                             if (DEBUG_DEPENDENCY) {
                                 printIndent(indent, "JAR-INFO: " + javaDependency.toString());
                             }
-
                         } else if (EXT_ANDROID_PACKAGE.equals(artifact.getExtension())) {
                             String name = computeArtifactName(moduleVersion, artifact);
 
-                            configDependencies.getChecker().handleIssue(
-                                    name,
-                                    SyncIssue.TYPE_DEPENDENCY_IS_APK,
-                                    SyncIssue.SEVERITY_ERROR,
-                                    String.format(
-                                            "Dependency %s on project %s resolves to an APK archive "
-                                                    +
-                                                    "which is not supported as a compilation dependency. File: %s",
-                                            name, project.getName(), artifact.getFile()));
+                            configDependencies.getChecker().handleIssue(name,
+                                                                        SyncIssue.TYPE_DEPENDENCY_IS_APK,
+                                                                        SyncIssue.SEVERITY_ERROR,
+                                                                        String.format(
+                                                                            "Dependency %s on project %s resolves to an APK archive "
+                                                                            + "which is not supported as a compilation dependency. File: %s",
+                                                                            name,
+                                                                            project.getName(),
+                                                                            artifact.getFile()));
                         } else if ("apklib".equals(artifact.getExtension())) {
                             String name = computeArtifactName(moduleVersion, artifact);
 
-                            configDependencies.getChecker().handleIssue(
-                                    name,
-                                    SyncIssue.TYPE_DEPENDENCY_IS_APKLIB,
-                                    SyncIssue.SEVERITY_ERROR,
-                                    String.format(
-                                            "Packaging for dependency %s is 'apklib' and is not supported. "
-                                                    +
-                                                    "Only 'aar' libraries are supported.", name));
-                        } else if ("awb".equals(artifact.getExtension()) ||
-                                "solib".equals(artifact.getExtension())){
+                            configDependencies.getChecker().handleIssue(name,
+                                                                        SyncIssue.TYPE_DEPENDENCY_IS_APKLIB,
+                                                                        SyncIssue.SEVERITY_ERROR,
+                                                                        String.format(
+                                                                            "Packaging for dependency %s is 'apklib' and is not supported. "
+                                                                            + "Only 'aar' libraries are supported.",
+                                                                            name));
+                        } else if ("awb".equals(artifact.getExtension()) || "solib".equals(artifact.getExtension())) {
 
                             break;
-
                         } else {
                             String name = computeArtifactName(moduleVersion, artifact);
 
-                            logger.warning(String.format(
-                                    "Unrecognized dependency: '%s' (type: '%s', extension: '%s')",
-                                    name, artifact.getType(), artifact.getExtension()));
+                            logger.warning(String.format("Unrecognized dependency: '%s' (type: '%s', extension: '%s')",
+                                                         name,
+                                                         artifact.getType(),
+                                                         artifact.getExtension()));
                         }
 
                         if (provided && alreadyCreatedDependency != null) {
@@ -1212,11 +1145,10 @@ public class DependencyManager {
 
                     if (alreadyCreatedDependency != null) {
                         // all we need is to create a DependencyNode
-                        DependencyNode node = new DependencyNode(
-                                alreadyCreatedDependency.getAddress(),
-                                nodeType,
-                                transitiveDependencies,
-                                null /*requested Coordinates*/);
+                        DependencyNode node = new DependencyNode(alreadyCreatedDependency.getAddress(),
+                                                                 nodeType,
+                                                                 transitiveDependencies,
+                                                                 null /*requested Coordinates*/);
                         outDependencies.add(node);
 
                         if (nodesForThisModule == null) {
@@ -1236,33 +1168,29 @@ public class DependencyManager {
     }
 
     protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
-                                        ModuleVersionIdentifier moduleVersion,
-                                        ResolvedComponentResult resolvedComponentResult) {return configDependencies.getChecker().checkForExclusion(moduleVersion);}
+                                        ModuleVersionIdentifier moduleVersion, List<ResolvedArtifact> moduleArtifacts,
+                                        ResolvedComponentResult resolvedComponentResult) {
+        return configDependencies.getChecker().checkForExclusion(moduleVersion);
+    }
 
     @NonNull
-    private static MavenCoordinatesImpl createMavenCoordinates(
-            @NonNull ResolvedArtifact resolvedArtifact) {
-        return new MavenCoordinatesImpl(
-                resolvedArtifact.getModuleVersion().getId().getGroup(),
-                resolvedArtifact.getModuleVersion().getId().getName(),
-                resolvedArtifact.getModuleVersion().getId().getVersion(),
-                resolvedArtifact.getExtension(),
-                resolvedArtifact.getClassifier());
+    private static MavenCoordinatesImpl createMavenCoordinates(@NonNull ResolvedArtifact resolvedArtifact) {
+        return new MavenCoordinatesImpl(resolvedArtifact.getModuleVersion().getId().getGroup(),
+                                        resolvedArtifact.getModuleVersion().getId().getName(),
+                                        resolvedArtifact.getModuleVersion().getId().getVersion(),
+                                        resolvedArtifact.getExtension(),
+                                        resolvedArtifact.getClassifier());
     }
 
-    private static boolean containsDirectDependency(
-            @NonNull List<DependencyNode> dependencies,
-            @NonNull NodeType nodeType) {
-        return dependencies.stream().anyMatch(
-                dependencyNode -> dependencyNode.getNodeType() == nodeType);
+    private static boolean containsDirectDependency(@NonNull List<DependencyNode> dependencies,
+                                                    @NonNull NodeType nodeType) {
+        return dependencies.stream().anyMatch(dependencyNode -> dependencyNode.getNodeType() == nodeType);
     }
 
-    private static void recursiveSkip(
-            @NonNull MutableDependencyDataMap mutableDependencyDataMap,
-            @NonNull List<DependencyNode> nodes,
-            @NonNull Map<Object, Dependency> dependencyMap,
-            boolean skipAndroidDependency,
-            boolean skipJavaDependency) {
+    private static void recursiveSkip(@NonNull MutableDependencyDataMap mutableDependencyDataMap,
+                                      @NonNull List<DependencyNode> nodes,
+                                      @NonNull Map<Object, Dependency> dependencyMap, boolean skipAndroidDependency,
+                                      boolean skipJavaDependency) {
         for (DependencyNode node : nodes) {
             Dependency dep = dependencyMap.get(node.getAddress());
 
@@ -1278,21 +1206,18 @@ public class DependencyManager {
                 }
             }
 
-            recursiveSkip(
-                    mutableDependencyDataMap,
-                    node.getDependencies(),
-                    dependencyMap,
-                    skipAndroidDependency,
-                    skipJavaDependency);
+            recursiveSkip(mutableDependencyDataMap,
+                          node.getDependencies(),
+                          dependencyMap,
+                          skipAndroidDependency,
+                          skipJavaDependency);
         }
     }
 
-    private static void recursiveProvided(
-            @NonNull MutableDependencyDataMap mutableDependencyDataMap,
-            @NonNull List<DependencyNode> nodes,
-            @NonNull Map<Object, Dependency> dependencyMap,
-            boolean skipAndroidDependency,
-            boolean skipJavaDependency) {
+    private static void recursiveProvided(@NonNull MutableDependencyDataMap mutableDependencyDataMap,
+                                          @NonNull List<DependencyNode> nodes,
+                                          @NonNull Map<Object, Dependency> dependencyMap, boolean skipAndroidDependency,
+                                          boolean skipJavaDependency) {
         for (DependencyNode node : nodes) {
             Dependency dep = dependencyMap.get(node.getAddress());
 
@@ -1308,55 +1233,43 @@ public class DependencyManager {
                 }
             }
 
-            recursiveProvided(
-                    mutableDependencyDataMap,
-                    node.getDependencies(),
-                    dependencyMap,
-                    skipAndroidDependency,
-                    skipJavaDependency);
+            recursiveProvided(mutableDependencyDataMap,
+                              node.getDependencies(),
+                              dependencyMap,
+                              skipAndroidDependency,
+                              skipJavaDependency);
         }
     }
 
     @NonNull
-    private String computeArtifactPath(
-            @NonNull ModuleVersionIdentifier moduleVersion,
-            @NonNull ResolvedArtifact artifact) {
+    private String computeArtifactPath(@NonNull ModuleVersionIdentifier moduleVersion,
+                                       @NonNull ResolvedArtifact artifact) {
         StringBuilder pathBuilder = new StringBuilder(
-                moduleVersion.getGroup().length()
-                        + moduleVersion.getName().length()
-                        + moduleVersion.getVersion().length()
-                        + 10); // in case of classifier which is rare.
+            moduleVersion.getGroup().length() + moduleVersion.getName().length() + moduleVersion.getVersion().length()
+            + 10); // in case of classifier which is rare.
 
         pathBuilder.append(normalize(logger, moduleVersion, moduleVersion.getGroup()))
-                .append(File.separatorChar)
-                .append(normalize(logger, moduleVersion, moduleVersion.getName()))
-                .append(File.separatorChar)
-                .append(normalize(logger, moduleVersion,
-                        moduleVersion.getVersion()));
+                   .append(File.separatorChar)
+                   .append(normalize(logger, moduleVersion, moduleVersion.getName()))
+                   .append(File.separatorChar)
+                   .append(normalize(logger, moduleVersion, moduleVersion.getVersion()));
 
         if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
-            pathBuilder.append(File.separatorChar).append(normalize(logger, moduleVersion,
-                    artifact.getClassifier()));
+            pathBuilder.append(File.separatorChar).append(normalize(logger, moduleVersion, artifact.getClassifier()));
         }
 
         return pathBuilder.toString();
     }
 
     @NonNull
-    private static String computeArtifactName(
-            @NonNull ModuleVersionIdentifier moduleVersion,
-            @NonNull ResolvedArtifact artifact) {
+    private static String computeArtifactName(@NonNull ModuleVersionIdentifier moduleVersion,
+                                              @NonNull ResolvedArtifact artifact) {
         StringBuilder nameBuilder = new StringBuilder(
-                moduleVersion.getGroup().length()
-                        + moduleVersion.getName().length()
-                        + moduleVersion.getVersion().length()
-                        + 10); // in case of classifier which is rare.
+            moduleVersion.getGroup().length() + moduleVersion.getName().length() + moduleVersion.getVersion().length()
+            + 10); // in case of classifier which is rare.
 
-        nameBuilder.append(moduleVersion.getGroup())
-                .append(':')
-                .append(moduleVersion.getName())
-                .append(':')
-                .append(moduleVersion.getVersion());
+        nameBuilder.append(moduleVersion.getGroup()).append(':').append(moduleVersion.getName()).append(':').append(
+            moduleVersion.getVersion());
 
         if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
             nameBuilder.append(':').append(artifact.getClassifier());
@@ -1369,24 +1282,27 @@ public class DependencyManager {
      * Normalize a path to remove all illegal characters for all supported operating systems.
      * {@see http://en.wikipedia.org/wiki/Filename#Comparison%5Fof%5Ffile%5Fname%5Flimitations}
      *
-     * @param id the module coordinates that generated this path
+     * @param id   the module coordinates that generated this path
      * @param path the proposed path name
      * @return the normalized path name
      */
     static String normalize(ILogger logger, ModuleVersionIdentifier id, String path) {
         if (path == null || path.isEmpty()) {
-            logger.verbose(String.format(
-                    "When unzipping library '%s:%s:%s, either group, name or version is empty",
-                    id.getGroup(), id.getName(), id.getVersion()));
+            logger.verbose(String.format("When unzipping library '%s:%s:%s, either group, name or version is empty",
+                                         id.getGroup(),
+                                         id.getName(),
+                                         id.getVersion()));
             return path;
         }
         // list of illegal characters
         String normalizedPath = path.replaceAll("[%<>:\"/?*\\\\]", "@");
         if (normalizedPath == null || normalizedPath.isEmpty()) {
             // if the path normalization failed, return the original path.
-            logger.verbose(String.format(
-                    "When unzipping library '%s:%s:%s, the normalized '%s' is empty",
-                    id.getGroup(), id.getName(), id.getVersion(), path));
+            logger.verbose(String.format("When unzipping library '%s:%s:%s, the normalized '%s' is empty",
+                                         id.getGroup(),
+                                         id.getName(),
+                                         id.getVersion(),
+                                         path));
             return path;
         }
         try {
@@ -1394,22 +1310,26 @@ public class DependencyManager {
             // do not end your path with either a dot or a space.
             String suffix = "";
             while (pathPointer >= 0 && (normalizedPath.charAt(pathPointer) == '.'
-                    || normalizedPath.charAt(pathPointer) == ' ')) {
+                                        || normalizedPath.charAt(pathPointer) == ' ')) {
                 pathPointer--;
                 suffix += "@";
             }
             if (pathPointer < 0) {
-                throw new RuntimeException(String.format(
-                        "When unzipping library '%s:%s:%s, " +
-                        "the path '%s' cannot be transformed into a valid directory name",
-                        id.getGroup(), id.getName(), id.getVersion(), path));
+                throw new RuntimeException(String.format("When unzipping library '%s:%s:%s, "
+                                                         + "the path '%s' cannot be transformed into a valid directory name",
+                                                         id.getGroup(),
+                                                         id.getName(),
+                                                         id.getVersion(),
+                                                         path));
             }
             return normalizedPath.substring(0, pathPointer + 1) + suffix;
         } catch (Exception e) {
-            logger.error(e, String.format(
-                    "When unzipping library '%s:%s:%s', " +
-                    "Path normalization failed for input %s",
-                    id.getGroup(), id.getName(), id.getVersion(), path));
+            logger.error(e,
+                         String.format("When unzipping library '%s:%s:%s', " + "Path normalization failed for input %s",
+                                       id.getGroup(),
+                                       id.getName(),
+                                       id.getVersion(),
+                                       path));
             return path;
         }
     }
