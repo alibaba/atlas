@@ -208,25 +208,15 @@
 
 package android.taobao.atlas.framework.bundlestorage;
 
-import android.app.PreVerifier;
-import android.content.Context;
-import android.os.Build;
-import android.support.multidex.MultiDex;
-import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
-import android.taobao.atlas.framework.Framework;
-import android.taobao.atlas.util.*;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
-import android.text.TextUtils;
-import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.runtime.RuntimeVariables;
-import android.util.Log;
-
-import com.taobao.android.runtime.AndroidRuntime;
-
-import dalvik.system.DexClassLoader;
-import dalvik.system.DexFile;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -239,6 +229,25 @@ import java.util.Map;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import android.app.PreVerifier;
+import android.content.Context;
+import android.os.Build;
+import android.support.multidex.MultiDex;
+import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.framework.Framework;
+import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.util.ApkUtils;
+import android.taobao.atlas.util.AtlasFileLock;
+import android.taobao.atlas.util.IOUtil;
+import android.taobao.atlas.util.StringUtils;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
+import android.text.TextUtils;
+import android.util.Log;
+import com.taobao.android.runtime.AndroidRuntime;
+import dalvik.system.DexClassLoader;
+import dalvik.system.DexFile;
 
 public class BundleArchiveRevision {
 
@@ -671,7 +680,7 @@ public class BundleArchiveRevision {
             }
         }
         if(patchDexFileForDebug!=null){
-            patchDexFileForDebug.loadClass(clazz,cl);
+            return patchDexFileForDebug.loadClass(clazz,cl);
         }
         return null;
     }
