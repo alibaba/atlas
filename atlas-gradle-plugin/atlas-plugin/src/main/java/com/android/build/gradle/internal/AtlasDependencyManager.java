@@ -366,22 +366,18 @@ public class AtlasDependencyManager extends DependencyManager {
         if (super.checkForExclusion(configDependencies, moduleVersion, moduleArtifacts, resolvedComponentResult)) {
             return true;
         }
-        if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
-            return false;
-        }
-        if (moduleArtifacts != null) {
-            if (Iterables.getOnlyElement(moduleArtifacts).getType().equals("awb")) {
-                return false;
-            }
-        }
         if (apDependencies != null) {
+            if (moduleArtifacts != null) {
+                if (Iterables.getLast(moduleArtifacts).getType().equals("awb")) {
+                    return false;
+                }
+            }
             if (!apDependencies.isMainLibrary(moduleVersion.getModule())) {
                 return true;
             }
-            if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
+            if (apDependencies.hasSameResolvedDependency(moduleVersion) &&!(resolvedComponentResult.getId() instanceof ProjectComponentIdentifier)) {
                 return true;
             }
-        }
-        return false;
+        } return false;
     }
 }
