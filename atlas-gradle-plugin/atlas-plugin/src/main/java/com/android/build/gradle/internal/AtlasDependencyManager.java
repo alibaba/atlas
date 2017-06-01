@@ -372,13 +372,14 @@ public class AtlasDependencyManager extends DependencyManager {
                     return false;
                 }
             }
-            if (!atlasDependencyTree.getMainBundle(). containsDependency(moduleVersion)){
+            if (!atlasDependencyTree.getMainBundle().containsDependency(moduleVersion)) {
                 return true;
             }
             if (apDependencies.hasSameResolvedDependency(moduleVersion)
                 && !(resolvedComponentResult.getId() instanceof ProjectComponentIdentifier)) {
                 return true;
             }
-        } return false;
+        }
+        return false;
     }
 }
