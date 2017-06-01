@@ -464,15 +464,15 @@ public class DependencyResolver {
         if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
             return true;
         }
-        if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
-            return false;
-        }
-        if (moduleArtifacts != null) {
-            if (Iterables.getOnlyElement(moduleArtifacts).getType().equals("awb")) {
+        if (apDependencies != null) {
+            if (moduleArtifacts != null) {
+                if (Iterables.getLast(moduleArtifacts).getType().equals("awb")) {
+                    return false;
+                }
+            }
+            if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
                 return false;
             }
-        }
-        if (apDependencies != null) {
             if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                 return true;
             }
