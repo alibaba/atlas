@@ -370,15 +370,18 @@ public class PrepareAPTask extends BaseTask {
             File explodedDir = getExplodedDir();
             File awbExplodedDir = new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY);
             File remotebundlesDir = new File(explodedDir, AP_REMOTE_BUNDLES_DIRECTORY);
+            File awbDir = new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY);
+            FileUtils.mkdirs(awbDir);
+            FileUtils.mkdirs(awbExplodedDir);
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 String awbSoName = awbBundle.getAwbSoName();
                 File awbFile = new File(remotebundlesDir, awbSoName);
                 if (awbFile.exists()) {
-                    FileUtils.copyFileToDirectory(awbFile, awbExplodedDir);
+                    FileUtils.copyFileToDirectory(awbFile, awbDir);
                 } else {
                     awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
                                                     "lib/armeabi/" + awbSoName,
-                                                    new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
+                                                    awbDir);
                 }
                 File awbExplodedFile = new File(awbExplodedDir, FilenameUtils.getBaseName(awbSoName));
                 BetterZip.unzipDirectory(awbFile, awbExplodedFile);
