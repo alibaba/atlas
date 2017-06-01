@@ -251,6 +251,7 @@ import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
 import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_APK_FILENAME;
 import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_AWB_EXPLODED_DIRECTORY;
 import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_AWB_EXTRACT_DIRECTORY;
+import static com.android.build.gradle.internal.api.ApContext.AP_REMOTE_BUNDLES_DIRECTORY;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
@@ -367,16 +368,22 @@ public class PrepareAPTask extends BaseTask {
         if (getAwbBundles() != null) {
             // 解压基线Bundle
             File explodedDir = getExplodedDir();
+            File awbExplodedDir = new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY);
+            File remotebundlesDir = new File(explodedDir, AP_REMOTE_BUNDLES_DIRECTORY);
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 String awbSoName = awbBundle.getAwbSoName();
-                File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
-                                                     "lib/armeabi/" + awbSoName,
-                                                     new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
-                File awbExplodedDir = new File(new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY),
-                                               FilenameUtils.getBaseName(awbSoName));
-                BetterZip.unzipDirectory(awbFile, awbExplodedDir);
-                FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
-                                   new File(awbExplodedDir, "classes2.dex"));
+                File awbFile = new File(remotebundlesDir, awbSoName);
+                if (awbFile.exists()) {
+                    FileUtils.copyFileToDirectory(awbFile, awbExplodedDir);
+                } else {
+                    awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
+                                                    "lib/armeabi/" + awbSoName,
+                                                    new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
+                }
+                File awbExplodedFile = new File(awbExplodedDir, FilenameUtils.getBaseName(awbSoName));
+                BetterZip.unzipDirectory(awbFile, awbExplodedFile);
+                FileUtils.renameTo(new File(awbExplodedFile, FN_APK_CLASSES_DEX),
+                                   new File(awbExplodedFile, "classes2.dex"));
             }
         }
     }

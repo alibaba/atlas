@@ -226,6 +226,8 @@ public class ApContext {
 
     public static final String AP_INLINE_APK_EXTRACT_DIRECTORY = "android.apk_";
 
+    public static final String AP_REMOTE_BUNDLES_DIRECTORY = "remotebundles";
+
     public static final String AP_INLINE_AWB_EXPLODED_DIRECTORY = "exploded-awb";
 
     public static final String AP_INLINE_AWB_EXTRACT_DIRECTORY = "awbs";
