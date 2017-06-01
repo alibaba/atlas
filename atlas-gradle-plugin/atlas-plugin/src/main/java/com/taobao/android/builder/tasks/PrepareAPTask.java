@@ -318,6 +318,9 @@ public class PrepareAPTask extends BaseTask {
     void generate() throws IOException, DocumentException {
 
         File apBaseFile = getApBaseFile(getProject());
+        File explodedDir = getExplodedDir();
+
+        FileUtils.cleanOutputDir(explodedDir);
 
         boolean incremental = variantContext.getAtlasExtension().getTBuildConfig().isIncremental();
         if (incremental && apBaseFile == null || !apBaseFile.isFile()) {
@@ -325,7 +328,6 @@ public class PrepareAPTask extends BaseTask {
         }
 
         if (null != apBaseFile && apBaseFile.exists()) {
-            File explodedDir = getExplodedDir();
             BetterZip.unzipDirectory(apBaseFile, getExplodedDir());
             extractBaseBundles();
             if (incremental) {
