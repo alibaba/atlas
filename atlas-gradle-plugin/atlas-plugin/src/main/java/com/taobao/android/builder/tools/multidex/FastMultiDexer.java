@@ -233,9 +233,6 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.transforms.JarMerger;
 import com.android.builder.core.AtlasBuilder.MultiDexer;
 import com.android.dex.Dex;
-import com.android.dex.DexIndexOverflowException;
-import com.android.dex.FieldId;
-import com.android.dex.MethodId;
 import com.android.dx.command.dexer.DxContext;
 import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
@@ -243,7 +240,6 @@ import com.google.common.base.Joiner;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.FileNameUtils;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -262,8 +258,6 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
  * Created by wuzhong on 2017/5/8.
  */
 public class FastMultiDexer implements MultiDexer {
-
-    public static final int MAX_FIELD_IDS = 65530;
 
     private static final Logger logger = LoggerFactory.getLogger(FastMultiDexer.class);
 
@@ -519,53 +513,14 @@ public class FastMultiDexer implements MultiDexer {
     }
 
     @Override
-    public void dexMerge(List<Dex> dexList, File outDexFolder) throws IOException {
+    public void dexMerge(Map<File, Dex> fileDexMap, File outDexFolder) throws IOException {
 
-        List<DexDto> dexDtos = new ArrayList<>();
-        DexDto dexDto = new DexDto();
-        for (Dex dex : dexList) {
-            if (!dexDto.addDex(dex)) {
-                dexDtos.add(dexDto);
-                dexDto = new DexDto();
-                dexDto.addDex(dex);
-            }
-        }
-        dexDtos.add(dexDto);
+        com.taobao.android.builder.tools.multidex.DexMerger dexMerger = new com.taobao.android.builder.tools.multidex
+            .DexMerger(multiDexConfig, fileDexMap);
 
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("dexmerge", LoggerFactory
-            .getLogger(FastMultiDexer.class), dexDtos.size());
-        List<Runnable> runnables = new ArrayList<>(dexDtos.size());
+        List<DexGroup> dexDtos = dexMerger.group();
 
-        Dex[] mergedList = new Dex[dexDtos.size()];
-        for (int i = 0; i < dexDtos.size(); i++) {
-            final List<Dex> dexes = dexDtos.get(i).dexs;
-            final int index = i;
-            runnables.add(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        mergeDex(outDexFolder, dexes, index, mergedList);
-                    } catch (Throwable e) {
-                        throw new GradleException(e.getMessage(), e);
-                    }
-                }
-            });
-        }
-
-        try {
-            executorServicesHelper.execute(runnables);
-        } catch (InterruptedException e) {
-            throw new GradleException(e.getMessage(), e);
-        }
-
-        //todo
-        //System.out.println(mergedList.length);
-        //File[] files = outDexFolder.listFiles(new FilenameFilter() {
-        //    @Override
-        //    public boolean accept(File dir, String name) {
-        //        return name.endsWith("dex");
-        //    }
-        //});
+        dexMerger.executeMerge(outDexFolder, dexDtos);
 
     }
 
@@ -583,67 +538,4 @@ public class FastMultiDexer implements MultiDexer {
         dex.writeTo(dexFile);
     }
 
-    public static class DexDto {
-
-        public List<Dex> dexs = new ArrayList<>();
-
-        public int methods = 0;
-
-        public int fields = 0;
-
-        public boolean addDex(Dex dex) {
-
-            int ms = dex.getTableOfContents().methodIds.size;
-            int fs = dex.getTableOfContents().fieldIds.size;
-
-            if (fs >= MAX_FIELD_IDS) {
-                throw new DexIndexOverflowException("field ID not in [0, 0xffff]: " + fs);
-            }
-            if (methods + ms >= 63000 || fields + fs >= MAX_FIELD_IDS) {
-                return false;
-            }
-
-            dexs.add(dex);
-            methods += ms;
-            fields += fs;
-
-            return true;
-        }
-
-        private Set<String> getMethods(Dex dex) {
-            Set<String> sets = new HashSet<>();
-            for (MethodId mi : dex.methodIds()) {
-                sets.add(mi.toString());
-            }
-            return sets;
-        }
-
-        private Set<String> getFields(Dex dex) {
-            Set<String> sets = new HashSet<>();
-            for (FieldId filedId : dex.fieldIds()) {
-                sets.add(filedId.toString());
-            }
-            return sets;
-        }
-    }
-
-    public static class DexWrapper {
-
-        public Dex dex;
-
-        public boolean addDex(Dex newDex, int count) {
-
-            int ms = dex.getTableOfContents().methodIds.size;
-            int fs = dex.getTableOfContents().fieldIds.size;
-
-            int ms2 = newDex.getTableOfContents().methodIds.size;
-            int fs2 = newDex.getTableOfContents().fieldIds.size;
-
-            if (ms + ms >= count || ms2 + fs >= count) {
-                return false;
-            }
-
-            return true;
-        }
-    }
 }

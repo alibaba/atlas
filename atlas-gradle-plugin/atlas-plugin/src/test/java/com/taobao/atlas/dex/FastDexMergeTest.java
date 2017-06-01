@@ -207,95 +207,74 @@
  *
  */
 
-package com.taobao.android.builder.extension;
+package com.taobao.atlas.dex;
 
-import java.util.Set;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
+import com.taobao.android.builder.extension.MultiDexConfig;
+import com.taobao.android.builder.tools.multidex.DexGroup;
+import com.taobao.android.builder.tools.multidex.DexMerger;
+import org.apache.commons.io.FileUtils;
+import org.junit.Test;
 
 /**
- * Created by wuzhong on 2017/5/8.
+ * Created by wuzhong on 2017/5/19.
  */
-public class MultiDexConfig {
+public class FastDexMergeTest {
 
-    private String name;
+    @Test
+    public void test() throws IOException {
 
-    public MultiDexConfig(String name) {
-        this.name = name;
+        //String dir
+        //    = "/Users/wuzhong/workspace/ali_android/cainiao/guoguo_android/guoguo_app/build/intermediates/transforms"
+        //    + "/dex/debug/folders/1000/1f/main";
+
+        String dir = "/Users/wuzhong/Downloads/alipay";
+
+        //String dir = "/Users/wuzhong/Downloads/guoguo";
+        Collection<File> files = FileUtils.listFiles(new File(dir), new String[] {"dex"}, true);
+
+        //testA(files);
+        //
+        //testB(files);
+
+        testC(files);
+
     }
 
-    @Config(title = "是否启用快速", message = "是否启用atlas , true/false", order = 0, group = "atlas")
-    private boolean fastMultiDex = false;
-
-    @Config(title = "额外第一个dex类列表", message = "自定义需要放到第一个dex中的入口类", order = 3, group = "atlas")
-    private Set<String> firstDexClasses = Sets.newHashSet();
-    /**
-     * dex 的分包个数， 0 表示不进行限制，不做2次merge
-     */
-    @Config(title = "dex的个数", message = "0表示无限制", order = 1, group = "atlas")
-    private int dexCount;
-
-    @Config(title = "dex分隔的规则", message = "a,b;c,d", order = 2, group = "atlas")
-    private String dexSplitRules;
-
-    private Set<String> mainDexWhiteList = Sets.newHashSet();
-
-    private Set<String> mainDexBlackList = Sets.newHashSet();
-
-    public String getName() {
-        return name;
+    private void testA(Collection<File> files) throws IOException {
+        MultiDexConfig multiDexConfig = new MultiDexConfig("debug");
+        DexMerger dexMerger = new DexMerger(multiDexConfig, files);
+        List<DexGroup> dexDtos = dexMerger.group();
+        //System.out.println(JSON.toJSONString(dexDtos,true));
+        System.out.println(dexDtos.size());
+        System.out.println(dexMerger.dexList.size());
     }
 
-    public void setName(String name) {
-        this.name = name;
+    private void testB(Collection<File> files) throws IOException {
+        MultiDexConfig multiDexConfig = new MultiDexConfig("debug");
+        multiDexConfig.setDexCount(3);
+        DexMerger dexMerger = new DexMerger(multiDexConfig, files);
+        List<DexGroup> dexDtos = dexMerger.group();
+        //System.out.println(JSON.toJSONString(dexDtos,true));
+        System.out.println(dexDtos.size());
+        System.out.println(dexMerger.dexList.size());
     }
 
-    public boolean isFastMultiDex() {
-        return fastMultiDex;
+    private void testC(Collection<File> files) throws IOException {
+        MultiDexConfig multiDexConfig = new MultiDexConfig("debug");
+        //multiDexConfig.setDexSplitRules("a12312,123213;c123123,d123123;ee123123");
+        //multiDexConfig.setDexCount(3);
+        DexMerger dexMerger = new DexMerger(multiDexConfig, files);
+        List<DexGroup> dexDtos = dexMerger.group();
+        System.out.println(dexDtos.size());
+        System.out.println(dexMerger.dexList.size());
+        FileUtils.deleteDirectory(new File("/Users/wuzhong/Downloads/dex"));
+        new File("/Users/wuzhong/Downloads/dex").mkdirs();
+        dexMerger.executeMerge(new File("/Users/wuzhong/Downloads/dex"),dexDtos);
     }
 
-    public void setFastMultiDex(boolean fastMultiDex) {
-        this.fastMultiDex = fastMultiDex;
-    }
-
-    public Set<String> getMainDexWhiteList() {
-        return mainDexWhiteList;
-    }
-
-    public void setMainDexWhiteList(Set<String> mainDexWhiteList) {
-        this.mainDexWhiteList = mainDexWhiteList;
-    }
-
-    public Set<String> getMainDexBlackList() {
-        return mainDexBlackList;
-    }
-
-    public void setMainDexBlackList(Set<String> mainDexBlackList) {
-        this.mainDexBlackList = mainDexBlackList;
-    }
-
-    public Set<String> getFirstDexClasses() {
-        return firstDexClasses;
-    }
-
-    public void setFirstDexClasses(Set<String> firstDexClasses) {
-        this.firstDexClasses = firstDexClasses;
-    }
-
-    public int getDexCount() {
-        return dexCount;
-    }
-
-    public void setDexCount(int dexCount) {
-        this.dexCount = dexCount;
-    }
-
-    public String getDexSplitRules() {
-        return dexSplitRules;
-    }
-
-    public void setDexSplitRules(String dexSplitRules) {
-        this.dexSplitRules = dexSplitRules;
-    }
 }

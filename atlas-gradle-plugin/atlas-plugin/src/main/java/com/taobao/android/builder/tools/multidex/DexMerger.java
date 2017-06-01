@@ -207,95 +207,234 @@
  *
  */
 
-package com.taobao.android.builder.extension;
+package com.taobao.android.builder.tools.multidex;
 
-import java.util.Set;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
+import com.android.dex.Dex;
+import com.android.dex.DexIndexOverflowException;
+import com.android.dx.command.dexer.DxContext;
+import com.android.dx.merge.CollisionPolicy;
+import com.taobao.android.builder.extension.MultiDexConfig;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import org.apache.commons.lang.StringUtils;
+import org.gradle.api.GradleException;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Created by wuzhong on 2017/5/8.
+ * Created by wuzhong on 2017/5/31.
  */
-public class MultiDexConfig {
+public class DexMerger {
 
-    private String name;
+    private static Logger logger = LoggerFactory.getLogger(DexMerger.class);
 
-    public MultiDexConfig(String name) {
-        this.name = name;
+    private MultiDexConfig multiDexConfig;
+    private List<File> fileList;
+
+    private LinkedHashMap<File, Dex> jarDexMap = new LinkedHashMap<>();
+    public List<Dex> dexList = new ArrayList<>();
+
+    public DexMerger(MultiDexConfig multiDexConfig, Collection<File> fileList) throws IOException {
+
+        this.multiDexConfig = multiDexConfig;
+        this.fileList = fileList.stream().sorted(new FileComparator()).collect(Collectors.toList());
+
+        for (File file : fileList) {
+            Dex dex = new Dex(file);
+            jarDexMap.put(file, dex);
+        }
+
+        dexList = new ArrayList<>(jarDexMap.values());
+
     }
 
-    @Config(title = "是否启用快速", message = "是否启用atlas , true/false", order = 0, group = "atlas")
-    private boolean fastMultiDex = false;
+    public DexMerger(MultiDexConfig multiDexConfig, Map<File, Dex> dexFileMap) throws IOException {
 
-    @Config(title = "额外第一个dex类列表", message = "自定义需要放到第一个dex中的入口类", order = 3, group = "atlas")
-    private Set<String> firstDexClasses = Sets.newHashSet();
-    /**
-     * dex 的分包个数， 0 表示不进行限制，不做2次merge
-     */
-    @Config(title = "dex的个数", message = "0表示无限制", order = 1, group = "atlas")
-    private int dexCount;
+        this.multiDexConfig = multiDexConfig;
+        this.fileList = dexFileMap.keySet().stream().sorted(new FileComparator()).collect(Collectors.toList());
 
-    @Config(title = "dex分隔的规则", message = "a,b;c,d", order = 2, group = "atlas")
-    private String dexSplitRules;
+        for (File file : fileList) {
+            Dex dex = dexFileMap.get(file);
+            jarDexMap.put(file, dex);
+        }
 
-    private Set<String> mainDexWhiteList = Sets.newHashSet();
+        dexList = new ArrayList<>(jarDexMap.values());
 
-    private Set<String> mainDexBlackList = Sets.newHashSet();
-
-    public String getName() {
-        return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public List<DexGroup> group() {
+
+        List<DexGroup> dexGroupList = new ArrayList<>();
+
+        addDexByRule(dexGroupList);
+
+        addDexLimited(dexGroupList, true);
+
+        return dexGroupList;
+
     }
 
-    public boolean isFastMultiDex() {
-        return fastMultiDex;
+    public void executeMerge(File outDexFolder, List<DexGroup> dexGroupList) {
+
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("dexmerge", LoggerFactory
+            .getLogger(FastMultiDexer.class), dexGroupList.size());
+        List<Runnable> runnables = new ArrayList<>(dexGroupList.size());
+
+        Dex[] mergedList = new Dex[dexGroupList.size()];
+        for (int i = 0; i < dexGroupList.size(); i++) {
+            final List<Dex> dexes = dexGroupList.get(i).dexs;
+            final int index = i;
+            runnables.add(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        mergeDex(outDexFolder, dexes, index, mergedList);
+                    } catch (Throwable e) {
+                        throw new GradleException(e.getMessage(), e);
+                    }
+                }
+            });
+        }
+
+        try {
+            executorServicesHelper.execute(runnables);
+        } catch (InterruptedException e) {
+            throw new GradleException(e.getMessage(), e);
+        }
+
+        if (!dexList.isEmpty()) {
+            mergeSmallDexs(outDexFolder, mergedList);
+        }
+
     }
 
-    public void setFastMultiDex(boolean fastMultiDex) {
-        this.fastMultiDex = fastMultiDex;
+    private void mergeSmallDexs(File outDexFolder, Dex[] mergedList) {
+        List<DexGroup> dexGroupList = new ArrayList<>();
+        for (int i = 0; i < mergedList.length; i++) {
+            DexGroup dexGroup = new DexGroup();
+            dexGroup.firstDex = (0 == i);
+            dexGroup.addDex(mergedList[i]);
+            dexGroupList.add(i,dexGroup);
+        }
+
+        addDexLimited(dexGroupList, false);
+
+        executeMerge(outDexFolder, dexGroupList);
     }
 
-    public Set<String> getMainDexWhiteList() {
-        return mainDexWhiteList;
+    private void mergeDex(File outDexFolder, List<Dex> tmpList, int index, Dex[] mergedList) throws IOException {
+
+        com.android.dx.merge.DexMerger dexMerger = new com.android.dx.merge.DexMerger(tmpList.toArray(new Dex[0]),
+                                                                                      CollisionPolicy.KEEP_FIRST,
+                                                                                      new DxContext());
+
+        dexMerger.setCompactWasteThreshold(1024);
+
+        Dex dex = dexMerger.merge();
+
+        mergedList[index] = dex;
+
+        if (dexList.isEmpty()) {
+            logger.warn("dexCount of {}, methods {} , fields {}", index, dex.getTableOfContents().methodIds.size,
+                        dex.getTableOfContents().fieldIds.size);
+
+            String name = "classes" + (0 == index ? "" : String.valueOf(index + 1)) + ".dex";
+
+            File dexFile = new File(outDexFolder, name);
+
+            dex.writeTo(dexFile);
+        }
     }
 
-    public void setMainDexWhiteList(Set<String> mainDexWhiteList) {
-        this.mainDexWhiteList = mainDexWhiteList;
+    private void addDexByRule(List<DexGroup> dexDtos) {
+
+        if (StringUtils.isEmpty(multiDexConfig.getDexSplitRules())) {
+            return;
+        }
+
+        String[] rules = multiDexConfig.getDexSplitRules().split(";");
+        for (int i = 0; i < rules.length; i++) {
+            String rule = rules[i];
+            if (StringUtils.isEmpty(rule)) {
+                continue;
+            }
+            String[] items = rule.split(",");
+            DexGroup dexDto = new DexGroup();
+            dexDto.firstDex = (i == 0);
+            dexDtos.add(i, dexDto);
+            for (File file : fileList) {
+                if (match(items, file)) {
+                    Dex dex = jarDexMap.get(file);
+                    if (!dexDto.addDex(dex)) {
+                        throw new DexIndexOverflowException(file.getAbsolutePath() + " can't add to dex" + i);
+                    }
+                    dexList.remove(dex);
+                }
+            }
+        }
+
     }
 
-    public Set<String> getMainDexBlackList() {
-        return mainDexBlackList;
+    private void addDexLimited(List<DexGroup> dexDtos, boolean limited) {
+
+        int dexCount = multiDexConfig.getDexCount();
+        if (dexCount == 0) {
+            dexCount = Integer.MAX_VALUE;
+        }
+
+        int index = 0;
+        DexGroup dexDto = getDexDto(dexDtos, index);
+        for (Dex dex : new ArrayList<>(dexList)) {
+            //如果不能加入进去，需要重新扩展一个dex
+            while (!dexDto.addDex(dex)) {
+
+                if (limited && index >= dexCount) {
+                    return;
+                }
+
+                dexDto = getDexDto(dexDtos, index++);
+
+            }
+            dexList.remove(dex);
+        }
+
     }
 
-    public void setMainDexBlackList(Set<String> mainDexBlackList) {
-        this.mainDexBlackList = mainDexBlackList;
+    @NotNull
+    private DexGroup getDexDto(List<DexGroup> dexDtos, int index) {
+        if (dexDtos.size() <= index) {
+            DexGroup dexDto = new DexGroup();
+            dexDtos.add(index, dexDto);
+            return dexDto;
+        }
+
+        DexGroup dexDto = dexDtos.get(index);
+        if (null == dexDto) {
+            dexDto = new DexGroup();
+            if (index == 0) {
+                dexDto.firstDex = true;
+            }
+            dexDtos.add(index, dexDto);
+        }
+        return dexDto;
     }
 
-    public Set<String> getFirstDexClasses() {
-        return firstDexClasses;
+    private boolean match(String[] items, File file) {
+        for (String artiId : items) {
+            if (file.getParentFile().getName().contains(artiId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public void setFirstDexClasses(Set<String> firstDexClasses) {
-        this.firstDexClasses = firstDexClasses;
-    }
-
-    public int getDexCount() {
-        return dexCount;
-    }
-
-    public void setDexCount(int dexCount) {
-        this.dexCount = dexCount;
-    }
-
-    public String getDexSplitRules() {
-        return dexSplitRules;
-    }
-
-    public void setDexSplitRules(String dexSplitRules) {
-        this.dexSplitRules = dexSplitRules;
-    }
 }

@@ -209,6 +209,21 @@
 
 package com.android.builder.core;
 
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -277,16 +292,6 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.StopExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.util.*;
-
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -926,7 +931,10 @@ public class AtlasBuilder extends AndroidBuilder {
         if (AtlasBuildContext.sBuilderAdapter.fileCache.isCacheEnabled() && inputs.size() > 1) {
 
             Profiler.enter("jar2dex");
+
             List<Dex> dexs = new ArrayList<>();
+            Map<File,Dex> fileDexMap = new HashMap<>();
+
             //做dexMerge
             File tmpDir = new File(outDexFolder, "tmp");
             tmpDir.mkdirs();
@@ -980,7 +988,9 @@ public class AtlasBuilder extends AndroidBuilder {
                 File[] files = dexDir.listFiles();
                 for (File dexFile : files) {
                     if (dexFile.exists() && dexFile.length() > 0) {
-                        dexs.add(new Dex(dexFile));
+                        Dex dex = new Dex(dexFile);
+                        dexs.add(dex);
+                        fileDexMap.put(dexFile,dex);
                     }
                 }
             }
@@ -993,7 +1003,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
                 if (fastMultiDex) {
 
-                    multiDexer.dexMerge(dexs, outDexFolder);
+                    multiDexer.dexMerge(fileDexMap, outDexFolder);
 
                 } else {
                     DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
@@ -1105,7 +1115,6 @@ public class AtlasBuilder extends AndroidBuilder {
         //todo  设置dexOptions
         DefaultDexOptions defaultDexOptions = new DefaultDexOptions();
 
-        defaultDexOptions.setJumboMode(dexOptions.getJumboMode());
         //外部已经启动了多线程，尽量少一点
         defaultDexOptions.setThreadCount(dexOptions.getThreadCount());
         defaultDexOptions.setAdditionalParameters(dexOptions.getAdditionalParameters());
@@ -1303,7 +1312,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
         public Collection<File> repackageJarList(Collection<File> files) throws IOException;
 
-        public void dexMerge(List<Dex> dexList, File outDexFolder) throws IOException;
+        public void dexMerge(Map<File,Dex> fileDexMap, File outDexFolder) throws IOException;
 
     }
 }

@@ -207,95 +207,68 @@
  *
  */
 
-package com.taobao.android.builder.extension;
+package com.taobao.android.builder.tools.multidex;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.extension.annotation.Config;
+import com.android.dex.Dex;
+import com.android.dex.DexIndexOverflowException;
+import com.android.dex.FieldId;
+import com.android.dex.MethodId;
 
-/**
- * Created by wuzhong on 2017/5/8.
- */
-public class MultiDexConfig {
+public class DexGroup {
 
-    private String name;
+    public static final int MAX_FIELD_IDS = 65530;
+    public static final int MAX_METHOD_IDS = 65530;
+    public static final int MAX_METHOD_IDS_FIRSTDEX = 65000;
 
-    public MultiDexConfig(String name) {
-        this.name = name;
+    public boolean firstDex;
+
+    public List<Dex> dexs = new ArrayList<>();
+
+    public int methods = 0;
+    public int fields = 0;
+    public Set<String> strings = new HashSet<>();
+
+    public boolean addDex(Dex dex) {
+
+        int ms = dex.getTableOfContents().methodIds.size;
+        int fs = dex.getTableOfContents().fieldIds.size;
+
+        Set<String> newstrings = new HashSet<>(strings);
+        newstrings.addAll(dex.strings());
+
+        if (fs >= MAX_FIELD_IDS) {
+            throw new DexIndexOverflowException("field ID not in [0, 0xffff]: " + fs);
+        }
+        if (methods + ms >= (firstDex ? MAX_METHOD_IDS_FIRSTDEX : MAX_METHOD_IDS) || fields + fs >= MAX_FIELD_IDS || newstrings.size() >= MAX_FIELD_IDS) {
+            return false;
+        }
+
+        dexs.add(dex);
+        methods += ms;
+        fields += fs;
+        strings = newstrings;
+
+        return true;
     }
 
-    @Config(title = "是否启用快速", message = "是否启用atlas , true/false", order = 0, group = "atlas")
-    private boolean fastMultiDex = false;
-
-    @Config(title = "额外第一个dex类列表", message = "自定义需要放到第一个dex中的入口类", order = 3, group = "atlas")
-    private Set<String> firstDexClasses = Sets.newHashSet();
-    /**
-     * dex 的分包个数， 0 表示不进行限制，不做2次merge
-     */
-    @Config(title = "dex的个数", message = "0表示无限制", order = 1, group = "atlas")
-    private int dexCount;
-
-    @Config(title = "dex分隔的规则", message = "a,b;c,d", order = 2, group = "atlas")
-    private String dexSplitRules;
-
-    private Set<String> mainDexWhiteList = Sets.newHashSet();
-
-    private Set<String> mainDexBlackList = Sets.newHashSet();
-
-    public String getName() {
-        return name;
+    private Set<String> getMethods(Dex dex) {
+        Set<String> sets = new HashSet<>();
+        for (MethodId mi : dex.methodIds()) {
+            sets.add(mi.toString());
+        }
+        return sets;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public boolean isFastMultiDex() {
-        return fastMultiDex;
-    }
-
-    public void setFastMultiDex(boolean fastMultiDex) {
-        this.fastMultiDex = fastMultiDex;
-    }
-
-    public Set<String> getMainDexWhiteList() {
-        return mainDexWhiteList;
-    }
-
-    public void setMainDexWhiteList(Set<String> mainDexWhiteList) {
-        this.mainDexWhiteList = mainDexWhiteList;
-    }
-
-    public Set<String> getMainDexBlackList() {
-        return mainDexBlackList;
-    }
-
-    public void setMainDexBlackList(Set<String> mainDexBlackList) {
-        this.mainDexBlackList = mainDexBlackList;
-    }
-
-    public Set<String> getFirstDexClasses() {
-        return firstDexClasses;
-    }
-
-    public void setFirstDexClasses(Set<String> firstDexClasses) {
-        this.firstDexClasses = firstDexClasses;
-    }
-
-    public int getDexCount() {
-        return dexCount;
-    }
-
-    public void setDexCount(int dexCount) {
-        this.dexCount = dexCount;
-    }
-
-    public String getDexSplitRules() {
-        return dexSplitRules;
-    }
-
-    public void setDexSplitRules(String dexSplitRules) {
-        this.dexSplitRules = dexSplitRules;
+    private Set<String> getFields(Dex dex) {
+        Set<String> sets = new HashSet<>();
+        for (FieldId filedId : dex.fieldIds()) {
+            sets.add(filedId.toString());
+        }
+        return sets;
     }
 }
