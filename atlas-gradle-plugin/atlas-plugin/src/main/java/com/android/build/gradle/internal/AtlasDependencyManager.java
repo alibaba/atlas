@@ -257,6 +257,8 @@ public class AtlasDependencyManager extends DependencyManager {
 
     private ApDependencies apDependencies;
 
+    private AtlasDependencyTree atlasDependencyTree;
+
     public AtlasDependencyManager(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo,
                                   @NonNull SdkHandler sdkHandler) {
         super(project, extraModelInfo, sdkHandler);
@@ -277,9 +279,7 @@ public class AtlasDependencyManager extends DependencyManager {
                                                       @Nullable String testedProjectPath) {
         this.apDependencies = resolveApDependencies(variantDeps);
 
-        AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(project,
-                                                                         extraModelInfo,
-                                                                         this.apDependencies).parseDependencyTree(
+        atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo, this.apDependencies).parseDependencyTree(
             variantDeps);
 
         AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
@@ -372,14 +372,13 @@ public class AtlasDependencyManager extends DependencyManager {
                     return false;
                 }
             }
-            if (!apDependencies.isMainLibrary(moduleVersion.getModule())) {
+            if (!atlasDependencyTree.getMainBundle(). containsDependency(moduleVersion)){
                 return true;
             }
             if (apDependencies.hasSameResolvedDependency(moduleVersion)
                 && !(resolvedComponentResult.getId() instanceof ProjectComponentIdentifier)) {
                 return true;
             }
-        }
-        return false;
+        } return false;
     }
 }

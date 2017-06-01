@@ -500,13 +500,13 @@ public class AwbBundle {
                 return true;
             }
         }
-            for (JavaLibrary javaLibrary : getJavaLibraries()) {
-                if (compareWithoutVersion(moduleVersion, javaLibrary.getResolvedCoordinates())) {
-                    return true;
-                }
+        for (JavaLibrary javaLibrary : getJavaLibraries()) {
+            if (compareWithoutVersion(moduleVersion, javaLibrary.getResolvedCoordinates())) {
+                return true;
             }
+        }
         for (SoLibrary soLibrary : getSoLibraries()) {
-            if (compareWithoutVersion(moduleVersion,soLibrary.getResolvedCoordinates())) {
+            if (compareWithoutVersion(moduleVersion, soLibrary.getResolvedCoordinates())) {
                 return true;
             }
         }
