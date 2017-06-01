@@ -479,6 +479,9 @@ public class BundleArchiveRevision {
             if (dexFile == null){
                 if(!externalStorage || (externalStorage && Build.VERSION.SDK_INT>=21 && MultiDex.IS_VM_MULTIDEX_CAPABLE)) {
                     boolean interpretOnly = externalStorage ? true : false;
+                    if(bundleFile.getUsableSpace()<5*1024*1024){
+                        interpretOnly = true;
+                    }
                     dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
                 }else{
                     Method m=Class.forName("android.taobao.atlas.util.DexFileCompat")

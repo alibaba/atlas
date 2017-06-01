@@ -415,13 +415,18 @@ public class BundleListing implements Serializable{
         }
 
         private void findBundleTransitively(String location,List<String> bundlesListForInstall){
-            //打断循环依赖
-            if(bundlesListForInstall.contains(location)){
-                return;
-            }
+//            //打断循环依赖
+//            if(bundlesListForInstall.contains(location)){
+//                return;
+//            }
             if(!bundlesListForInstall.contains(location)) {
                 bundlesListForInstall.add(0,location);
+            }else{
+                bundlesListForInstall.remove(location);
+                bundlesListForInstall.add(0,location);
+                return;
             }
+
             List<String> singleLevelDependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
             if(singleLevelDependencies!=null){
                 for(String dependepcy : singleLevelDependencies){

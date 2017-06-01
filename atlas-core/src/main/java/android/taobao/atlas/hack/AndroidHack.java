@@ -452,12 +452,14 @@ public class AndroidHack {
                         sAssetsField.set(res, resources.getAssets());
                     }
                 }else{
-                    Field resourcesImplField = Resources.class.getDeclaredField("mResourcesImpl");
-                    resourcesImplField.setAccessible(true);
-                    Object resourceImpl = resourcesImplField.get(res);
-                    Field implAssets = findField(resourceImpl, "mAssets");
-                    implAssets.setAccessible(true);
-                    implAssets.set(resourceImpl, resources.getAssets());
+                    if(res!=null) {
+                        Field resourcesImplField = Resources.class.getDeclaredField("mResourcesImpl");
+                        resourcesImplField.setAccessible(true);
+                        Object resourceImpl = resourcesImplField.get(res);
+                        Field implAssets = findField(resourceImpl, "mAssets");
+                        implAssets.setAccessible(true);
+                        implAssets.set(resourceImpl, resources.getAssets());
+                    }
                 }
 
                 if(Build.VERSION.SDK_INT>19 && Build.VERSION.SDK_INT<24) {

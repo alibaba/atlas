@@ -250,37 +250,24 @@ public class DelegateClassLoader extends PathClassLoader {
 
     @Override
     protected Class<?> findClass(String className) throws ClassNotFoundException {
-        if(className.contains("dexmerge")){
-            Log.e("AtlasBridgeApplcation","find : "+className);
-        }
         Class<?> clazz = null;
-        try {
-            clazz = loadFromInstalledBundles(className,false);
-        }catch(Throwable e){
-
-        }finally {
-            if (clazz == null) {
-                if (Thread.currentThread().getId() != Looper.getMainLooper().getThread().getId()) {
-                    BundleUtil.checkBundleStateSyncOnChildThread(className);
-                } else {
-                    BundleUtil.checkBundleStateSyncOnUIThread(className);
-                }
-                clazz = loadFromInstalledBundles(className, true);
-                if (clazz != null)
-                    return clazz;
-
-                ComponentName comp = new ComponentName(RuntimeVariables.androidApplication.getPackageName(),className);
-                if (isProvider(comp)){
-                    return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeProvider");
-                }else if(isReceiver(comp)){
-                    return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeReceiver");
-                }
-
-                throw new ClassNotFoundException("Can't find class " + className + printExceptionInfo());
-            }else{
-                return clazz;
-            }
+        if (Thread.currentThread().getId() != Looper.getMainLooper().getThread().getId()) {
+            BundleUtil.checkBundleStateSyncOnChildThread(className);
+        } else {
+            BundleUtil.checkBundleStateSyncOnUIThread(className);
         }
+        clazz = loadFromInstalledBundles(className, true);
+        if (clazz != null)
+            return clazz;
+
+        ComponentName comp = new ComponentName(RuntimeVariables.androidApplication.getPackageName(),className);
+        if (isProvider(comp)){
+            return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeProvider");
+        }else if(isReceiver(comp)){
+            return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeReceiver");
+        }
+
+        throw new ClassNotFoundException("Can't find class " + className + printExceptionInfo());
     }
     
     private String printExceptionInfo(){
