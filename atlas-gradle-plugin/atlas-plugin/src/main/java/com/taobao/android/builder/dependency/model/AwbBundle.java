@@ -236,6 +236,7 @@ import com.android.utils.XmlUtils;
 import com.android.xml.AndroidManifest;
 import com.android.xml.AndroidXPathFactory;
 import com.google.common.base.Charsets;
+import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
@@ -244,6 +245,7 @@ import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.UncheckedIOException;
 import org.gradle.api.artifacts.ModuleIdentifier;
+import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -490,6 +492,30 @@ public class AwbBundle {
 
     public Map<ModuleIdentifier, String> getBaseAwbDependencies() {
         return baseAwbDependencies;
+    }
+
+    public boolean containsDependency(ModuleVersionIdentifier moduleVersion) {
+        for (AndroidLibrary androidL : getAllLibraryAars()) {
+            if (compareWithoutVersion(moduleVersion, androidL.getResolvedCoordinates())) {
+                return true;
+            }
+        }
+            for (JavaLibrary javaLibrary : getJavaLibraries()) {
+                if (compareWithoutVersion(moduleVersion, javaLibrary.getResolvedCoordinates())) {
+                    return true;
+                }
+            }
+        for (SoLibrary soLibrary : getSoLibraries()) {
+            if (compareWithoutVersion(moduleVersion,soLibrary.getResolvedCoordinates())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean compareWithoutVersion(ModuleVersionIdentifier moduleVersion, MavenCoordinates coordinates) {
+        return Objects.equal(moduleVersion.getGroup(), coordinates.getGroupId())
+               && Objects.equal(moduleVersion.getName(), coordinates.getArtifactId());
     }
 
     public void setBaseAwbDependencies(Map<ModuleIdentifier, String> baseAwbDependencies) {
