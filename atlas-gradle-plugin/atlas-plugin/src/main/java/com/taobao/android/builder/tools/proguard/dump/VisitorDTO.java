@@ -207,93 +207,168 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.visitor;
+package com.taobao.android.builder.tools.proguard.dump;
 
-import com.taobao.android.builder.tools.proguard.visitor.VisitorDTO.ClassStruct;
-import com.taobao.android.builder.tools.proguard.visitor.VisitorDTO.LibraryClazzInfo;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import proguard.classfile.ProgramClass;
-import proguard.classfile.ProgramField;
-import proguard.classfile.ProgramMethod;
-import proguard.classfile.visitor.ClassVisitor;
+import proguard.classfile.ClassConstants;
+import proguard.classfile.ClassPool;
+import proguard.classfile.Clazz;
+import proguard.classfile.LibraryClass;
 
 /**
- * Created by wuzhong on 2017/5/12.
- *
- * 查找所有类的父子关系， 是 当前类 -> root library class
+ * Created by wuzhong on 2017/5/27.
  */
-public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVisitor {
+public class VisitorDTO {
 
-    private VisitorDTO visitorDTO;
+    /**
+     * System class list， aa/bb
+     */
+    public Set<String> defaultClasses;
 
-    public ClassStructVisitor(VisitorDTO visitorDTO) {
-        this.visitorDTO = visitorDTO;
+    /**
+     * 当前的 classpool
+     */
+    public ClassPool currentClassPool;
+
+    public Set<String> abstractClasses = new HashSet<>();
+
+    /**
+     * 当前 classpool 下所有类的结构，其中 super 指向的是 library 的类
+     */
+    public Map<String, ClassStruct> classStructMap = new HashMap<>();
+
+    public Map<String, LibraryClazzInfo> libraryClazzInfoMap = new HashMap<>();
+
+    /**
+     * 最终的输出结果
+     */
+    public Map<String, ClazzRefInfo> clazzRefInfoMap = new HashMap<>();
+
+    public VisitorDTO(Set<String> defaultClasses, ClassPool currentClassPool) {
+        this.defaultClasses = defaultClasses;
+        this.currentClassPool = currentClassPool;
     }
 
-    //class 的顺序不确定有很大的问题
-    @Override
-    public void visitProgramClass(ProgramClass programClass) {
+    /**
+     * 查找离他最近的 library class
+     *
+     * @param programClass
+     * @return
+     */
+    public String findRootLibClazz(Clazz programClass) {
+        Clazz superClass = programClass.getSuperClass();
+        if (null == superClass) {
+            return "";
+        }
+        if (superClass instanceof LibraryClass) {
+            LibraryClass libraryClass = (LibraryClass)superClass;
+            String className = libraryClass.getName();
+            if (isLibClazz(className)) {
+                if ((libraryClass.getAccessFlags() & ClassConstants.ACC_ABSTRACT) == ClassConstants.ACC_ABSTRACT) {
+                    abstractClasses.add(className);
+                }
+                return className;
+            }
+            return "";
+        }
+        return findRootLibClazz(superClass);
+    }
 
-        addSuperClass(programClass);
+    public String findRootLibClazz(String className) {
+        if (isLibClazz(className)) {
+            return className;
+        }
+        Clazz clazz = currentClassPool.getClass(className);
+        //assert clazz!=null;
+        if (null == clazz) {
+            return "";
+        }
+        return findRootLibClazz(clazz);
+    }
 
-        for (int i = 0; i < programClass.getInterfaceCount(); i++) {
-            addInterface(programClass, i);
+    public boolean isLibClazz(String className) {
+        //System.out.println(className);
+        if (defaultClasses.contains(className)) {
+            return false;
+        }
+        if (className.contains("[")) {
+            return false;
+        }
+        if (null != currentClassPool.getClass(className)) {
+            return false;
+        }
+        return true;
+    }
+
+    public LibraryClazzInfo getLibraryClazzInfo(String className) {
+        String rootLibraryClass = this.findRootLibClazz(className);
+        if (StringUtils.isEmpty(rootLibraryClass)) {
+            return null;
         }
 
-        programClass.methodsAccept(this);
-
-        programClass.fieldsAccept(this);
-
+        LibraryClazzInfo libraryClazzInfo = this.libraryClazzInfoMap.get(rootLibraryClass);
+        if (null == libraryClazzInfo) {
+            libraryClazzInfo = new LibraryClazzInfo();
+            this.libraryClazzInfoMap.put(rootLibraryClass, libraryClazzInfo);
+        }
+        return libraryClazzInfo;
     }
 
-    private void addInterface(ProgramClass programClass, int i) {
-        String interfaceClazz = programClass.getInterfaceName(i);
-        //简化处理
-        if (visitorDTO.isLibClazz(interfaceClazz)) {
-            ClassStruct classStruct = getOrCreateClassStruct(programClass);
-            classStruct.libInterfaces.add(interfaceClazz);
+    public ClazzRefInfo getClazzRefInfo(String className) {
+        String rootLibraryClass = this.findRootLibClazz(className);
+        if (StringUtils.isEmpty(rootLibraryClass)) {
+            return null;
+        }
+
+        return getClazzRefInfoByName(rootLibraryClass);
+    }
+
+    private ClazzRefInfo getClazzRefInfoByName(String className) {
+        ClazzRefInfo libraryClazzInfo = this.clazzRefInfoMap.get(className);
+        if (null == libraryClazzInfo) {
+            libraryClazzInfo = new ClazzRefInfo(className);
+            this.clazzRefInfoMap.put(className, libraryClazzInfo);
+        }
+        return libraryClazzInfo;
+    }
+
+    public void addSuperRefInfo() {
+        for (ClassStruct classStruct : classStructMap.values()) {
+            if (StringUtils.isNotEmpty(classStruct.superClazzName)) {
+                if (abstractClasses.contains(classStruct.superClazzName)) {
+                    getClazzRefInfoByName(classStruct.superClazzName).setKeepAll(true);
+                } else {
+                    getClazzRefInfoByName(classStruct.superClazzName).setNeedExtend(true);
+                }
+            }
+            for (String inter : classStruct.libInterfaces) {
+                getClazzRefInfoByName(inter).setKeepAll(true);
+            }
         }
     }
 
-    @NotNull
-    private ClassStruct getOrCreateClassStruct(ProgramClass programClass) {
-        ClassStruct classStruct = visitorDTO.classStructMap.get(programClass.getName());
-        if (null == classStruct) {
-            classStruct = new ClassStruct();
-            visitorDTO.classStructMap.put(programClass.getName(), classStruct);
-        }
-        return classStruct;
+    public static class ClassStruct {
+
+        public String superAbsClazzName;
+
+        public String superClazzName;
+
+        public Set<String> libInterfaces = new HashSet<>();
+
     }
 
-    private void addSuperClass(ProgramClass programClass) {
-        String superName = visitorDTO.findRootLibClazz(programClass);
-        if (StringUtils.isEmpty(superName)) {
-            return;
-        }
-        ClassStruct classStruct = getOrCreateClassStruct(programClass);
-        classStruct.superClazzName = superName;
-    }
+    public static class LibraryClazzInfo {
 
-    @Override
-    public void visitProgramField(ProgramClass programClass, ProgramField programField) {
-        LibraryClazzInfo libraryClazzInfo = getOrCreateLibraryClazzInfo(programClass);
-        if (null != libraryClazzInfo) {
-            libraryClazzInfo.appFields.add(programField.getName(programClass));
-        }
-    }
+        public String clazzName;
 
-    @Override
-    public void visitProgramMethod(ProgramClass programClass, ProgramMethod programMethod) {
-        LibraryClazzInfo libraryClazzInfo = getOrCreateLibraryClazzInfo(programClass);
-        if (null != libraryClazzInfo) {
-            libraryClazzInfo.appMethods.add(programMethod.getName(programClass));
-        }
-    }
+        public Set<String> appMethods = new HashSet<>();
 
-    private LibraryClazzInfo getOrCreateLibraryClazzInfo(ProgramClass programClass) {
-
-        return visitorDTO.getLibraryClazzInfo(programClass.getName());
+        public Set<String> appFields = new HashSet<>();
 
     }
 

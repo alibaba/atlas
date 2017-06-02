@@ -207,133 +207,31 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.visitor;
+package com.taobao.android.builder.tools.proguard.dump;
 
-import proguard.classfile.Clazz;
-import proguard.classfile.LibraryClass;
-import proguard.classfile.LibraryField;
-import proguard.classfile.LibraryMethod;
-import proguard.classfile.ProgramClass;
-import proguard.classfile.ProgramField;
-import proguard.classfile.ProgramMethod;
-import proguard.classfile.constant.ClassConstant;
-import proguard.classfile.constant.DoubleConstant;
-import proguard.classfile.constant.FieldrefConstant;
-import proguard.classfile.constant.FloatConstant;
-import proguard.classfile.constant.IntegerConstant;
-import proguard.classfile.constant.InterfaceMethodrefConstant;
-import proguard.classfile.constant.InvokeDynamicConstant;
-import proguard.classfile.constant.LongConstant;
-import proguard.classfile.constant.MethodHandleConstant;
-import proguard.classfile.constant.MethodTypeConstant;
-import proguard.classfile.constant.MethodrefConstant;
-import proguard.classfile.constant.NameAndTypeConstant;
-import proguard.classfile.constant.StringConstant;
-import proguard.classfile.constant.Utf8Constant;
-import proguard.classfile.constant.visitor.ConstantVisitor;
-import proguard.classfile.visitor.ClassVisitor;
-import proguard.classfile.visitor.MemberVisitor;
+import java.util.Map;
+import java.util.Set;
+
+import com.taobao.android.builder.tools.ReflectUtils;
+import proguard.ProGuard;
+import proguard.classfile.ClassPool;
 
 /**
- * Created by wuzhong on 2017/5/12.
+ * Created by wuzhong on 2017/6/2.
  */
-public class AbstractClasslVisitor implements ConstantVisitor, MemberVisitor, ClassVisitor {
+public class BundleProguardDumper {
 
-    @Override
-    public void visitProgramClass(ProgramClass programClass) {
-        programClass.constantPoolEntriesAccept(this);
-    }
+    public static Map<String, ClazzRefInfo> dump(ProGuard proGuard, Set<String> defaultClasses) throws Exception {
 
-    @Override
-    public void visitLibraryClass(LibraryClass libraryClass) {
-    }
+        ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
 
-    @Override
-    public void visitIntegerConstant(Clazz clazz, IntegerConstant integerConstant) {
+        VisitorDTO visitorDTO = new VisitorDTO(defaultClasses, classPool);
 
-    }
+        classPool.classesAccept(new ClassStructVisitor(visitorDTO));
+        classPool.classesAccept(new ClassDetailVisitor(visitorDTO));
+        visitorDTO.addSuperRefInfo();
 
-    @Override
-    public void visitLongConstant(Clazz clazz, LongConstant longConstant) {
-
-    }
-
-    @Override
-    public void visitFloatConstant(Clazz clazz, FloatConstant floatConstant) {
-
-    }
-
-    @Override
-    public void visitDoubleConstant(Clazz clazz, DoubleConstant doubleConstant) {
-
-    }
-
-    @Override
-    public void visitStringConstant(Clazz clazz, StringConstant stringConstant) {
-
-    }
-
-    @Override
-    public void visitUtf8Constant(Clazz clazz, Utf8Constant utf8Constant) {
-
-    }
-
-    @Override
-    public void visitInvokeDynamicConstant(Clazz clazz, InvokeDynamicConstant invokeDynamicConstant) {
-
-    }
-
-    @Override
-    public void visitMethodHandleConstant(Clazz clazz, MethodHandleConstant methodHandleConstant) {
-
-    }
-
-    @Override
-    public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
-    }
-
-    @Override
-    public void visitInterfaceMethodrefConstant(Clazz clazz, InterfaceMethodrefConstant interfaceMethodrefConstant) {
-
-    }
-
-    @Override
-    public void visitMethodrefConstant(Clazz clazz, MethodrefConstant methodrefConstant) {
-    }
-
-    @Override
-    public void visitClassConstant(Clazz clazz, ClassConstant classConstant) {
-
-    }
-
-    @Override
-    public void visitMethodTypeConstant(Clazz clazz, MethodTypeConstant methodTypeConstant) {
-
-    }
-
-    @Override
-    public void visitNameAndTypeConstant(Clazz clazz, NameAndTypeConstant nameAndTypeConstant) {
-
-    }
-
-    @Override
-    public void visitProgramField(ProgramClass programClass, ProgramField programField) {
-    }
-
-    @Override
-    public void visitProgramMethod(ProgramClass programClass, ProgramMethod programMethod) {
-    }
-
-    @Override
-    public void visitLibraryField(LibraryClass libraryClass, LibraryField libraryField) {
-    }
-
-    @Override
-    public void visitLibraryMethod(LibraryClass libraryClass, LibraryMethod libraryMethod) {
-    }
-
-    public void println(String message) {
-        System.out.println(message);
+        return visitorDTO.clazzRefInfoMap;
     }
 
 }

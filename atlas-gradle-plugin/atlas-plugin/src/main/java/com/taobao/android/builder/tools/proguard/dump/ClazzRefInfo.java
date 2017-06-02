@@ -207,7 +207,7 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.domain;
+package com.taobao.android.builder.tools.proguard.dump;
 
 import java.util.HashSet;
 import java.util.Set;

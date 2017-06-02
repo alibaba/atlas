@@ -207,91 +207,92 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.domain;
+package com.taobao.android.builder.tools.proguard.dump;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.taobao.android.builder.tools.proguard.dump.VisitorDTO.ClassStruct;
+import com.taobao.android.builder.tools.proguard.dump.VisitorDTO.LibraryClazzInfo;
+import org.apache.commons.lang.StringUtils;
+import proguard.classfile.ProgramClass;
+import proguard.classfile.ProgramField;
+import proguard.classfile.ProgramMethod;
+import proguard.classfile.visitor.ClassVisitor;
 
 /**
- * Created by wuzhong on 2017/5/14.
+ * Created by wuzhong on 2017/5/12.
+ *
+ * 查找所有类的父子关系， 是 当前类 -> root library class
  */
-public class ClazzRefInfoContainer {
+public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVisitor {
 
-    private Map<String, ClazzRefInfo> refClazzMap = new HashMap<>();
+    private VisitorDTO visitorDTO;
 
-    public ClazzRefInfoContainer(
-        Map<String, ClazzRefInfo> refClazzMap) {
-        this.refClazzMap = refClazzMap;
+    public ClassStructVisitor(VisitorDTO visitorDTO) {
+        this.visitorDTO = visitorDTO;
     }
 
-    public ClazzRefInfoContainer() {
-    }
+    //class 的顺序不确定有很大的问题
+    @Override
+    public void visitProgramClass(ProgramClass programClass) {
 
-    public void addRefClazz(Map<String, ClazzRefInfo> other) {
+        addSuperClass(programClass);
 
-        for (String key : other.keySet()) {
-
-            ClazzRefInfo otherClazz = other.get(key);
-            ClazzRefInfo clazz = refClazzMap.get(key);
-            if (null == clazz) {
-                refClazzMap.put(key, otherClazz);
-            } else {
-                clazz.getFields().addAll(otherClazz.getFields());
-                clazz.getMethods().addAll(otherClazz.getMethods());
-                clazz.setKeepAll(clazz.isKeepAll() || otherClazz.isKeepAll());
-                clazz.setNeedExtend(clazz.isNeedExtend() || otherClazz.isNeedExtend());
-            }
+        for (int i = 0; i < programClass.getInterfaceCount(); i++) {
+            addInterface(programClass, i);
         }
 
-    }
+        programClass.methodsAccept(this);
 
-    public List<String> convertToKeeplines() {
-
-        List<ClazzRefInfo> refClazzes = new ArrayList<>(refClazzMap.values());
-        Collections.sort(refClazzes, new Comparator<ClazzRefInfo>() {
-            @Override
-            public int compare(ClazzRefInfo o1, ClazzRefInfo o2) {
-                return o1.getClazzName().compareTo(o2.getClazzName());
-            }
-        });
-
-        List<String> lines = new ArrayList<>();
-        for (ClazzRefInfo refClazz : refClazzes) {
-
-            String line = "-keep class ";
-            addKeepLines(lines, refClazz, line);
-
-            if (refClazz.isNeedExtend()){
-                line += " * extends ";
-                addKeepLines(lines, refClazz, line);
-            }
-
-        }
-        return lines;
+        programClass.fieldsAccept(this);
 
     }
 
-    private void addKeepLines(List<String> lines, ClazzRefInfo refClazz, String line) {
-        line += refClazz.getClazzName().replace("/", ".");
-        if (refClazz.isKeepAll()) {
-            lines.add(line + " { *; }");
-        } else {
-            lines.add(line + " {");
-            List<String> methods = new ArrayList<>(refClazz.getMethods());
-            List<String> fields = new ArrayList<>(refClazz.getFields());
-            Collections.sort(methods);
-            Collections.sort(fields);
-            for (String name : methods) {
-                lines.add(" *** " + name + "(...);");
-            }
-            for (String name : fields) {
-                lines.add(" *** " + name + ";");
-            }
-            lines.add("}");
+    private void addInterface(ProgramClass programClass, int i) {
+        String interfaceClazz = programClass.getInterfaceName(i);
+        //简化处理
+        if (visitorDTO.isLibClazz(interfaceClazz)) {
+            ClassStruct classStruct = getOrCreateClassStruct(programClass);
+            classStruct.libInterfaces.add(interfaceClazz);
         }
     }
+
+    private ClassStruct getOrCreateClassStruct(ProgramClass programClass) {
+        ClassStruct classStruct = visitorDTO.classStructMap.get(programClass.getName());
+        if (null == classStruct) {
+            classStruct = new ClassStruct();
+            visitorDTO.classStructMap.put(programClass.getName(), classStruct);
+        }
+        return classStruct;
+    }
+
+    private void addSuperClass(ProgramClass programClass) {
+        String superName = visitorDTO.findRootLibClazz(programClass);
+        if (StringUtils.isEmpty(superName)) {
+            return;
+        }
+        ClassStruct classStruct = getOrCreateClassStruct(programClass);
+        classStruct.superClazzName = superName;
+    }
+
+    @Override
+    public void visitProgramField(ProgramClass programClass, ProgramField programField) {
+        LibraryClazzInfo libraryClazzInfo = getOrCreateLibraryClazzInfo(programClass);
+        if (null != libraryClazzInfo) {
+            libraryClazzInfo.appFields.add(programField.getName(programClass));
+        }
+    }
+
+    @Override
+    public void visitProgramMethod(ProgramClass programClass, ProgramMethod programMethod) {
+        LibraryClazzInfo libraryClazzInfo = getOrCreateLibraryClazzInfo(programClass);
+        if (null != libraryClazzInfo) {
+            libraryClazzInfo.appMethods.add(programMethod.getName(programClass));
+        }
+    }
+
+    private LibraryClazzInfo getOrCreateLibraryClazzInfo(ProgramClass programClass) {
+
+        return visitorDTO.getLibraryClazzInfo(programClass.getName());
+
+    }
+
 }
