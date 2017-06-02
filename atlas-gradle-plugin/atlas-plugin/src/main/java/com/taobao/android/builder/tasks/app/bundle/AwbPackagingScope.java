@@ -77,7 +77,9 @@ public class AwbPackagingScope implements PackagingScope {
     public File getFinalResourcesFile() {
         ProcessAwbAndroidResources processAwbAndroidResources = appVariantOutputContext.getAwbAndroidResourcesMap().get(
             awbBundle.getName());
-        if (processAwbAndroidResources == null) { return null; }
+        if (processAwbAndroidResources == null) {
+            return null;
+        }
         File resourceFile = processAwbAndroidResources.getPackageOutputFile();
         return resourceFile;
     }
@@ -125,9 +127,11 @@ public class AwbPackagingScope implements PackagingScope {
         Set<File> javaResourcesLocations = Sets.newHashSet();
         if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()
             && awbBundle.getBaseAwbDependencies() != null && awbBundle.getBaseAwbDependencies().size() > 1) {
-            File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseExplodedAwb(
-                awbBundle.getAwbSoName());
-            javaResourcesLocations.add(baseAwb);
+            String awbSoName = awbBundle.getAwbSoName();
+            if (awbSoName != null) {
+                File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseExplodedAwb(awbSoName);
+                javaResourcesLocations.add(baseAwb);
+            }
         }
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getMergeAwbJavaRes()) {
             javaResourcesLocations.addAll(awbBundle.getLibraryJars());
