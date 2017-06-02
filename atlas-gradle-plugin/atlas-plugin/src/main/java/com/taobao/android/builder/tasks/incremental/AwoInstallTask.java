@@ -258,6 +258,10 @@ public class AwoInstallTask extends BaseTask {
         File mainDexFile = getMainDexFile();
         Collection<File> awbApkFiles = getAwbApkFiles();
         int size = awbApkFiles.size();
+        if (size > 0) {
+            mainDexFile = null;
+        }
+
         if (mainDexFile != null) {
             size++;
         }
@@ -326,8 +330,9 @@ public class AwoInstallTask extends BaseTask {
                 @Override
                 public String call() {
                     //TODO  from config
-                    String packageName = ManifestFileUtils.getPackage(
-                        new File(appVariantContext.apContext.getApExploredFolder(), "AndroidManifest.xml"));
+                    String packageName
+                        = ManifestFileUtils.getPackage(new File(appVariantContext.apContext.getApExploredFolder(),
+                                                                "AndroidManifest.xml"));
                     return packageName;
                 }
             });
@@ -336,8 +341,8 @@ public class AwoInstallTask extends BaseTask {
 
                 @Override
                 public File call() {
-                    AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                        task.getVariantName());
+                    AtlasDependencyTree atlasDependencyTree
+                        = AtlasBuildContext.androidDependencyTrees.get(task.getVariantName());
                     List<String> allDependencies = atlasDependencyTree.getMainBundle().getAllDependencies();
                     if (allDependencies.size() == 0) {
                         return null;
