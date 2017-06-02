@@ -75,6 +75,7 @@ public class PrepareBaseApkTask extends IncrementalTask {
             });
         } else {
             BetterZip.unzipDirectory(baseApk, outputDir);
+            FileUtils.delete(FileUtils.join(outputDir, "res/drawable/abc_wb_textfield_cdf.jpg"));
             FileUtils.deleteDirectoryContents(FileUtils.join(outputDir, "META-INF/"));
         }
 
