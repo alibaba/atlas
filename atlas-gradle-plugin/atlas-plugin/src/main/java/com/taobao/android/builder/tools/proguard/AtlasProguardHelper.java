@@ -246,9 +246,9 @@ import com.taobao.android.builder.tools.bundleinfo.BundleGraphExecutor;
 import com.taobao.android.builder.tools.bundleinfo.BundleItem;
 import com.taobao.android.builder.tools.bundleinfo.BundleItemRunner;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
+import com.taobao.android.builder.tools.proguard.dump.KeepConverter;
 import com.taobao.android.builder.tools.proguard.domain.Input;
-import com.taobao.android.builder.tools.proguard.domain.ClazzRefInfo;
-import com.taobao.android.builder.tools.proguard.domain.ClazzRefInfoContainer;
+import com.taobao.android.builder.tools.proguard.dump.ClazzRefInfo;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
@@ -322,12 +322,15 @@ public class AtlasProguardHelper {
                                                 input.getDefaultLibraryClasses().addAll(defaultLibClasses);
 
                                                 input.printConfiguration = new File(
-                                                    appVariantContext.getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle()), "proguard.cfg");
+                                                    appVariantContext
+                                                        .getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle()),
+                                                    "proguard.cfg");
                                                 input.printUsage = new File(
-                                                    appVariantContext.getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle()), "usage.cfg");
+                                                    appVariantContext
+                                                        .getAwbProguardDir(input.getAwbBundles().get(0).getAwbBundle()),
+                                                    "usage.cfg");
 
-
-                                                addLibraryProguardFiles(appVariantContext,input);
+                                                addLibraryProguardFiles(appVariantContext, input);
 
                                                 addChildDependency(bundleItem, input, bundleInfoAwbTransformMap);
 
@@ -458,19 +461,20 @@ public class AtlasProguardHelper {
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
             appVariantContext.getVariantConfiguration().getFullName());
         return generateKeepFile(dependencyTree.getAwbBundles(),
-                                            appVariantContext.getScope().getGlobalScope().getOutputsDir());
+                                appVariantContext.getScope().getGlobalScope().getOutputsDir());
     }
 
     @NotNull
     private static File generateKeepFile(List<AwbBundle> awbBundles, File dir) throws IOException {
 
-        ClazzRefInfoContainer refClazzContainer = new ClazzRefInfoContainer();
+        KeepConverter refClazzContainer = new KeepConverter();
         for (AwbBundle awbBundle : awbBundles) {
             if (null != awbBundle.getKeepProguardFile() && awbBundle.getKeepProguardFile().exists()) {
 
                 String json = FileUtils.readFileToString(awbBundle.getKeepProguardFile());
                 Map<String, ClazzRefInfo> refClazzMap = JSON.parseObject(json,
-                                                                         new TypeReference<Map<String, ClazzRefInfo>>() {});
+                                                                         new TypeReference<Map<String, ClazzRefInfo>>
+                                                                             () {});
 
                 refClazzContainer.addRefClazz(refClazzMap);
 

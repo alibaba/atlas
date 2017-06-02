@@ -207,172 +207,134 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.visitor;
+package com.taobao.android.builder.tools.proguard.dump;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import com.taobao.android.builder.tools.proguard.domain.ClazzRefInfo;
-import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import proguard.classfile.ClassConstants;
-import proguard.classfile.ClassPool;
 import proguard.classfile.Clazz;
 import proguard.classfile.LibraryClass;
+import proguard.classfile.LibraryField;
+import proguard.classfile.LibraryMethod;
+import proguard.classfile.ProgramClass;
+import proguard.classfile.ProgramField;
+import proguard.classfile.ProgramMethod;
+import proguard.classfile.constant.ClassConstant;
+import proguard.classfile.constant.DoubleConstant;
+import proguard.classfile.constant.FieldrefConstant;
+import proguard.classfile.constant.FloatConstant;
+import proguard.classfile.constant.IntegerConstant;
+import proguard.classfile.constant.InterfaceMethodrefConstant;
+import proguard.classfile.constant.InvokeDynamicConstant;
+import proguard.classfile.constant.LongConstant;
+import proguard.classfile.constant.MethodHandleConstant;
+import proguard.classfile.constant.MethodTypeConstant;
+import proguard.classfile.constant.MethodrefConstant;
+import proguard.classfile.constant.NameAndTypeConstant;
+import proguard.classfile.constant.StringConstant;
+import proguard.classfile.constant.Utf8Constant;
+import proguard.classfile.constant.visitor.ConstantVisitor;
+import proguard.classfile.util.SimplifiedVisitor;
+import proguard.classfile.visitor.ClassVisitor;
+import proguard.classfile.visitor.MemberVisitor;
 
 /**
- * Created by wuzhong on 2017/5/27.
+ * Created by wuzhong on 2017/5/12.
  */
-public class VisitorDTO {
+public class AbstractClasslVisitor extends SimplifiedVisitor implements ConstantVisitor, MemberVisitor, ClassVisitor {
 
-    /**
-     * System class list， aa/bb
-     */
-    public Set<String> defaultClasses;
-
-    /**
-     * 当前的 classpool
-     */
-    public ClassPool currentClassPool;
-
-    public Set<String> abstractClasses = new HashSet<>();
-
-    /**
-     * 当前 classpool 下所有类的结构，其中 super 指向的是 library 的类
-     */
-    public Map<String, ClassStruct> classStructMap = new HashMap<>();
-
-    public Map<String, LibraryClazzInfo> libraryClazzInfoMap = new HashMap<>();
-
-    /**
-     * 最终的输出结果
-     */
-    public Map<String, ClazzRefInfo> clazzRefInfoMap = new HashMap<>();
-
-    public VisitorDTO(Set<String> defaultClasses, ClassPool currentClassPool) {
-        this.defaultClasses = defaultClasses;
-        this.currentClassPool = currentClassPool;
+    @Override
+    public void visitProgramClass(ProgramClass programClass) {
+        programClass.constantPoolEntriesAccept(this);
     }
 
-    /**
-     * 查找离他最近的 library class
-     *
-     * @param programClass
-     * @return
-     */
-    public String findRootLibClazz(Clazz programClass) {
-        Clazz superClass = programClass.getSuperClass();
-        if (null == superClass){
-            return "";
-        }
-        if(superClass instanceof LibraryClass){
-            LibraryClass libraryClass = (LibraryClass)superClass;
-            String className = libraryClass.getName();
-            if (isLibClazz(className)){
-                if ((libraryClass.getAccessFlags() & ClassConstants.ACC_ABSTRACT) == ClassConstants.ACC_ABSTRACT){
-                    abstractClasses.add(className);
-                }
-                return className;
-            }
-            return "";
-        }
-        return findRootLibClazz(superClass);
+    @Override
+    public void visitLibraryClass(LibraryClass libraryClass) {
     }
 
-    public String findRootLibClazz(String className) {
-        if (isLibClazz(className)){
-            return className;
-        }
-        Clazz clazz = currentClassPool.getClass(className);
-        //assert clazz!=null;
-        if (null == clazz) {
-            return "";
-        }
-        return findRootLibClazz(clazz);
-    }
-
-    public boolean isLibClazz(String className) {
-        //System.out.println(className);
-        if (defaultClasses.contains(className)) {
-            return false;
-        }
-        if (className.contains("[")) {
-            return false;
-        }
-        if (null != currentClassPool.getClass(className)) {
-            return false;
-        }
-        return true;
-    }
-
-    public LibraryClazzInfo getLibraryClazzInfo(String className) {
-        String rootLibraryClass = this.findRootLibClazz(className);
-        if (StringUtils.isEmpty(rootLibraryClass)) {
-            return null;
-        }
-
-        LibraryClazzInfo libraryClazzInfo = this.libraryClazzInfoMap.get(rootLibraryClass);
-        if (null == libraryClazzInfo) {
-            libraryClazzInfo = new LibraryClazzInfo();
-            this.libraryClazzInfoMap.put(rootLibraryClass, libraryClazzInfo);
-        }
-        return libraryClazzInfo;
-    }
-
-    public ClazzRefInfo getClazzRefInfo(String className) {
-        String rootLibraryClass = this.findRootLibClazz(className);
-        if (StringUtils.isEmpty(rootLibraryClass)) {
-            return null;
-        }
-
-        return getClazzRefInfoByName(rootLibraryClass);
-    }
-
-    @NotNull
-    private ClazzRefInfo getClazzRefInfoByName(String className) {
-        ClazzRefInfo libraryClazzInfo = this.clazzRefInfoMap.get(className);
-        if (null == libraryClazzInfo) {
-            libraryClazzInfo = new ClazzRefInfo(className);
-            this.clazzRefInfoMap.put(className, libraryClazzInfo);
-        }
-        return libraryClazzInfo;
-    }
-
-    public void addSuperRefInfo() {
-        for (ClassStruct classStruct : classStructMap.values()) {
-            if (StringUtils.isNotEmpty(classStruct.superClazzName)) {
-                if (abstractClasses.contains(classStruct.superClazzName)){
-                    getClazzRefInfoByName(classStruct.superClazzName).setKeepAll(true);
-                }else {
-                    getClazzRefInfoByName(classStruct.superClazzName).setNeedExtend(true);
-                }
-            }
-            for (String inter : classStruct.libInterfaces) {
-                getClazzRefInfoByName(inter).setKeepAll(true);
-            }
-        }
-    }
-
-    public static class ClassStruct {
-
-        public String superAbsClazzName;
-
-        public String superClazzName;
-
-        public Set<String> libInterfaces = new HashSet<>();
+    @Override
+    public void visitIntegerConstant(Clazz clazz, IntegerConstant integerConstant) {
 
     }
 
-    public static class LibraryClazzInfo {
+    @Override
+    public void visitLongConstant(Clazz clazz, LongConstant longConstant) {
 
-        public String clazzName;
+    }
 
-        public Set<String> appMethods = new HashSet<>();
+    @Override
+    public void visitFloatConstant(Clazz clazz, FloatConstant floatConstant) {
 
-        public Set<String> appFields = new HashSet<>();
+    }
 
+    @Override
+    public void visitDoubleConstant(Clazz clazz, DoubleConstant doubleConstant) {
+
+    }
+
+    @Override
+    public void visitStringConstant(Clazz clazz, StringConstant stringConstant) {
+
+    }
+
+    @Override
+    public void visitUtf8Constant(Clazz clazz, Utf8Constant utf8Constant) {
+
+    }
+
+    @Override
+    public void visitInvokeDynamicConstant(Clazz clazz, InvokeDynamicConstant invokeDynamicConstant) {
+
+    }
+
+    @Override
+    public void visitMethodHandleConstant(Clazz clazz, MethodHandleConstant methodHandleConstant) {
+
+    }
+
+    @Override
+    public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
+    }
+
+    @Override
+    public void visitInterfaceMethodrefConstant(Clazz clazz, InterfaceMethodrefConstant interfaceMethodrefConstant) {
+
+    }
+
+    @Override
+    public void visitMethodrefConstant(Clazz clazz, MethodrefConstant methodrefConstant) {
+    }
+
+    @Override
+    public void visitClassConstant(Clazz clazz, ClassConstant classConstant) {
+
+    }
+
+    @Override
+    public void visitMethodTypeConstant(Clazz clazz, MethodTypeConstant methodTypeConstant) {
+
+    }
+
+    @Override
+    public void visitNameAndTypeConstant(Clazz clazz, NameAndTypeConstant nameAndTypeConstant) {
+
+    }
+
+    @Override
+    public void visitProgramField(ProgramClass programClass, ProgramField programField) {
+    }
+
+    @Override
+    public void visitProgramMethod(ProgramClass programClass, ProgramMethod programMethod) {
+    }
+
+    @Override
+    public void visitLibraryField(LibraryClass libraryClass, LibraryField libraryField) {
+    }
+
+    @Override
+    public void visitLibraryMethod(LibraryClass libraryClass, LibraryMethod libraryMethod) {
+    }
+
+    public void println(String message) {
+        System.out.println(message);
     }
 
 }

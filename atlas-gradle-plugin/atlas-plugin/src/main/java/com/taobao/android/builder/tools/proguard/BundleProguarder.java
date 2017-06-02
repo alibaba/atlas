@@ -227,9 +227,8 @@ import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
 import com.taobao.android.builder.tools.cache.FileLockUtils;
 import com.taobao.android.builder.tools.proguard.domain.Input;
 import com.taobao.android.builder.tools.proguard.domain.Result;
-import com.taobao.android.builder.tools.proguard.visitor.ClassDetailVisitor;
-import com.taobao.android.builder.tools.proguard.visitor.ClassStructVisitor;
-import com.taobao.android.builder.tools.proguard.visitor.VisitorDTO;
+import com.taobao.android.builder.tools.proguard.dump.BundleProguardDumper;
+import com.taobao.android.builder.tools.proguard.dump.ClazzRefInfo;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
@@ -251,7 +250,7 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
-    public static final String CACHE_TYPE = "proguard-bundles-0.01";
+    public static final String CACHE_TYPE = "proguard-bundles-0.03";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
 
@@ -289,8 +288,8 @@ public class BundleProguarder {
 
                     //缓存keep.json
                     File keepFile = awbBundle.getKeepProguardFile();
-                    if (null != keepFile && keepFile.exists()){
-                        FileUtils.copyFileToDirectory(keepFile,result.cacheDir);
+                    if (null != keepFile && keepFile.exists()) {
+                        FileUtils.copyFileToDirectory(keepFile, result.cacheDir);
                     }
 
                     File proguardCfg = new File(null != input.proguardOutputDir ? input.proguardOutputDir
@@ -302,9 +301,9 @@ public class BundleProguarder {
                     }
 
                     File usageCfg = new File(null != input.proguardOutputDir ? input.proguardOutputDir
-                                                    : appVariantContext
-                                                        .getAwbProguardDir(awbBundle),
-                                                "usage.cfg");
+                                                 : appVariantContext
+                                                     .getAwbProguardDir(awbBundle),
+                                             "usage.cfg");
                     if (usageCfg.exists()) {
                         FileUtils.copyFileToDirectory(usageCfg, result.cacheDir);
                     }
@@ -450,14 +449,8 @@ public class BundleProguarder {
 
         ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
 
-        VisitorDTO visitorDTO = new VisitorDTO(input.getDefaultLibraryClasses(), classPool);
-        ClassStructVisitor classStructVisitor = new ClassStructVisitor(visitorDTO);
-        ClassDetailVisitor classDetailVisitor = new ClassDetailVisitor(visitorDTO);
-
-        classPool.classesAccept(classStructVisitor);
-        classPool.classesAccept(classDetailVisitor);
-
-        visitorDTO.addSuperRefInfo();
+        Map<String, ClazzRefInfo> clazzRefInfoMap = BundleProguardDumper.dump(proGuard,
+                                                                              input.getDefaultLibraryClasses());
 
         //Fileoutputs
         for (AwbTransform awbTransform : input.getAwbBundles()) {
@@ -466,7 +459,7 @@ public class BundleProguarder {
                 File fileOut = new File(appVariantContext.getAwbProguardDir(awbBundle), "keep.json");
                 fileOut.delete();
                 fileOut.getParentFile().mkdirs();
-                FileUtils.write(fileOut, JSON.toJSONString(visitorDTO.clazzRefInfoMap));
+                FileUtils.write(fileOut, JSON.toJSONString(clazzRefInfoMap));
                 awbBundle.setKeepProguardFile(fileOut);
             }
         }

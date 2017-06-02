@@ -207,18 +207,27 @@
  *
  */
 
-package com.taobao.android.builder.tools.proguard.visitor;
+package com.taobao.android.builder.tools.proguard.dump;
 
-import com.taobao.android.builder.tools.proguard.domain.ClazzRefInfo;
 import proguard.classfile.Clazz;
+import proguard.classfile.Method;
 import proguard.classfile.ProgramClass;
+import proguard.classfile.ProgramMember;
+import proguard.classfile.ProgramMethod;
+import proguard.classfile.attribute.Attribute;
+import proguard.classfile.attribute.CodeAttribute;
+import proguard.classfile.attribute.visitor.AttributeVisitor;
 import proguard.classfile.constant.FieldrefConstant;
+import proguard.classfile.constant.InterfaceMethodrefConstant;
 import proguard.classfile.constant.MethodrefConstant;
+import proguard.classfile.instruction.ConstantInstruction;
+import proguard.classfile.instruction.Instruction;
+import proguard.classfile.instruction.visitor.InstructionVisitor;
 
 /**
  * Created by wuzhong on 2017/5/12.
  */
-public class ClassDetailVisitor extends AbstractClasslVisitor {
+public class ClassDetailVisitor extends AbstractClasslVisitor implements AttributeVisitor, InstructionVisitor {
 
     private VisitorDTO visitorDTO;
 
@@ -230,31 +239,125 @@ public class ClassDetailVisitor extends AbstractClasslVisitor {
     @Override
     public void visitProgramClass(ProgramClass programClass) {
         programClass.constantPoolEntriesAccept(this);
+
+        programClass.methodsAccept(this);
+    }
+
+    //@Override
+    //public void visitMethodrefConstant(Clazz clazz, MethodrefConstant methodrefConstant) {
+    //
+    //    String clazzName = clazz.getClassName(methodrefConstant.u2classIndex);
+    //    ClazzRefInfo clazzRefInfo = visitorDTO.getClazzRefInfo(clazzName);
+    //
+    //    String methodName = clazz.getName(methodrefConstant.u2nameAndTypeIndex);
+    //    if (null != clazzRefInfo) {
+    //        clazzRefInfo.getMethods().add(methodName);
+    //    }
+    //
+    //}
+
+    @Override
+    public void visitProgramMethod(ProgramClass programClass, ProgramMethod programMethod) {
+        visitMember(programClass, programMethod);
+    }
+
+    private void visitMember(ProgramClass programClass, ProgramMember programMember) {
+        if (programMember.u2attributesCount > 0) {
+            //println("Class member attributes (count = " + programMember.u2attributesCount + "):");
+            programMember.attributesAccept(programClass, this);
+        }
     }
 
     @Override
-    public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
+    public void visitAnyInstruction(Clazz clazz, Method method, CodeAttribute codeAttribute, int offset,
+                                    Instruction instruction) {
+        //println(instruction.toString(offset));
+    }
 
-        String clazzName = clazz.getClassName(fieldrefConstant.u2classIndex);
+    @Override
+    public void visitAnyAttribute(Clazz clazz, Attribute attribute) {
+        //super.visitAnyAttribute(clazz, attribute);
 
-        ClazzRefInfo clazzRefInfo = visitorDTO.getClazzRefInfo(clazzName);
+        //System.out.println(">>>>>>");
 
-        String fieldName = clazz.getName(fieldrefConstant.u2nameAndTypeIndex);
-        if (null != clazzRefInfo) {
-            clazzRefInfo.getFields().add(fieldName);
-        }
+    }
 
+    @Override
+    public void visitCodeAttribute(Clazz clazz, Method method, CodeAttribute codeAttribute) {
+
+        //println("visitCodeAttribute >>>>>");
+
+        codeAttribute.instructionsAccept(clazz, method, this);
+    }
+
+    @Override
+    public void visitConstantInstruction(Clazz clazz, Method method, CodeAttribute codeAttribute, int offset,
+                                         ConstantInstruction constantInstruction) {
+        //println("visitConstantInstruction >>>" + constantInstruction.toString(offset));
+
+        //indent();
+        clazz.constantPoolEntryAccept(constantInstruction.constantIndex, this);
+        //outdent();
     }
 
     @Override
     public void visitMethodrefConstant(Clazz clazz, MethodrefConstant methodrefConstant) {
 
-        String clazzName = clazz.getClassName(methodrefConstant.u2classIndex);
-        ClazzRefInfo clazzRefInfo = visitorDTO.getClazzRefInfo(clazzName);
+        //println("visitMethodrefConstant Methodref [" +
+        //            clazz.getClassName(methodrefConstant.u2classIndex) + "." +
+        //            clazz.getName(methodrefConstant.u2nameAndTypeIndex) + " " +
+        //            clazz.getType(methodrefConstant.u2nameAndTypeIndex) + "]");
 
-        String methodName = clazz.getName(methodrefConstant.u2nameAndTypeIndex);
+        addMethod(clazz.getClassName(methodrefConstant.u2classIndex),
+                  clazz.getName(methodrefConstant.u2nameAndTypeIndex),false);
+
+    }
+
+    @Override
+    public void visitInterfaceMethodrefConstant(Clazz clazz, InterfaceMethodrefConstant interfaceMethodrefConstant) {
+        //println("visitInterfaceMethodrefConstant InterfaceMethodref [" +
+        //            clazz.getClassName(interfaceMethodrefConstant.u2classIndex) + "." +
+        //            clazz.getName(interfaceMethodrefConstant.u2nameAndTypeIndex) + " " +
+        //            clazz.getType(interfaceMethodrefConstant.u2nameAndTypeIndex) + "]");
+
+        addMethod(clazz.getClassName(interfaceMethodrefConstant.u2classIndex),
+                  clazz.getName(interfaceMethodrefConstant.u2nameAndTypeIndex),true);
+
+    }
+
+    @Override
+    public void visitFieldrefConstant(Clazz clazz, FieldrefConstant fieldrefConstant) {
+
+        //println("visitFieldrefConstant Methodref [" +
+        //            clazz.getClassName(fieldrefConstant.u2classIndex) + "." +
+        //            clazz.getName(fieldrefConstant.u2nameAndTypeIndex) + " " +
+        //            clazz.getType(fieldrefConstant.u2nameAndTypeIndex) + "]");
+
+        addField(clazz.getClassName(fieldrefConstant.u2classIndex),
+                 clazz.getName(fieldrefConstant.u2nameAndTypeIndex));
+
+    }
+
+    private void addMethod(String name, String method, boolean needExtend) {
+        //println("addMethod " + name + "." + method);
+
+        ClazzRefInfo clazzRefInfo = visitorDTO.getClazzRefInfo(name);
         if (null != clazzRefInfo) {
-            clazzRefInfo.getMethods().add(methodName);
+            clazzRefInfo.getMethods().add(method);
+            if (needExtend){
+                clazzRefInfo.setNeedExtend(true);
+            }
+        }
+
+    }
+
+    private void addField(String name, String field) {
+
+        //println("addField " + name + "." + field);
+
+        ClazzRefInfo clazzRefInfo = visitorDTO.getClazzRefInfo(name);
+        if (null != clazzRefInfo) {
+            clazzRefInfo.getFields().add(field);
         }
 
     }

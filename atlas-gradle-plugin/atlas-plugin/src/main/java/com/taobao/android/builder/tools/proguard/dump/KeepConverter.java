@@ -207,147 +207,91 @@
  *
  */
 
-package proguard;
+package com.taobao.android.builder.tools.proguard.dump;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import com.alibaba.fastjson.JSON;
-
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.tools.ReflectUtils;
-import com.taobao.android.builder.tools.proguard.visitor.ClassDetailVisitor;
-import com.taobao.android.builder.tools.proguard.visitor.ClassStructVisitor;
-import com.taobao.android.builder.tools.proguard.visitor.VisitorDTO;
-import org.apache.commons.io.FileUtils;
-import org.junit.Test;
-import proguard.classfile.ClassPool;
+import java.util.Map;
 
 /**
- * Created by wuzhong on 2017/4/18.
+ * Created by wuzhong on 2017/5/14.
  */
-public class ProguardTest {
+public class KeepConverter {
 
-    @Test
-    public void test() throws Exception {
+    private Map<String, ClazzRefInfo> refClazzMap = new HashMap<>();
 
-        File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest.cfg").getFile());
-
-        //File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/build/outputs/proguard.cfg");
-        Configuration configuration = new Configuration();
-
-        // Parse the options specified in the command line arguments.
-        ConfigurationParser parser = new ConfigurationParser(file,
-                                                             System.getProperties());
-        try {
-            parser.parse(configuration);
-        } finally {
-            parser.close();
-        }
-
-        // Execute ProGuard with these options.
-        ProGuard proGuard = new ProGuard(configuration);
-        proGuard.execute();
-
-        ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
-
-        //classPool.classesAccept(new MyClassPrinter());
-
-        VisitorDTO visitorDTO = new VisitorDTO(Sets.newHashSet("java/lang/Object", "java/lang/System", "java/io/PrintStream"), classPool);
-
-        ClassStructVisitor classRefPrinter = new ClassStructVisitor(visitorDTO);
-        classPool.classesAccept(classRefPrinter);
-
-        ClassDetailVisitor classDetailVisitor = new ClassDetailVisitor(visitorDTO);
-        classPool.classesAccept(classDetailVisitor);
-
-        visitorDTO.addSuperRefInfo();
-
-        System.out.println(JSON.toJSONString(visitorDTO.clazzRefInfoMap, true));
-
-        //LibMethodFieldsVisitor libMethodFieldsVisitor = new LibMethodFieldsVisitor(Sets.newHashSet("java/lang/Object", "java/lang/System", "java/io/PrintStream"), classPool);
-        //libMethodFieldsVisitor.setRefClazzMap(classRefPrinter.getRefClazzMap());
-        //libMethodFieldsVisitor.setClazzInfoMap(classRefPrinter.getClazzInfoMap());
-        //classPool.classesAccept(libMethodFieldsVisitor)
+    public KeepConverter(
+        Map<String, ClazzRefInfo> refClazzMap) {
+        this.refClazzMap = refClazzMap;
     }
 
-    @Test
-    public void test2() throws IOException, ParseException {
-
-        File file = new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main.cfg").getFile());
-
-        Configuration configuration = new Configuration();
-
-        // Parse the options specified in the command line arguments.
-        ConfigurationParser parser = new ConfigurationParser(file,
-                                                             System.getProperties());
-        try {
-            parser.parse(configuration);
-        } finally {
-            parser.close();
-        }
-
-        ConfigurationParser parser2 = new ConfigurationParser(new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main2.cfg").getFile()),
-                                                             System.getProperties());
-        try {
-            parser2.parse(configuration);
-        } finally {
-            parser2.close();
-        }
-
-        // Execute ProGuard with these options.
-        new ProGuard(configuration).execute();
-
+    public KeepConverter() {
     }
 
+    public void addRefClazz(Map<String, ClazzRefInfo> other) {
 
+        for (String key : other.keySet()) {
 
-    @Test
-    public void testConfigLoad() throws IOException, ParseException {
-
-        String dir = "/Users/wuzhong/workspace/taobao_android/MainBuilder/build/intermediates/bundle_proguard/release";
-
-        File file = new File("/Users/wuzhong/workspace/taobao_android/MainBuilder/proguard.cfg");
-        List<File> files = FileUtils.listFiles(new File(dir), new String[]{"cfg"}, true).parallelStream().filter(
-            new Predicate<File>() {
-                @Override
-                public boolean test(File file) {
-                    return file.getName().equals("keep.cfg");
-                }
-            }).collect(Collectors.toList());
-
-        files.add(0,file);
-        System.out.println(1111);
-
-        Configuration configuration = new Configuration();
-
-        for (File f : files) {
-
-            System.err.println(">>>> " + f.getAbsolutePath());
-
-            ConfigurationParser parser = new ConfigurationParser(f,
-                                                                 System.getProperties());
-            try {
-                parser.parse(configuration);
-            } finally {
-                parser.close();
+            ClazzRefInfo otherClazz = other.get(key);
+            ClazzRefInfo clazz = refClazzMap.get(key);
+            if (null == clazz) {
+                refClazzMap.put(key, otherClazz);
+            } else {
+                clazz.getFields().addAll(otherClazz.getFields());
+                clazz.getMethods().addAll(otherClazz.getMethods());
+                clazz.setKeepAll(clazz.isKeepAll() || otherClazz.isKeepAll());
+                clazz.setNeedExtend(clazz.isNeedExtend() || otherClazz.isNeedExtend());
             }
         }
 
-        //ConfigurationParser parser2 = new ConfigurationParser(new File(ProguardTest.class.getClassLoader().getResource("proguardtest_main2.cfg").getFile()),
-        //                                                      System.getProperties());
-        //try {
-        //    parser2.parse(configuration);
-        //} finally {
-        //    parser2.close();
-        //}
-        //
-        //// Execute ProGuard with these options.
-        //new ProGuard(configuration).execute();
+    }
+
+    public List<String> convertToKeeplines() {
+
+        List<ClazzRefInfo> refClazzes = new ArrayList<>(refClazzMap.values());
+        Collections.sort(refClazzes, new Comparator<ClazzRefInfo>() {
+            @Override
+            public int compare(ClazzRefInfo o1, ClazzRefInfo o2) {
+                return o1.getClazzName().compareTo(o2.getClazzName());
+            }
+        });
+
+        List<String> lines = new ArrayList<>();
+        for (ClazzRefInfo refClazz : refClazzes) {
+
+            String line = "-keep class ";
+            addKeepLines(lines, refClazz, line);
+
+            if (refClazz.isNeedExtend()){
+                line += " * extends ";
+                addKeepLines(lines, refClazz, line);
+            }
+
+        }
+        return lines;
 
     }
 
+    private void addKeepLines(List<String> lines, ClazzRefInfo refClazz, String line) {
+        line += refClazz.getClazzName().replace("/", ".");
+        if (refClazz.isKeepAll()) {
+            lines.add(line + " { *; }");
+        } else {
+            lines.add(line + " {");
+            List<String> methods = new ArrayList<>(refClazz.getMethods());
+            List<String> fields = new ArrayList<>(refClazz.getFields());
+            Collections.sort(methods);
+            Collections.sort(fields);
+            for (String name : methods) {
+                lines.add(" *** " + name + "(...);");
+            }
+            for (String name : fields) {
+                lines.add(" *** " + name + ";");
+            }
+            lines.add("}");
+        }
+    }
 }
