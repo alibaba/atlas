@@ -399,6 +399,10 @@ public class AwbBundle {
         if (org.apache.commons.lang3.StringUtils.isEmpty(soFileName)) {
             String packageName = getPackageName();
 
+            if (packageName == null) {
+                return null;
+            }
+
             soFileName = "lib" + StringUtils.replace(packageName, ".", "_") + ".so";
         }
         return soFileName;
