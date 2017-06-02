@@ -301,6 +301,7 @@ import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
+import com.taobao.android.builder.tasks.incremental.AwoInstallTask;
 import com.taobao.android.builder.tasks.incremental.IncrementalInstallVariantTask;
 import com.taobao.android.builder.tasks.incremental.PreIncrementalInstallVariantTask;
 import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
@@ -682,6 +683,15 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                                                                  vod));
         incrementalInstallVariantTask.dependsOn(tasks, preIncrementalInstallVariantTask);
         incrementalInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().
+            getPackageApplicationTask().getName());
+
+        // 安装
+        AndroidTask<AwoInstallTask> awoInstallVariantTask = androidTasks.create(tasks,
+                                                                                new AwoInstallTask.ConfigAction(
+                                                                                    appVariantContext,
+                                                                                    vod));
+        awoInstallVariantTask.dependsOn(tasks, preIncrementalInstallVariantTask);
+        awoInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().
             getPackageApplicationTask().getName());
     }
 
