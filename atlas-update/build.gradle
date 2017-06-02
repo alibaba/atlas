@@ -42,6 +42,7 @@ repositories {
 
 dependencies {
     compile 'com.taobao.android:atlas_core:5.0.6-rc86@aar'
+    compile 'io.reactivex:rxjava:1.2.0'
 }
 
 def siteUrl = 'https://github.com/alibaba/atlas'

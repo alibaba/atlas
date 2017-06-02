@@ -411,7 +411,6 @@ public class TPatchTool extends BasePatchTool {
         isTpatch = true;
         pName = productName;
          hisTpatchFolder = new File(outPatchDir.getParentFile().getParentFile().getParentFile().getParentFile(),"hisTpatch");
-         System.out.println();hisTpatchFolder.getAbsolutePath();
         final File diffTxtFile = new File(outPatchDir, "diff.json");
         final File patchInfoFile = new File(outPatchDir, "patchInfo.json");
         final File patchTmpDir = new File(outPatchDir, "tpatch-tmp");
@@ -421,7 +420,7 @@ public class TPatchTool extends BasePatchTool {
         FileUtils.cleanDirectory(patchTmpDir);
         mainDiffFolder.mkdirs();
         File lastPatchFile = null;
-        readWhiteList(outPatchDir.getParentFile().getParentFile().getParentFile());
+        readWhiteList(outPatchDir);
         lastPatchFile = getLastPatchFile(baseApkBO.getVersionName(), productName, outPatchDir);
         PatchUtils.getTpatchClassDef(lastPatchFile, bundleClassMap);
 
@@ -469,14 +468,11 @@ public class TPatchTool extends BasePatchTool {
                     File destFile = new File(patchTmpDir, mainBundleName + "/" +
                             relativePath);
                     File baseSoFile = new File(baseApkUnzipFolder, relativePath);
-                    if (whiteList.contains(soFile.getName())){
+                    if (isBlackBundle(soFile)||!PatchUtils.isBundleFile(soFile)){
+                        if (isFileModify(soFile,baseSoFile))
                         FileUtils.copyFile(soFile, destFile);
-                    }else if (PatchUtils.isBundleFile(soFile)) { // 如果是bundle文件
+                    }else { // 如果是bundle文件
                         processBundleFiles(soFile, baseSoFile, patchTmpDir);
-                    } else {
-                        if (isFileModify(soFile, baseSoFile)) {
-                            FileUtils.copyFile(soFile, destFile);
-                        }
                     }
                     return true;
                 }
@@ -534,8 +530,21 @@ public class TPatchTool extends BasePatchTool {
         return patchFile;
     }
 
+    private boolean isBlackBundle(File file) {
+    if (whiteList != null){
+        for (String bundleName:whiteList){
+            if (file.getAbsolutePath().endsWith(bundleName)){
+                return true;
+            }
+        }
+    }
+
+    return false;
+
+    }
+
     private void readWhiteList(File parentFile) throws Exception {
-        File whiteListFile = new File(parentFile,"DiffWhiteList.txt");
+        File whiteListFile = new File(parentFile,"bundleList.cfg");
         if (whiteListFile.exists()){
             BufferedReader br = null;
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(whiteListFile),
@@ -1206,11 +1215,27 @@ public class TPatchTool extends BasePatchTool {
 
 
 public static void main(String []args){
-//        String aa = "\"*/\\.*\" -x \"\\.*\"";
-        CommandUtils.exec(new File("/Users/lilong/Downloads/111/scan-tmp/apk"),
-                "zip -r /Users/lilong/Downloads/1.zip . -x */ -x .*");
+        ApkBO baseApkBo = new ApkBO(new File("/Users/lilong/Downloads/taobao-android-debug.apk"),"aa","1.0.0");
+    ApkBO newApkB0 = new ApkBO(new File("/Users/lilong/Downloads/tpatch-diff.apk"),"aa","2.0.0");
+    TPatchTool tPatchTool = new TPatchTool(baseApkBo,newApkB0,true);
+    try {
+        tPatchTool.doPatch(new File("/Users/lilong/Downloads/ccc"),true,null,true,null,null);
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    File dexFile = new File("/Users/lilong/Downloads/libcom_aligame_gamecenter_api_base/classes.dex");
+    File newDexFile = new File("/Users/lilong/Downloads/libcom_aligame_gamecenter_api_diff/classes.dex");
+    TPatchDexTool tPatchDexTool = new TPatchDexTool(dexFile,newDexFile,19,false);
+    try {
+        tPatchDexTool.createTPatchDex(new File("/Users/lilong/Downloads/libcom_aligame_gamecenter_api_diff/a.dex"));
+    } catch (IOException e) {
+        e.printStackTrace();
+    } catch (PatchException e) {
+        e.printStackTrace();
+    } catch (RecognitionException e) {
+        e.printStackTrace();
+    }
 }
-
 
 
 

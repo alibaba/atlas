@@ -1081,6 +1081,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
         if (!inputFile.getName().startsWith("combined")) {
 
+
             if (inputFile.isFile()) {
                 md5 = MD5Util.getFileMD5(inputFile);
             } else if (inputFile.isDirectory()) {
@@ -1293,7 +1294,8 @@ public class AtlasBuilder extends AndroidBuilder {
 
     @NonNull
     public DexByteCodeConverter getDexByteCodeConverter() {
-        if (!buildType.equals("release")){
+
+        if (AtlasBuildContext.appVariantContext.getBuildType().getDexConfig()==null||!AtlasBuildContext.appVariantContext.getBuildType().getDexConfig().isUseMyDex()){
             return super.getDexByteCodeConverter();
         }
         if (dexByteCodeConverter == null){
