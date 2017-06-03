@@ -230,7 +230,9 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 
 import com.android.xml.AndroidXPathFactory;
+import com.google.common.base.Joiner;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
@@ -369,7 +371,8 @@ public class ManifestFileUtils {
         // 解析基础信息
         if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists() && baseBunfleInfoFile.canRead()) {
             String bundleBaseInfo = FileUtils.readFileToString(baseBunfleInfoFile, "utf-8");
-            bundleFileMap = JSON.parseObject(bundleBaseInfo, new TypeReference<Map<String, BundleInfo>>() {});
+            bundleFileMap = JSON.parseObject(bundleBaseInfo, new TypeReference<Map<String, BundleInfo>>() {
+            });
         }
         Map<String, LibBundleInfo> awbManifestMap = Maps.newHashMap();
         for (Map.Entry<String, File> entry : libManifestMap.entrySet()) {
@@ -388,8 +391,11 @@ public class ManifestFileUtils {
                 if (null != applicationElement) {
                     applicationName = applicationElement.attributeValue("name");
                 }
-                LibBundleInfo libBundleInfo = new LibBundleInfo(artifactId, packageName, applicationName,
-                                                                bundleFileMap.get(libName), libName);
+                LibBundleInfo libBundleInfo = new LibBundleInfo(artifactId,
+                                                                packageName,
+                                                                applicationName,
+                                                                bundleFileMap.get(libName),
+                                                                libName);
                 awbManifestMap.put(artifactId, libBundleInfo);
             }
         }
@@ -411,7 +417,7 @@ public class ManifestFileUtils {
                         bundleDepValue = StringUtils.join(bundleInfo.getDependency(), "|");
                     }
                     String value = libBundleInfo.applicationName + "," + !remoteBundles.contains(libBundleInfo.libName)
-                        + "," + bundleDepValue;
+                                   + "," + bundleDepValue;
                     logger.info("[bundleInfo] add bundle value : " + value + " to manifest");
                     metaData.addAttribute("android:name", "bundle_" + bundlePackageName);
                     metaData.addAttribute("android:value", value);
@@ -631,7 +637,7 @@ public class ManifestFileUtils {
         logger.warn("[permission] start >>>>>>>> ");
         List<String> lines = new ArrayList<>(permissons);
         Collections.sort(lines);
-        for (String name : lines){
+        for (String name : lines) {
             logger.warn(name);
         }
         logger.warn("[permission] end <<<<<<<<< ");
@@ -711,7 +717,7 @@ public class ManifestFileUtils {
         if (null != applicationElement) {
             applicationElement.addAttribute("tools:replace",
                                             "android:name,android:icon,android:allowBackup,android:label,"
-                                                + "android:supportsRtl");
+                                            + "android:supportsRtl");
         }
 
         XmlHelper.saveDocument(document, modifyManifest);
@@ -798,6 +804,10 @@ public class ManifestFileUtils {
             List<? extends Node> nodes = root.selectNodes("//application/*");
             for (Node node : nodes) {
                 Element element = (Element)node;
+                element.addAttribute("tools:replace",
+                                     Joiner.on(',')
+                                           .join(Iterables.transform(element.attributes(),
+                                                                     Attribute::getQualifiedName)));
                 element.addAttribute("tools:node", "replace");
             }
         }
@@ -1036,8 +1046,8 @@ public class ManifestFileUtils {
         for (Node node : newNodes) {
             Element el = (Element)node;
             String key = el.attributeValue("process") + el.attributeValue("name");
-            if (!baseNodeMap.containsKey(key) && !el.attributeValue("name").startsWith(
-                AtlasProxy.ATLAS_PROXY_PACKAGE)) {
+            if (!baseNodeMap.containsKey(key) && !el.attributeValue("name")
+                                                    .startsWith(AtlasProxy.ATLAS_PROXY_PACKAGE)) {
                 applicationElement.add(node);
             }
         }
