@@ -13,7 +13,6 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.builder.core.DefaultManifestParser;
 import com.android.builder.core.DefaultProductFlavor;
-import com.android.builder.model.ProductFlavor;
 import com.google.common.base.Strings;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.TaskAction;
@@ -33,15 +32,20 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
     @TaskAction
     public void taskAction() {
         DefaultManifestParser manifestParser = new DefaultManifestParser(apContext.getBaseManifest());
+        GradleVariantConfiguration variantConfiguration = appVariantContext.getScope().getVariantConfiguration();
+        DefaultProductFlavor mergedFlavor = (DefaultProductFlavor)variantConfiguration.getMergedFlavor();
+        String idOverride = variantConfiguration.getIdOverride();
+        if (Strings.isNullOrEmpty(idOverride)) {
+            mergedFlavor.setApplicationId(manifestParser.getPackage());
+        }
+
         String versionNameOverride = apkVariantOutputData.getVersionNameOverride();
         if (Strings.isNullOrEmpty(versionNameOverride)) {
             apkVariantOutputData.setVersionNameOverride(manifestParser.getVersionName());
 
-            GradleVariantConfiguration variantConfiguration = appVariantContext.getScope().getVariantConfiguration();
-            ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
             String versionName = mergedFlavor.getVersionName();
             if (versionName == null) {
-                ((DefaultProductFlavor)mergedFlavor).setVersionName(manifestParser.getVersionName());
+                mergedFlavor.setVersionName(manifestParser.getVersionName());
             }
         }
 
