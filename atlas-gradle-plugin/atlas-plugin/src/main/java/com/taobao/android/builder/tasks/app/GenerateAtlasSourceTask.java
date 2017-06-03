@@ -245,14 +245,10 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
     @Input
     public InjectParam getInput() {
-        if (null != injectParam) {
+        if (injectParam != null) {
             return injectParam;
         }
-        try {
-            injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
         return injectParam;
     }
 
@@ -300,11 +296,9 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
             FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),
                                      "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
-
         } catch (Exception e) {
             throw new GradleException(e.getMessage(), e);
         }
-
     }
 
     private String escapeExprSpecialWord(String keyword) {
@@ -321,10 +315,9 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<GenerateAtlasSourceTask> {
 
-        private AppVariantContext appVariantContext;
+        private final AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -349,7 +342,6 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
             atlasSourceTask.outputDir = srcDir;
             atlasSourceTask.appVariantContext = appVariantContext;
-
         }
     }
 }

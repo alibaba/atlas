@@ -25,7 +25,7 @@ import static com.taobao.android.builder.AtlasBuildContext.appVariantContext;
  * @date 2017/6/3
  */
 
-public class APInfoLoaderTask extends DefaultAndroidTask {
+public class PreIncrementalBuildTask extends DefaultAndroidTask {
     private ApContext apContext;
 
     private ApkVariantOutputData apkVariantOutputData;
@@ -57,9 +57,25 @@ public class APInfoLoaderTask extends DefaultAndroidTask {
                 return apContext.getBaseModifyManifest();
             }
         });
+
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+            File atlasFrameworkPropertiesFile = apContext.getBaseAtlasFrameworkPropertiesFile();
+            if (!atlasFrameworkPropertiesFile.exists()) {
+                String taskName;
+                if (appVariantContext.getAtlasExtension().getTBuildConfig().getClassInject()) {
+                    taskName = null;
+                } else {
+                    taskName = apkVariantOutputData.getScope().getTaskName("generate", "AtlasSources");
+                    getLogger().warn("Skipped " + taskName + " : required atlasFrameworkPropertiesFile not found "
+                                     + atlasFrameworkPropertiesFile + '\n'
+                                     + "Please check and update your baseline project atlasplugin.");
+                    getProject().getTasks().getByName(taskName).setEnabled(false);
+                }
+            }
+        }
     }
 
-    public static class ConfigAction extends MtlBaseTaskAction<APInfoLoaderTask> {
+    public static class ConfigAction extends MtlBaseTaskAction<PreIncrementalBuildTask> {
 
         private final AppVariantContext appVariantContext;
 
@@ -74,12 +90,12 @@ public class APInfoLoaderTask extends DefaultAndroidTask {
         }
 
         @Override
-        public Class<APInfoLoaderTask> getType() {
-            return APInfoLoaderTask.class;
+        public Class<PreIncrementalBuildTask> getType() {
+            return PreIncrementalBuildTask.class;
         }
 
         @Override
-        public void execute(APInfoLoaderTask task) {
+        public void execute(PreIncrementalBuildTask task) {
 
             super.execute(task);
             task.apContext = variantContext.apContext;

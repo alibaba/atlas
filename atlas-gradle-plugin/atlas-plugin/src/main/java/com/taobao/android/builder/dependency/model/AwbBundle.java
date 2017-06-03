@@ -216,7 +216,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.android.annotations.NonNull;
 import com.android.builder.core.DefaultManifestParser;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
@@ -505,14 +504,5 @@ public class AwbBundle {
 
     public void setBaseAwbDependencies(Map<ModuleIdentifier, String> baseAwbDependencies) {
         this.baseAwbDependencies = baseAwbDependencies;
-    }
-
-    /**
-     * Runtime exception thrown when something went bad with the manifest parsing
-     */
-    private static class DefaultManifestParserException extends RuntimeException {
-        DefaultManifestParserException(@NonNull File file, @NonNull Throwable cause) {
-            super("Exception while parsing the supplied manifest file " + file.getAbsolutePath(), cause);
-        }
     }
 }
