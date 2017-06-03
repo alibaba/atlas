@@ -229,6 +229,7 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.diff.DependencyCompareUtils;
@@ -316,9 +317,8 @@ public class DiffBundleInfoTask extends BaseTask {
         }
     }
 
-    private Set<ArtifactBundleInfo> getArtifactBundleInfo(DependencyDiff dependencyDiff,
-                                                          File mainfestFile,
-                                                          File apDir) throws IOException, DocumentException {
+    private Set<ArtifactBundleInfo> getArtifactBundleInfo(DependencyDiff dependencyDiff, File mainfestFile, File apDir)
+        throws IOException, DocumentException {
 
         Set<ArtifactBundleInfo> artifactBundleInfos = new HashSet<ArtifactBundleInfo>();
         if (null == apDir) {
@@ -332,10 +332,11 @@ public class DiffBundleInfoTask extends BaseTask {
             throw new GradleException(e.getMessage(), e);
         }
 
-        Map<String,String> tagMap = new HashMap<>();
-        JSONObject jsonObject = (JSONObject)JSON.parse(FileUtils.readFileToString(new File(apDir, "atlasFrameworkProperties.json")));
+        Map<String, String> tagMap = new HashMap<>();
+        JSONObject jsonObject = (JSONObject)JSON.parse(FileUtils.readFileToString(new File(apDir,
+                                                                                           "atlasFrameworkProperties.json")));
         JSONArray jsonArray = jsonObject.getJSONArray("bundleInfo");
-        for (JSONObject obj : jsonArray.toArray(new JSONObject[0])){
+        for (JSONObject obj : jsonArray.toArray(new JSONObject[0])) {
             tagMap.put(obj.getString("pkgName"), obj.getString("unique_tag"));
         }
 
@@ -344,8 +345,8 @@ public class DiffBundleInfoTask extends BaseTask {
         mainBundleInfo.setBaseVersion(apVersion);
         mainBundleInfo.setMainBundle(true);
         mainBundleInfo.setVersion(appVariantOutputContext.getVariantContext()
-                                          .getVariantConfiguration()
-                                          .getVersionName());
+                                                         .getVariantConfiguration()
+                                                         .getVersionName());
         if (dependencyDiff.getMainDexDiffs().size() > 0) {
             mainBundleInfo.setDiffType(DiffType.MODIFY);
         } else {
@@ -358,9 +359,9 @@ public class DiffBundleInfoTask extends BaseTask {
         artifactBundleInfos.add(mainBundleInfo);
 
         // 2. 添加各自的bundle
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                appVariantOutputContext.getVariantContext().
-                        getVariantConfiguration().getFullName());
+        AtlasDependencyTree atlasDependencyTree
+            = AtlasBuildContext.androidDependencyTrees.get(appVariantOutputContext.getVariantContext().
+            getVariantConfiguration().getFullName());
 
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
@@ -368,7 +369,7 @@ public class DiffBundleInfoTask extends BaseTask {
 
             ArtifactBundleInfo awbBundleInfo = new ArtifactBundleInfo();
             awbBundleInfo.setMainBundle(false);
-            awbBundleInfo.setDependency(bundleInfo.getDependency());
+            awbBundleInfo.setDependency(Lists.newArrayList(bundleInfo.getDependency()));
             awbBundleInfo.setPkgName(bundleInfo.getPkgName());
             awbBundleInfo.setApplicationName(bundleInfo.getApplicationName());
             awbBundleInfo.setArtifactId(awbBundle.getResolvedCoordinates().getArtifactId());
@@ -403,9 +404,8 @@ public class DiffBundleInfoTask extends BaseTask {
     }
 
     private String getBundleName(AwbBundle libraryDependency) {
-        return libraryDependency.getResolvedCoordinates().getGroupId() +
-                ":" +
-                libraryDependency.getResolvedCoordinates().getArtifactId();
+        return libraryDependency.getResolvedCoordinates().getGroupId() + ":"
+               + libraryDependency.getResolvedCoordinates().getArtifactId();
     }
 
     private static ArtifactBundleInfo getMainArtifactBundInfo(File manifestFile) {
@@ -421,7 +421,7 @@ public class DiffBundleInfoTask extends BaseTask {
 
         List<? extends Node> metadataNodes = root.selectNodes("//meta-data");
         for (Node node : metadataNodes) {
-            Element element = (Element) node;
+            Element element = (Element)node;
             Attribute attribute = element.attribute("name");
             if (attribute.getValue().equals("label")) {
                 Attribute labelAttribute = element.attribute("value");
@@ -431,7 +431,7 @@ public class DiffBundleInfoTask extends BaseTask {
 
         List<? extends Node> applicatNodes = root.selectNodes("//application");
         for (Node node : applicatNodes) {
-            Element element = (Element) node;
+            Element element = (Element)node;
             Attribute attribute = element.attribute("name");
             if (attribute != null) {
                 mainBundleInfo.setApplicationName(attribute.getValue());
@@ -454,10 +454,9 @@ public class DiffBundleInfoTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<DiffBundleInfoTask> {
 
-        private AppVariantContext appVariantContext;
+        private final AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -488,13 +487,12 @@ public class DiffBundleInfoTask extends BaseTask {
 
             super.execute(diffBundleInfoTask);
 
-            if (!appVariantContext.getAtlasExtension().isAtlasEnabled()){
+            if (!appVariantContext.getAtlasExtension().isAtlasEnabled()) {
                 diffBundleInfoTask.setEnabled(false);
             }
 
-            final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope.getVariantOutputData();
-            final GradleVariantConfiguration config = scope.getVariantScope()
-                    .getVariantConfiguration();
+            final ApkVariantOutputData variantOutputData = (ApkVariantOutputData)scope.getVariantOutputData();
+            final GradleVariantConfiguration config = scope.getVariantScope().getVariantConfiguration();
 
             ConventionMappingHelper.map(diffBundleInfoTask, "outJsonFile", new Callable<File>() {
                 @Override
@@ -515,40 +513,33 @@ public class DiffBundleInfoTask extends BaseTask {
             });
 
             //设置DependencyDiff
-            ConventionMappingHelper.map(diffBundleInfoTask,
-                                        "dependencyDiff",
-                                        new Callable<DependencyDiff>() {
-                                            @Override
-                                            public DependencyDiff call() throws Exception {
+            ConventionMappingHelper.map(diffBundleInfoTask, "dependencyDiff", new Callable<DependencyDiff>() {
+                @Override
+                public DependencyDiff call() throws Exception {
 
-                                                if (null !=
-                                                        appVariantContext.apContext.getApExploredFolder() &&
-                                                        appVariantContext.apContext.getApExploredFolder()
-                                                                .exists()) {
-                                                    DependencyJson dependencyJson = AtlasBuildContext.androidDependencyTrees
-                                                            .get(scope.getVariantOutputData().variantData
-                                                                         .getName())
-                                                            .getDependencyJson();
-                                                    File baseDependencyFile = new File(
-                                                            appVariantContext.apContext.getApExploredFolder(),
-                                                            "dependencies.txt");
-                                                    if (baseDependencyFile.exists()) {
-                                                        DependencyDiff dependencyDiff = DependencyCompareUtils
-                                                                .diff(baseDependencyFile,
-                                                                      dependencyJson);
-                                                        return dependencyDiff;
-                                                    }
-                                                }
-                                                return null;
-                                            }
-                                        });
+                    if (null != appVariantContext.apContext.getApExploredFolder()
+                        && appVariantContext.apContext.getApExploredFolder().exists()) {
+                        DependencyJson dependencyJson
+                            = AtlasBuildContext.androidDependencyTrees.get(scope.getVariantOutputData().variantData.getName())
+                                                                      .getDependencyJson();
+                        File baseDependencyFile = new File(appVariantContext.apContext.getApExploredFolder(),
+                                                           "dependencies.txt");
+                        if (baseDependencyFile.exists()) {
+                            DependencyDiff dependencyDiff = DependencyCompareUtils.diff(baseDependencyFile,
+                                                                                        dependencyJson);
+                            return dependencyDiff;
+                        }
+                    }
+                    return null;
+                }
+            });
 
             ConventionMappingHelper.map(diffBundleInfoTask, "apDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
 
-                    if (null != appVariantContext.apContext.getApExploredFolder() &&
-                            appVariantContext.apContext.getApExploredFolder().exists()) {
+                    if (null != appVariantContext.apContext.getApExploredFolder()
+                        && appVariantContext.apContext.getApExploredFolder().exists()) {
                         return appVariantContext.apContext.getApExploredFolder();
                     }
                     return null;

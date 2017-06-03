@@ -227,7 +227,8 @@ public class MD5Util {
      * 默认的密码字符串组合，apache校验下载的文件的正确性用的就是默认的这个组合
      */
     private final static String[] hexDigits = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d",
-            "e", "f"};
+        "e", "f"};
+
     protected static MessageDigest messagedigest = null;
 
     static {
@@ -244,18 +245,22 @@ public class MD5Util {
      * @param code 原始字符串
      * @return 返回字符串的MD5码
      */
-    public static String getMD5(String origincode) throws Exception {
-        MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-        byte[] bytes = origincode.getBytes();
-        byte[] results = messageDigest.digest(bytes);
-        StringBuilder stringBuilder = new StringBuilder();
+    public static String getMD5(String origincode) {
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            byte[] bytes = origincode.getBytes();
+            byte[] results = messageDigest.digest(bytes);
+            StringBuilder stringBuilder = new StringBuilder();
 
-        for (byte result : results) {
-            // 将byte数组转化为16进制字符存入stringbuilder中
-            stringBuilder.append(String.format("%02x", result));
+            for (byte result : results) {
+                // 将byte数组转化为16进制字符存入stringbuilder中
+                stringBuilder.append(String.format("%02x", result));
+            }
+
+            return stringBuilder.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-
-        return stringBuilder.toString();
     }
 
     /**
@@ -289,7 +294,6 @@ public class MD5Util {
         return md5;
     }
 
-
     /***
      * Get MD5 of one file！test ok!
      *
@@ -300,7 +304,6 @@ public class MD5Util {
         File file = new File(filepath);
         return getFileMD5(file);
     }
-
 
     public static String getFileMD5String(File file) throws IOException {
         return getFileMD5(file);
@@ -323,8 +326,9 @@ public class MD5Util {
     // 将一个字节转化成十六进制形式的字符串
     private static String byteToHexString(byte b) {
         int n = b;
-        if (n < 0)
+        if (n < 0) {
             n = 256 + n;
+        }
         int d1 = n / 16;
         int d2 = n % 16;
         return hexDigits[d1] + hexDigits[d2];
@@ -341,7 +345,6 @@ public class MD5Util {
             }
         };
 
-
         for (File file : inputFiles) {
             if (null == file || !file.exists()) {
                 continue;
@@ -355,7 +358,6 @@ public class MD5Util {
                     stringBuilder.append(MD5Util.getFileMD5(file1));
                 }
             }
-
         }
 
         try {
@@ -364,18 +366,15 @@ public class MD5Util {
             e.printStackTrace();
             return "";
         }
-
-
     }
 
     private static void listFilesForFolder(final File folder, List<File> fileList) {
         for (final File fileEntry : folder.listFiles()) {
             if (fileEntry.isDirectory()) {
-                listFilesForFolder(fileEntry,fileList);
+                listFilesForFolder(fileEntry, fileList);
             } else {
                 fileList.add(fileEntry);
             }
         }
     }
-
 }

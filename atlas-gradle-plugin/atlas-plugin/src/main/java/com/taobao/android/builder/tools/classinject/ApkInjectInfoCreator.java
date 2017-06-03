@@ -212,44 +212,42 @@ package com.taobao.android.builder.tools.classinject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.gradle.api.UncheckedIOException;
 
 /**
  * Created by wuzhong on 2016/12/1.
  */
 public class ApkInjectInfoCreator {
 
-    public InjectParam creteInjectParam(AppVariantContext appVariantContext) throws Exception {
+    public InjectParam creteInjectParam(AppVariantContext appVariantContext) {
         InjectParam injectParam = new InjectParam();
 
-        injectParam.removePreverify = !appVariantContext.getAtlasExtension()
-            .getTBuildConfig()
-            .getDoPreverify();
+        injectParam.removePreverify = !appVariantContext.getAtlasExtension().getTBuildConfig().getDoPreverify();
 
         injectParam.version = appVariantContext.getVariantConfiguration().getVersionName();
 
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-            appVariantContext.getScope().
-                getVariantConfiguration().getFullName());
+        AtlasDependencyTree atlasDependencyTree
+            = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getScope().
+            getVariantConfiguration().getFullName());
 
         List<BasicBundleInfo> basicBundleInfos = new ArrayList<BasicBundleInfo>();
-        Map<String, BasicBundleInfo> basicBundleInfoMap = new HashMap<>();
 
         String mainMd5 = MD5Util.getMD5(StringUtils.join(atlasDependencyTree.getMainBundle().getAllDependencies()));
         injectParam.unit_tag = mainMd5;
@@ -267,7 +265,7 @@ public class ApkInjectInfoCreator {
 
             //set unique_tag
             String bundleMd5 = MD5Util.getMD5(StringUtils.join(awbBundle.getAllDependencies()));
-            basicBundleInfo.setUnique_tag(MD5Util.getMD5(mainMd5+bundleMd5));
+            basicBundleInfo.setUnique_tag(MD5Util.getMD5(mainMd5 + bundleMd5));
             bundleInfo.setUnique_tag(basicBundleInfo.getUnique_tag());
 
             if (!bundleInfo.getIsInternal()) {
@@ -290,7 +288,6 @@ public class ApkInjectInfoCreator {
             }
 
             basicBundleInfos.add(basicBundleInfo);
-            basicBundleInfoMap.put(bundleInfo.getPkgName(), basicBundleInfo);
         }
 
         injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
@@ -307,66 +304,55 @@ public class ApkInjectInfoCreator {
         //}
         //
         injectParam.autoStartBundles = StringUtils.join(appVariantContext.getAtlasExtension()
-                                                            .getTBuildConfig()
-                                                            .getAutoStartBundles(), ",");
-        injectParam.preLaunch = appVariantContext.getAtlasExtension()
-            .getTBuildConfig()
-            .getPreLaunch();
-        mergeBundleInfos(appVariantContext, injectParam, basicBundleInfos, basicBundleInfoMap);
+                                                                         .getTBuildConfig()
+                                                                         .getAutoStartBundles(), ",");
+        injectParam.preLaunch = appVariantContext.getAtlasExtension().getTBuildConfig().getPreLaunch();
+        mergeBundleInfos(appVariantContext, injectParam);
         return injectParam;
     }
 
-    private void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam,
-                                  List<BasicBundleInfo> basicBundleInfos,
-                                  Map<String, BasicBundleInfo> basicBundleInfoMap) throws IOException {
+    public void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam) {
         if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
             File atlasFrameworkPropertiesFile = new File(appVariantContext.apContext.getApExploredFolder(),
                                                          "atlasFrameworkProperties.json");
             if (!atlasFrameworkPropertiesFile.exists()) {
                 return;
             }
-            String atlasFrameworkPropertiesStr = FileUtils.readFileToString(
-                atlasFrameworkPropertiesFile);
-            FrameworkProperties atlasFrameworkProperties = JSON.parseObject(
-                atlasFrameworkPropertiesStr,
-                FrameworkProperties.class);
+            List<BasicBundleInfo> basicBundleInfos = JSON.parseObject(injectParam.bundleInfo,
+                                                                      new TypeReference<List<BasicBundleInfo>>() {
+                                                                      });
+            FrameworkProperties atlasFrameworkProperties;
+            try {
+                atlasFrameworkProperties = JSON.parseObject(Files.toString(atlasFrameworkPropertiesFile,
+                                                                           Charsets.UTF_8), FrameworkProperties.class);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+
             List<BasicBundleInfo> baseBundleInfos = atlasFrameworkProperties.bundleInfo;
-            for (BasicBundleInfo baseBundleInfo : baseBundleInfos) {
-                BasicBundleInfo basicBundleInfo = basicBundleInfoMap.get(baseBundleInfo.getPkgName());
-                if (basicBundleInfo == null) {
-                    basicBundleInfos.add(baseBundleInfo);
+            List<BasicBundleInfo> mergeBasicBundleInfos = Lists.newArrayList(baseBundleInfos);
+            for (BasicBundleInfo basicBundleInfo : basicBundleInfos) {
+                BasicBundleInfo baseBasicBundleInfo = Iterables.find(baseBundleInfos,
+                                                                     input -> basicBundleInfo.getPkgName()
+                                                                                             .equals(input.getPkgName()));
+
+                if (baseBasicBundleInfo == null) {
+                    mergeBasicBundleInfos.add(basicBundleInfo);
                     continue;
                 }
-                if (!baseBundleInfo.getActivities().isEmpty()) {
-                    basicBundleInfo.setActivities(concatList(baseBundleInfo.getActivities(),
-                                                             basicBundleInfo.getActivities()));
-                }
-                if (!baseBundleInfo.getContentProviders().isEmpty()) {
-                    basicBundleInfo.setContentProviders(concatList(baseBundleInfo.getContentProviders(),
-                                                                   basicBundleInfo.getContentProviders()));
-                }
-                if (!baseBundleInfo.getDependency().isEmpty()) {
-                    basicBundleInfo.setDependency(concatList(baseBundleInfo.getDependency(),
-                                                             basicBundleInfo.getDependency()));
-                }
-                if (!baseBundleInfo.getReceivers().isEmpty()) {
-                    basicBundleInfo.setReceivers(concatList(baseBundleInfo.getReceivers(),
-                                                            basicBundleInfo.getReceivers()));
-                }
-                if (!baseBundleInfo.getServices().isEmpty()) {
-                    basicBundleInfo.setServices(concatList(baseBundleInfo.getServices(),
-                                                           basicBundleInfo.getServices()));
-                }
+                basicBundleInfo.getActivities().addAll(baseBasicBundleInfo.getActivities());
+                basicBundleInfo.getContentProviders().addAll(baseBasicBundleInfo.getContentProviders());
+                basicBundleInfo.getDependency().addAll(baseBasicBundleInfo.getDependency());
+                basicBundleInfo.getReceivers().addAll(baseBasicBundleInfo.getReceivers());
+                basicBundleInfo.getServices().addAll(baseBasicBundleInfo.getServices());
+
+                mergeBasicBundleInfos.remove(baseBasicBundleInfo);
+                mergeBasicBundleInfos.add(basicBundleInfo);
             }
-            injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
+
+            injectParam.bundleInfo = JSON.toJSONString(mergeBasicBundleInfos);
             injectParam.autoStartBundles = atlasFrameworkProperties.autoStartBundles;
             injectParam.preLaunch = atlasFrameworkProperties.preLaunch;
         }
-    }
-
-    private static List<String> concatList(List<String> listOne, List<String> listTwo) {
-        return Stream.concat(listOne.stream(), listTwo.stream())
-            .distinct()
-            .collect(Collectors.toList());
     }
 }

@@ -25,7 +25,6 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.zip.BetterZip;
 import groovy.lang.Closure;
 import org.gradle.api.Project;
 import org.gradle.api.file.CopySpec;
@@ -63,21 +62,20 @@ public class PrepareBaseApkTask extends IncrementalTask {
         FileUtils.deleteDirectoryContents(outputDir);
         Project project = getProject();
         int dexFilesCount = getDexFilesCount();
-        if (isCreateTPatch() && dexFilesCount > 0) {
-            project.copy(new Closure(PrepareBaseApkTask.class) {
-                public Object doCall(CopySpec cs) {
-                    cs.from(project.zipTree(baseApk));
-                    cs.into(outputDir);
+        project.copy(new Closure(PrepareBaseApkTask.class) {
+            public Object doCall(CopySpec cs) {
+                cs.from(project.zipTree(baseApk));
+                cs.into(outputDir);
+                if (isCreateTPatch() && dexFilesCount > 0) {
                     cs.include("classes*.dex");
-
-                    return cs;
+                } else {
+                    cs.exclude("res/drawable/abc_wb_textfield_cdf.jpg");
+                    cs.exclude("META-INF/");
                 }
-            });
-        } else {
-            BetterZip.unzipDirectory(baseApk, outputDir);
-            FileUtils.delete(FileUtils.join(outputDir, "res/drawable/abc_wb_textfield_cdf.jpg"));
-            FileUtils.deleteDirectoryContents(FileUtils.join(outputDir, "META-INF/"));
-        }
+
+                return cs;
+            }
+        });
 
         if (dexFilesCount > 0) {
             Set<File> baseDexFileSet = getProject().fileTree(ImmutableMap.of("dir",

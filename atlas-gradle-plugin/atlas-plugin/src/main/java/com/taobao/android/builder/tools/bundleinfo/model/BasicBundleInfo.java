@@ -209,9 +209,9 @@
 
 package com.taobao.android.builder.tools.bundleinfo.model;
 
-import com.google.common.collect.Lists;
+import java.util.Set;
 
-import java.util.List;
+import com.google.common.collect.Sets;
 
 /**
  * Created by wuzhong on 2016/11/24.
@@ -229,15 +229,15 @@ public class BasicBundleInfo {
 
     private String version;
 
-    private List<String> dependency = Lists.newArrayList();
+    private Set<String> dependency = Sets.newHashSet();
 
-    private List<String> activities = Lists.newArrayList();
+    private Set<String> activities = Sets.newHashSet();
 
-    private List<String> services = Lists.newArrayList();
+    private Set<String> services = Sets.newHashSet();
 
-    private List<String> receivers = Lists.newArrayList();
+    private Set<String> receivers = Sets.newHashSet();
 
-    private List<String> contentProviders = Lists.newArrayList();
+    private Set<String> contentProviders = Sets.newHashSet();
 
     private Boolean isInternal = true;
 
@@ -265,43 +265,43 @@ public class BasicBundleInfo {
         this.version = version;
     }
 
-    public List<String> getDependency() {
+    public Set<String> getDependency() {
         return dependency;
     }
 
-    public void setDependency(List<String> dependency) {
+    public void setDependency(Set<String> dependency) {
         this.dependency = dependency;
     }
 
-    public List<String> getActivities() {
+    public Set<String> getActivities() {
         return activities;
     }
 
-    public void setActivities(List<String> activities) {
+    public void setActivities(Set<String> activities) {
         this.activities = activities;
     }
 
-    public List<String> getServices() {
+    public Set<String> getServices() {
         return services;
     }
 
-    public void setServices(List<String> services) {
+    public void setServices(Set<String> services) {
         this.services = services;
     }
 
-    public List<String> getReceivers() {
+    public Set<String> getReceivers() {
         return receivers;
     }
 
-    public void setReceivers(List<String> receivers) {
+    public void setReceivers(Set<String> receivers) {
         this.receivers = receivers;
     }
 
-    public List<String> getContentProviders() {
+    public Set<String> getContentProviders() {
         return contentProviders;
     }
 
-    public void setContentProviders(List<String> contentProviders) {
+    public void setContentProviders(Set<String> contentProviders) {
         this.contentProviders = contentProviders;
     }
 

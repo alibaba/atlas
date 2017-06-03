@@ -209,25 +209,17 @@
 
 package com.taobao.android.builder.tasks.app.manifest;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.MergeManifests;
-import com.android.builder.core.DefaultManifestParser;
-import com.android.builder.core.DefaultProductFlavor;
-import com.android.builder.model.ProductFlavor;
 import com.android.manifmerger.ManifestProvider;
-import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -266,7 +258,7 @@ public class PreProcessManifestAction implements Action<Task> {
         Set<String> notMergedArtifacts = Sets.newHashSet();
 
         if (null != atlasExtension.getManifestOptions() && null != atlasExtension.getManifestOptions()
-            .getNotMergedBundles()) {
+                                                                                 .getNotMergedBundles()) {
             notMergedArtifacts = atlasExtension.getManifestOptions().getNotMergedBundles();
         }
 
@@ -278,11 +270,11 @@ public class PreProcessManifestAction implements Action<Task> {
             GradleVariantConfiguration config = variantScope.getVariantConfiguration();
             AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
 
-            List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(appVariantContext, dependencyTree,
+            List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(appVariantContext,
+                                                                                      dependencyTree,
                                                                                       atlasExtension);
 
             List<ManifestProvider> allManifest = new ArrayList<>();
-            modifyForIncremental(mergeManifests, allManifest);
             allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
             allManifest.addAll(bundleProviders);
 
@@ -294,40 +286,6 @@ public class PreProcessManifestAction implements Action<Task> {
 
             // 不加这一步,每次的getLibraries 都会从mapping里去重新计算
             mergeManifests.setProviders(allManifest);
-        }
-    }
-
-    private void modifyForIncremental(MergeManifests mergeManifests, List<ManifestProvider> allManifest) {
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-            File mainManifest = mergeManifests.getMainManifest();
-            File baseManifest = appVariantContext.apContext.getBaseModifyManifest();
-            // allManifest.add(new ManifestHelper.MainManifestProvider(mainManifest, "main-manifest"));
-            ConventionMappingHelper.map(mergeManifests, "mainManifest", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return baseManifest;
-                }
-            });
-            if (baseVariantOutputData instanceof ApkVariantOutputData) {
-                // TODO 提升性能
-                ApkVariantOutputData variantOutputData = (ApkVariantOutputData)baseVariantOutputData;
-                DefaultManifestParser manifestParser = new DefaultManifestParser(baseManifest);
-                String versionNameOverride = variantOutputData.getVersionNameOverride();
-                if (Strings.isNullOrEmpty(versionNameOverride)) {
-                    variantOutputData.setVersionNameOverride(manifestParser.getVersionName());
-                    GradleVariantConfiguration variantConfiguration = appVariantContext.getScope()
-                        .getVariantConfiguration();
-                    ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
-                    String versionName = mergedFlavor.getVersionName();
-                    if (versionName == null) {
-                        ((DefaultProductFlavor)mergedFlavor).setVersionName(manifestParser.getVersionName());
-                    }
-                }
-                int versionCodeOverride = variantOutputData.getVersionCodeOverride();
-                if (versionCodeOverride == -1) {
-                    variantOutputData.setVersionCodeOverride(manifestParser.getVersionCode());
-                }
-            }
         }
     }
 }
