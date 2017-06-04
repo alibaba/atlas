@@ -250,11 +250,11 @@ public class ApContext {
 
     private File baseApk;
 
-    private File baseApkDirectory;
+    private File extractedBaseApkFolder;
 
-    private File baseAwbDirectory;
+    private File baseAwbsFolder;
 
-    private File baseExplodedAwbDirectory;
+    private File extractedBaseAwbFolder;
 
     private File baseManifest;
 
@@ -293,24 +293,24 @@ public class ApContext {
         this.baseManifest = new File(apExploredFolder, ANDROID_MANIFEST_XML);
         this.baseMainManifest = new File(apExploredFolder, "_" + ANDROID_MANIFEST_XML);
         this.baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
-        this.baseApkDirectory = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
-        this.baseAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXTRACT_DIRECTORY);
-        this.baseExplodedAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
+        this.extractedBaseApkFolder = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
+        this.baseAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_EXTRACT_DIRECTORY);
+        this.extractedBaseAwbFolder = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
         this.basePackageIdFile = new File(apExploredFolder, PACKAGE_ID_PROPERTIES_FILENAME);
         this.baseAtlasFrameworkPropertiesFile = new File(apExploredFolder, ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
         this.baseDependenciesFile = new File(apExploredFolder, DEPENDENCIES_FILENAME);
-    }
-
-    public File getExtractedBaseApkFolder() {
-        return baseApkDirectory;
     }
 
     public File getBaseApk() {
         return baseApk;
     }
 
-    public File getBaseAwbDirectory() {
-        return baseAwbDirectory;
+    public File getExtractedBaseApkFolder() {
+        return extractedBaseApkFolder;
+    }
+
+    public File getBaseAwbsFolder() {
+        return baseAwbsFolder;
     }
 
     public File getBaseManifest() {
@@ -334,15 +334,15 @@ public class ApContext {
     }
 
     public File getBaseAwb(String soFileName) {
-        File file = FileUtils.join(baseAwbDirectory, soFileName);
+        File file = FileUtils.join(baseAwbsFolder, soFileName);
         if (!file.exists()) {
             return null;
         }
         return file;
     }
 
-    public File getBaseExplodedAwb(String soFileName) {
-        File file = FileUtils.join(baseExplodedAwbDirectory, FilenameUtils.getBaseName(soFileName));
+    public File getExtractedBaseAwb(String soFileName) {
+        File file = FileUtils.join(extractedBaseAwbFolder, FilenameUtils.getBaseName(soFileName));
         if (!file.exists()) {
             return null;
         }
