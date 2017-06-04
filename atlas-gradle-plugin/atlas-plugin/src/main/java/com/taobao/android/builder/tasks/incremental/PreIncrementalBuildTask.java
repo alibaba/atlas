@@ -58,7 +58,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
         ConventionMappingHelper.map(manifestProcessorTask, "mainManifest", new Callable<File>() {
             @Override
             public File call() throws Exception {
-                return apContext.getBaseModifyManifest();
+                return apContext.getBaseMainManifest();
             }
         });
 

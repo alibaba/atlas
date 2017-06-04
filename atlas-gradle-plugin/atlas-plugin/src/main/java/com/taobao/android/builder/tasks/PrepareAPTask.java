@@ -231,11 +231,13 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.builder.tools.xml.XmlHelper;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.dom4j.Element;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -330,13 +332,9 @@ public class PrepareAPTask extends BaseTask {
 
         if (null != apBaseFile && apBaseFile.exists()) {
             BetterZip.unzipDirectory(apBaseFile, getExplodedDir());
-            extractBaseBundles();
             if (incremental) {
-                // 预处理增量AndroidManifest.xml
-                ManifestFileUtils.updatePreProcessBaseManifestFile(FileUtils.join(explodedDir,
-                                                                                  "manifest-modify",
-                                                                                  ANDROID_MANIFEST_XML),
-                                                                   new File(explodedDir, ANDROID_MANIFEST_XML));
+                extractBaseBundles();
+                generateMainManifest(explodedDir);
             }
         }
     }
@@ -389,6 +387,25 @@ public class PrepareAPTask extends BaseTask {
                                    new File(awbExplodedFile, "classes2.dex"));
             }
         }
+    }
+
+    // 预处理增量AndroidManifest.xml
+    private void generateMainManifest(File explodedDir) throws DocumentException, IOException {
+        Document document = XmlHelper.readXml(new File(explodedDir, ANDROID_MANIFEST_XML));// 读取XML文件
+
+        Element root = document.getRootElement();// 得到根节点
+        root.addNamespace("tools", "http://schemas.android.com/tools");
+        Element applicationElement = root.element("application");
+
+        //判断是否有application，需要删除掉
+        if (null != applicationElement) {
+            applicationElement.addAttribute("tools:replace",
+                                            "android:name,android:icon,android:allowBackup,android:label,"
+                                            + "android:supportsRtl");
+            applicationElement.clearContent();
+        }
+
+        XmlHelper.saveDocument(document, FileUtils.join(explodedDir, "_" + ANDROID_MANIFEST_XML));
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {

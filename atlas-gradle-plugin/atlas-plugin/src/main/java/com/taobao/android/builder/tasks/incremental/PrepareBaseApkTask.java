@@ -200,7 +200,7 @@ public class PrepareBaseApkTask extends IncrementalTask {
             ConventionMappingHelper.map(prepareBaseApkTask, "outputDir", new Callable<File>() {
                 @Override
                 public File call() {
-                    return variantContext.apContext.getBaseApkDirectory();
+                    return variantContext.apContext.getExtractedBaseApkFolder();
                 }
             });
 
@@ -210,7 +210,7 @@ public class PrepareBaseApkTask extends IncrementalTask {
                                             .setFolders(new Supplier<Collection<File>>() {
                                                 @Override
                                                 public Collection<File> get() {
-                                                    return ImmutableList.of(variantContext.apContext.getBaseApkDirectory());
+                                                    return ImmutableList.of(variantContext.apContext.getExtractedBaseApkFolder());
                                                 }
                                             })
                 // .setFolder(variantScope

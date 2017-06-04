@@ -258,7 +258,7 @@ public class ApContext {
 
     private File baseManifest;
 
-    private File baseModifyManifest;
+    private File baseMainManifest;
 
     private File baseAtlasFrameworkPropertiesFile;
 
@@ -291,7 +291,7 @@ public class ApContext {
     public void setApExploredFolder(File apExploredFolder) {
         this.apExploredFolder = apExploredFolder;
         this.baseManifest = new File(apExploredFolder, ANDROID_MANIFEST_XML);
-        this.baseModifyManifest = FileUtils.join(apExploredFolder, "manifest-modify", ANDROID_MANIFEST_XML);
+        this.baseMainManifest = new File(apExploredFolder, "_" + ANDROID_MANIFEST_XML);
         this.baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
         this.baseApkDirectory = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
         this.baseAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXTRACT_DIRECTORY);
@@ -301,7 +301,7 @@ public class ApContext {
         this.baseDependenciesFile = new File(apExploredFolder, DEPENDENCIES_FILENAME);
     }
 
-    public File getBaseApkDirectory() {
+    public File getExtractedBaseApkFolder() {
         return baseApkDirectory;
     }
 
@@ -317,8 +317,8 @@ public class ApContext {
         return baseManifest;
     }
 
-    public File getBaseModifyManifest() {
-        return baseModifyManifest;
+    public File getBaseMainManifest() {
+        return baseMainManifest;
     }
 
     public File getBaseAtlasFrameworkPropertiesFile() {

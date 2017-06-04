@@ -225,6 +225,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
+import com.taobao.android.builder.tools.manifest.ManifestHelper.BundleManifestProvider;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.slf4j.Logger;
@@ -275,6 +276,7 @@ public class PreProcessManifestAction implements Action<Task> {
                                                                                       atlasExtension);
 
             List<ManifestProvider> allManifest = new ArrayList<>();
+            allManifest.add(new BundleManifestProvider(appVariantContext.apContext.getBaseMainManifest()));
             allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
             allManifest.addAll(bundleProviders);
 

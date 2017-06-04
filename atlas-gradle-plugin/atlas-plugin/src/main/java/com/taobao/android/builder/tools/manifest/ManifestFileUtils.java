@@ -704,25 +704,6 @@ public class ManifestFileUtils {
     //
     //}
 
-    public static void updatePreProcessBaseManifestFile(File modifyManifest, File orgManifestFile)
-        throws IOException, DocumentException {
-
-        Document document = XmlHelper.readXml(orgManifestFile);// 读取XML文件
-
-        Element root = document.getRootElement();// 得到根节点
-        root.addNamespace("tools", "http://schemas.android.com/tools");
-        Element applicationElement = root.element("application");
-
-        //判断是否有application，需要删除掉
-        if (null != applicationElement) {
-            applicationElement.addAttribute("tools:replace",
-                                            "android:name,android:icon,android:allowBackup,android:label,"
-                                            + "android:supportsRtl");
-        }
-
-        XmlHelper.saveDocument(document, modifyManifest);
-    }
-
     /**
      * 更新libManifest文件
      *
