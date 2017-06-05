@@ -210,6 +210,8 @@
 package com.taobao.android.builder.tools.proguard.dump;
 
 import proguard.classfile.Clazz;
+import proguard.classfile.LibraryClass;
+import proguard.classfile.LibraryMethod;
 import proguard.classfile.Method;
 import proguard.classfile.ProgramClass;
 import proguard.classfile.ProgramMember;
@@ -309,7 +311,8 @@ public class ClassDetailVisitor extends AbstractClasslVisitor implements Attribu
         //            clazz.getType(methodrefConstant.u2nameAndTypeIndex) + "]");
 
         addMethod(clazz.getClassName(methodrefConstant.u2classIndex),
-                  clazz.getName(methodrefConstant.u2nameAndTypeIndex),false);
+                  clazz.getName(methodrefConstant.u2nameAndTypeIndex),
+                  clazz.getType(methodrefConstant.u2nameAndTypeIndex), false);
 
     }
 
@@ -321,7 +324,8 @@ public class ClassDetailVisitor extends AbstractClasslVisitor implements Attribu
         //            clazz.getType(interfaceMethodrefConstant.u2nameAndTypeIndex) + "]");
 
         addMethod(clazz.getClassName(interfaceMethodrefConstant.u2classIndex),
-                  clazz.getName(interfaceMethodrefConstant.u2nameAndTypeIndex),true);
+                  clazz.getName(interfaceMethodrefConstant.u2nameAndTypeIndex),
+                  clazz.getType(interfaceMethodrefConstant.u2nameAndTypeIndex), true);
 
     }
 
@@ -338,17 +342,64 @@ public class ClassDetailVisitor extends AbstractClasslVisitor implements Attribu
 
     }
 
-    private void addMethod(String name, String method, boolean needExtend) {
+    private void addMethod(String name, String method, String args, boolean interfaceClazz) {
         //println("addMethod " + name + "." + method);
 
         ClazzRefInfo clazzRefInfo = visitorDTO.getClazzRefInfo(name);
         if (null != clazzRefInfo) {
-            clazzRefInfo.getMethods().add(method);
-            if (needExtend){
+
+            if (interfaceClazz) {
                 clazzRefInfo.setNeedExtend(true);
+            }
+
+            //keep it interface
+            LibraryClass libraryClass = (LibraryClass)visitorDTO.libraryClassPool.getClass(clazzRefInfo.getClazzName());
+            //判断是否能命中super类
+            if (null != libraryClass) {
+
+                ClazzRefInfo superRefInfo = getSuperClazzRef(libraryClass, method, args);
+                if (null != superRefInfo){
+                    superRefInfo.getMethods().add(method);
+                }
+
+            }
+
+            //clazzRefInfo.getMethods().add(method);
+
+        }
+
+    }
+
+    private ClazzRefInfo getSuperClazzRef(LibraryClass libraryClass, String methodName, String args) {
+        if (null == libraryClass || !visitorDTO.isLibClazz(libraryClass.getName())) {
+            return null;
+        }
+        for (LibraryMethod method : libraryClass.methods) {
+            if (method.name.equals(methodName) && method.descriptor.equals(args)) {
+                ClazzRefInfo clazzRefInfo = visitorDTO.getClazzRefInfoByName(libraryClass.getName());
+                return clazzRefInfo;
             }
         }
 
+        Clazz clazz = libraryClass.getSuperClass();
+        ClazzRefInfo clazzRefInfo = getClazzRefInfoBySuper(methodName, args, clazz);
+        if (clazzRefInfo != null) {
+            return clazzRefInfo;
+        }
+        for (int i = 0; i < libraryClass.getInterfaceCount(); i++) {
+            ClazzRefInfo clazzRefInfo1 = getClazzRefInfoBySuper(methodName, args, libraryClass.getInterface(i));
+            if (clazzRefInfo1 != null) {
+                return clazzRefInfo1;
+            }
+        }
+        return null;
+    }
+
+    private ClazzRefInfo getClazzRefInfoBySuper(String methodName, String args, Clazz clazz) {
+        if (null != clazz && visitorDTO.isLibClazz(clazz.getName())) {
+            return getSuperClazzRef((LibraryClass)clazz, methodName, args);
+        }
+        return null;
     }
 
     private void addField(String name, String field) {

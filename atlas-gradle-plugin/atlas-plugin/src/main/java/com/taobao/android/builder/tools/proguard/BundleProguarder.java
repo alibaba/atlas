@@ -250,7 +250,7 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
-    public static final String CACHE_TYPE = "proguard-bundles-0.03";
+    public static final String CACHE_TYPE = "proguard-bundles-0.05";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
 
