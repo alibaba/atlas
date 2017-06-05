@@ -211,13 +211,9 @@ package com.taobao.android.builder.tools.diff;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.zip.ZipUtils;
@@ -240,12 +236,12 @@ public class DiffResExtractor {
      * @param destDir
      * @throws IOException
      */
-    public static void extractDiff(Set<String> diffResFiles, File currentApk, File baseApk, File fullResDir, File destDir) throws IOException {
+    public static void extractDiff(Set<String> diffResFiles, File currentApk, File baseApk, File fullResDir,
+                                   File destDir) throws IOException {
 
         if (!currentApk.exists() || !baseApk.exists() || !fullResDir.exists()) {
             return;
         }
-
 
         FileUtils.deleteDirectory(destDir);
         destDir.mkdirs();
@@ -253,7 +249,6 @@ public class DiffResExtractor {
         File tmpFolder = new File(destDir.getParentFile(), "tmp-diffRes");
         FileUtils.deleteDirectory(tmpFolder);
         tmpFolder.mkdirs();
-
 
         File apkDir = new File(tmpFolder, "newApkDir");
         File baseApkDir = new File(tmpFolder, "baseApkDir");
@@ -266,7 +261,7 @@ public class DiffResExtractor {
 
         int basePathLength = apkDir.getAbsolutePath().length();
 
-        List<String> diffResPath = new ArrayList<String>();
+        //List<String> diffResPath = new ArrayList<String>();
 
         //计算assets
         for (File file : files) {
@@ -278,17 +273,10 @@ public class DiffResExtractor {
             }
 
             File baseFile = new File(baseApkDir, relativePath);
-            if (!baseFile.exists()) {
-                diffResPath.add(relativePath);
-                continue;
+            if (!baseFile.exists() || !MD5Util.getFileMD5(file).equals(MD5Util.getFileMD5(baseFile))) {
+                FileUtils.copyFile(file, new File(destDir, relativePath));
             }
 
-            if (!MD5Util.getFileMD5(file).equals(MD5Util.getFileMD5(baseFile))) {
-
-                File rawFile = new File(apkDir, relativePath);
-                FileUtils.copyFile(rawFile, new File(destDir, relativePath));
-
-            }
         }
 
         //计算res
@@ -297,7 +285,8 @@ public class DiffResExtractor {
             File baseFile = new File(baseApkDir, diffFile);
             File currentFile = new File(apkDir, diffFile);
 
-            if (baseFile.exists() && currentFile.exists() && MD5Util.getFileMD5(baseFile).equals(MD5Util.getFileMD5(currentFile))) {
+            if (baseFile.exists() && currentFile.exists() && MD5Util.getFileMD5(baseFile).equals(
+                MD5Util.getFileMD5(currentFile))) {
                 continue;
             }
 
@@ -316,22 +305,25 @@ public class DiffResExtractor {
             FileUtils.forceMkdir(valuesDir);
             File stringsFile = new File(valuesDir, "strings.xml");
             UUID uuid = UUID.randomUUID();
-            FileUtils.writeStringToFile(stringsFile, String.format("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <string name=\"%s\">%s</string>\n</resources>\n", uuid, uuid), "UTF-8", false);
+            FileUtils.writeStringToFile(stringsFile, String.format(
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <string "
+                    + "name=\"%s\">%s</string>\n</resources>\n",
+                uuid, uuid), "UTF-8", false);
 
         }
 
-        final Pattern densityOnlyPattern = Pattern.compile("[a-zA-Z]+-[a-zA-Z]+dpi");
-        if (resDir.exists()) {
-            File[] resDirs = resDir.listFiles();
-            if (resDirs != null) {
-                for (File file : resDirs) {
-                    Matcher m = densityOnlyPattern.matcher(file.getName());
-                    if (m.matches()) {
-                        FileUtils.moveDirectory(file, new File(file.getAbsolutePath() + "-v4"));
-                    }
-                }
-            }
-        }
+        //final Pattern densityOnlyPattern = Pattern.compile("[a-zA-Z]+-[a-zA-Z]+dpi");
+        //if (resDir.exists()) {
+        //    File[] resDirs = resDir.listFiles();
+        //    if (resDirs != null) {
+        //        for (File file : resDirs) {
+        //            Matcher m = densityOnlyPattern.matcher(file.getName());
+        //            if (m.matches()) {
+        //                FileUtils.moveDirectory(file, new File(file.getAbsolutePath() + "-v4"));
+        //            }
+        //        }
+        //    }
+        //}
 
     }
 
