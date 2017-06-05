@@ -13,6 +13,7 @@
 * [动态部署](update/README.md)
     * [技术原理](update/principle.md)
     * [dexpatch](update/dexpatch.md)
+    * [dexpatch使用教程](update/dexpatch_use_guide.md)
     * [一些限制](update/guide.md)
 * FAQ
 	 * [gradle配置](atlas_gradle_apk/atlas_atlas_gradle_apk.md)
