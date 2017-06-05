@@ -212,7 +212,7 @@ package com.taobao.android.builder.tools.proguard.dump;
 import java.util.Map;
 import java.util.Set;
 
-import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.proguard.dump.utils.ReflectUtils;
 import proguard.ProGuard;
 import proguard.classfile.ClassPool;
 
@@ -224,8 +224,9 @@ public class BundleProguardDumper {
     public static Map<String, ClazzRefInfo> dump(ProGuard proGuard, Set<String> defaultClasses) throws Exception {
 
         ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
+        ClassPool libClassPool = (ClassPool)ReflectUtils.getField(proGuard, "libraryClassPool");
 
-        VisitorDTO visitorDTO = new VisitorDTO(defaultClasses, classPool);
+        VisitorDTO visitorDTO = new VisitorDTO(defaultClasses, classPool, libClassPool);
 
         classPool.classesAccept(new ClassStructVisitor(visitorDTO));
         classPool.classesAccept(new ClassDetailVisitor(visitorDTO));

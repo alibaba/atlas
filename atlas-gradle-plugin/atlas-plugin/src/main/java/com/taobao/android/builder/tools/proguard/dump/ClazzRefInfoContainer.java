@@ -209,187 +209,89 @@
 
 package com.taobao.android.builder.tools.proguard.dump;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.lang.StringUtils;
-import proguard.classfile.ClassConstants;
-import proguard.classfile.ClassPool;
-import proguard.classfile.Clazz;
-import proguard.classfile.LibraryClass;
 
 /**
- * Created by wuzhong on 2017/5/27.
+ * Created by wuzhong on 2017/5/14.
  */
-public class VisitorDTO {
+public class ClazzRefInfoContainer {
 
-    /**
-     * System class list， aa/bb
-     */
-    public Set<String> defaultClasses;
+    private Map<String, ClazzRefInfo> refClazzMap = new HashMap<>();
 
-    /**
-     * 当前的 classpool
-     */
-    public ClassPool currentClassPool;
-
-    public ClassPool libraryClassPool;
-
-    public Set<String> abstractClasses = new HashSet<>();
-
-    /**
-     * 当前 classpool 下所有类的结构，其中 super 指向的是 library 的类
-     */
-    public Map<String, ClassStruct> classStructMap = new HashMap<>();
-
-    public Map<String, LibraryClazzInfo> libraryClazzInfoMap = new HashMap<>();
-
-    /**
-     * 最终的输出结果
-     */
-    public Map<String, ClazzRefInfo> clazzRefInfoMap = new HashMap<>();
-
-    public VisitorDTO(Set<String> defaultClasses, ClassPool currentClassPool, ClassPool libraryClassPool) {
-        this.defaultClasses = defaultClasses;
-        this.currentClassPool = currentClassPool;
-        this.libraryClassPool = libraryClassPool;
+    public ClazzRefInfoContainer(
+        Map<String, ClazzRefInfo> refClazzMap) {
+        this.refClazzMap = refClazzMap;
     }
 
-    /**
-     * 查找离他最近的 library class
-     *
-     * @param programClass
-     * @return
-     */
-    public String findRootLibClazz(Clazz programClass) {
-        Clazz superClass = programClass.getSuperClass();
-        if (null == superClass) {
-            return "";
-        }
-        if (superClass instanceof LibraryClass) {
-            LibraryClass libraryClass = (LibraryClass)superClass;
-            String className = libraryClass.getName();
-            if (isLibClazz(className)) {
-                if ((libraryClass.getAccessFlags() & ClassConstants.ACC_ABSTRACT) == ClassConstants.ACC_ABSTRACT) {
-                    abstractClasses.add(className);
-                }
-                return className;
-            }
-            return "";
-        }
-        return findRootLibClazz(superClass);
+    public ClazzRefInfoContainer() {
     }
 
-    public String findRootLibClazz(String className) {
-        if (isLibClazz(className)) {
-            return className;
-        }
-        Clazz clazz = currentClassPool.getClass(className);
-        //assert clazz!=null;
-        if (null == clazz) {
-            return "";
-        }
-        return findRootLibClazz(clazz);
-    }
+    public void addRefClazz(Map<String, ClazzRefInfo> other) {
 
-    public boolean isLibClazz(String className) {
-        //System.out.println(className);
-        if (defaultClasses.contains(className)) {
-            return false;
-        }
-        if (className.contains("[")) {
-            return false;
-        }
-        if (null != currentClassPool.getClass(className)) {
-            return false;
-        }
-        return true;
-    }
+        for (String key : other.keySet()) {
 
-    public LibraryClazzInfo getLibraryClazzInfo(String className) {
-        String rootLibraryClass = this.findRootLibClazz(className);
-        if (StringUtils.isEmpty(rootLibraryClass)) {
-            return null;
-        }
-
-        LibraryClazzInfo libraryClazzInfo = this.libraryClazzInfoMap.get(rootLibraryClass);
-        if (null == libraryClazzInfo) {
-            libraryClazzInfo = new LibraryClazzInfo();
-            this.libraryClazzInfoMap.put(rootLibraryClass, libraryClazzInfo);
-        }
-        return libraryClazzInfo;
-    }
-
-    public ClazzRefInfo getClazzRefInfo(String className) {
-        String rootLibraryClass = this.findRootLibClazz(className);
-        if (StringUtils.isEmpty(rootLibraryClass)) {
-            return null;
-        }
-
-        return getClazzRefInfoByName(rootLibraryClass);
-    }
-
-    public ClazzRefInfo getClazzRefInfoByName(String className) {
-        ClazzRefInfo libraryClazzInfo = this.clazzRefInfoMap.get(className);
-        if (null == libraryClazzInfo) {
-            libraryClazzInfo = new ClazzRefInfo(className);
-            this.clazzRefInfoMap.put(className, libraryClazzInfo);
-            if (isVirtualClass(className)){
-                libraryClazzInfo.setNeedExtend(true);
+            ClazzRefInfo otherClazz = other.get(key);
+            ClazzRefInfo clazz = refClazzMap.get(key);
+            if (null == clazz) {
+                refClazzMap.put(key, otherClazz);
+            } else {
+                clazz.getFields().addAll(otherClazz.getFields());
+                clazz.getMethods().addAll(otherClazz.getMethods());
+                clazz.setKeepAll(clazz.isKeepAll() || otherClazz.isKeepAll());
+                clazz.setNeedExtend(clazz.isNeedExtend() || otherClazz.isNeedExtend());
             }
         }
 
-        return libraryClazzInfo;
-
     }
 
-    public void addSuperRefInfo() {
-        for (ClassStruct classStruct : classStructMap.values()) {
-            if (StringUtils.isNotEmpty(classStruct.superClazzName)) {
-                if (abstractClasses.contains(classStruct.superClazzName)) {
-                    getClazzRefInfoByName(classStruct.superClazzName).setKeepAll(true);
-                } else {
-                    getClazzRefInfoByName(classStruct.superClazzName).setNeedExtend(true);
-                }
+    public List<String> convertToKeeplines() {
+
+        List<ClazzRefInfo> refClazzes = new ArrayList<>(refClazzMap.values());
+        Collections.sort(refClazzes, new Comparator<ClazzRefInfo>() {
+            @Override
+            public int compare(ClazzRefInfo o1, ClazzRefInfo o2) {
+                return o1.getClazzName().compareTo(o2.getClazzName());
             }
-            for (String inter : classStruct.libInterfaces) {
-                getClazzRefInfoByName(inter).setKeepAll(true);
+        });
+
+        List<String> lines = new ArrayList<>();
+        for (ClazzRefInfo refClazz : refClazzes) {
+
+            String line = "-keep class ";
+            addKeepLines(lines, refClazz, line);
+
+            if (refClazz.isNeedExtend()){
+                line += " * extends ";
+                addKeepLines(lines, refClazz, line);
             }
+
+        }
+        return lines;
+
+    }
+
+    private void addKeepLines(List<String> lines, ClazzRefInfo refClazz, String line) {
+        line += refClazz.getClazzName().replace("/", ".");
+        if (refClazz.isKeepAll()) {
+            lines.add(line + " { *; }");
+        } else {
+            lines.add(line + " {");
+            List<String> methods = new ArrayList<>(refClazz.getMethods());
+            List<String> fields = new ArrayList<>(refClazz.getFields());
+            Collections.sort(methods);
+            Collections.sort(fields);
+            for (String name : methods) {
+                lines.add(" *** " + name + "(...);");
+            }
+            for (String name : fields) {
+                lines.add(" *** " + name + ";");
+            }
+            lines.add("}");
         }
     }
-
-    private boolean isVirtualClass(String className){
-        Clazz clazz = libraryClassPool.getClass(className);
-        if (null == clazz){
-            return false;
-        }
-        if ((clazz.getAccessFlags() & ClassConstants.ACC_ABSTRACT) == ClassConstants.ACC_ABSTRACT) {
-            abstractClasses.add(className);
-            return true;
-        }
-        return false;
-    }
-
-    public static class ClassStruct {
-
-        public String superAbsClazzName;
-
-        public String superClazzName;
-
-        public Set<String> libInterfaces = new HashSet<>();
-
-    }
-
-    public static class LibraryClazzInfo {
-
-        public String clazzName;
-
-        public Set<String> appMethods = new HashSet<>();
-
-        public Set<String> appFields = new HashSet<>();
-
-    }
-
 }
