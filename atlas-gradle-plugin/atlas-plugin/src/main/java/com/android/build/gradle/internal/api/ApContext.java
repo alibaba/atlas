@@ -346,7 +346,6 @@ public class ApContext {
             if (!file.exists()) {
                 return null;
             }
-            return null;
         }
         return file;
     }
