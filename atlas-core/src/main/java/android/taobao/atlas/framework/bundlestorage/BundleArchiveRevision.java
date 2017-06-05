@@ -652,6 +652,9 @@ public class BundleArchiveRevision {
                 if(clazz!=null){
                     return clazz;
                 }
+                if(patchDexFileForDebug!=null){
+                    return clazz;
+                }
             }
             clazz = dexFile.loadClass(className, cl);
             return clazz;
