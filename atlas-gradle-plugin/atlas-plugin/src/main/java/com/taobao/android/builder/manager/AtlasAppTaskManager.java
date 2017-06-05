@@ -436,28 +436,24 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
                 VariantScope variantScope = appVariantContext.getVariantData().getScope();
 
-                // create the stream generated from this task
-                Builder builder = OriginalStream.builder();
-                if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() || (
-                    appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                                                                                                   .getPatchConfig()
-                                                                                                   .isCreateTPatch())) {
-                    // 动态部署增量编译不打包awb;
+                // 增量编译不打包awb;动态决定
+                if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+                    // create the stream generated from this task
+                    Builder builder = OriginalStream.builder();
                     builder.addContentType(ExtendedContentType.NATIVE_LIBS);
+                    variantScope.getTransformManager()
+                                .addStream(builder.addContentType(AtlasExtendedContentType.AWB_APKS).addScope(
+                                    QualifiedContent.Scope.PROJECT).setFolders(new Supplier<Collection<File>>() {
+                                    @Override
+                                    public Collection<File> get() {
+                                        return ImmutableList.of(appVariantContext.getAwbApkOutputDir());
+                                    }
+                                })
+                                                  // .setFolder(variantScope
+                                                  // .getSourceFoldersJavaResDestinationDir())
+                                                  // .setDependency(processJavaResourcesTask.getName())
+                                                  .build());
                 }
-
-                variantScope.getTransformManager().addStream(builder.addContentType(AtlasExtendedContentType.AWB_APKS)
-                                                                    .addScope(QualifiedContent.Scope.PROJECT)
-                                                                    .setFolders(new Supplier<Collection<File>>() {
-                                                                        @Override
-                                                                        public Collection<File> get() {
-                                                                            return ImmutableList.of(appVariantContext.getAwbApkOutputDir());
-                                                                        }
-                                                                    })
-                                                                    // .setFolder(variantScope
-                                                                    // .getSourceFoldersJavaResDestinationDir())
-                                                                    // .setDependency(processJavaResourcesTask.getName())
-                                                                    .build());
 
                 mtlTaskContextList.add(new MtlTaskContext("package"));
 

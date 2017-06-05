@@ -1,11 +1,17 @@
 package com.taobao.android.builder.tasks.incremental;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.concurrent.Callable;
 
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.pipeline.AtlasExtendedContentType;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
+import com.android.build.gradle.internal.pipeline.OriginalStream;
+import com.android.build.gradle.internal.pipeline.OriginalStream.Builder;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
@@ -14,10 +20,10 @@ import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.builder.core.DefaultManifestParser;
 import com.android.builder.core.DefaultProductFlavor;
 import com.google.common.base.Strings;
+import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.TaskAction;
-
-import static com.taobao.android.builder.AtlasBuildContext.appVariantContext;
 
 /**
  * @author chenhjohn
@@ -28,6 +34,9 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
     private ApContext apContext;
 
     private ApkVariantOutputData apkVariantOutputData;
+
+    private AppVariantContext appVariantContext;
+
     @TaskAction
     public void taskAction() {
         // 覆盖包名
@@ -65,21 +74,34 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
         });
 
         // atlasFrameworkProperties合并判断
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-            File atlasFrameworkPropertiesFile = apContext.getBaseAtlasFrameworkPropertiesFile();
-            if (!atlasFrameworkPropertiesFile.exists()) {
-                String taskName;
-                if (appVariantContext.getAtlasExtension().getTBuildConfig().getClassInject()) {
-                    taskName = null;
-                } else {
-                    taskName = apkVariantOutputData.getScope().getTaskName("generate", "AtlasSources");
-                    getLogger().warn("Skipped " + taskName + " : required atlasFrameworkPropertiesFile not found "
-                                     + atlasFrameworkPropertiesFile + '\n'
-                                     + "Please check and update your baseline project atlasplugin.");
-                    getProject().getTasks().getByName(taskName).setEnabled(false);
-                }
+        File atlasFrameworkPropertiesFile = apContext.getBaseAtlasFrameworkPropertiesFile();
+        if (!atlasFrameworkPropertiesFile.exists()) {
+            String taskName;
+            if (appVariantContext.getAtlasExtension().getTBuildConfig().getClassInject()) {
+                taskName = null;
+            } else {
+                taskName = apkVariantOutputData.getScope().getTaskName("generate", "AtlasSources");
+                getLogger().warn("Skipped " + taskName + " : required atlasFrameworkPropertiesFile not found "
+                                 + atlasFrameworkPropertiesFile + '\n'
+                                 + "Please check and update your baseline project atlasplugin.");
+                getProject().getTasks().getByName(taskName).setEnabled(false);
             }
         }
+
+        Builder builder = OriginalStream.builder().addContentType(AtlasExtendedContentType.AWB_APKS).addScope(
+            QualifiedContent.Scope.PROJECT).setFolders(new Supplier<Collection<File>>() {
+            @Override
+            public Collection<File> get() {
+                return ImmutableList.of(appVariantContext.getAwbApkOutputDir());
+            }
+        });
+        // 动态部署增量编译不打包Awb
+        if (appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
+                                                                                           .getPatchConfig()
+                                                                                           .isCreateTPatch()) {
+            builder.addContentType(ExtendedContentType.NATIVE_LIBS);
+        }
+        appVariantContext.getScope().getTransformManager().addStream(builder.build());
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PreIncrementalBuildTask> {
@@ -106,6 +128,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
 
             super.execute(task);
             task.apContext = variantContext.apContext;
+            task.appVariantContext = appVariantContext;
             task.apkVariantOutputData = (ApkVariantOutputData)baseVariantOutputData;
         }
     }
