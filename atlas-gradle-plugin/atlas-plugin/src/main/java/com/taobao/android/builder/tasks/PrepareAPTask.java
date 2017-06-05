@@ -233,15 +233,15 @@ import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.xml.XmlHelper;
 import com.taobao.android.builder.tools.zip.BetterZip;
-import org.apache.commons.io.FilenameUtils;
+import groovy.lang.Closure;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.gradle.api.Nullable;
-import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.file.CopySpec;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Optional;
@@ -249,11 +249,6 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
-import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_APK_FILENAME;
-import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_AWB_EXPLODED_DIRECTORY;
-import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_AWB_EXTRACT_DIRECTORY;
-import static com.android.build.gradle.internal.api.ApContext.AP_REMOTE_BUNDLES_DIRECTORY;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
@@ -320,7 +315,7 @@ public class PrepareAPTask extends BaseTask {
     @TaskAction
     void generate() throws IOException, DocumentException {
 
-        File apBaseFile = getApBaseFile(getProject());
+        File apBaseFile = getApBaseFile();
         File explodedDir = getExplodedDir();
 
         FileUtils.cleanOutputDir(explodedDir);
@@ -339,7 +334,7 @@ public class PrepareAPTask extends BaseTask {
         }
     }
 
-    private File getApBaseFile(Project project) {
+    private File getApBaseFile() {
         File apBaseFile = null;
 
         File apFile = getApFile();
@@ -348,8 +343,8 @@ public class PrepareAPTask extends BaseTask {
         } else {
             String apDependency = getApDependency();
             if (StringUtils.isNotBlank(apContext.getApDependency())) {
-                Dependency dependency = project.getDependencies().create(apDependency);
-                Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
+                Dependency dependency = getProject().getDependencies().create(apDependency);
+                Configuration configuration = getProject().getConfigurations().detachedConfiguration(dependency);
                 configuration.setTransitive(false);
                 for (File file : configuration.getFiles()) {
                     if (file.getName().endsWith(".ap")) {
@@ -365,31 +360,32 @@ public class PrepareAPTask extends BaseTask {
     private void extractBaseBundles() throws IOException, DocumentException {
         if (getAwbBundles() != null) {
             // 解压基线Bundle
-            File explodedDir = getExplodedDir();
-            File awbExplodedDir = new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY);
-            File remotebundlesDir = new File(explodedDir, AP_REMOTE_BUNDLES_DIRECTORY);
-            File awbDir = new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY);
-            FileUtils.mkdirs(awbDir);
-            FileUtils.mkdirs(awbExplodedDir);
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 String awbSoName = awbBundle.getAwbSoName();
-                File awbFile = new File(remotebundlesDir, awbSoName);
-                if (awbFile.exists()) {
-                    FileUtils.copyFileToDirectory(awbFile, awbDir);
-                } else {
-                    awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
+                File awbFile = new File(apContext.getBaseRemoteBundlesFolder(), awbSoName);
+                if (!awbFile.exists()) {
+                    awbFile = BetterZip.extractFile(apContext.getBaseApk(),
                                                     "lib/armeabi/" + awbSoName,
-                                                    awbDir);
+                                                    apContext.getBaseAwbsFolder());
                 }
-                File awbExplodedFile = new File(awbExplodedDir, FilenameUtils.getBaseName(awbSoName));
-                BetterZip.unzipDirectory(awbFile, awbExplodedFile);
-                FileUtils.renameTo(new File(awbExplodedFile, FN_APK_CLASSES_DEX),
-                                   new File(awbExplodedFile, "classes2.dex"));
+                extractAwb(awbFile, awbSoName);
             }
         }
     }
 
-    // 预处理增量AndroidManifest.xml
+    private void extractAwb(final File awbFile, String awbSoName) {
+        getProject().copy(new Closure(PrepareAPTask.class) {
+            public Object doCall(CopySpec cs) {
+                cs.from(getProject().zipTree(awbFile));
+                cs.into(apContext.getExtractedBaseAwbFolder(awbSoName));
+                cs.exclude("classes*.dex");
+
+                return cs;
+            }
+        });
+    }
+
+    // 生成增量空的AndroidManifest.xml
     private void generateMainManifest(File explodedDir) throws DocumentException, IOException {
         Document document = XmlHelper.readXml(new File(explodedDir, ANDROID_MANIFEST_XML));// 读取XML文件
 

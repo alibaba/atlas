@@ -28,9 +28,9 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
     private ApContext apContext;
 
     private ApkVariantOutputData apkVariantOutputData;
-
     @TaskAction
     public void taskAction() {
+        // 覆盖包名
         DefaultManifestParser manifestParser = new DefaultManifestParser(apContext.getBaseManifest());
         GradleVariantConfiguration variantConfiguration = appVariantContext.getScope().getVariantConfiguration();
         DefaultProductFlavor mergedFlavor = (DefaultProductFlavor)variantConfiguration.getMergedFlavor();
@@ -39,6 +39,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
             mergedFlavor.setApplicationId(manifestParser.getPackage());
         }
 
+        // 覆盖版本号
         String versionNameOverride = apkVariantOutputData.getVersionNameOverride();
         if (Strings.isNullOrEmpty(versionNameOverride)) {
             apkVariantOutputData.setVersionNameOverride(manifestParser.getVersionName());
@@ -54,6 +55,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
             apkVariantOutputData.setVersionCodeOverride(manifestParser.getVersionCode());
         }
 
+        // 覆盖mainManifest
         ManifestProcessorTask manifestProcessorTask = apkVariantOutputData.manifestProcessorTask;
         ConventionMappingHelper.map(manifestProcessorTask, "mainManifest", new Callable<File>() {
             @Override
@@ -62,6 +64,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
             }
         });
 
+        // atlasFrameworkProperties合并判断
         if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
             File atlasFrameworkPropertiesFile = apContext.getBaseAtlasFrameworkPropertiesFile();
             if (!atlasFrameworkPropertiesFile.exists()) {

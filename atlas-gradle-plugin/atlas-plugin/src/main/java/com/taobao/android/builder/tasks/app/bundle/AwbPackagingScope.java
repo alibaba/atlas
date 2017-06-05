@@ -129,7 +129,8 @@ public class AwbPackagingScope implements PackagingScope {
             && awbBundle.getBaseAwbDependencies() != null && awbBundle.getBaseAwbDependencies().size() > 1) {
             String awbSoName = awbBundle.getAwbSoName();
             if (awbSoName != null) {
-                File baseAwb = appVariantOutputContext.getVariantContext().apContext.getExtractedBaseAwb(awbSoName);
+                File baseAwb
+                    = appVariantOutputContext.getVariantContext().apContext.getExtractedBaseAwbFolder(awbSoName);
                 javaResourcesLocations.add(baseAwb);
             }
         }
