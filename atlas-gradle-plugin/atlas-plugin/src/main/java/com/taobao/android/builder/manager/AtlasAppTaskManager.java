@@ -571,8 +571,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                     builder.addAll(super.getSecondaryFiles());
                     String awbSoName = awbBundle.getAwbSoName();
                     if (awbSoName != null) {
-                        builder.add(SecondaryFile.nonIncremental(appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
-                            awbSoName)));
+                        File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbSoName);
+                        if (baseAwb != null) {
+                            builder.add(SecondaryFile.nonIncremental(baseAwb));
+                        }
                     }
                     return builder.build();
                 }
