@@ -212,6 +212,8 @@ package com.taobao.android.builder.tools.proguard.dump;
 import com.taobao.android.builder.tools.proguard.dump.VisitorDTO.ClassStruct;
 import com.taobao.android.builder.tools.proguard.dump.VisitorDTO.LibraryClazzInfo;
 import org.apache.commons.lang.StringUtils;
+import proguard.classfile.Clazz;
+import proguard.classfile.LibraryClass;
 import proguard.classfile.ProgramClass;
 import proguard.classfile.ProgramField;
 import proguard.classfile.ProgramMethod;
@@ -252,6 +254,27 @@ public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVi
         if (visitorDTO.isLibClazz(interfaceClazz)) {
             ClassStruct classStruct = getOrCreateClassStruct(programClass);
             classStruct.libInterfaces.add(interfaceClazz);
+
+            //add super interface to keep
+            addSuperInterfaces(interfaceClazz, classStruct);
+
+        }
+    }
+
+    private void addSuperInterfaces(String interfaceClazz, ClassStruct classStruct) {
+        LibraryClass libraryClass = (LibraryClass)visitorDTO.libraryClassPool.getClass(interfaceClazz);
+        if (null == libraryClass){
+            return;
+        }
+        for (int index = 0; index < libraryClass.getInterfaceCount(); index++) {
+            Clazz superInter = libraryClass.getInterface(index);
+            if (null != superInter && visitorDTO.isLibClazz(superInter.getName())) {
+                classStruct.libInterfaces.add(superInter.getName());
+
+                //再迭代
+                addSuperInterfaces(superInter.getName(), classStruct);
+
+            }
         }
     }
 
