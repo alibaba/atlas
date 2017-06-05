@@ -48,7 +48,7 @@ PS:
 |字端|说明|
 |---|---|
 | dexPatch |开关标志，表示是否一个dexpatch包|
-|dexpatchVersion|每一个bundle都有一个`dexpatchVersion`的版本要大于历史版本，<br>__下发的补丁要大于等于客户端的`dexpatchVersion`__,否则，不符合要求的bundle将不会被更新。|
+|dexpatchVersion|标识bundle的dexpatch版本<br>__补丁bundle的版本要大于等于客户端中bundle的版本__。否则，bundle将不会被更新。|
 
 # 部署Patch
 
