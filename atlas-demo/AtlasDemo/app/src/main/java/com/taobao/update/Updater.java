@@ -262,7 +262,6 @@ public class Updater {
             }
         });
     }
-<<<<<<< ae02cf0e0df8da103c8fb4c6a4702bf0c4dfa7d5
 
     public static void dexPatchUpdate(Context context) {
         UpdateInfo info = loadUpdateInfo(context);
@@ -274,17 +273,17 @@ public class Updater {
             AtlasUpdater.dexpatchUpdate(context,info, patchFile, new AtlasUpdater.IDexpatchMonitor() {
                 @Override
                 public void merge(boolean success, String bundleName, long version, String errMsg) {
-                    Log.d(TAG, "merge: " + success + " " + bundleName + " " + version + " " + errMsg);
+                    Log.d("update", "merge: " + success + " " + bundleName + " " + version + " " + errMsg);
                 }
 
                 @Override
                 public void install(boolean success, String bundleName, long version, String errMsg) {
-                    Log.d(TAG, "install: " + success + " " + bundleName + " " + version + " " + errMsg);
+                    Log.d("update", "install: " + success + " " + bundleName + " " + version + " " + errMsg);
                 }
             });
-            Log.d(TAG, "update success");
+            Log.d("update", "update success");
         } catch (Throwable e) {
-            Log.e(TAG, "更新失败", e);
+            Log.e("update", "更新失败", e);
         }
     }
 
@@ -297,7 +296,7 @@ public class Updater {
         File updateInfo = new File(context.getExternalCacheDir(), "update-" + versionName + ".json");
 
         if (!updateInfo.exists()) {
-            Log.e(TAG, "更新信息不存在，请先 执行 buildTpatch.sh");
+            Log.e("update", "更新信息不存在，请先 执行 buildTpatch.sh");
             return null;
         }
 
@@ -305,6 +304,4 @@ public class Updater {
         return JSON.parseObject(jsonStr, UpdateInfo.class);
     }
 
-=======
->>>>>>> 使用新版插件
 }
