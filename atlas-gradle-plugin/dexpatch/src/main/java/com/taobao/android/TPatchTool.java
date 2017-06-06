@@ -468,11 +468,12 @@ public class TPatchTool extends BasePatchTool {
                     File destFile = new File(patchTmpDir, mainBundleName + "/" +
                             relativePath);
                     File baseSoFile = new File(baseApkUnzipFolder, relativePath);
-                    if (isBlackBundle(soFile)||!PatchUtils.isBundleFile(soFile)){
-                        if (isFileModify(soFile,baseSoFile))
-                        FileUtils.copyFile(soFile, destFile);
-                    }else { // 如果是bundle文件
+                    if (isBundleFile(soFile)){
                         processBundleFiles(soFile, baseSoFile, patchTmpDir);
+
+                    }else { // 如果是bundle文件
+                        if (isFileModify(soFile,baseSoFile))
+                            FileUtils.copyFile(soFile, destFile);
                     }
                     return true;
                 }
@@ -530,7 +531,7 @@ public class TPatchTool extends BasePatchTool {
         return patchFile;
     }
 
-    private boolean isBlackBundle(File file) {
+    private boolean isBundleFile(File file) {
     if (whiteList != null){
         for (String bundleName:whiteList){
             if (file.getAbsolutePath().endsWith(bundleName)){

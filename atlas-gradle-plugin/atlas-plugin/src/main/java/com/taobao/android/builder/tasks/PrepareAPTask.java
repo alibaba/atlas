@@ -336,6 +336,7 @@ public class PrepareAPTask extends BaseTask {
         }
 
         if (null != apBaseFile && apBaseFile.exists()) {
+
             try {
                 explodedDir = getExplodedDir();
                 BetterZip.unzipDirectory(apBaseFile, explodedDir);
@@ -364,6 +365,7 @@ public class PrepareAPTask extends BaseTask {
             }catch (Throwable e){
                 FileUtils.deleteIfExists(apBaseFile);
                 throw new GradleException(e.getMessage(),e);
+
             }
         }
     }

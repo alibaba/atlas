@@ -245,6 +245,7 @@ import org.gradle.api.tasks.TaskAction;
  */
 public class PreparePackageIdsTask extends BaseTask {
 
+
     AppVariantContext appVariantContext;
     AppVariantOutputContext.AppBuildInfo appBuildInfo;
 
@@ -293,6 +294,7 @@ public class PreparePackageIdsTask extends BaseTask {
 
             for (String key : keys) {
                 if ("".equals(autoConfigMap.get(key))) {
+
                     for (int i = minPackageId; i <= 127; i++) {
                         if (!autoConfigMap.values().contains(String.valueOf(i))) {
                             autoConfigMap.put(key, String.valueOf(i));

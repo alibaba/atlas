@@ -1,25 +1,26 @@
 1、 app的build.gradle的语句"version = getEnvValue("versionName", "1.0.0");"中修改想要生成的app的versionName（默认为1.0.0）
 
-    app目录下执行../gradlew clean assembleDebug publish
+    app目录下执行../gradlew clean assembleDebug 生成apk  (windows 环境的命令为 ..\gradlew.bat clean assembleDebug  以下类同)
 
-    (生成apk同时将跟apk同目录的ap文件发布到仓库)
+2、 app目录下执行../gradlew publish 将跟apk同目录的ap文件发布到仓库,此时ap的版本是1.0.0
 
-2、 手机上安装apk，同时进到动态部署界面（侧边栏里面划开点击进入),且手机连接电脑adb（确保adb devices可见）
+3、 手机上安装生成的apk，同时进到动态部署界面（侧边栏里面划开点击进入),且手机连接电脑adb（确保adb devices可见）
 
 ///////////////////////////////^^^^^^^准备工作^^^^^^^^^^////////////////////////
 
-3、 进行一些想要的修改（暂时不支持manifest的修改，会在近期上线）
+4、 进行一些想要的修改（不支持manifest的修改）
 
-4、 app工程目录下执行../gradlew clean assembleDebug -DapVersion=apVersion -DversionName=newVersion,
-    其中apVersion为之前打的完整apk的版本，newVersion为此次动态部署要生成的新的版本号
+5、 app工程目录下执行../gradlew clean assembleDebug -DapVersion=apVersion -DversionName=newVersion,
+    其中apVersion为之前打的完整apk的版本，newVersion为此次动态部署要生成的新的版本号，
+    例如命令 ../gradlew clean assembleDebug -DapVersion=1.0.0 -DversionName=1.0.1
 
-5、 检查build/output/tpatch-debug 目录下文件是否生成，然后执行下面的命令(以下为mac下的命令，windows请修改文件分隔符)
+6、 检查build/output/tpatch-debug 目录下文件是否生成，然后执行下面的命令(以下为mac下的命令，windows请修改文件分隔符)
     adb push build/outputs/tpatch-debug/update.json /sdcard/Android/data/com.taobao.demo/cache/update-**.json
     (根据你手机的当前版本推送对应版本的update-**.json,和对应的tpatch文件)
     adb push build/outputs/tpatch-debug/patch-*.tpatch /sdcard/Android/data/com.taobao.demo/cache
 
-6、 点击动态部署页面红色按钮执行动态部署
+7、 点击动态部署页面红色按钮执行动态部署
 
-7.  修改了某个bundle做动态部署的时候请更新版本号，因为差量会基于版本号对比。
+8、 修改了某个bundle做动态部署的时候请更新版本号，因为差量会基于版本号对比。
 
-8.  如果做了多次动态部署后，需要从头开始测试，请先清楚AtlasDemo根目录下的hisTpatch文件夹。
+9、 如果做了多次动态部署后，需要从头开始测试，请先清楚AtlasDemo根目录下的hisTpatch文件夹。
