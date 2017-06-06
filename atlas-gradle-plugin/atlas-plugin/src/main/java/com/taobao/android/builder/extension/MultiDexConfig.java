@@ -228,6 +228,8 @@ public class MultiDexConfig {
     @Config(title = "是否启用快速", message = "是否启用atlas , true/false", order = 0, group = "atlas")
     private boolean fastMultiDex = false;
 
+    private Set<String> firstDexClasses = Sets.newHashSet();
+
     private Set<String> mainDexWhiteList = Sets.newHashSet();
 
     private Set<String> mainDexBlackList = Sets.newHashSet();
@@ -262,5 +264,13 @@ public class MultiDexConfig {
 
     public void setMainDexBlackList(Set<String> mainDexBlackList) {
         this.mainDexBlackList = mainDexBlackList;
+    }
+
+    public Set<String> getFirstDexClasses() {
+        return firstDexClasses;
+    }
+
+    public void setFirstDexClasses(Set<String> firstDexClasses) {
+        this.firstDexClasses = firstDexClasses;
     }
 }

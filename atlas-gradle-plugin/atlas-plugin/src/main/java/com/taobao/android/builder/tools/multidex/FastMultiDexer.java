@@ -241,6 +241,7 @@ import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
 import com.google.common.base.Joiner;
 import com.taobao.android.builder.extension.MultiDexConfig;
+import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
@@ -406,22 +407,28 @@ public class FastMultiDexer implements MultiDexer {
             throw new GradleException(e.getMessage(), e);
         }
 
+        TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
+
         HashSet handleList = new HashSet<String>();
+        Set<String> headClasses = new HashSet<>();
 
-        addRefClazz(classPool, applicationName, mainDexList, handleList);
+        headClasses.add(applicationName);
+        headClasses.addAll(multiDexConfig.getFirstDexClasses());
 
-        String preLaunchStr = appVariantContext.getAtlasExtension().getTBuildConfig().getPreLaunch();
-
+        String preLaunchStr = tBuildConfig.getPreLaunch();
         if (!org.apache.commons.lang3.StringUtils.isEmpty(preLaunchStr)) {
             String[] launchArray = preLaunchStr.split("\\|");
             if (launchArray.length > 0) {
                 for (String launchItem : launchArray) {
                     String[] launchInfo = launchItem.split(":");
                     String clazzName = launchInfo[0];
-
-                    addRefClazz(classPool, clazzName, mainDexList, handleList);
+                    headClasses.add(clazzName);
                 }
             }
+        }
+
+        for (String headClass : headClasses) {
+            addRefClazz(classPool, headClass, mainDexList, handleList);
         }
 
         //get manifest
