@@ -233,6 +233,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -244,7 +245,6 @@ import org.gradle.api.tasks.TaskAction;
  */
 public class PreparePackageIdsTask extends BaseTask {
 
-    public static final int MIN_ID = 35;
     AppVariantContext appVariantContext;
     AppVariantOutputContext.AppBuildInfo appBuildInfo;
 
@@ -254,9 +254,12 @@ public class PreparePackageIdsTask extends BaseTask {
     @TaskAction
     void generate() throws IOException {
 
-        File packageIdFile = appVariantContext.getAtlasExtension().getTBuildConfig().getPackageIdFile();
+        TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
+
+        File packageIdFile = tBuildConfig.getPackageIdFile();
         File apPackageIdFile = appVariantContext.apContext.getPackageIdFile();
-        boolean isAutoPackageId = appVariantContext.getAtlasExtension().getTBuildConfig().isAutoPackageId();
+        boolean isAutoPackageId = tBuildConfig.isAutoPackageId();
+        int minPackageId = tBuildConfig.getMinPackageId();
 
         Map<String, String> autoConfigMap = new HashMap<String, String>();
         if (null != apPackageIdFile && apPackageIdFile.exists()) {
@@ -290,7 +293,7 @@ public class PreparePackageIdsTask extends BaseTask {
 
             for (String key : keys) {
                 if ("".equals(autoConfigMap.get(key))) {
-                    for (int i = MIN_ID; i <= 127; i++) {
+                    for (int i = minPackageId; i <= 127; i++) {
                         if (!autoConfigMap.values().contains(String.valueOf(i))) {
                             autoConfigMap.put(key, String.valueOf(i));
                             break;

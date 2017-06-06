@@ -236,6 +236,7 @@ import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.DocumentException;
+import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -335,26 +336,34 @@ public class PrepareAPTask extends BaseTask {
         }
 
         if (null != apBaseFile && apBaseFile.exists()) {
-            explodedDir = getExplodedDir();
-            BetterZip.unzipDirectory(apBaseFile, explodedDir);
-            apContext.setApExploredFolder(explodedDir);
-            Set<String> awbBundles = getAwbBundles();
-            if (awbBundles != null) {
-                // 解压基线Bundle
-                for (String awbBundle : awbBundles) {
-                    File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
-                                                         "lib/armeabi/" + awbBundle,
-                                                         new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
-                    File awbExplodedDir = new File(new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY),
-                                                   FilenameUtils.getBaseName(awbBundle));
-                    BetterZip.unzipDirectory(awbFile, awbExplodedDir);
-                    FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
-                                       new File(awbExplodedDir, "classes2.dex"));
+            try {
+                explodedDir = getExplodedDir();
+                BetterZip.unzipDirectory(apBaseFile, explodedDir);
+                apContext.setApExploredFolder(explodedDir);
+                Set<String> awbBundles = getAwbBundles();
+                if (awbBundles != null) {
+                    // 解压基线Bundle
+                    for (String awbBundle : awbBundles) {
+                        File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
+                                                             "lib/armeabi/" + awbBundle,
+                                                             new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
+                        File awbExplodedDir = new File(new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY),
+                                                       FilenameUtils.getBaseName(awbBundle));
+                        BetterZip.unzipDirectory(awbFile, awbExplodedDir);
+                        FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
+                                           new File(awbExplodedDir, "classes2.dex"));
+                    }
+                    // 预处理增量AndroidManifest.xml
+                    ManifestFileUtils.updatePreProcessBaseManifestFile(
+                        FileUtils.join(explodedDir, "manifest-modify", ANDROID_MANIFEST_XML),
+                        new File(explodedDir, ANDROID_MANIFEST_XML));
                 }
-                // 预处理增量AndroidManifest.xml
-                ManifestFileUtils.updatePreProcessBaseManifestFile(
-                    FileUtils.join(explodedDir, "manifest-modify", ANDROID_MANIFEST_XML),
-                    new File(explodedDir, ANDROID_MANIFEST_XML));
+                if (explodedDir.listFiles().length == 0){
+                    throw new RuntimeException("unzip ap exception, no files found");
+                }
+            }catch (Throwable e){
+                FileUtils.deleteIfExists(apBaseFile);
+                throw new GradleException(e.getMessage(),e);
             }
         }
     }

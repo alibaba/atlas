@@ -4,8 +4,9 @@
 
 ### TODO
 
-1. bundleInfo 增加unique_tag
-2. 去除classInjectTransform
+1. unit tag diff bundle 不变
+2. tBuildConfig.minPackageId 可设置最小的自动分配packageId，默认35（10进制）开始
+
 
 ### 2.3.1.rc15
 
