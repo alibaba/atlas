@@ -116,7 +116,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
 
         @Override
         public String getName() {
-            return scope.getTaskName("APInfo", "Loader");
+            return scope.getTaskName("PreIncrementalBuild");
         }
 
         @Override
