@@ -413,6 +413,7 @@ public class FastMultiDexer implements MultiDexer {
         Set<String> headClasses = new HashSet<>();
 
         headClasses.add(applicationName);
+        headClasses.add("android.taobao.atlas.bridge.BridgeApplicationDelegate");
         headClasses.addAll(multiDexConfig.getFirstDexClasses());
 
         String preLaunchStr = tBuildConfig.getPreLaunch();
