@@ -209,9 +209,10 @@
 
 package com.android.build.gradle.internal.api;
 
-import com.android.utils.FileUtils;
-
 import java.io.File;
+
+import com.android.utils.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 
@@ -224,6 +225,8 @@ public class ApContext {
     public static final String AP_INLINE_APK_FILENAME = "android.apk";
 
     public static final String AP_INLINE_APK_EXTRACT_DIRECTORY = "android.apk_";
+
+    public static final String AP_INLINE_AWB_EXPLODED_DIRECTORY = "exploded-awb";
 
     public static final String AP_INLINE_AWB_EXTRACT_DIRECTORY = "awbs";
 
@@ -248,6 +251,8 @@ public class ApContext {
     private File baseApkDirectory;
 
     private File baseAwbDirectory;
+
+    private File baseExplodedAwbDirectory;
 
     private File baseManifest;
 
@@ -284,15 +289,13 @@ public class ApContext {
     public void setApExploredFolder(File apExploredFolder) {
         this.apExploredFolder = apExploredFolder;
         this.baseManifest = new File(apExploredFolder, ANDROID_MANIFEST_XML);
-        this.baseModifyManifest = FileUtils.join(apExploredFolder,
-                                                 "manifest-modify",
-                                                 ANDROID_MANIFEST_XML);
+        this.baseModifyManifest = FileUtils.join(apExploredFolder, "manifest-modify", ANDROID_MANIFEST_XML);
         this.baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
-        this.baseAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXTRACT_DIRECTORY);
         this.baseApkDirectory = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
+        this.baseAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXTRACT_DIRECTORY);
+        this.baseExplodedAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
         this.basePackageIdFile = new File(apExploredFolder, PACKAGE_ID_PROPERTIES_FILENAME);
-        this.baseAtlasFrameworkPropertiesFile = new File(apExploredFolder,
-                                                         ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
+        this.baseAtlasFrameworkPropertiesFile = new File(apExploredFolder, ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
         this.baseDependenciesFile = new File(apExploredFolder, DEPENDENCIES_FILENAME);
     }
 
@@ -330,6 +333,14 @@ public class ApContext {
 
     public File getBaseAwb(String soFileName) {
         File file = FileUtils.join(baseAwbDirectory, soFileName);
+        if (!file.exists()) {
+            return null;
+        }
+        return file;
+    }
+
+    public File getBaseExplodedAwb(String soFileName) {
+        File file = FileUtils.join(baseExplodedAwbDirectory, FilenameUtils.getBaseName(soFileName));
         if (!file.exists()) {
             return null;
         }

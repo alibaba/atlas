@@ -1,5 +1,11 @@
 package com.taobao.android.builder.tasks.incremental;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
@@ -12,19 +18,11 @@ import com.android.ide.common.res2.FileStatus;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.zip.ZipUtils;
-
+import com.taobao.android.builder.tools.zip.BetterZip;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputDirectory;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
 
 /**
  * Created by chenhjohn on 2017/4/24.
@@ -52,15 +50,11 @@ public class PrepareBaseApkTask extends IncrementalTask {
         File baseApk = getBaseApk();
         File outputDir = getOutputDir();
         FileUtils.deleteDirectoryContents(outputDir);
-        ZipUtils.unzip(baseApk, outputDir.getAbsolutePath());
+        BetterZip.unzipDirectory(baseApk, outputDir);
         FileUtils.deleteDirectoryContents(FileUtils.join(outputDir, "META-INF/"));
         int dexFilesCount = getDexFilesCount();
-        Set<File> baseDexFileSet = getProject().fileTree(ImmutableMap.of("dir",
-                                                                         outputDir,
-                                                                         "includes",
-                                                                         ImmutableList.of(
-                                                                                 "classes*.dex")))
-                .getFiles();
+        Set<File> baseDexFileSet = getProject().fileTree(
+            ImmutableMap.of("dir", outputDir, "includes", ImmutableList.of("classes*.dex"))).getFiles();
         File[] baseDexFiles = baseDexFileSet.toArray(new File[baseDexFileSet.size()]);
         int j = baseDexFileSet.size() + dexFilesCount;
         for (int i = baseDexFiles.length - 1; i >= 0; i--) {
@@ -95,7 +89,6 @@ public class PrepareBaseApkTask extends IncrementalTask {
     public void setOutputDir(File outputDir) {
         this.outputDir = outputDir;
     }
-
 
     @Override
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
@@ -147,29 +140,24 @@ public class PrepareBaseApkTask extends IncrementalTask {
                     return variantContext.apContext.getBaseApk();
                 }
             });
-            ConventionMappingHelper.map(prepareBaseApkTask,
-                                        "dexFilesCount",
-                                        new Callable<Integer>() {
-                                            @Override
-                                            public Integer call() {
-                                                Set<File> dexFolders = scope.getTransformManager()
-                                                        .getPipelineOutput(StreamFilter.DEX)
-                                                        .keySet();
-                                                // Preconditions.checkState(dexFolders.size() == 1,
-                                                //                          "There must be exactly one output");
-                                                return scope.getGlobalScope()
-                                                        .getProject()
-                                                        .fileTree(ImmutableMap.of("dir",
-                                                                                  Iterables.getOnlyElement(
-                                                                                          dexFolders),
-                                                                                  "includes",
-                                                                                  ImmutableList.of(
-                                                                                          "classes*.dex")))
-                                                        .getFiles()
-                                                        .size();
-                                            }
-                                        });
-            ConventionMappingHelper.map(prepareBaseApkTask, "outputDir", new Callable<File>() {
+            ConventionMappingHelper.map(prepareBaseApkTask, "dexFilesCount", new Callable<Integer>() {
+                @Override
+                public Integer call() {
+                    int dexFilesCount = 0;
+                    Set<File> dexFolders = scope.getTransformManager().getPipelineOutput(StreamFilter.DEX).keySet();
+                    // Preconditions.checkState(dexFolders.size() == 1,
+                    //                          "There must be exactly one output");
+                    for (File dexFolder : dexFolders) {
+                        dexFilesCount += scope.getGlobalScope().getProject().fileTree(
+                            ImmutableMap.of("dir", dexFolder, "includes", ImmutableList.of("classes*.dex"))).getFiles()
+                            .size();
+                    }
+                    return dexFilesCount;
+                }
+            });
+            ConventionMappingHelper.map(prepareBaseApkTask, "outputDir", new Callable<File>()
+
+            {
                 @Override
                 public File call() {
                     return new File(variantContext.apContext.getBaseApk() + "_");

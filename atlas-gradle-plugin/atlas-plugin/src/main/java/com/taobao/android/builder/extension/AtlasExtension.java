@@ -233,6 +233,8 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     @ConfigGroup(order = 12, advance = false)
     public NamedDomainObjectContainer<PatchConfig> patchConfigs;
 
+    public NamedDomainObjectContainer<DexConfig>dexConfigs;
+
     public BundleConfig bundleConfig;
 
     @ConfigGroup(order = 3, advance = true)
@@ -255,12 +257,14 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     public AtlasExtension(@NonNull final ProjectInternal project,
                           @NonNull Instantiator instantiator,
                           @NonNull NamedDomainObjectContainer<T> buildTypes,
-                          @NonNull NamedDomainObjectContainer<PatchConfig> patchConfigs) {
+                          @NonNull NamedDomainObjectContainer<PatchConfig> patchConfigs,
+                          @NonNull NamedDomainObjectContainer<DexConfig>dexConfigs) {
 
         logger = Logging.getLogger(this.getClass());
         this.project = project;
 
         this.patchConfigs = patchConfigs;
+        this.dexConfigs = dexConfigs;
         this.buildTypes = buildTypes;
         this.multiDexConfigs = project.container(MultiDexConfig.class, new MultiDexConfigFactory(
             instantiator,project, project.getLogger()));
@@ -280,6 +284,10 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     public void tBuildConfig(Action<Z> action) {
         action.execute(tBuildConfig);
+    }
+
+    public void dexConfigs(Action<? super NamedDomainObjectContainer<DexConfig>>action){
+        action.execute(dexConfigs);
     }
 
     public void manifestOptions(Action<ManifestOptions> action) {
@@ -312,6 +320,9 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     public TBuildConfig getTBuildConfig() {
         return tBuildConfig;
+    }
+    public NamedDomainObjectContainer<DexConfig> getDexConfig(){
+        return dexConfigs;
     }
 
     public boolean isAtlasEnabled() {

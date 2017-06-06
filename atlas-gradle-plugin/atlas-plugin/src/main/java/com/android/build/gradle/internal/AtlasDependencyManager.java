@@ -209,7 +209,11 @@
 
 package com.android.build.gradle.internal;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.alibaba.fastjson.JSON;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -217,14 +221,16 @@ import com.android.builder.dependency.level2.AndroidDependency;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.parser.AtlasDepTreeParser;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.extension.TBuildType;
+import com.taobao.android.builder.tasks.incremental.ApDependencies;
 import com.taobao.android.builder.tools.PluginTypeUtils;
-
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
+import org.gradle.api.artifacts.result.ResolvedComponentResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * A manager to resolve configuration dependencies.
@@ -233,14 +239,15 @@ import java.util.Set;
  */
 public class AtlasDependencyManager extends DependencyManager {
 
-    private static Logger sLogger = LoggerFactory.getLogger(AtlasDependencyManager.class);
+    private static final Logger sLogger = LoggerFactory.getLogger(AtlasDependencyManager.class);
 
-    private Project project;
+    private final Project project;
 
-    private ExtraModelInfo extraModelInfo;
+    private final ExtraModelInfo extraModelInfo;
 
-    public AtlasDependencyManager(@NonNull Project project,
-                                  @NonNull ExtraModelInfo extraModelInfo,
+    private ApDependencies apDependencies;
+
+    public AtlasDependencyManager(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo,
                                   @NonNull SdkHandler sdkHandler) {
         super(project, extraModelInfo, sdkHandler);
         this.project = project;
@@ -258,24 +265,45 @@ public class AtlasDependencyManager extends DependencyManager {
     @Override
     public Set<AndroidDependency> resolveDependencies(@NonNull VariantDependencies variantDeps,
                                                       @Nullable String testedProjectPath) {
+        this.apDependencies = resolveApDependencies(variantDeps);
 
-        AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(project,
-                                                                         extraModelInfo).parseDependencyTree(
-                variantDeps);
+        AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo, this.apDependencies)
+            .parseDependencyTree(variantDeps);
 
         sLogger.info("[dependencyTree" + variantDeps.getName() + "] {}",
                      JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
 
         if (PluginTypeUtils.isAppProject(project)) {
-            AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(),
-                                                         atlasDependencyTree);
+            AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
         } else {
             AtlasBuildContext.libDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
         }
 
-        Set<AndroidDependency> libsToExplode = super.resolveDependencies(variantDeps,
-                                                                         testedProjectPath);
+        Set<AndroidDependency> libsToExplode = super.resolveDependencies(variantDeps, testedProjectPath);
         //return libsToExplode;
         return new HashSet<>(0);
+    }
+
+    private ApDependencies resolveApDependencies(@NonNull VariantDependencies variantDeps) {
+        AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
+        if (!atlasExtension.getTBuildConfig().isIncremental()) {
+            return null;
+        }
+
+        TBuildType tBuildType = (TBuildType)atlasExtension.getBuildTypes().findByName(variantDeps.getName());
+        if (tBuildType == null) {
+            return null;
+        }
+
+        return new ApDependencies(project, tBuildType);
+    }
+
+    @Override
+    protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
+                                        ModuleVersionIdentifier moduleVersion,
+                                        ResolvedComponentResult resolvedComponentResult) {
+        return super.checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult) || (
+            apDependencies != null && apDependencies.hasSameResolvedDependency(moduleVersion)
+            && !(resolvedComponentResult.getId() instanceof ProjectComponentIdentifier));
     }
 }

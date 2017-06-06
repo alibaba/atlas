@@ -228,6 +228,16 @@ public class TBuildType {
 
     private PatchConfig patchConfig;
 
+    public DexConfig getDexConfig() {
+        return dexConfig;
+    }
+
+    public void setDexConfig(DexConfig dexConfig) {
+        this.dexConfig = dexConfig;
+    }
+
+    private DexConfig dexConfig;
+
     private MultiDexConfig multiDexConfig;
 
     private DefaultSigningConfig signingConfig;

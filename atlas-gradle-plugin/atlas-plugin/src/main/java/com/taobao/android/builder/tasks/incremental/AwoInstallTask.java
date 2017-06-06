@@ -209,26 +209,29 @@
 
 package com.taobao.android.builder.tasks.incremental;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.signing.SigningException;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.awo.utils.AwoInstaller;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.concurrent.Callable;
 
 /**
  * 把 patch 安装到手机上的任务
@@ -252,14 +255,21 @@ public class AwoInstallTask extends BaseTask {
     @TaskAction
     public void doTask() throws IOException, SigningException {
 
-        AwoInstaller.installAwoSos(getBuilder(),
-                                   getMainDexFile(),
-                                   getAwbApkFiles(),
-                                   getPackageName(),
-                                   getLogger());
+        File mainDexFile = getMainDexFile();
+        Collection<File> awbApkFiles = getAwbApkFiles();
+        int size = awbApkFiles.size();
+        if (mainDexFile != null) {
+            size++;
+        }
+
+        if (size > 1) {
+            throw new IllegalStateException("Multi bundle is not supported yet.");
+        }
+        AwoInstaller.installAwoSo(getBuilder(), mainDexFile, awbApkFiles, getPackageName(), getLogger());
     }
 
     @InputFile
+    @Optional
     public File getMainDexFile() {
         return mainDexFile;
     }
@@ -291,7 +301,7 @@ public class AwoInstallTask extends BaseTask {
 
         @Override
         public String getName() {
-            return appVariantContext.getScope().getTaskName("awoInstall");
+            return appVariantContext.getScope().getTaskName("install", "Awo");
         }
 
         @Override
@@ -302,25 +312,22 @@ public class AwoInstallTask extends BaseTask {
         @Override
         public void execute(AwoInstallTask task) {
 
+            task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             task.setVariantName(appVariantContext.getVariantName());
+            task.setGroup(TaskManager.INSTALL_GROUP);
 
-            String buildType = appVariantContext.getScope()
-                    .getVariantConfiguration()
-                    .getBuildType()
-                    .getName();
+            String buildType = appVariantContext.getScope().getVariantConfiguration().getBuildType().getName();
             if (!atlasExtension.getBundleConfig().isAwoDynDeploy()) {
                 task.setEnabled(false);
                 return;
             }
-
             ConventionMappingHelper.map(task, "packageName", new Callable<String>() {
 
                 @Override
                 public String call() {
                     //TODO  from config
-                    String packageName = ManifestFileUtils.getPackage(new File(appVariantContext.apContext
-                                                                                       .getApExploredFolder(),
-                                                                               "AndroidManifest.xml"));
+                    String packageName = ManifestFileUtils.getPackage(
+                        new File(appVariantContext.apContext.getApExploredFolder(), "AndroidManifest.xml"));
                     return packageName;
                 }
             });
@@ -329,7 +336,13 @@ public class AwoInstallTask extends BaseTask {
 
                 @Override
                 public File call() {
-                    return getAppVariantOutputContext().getDiffApk();
+                    AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                        task.getVariantName());
+                    List<String> allDependencies = atlasDependencyTree.getMainBundle().getAllDependencies();
+                    if (allDependencies.size() == 0) {
+                        return null;
+                    }
+                    return getAppVariantOutputContext().getApkOutputFile(true);
                 }
             });
             ConventionMappingHelper.map(task, "awbApkFiles", appVariantContext::getAwbApkFiles);

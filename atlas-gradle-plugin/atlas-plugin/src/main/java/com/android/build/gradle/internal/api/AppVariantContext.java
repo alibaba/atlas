@@ -249,6 +249,11 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     public Map<String, File> manifestMap = new HashMap<>();
     public String unit_tag = "";
 
+    /**
+     * bundle列表清单文件
+     */
+    public File bundleListCfg;
+
     public AppVariantContext(ApplicationVariantImpl applicationVariant, Project project, AtlasExtension atlasExtension, AppExtension appExtension) {
         super(applicationVariant, project, atlasExtension, appExtension);
         this.applicationVariant = applicationVariant;

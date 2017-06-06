@@ -209,16 +209,20 @@
 
 package com.taobao.android.builder.tools.diff;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by wuzhong on 2016/9/30.
@@ -306,9 +310,8 @@ public class DiffResExtractor {
         }
 
         //必须生成resource.arsc
-        File assetsDir = new File(destDir, "assets");
         File resDir = new File(destDir, "res");
-        if (assetsDir.exists() && !resDir.exists()) {
+        if (!resDir.exists()) {
             File valuesDir = new File(resDir, "values");
             FileUtils.forceMkdir(valuesDir);
             File stringsFile = new File(valuesDir, "strings.xml");

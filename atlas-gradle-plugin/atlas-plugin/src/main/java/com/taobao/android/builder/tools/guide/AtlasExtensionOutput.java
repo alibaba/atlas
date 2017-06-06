@@ -210,11 +210,7 @@
 package com.taobao.android.builder.tools.guide;
 
 import com.android.builder.signing.DefaultSigningConfig;
-import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.extension.ManifestOptions;
-import com.taobao.android.builder.extension.PatchConfig;
-import com.taobao.android.builder.extension.TBuildConfig;
-import com.taobao.android.builder.extension.TBuildType;
+import com.taobao.android.builder.extension.*;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.FileConverter;
@@ -238,7 +234,6 @@ public class AtlasExtensionOutput extends AtlasExtension {
 
         this.manifestOptions = new ManifestOptions();
         this.tBuildConfig = new TBuildConfig();
-
         copyProps(this.manifestOptions, atlasExtension.getManifestOptions());
         copyProps(this.tBuildConfig, atlasExtension.getTBuildConfig());
 
@@ -248,14 +243,17 @@ public class AtlasExtensionOutput extends AtlasExtension {
         if (null == mtlBuildTypeValue) {
             return;
         }
+//        mtlBuildTypeValue.setDexConfig((DexConfig) atlasExtension.dexConfigs.maybeCreate(name));
 
         tBuildType.setBaseApDependency(mtlBuildTypeValue.getBaseApDependency());
         tBuildType.setBaseApFile(mtlBuildTypeValue.getBaseApFile());
         tBuildType.setSigningConfig(new DefaultSigningConfig(name));
         tBuildType.setPatchConfig(new PatchConfig(name));
+        tBuildType.setDexConfig(new DexConfig(name));
 
         copyProps(tBuildType.getSigningConfig(), mtlBuildTypeValue.getSigningConfig());
         copyProps(tBuildType.getPatchConfig(), mtlBuildTypeValue.getPatchConfig());
+        copyProps(tBuildType.getDexConfig(),mtlBuildTypeValue.getDexConfig());
     }
 
     private void copyProps(Object dest, Object orig) {
