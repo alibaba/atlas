@@ -231,10 +231,8 @@ import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.diff.DependencyCompareUtils;
 import com.taobao.android.builder.dependency.diff.DependencyDiff;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
@@ -520,26 +518,7 @@ public class DiffBundleInfoTask extends BaseTask {
                                         new Callable<DependencyDiff>() {
                                             @Override
                                             public DependencyDiff call() throws Exception {
-
-                                                if (null !=
-                                                        appVariantContext.apContext.getApExploredFolder() &&
-                                                        appVariantContext.apContext.getApExploredFolder()
-                                                                .exists()) {
-                                                    DependencyJson dependencyJson = AtlasBuildContext.androidDependencyTrees
-                                                            .get(scope.getVariantOutputData().variantData
-                                                                         .getName())
-                                                            .getDependencyJson();
-                                                    File baseDependencyFile = new File(
-                                                            appVariantContext.apContext.getApExploredFolder(),
-                                                            "dependencies.txt");
-                                                    if (baseDependencyFile.exists()) {
-                                                        DependencyDiff dependencyDiff = DependencyCompareUtils
-                                                                .diff(baseDependencyFile,
-                                                                      dependencyJson);
-                                                        return dependencyDiff;
-                                                    }
-                                                }
-                                                return null;
+                                                return appVariantContext.getDependencyDiff();
                                             }
                                         });
 

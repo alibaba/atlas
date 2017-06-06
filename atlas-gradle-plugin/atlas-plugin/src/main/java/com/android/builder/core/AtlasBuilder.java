@@ -209,6 +209,20 @@
 
 package com.android.builder.core;
 
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -239,7 +253,12 @@ import com.android.dex.Dex;
 import com.android.dx.command.dexer.DxContext;
 import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
-import com.android.ide.common.process.*;
+import com.android.ide.common.process.JavaProcessExecutor;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessInfo;
+import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.ide.common.process.ProcessResult;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.signing.KeytoolException;
 import com.android.io.FileWrapper;
@@ -272,14 +291,6 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.StopExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.util.*;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -1284,7 +1295,6 @@ public class AtlasBuilder extends AndroidBuilder {
     public DexByteCodeConverter getDexByteCodeConverter() {
 
         if (AtlasBuildContext.appVariantContext.getBuildType().getDexConfig()==null||!AtlasBuildContext.appVariantContext.getBuildType().getDexConfig().isUseMyDex()){
-
             return super.getDexByteCodeConverter();
         }
         if (dexByteCodeConverter == null){

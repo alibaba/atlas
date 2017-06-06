@@ -210,11 +210,12 @@
 
 package com.taobao.android.builder.dependency.diff;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
 import java.util.List;
 import java.util.Set;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 
 /**
  * 依赖的差异性信息
@@ -258,4 +259,12 @@ public class DependencyDiff {
     public void setModifyLines(List<String> modifyLines) {
         this.modifyLines = modifyLines;
     }
+
+    public boolean isDiffBundle(AwbBundle awbBundle){
+        String key = awbBundle.getResolvedCoordinates().getGroupId() +
+                ":" +
+                awbBundle.getResolvedCoordinates().getArtifactId();
+        return awbDiffs.contains(key);
+    }
+
 }

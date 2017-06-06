@@ -209,6 +209,18 @@
 
 package com.android.build.gradle.internal.api;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.BaseExtension;
@@ -218,24 +230,21 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.diff.DependencyCompareUtils;
+import com.taobao.android.builder.dependency.diff.DependencyDiff;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.extension.AtlasExtension;
-
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
-
-import java.io.File;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Applicaiton的编译的context
  * Created by shenghua.nish on 2016-05-04 下午3:46.
  */
-public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtension, E extends AtlasExtension> extends VariantContext<ApplicationVariantImpl, AppExtension, AtlasExtension> {
+public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtension, E extends AtlasExtension>
+    extends VariantContext<ApplicationVariantImpl, AppExtension, AtlasExtension> {
 
     private final ApplicationVariantImpl applicationVariant;
 
@@ -249,15 +258,18 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     public Map<String, File> manifestMap = new HashMap<>();
     public String unit_tag = "";
 
+    public DependencyDiff dependencyDiff;
+
     /**
      * bundle列表清单文件
      */
     public File bundleListCfg;
 
-    public AppVariantContext(ApplicationVariantImpl applicationVariant, Project project, AtlasExtension atlasExtension, AppExtension appExtension) {
+    public AppVariantContext(ApplicationVariantImpl applicationVariant, Project project, AtlasExtension atlasExtension,
+                             AppExtension appExtension) {
         super(applicationVariant, project, atlasExtension, appExtension);
         this.applicationVariant = applicationVariant;
-        this.variantData = (ApplicationVariantData) applicationVariant.getApkVariantData();
+        this.variantData = (ApplicationVariantData)applicationVariant.getApkVariantData();
         this.scope = this.variantData.getScope();
     }
 
@@ -281,9 +293,9 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     public File getAwbRClassSourceOutputDir(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getGeneratedDir(),
                         "source/awb-r/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
+                            getVariantConfiguration().getDirName() +
+                            "/" +
+                            awbBundle.getName());
     }
 
     public List<ConfigurableFileTree> getAwSourceOutputDir(AwbBundle awbBundle) {
@@ -305,51 +317,51 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public File getAwbLibraryDirForDataBinding(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir() +
-                        "/transforms-awbs/databinding/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
+                            "/transforms-awbs/databinding/" +
+                            getVariantConfiguration().getDirName() +
+                            "/" +
+                            awbBundle.getName());
     }
 
     public File getAwbLayoutInfoOutputForDataBinding(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir() +
-                        "/data-binding-info-awbs/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
+                            "/data-binding-info-awbs/" +
+                            getVariantConfiguration().getDirName() +
+                            "/" +
+                            awbBundle.getName());
     }
 
     public File getJAwbavaOutputDir(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
                         "/awb-classes/" +
-                        variantData.getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
+                            variantData.getVariantConfiguration().getDirName() +
+                            "/" +
+                            awbBundle.getName());
     }
 
     public File getAwbClassOutputForDataBinding(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getGeneratedDir(),
                         "source/awb-dataBinding/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
+                            getVariantConfiguration().getDirName() +
+                            "/" +
+                            awbBundle.getName());
     }
 
     public File getAwbLayoutFolderOutputForDataBinding(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir() +
-                        "/data-binding-layout-out-awb/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
+                            "/data-binding-layout-out-awb/" +
+                            getVariantConfiguration().getDirName() +
+                            "/" +
+                            awbBundle.getName());
     }
 
     public File getAwbDataBindingMergeArtifacts(AwbBundle awbBundle) {
 
         return new File(scope.getGlobalScope().getIntermediatesDir() +
-                        "/data-binding-compiler-awbs/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
+                            "/data-binding-compiler-awbs/" +
+                            getVariantConfiguration().getDirName() +
+                            "/" +
+                            awbBundle.getName());
 
         //return new File(scope.getBuildFolderForDataBindingCompiler() +  "-" + awbBundle.getName(),
         //                     DataBindingBuilder.ARTIFACT_FILES_DIR_FROM_LIBS);
@@ -359,25 +371,25 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     public File getAwbMergeResourcesOutputDir(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
                         "/awb-res/merged/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
+                            getVariantConfiguration().getDirName() +
+                            "/" +
+                            awbBundle.getName());
     }
 
     public File getAwbBlameLogFolder(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
                         "/awb-blame/" +
-                        getVariantConfiguration().getDirName() +
-                        "/" +
-                        awbBundle.getName());
+                            getVariantConfiguration().getDirName() +
+                            "/" +
+                            awbBundle.getName());
     }
 
     public File getModifyManifest(AndroidLibrary androidLibrary) {
         return new File(getModifyManifestDir(),
                         androidLibrary.getResolvedCoordinates().getGroupId() +
-                        "." +
-                        androidLibrary.getResolvedCoordinates().getArtifactId() +
-                        ".xml");
+                            "." +
+                            androidLibrary.getResolvedCoordinates().getArtifactId() +
+                            ".xml");
     }
 
     @NonNull
@@ -397,9 +409,9 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public File getBundleBaseInfoFile() {
         File bundleBaseLineInfo = new File(this.getScope()
-                                                   .getGlobalScope()
-                                                   .getProject()
-                                                   .getProjectDir(), "bundleBaseInfoFile.json");
+                                               .getGlobalScope()
+                                               .getProject()
+                                               .getProjectDir(), "bundleBaseInfoFile.json");
         return bundleBaseLineInfo;
     }
 
@@ -410,8 +422,8 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public AppVariantOutputContext getAppVariantOutputContext(BaseVariantOutputData vod) {
 
-        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) this.getOutputContextMap()
-                .get(vod.getFullName());
+        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)this.getOutputContextMap()
+            .get(vod.getFullName());
 
         if (null == appVariantOutputContext) {
             appVariantOutputContext = new AppVariantOutputContext(vod.getFullName(),
@@ -427,5 +439,54 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     public File getAtlaSourceDir() {
         return new File(scope.getGlobalScope().getGeneratedDir(),
                         "source/atlascore/" + getVariantConfiguration().getDirName());
+    }
+
+    public Map<String, String> getBaseUnitTagMap() throws IOException {
+        Map<String, String> tagMap = new HashMap<>();
+        if (null != this.apContext.getApExploredFolder()
+            && this.apContext.getApExploredFolder().exists()) {
+            File file = new File(this.apContext.getApExploredFolder(), "atlasFrameworkProperties.json");
+            if (file.exists()) {
+                JSONObject jsonObject = (JSONObject)JSON.parse(org.apache.commons.io.FileUtils.readFileToString(file));
+                JSONArray jsonArray = jsonObject.getJSONArray("bundleInfo");
+                for (JSONObject obj : jsonArray.toArray(new JSONObject[0])) {
+                    tagMap.put(obj.getString("pkgName"), obj.getString("unique_tag"));
+                }
+            }
+        }
+        return tagMap;
+    }
+
+    public DependencyDiff getDependencyDiff() throws IOException {
+
+        if (null != this.dependencyDiff) {
+            return this.dependencyDiff;
+        }
+
+        if (null !=
+            this.apContext.getApExploredFolder() &&
+            this.apContext.getApExploredFolder()
+                .exists()) {
+
+            DependencyJson dependencyJson = AtlasBuildContext.androidDependencyTrees
+                .get(this.getVariantData().getName())
+                .getDependencyJson();
+            File baseDependencyFile = new File(
+                this.apContext.getApExploredFolder(),
+                "dependencies.txt");
+            if (baseDependencyFile.exists()) {
+                DependencyDiff dependencyDiff = DependencyCompareUtils
+                    .diff(baseDependencyFile,
+                          dependencyJson);
+
+                this.dependencyDiff = dependencyDiff;
+
+                return dependencyDiff;
+            }
+
+        }
+
+        return null;
+
     }
 }
