@@ -248,7 +248,6 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
@@ -387,7 +386,7 @@ public class PrepareAPTask extends BaseTask {
 
     // 生成增量空的AndroidManifest.xml
     private void generateMainManifest(File explodedDir) throws DocumentException, IOException {
-        Document document = XmlHelper.readXml(new File(explodedDir, ANDROID_MANIFEST_XML));// 读取XML文件
+        Document document = XmlHelper.readXml(apContext.getBaseManifest());// 读取XML文件
 
         Element root = document.getRootElement();// 得到根节点
         root.addNamespace("tools", "http://schemas.android.com/tools");
@@ -401,7 +400,7 @@ public class PrepareAPTask extends BaseTask {
             applicationElement.clearContent();
         }
 
-        XmlHelper.saveDocument(document, FileUtils.join(explodedDir, "_" + ANDROID_MANIFEST_XML));
+        XmlHelper.saveDocument(document, apContext.getBaseMainManifest());
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {

@@ -459,7 +459,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext("zipalign"));
 
-                // 增量编译
+                // 增量编译忽略以下任务
                 if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
                     mtlTaskContextList.add(new MtlTaskContext(ApBuildTask.ConfigAction.class, null));
 

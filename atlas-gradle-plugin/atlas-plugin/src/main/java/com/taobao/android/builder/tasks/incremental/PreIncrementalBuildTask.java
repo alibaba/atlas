@@ -73,6 +73,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
             }
         });
 
+        // TODO 内容无变化也不执行
         // atlasFrameworkProperties合并判断
         File atlasFrameworkPropertiesFile = apContext.getBaseAtlasFrameworkPropertiesFile();
         if (!atlasFrameworkPropertiesFile.exists()) {
