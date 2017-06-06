@@ -395,7 +395,7 @@ public class TPatchTask extends BaseTask {
                                                bundleInfoFileName);
                 if (bundleInfoFile.exists()){
                     getLogger().info("add " + bundleInfoFileName + " to apk!");
-                    BuildHelper.writeFileToApk(buildFile, baseVesrionApk, "assets/" + bundleInfoFileName);
+                    BuildHelper.writeFileToApk(bundleInfoFile, baseVesrionApk, "assets/" + bundleInfoFileName);
                 }
 
                 BuildHelper.reSign(baseVesrionApk, signingConfig);
