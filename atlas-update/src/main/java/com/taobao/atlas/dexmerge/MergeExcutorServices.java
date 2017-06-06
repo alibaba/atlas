@@ -4,11 +4,12 @@ import android.os.RemoteException;
 import com.taobao.atlas.dex.Dex;
 import com.taobao.atlas.dexmerge.dx.merge.CollisionPolicy;
 import com.taobao.atlas.dexmerge.dx.merge.DexMerger;
-import rx.Observable;
-import rx.Observer;
-import rx.Subscriber;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 import java.io.*;
 import java.util.*;
@@ -37,9 +38,9 @@ public class MergeExcutorServices {
     }
 
     public void excute(String patchFilePath, final List<MergeObject> list, final boolean b) throws ExecutionException, InterruptedException {
-        Observable.just(patchFilePath).map(new Func1<String, Map>() {
+        io.reactivex.Observable.just(patchFilePath).map(new Function<String, Map>() {
             @Override
-            public Map call(String s) {
+            public Map<String, List<ZipEntry>> apply(String s) throws Exception {
                 try {
                     sZipPatch = new ZipFile(s);
                     Enumeration<? extends ZipEntry> zes = sZipPatch.entries();
@@ -49,7 +50,7 @@ public class MergeExcutorServices {
                     while (zes.hasMoreElements()) {
                         entry = zes.nextElement();
                         if (entry.getName().equals("libcom_taobao_maindex.so")) {
-                            List<ZipEntry> mainDex = new ArrayList<ZipEntry>();
+                            List<ZipEntry> mainDex = new ArrayList<>();
                             mainDex.add(entry);
                             bundleEntryGroup.put("com_taobao_maindex", mainDex);
                         } else if (entry.getName().startsWith("lib")) {
@@ -76,13 +77,8 @@ public class MergeExcutorServices {
                 }
                 return bundleEntryGroup;
             }
-        }).subscribe(new Observer<Map>() {
-            @Override
-            public void onCompleted() {
-                if (bundleEntryGroup.size() != list.size()){
-                    onError(new RuntimeException("parse bundleEntryGroup failed!"));
-                }
-            }
+
+        }).subscribe(new io.reactivex.Observer<Map>() {
 
             @Override
             public void onError(Throwable e) {
@@ -95,46 +91,42 @@ public class MergeExcutorServices {
             }
 
             @Override
+            public void onComplete() {
+                if (bundleEntryGroup.size() != list.size()){
+                    onError(new RuntimeException("parse bundleEntryGroup failed!"));
+                }
+            }
+
+            @Override
+            public void onSubscribe(Disposable disposable) {
+
+            }
+
+            @Override
             public void onNext(Map map) {
 
             }
 
         });
 
-        List<MergeTask>tasks = new ArrayList<>();
-        for (MergeObject mo:list){
-            MergeTask mergeTask = new MergeTask(new File(mo.originalFile),bundleEntryGroup.get(mo.patchName.replace(".","_")),mo.patchName, new File(mo.mergeFile), b);
-            tasks.add(mergeTask);
+        MergeTask[]tasks = new MergeTask[list.size()];
+        for (int i =0;i < list.size(); i ++){
+            MergeTask mergeTask = new MergeTask(new File(list.get(i).originalFile),bundleEntryGroup.get(list.get(i).patchName.replace(".","_")),list.get(i).patchName, new File(list.get(i).mergeFile), b);
+            tasks[i] = mergeTask;
         }
-        System.setProperty("rx.scheduler.max-computation-threads",String.valueOf(Runtime.getRuntime().availableProcessors()/2));
+        System.setProperty("rx2.computation-threads",String.valueOf(Runtime.getRuntime().availableProcessors()/2));
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-            Observable.from(tasks).flatMap(new Func1<MergeTask, Observable<File>>() {
+            Observable.fromArray(tasks).flatMap(new Function<MergeTask, ObservableSource<File>>() {
                 @Override
-                public Observable<File> call(final MergeTask mergeTask) {
-                    return  Observable.just(mergeTask).map(new Func1<MergeTask, File>() {
+                public ObservableSource<File> apply(MergeTask mergeTask) throws Exception {
+                    return Observable.just(mergeTask).map(new Function<MergeTask, File>() {
                         @Override
-                        public File call(MergeTask mergeTask) {
-                            try {
-                                return mergeTask.call();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (MergeException e) {
-                                e.printStackTrace();
-                            }
-                            return null;
+                        public File apply(MergeTask mergeTask) throws Exception {
+                            return mergeTask.call();
                         }
                     }).subscribeOn(Schedulers.computation());
                 }
-            }).subscribe(new Subscriber<File>() {
-                @Override
-                public void onCompleted() {
-                    try {
-                        mCallback.onMergeAllFinish(true,null);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                    countDownLatch.countDown();
-                }
+            }).subscribeOn(Schedulers.computation()).subscribe(new Observer<File>() {
 
                 @Override
                 public void onError(Throwable e) {
@@ -144,6 +136,24 @@ public class MergeExcutorServices {
                         e1.printStackTrace();
                     }
                     countDownLatch.countDown();
+                }
+
+                @Override
+                public void onComplete() {
+                    try {
+                        mCallback.onMergeAllFinish(true,null);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                    countDownLatch.countDown();
+                }
+
+                @Override
+                public void onSubscribe(Disposable disposable) {
+                    if (disposable.isDisposed()){
+                        onError(new IllegalStateException("connection closed!"));
+                    }
+
                 }
 
                 @Override
@@ -276,54 +286,77 @@ public class MergeExcutorServices {
     }
 
 
-//    public static void main(String []args) throws InterruptedException {
-//        String []aa = new String[]{"1","2","3","a"};
-//        Observable observable1 = Observable.just("1");
-//        Observable observable2 = Observable.just("2");
-//        Observable observable5 = Observable.just("5");
-//        Observable observable6 = Observable.just("6");
-//        Observable observable7 = Observable.just("7");
-//        Observable observable3 = Observable.just("3");
-//        Observable observable4 = Observable.just("4");
-//        final ExecutorService es = Executors.newFixedThreadPool(5);
+    public static void main(String []args) throws InterruptedException {
+//       Observable.just(1,2,3,4).doOnSubscribe(new Consumer<Disposable>() {
+//           @Override
+//           public void accept(Disposable disposable) throws Exception {
+//               System.out.println("doOnSubscribe0 +"+Thread.currentThread().getName());
 //
-//        final CountDownLatch countDownLatch = new CountDownLatch(1);
-//        Observable.concatEager(observable1,observable2,observable5,observable6,observable7,observable3,observable4).flatMap(new Func1<String,Observable<Integer>>() {
-//            @Override
-//            public Observable<Integer> call(final String integer) {
-//                return Observable.just(integer).map(new Func1<String, Integer>() {
-//                    @Override
-//                    public Integer call(String s) {
-//                        return Integer.valueOf(s);
-//                    }
-//                }).subscribeOn(Schedulers.from(es));
-//            }
+//           }
+//       }).map(new Function<Integer, Integer>() {
 //
-//        }).observeOn(Schedulers.immediate()).subscribe(new Subscriber<Integer>() {
-//            @Override
-//            public void onCompleted() {
-//                countDownLatch.countDown();
-//            }
+//           @Override
+//           public Integer apply(Integer integer) throws Exception {
+//               System.out.println("map0 +"+Thread.currentThread().getName());
 //
-//            @Override
-//            public void onError(Throwable e) {
-//                countDownLatch.countDown();
+//               return integer;
+//           }
+//       }).subscribeOn(Schedulers.newThread()).map(new Function<Integer, Integer>() {
+//           @Override
+//           public Integer apply(Integer integer) throws Exception {
+//               System.out.println("map +"+Thread.currentThread().getName());
+//               return integer+1;
+//           }
+//       }).subscribeOn(Schedulers.computation()).map(new Function<Integer, Integer>() {
+//           @Override
+//           public Integer apply(Integer integer) throws Exception {
+//               System.out.println("map5 +"+Thread.currentThread().getName());
 //
-//            }
+//               return integer;
+//           }
+//       }).doOnSubscribe(new Consumer<Disposable>() {
+//           @Override
+//           public void accept(Disposable disposable) throws Exception {
+//               System.out.println("doOnSubscribe +"+Thread.currentThread().getName());
 //
-//            @Override
-//            public void onNext(Integer integer) {
-//                System.out.println(integer+Thread.currentThread().getName()+new Date(System.currentTimeMillis()));
-//            }
 //
-//        });
-//        countDownLatch.await();
-//        System.out.println("4"+Thread.currentThread().getName());
-//        try {
-//            Thread.sleep(2000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
+//           }
+//       }).subscribeOn(Schedulers.io()).observeOn(Schedulers.single()).doOnSubscribe(new Consumer<Disposable>() {
+//           @Override
+//           public void accept(Disposable disposable) throws Exception {
+//               System.out.println("doOnSubscribe1 +"+Thread.currentThread().getName());
+//
+//           }
+//       }).subscribeOn(Schedulers.computation()).map(new Function<Integer, Integer>() {
+//           @Override
+//           public Integer apply(Integer integer) throws Exception {
+//               System.out.println("map1 +"+Thread.currentThread().getName());
+//
+//               return integer+1;
+//           }
+//       }).observeOn(Schedulers.computation()).map(new Function<Integer, Integer>() {
+//           @Override
+//           public Integer apply(Integer integer) throws Exception {
+//               System.out.println("map3 +"+Thread.currentThread().getName());
+//
+//               return integer;
+//           }
+//       }).blockingSubscribe(new Consumer<Integer>() {
+//           @Override
+//           public void accept(Integer integer) throws Exception {
+//               System.out.println("Consumer +"+integer+Thread.currentThread().getName());
+//
+//           }
+//       });
+
+//        Set<String>set = new HashSet<>();
+//        set.add("a");
+//        set.add("b");
+//        set.add("f");
+//        set.add("c");
+//        System.out.println(set.toArray()[0]);
+//       Thread.sleep(5000);
+    }
+
 
 }
