@@ -432,10 +432,7 @@ import org.jf.dexlib2.util.ReferenceUtil;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Dex文件差异性获取的类
@@ -791,16 +788,6 @@ public class DexDiffer {
             throw new RuntimeException("Not a valid dalvik class name");
         }
         return StringUtils.replace(className.substring(1, className.length() - 1), "/", ".");
-    }
-
-
-    public static void main(String[] args) throws IOException {
-        File dexFile = new File("/Users/shenghua/Downloads/taobao-android.apk/classes.dex");
-        DexBackedDexFile baseBackedDexFile = DexFileFactory.loadDexFile(dexFile, 19, true);
-        for (DexBackedClassDef classDef : baseBackedDexFile.getClasses()) {
-            System.out.println(classDef.getType());
-        }
-
     }
 
 
