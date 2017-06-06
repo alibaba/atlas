@@ -416,14 +416,18 @@ public class BundleListing implements Serializable{
 
         private void findBundleTransitively(String location,List<String> bundlesListForInstall){
 //            //打断循环依赖
-//            if(bundlesListForInstall.contains(location)){
-//                return;
-//            }
+            findBundleTransitivelyInternal(location,bundlesListForInstall,location);
+        }
+
+        private void findBundleTransitivelyInternal(String location,List<String> bundlesListForInstall,final String root){
+//            //打断循环依赖
             if(!bundlesListForInstall.contains(location)) {
                 bundlesListForInstall.add(0,location);
             }else{
-                bundlesListForInstall.remove(location);
-                bundlesListForInstall.add(0,location);
+                if(!location.equals(root)) {
+                    bundlesListForInstall.remove(location);
+                    bundlesListForInstall.add(0, location);
+                }
                 return;
             }
 
@@ -431,7 +435,7 @@ public class BundleListing implements Serializable{
             if(singleLevelDependencies!=null){
                 for(String dependepcy : singleLevelDependencies){
                     if(dependepcy!=null){
-                        findBundleTransitively(dependepcy,bundlesListForInstall);
+                        findBundleTransitivelyInternal(dependepcy,bundlesListForInstall,root);
                     }
                 }
             }

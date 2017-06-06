@@ -382,10 +382,14 @@ public final class BundleClassLoader extends BaseDexClassLoader {
             for (String dependencyBundle : dependencies) {
                 try {
                     BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
-                    impl.startBundle();
-                    clazz = ((BundleClassLoader) impl.getClassLoader()).loadOwnClass(classname);
-                    if(clazz!=null){
-                        return clazz;
+                    if(impl!=null) {
+                        impl.startBundle();
+                        clazz = ((BundleClassLoader) impl.getClassLoader()).loadOwnClass(classname);
+                        if (clazz != null) {
+                            return clazz;
+                        }
+                    }else{
+                        Log.e("BundleClassLoader",String.format("%s is not success installed by %s",""+dependencyBundle,location));
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
