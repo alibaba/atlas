@@ -246,6 +246,9 @@ public class TBuildConfig {
     @Config(message = "自动生成bundle的packageId", order = 6, advance = false, group = "atlas")
     private boolean autoPackageId = true;
 
+    @Config(message = "自动分配的packageId 最小值", order = 6, advance = false, group = "atlas")
+    private int minPackageId = 35;
+
     @Config(title = "构建基线包", message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0, group = "atlas_patch")
     private Boolean createAP = true;
 
@@ -493,5 +496,13 @@ public class TBuildConfig {
 
     public void setBundleProguardConfigBlackList(Set<String> bundleProguardConfigBlackList) {
         this.bundleProguardConfigBlackList = bundleProguardConfigBlackList;
+    }
+
+    public int getMinPackageId() {
+        return minPackageId;
+    }
+
+    public void setMinPackageId(int minPackageId) {
+        this.minPackageId = minPackageId;
     }
 }

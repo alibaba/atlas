@@ -213,6 +213,7 @@ import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.diff.DependencyDiff;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
@@ -257,6 +258,10 @@ public class ApkInjectInfoCreator {
         injectParam.unit_tag = mainMd5;
         appVariantContext.unit_tag = mainMd5;
 
+        //依赖是否发送变更
+        DependencyDiff dependencyDiff = appVariantContext.getDependencyDiff();
+        Map<String, String> baseTagMap = appVariantContext.getBaseUnitTagMap();
+
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
             BundleInfo bundleInfo = awbBundle.bundleInfo;
@@ -268,16 +273,18 @@ public class ApkInjectInfoCreator {
             basicBundleInfo.setPkgName(bundleInfo.getPkgName());
 
             //set unique_tag
-            List<String>bundleDependencies = awbBundle.getAllDependencies();
-            Collections.sort(bundleDependencies, new Comparator<String>() {
-                @Override
-                public int compare(String o1, String o2) {
-                    return o1.compareTo(o2);
-                }
-            });
-            String bundleMd5 = MD5Util.getMD5(StringUtils.join(bundleDependencies));
-            basicBundleInfo.setUnique_tag(MD5Util.getMD5(mainMd5+bundleMd5));
-            bundleInfo.setUnique_tag(basicBundleInfo.getUnique_tag());
+            String bundleMd5 = MD5Util.getMD5(StringUtils.join(awbBundle.getAllDependencies()));
+            String bundleUnitTag = "";
+
+            if ( null != dependencyDiff && !dependencyDiff.isDiffBundle(awbBundle)){
+                bundleUnitTag = baseTagMap.get(awbBundle.getPackageName());
+            }
+            if (StringUtils.isEmpty(bundleUnitTag)){
+                bundleUnitTag = MD5Util.getMD5(mainMd5 + bundleMd5);
+            }
+
+            basicBundleInfo.setUnique_tag(bundleUnitTag);
+            bundleInfo.setUnique_tag(bundleUnitTag);
 
             if (!bundleInfo.getIsInternal()) {
                 basicBundleInfo.setIsInternal(false);
@@ -324,6 +331,7 @@ public class ApkInjectInfoCreator {
         mergeBundleInfos(appVariantContext, injectParam, basicBundleInfos, basicBundleInfoMap);
         return injectParam;
     }
+
 
     private void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam,
                                   List<BasicBundleInfo> basicBundleInfos,
