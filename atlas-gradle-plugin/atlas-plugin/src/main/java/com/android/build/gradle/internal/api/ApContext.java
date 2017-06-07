@@ -212,6 +212,7 @@ package com.android.build.gradle.internal.api;
 import java.io.File;
 
 import com.android.utils.FileUtils;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 
@@ -229,7 +230,9 @@ public class ApContext {
 
     public static final String AP_INLINE_AWB_EXPLODED_DIRECTORY = "exploded-awb";
 
-    public static final String AP_INLINE_AWB_EXTRACT_DIRECTORY = "awbs";
+    public static final String AP_INLINE_AWO_DIRECTORY = "awo";
+
+    public static final String AP_INLINE_AWB_DIRECTORY = "awbs";
 
     public static final String APK_FILE_LIST = "apk-files.txt";
 
@@ -252,6 +255,8 @@ public class ApContext {
     private File extractedBaseApkFolder;
 
     private File baseRemoteBundlesFolder;
+
+    private File baseAwosFolder;
 
     private File baseAwbsFolder;
 
@@ -296,7 +301,8 @@ public class ApContext {
         this.baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
         this.extractedBaseApkFolder = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
         this.baseRemoteBundlesFolder = new File(apExploredFolder, AP_REMOTE_BUNDLES_DIRECTORY);
-        this.baseAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_EXTRACT_DIRECTORY);
+        this.baseAwosFolder = new File(apExploredFolder, AP_INLINE_AWO_DIRECTORY);
+        this.baseAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_DIRECTORY);
         this.extractedBaseAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
         this.basePackageIdFile = new File(apExploredFolder, PACKAGE_ID_PROPERTIES_FILENAME);
         this.baseAtlasFrameworkPropertiesFile = new File(apExploredFolder, ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
@@ -357,6 +363,10 @@ public class ApContext {
             soFileName = soFileName.substring(0, pos);
         }
         return FileUtils.join(extractedBaseAwbsFolder, soFileName);
+    }
+
+    public File getBaseAwbTextSymbol(AwbBundle awbBundle) {
+        return FileUtils.join(baseAwosFolder, awbBundle.getPackageName() + ".R.txt");
     }
 
     public File getExtractedBaseAwbsFolder() {

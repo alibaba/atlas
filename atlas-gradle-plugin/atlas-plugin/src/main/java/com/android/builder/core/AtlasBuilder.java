@@ -302,7 +302,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class AtlasBuilder extends AndroidBuilder {
 
-    private static Logger sLogger = LoggerFactory.getLogger(AtlasBuilder.class);
+    private static final Logger sLogger = LoggerFactory.getLogger(AtlasBuilder.class);
 
     protected AtlasExtension atlasExtension;
 
@@ -312,9 +312,9 @@ public class AtlasBuilder extends AndroidBuilder {
 
     private DexByteCodeConverter dexByteCodeConverter;
 
-    private JavaProcessExecutor javaProcessExecutor;
+    private final JavaProcessExecutor javaProcessExecutor;
 
-    private boolean verboseExec;
+    private final boolean verboseExec;
 
     /**
      * Creates an AndroidBuilder.
@@ -464,6 +464,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
             // For each dependency, load its symbol file.
             Set<SymbolTable> depSymbolTables = new HashSet<>();
+            //TODO 不生成多余R.java
             for (AndroidDependency dependency : aaptConfig.getLibraries()) {
                 File depMan = dependency.getManifest();
                 String depPackageName;
@@ -779,7 +780,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
     static class TProcessInfo implements ProcessInfo {
 
-        private ProcessInfo origin;
+        private final ProcessInfo origin;
 
         private String sybolOutputDir;
 
