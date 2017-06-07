@@ -236,6 +236,7 @@ import com.taobao.android.builder.dependency.diff.DependencyDiff;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tools.bundleinfo.ApkFileListUtils;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
 
@@ -266,6 +267,7 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
      */
     public File bundleListCfg;
 
+    private ApkFiles apkFiles;
 
     public AppVariantContext(ApplicationVariantImpl applicationVariant, Project project, AtlasExtension atlasExtension,
                              AppExtension appExtension) {
@@ -491,5 +493,15 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
         return null;
 
+    }
+
+    public ApkFiles getApkFiles() {
+
+        if (null != apkFiles){
+            return apkFiles;
+        }
+
+        apkFiles = ApkFileListUtils.recordApkFileInfos(this);
+        return apkFiles;
     }
 }

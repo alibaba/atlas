@@ -221,9 +221,7 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.bundleinfo.ApkFileListUtils;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
@@ -353,11 +351,9 @@ public class ApBuildTask extends DefaultAndroidTask {
     private static File getApkFiles(File outputDir,
                                     AppVariantContext appVariantContext) throws IOException {
 
-        ApkFileListUtils.recordApkFileInfos(appVariantContext);
-
         File apkFiles = new File(outputDir, ApContext.APK_FILE_LIST);
         FileUtils.writeStringToFile(apkFiles,
-                                    JSON.toJSONString(AtlasBuildContext.finalApkFileList));
+                                    JSON.toJSONString(appVariantContext.getApkFiles().finalApkFileList));
         return apkFiles;
     }
 

@@ -209,6 +209,10 @@
 
 package com.taobao.android.builder;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.model.MavenCoordinates;
@@ -216,12 +220,7 @@ import com.google.common.collect.Maps;
 import com.taobao.android.builder.adapter.BuilderAdapter;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.object.ApkFileList;
 import org.gradle.api.Project;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by shenghua.nish on 2016-05-09 下午3:50.
@@ -238,10 +237,6 @@ public class AtlasBuildContext {
     public static Map<String, AtlasDependencyTree> androidDependencyTrees = Maps.newHashMap();
 
     public static Map<String, AtlasDependencyTree> libDependencyTrees = Maps.newHashMap();
-
-    public static ApkFileList apkFileList = new ApkFileList();
-
-    public static ApkFileList finalApkFileList = new ApkFileList();
 
     public static Map<String, String> customPackageIdMaps = new HashMap<String, String>();
 
@@ -262,5 +257,16 @@ public class AtlasBuildContext {
      * 修改后的文件 -> 原始文件
      */
     public static Map<String, String> jarTraceMap = new HashMap<String, String>();
+
+    public static void reset(){
+        dependencyTraceMap.clear();
+        jarTraceMap.clear();
+        conflictDependencies = null;
+        awbBundleMap.clear();
+        androidBuilderMap.clear();
+        customPackageIdMaps.clear();
+        libDependencyTrees.clear();
+        androidBuilderMap.clear();
+    }
 
 }

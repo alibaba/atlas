@@ -348,7 +348,7 @@ public class TPatchTask extends BaseTask {
         }
 
         tPatchTool.setBaseApkFileList(patchContext.getBaseApkFiles());
-        tPatchTool.setNewApkFileList(patchContext.getNewApkFiles());
+        tPatchTool.setNewApkFileList(patchContext.getNewApkFiles(appVariantContext));
         tPatchTool.setLogger(getILogger());
         tPatchTool.setOnlyIncludeModifyBundle(patchContext.onlyBuildModifyAwb);
 
@@ -356,7 +356,7 @@ public class TPatchTask extends BaseTask {
             tPatchTool.setNotIncludeFiles(patchContext.excludeFiles.split(","));
         }
 
-        ApkFileList apkFileList = AtlasBuildContext.finalApkFileList;
+        ApkFileList apkFileList = appVariantContext.getApkFiles().finalApkFileList;
         try {
 
             tPatchTool.setCreateAll(StringUtils.isEmpty(patchContext.tpatchHistoryUrl));
@@ -569,8 +569,8 @@ public class TPatchTask extends BaseTask {
 
         public String appSignName;
 
-        public File getNewApkFiles() throws IOException {
-            ApkFileList apkFileList = AtlasBuildContext.finalApkFileList;
+        public File getNewApkFiles(AppVariantContext appVariantContext) throws IOException {
+            ApkFileList apkFileList = appVariantContext.getApkFiles().finalApkFileList;
             File apkFiles = new File(outPatchFolder.getParentFile(), APK_FILE_MD5);
             FileUtils.writeStringToFile(apkFiles, JSON.toJSONString(apkFileList));
             return apkFiles;
