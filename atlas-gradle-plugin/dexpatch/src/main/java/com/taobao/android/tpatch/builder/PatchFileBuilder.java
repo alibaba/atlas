@@ -263,6 +263,7 @@ public class PatchFileBuilder {
                 hisBundles.remove(bundleName);
             } else { // 如果历史的patch中没有包含该bundle
                 bundlePatch.bundlePolicy = BundlePolicy.ADD;
+                bundlePatch.srcUnitTag = curBundleInfo.getSrcUnitTag();
             }
             list.add(bundlePatch);
         }
