@@ -219,7 +219,6 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.ImmutableList;
-import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.ApLibrary;
 import com.taobao.android.builder.dependency.model.ApkLibrary;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -273,7 +272,7 @@ public class DependencyConvertUtils {
                                                                                          resolvedDependencyInfo
                                                                                              .getExplodedDir());
 
-        List<File> localJars = getLocalJars(project, bundle, androidDependency);
+        List<File> localJars = new ArrayList<>();
 
         return new AndroidLibraryImpl(androidDependency,
                                       false,
@@ -283,19 +282,19 @@ public class DependencyConvertUtils {
                                       localJars);
     }
 
-    private static List<File> getLocalJars(Project project, boolean bundle, AndroidDependency androidDependency) {
-
-        if (!bundle) {
-            return androidDependency.getLocalJars();
-        }
-
-        boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
-        if (project.hasProperty("localJarEnabled")) {
-            localJarEnabled = "true".equals(project.property("localJarEnabled"));
-        }
-
-        return localJarEnabled ? androidDependency.getLocalJars() : new ArrayList<>(0);
-    }
+    //public static List<File> getLocalJars(Project project, boolean bundle, AndroidDependency androidDependency) {
+    //
+    //    if (!bundle) {
+    //        return androidDependency.getLocalJars();
+    //    }
+    //
+    //    boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
+    //    if (project.hasProperty("localJarEnabled")) {
+    //        localJarEnabled = "true".equals(project.property("localJarEnabled"));
+    //    }
+    //
+    //    return localJarEnabled ? androidDependency.getLocalJars() : new ArrayList<>(0);
+    //}
 
     public static AndroidLibrary toAndroidLibrary(MavenCoordinates mavenCoordinates, File artifact, File dir) {
 
