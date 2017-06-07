@@ -223,6 +223,7 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.tasks.PrepareLibraryTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
+import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.SoLibrary;
@@ -231,10 +232,14 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.apache.commons.io.FileUtils;
 import org.dom4j.DocumentException;
+import org.gradle.api.Project;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
+
+import static com.android.SdkConstants.DOT_JAR;
+import static com.android.SdkConstants.FD_AAR_LIBS;
 
 /**
  * 1. 自己控制并发，可以提高性能
@@ -333,6 +338,57 @@ public class PrepareAllDependenciesTask extends BaseTask {
         }
 
         executorServicesHelper.execute(runnables);
+
+        //TODO localJars
+        Project project = getProject();
+        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()){
+
+            List<File> localJars = getLocalJars(project,aarBundle);
+            System.out.println("get local libs");
+            for (File file : localJars){
+                System.out.println(file.getAbsolutePath());
+            }
+
+            aarBundle.getLocalJars().addAll(localJars);
+
+            //getLocalJars(project, bundle, androidDependency);
+        }
+
+
+    }
+
+    private List<File> getLocalJars(Project project, AndroidLibrary aarBundle ) {
+
+        if (!"awb".equals(aarBundle.getResolvedCoordinates().getPackaging())) {
+            return  getLocalJars(aarBundle.getFolder());
+        }
+
+        boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
+        if (project.hasProperty("localJarEnabled")) {
+            localJarEnabled = "true".equals(project.property("localJarEnabled"));
+        }
+
+        return localJarEnabled ? getLocalJars(aarBundle.getFolder()) : new ArrayList<>(0);
+    }
+
+    private List<File> getLocalJars(File rootDir) {
+        List<File> localJars = Lists.newArrayList();
+        List<File> rootDirs = new ArrayList<>();
+        rootDirs.add(new File(rootDir, FD_AAR_LIBS));
+        rootDirs.add(new File(rootDir, "jars/"+FD_AAR_LIBS));
+
+        for (File root : rootDirs){
+            File[] jarList = root.listFiles();
+            if (jarList != null) {
+                for (File jars : jarList) {
+                    if (jars.isFile() && jars.getName().endsWith(DOT_JAR)) {
+                        localJars.add(jars);
+                    }
+                }
+            }
+        }
+
+        return localJars;
     }
 
     private void prepareLibrary(AndroidLibrary library) {
