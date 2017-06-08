@@ -236,10 +236,8 @@ import org.osgi.framework.FrameworkListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -410,7 +408,7 @@ public final class Framework {
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
-            if (bundleDir != null && !Framework.updateHappend) {
+            if (bundleDir != null && !updateHappend) {
                 Framework.deleteDirectory(bundleDir);
             }
             if (FileUtils.getUsableSpace(Environment.getDataDirectory()) < LowDiskException.thredshold) {
@@ -419,7 +417,7 @@ public final class Framework {
             throw new BundleException("Failed to install bundle.", e);
         } catch (BundleException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
-            if (bundleDir != null && !Framework.updateHappend) {
+            if (bundleDir != null && !updateHappend) {
                 Framework.deleteDirectory(bundleDir);
             }
             throw e1;
@@ -464,16 +462,18 @@ public final class Framework {
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
-            if (bundleDir != null)
+            if (bundleDir != null && !updateHappend) {
                 Framework.deleteDirectory(bundleDir);
+            }
             if (FileUtils.getUsableSpace(Environment.getDataDirectory()) < LowDiskException.thredshold) {
                 throw new LowDiskException(FileUtils.getAvailableDisk(), e);
             }
             throw new BundleException("Failed to install bundle.", e);
         } catch (BundleException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
-            if (bundleDir != null)
+            if (bundleDir != null && !updateHappend) {
                 Framework.deleteDirectory(bundleDir);
+            }
             throw e1;
         } finally {
             installingBundles.remove(location);
@@ -530,7 +530,7 @@ public final class Framework {
             }
         }
         Log.e("Framework","restoreExisted: "+location+"| "+bundleUniqueTag +"| "+bundleDir);
-        if(!new File(bundleDir,bundleUniqueTag).exists() && BaselineInfoManager.instance().isUpdated(location)){
+        if(bundleDir==null && BaselineInfoManager.instance().isUpdated(location)){
             //出现无法恢复的情况，立即回滚
             if(getCurProcessName().equals(RuntimeVariables.androidApplication.getPackageName())) {
                 Map<String, Object> detail = new HashMap<>();
@@ -774,25 +774,42 @@ public final class Framework {
         File bundleDir = null;
         if(new File(STORAGE_LOCATION,location+File.separator+bundleUniqueId).exists()){
             bundleDir = new File(STORAGE_LOCATION,location);
+            File file = getInstalledBundleInternal(location,bundleUniqueId,bundleDir);
+            if(file!=null){
+                return file;
+            }
         }else{
             File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
             if(externalStorages!=null && externalStorages.length>0){
                 for(File tmpDir : externalStorages){
                     if(getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+bundleUniqueId).exists()) {
                         bundleDir = new File(tmpDir,location);
-                        break;
+                        File file = getInstalledBundleInternal(location,bundleUniqueId,bundleDir);
+                        if(file.exists()){
+                            return file;
+                        }
                     }
                 }
             }
         }
-        if(bundleDir!=null){
-            if(isKernalBundle(location)){
-                return new File(bundleDir,bundleUniqueId+File.separator+"com_taobao_maindex.zip");
+        return null;
+    }
+
+    private static File getInstalledBundleInternal(String bundleName,String bundleUniqueId,File bundleDir){
+        if(bundleDir!=null && bundleDir.exists()){
+            if(isKernalBundle(bundleName)){
+                File file = new File(bundleDir,bundleUniqueId+File.separator+"com_taobao_maindex.zip");
+                if(file.exists()){
+                    return file;
+                }
             }else{
                 try {
-                    BundleArchive archive = new BundleArchive(location, bundleDir, bundleUniqueId, 0);
+                    BundleArchive archive = new BundleArchive(bundleName, bundleDir, bundleUniqueId, 0);
                     if(archive!=null){
-                        return archive.getArchiveFile();
+                        File file = archive.getArchiveFile();
+                        if(file!=null && file.exists()){
+                            return file;
+                        }
                     }
                 }catch(Throwable e){
                     return null;
@@ -800,37 +817,9 @@ public final class Framework {
             }
         }
         return null;
-//        try {
-//            File storageLocation = null;
-//            if(BaselineInfoManager.instance().isUpdated(location) && !TextUtils.isEmpty(BaselineInfoManager.instance().getUpdateStorageLocation())){
-//                storageLocation = new File(BaselineInfoManager.instance().getUpdateStorageLocation());
-//            }else{
-//                storageLocation = new File(STORAGE_LOCATION);
-//            }
-//            File bundleDir = new File(storageLocation,location);
-//            if (bundleDir.exists()) {
-//                if(isKernalBundle(location)){
-//                    File mainBundle = new File(bundleDir,bundleUniqueId+File.separator+"com_taobao_maindex.zip");
-//                    if(mainBundle.exists()){
-//                        return mainBundle;
-//                    }
-//                }else {
-//                    BundleArchive archive = new BundleArchive(location, new File(storageLocation,location), bundleUniqueId, 0);
-//                    if (archive != null) {
-//                        return archive.getArchiveFile();
-//                    } else {
-//                        return null;
-//                    }
-//                }
-//            }
-//            return null;
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return null;
-//        }
     }
 
-    public static File createBundleStorage(String bundleName){
+    private static File createBundleStorage(String bundleName){
         if(new File(STORAGE_LOCATION).getUsableSpace()>10*1024*1024){
             return new File(STORAGE_LOCATION,bundleName);
         }else{
@@ -838,8 +827,9 @@ public final class Framework {
             File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
             if(externalStorages!=null && externalStorages.length>0){
                 for(File tmpDir : externalStorages){
-                    if(getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && tmpDir.getUsableSpace()>10*1024*1024) {
+                    if(getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && tmpDir.getUsableSpace()>20*1024*1024) {
                         externalStorageDir = tmpDir;
+                        break;
                     }
                 }
             }

@@ -351,11 +351,7 @@ public class BundleArchive {
         File[] dexPatchs = dexPatchDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String filename) {
-                long version = 0;
-                try {
-                    version = Long.parseLong(filename);
-                }catch(Throwable e){}
-                if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"") && dexPatchVersion>version){
+                if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"")){
                     return true;
                 }
                 return false;
