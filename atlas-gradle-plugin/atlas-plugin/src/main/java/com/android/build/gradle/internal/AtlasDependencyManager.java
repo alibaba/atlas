@@ -277,7 +277,7 @@ public class AtlasDependencyManager extends DependencyManager {
     @Override
     public Set<AndroidDependency> resolveDependencies(@NonNull VariantDependencies variantDeps,
                                                       @Nullable String testedProjectPath) {
-        this.apDependencies = resolveApDependencies(variantDeps);
+        this.apDependencies = resolveApDependencies(project, variantDeps.getName());
 
         atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo, this.apDependencies).parseDependencyTree(
             variantDeps);
@@ -303,14 +303,13 @@ public class AtlasDependencyManager extends DependencyManager {
         return new HashSet<>(0);
     }
 
-    private ApDependencies resolveApDependencies(@NonNull VariantDependencies variantDeps) {
+    private static ApDependencies resolveApDependencies(Project project, String variantDepsName) {
         AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
         if (!atlasExtension.getTBuildConfig().isIncremental()) {
             return null;
         }
 
-        TBuildType tBuildType = (TBuildType)atlasExtension.getBuildTypes().findByName(variantDeps.getName());
-
+        TBuildType tBuildType = (TBuildType)atlasExtension.getBuildTypes().findByName(variantDepsName);
         if (tBuildType == null) {
             return null;
         }
@@ -319,11 +318,12 @@ public class AtlasDependencyManager extends DependencyManager {
         if (baseApFile == null) {
             return null;
         }
+
         return new ApDependencies(project, baseApFile);
     }
 
-    private File getBaseApFile(Project project, TBuildType tBuildType) {
-        //上一次构建baseAp文件
+    private static File getBaseApFile(Project project, TBuildType tBuildType) {
+        //重用上一次构建baseAp文件
         //File apBaseFile = Iterables.getOnlyElement(
         //    FileUtils.find(FileUtils.join(project.getBuildDir(), FD_OUTPUTS), Pattern.compile("\\.ap$")), null);
         File apBaseFile = null;
