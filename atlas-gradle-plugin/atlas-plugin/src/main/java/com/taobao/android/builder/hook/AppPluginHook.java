@@ -223,7 +223,6 @@ import org.gradle.api.Project;
 
 /**
  * Created by wuzhong on 2017/3/10.
- *
  * 1. 替换dependencyManager
  * 2. 替换androidBuilder
  *
@@ -232,7 +231,9 @@ import org.gradle.api.Project;
  */
 public class AppPluginHook {
 
-    private Project project;
+    private final Project project;
+
+    private TaskManager taskManager;
 
     public AppPluginHook(Project project) {
         this.project = project;
@@ -246,22 +247,21 @@ public class AppPluginHook {
             return;
         }
 
-        TaskManager taskManager =
-            (TaskManager)ReflectUtils.getField(BasePlugin.class, appPlugin, "taskManager");
+        taskManager = (TaskManager)ReflectUtils.getField(BasePlugin.class, appPlugin, "taskManager");
 
-        DependencyManager dependencyManager = (DependencyManager)ReflectUtils.getField(TaskManager.class, taskManager,
+        DependencyManager dependencyManager = (DependencyManager)ReflectUtils.getField(TaskManager.class,
+                                                                                       taskManager,
                                                                                        "dependencyManager");
 
         AtlasDependencyManager atlasDependencyManager = new AtlasDependencyManager(project,
-                                                                                   (ExtraModelInfo)ReflectUtils
-                                                                                       .getField(dependencyManager,
-                                                                                                 "extraModelInfo"),
-                                                                                   (SdkHandler)ReflectUtils
-                                                                                       .getField(dependencyManager,
-                                                                                                 "sdkHandler"));
+                                                                                   (ExtraModelInfo)ReflectUtils.getField(
+                                                                                       dependencyManager,
+                                                                                       "extraModelInfo"),
+                                                                                   (SdkHandler)ReflectUtils.getField(
+                                                                                       dependencyManager,
+                                                                                       "sdkHandler"));
 
         ReflectUtils.updateField(TaskManager.class, taskManager, "dependencyManager", atlasDependencyManager);
-
     }
 
     public AndroidBuilder getAndroidBuilder() throws Exception {
@@ -272,15 +272,18 @@ public class AppPluginHook {
             basePlugin = project.getPlugins().findPlugin(LibraryPlugin.class);
         }
 
-        if (null == basePlugin){
+        if (null == basePlugin) {
             return null;
         }
 
-        AndroidBuilder androidBuilder =
-            (AndroidBuilder)ReflectUtils.getField(BasePlugin.class, basePlugin, "androidBuilder");
+        AndroidBuilder androidBuilder = (AndroidBuilder)ReflectUtils.getField(BasePlugin.class,
+                                                                              basePlugin,
+                                                                              "androidBuilder");
 
         return androidBuilder;
-
     }
 
+    public TaskManager getTaskManager() {
+        return taskManager;
+    }
 }

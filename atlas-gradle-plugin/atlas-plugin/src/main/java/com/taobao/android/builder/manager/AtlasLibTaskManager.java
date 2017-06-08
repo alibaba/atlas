@@ -218,6 +218,7 @@ import java.util.function.Consumer;
 
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.LibraryVariant;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.api.LibraryVariantImpl;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -267,8 +268,8 @@ import org.gradle.api.tasks.bundling.Zip;
 public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
     public AtlasLibTaskManager(AtlasBuilder androidBuilder, LibraryExtension libraryExtension, Project project,
-                               AtlasExtension atlasExtension) {
-        super(androidBuilder, libraryExtension, project, atlasExtension);
+                               AtlasExtension atlasExtension, TaskManager taskManager) {
+        super(androidBuilder, libraryExtension, project, atlasExtension, taskManager);
         this.libraryExtension = libraryExtension;
     }
 
@@ -282,8 +283,10 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
             @Override
             public void accept(LibraryVariant libraryVariant) {
 
-                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant, project,
-                                                                            atlasExtension, libraryExtension);
+                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant,
+                                                                            project,
+                                                                            atlasExtension,
+                                                                            libraryExtension);
 
                 TBuildType tBuildType = libVariantContext.getBuildType();
                 if (null != tBuildType) {
@@ -345,8 +348,10 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
     private void createIncrementalAllActionsTasks(LibVariantOutputData libVariantOutputData) {
         VariantScope scope = libVariantOutputData.getScope().getVariantScope();
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-        MergeResources mergeResourcesTask = libVariantOutputData.getScope().getVariantScope().getMergeResourcesTask()
-            .get(tasks);
+        MergeResources mergeResourcesTask = libVariantOutputData.getScope()
+                                                                .getVariantScope()
+                                                                .getMergeResourcesTask()
+                                                                .get(tasks);
         atlasExtension.getTBuildConfig().setUseCustomAapt(true);
         mergeResourcesTask.setAndroidBuilder(tAndroidBuilder);
         ConventionMappingHelper.map(mergeResourcesTask, "inputResourceSets", new Callable<List<ResourceSet>>() {
@@ -357,8 +362,9 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                 if (variantData.getExtraGeneratedResFolders() != null) {
                     generatedResFolders.addAll(variantData.getExtraGeneratedResFolders());
                 }
-                if (scope.getMicroApkTask() != null && variantData.getVariantConfiguration().getBuildType()
-                    .isEmbedMicroApp()) {
+                if (scope.getMicroApkTask() != null && variantData.getVariantConfiguration()
+                                                                  .getBuildType()
+                                                                  .isEmbedMicroApp()) {
                     generatedResFolders.add(scope.getMicroApkResDirectory());
                 }
 
