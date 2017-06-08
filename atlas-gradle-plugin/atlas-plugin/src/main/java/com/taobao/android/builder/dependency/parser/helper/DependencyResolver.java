@@ -250,19 +250,23 @@ import org.gradle.api.internal.artifacts.result.DefaultResolvedComponentResult;
  */
 public class DependencyResolver {
 
-    private static final ILogger logger = LoggerWrapper.getLogger(DependencyResolver.class);
+    private static final ILogger LOGGER = LoggerWrapper.getLogger(DependencyResolver.class);
 
     private final ApDependencies apDependencies;
 
-    Project project;
+    private final Project project;
 
-    VariantDependencies variantDeps;
+    private final VariantDependencies variantDeps;
 
-    Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts;
+    private final Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts;
 
-    Map<String, Set<String>> bundleProvidedMap;
+    private final Map<String, Set<String>> bundleProvidedMap;
 
-    public Set<String> mainDependencies = new HashSet<>();
+    private final Set<String> mainDependencies = new HashSet<>();
+
+    private final DefaultResolvedComponentResult compileRootClasspath;
+
+    private final DefaultResolvedComponentResult packageRootClasspath;
 
     public DependencyResolver(Project project, VariantDependencies variantDeps,
                               Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
@@ -272,6 +276,14 @@ public class DependencyResolver {
         this.artifacts = artifacts;
         this.bundleProvidedMap = bundleProvidedMap;
         this.apDependencies = apDependencies;
+        this.compileRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getCompileConfiguration()
+                                                                                .getIncoming()
+                                                                                .getResolutionResult()
+                                                                                .getRoot());
+        this.packageRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getPackageConfiguration()
+                                                                                .getIncoming()
+                                                                                .getResolutionResult()
+                                                                                .getRoot());
     }
 
     public List<ResolvedDependencyInfo> resolve(List<DependencyResult> dependencyResults, boolean mainBundle) {
@@ -363,14 +375,8 @@ public class DependencyResolver {
                     if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                         continue;
                     } else {
-                        ((DefaultResolvedComponentResult)variantDeps.getCompileConfiguration()
-                                                                    .getIncoming()
-                                                                    .getResolutionResult()
-                                                                    .getRoot()).addDependency(dependencyResult);
-                        ((DefaultResolvedComponentResult)variantDeps.getPackageConfiguration()
-                                                                    .getIncoming()
-                                                                    .getResolutionResult()
-                                                                    .getRoot()).addDependency(dependencyResult);
+                        compileRootClasspath.addDependency(dependencyResult);
+                        packageRootClasspath.addDependency(dependencyResult);
                         parent = null;
                     }
                 }
@@ -434,9 +440,9 @@ public class DependencyResolver {
                                 childResolvedComponentResult.getModuleVersion(),
                                 node,
                                 indent + 1);
-                            CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(logger);
+                            CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(LOGGER);
                             if (circleResult.hasCircle) {
-                                logger.warning("[CircleDependency]" + StringUtils.join(circleResult.detail, ";"));
+                                LOGGER.warning("[CircleDependency]" + StringUtils.join(circleResult.detail, ";"));
                             } else {
                                 resolveDependency(parent,
                                                   dep,
