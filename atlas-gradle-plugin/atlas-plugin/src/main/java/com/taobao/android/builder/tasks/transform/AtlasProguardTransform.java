@@ -234,6 +234,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.Profiler;
 import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.log.FileLogger;
 import com.taobao.android.builder.tools.proguard.AtlasProguardHelper;
 import com.taobao.android.builder.tools.proguard.BundleProguarder;
 import com.taobao.android.builder.tools.proguard.KeepOnlyConfigurationParser;
@@ -339,9 +340,11 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
             Profiler.release();
 
-            if (appVariantContext.getProject().getGradle().getStartParameter().isProfile()) {
-                appVariantContext.getProject().getLogger().warn(Profiler.dump());
-            }
+            //if (appVariantContext.getProject().getGradle().getStartParameter().isProfile()) {
+            //    appVariantContext.getProject().getLogger().warn("proguard profile >>>>>" );
+            //    appVariantContext.getProject().getLogger().warn( Profiler.dump());
+            //}
+            FileLogger.getInstance("proguard").log(Profiler.dump());
 
         } catch (Exception e) {
             throw new GradleException(e.getMessage(), e);
@@ -390,7 +393,9 @@ public class AtlasProguardTransform extends ProGuardTransform {
         input.printUsage = (File)ReflectUtils.getField(oldTransform, "printUsage");
         input.printConfiguration = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
 
+        Profiler.enter("executeproguard");
         BundleProguarder.execute(appVariantContext, input);
+        Profiler.release();
 
     }
 
