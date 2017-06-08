@@ -267,6 +267,7 @@ public class AtlasProguardHelper {
     public static void doBundleProguard(final AppVariantContext appVariantContext, List<File> mainDexJars)
         throws Exception {
 
+        Profiler.enter("preparebundleproguard");
         VariantScope variantScope = appVariantContext.getScope();
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
             variantScope.getVariantConfiguration().getFullName());
@@ -301,6 +302,7 @@ public class AtlasProguardHelper {
         for (AwbTransform awbTransform : appVariantOutputContext.getAwbTransformMap().values()) {
             bundleInfoAwbTransformMap.put(awbTransform.getAwbBundle().bundleInfo, awbTransform);
         }
+        Profiler.release();
 
         BundleGraphExecutor.execute(new ArrayList<>(bundleInfoAwbTransformMap.keySet()), parallelCount,
                                     new BundleItemRunner() {

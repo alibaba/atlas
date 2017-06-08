@@ -225,6 +225,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
 import com.taobao.android.builder.tools.cache.FileLockUtils;
+import com.taobao.android.builder.tools.log.FileLogger;
 import com.taobao.android.builder.tools.proguard.domain.Input;
 import com.taobao.android.builder.tools.proguard.domain.Result;
 import com.taobao.android.builder.tools.proguard.dump.BundleProguardDumper;
@@ -253,6 +254,7 @@ public class BundleProguarder {
     public static final String CACHE_TYPE = "proguard-bundles-0.07";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
+    private static FileLogger fileLogger = FileLogger.getInstance("proguard");
 
     public static void execute(AppVariantContext appVariantContext, Input input) throws Exception {
 
@@ -260,13 +262,18 @@ public class BundleProguarder {
 
         Result result = loadProguardFromCache(appVariantContext, input);
 
+        String bundleName = input.getAwbBundles().get(0).getAwbBundle().getName();
+
         if (result.success) {
-            logger.warn("bundle proguard for " + input.getAwbBundles().get(0).getAwbBundle().getName() +
-                            " successfully load from  cache ");
+            fileLogger.log(bundleName + "hit cache " + result.cacheDir.getAbsolutePath());
             return;
         }
+        fileLogger.log(bundleName + "miss cache " + result.cacheDir.getAbsolutePath());
 
+        long startTime = System.currentTimeMillis();
         doProguard(appVariantContext, input);
+        double during = (System.currentTimeMillis() - startTime) / 1000.0;
+        fileLogger.log(bundleName + "proguard consume (s) " + during );
 
         //cache
         result.cacheDir.mkdirs();

@@ -345,9 +345,9 @@ public class PrepareAllDependenciesTask extends BaseTask {
         for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()){
 
             List<File> localJars = getLocalJars(project,aarBundle);
-            System.out.println("get local libs");
+            //System.out.println("get local libs");
             for (File file : localJars){
-                System.out.println(file.getAbsolutePath());
+                project.getLogger().info( "add local jar to dependency " + file.getAbsolutePath() + "->" + aarBundle.getResolvedCoordinates().toString());
             }
 
             aarBundle.getLocalJars().addAll(localJars);
@@ -355,14 +355,13 @@ public class PrepareAllDependenciesTask extends BaseTask {
             //getLocalJars(project, bundle, androidDependency);
         }
 
-
     }
 
     private List<File> getLocalJars(Project project, AndroidLibrary aarBundle ) {
 
-        if (!"awb".equals(aarBundle.getResolvedCoordinates().getPackaging())) {
-            return  getLocalJars(aarBundle.getFolder());
-        }
+        //if (!"awb".equals(aarBundle.getResolvedCoordinates().getPackaging())) {
+        //    return  getLocalJars(aarBundle.getFolder());
+        //}
 
         boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
         if (project.hasProperty("localJarEnabled")) {
