@@ -211,6 +211,7 @@ package android.taobao.atlas.framework.bundlestorage;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -228,7 +229,7 @@ public class BundleArchive {
     // reload
     public BundleArchive(String location,File bundleDir,String uniqueTag,long dexPatchVersion) throws IOException {
         this.bundleDir = bundleDir;
-        if (RuntimeVariables.sCurrentProcessName.equals(RuntimeVariables.androidApplication.getPackageName())) {
+        if (RuntimeVariables.sCurrentProcessName.equals(RuntimeVariables.androidApplication.getPackageName()) && !Framework.updateHappend) {
             purge(uniqueTag,dexPatchVersion);
         }
         File revisionDir ;
@@ -344,7 +345,7 @@ public class BundleArchive {
     /**
      * This method removes all old revisions associated with the archive and keeps only the current revision.
      **/
-    public synchronized void purge(String uniqueTag, final long dexPatchVersion) {
+    public synchronized void purge(final String uniqueTag, final long dexPatchVersion) {
         // remove old dexpatch
         File dexPatchDir = new File(bundleDir,DEXPATCH_DIR);
         File[] dexPatchs = dexPatchDir.listFiles(new FilenameFilter() {
@@ -356,10 +357,6 @@ public class BundleArchive {
                 }catch(Throwable e){}
                 if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"") && dexPatchVersion>version){
                     return true;
-                }else if(dexPatchVersion<=0){
-                    if(System.currentTimeMillis()-dir.lastModified()>30*1000) {
-                        return true;
-                    }
                 }
                 return false;
             }
@@ -376,6 +373,7 @@ public class BundleArchive {
         File[] dirs = bundleDir.listFiles();
         for(File dir : dirs){
             if(dir.isDirectory() && !dir.getName().contains("dexpatch") && !dir.getName().equals(uniqueTag)){
+                Log.e("BundleArchive","purge "+bundleDir +" : "+dir.getName());
                 Framework.deleteDirectory(dir);
             }
         }
