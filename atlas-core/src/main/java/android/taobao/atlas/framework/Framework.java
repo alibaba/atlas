@@ -212,6 +212,8 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Looper;
+import android.os.Process;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
@@ -221,6 +223,7 @@ import android.taobao.atlas.runtime.LowDiskException;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.*;
 import android.taobao.atlas.util.AtlasFileLock;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -233,12 +236,15 @@ import org.osgi.framework.FrameworkListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import android.os.*;
 
 import static android.os.Environment.MEDIA_UNKNOWN;
 
@@ -293,6 +299,7 @@ public final class Framework {
     static ClassLoader systemClassLoader;
 
     private static boolean bundleUpdated = false;
+    public static boolean updateHappend = false;
     public static boolean DEBUG = false;
 
     static {
@@ -362,6 +369,7 @@ public final class Framework {
         if (files == null){
             return;
         }
+        Log.e("delete",path.getAbsolutePath());
         for (int i = 0; i < files.length; i++) {
             if (files[i].isDirectory()) {
                 deleteDirectory(files[i]);
@@ -401,19 +409,21 @@ public final class Framework {
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
-            if (bundleDir != null)
+            if (bundleDir != null && !Framework.updateHappend) {
                 Framework.deleteDirectory(bundleDir);
+            }
             if (FileUtils.getUsableSpace(Environment.getDataDirectory()) < LowDiskException.thredshold) {
                 throw new LowDiskException(FileUtils.getAvailableDisk(), e);
             }
             throw new BundleException("Failed to install bundle.", e);
         } catch (BundleException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
-            if (bundleDir != null)
+            if (bundleDir != null && !Framework.updateHappend) {
                 Framework.deleteDirectory(bundleDir);
+            }
             throw e1;
         } finally {
-            installingBundles .remove(location);
+            installingBundles.remove(location);
             BundleLock.WriteUnLock(location);
             if (bundleDir != null) {
                 AtlasFileLock.getInstance().unLock(bundleDir);
@@ -480,7 +490,6 @@ public final class Framework {
         long dexPatchVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(location);
         File bundleDir = new File(STORAGE_LOCATION, location);
         File dexPatchDir = bundleDir;
-
         if(dexPatchVersion>0 && !TextUtils.isEmpty(BaselineInfoManager.instance().getDexPatchStorageLocation())){
             dexPatchDir = new File(BaselineInfoManager.instance().getDexPatchStorageLocation(),location);
         }
@@ -488,7 +497,30 @@ public final class Framework {
         if(BaselineInfoManager.instance().isUpdated(location)&& !TextUtils.isEmpty(BaselineInfoManager.instance().getUpdateStorageLocation())){
             bundleDir =  new File(BaselineInfoManager.instance().getUpdateStorageLocation(),location);
         }
-
+        if(bundleDir.exists()) {
+            String[] temp = bundleDir.list();
+            if(temp!=null) {
+                for (String tmp : temp) {
+                    Log.e("Framework", "content: " + tmp);
+                }
+            }
+        }
+        Log.e("Framework","restoreExisted: "+location+"| "+bundleUniqueTag +"| "+bundleDir);
+        if(!new File(bundleDir,bundleUniqueTag).exists() && BaselineInfoManager.instance().isUpdated(location)){
+            //出现无法恢复的情况，立即回滚
+            if(getCurProcessName().equals(RuntimeVariables.androidApplication.getPackageName())) {
+                Map<String, Object> detail = new HashMap<>();
+                detail.put("Bundle", location);
+                AtlasMonitor.getInstance().report(AtlasMonitor.DD_BUNDLE_MISMATCH, detail, new RuntimeException(bundleUniqueTag+" is not existed"));
+                BaselineInfoManager.instance().rollbackHardly();
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        android.os.Process.killProcess(Process.myPid());
+                    }
+                },1000);
+            }
+        }
         if(!installingBundles.containsKey(location) && (new File(bundleDir,bundleUniqueTag).exists() || new File(dexPatchDir,BundleArchive.DEXPATCH_DIR+dexPatchVersion).exists())){
             try {
                 lockSuccess = BundleLock.ReadLock(location);
@@ -541,6 +573,7 @@ public final class Framework {
         if(updateStorageDir==null){
             throw new BundleException("no enough space");
         }
+        updateHappend = true;
         for (int i = 0; i < locations.length; i++) {
             if (locations[i] == null || files[i] == null) {
                 continue;
@@ -580,6 +613,11 @@ public final class Framework {
                     }else{
                         new BundleImpl(bundleDir, locations[i], null, files[i],null, false,dexPatchVersions[i]);
                     }
+//                    Log.e("Framework","info of "+bundleDir+"newTag: "+newBundleTag[i]);
+//                    String[] list = bundleDir.list();
+//                    for(String temp : list){
+//                        Log.e("Framework",temp);
+//                    }
                 }
                 if(upgrade){
                     updateBundles.put(locations[i],newBundleTag[i]);
