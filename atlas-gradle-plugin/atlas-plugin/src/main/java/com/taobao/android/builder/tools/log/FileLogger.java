@@ -300,7 +300,7 @@ public class FileLogger {
                 if (fileLogger.lines.isEmpty()){
                     return;
                 }
-                FileUtils.writeLines(fileLogger.getLogFile(), fileLogger.lines,true);
+                FileUtils.writeLines(fileLogger.getLogFile(),  new ArrayList<>(fileLogger.lines),true);
                 fileLogger.lines = new ArrayList<>();
             } catch (IOException e) {
                 e.printStackTrace();

@@ -342,6 +342,7 @@ public class AtlasProguardHelper {
                                                 BundleProguarder.execute(appVariantContext, input);
 
                                             } catch (Exception e) {
+                                                e.printStackTrace();
                                                 throw new GradleException(
                                                     "proguard " + bundleItem.bundleInfo.getPkgName(), e);
                                             }

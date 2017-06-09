@@ -507,7 +507,7 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public File getAwbProguardDir(AwbBundle awbBundle) {
         File file = new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "proguard-bundles/" + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+                        "awb-proguard/" + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
         file.mkdirs();
         return file;
     }

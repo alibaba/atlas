@@ -300,7 +300,7 @@ public class BundleProguarder {
         File cacheDir = FileCacheCenter.queryFile(CACHE_TYPE, md5, true, true);
         result.cacheDir = cacheDir;
         if (!cacheDir.exists()) {
-            logger.warn("bundle proguard for " + name + " miss  cache ");
+            logger.warn("bundle proguard for " + name + " miss  cache " + cacheDir.getAbsolutePath());
             return result;
         }
         logger.warn("bundle proguard for " + name + " hit  cache ");
@@ -329,63 +329,67 @@ public class BundleProguarder {
 
             result.success = true;
             return result;
-        }
+        }else {
 
-        if (!keepJson.exists()) {
-            logger.error("bundle proguard for " + name + " missing keep.json  ");
-            FileUtils.deleteDirectory(cacheDir);
-            return result;
-        }
-
-        Map<AwbTransform, List<File>> transformListMap = new HashMap<>();
-        for (AwbTransform awbTransform : input.getAwbBundles()) {
-
-            File awbProguardDir = appVariantContext.getAwbProguardDir(awbTransform.getAwbBundle());
-            FileUtils.copyFileToDirectory(keepJson, awbProguardDir);
-            if (proguardCfg.exists()) {
-                FileUtils.copyFileToDirectory(proguardCfg,
-                                              awbProguardDir);
-            }
-            if (usageCfg.exists()) {
-                FileUtils.copyFileToDirectory(usageCfg,
-                                              awbProguardDir);
+            if (!keepJson.exists()) {
+                logger.error("bundle proguard for " + name + " missing keep.json  ");
+                FileUtils.deleteDirectory(cacheDir);
+                return result;
             }
 
-            List<File> inputFiles = new ArrayList<>();
-            transformListMap.put(awbTransform, inputFiles);
+            Map<AwbTransform, List<File>> transformListMap = new HashMap<>();
+            for (AwbTransform awbTransform : input.getAwbBundles()) {
 
-            List<File> files = new ArrayList<>();
-            files.addAll(awbTransform.getInputLibraries());
+                File awbProguardDir = appVariantContext.getAwbProguardDir(awbTransform.getAwbBundle());
+                FileUtils.copyFileToDirectory(keepJson, awbProguardDir);
+                if (proguardCfg.exists()) {
+                    FileUtils.copyFileToDirectory(proguardCfg,
+                                                  awbProguardDir);
+                }
+                if (usageCfg.exists()) {
+                    FileUtils.copyFileToDirectory(usageCfg,
+                                                  awbProguardDir);
+                }
 
-            //configs.add();
-            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                files.add(awbTransform.getInputDir());
-            }
+                List<File> inputFiles = new ArrayList<>();
+                transformListMap.put(awbTransform, inputFiles);
 
-            for (File oldFile : files) {
-                File file = new File(cacheDir, input.getFileMd5s().get(oldFile) + ".jar");
-                if (file.exists()) {
-                    if (ZipUtils.isZipFile(file)) {
-                        inputFiles.add(file);
+                List<File> files = new ArrayList<>();
+                files.addAll(awbTransform.getInputLibraries());
+
+                //configs.add();
+                if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
+                    files.add(awbTransform.getInputDir());
+                }
+
+                for (File oldFile : files) {
+                    File file = new File(cacheDir, input.getFileMd5s().get(oldFile) + ".jar");
+                    if (file.exists()) {
+                        if (ZipUtils.isZipFile(file)) {
+                            inputFiles.add(file);
+                        }
+                    } else {
+                        logger.error("miss proguard jar for :" + file.getAbsolutePath());
+                        FileUtils.deleteDirectory(cacheDir);
+                        logger.error("delete cache Dir " + cacheDir.getAbsolutePath());
+                        return result;
                     }
-                } else {
-                    logger.error("miss proguard jar for :" + file.getAbsolutePath());
-                    FileUtils.deleteDirectory(cacheDir);
-                    logger.error("delete cache Dir " + cacheDir.getAbsolutePath());
-                    return result;
                 }
             }
+
+            for (AwbTransform awbTransform : input.getAwbBundles()) {
+                awbTransform.setInputFiles(transformListMap.get(awbTransform));
+                awbTransform.setInputDir(null);
+                awbTransform.getInputLibraries().clear();
+                awbTransform.getAwbBundle().setKeepProguardFile(keepJson);
+            }
+
+            result.success = true;
+            return result;
+
         }
 
-        for (AwbTransform awbTransform : input.getAwbBundles()) {
-            awbTransform.setInputFiles(transformListMap.get(awbTransform));
-            awbTransform.setInputDir(null);
-            awbTransform.getInputLibraries().clear();
-            awbTransform.getAwbBundle().setKeepProguardFile(keepJson);
-        }
 
-        result.success = true;
-        return result;
     }
 
     public static void doProguard(AppVariantContext appVariantContext, Input input)
