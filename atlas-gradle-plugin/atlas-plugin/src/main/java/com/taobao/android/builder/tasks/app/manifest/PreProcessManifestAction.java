@@ -276,9 +276,9 @@ public class PreProcessManifestAction implements Action<Task> {
                                                                                       atlasExtension);
 
             List<ManifestProvider> allManifest = new ArrayList<>();
-            allManifest.add(new BundleManifestProvider(appVariantContext.apContext.getBaseManifest()));
             allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
             allManifest.addAll(bundleProviders);
+            allManifest.add(new BundleManifestProvider(appVariantContext.apContext.getBaseManifest()));
 
             //if (sLogger.isInfoEnabled()) {
             //    for (ManifestProvider manifestProvider : allManifest) {
