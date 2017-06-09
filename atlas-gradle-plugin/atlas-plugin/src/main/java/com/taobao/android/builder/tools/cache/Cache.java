@@ -207,60 +207,38 @@
  *
  */
 
-package com.taobao.android.builder.adapter;
+package com.taobao.android.builder.tools.cache;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.taobao.android.builder.tools.EnvHelper;
-import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
-import com.taobao.android.builder.tools.sign.AndroidSigner;
+import java.io.File;
+import java.io.IOException;
 
 /**
- * Created by wuzhong on 2017/3/29.
+ * Created by wuzhong on 2017/6/8.
  */
-public class BuilderAdapter {
-
-    public AtlasExtensionFactory extensionFactory = new AtlasExtensionFactory();
-
-    public AppVariantContextFactory appVariantContextFactory = new AppVariantContextFactory();
-
-    public AndroidSigner androidSigner = new AndroidSigner();
-
-    public ApkInjectInfoCreator apkInjectInfoCreator = new ApkInjectInfoCreator();
-
-    public String tpatchHistoryUrl = "";
-
-    public boolean packageRemoteAwbInJni = true;
+public interface Cache {
 
     /**
-     * 添加atlas和atlasupdate的依赖到主dex
+     * 存缓存
+     *
+     * @param type
+     * @param key
+     * @param file
+     * @return
      */
-    public boolean addAtlasDependency = true;
+    public void cacheFile(String type, String key, File file) throws FileCacheException;
 
     /**
-     * bundle中允许使用本地jar，默认打开， 淘宝不打开
-     * 主bundle的本地jar一直开启
+     * 读取缓存
+     *
+     * @param type
+     * @param key
+     * @param localFile
+     * @return
+     * @throws IOException
      */
-    public boolean localJarEnabled = true;
+    public boolean fetchFile(String type, String key, File localFile, boolean folder) throws FileCacheException;
 
-    /**
-     * 开启 dex， proguard 缓存
-     */
-    public boolean fileCacheEnabled = false;
 
-    /**
-     * 标准格式的依赖
-     */
-    public boolean prettyDependencyFormat = true;
-
-    public boolean dexCacheEnabled = false;
-
-    public List<String> buildInfos = new ArrayList<>();
-
-    public boolean isBuildCacheEnabled(){
-        return fileCacheEnabled || EnvHelper.getEnv("atlasBuildCacheEnabled", false);
-        //return false;
-    }
+    public File getLocalCacheFile(String type, String key);
 
 }

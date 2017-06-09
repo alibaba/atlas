@@ -207,60 +207,97 @@
  *
  */
 
-package com.taobao.android.builder.adapter;
+package com.taobao.android.builder.tools.cache;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
 
-import com.taobao.android.builder.tools.EnvHelper;
-import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
-import com.taobao.android.builder.tools.sign.AndroidSigner;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Created by wuzhong on 2017/3/29.
+ * Created by wuzhong on 2017/6/8.
  */
-public class BuilderAdapter {
+public class SimpleLocalCache implements Cache {
 
-    public AtlasExtensionFactory extensionFactory = new AtlasExtensionFactory();
+    //java.io.tmpdir
+    static File cacheDir;
 
-    public AppVariantContextFactory appVariantContextFactory = new AppVariantContextFactory();
+    static {
+        cacheDir = new File(System.getProperty("user.home"), ".mtl-plugin/cache");
+        cacheDir.mkdirs();
+    }
 
-    public AndroidSigner androidSigner = new AndroidSigner();
+    @Override
+    public void cacheFile(String type, String key, File file) throws FileCacheException {
+        if (StringUtils.isEmpty(key)) {
+            throw new FileCacheException("cache key is empty ");
+        }
+        File cacheFile = getLocalCacheFile(type, key);
+        if (cacheFile.exists()) {
+            throw new FileCacheException("file cache alerady exist:" + cacheFile.getAbsolutePath());
+        }
 
-    public ApkInjectInfoCreator apkInjectInfoCreator = new ApkInjectInfoCreator();
+        try {
 
-    public String tpatchHistoryUrl = "";
+            cacheFile.getParentFile().mkdirs();
 
-    public boolean packageRemoteAwbInJni = true;
+            if (file.isFile()) {
+                FileUtils.copyFile(file, cacheFile);
+            } else {
 
-    /**
-     * 添加atlas和atlasupdate的依赖到主dex
-     */
-    public boolean addAtlasDependency = true;
+                cacheFile.mkdirs();
 
-    /**
-     * bundle中允许使用本地jar，默认打开， 淘宝不打开
-     * 主bundle的本地jar一直开启
-     */
-    public boolean localJarEnabled = true;
+                FileLockUtils.lock(cacheFile, new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            FileUtils.copyDirectory(file, cacheFile);
+                        } catch (Throwable e) {
+                            try {
+                                FileUtils.forceDelete(cacheFile);
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                            }
+                            throw new RuntimeException(e.getMessage(), e);
+                        }
+                    }
+                });
+            }
+        } catch (Throwable e) {
+            throw new FileCacheException(e.getMessage(), e);
+        }
 
-    /**
-     * 开启 dex， proguard 缓存
-     */
-    public boolean fileCacheEnabled = false;
+    }
 
-    /**
-     * 标准格式的依赖
-     */
-    public boolean prettyDependencyFormat = true;
+    @Override
+    public boolean fetchFile(String type, String key, File localFile, boolean folder) throws FileCacheException {
 
-    public boolean dexCacheEnabled = false;
+        if (StringUtils.isEmpty(key)) {
+            throw new FileCacheException("cache key is empty ");
+        }
 
-    public List<String> buildInfos = new ArrayList<>();
+        File cacheFile = getLocalCacheFile(type, key);
 
-    public boolean isBuildCacheEnabled(){
-        return fileCacheEnabled || EnvHelper.getEnv("atlasBuildCacheEnabled", false);
-        //return false;
+        try {
+            if (cacheFile.exists() && cacheFile.length() > 0) {
+                if (cacheFile.isDirectory()) {
+                    FileUtils.copyDirectory(cacheFile, localFile);
+                } else {
+                    FileUtils.copyFile(cacheFile, localFile);
+                }
+            }
+        } catch (IOException e) {
+            throw new FileCacheException(e.getMessage(), e);
+        }
+
+        return true;
+    }
+
+    @NotNull
+    public File getLocalCacheFile(String type, String key) {
+        return new File(cacheDir, type + "/" + key);
     }
 
 }

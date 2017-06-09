@@ -209,115 +209,138 @@
 
 package com.taobao.android.builder.tools.cache;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-
 import java.io.File;
 import java.io.IOException;
 
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tools.log.FileLogger;
+import org.apache.commons.io.FileUtils;
+
 /**
- * Created by wuzhong on 2017/3/5.
+ * Created by wuzhong on 2017/6/8.
+ *
+ * 统一文件缓存中心
  */
-public interface FileCache {
+public class FileCacheCenter {
 
-    public String cacheFile(String key, File file, String type);
+    public static final boolean BUILD_CACHE_ENABLED = AtlasBuildContext.sBuilderAdapter.isBuildCacheEnabled();
+    private static FileLogger logger = FileLogger.getInstance("filecache");
 
-    public boolean fetchFile(String key, File localFile, String type) throws IOException;
+    public static Cache networkCache;
+    public static Cache localCache = new SimpleLocalCache();
 
-    public File getCacheFile(String key, String type);
+    /**
+     * 缓存文件或者文件夹
+     *
+     * @param type
+     * @param key
+     * @param file
+     * @throws FileCacheException
+     */
+    public static void cacheFile(String type, String key, File file, boolean remote) throws FileCacheException {
 
-    public boolean isCacheEnabled();
-
-    public static class NOCache implements FileCache {
-        @Override
-        public String cacheFile(String key, File file, String type) {
-            return "";
+        if (!BUILD_CACHE_ENABLED){
+            return;
         }
 
-        @Override
-        public boolean fetchFile(String key, File localFile, String type) throws IOException {
-            return false;
+        localCache.cacheFile(type, key, file);
+
+        logger.log(type + "." + key + " cache " + file.getAbsolutePath() + " to local success");
+
+        if (null != networkCache && remote) {
+            networkCache.cacheFile(type, key, file);
+            logger.log(type + "." + key + " cache " + file.getAbsolutePath() + " to network success");
         }
 
-        @Override
-        public File getCacheFile(String key, String type) {
-            return null;
-        }
-
-        @Override
-        public boolean isCacheEnabled() {
-            return false;
-        }
     }
 
     /**
-     * Created by wuzhong on 2017/2/17.
+     * 查询文件，如果本地文件不存在，尝试从云端读取缓存
+     *
+     * @param type
+     * @param key
+     * @param folder
+     * @return
+     * @throws FileCacheException
      */
-    public static class SimpleFileCache implements FileCache {
+    public static File queryFile(String type, String key, boolean folder, boolean remote) throws FileCacheException {
 
-        //java.io.tmpdir
-        static File cacheDir;
-
-        static {
-            cacheDir = new File(System.getProperty("user.home"), ".mtl-plugin/cache");
-            cacheDir.mkdirs();
+        if (!BUILD_CACHE_ENABLED){
+            return null;
         }
 
-        @Override
-        public String cacheFile(String key, File file, String type) {
-            if (StringUtils.isEmpty(key)) {
-                return "";
-            }
-            File cacheFile = new File(cacheDir, type + "/" + key);
-            if (cacheFile.exists()){
-                return cacheFile.getAbsolutePath();
-            }
-            cacheFile.getParentFile().mkdirs();
-            try {
-                if (file.isDirectory()) {
-                    FileUtils.copyDirectory(file, cacheFile);
-                } else {
-                    FileUtils.copyFile(file, cacheFile);
+        File localCacheFile = localCache.getLocalCacheFile(type, key);
+        if (localCacheFile.exists()) {
+
+            if (folder != localCacheFile.isDirectory()) {
+                try {
+                    FileUtils.forceDelete(localCacheFile);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-                return "";
-            }
-            return cacheFile.getAbsolutePath();
-        }
-
-        @Override
-        public File getCacheFile(String key, String type) {
-            return new File(cacheDir, type + "/" + key);
-        }
-
-        @Override
-        public boolean fetchFile(String key, File localFile, String type) throws IOException {
-
-            if (StringUtils.isEmpty(key)){
-                return false;
+                throw new FileCacheException("local dir is folder " + folder);
             }
 
-            File cacheFile = new File(cacheDir, type + "/" + key);
+            logger.log(type + "." + key + " query local cache  " + localCacheFile.getAbsolutePath() + " success");
+            return localCacheFile;
+        }
 
-            try {
-                if (cacheFile.exists() && cacheFile.length() > 0) {
-                    if (cacheFile.isDirectory()) {
-                        FileUtils.copyDirectory(cacheFile, localFile);
-                    } else {
-                        FileUtils.copyFile(cacheFile, localFile);
-                    }
-                    return true;
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+        if (null == networkCache || !remote) {
+            return localCacheFile;
+        }
+
+        try {
+
+            boolean success = networkCache.fetchFile(type, key, localCacheFile, folder);
+
+            logger.log(type + "." + key + " fetch remote cache  " + localCacheFile.getAbsolutePath() + success);
+
+            if (success) {
+                return localCacheFile;
             }
-            return false;
+
+        } catch (Throwable e) {
+
+            logger.log(type + "." + key + " fetch remote cache  " + localCacheFile.getAbsolutePath() + " exception");
+            e.printStackTrace();
         }
 
-        @Override
-        public boolean isCacheEnabled() {
-            return true;
+        logger.log(type + "." + key + " get cache file failed  " + localCacheFile.getAbsolutePath());
+        try {
+            FileUtils.forceDelete(localCacheFile);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        return localCacheFile;
+
     }
+
+
+    public static void fetchFile(String type, String key, boolean folder, boolean remote, File dest) throws FileCacheException {
+
+        if (!BUILD_CACHE_ENABLED){
+            return;
+        }
+
+        File cacheFile = queryFile(type,key,folder,remote);
+
+        if (null != cacheFile && cacheFile.exists()){
+
+            try {
+                if (cacheFile.isFile()) {
+                    FileUtils.copyFile(cacheFile, dest);
+                } else {
+                    FileUtils.copyDirectory(cacheFile, dest);
+                }
+                logger.log(type + "." + key + " fech  file success  " + dest.getAbsolutePath());
+            }catch (Throwable e){
+                throw new FileCacheException(e.getMessage(),e);
+            }
+
+        }
+
+
+    }
+
+
 }

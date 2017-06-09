@@ -215,6 +215,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.Project;
@@ -227,19 +229,35 @@ import org.slf4j.LoggerFactory;
 public class FileLogger {
 
     private static Logger sLogger = LoggerFactory.getLogger(FileLogger.class);
+    public static Project project;
 
     private List<String> lines = new ArrayList<>();
 
     private String fileName;
+    private File logFile;
 
     private static Map<String, FileLogger> sFileLoggerMap = new HashMap<>();
 
+    private static Timer sTimer;
+    static {
+        sTimer = new Timer("localfilelog");
+        sTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (null != project){
+                    writeToFile(project);
+                }
+            }
+        }, 10*1000, 10*1000);
+    }
+
     public void log(String content) {
 
-        lines.add(content);
+        if (null == project || !project.getGradle().getStartParameter().isProfile()) {
+            return;
+        }
 
-        sLogger.info(fileName+">>");
-        sLogger.info(content);
+        lines.add(content);
 
     }
 
@@ -253,17 +271,37 @@ public class FileLogger {
         return fileLogger;
     }
 
-    public static void writeToFile(Project project) {
+    private File getLogFile() {
+        if (null != logFile){
+            return logFile;
+        }
+        if (null == project){
+            return null;
+        }
+        File outputDir = new File(project.getBuildDir(), "logs");
+        outputDir.mkdirs();
+        logFile = new File(outputDir, fileName + ".log");
+        return logFile;
+    }
+
+    public static void shutDown(Project project){
+        sTimer.cancel();
+        writeToFile(project);
+    }
+
+    private static synchronized void writeToFile(Project project) {
 
         if (sFileLoggerMap.isEmpty()) {
             return;
         }
 
-        File outputDir = new File(project.getBuildDir(), "logs");
-        outputDir.mkdirs();
-        sFileLoggerMap.values().stream().forEach(fileLogger -> {
+        new ArrayList<>(sFileLoggerMap.values()).parallelStream().forEach(fileLogger -> {
             try {
-                FileUtils.writeLines(new File(outputDir, fileLogger.fileName + ".log"), fileLogger.lines);
+                if (fileLogger.lines.isEmpty()){
+                    return;
+                }
+                FileUtils.writeLines(fileLogger.getLogFile(), fileLogger.lines,true);
+                fileLogger.lines = new ArrayList<>();
             } catch (IOException e) {
                 e.printStackTrace();
             }

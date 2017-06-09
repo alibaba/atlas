@@ -222,10 +222,11 @@ public class LogOutputListener {
 
     public static void addListener(Project project) {
 
+        FileLogger.project = project.getRootProject();
+
         project.getGradle().addListener(new BuildListener() {
             @Override
             public void buildStarted(Gradle gradle) {
-
             }
 
             @Override
@@ -245,7 +246,7 @@ public class LogOutputListener {
 
             @Override
             public void buildFinished(BuildResult buildResult) {
-                FileLogger.writeToFile(project);
+                FileLogger.shutDown(project);
             }
         });
 

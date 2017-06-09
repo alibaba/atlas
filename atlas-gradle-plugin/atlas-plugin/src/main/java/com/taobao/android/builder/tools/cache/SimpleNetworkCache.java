@@ -207,60 +207,87 @@
  *
  */
 
-package com.taobao.android.builder.adapter;
+package com.taobao.android.builder.tools.cache;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
 
-import com.taobao.android.builder.tools.EnvHelper;
-import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
-import com.taobao.android.builder.tools.sign.AndroidSigner;
+import com.taobao.android.builder.tools.zip.BetterZip;
 
 /**
- * Created by wuzhong on 2017/3/29.
+ * Created by wuzhong on 2017/6/8.
  */
-public class BuilderAdapter {
+public class SimpleNetworkCache implements Cache{
 
-    public AtlasExtensionFactory extensionFactory = new AtlasExtensionFactory();
+    private NetworkProtocol networkProtocol;
 
-    public AppVariantContextFactory appVariantContextFactory = new AppVariantContextFactory();
+    public SimpleNetworkCache(NetworkProtocol networkProtocol) {
+        this.networkProtocol = networkProtocol;
+    }
 
-    public AndroidSigner androidSigner = new AndroidSigner();
+    @Override
+    public void cacheFile(String type, String key, File file) throws FileCacheException {
 
-    public ApkInjectInfoCreator apkInjectInfoCreator = new ApkInjectInfoCreator();
+        File toUploadFile = file;
+        if (file.isDirectory()){
+            toUploadFile = new File(file.getParentFile(),toUploadFile.getName()+"_tmp.zip");
+            try {
+                BetterZip.zipDirectory(file,toUploadFile);
+            } catch (IOException e) {
+                throw new FileCacheException(e.getMessage(),e);
+            }
+        }
 
-    public String tpatchHistoryUrl = "";
+        try {
+            if (!networkProtocol.uploadFile(type + "/" + key, toUploadFile)) {
+                throw new FileCacheException("upload file failed");
+            }
+        }finally {
+            toUploadFile.delete();
+        }
+    }
 
-    public boolean packageRemoteAwbInJni = true;
+    @Override
+    public boolean fetchFile(String type, String key, File localFile, boolean folder) throws FileCacheException {
 
-    /**
-     * 添加atlas和atlasupdate的依赖到主dex
-     */
-    public boolean addAtlasDependency = true;
+        boolean succss = networkProtocol.downloadFile(type + "/" + key, localFile);
 
-    /**
-     * bundle中允许使用本地jar，默认打开， 淘宝不打开
-     * 主bundle的本地jar一直开启
-     */
-    public boolean localJarEnabled = true;
+        if (!succss){
+            return false;
+        }
 
-    /**
-     * 开启 dex， proguard 缓存
-     */
-    public boolean fileCacheEnabled = false;
+        if (folder){
 
-    /**
-     * 标准格式的依赖
-     */
-    public boolean prettyDependencyFormat = true;
+            //解压文件
+            File current = new File(localFile.getAbsolutePath());
+            File zipFile = new File(localFile.getParentFile(),localFile.getName()+"_tmp.zip");
+            localFile.renameTo(zipFile);
 
-    public boolean dexCacheEnabled = false;
+            try {
+                BetterZip.unzipDirectory(zipFile,current);
+                zipFile.delete();
+            } catch (IOException e) {
+                throw new FileCacheException(e.getMessage(),e);
+            }
 
-    public List<String> buildInfos = new ArrayList<>();
+        }
 
-    public boolean isBuildCacheEnabled(){
-        return fileCacheEnabled || EnvHelper.getEnv("atlasBuildCacheEnabled", false);
-        //return false;
+        return true;
+
+    }
+
+    @Override
+    public File getLocalCacheFile(String type, String key) {
+        return null;
+    }
+
+
+    public static interface NetworkProtocol {
+
+        boolean downloadFile(String key, File localFile);
+
+        boolean uploadFile(String key, File file);
+
     }
 
 }
