@@ -1016,6 +1016,10 @@ public class AtlasBuilder extends AndroidBuilder {
                     File dexFile = new File(outDexFolder, "classes.dex");
 
                     dex.writeTo(dexFile);
+
+                    if (!dexFile.exists()){
+                        throw new GradleException("dexmerge failed, not dex file found , inputs : "  + dexs.size());
+                    }
                 }
 
             } else {
@@ -1077,7 +1081,7 @@ public class AtlasBuilder extends AndroidBuilder {
                               @NonNull ProcessOutputHandler processOutputHandler)
         throws IOException, InterruptedException, ProcessException {
 
-        if (!AtlasBuildContext.sBuilderAdapter.dexCacheEnabled) {
+        if (!AtlasBuildContext.sBuilderAdapter.dexCacheEnabled || multiDex) {
             super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler);
             return;
         }
@@ -1136,6 +1140,15 @@ public class AtlasBuilder extends AndroidBuilder {
                      outFile.getAbsolutePath());
 
         super.preDexLibrary(inputFile, outFile, multiDex, defaultDexOptions, processOutputHandler);
+
+        if (multiDex){
+            return;
+        }
+
+        if (!dexFile.exists() || dexFile.length() == 0){
+            sLogger.warn("dex failed " + dexFile.getAbsolutePath() + "->" + inputFile.getAbsolutePath());
+            return;
+        }
 
         if (StringUtils.isNotEmpty(md5) && dexFile.exists()) {
 

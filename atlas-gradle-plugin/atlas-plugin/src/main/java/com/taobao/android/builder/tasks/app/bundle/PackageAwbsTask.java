@@ -294,7 +294,7 @@ public class PackageAwbsTask extends BaseTask {
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
-                                                                                   0);
+                                                                                   1);
         List<Runnable> runnables = new ArrayList<>();
 
         final AtomicLong dexTotalTime = new AtomicLong(0);

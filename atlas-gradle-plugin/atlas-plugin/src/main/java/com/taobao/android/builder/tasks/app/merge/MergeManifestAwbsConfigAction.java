@@ -357,7 +357,7 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
                 processManifestTask.versionCode = String.valueOf(VersionUtils.getVersionCode(appVariantOutputContext));
 
                 File manifestOutFile = new File(scope.getGlobalScope().getIntermediatesDir(),
-                                                "/manifests-awb/full/" +
+                                                "/awb-manifests/full/" +
                                                     variantName +
                                                     "/" +
                                                     awbBundle.getName() +
