@@ -212,8 +212,7 @@ package com.taobao.android.builder.adapter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.taobao.android.builder.tools.cache.FileCache;
-import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
+import com.taobao.android.builder.tools.EnvHelper;
 import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
 import com.taobao.android.builder.tools.sign.AndroidSigner;
 
@@ -229,8 +228,6 @@ public class BuilderAdapter {
     public AndroidSigner androidSigner = new AndroidSigner();
 
     public ApkInjectInfoCreator apkInjectInfoCreator = new ApkInjectInfoCreator();
-
-    public FileCache fileCache = new SimpleFileCache();
 
     public String tpatchHistoryUrl = "";
 
@@ -248,6 +245,11 @@ public class BuilderAdapter {
     public boolean localJarEnabled = true;
 
     /**
+     * 开启 dex， proguard 缓存
+     */
+    public boolean fileCacheEnabled = false;
+
+    /**
      * 标准格式的依赖
      */
     public boolean prettyDependencyFormat = true;
@@ -255,5 +257,10 @@ public class BuilderAdapter {
     public boolean dexCacheEnabled = false;
 
     public List<String> buildInfos = new ArrayList<>();
+
+    public boolean isBuildCacheEnabled(){
+        return fileCacheEnabled || EnvHelper.getEnv("atlasBuildCacheEnabled", false);
+        //return false;
+    }
 
 }

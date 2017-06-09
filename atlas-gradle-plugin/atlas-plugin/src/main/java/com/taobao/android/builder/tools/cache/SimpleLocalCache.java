@@ -207,43 +207,97 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package com.taobao.android.builder.tools.cache;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import java.io.File;
+import java.io.IOException;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Created by wuzhong on 2017/6/8.
+ */
+public class SimpleLocalCache implements Cache {
+
+    //java.io.tmpdir
+    static File cacheDir;
+
+    static {
+        cacheDir = new File(System.getProperty("user.home"), ".mtl-plugin/cache");
+        cacheDir.mkdirs();
     }
+
+    @Override
+    public void cacheFile(String type, String key, File file) throws FileCacheException {
+        if (StringUtils.isEmpty(key)) {
+            throw new FileCacheException("cache key is empty ");
+        }
+        File cacheFile = getLocalCacheFile(type, key);
+        if (cacheFile.exists()) {
+            throw new FileCacheException("file cache alerady exist:" + cacheFile.getAbsolutePath());
+        }
+
+        try {
+
+            cacheFile.getParentFile().mkdirs();
+
+            if (file.isFile()) {
+                FileUtils.copyFile(file, cacheFile);
+            } else {
+
+                cacheFile.mkdirs();
+
+                FileLockUtils.lock(cacheFile, new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            FileUtils.copyDirectory(file, cacheFile);
+                        } catch (Throwable e) {
+                            try {
+                                FileUtils.forceDelete(cacheFile);
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                            }
+                            throw new RuntimeException(e.getMessage(), e);
+                        }
+                    }
+                });
+            }
+        } catch (Throwable e) {
+            throw new FileCacheException(e.getMessage(), e);
+        }
+
+    }
+
+    @Override
+    public boolean fetchFile(String type, String key, File localFile, boolean folder) throws FileCacheException {
+
+        if (StringUtils.isEmpty(key)) {
+            throw new FileCacheException("cache key is empty ");
+        }
+
+        File cacheFile = getLocalCacheFile(type, key);
+
+        try {
+            if (cacheFile.exists() && cacheFile.length() > 0) {
+                if (cacheFile.isDirectory()) {
+                    FileUtils.copyDirectory(cacheFile, localFile);
+                } else {
+                    FileUtils.copyFile(cacheFile, localFile);
+                }
+            }
+        } catch (IOException e) {
+            throw new FileCacheException(e.getMessage(), e);
+        }
+
+        return true;
+    }
+
+    @NotNull
+    public File getLocalCacheFile(String type, String key) {
+        return new File(cacheDir, type + "/" + key);
+    }
+
 }
-tasks.findByName("test").enabled=false
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:dex_patch:1.4.0.9-rc7"
-
-    testCompile "junit:junit:4.11"
-}
-
-
-version = '2.3.1.fastproguard4-SNAPSHOT'
-

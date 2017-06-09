@@ -211,7 +211,6 @@ package com.taobao.android.builder;
 
 import com.android.build.gradle.AppPlugin;
 import com.taobao.android.builder.manager.PluginManager;
-import com.taobao.android.builder.tools.log.LogOutputListener;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
@@ -229,8 +228,6 @@ public class AtlasAppPlugin implements Plugin<Project> {
         PluginManager.addPluginIfNot(project, AppPlugin.class);
 
         PluginManager.addPluginIfNot(project, AtlasPlugin.class);
-
-        LogOutputListener.addListener(project);
 
     }
 

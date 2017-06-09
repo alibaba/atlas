@@ -207,43 +207,87 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package com.taobao.android.builder.tools.cache;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import java.io.File;
+import java.io.IOException;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import com.taobao.android.builder.tools.zip.BetterZip;
+
+/**
+ * Created by wuzhong on 2017/6/8.
+ */
+public class SimpleNetworkCache implements Cache{
+
+    private NetworkProtocol networkProtocol;
+
+    public SimpleNetworkCache(NetworkProtocol networkProtocol) {
+        this.networkProtocol = networkProtocol;
     }
+
+    @Override
+    public void cacheFile(String type, String key, File file) throws FileCacheException {
+
+        File toUploadFile = file;
+        if (file.isDirectory()){
+            toUploadFile = new File(file.getParentFile(),toUploadFile.getName()+"_tmp.zip");
+            try {
+                BetterZip.zipDirectory(file,toUploadFile);
+            } catch (IOException e) {
+                throw new FileCacheException(e.getMessage(),e);
+            }
+        }
+
+        try {
+            if (!networkProtocol.uploadFile(type + "/" + key, toUploadFile)) {
+                throw new FileCacheException("upload file failed");
+            }
+        }finally {
+            toUploadFile.delete();
+        }
+    }
+
+    @Override
+    public boolean fetchFile(String type, String key, File localFile, boolean folder) throws FileCacheException {
+
+        boolean succss = networkProtocol.downloadFile(type + "/" + key, localFile);
+
+        if (!succss){
+            return false;
+        }
+
+        if (folder){
+
+            //解压文件
+            File current = new File(localFile.getAbsolutePath());
+            File zipFile = new File(localFile.getParentFile(),localFile.getName()+"_tmp.zip");
+            localFile.renameTo(zipFile);
+
+            try {
+                BetterZip.unzipDirectory(zipFile,current);
+                zipFile.delete();
+            } catch (IOException e) {
+                throw new FileCacheException(e.getMessage(),e);
+            }
+
+        }
+
+        return true;
+
+    }
+
+    @Override
+    public File getLocalCacheFile(String type, String key) {
+        return null;
+    }
+
+
+    public static interface NetworkProtocol {
+
+        boolean downloadFile(String key, File localFile);
+
+        boolean uploadFile(String key, File file);
+
+    }
+
 }
-tasks.findByName("test").enabled=false
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:dex_patch:1.4.0.9-rc7"
-
-    testCompile "junit:junit:4.11"
-}
-
-
-version = '2.3.1.fastproguard4-SNAPSHOT'
-

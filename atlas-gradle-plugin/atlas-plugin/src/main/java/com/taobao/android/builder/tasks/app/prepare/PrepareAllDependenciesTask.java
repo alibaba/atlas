@@ -339,35 +339,30 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
         executorServicesHelper.execute(runnables);
 
-        //TODO localJars
         Project project = getProject();
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()){
+        if (isLocalJarEnabled(project)) {
+            for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
+                List<File> localJars = getLocalJars(aarBundle.getFolder());
+                //System.out.println("get local libs");
+                for (File file : localJars) {
+                    project.getLogger().info("add local jar to dependency " + file.getAbsolutePath() + "->" + aarBundle
+                        .getResolvedCoordinates().toString());
+                }
 
-            List<File> localJars = getLocalJars(project,aarBundle);
-            //System.out.println("get local libs");
-            for (File file : localJars){
-                project.getLogger().info( "add local jar to dependency " + file.getAbsolutePath() + "->" + aarBundle.getResolvedCoordinates().toString());
+                aarBundle.getLocalJars().addAll(localJars);
+
+                //getLocalJars(project, bundle, androidDependency);
             }
-
-            aarBundle.getLocalJars().addAll(localJars);
-
-            //getLocalJars(project, bundle, androidDependency);
         }
 
     }
 
-    private List<File> getLocalJars(Project project, AndroidLibrary aarBundle ) {
-
-        //if (!"awb".equals(aarBundle.getResolvedCoordinates().getPackaging())) {
-        //    return  getLocalJars(aarBundle.getFolder());
-        //}
-
+    private boolean isLocalJarEnabled(Project project) {
         boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
         if (project.hasProperty("localJarEnabled")) {
             localJarEnabled = "true".equals(project.property("localJarEnabled"));
         }
-
-        return localJarEnabled ? getLocalJars(aarBundle.getFolder()) : new ArrayList<>(0);
+        return localJarEnabled;
     }
 
     private List<File> getLocalJars(File rootDir) {
