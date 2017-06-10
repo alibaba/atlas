@@ -307,7 +307,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
     private static Logger sLogger = LoggerFactory.getLogger(AtlasBuilder.class);
 
-    public static final String PRE_DEXCACHE_TYPE = "pre-dex-0.1";
+    public static final String PRE_DEXCACHE_TYPE = "pre-dex-0.06";
 
     protected AtlasExtension atlasExtension;
 
@@ -1018,12 +1018,12 @@ public class AtlasBuilder extends AndroidBuilder {
                     dex.writeTo(dexFile);
 
                     if (!dexFile.exists()){
-                        throw new GradleException("dexmerge failed, not dex file found , inputs : "  + dexs.size());
+                        sLogger.error("dexmerge failed, not dex file found , inputs : "  + dexs.size());
                     }
                 }
 
             } else {
-                sLogger.warn("no dex found to  " + outDexFolder.getAbsolutePath());
+                sLogger.error("no dex found to  " + outDexFolder.getAbsolutePath());
             }
             Profiler.release();
 
@@ -1149,6 +1149,8 @@ public class AtlasBuilder extends AndroidBuilder {
             sLogger.warn("dex failed " + dexFile.getAbsolutePath() + "->" + inputFile.getAbsolutePath());
             return;
         }
+
+        sLogger.warn("dex success " + dexFile.getAbsolutePath() + "->" + inputFile.getAbsolutePath());
 
         if (StringUtils.isNotEmpty(md5) && dexFile.exists()) {
 
