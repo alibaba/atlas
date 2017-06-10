@@ -243,7 +243,10 @@ public class SimpleNetworkCache implements Cache{
                 throw new FileCacheException("upload file failed");
             }
         }finally {
-            toUploadFile.delete();
+            //删除文件夹
+            if(toUploadFile.getName().endsWith("_tmp.zip")){
+                toUploadFile.delete();
+            }
         }
     }
 
