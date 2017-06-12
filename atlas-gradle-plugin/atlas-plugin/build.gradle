@@ -246,6 +246,5 @@ dependencies {
     testCompile "junit:junit:4.11"
 }
 
-
-version = '2.3.1.rc25'
+version = '2.3.1.fastproguard5-SNAPSHOT'
 

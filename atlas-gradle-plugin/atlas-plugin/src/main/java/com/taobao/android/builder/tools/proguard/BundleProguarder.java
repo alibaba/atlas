@@ -251,7 +251,7 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
-    public static final String CACHE_TYPE = "proguard-bundles-0.09";
+    public static final String CACHE_TYPE = "proguard-bundles-0.10";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
     private static FileLogger fileLogger = FileLogger.getInstance("proguard");
@@ -297,19 +297,17 @@ public class BundleProguarder {
 
         String md5 = input.getMd5();
 
-        String name = input.getAwbBundles().get(0).getAwbBundle().getName();
+        result.key = input.getAwbBundles().get(0).getAwbBundle().getName() + "_" + md5;
 
-        result.key = name + md5;
+        logger.info("bundle proguard for " + result.key + " with md5 key " + md5);
 
-        logger.info("bundle proguard for " + name + " with md5 key " + md5);
-
-        File cacheDir = FileCacheCenter.queryFile(CACHE_TYPE, md5, true, isRemoteCacheEnabled(appVariantContext));
+        File cacheDir = FileCacheCenter.queryFile(CACHE_TYPE, result.key, true, isRemoteCacheEnabled(appVariantContext));
         result.cacheDir = cacheDir;
         if (null == cacheDir || !cacheDir.exists()) {
-            logger.warn("bundle proguard for " + name + " miss  cache " + cacheDir.getAbsolutePath());
+            logger.warn("bundle proguard for " + result.key  + " miss  cache " + cacheDir.getAbsolutePath());
             return result;
         }
-        logger.warn("bundle proguard for " + name + " hit  cache ");
+        logger.warn("bundle proguard for " + result.key + " hit  cache ");
 
         File keepJson = new File(cacheDir, "keep.json");
         File proguardCfg = new File(cacheDir, "proguard.cfg");
@@ -338,7 +336,7 @@ public class BundleProguarder {
         } else {
 
             if (!keepJson.exists()) {
-                logger.error("bundle proguard for " + name + " missing keep.json  ");
+                logger.error("bundle proguard for " + result.key + " missing keep.json  ");
                 FileUtils.deleteDirectory(cacheDir);
                 return result;
             }

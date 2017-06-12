@@ -241,7 +241,7 @@ subprojects {
 
     def command = project.getGradle().startParameter.toString()
     def publishFile = new File(project.getRootDir(),
-                               "publish_" + (command.contains("bintray") ? "bintray" : "mvn") + ".gradle");
+                               "publish_mvn.gradle");
 
     if (publishFile.exists()) {
         apply from: publishFile.getAbsolutePath()

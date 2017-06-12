@@ -209,6 +209,21 @@
 
 package com.taobao.android.builder.tasks.app.bundle;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import javax.annotation.Nullable;
+
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -238,15 +253,6 @@ import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.log.FileLogger;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
-
-import javax.annotation.Nullable;
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 public class PackageAwbsTask extends BaseTask {
 
@@ -296,6 +302,10 @@ public class PackageAwbsTask extends BaseTask {
         final Map<String, Long[]> monitors = new HashMap<String, Long[]>();
         long startTime = System.currentTimeMillis();
 
+        if (appVariantContext.getBuildType().getDexConfig()!= null && appVariantContext.getBuildType().getDexConfig().isUseMyDex()) {
+            androidConfig.getDexOptions().additionalParameters("--useMyDex");
+        }
+
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
             runnables.add(new Runnable() {
@@ -317,10 +327,6 @@ public class PackageAwbsTask extends BaseTask {
                         inputFiles.addAll(awbTransform.getInputLibraries());
                         if (null != awbTransform.getInputDir()) {
                             inputFiles.add(awbTransform.getInputDir());
-                        }
-
-                        if (appVariantContext.getBuildType().getDexConfig()!= null && appVariantContext.getBuildType().getDexConfig().isUseMyDex()) {
-                            androidConfig.getDexOptions().additionalParameters("--useMyDex");
                         }
 
                         AtlasBuildContext.androidBuilderMap.get(getProject())

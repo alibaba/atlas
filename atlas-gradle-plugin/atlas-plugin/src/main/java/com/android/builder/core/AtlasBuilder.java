@@ -276,7 +276,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.taobao.android.AaptLib;
-import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.hook.dex.DexByteCodeConverterHook;
 import com.taobao.android.builder.tools.FileNameUtils;
@@ -1043,7 +1042,6 @@ public class AtlasBuilder extends AndroidBuilder {
                 }
             }
 
-
             super.convertByteCode(inputs,
                                   outDexFolder,
                                   multidex,
@@ -1109,7 +1107,16 @@ public class AtlasBuilder extends AndroidBuilder {
                                                              true));
             }
 
+            //TODO md5 with other
             if (StringUtils.isNotEmpty(md5)) {
+
+                String other = "" + dexOptions.getAdditionalParameters().contains("--useMyDex") + dexOptions.getJumboMode() + dexOptions.getKeepRuntimeAnnotatedClasses();
+
+                try {
+                    md5 = MD5Util.getMD5(other+md5);
+                } catch (Exception e) {
+                    throw new GradleException(e.getMessage(),e);
+                }
 
                 try {
                     FileCacheCenter.fetchFile(PRE_DEXCACHE_TYPE,md5, false, atlasExtension.getTBuildConfig().isDexNetworkCacheEnabled(), dexFile);
