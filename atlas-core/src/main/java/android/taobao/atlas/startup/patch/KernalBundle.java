@@ -305,14 +305,8 @@ public class KernalBundle{
                 if(patchFile.exists()){
                     loadKernalPatch = true;
                     KernalBundle bundle = new KernalBundle();
-                    Class AndroidRuntimeClass = Class.forName("com.taobao.android.runtime.AndroidRuntime");
-                    Method getInstanceMethod = AndroidRuntimeClass.getDeclaredMethod("getInstance");
-                    Object androidRuntimeInstance = getInstanceMethod.invoke(null);
-                    Method initMethod = AndroidRuntimeClass.getDeclaredMethod("init",Context.class);
-                    initMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext);
-                    Method loadDexMethod = AndroidRuntimeClass.getDeclaredMethod("loadDex",Context.class,String.class,String.class,int.class,boolean.class);
-                    DexFile dexFile = (DexFile) loadDexMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext,patchFile.getAbsolutePath(),
-                            new File(patchFile.getParent(),"patch.dex").getAbsolutePath(),0,true);
+                    DexFile dexFile = (DexFile)KernalConstants.dexBooster.loadDex(KernalConstants.baseContext,patchFile.getAbsolutePath(),
+                            new File(patchFile.getParent(),"patch.dex").getAbsolutePath(),0,true) ;
                     bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(), patchFile, new DexFile[]{dexFile}, null,
                                                (app_info.flags & ApplicationInfo.FLAG_VM_SAFE_MODE) != 0);
                     bundle.replacePathClassLoaderIfNeed(application);

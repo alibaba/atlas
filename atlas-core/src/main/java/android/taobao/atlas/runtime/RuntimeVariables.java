@@ -209,7 +209,6 @@
 package android.taobao.atlas.runtime;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.Application;
 import android.app.Dialog;
 import android.content.Context;
@@ -218,11 +217,7 @@ import android.taobao.atlas.R;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.FrameworkProperties;
 import android.taobao.atlas.runtime.dialog.DefaultProgress;
-import android.taobao.atlas.util.WrapperUtil;
-import android.text.TextUtils;
 import android.view.ViewGroup;
-import dalvik.system.DexFile;
-
 import java.io.Serializable;
 import java.lang.reflect.Field;
 
@@ -258,6 +253,7 @@ public class RuntimeVariables implements Serializable{
      * apilevel >=23
      */
     public static ClassLoader sRawClassLoader;
+    public static Object      sDexLoadBooster;
 
     public static Dialog alertDialogUntilBundleProcessed(Activity activity,String bundleName){
         if (activity != null) {

@@ -275,27 +275,27 @@ public class BaselineInfoManager{
         return null;
     }
 
-    public String getDexPatchStorageLocation(){
-        if(dexPatchStorageLocation==null) {
-            try {
-                dexPatchStorageLocation = (String) mVersionManager.getClass().getDeclaredField("DEXPATCH_STORAGE_LOCATION").get(mVersionManager);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-        return dexPatchStorageLocation;
-    }
-
-    public String getUpdateStorageLocation(){
-        if(updateBundleStorageLocation==null) {
-            try {
-                updateBundleStorageLocation = (String) mVersionManager.getClass().getDeclaredField("CURRENT_STORAGE_LOCATION").get(mVersionManager);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-        return updateBundleStorageLocation;
-    }
+//    public String getDexPatchStorageLocation(){
+//        if(dexPatchStorageLocation==null) {
+//            try {
+//                dexPatchStorageLocation = (String) mVersionManager.getClass().getDeclaredField("DEXPATCH_STORAGE_LOCATION").get(mVersionManager);
+//            } catch (Throwable e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        return dexPatchStorageLocation;
+//    }
+//
+//    public String getUpdateStorageLocation(){
+//        if(updateBundleStorageLocation==null) {
+//            try {
+//                updateBundleStorageLocation = (String) mVersionManager.getClass().getDeclaredField("CURRENT_STORAGE_LOCATION").get(mVersionManager);
+//            } catch (Throwable e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        return updateBundleStorageLocation;
+//    }
 
     public long getDexPatchBundleVersion(String bundleName){
         try {

@@ -245,7 +245,6 @@ import android.taobao.atlas.util.StringUtils;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.Log;
-import com.taobao.android.runtime.AndroidRuntime;
 import dalvik.system.DexClassLoader;
 import dalvik.system.DexFile;
 
@@ -482,7 +481,10 @@ public class BundleArchiveRevision {
                     if(bundleFile.getUsableSpace()<5*1024*1024){
                         interpretOnly = true;
                     }
-                    dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
+                    //兼容7。0 动态部署过后不同classloader下对classcast
+                    dexFile = (DexFile) RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex",Context.class,String.class, String.class, int.class, boolean.class).invoke(
+                            RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
+//                    dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
                 }else{
                     Method m=Class.forName("android.taobao.atlas.util.DexFileCompat")
                             .getDeclaredMethod("loadDex", Context.class,String.class,String.class,int.class);
@@ -678,9 +680,12 @@ public class BundleArchiveRevision {
             File patchFile = new File(debugBundleDir,"patch.zip");
             if(patchFile.exists()){
                 try {
-                    patchDexFileForDebug = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication,
-                            patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
-                } catch (IOException e) {
+//                    patchDexFileForDebug = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication,
+//                            patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
+                    //兼容7。0 动态部署过后不同classloader下对classcast
+                    RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex",Context.class,String.class, String.class, int.class, boolean.class).invoke(
+                            RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
+                } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
             }

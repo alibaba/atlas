@@ -263,6 +263,9 @@ public class AtlasBridgeApplication extends Application{
         KernalConstants.baseContext = getBaseContext();
         KernalConstants.APK_PATH = getBaseContext().getApplicationInfo().sourceDir;
         KernalConstants.RAW_APPLICATION_NAME = getClass().getName();
+        DexLoadBooster dexBooster = new DexLoadBooster();
+        dexBooster.init(getBaseContext());
+        KernalConstants.dexBooster = dexBooster;
         boolean hasKernalPatched  = false;
         boolean isMainProcess = getBaseContext().getPackageName().equals(KernalConstants.PROCESS);
         if(isUpdated){
@@ -280,6 +283,9 @@ public class AtlasBridgeApplication extends Application{
             KernalVersionManager.instance().init();
             System.setProperty("APK_INSTALLED", "true");
         }else{
+            if(KernalConstants.PROCESS.contains(":dex2oat")){
+                return;
+            }
             KernalVersionManager.instance().init();
             if(!KernalBundle.checkLoadKernalDebugPatch(this)){
                 if(KernalBundle.hasKernalPatch()) {
@@ -311,7 +317,7 @@ public class AtlasBridgeApplication extends Application{
             mVersionManager.set(instance,KernalVersionManager.instance());
 
             Class BridgeApplicationDelegateClazz = getBaseContext().getClassLoader().loadClass("android.taobao.atlas.bridge.BridgeApplicationDelegate");
-            Class<?>[] parTypes=new Class<?>[7];
+            Class<?>[] parTypes=new Class<?>[8];
             parTypes[0]= Application.class;
             parTypes[1]= String.class;
             parTypes[2]= String.class;
@@ -319,9 +325,10 @@ public class AtlasBridgeApplication extends Application{
             parTypes[4]= long.class;
             parTypes[5]= String.class;
             parTypes[6]= boolean.class;
+            parTypes[7]= Object.class;
             Constructor<?> con = BridgeApplicationDelegateClazz.getConstructor(parTypes);
             mBridgeApplicationDelegate = con.newInstance(this,KernalConstants.PROCESS,KernalConstants.INSTALLED_VERSIONNAME,
-                    KernalConstants.INSTALLED_VERSIONCODE,KernalConstants.LASTUPDATETIME,KernalConstants.APK_PATH,isUpdated);
+                    KernalConstants.INSTALLED_VERSIONCODE,KernalConstants.LASTUPDATETIME,KernalConstants.APK_PATH,isUpdated,KernalConstants.dexBooster);
             Method method = BridgeApplicationDelegateClazz.getDeclaredMethod("attachBaseContext");
             method.invoke(mBridgeApplicationDelegate);
         } catch (Throwable e) {
@@ -347,11 +354,13 @@ public class AtlasBridgeApplication extends Application{
     @Override
     public void onCreate() {
         super.onCreate();
-        try {
-            Method method = mBridgeApplicationDelegate.getClass().getDeclaredMethod("onCreate");
-            method.invoke(mBridgeApplicationDelegate);
-        } catch (Throwable e) {
-            e.printStackTrace();
+        if(!KernalConstants.PROCESS.contains(":dex2oat")){
+            try {
+                Method method = mBridgeApplicationDelegate.getClass().getDeclaredMethod("onCreate");
+                method.invoke(mBridgeApplicationDelegate);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
         }
     }
 

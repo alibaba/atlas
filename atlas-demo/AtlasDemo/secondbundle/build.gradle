@@ -7,7 +7,7 @@ atlas {
     }
 }
 group = 'com.atlas.demo'
-version = '1.0.0'
+version = '1.0.4'
 
 android {
     compileSdkVersion 25

@@ -17,7 +17,7 @@
 6、 检查build/output/tpatch-debug 目录下文件是否生成，然后执行下面的命令(以下为mac下的命令，windows请修改文件分隔符)
     adb push build/outputs/tpatch-debug/update.json /sdcard/Android/data/com.taobao.demo/cache/update-**.json
     (根据你手机的当前版本推送对应版本的update-**.json,和对应的tpatch文件)
-    adb push build/outputs/tpatch-debug/patch-*.tpatch /sdcard/Android/data/com.taobao.demo/cache
+    adb push build/outputs/tpatch-debug/patch-1.0.1@1.0.0.tpatch /sdcard/Android/data/com.taobao.demo/cache/patch-1.0.1@1.0.0.tpatch
 
 7、 点击动态部署页面红色按钮执行动态部署
 

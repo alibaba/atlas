@@ -213,7 +213,6 @@ package android.taobao.atlas.startup.patch.releaser;
  */
 
 import android.app.PreVerifier;
-import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -225,7 +224,6 @@ import dalvik.system.DexFile;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -415,10 +413,6 @@ public class BundleReleaser {
 
     }
 
-    Class AndroidRuntimeClass = null;
-    Object androidRuntimeInstance = null;
-    Method loadDexMethod = null;
-
     private void dexOptimization() {
         Log.e(TAG, "dexOptimization start");
         final File[] validDexes = reversionDir.listFiles(new FileFilter() {
@@ -433,26 +427,8 @@ public class BundleReleaser {
         });
          dexFiles = new DexFile[validDexes.length];
 
-        if(Build.VERSION.SDK_INT>=21){
-            try {
-                AndroidRuntimeClass = Class.forName("com.taobao.android.runtime.AndroidRuntime");
-                Method getInstanceMethod = AndroidRuntimeClass.getDeclaredMethod("getInstance");
-                androidRuntimeInstance = getInstanceMethod.invoke(null);
-                if(hasReleased){
-                    Method initMethod = AndroidRuntimeClass.getDeclaredMethod("init",Context.class);
-                    initMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext);
-                }
-                loadDexMethod = AndroidRuntimeClass.getDeclaredMethod("loadDex",Context.class,String.class,String.class,int.class,boolean.class);
-            }catch (Throwable e){
-                throw new RuntimeException(e);
-            }
-        }
-
-        if(!externalStorage && Build.VERSION.SDK_INT>=21) {
-            try {
-                Method setVerificationEnabledMethod = AndroidRuntimeClass.getDeclaredMethod("setVerificationEnabled", boolean.class);
-                setVerificationEnabledMethod.invoke(androidRuntimeInstance, true);
-            }catch(Throwable e){}
+        if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
+            KernalConstants.dexBooster.setVerificationEnabled(true);
         }
         final CountDownLatch countDownLatch = new CountDownLatch(validDexes.length);
         for (int i = 0;i < validDexes.length;i++) {
@@ -469,7 +445,8 @@ public class BundleReleaser {
                             //interpretOnly
                             if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {
                                 optimizedPath = KernalConstants.baseContext.getFilesDir()+File.separator+"fake.dex";
-                                dexFiles[j] = (DexFile) loadDexMethod.invoke(androidRuntimeInstance,KernalConstants.baseContext, validDexes[j].getPath(), optimizedPath, 0, true);
+                                new File(optimizedPath).createNewFile();
+                                dexFiles[j] = KernalConstants.dexBooster.loadDex(KernalConstants.baseContext, validDexes[j].getPath(), optimizedPath, 0, true);
                             }else{
                                 dexFiles[j] = DexFileCompat.loadDex(KernalConstants.baseContext,validDexes[j].getPath(), optimizedPath,0);
                             }
@@ -495,12 +472,8 @@ public class BundleReleaser {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if(!externalStorage && Build.VERSION.SDK_INT>=21) {
-            try {
-                Method setVerificationEnabledMethod = AndroidRuntimeClass.getDeclaredMethod("setVerificationEnabled", boolean.class);
-                setVerificationEnabledMethod.setAccessible(true);
-                setVerificationEnabledMethod.invoke(androidRuntimeInstance, false);
-            }catch(Throwable e){}
+        if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
+            KernalConstants.dexBooster.setVerificationEnabled(false);
         }
         Log.e(TAG, "dex opt done");
         handler.sendMessage(handler.obtainMessage(MSG_ID_DEX_OPT_DONE));
@@ -515,14 +488,7 @@ public class BundleReleaser {
                 return false;
             }
             if(!hasReleased && Build.VERSION.SDK_INT>=21) {
-                try {
-                    Method isOdexValidMethod = AndroidRuntimeClass.getDeclaredMethod("isOdexValid", String.class);
-                    isOdexValidMethod.setAccessible(true);
-                    boolean result = (Boolean) isOdexValidMethod.invoke(androidRuntimeInstance,optimizedPath);
-                    if(!result){
-                        return false;
-                    }
-                }catch(Throwable e){}
+                KernalConstants.dexBooster.isOdexValid(optimizedPath);
             }
             return true;
         }

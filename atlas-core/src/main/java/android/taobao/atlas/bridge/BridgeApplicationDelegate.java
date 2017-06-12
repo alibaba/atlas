@@ -253,10 +253,11 @@ public class BridgeApplicationDelegate {
     private long   mLastUpdateTime;
     private boolean mIsUpdated;
     private String mApkPath;
+    private Object mdexLoadBooster;
     private List<ProviderInfo> mBoundApplication_provider;
 
     public BridgeApplicationDelegate(Application rawApplication,String processname,String installedVersion,
-                                     long versioncode,long lastupdatetime,String apkPath,boolean isUpdated){
+                                     long versioncode,long lastupdatetime,String apkPath,boolean isUpdated,Object dexLoadBooster){
         mRawApplication = rawApplication;
         mCurrentProcessname = processname;
         mInstalledVersionName = installedVersion;
@@ -264,6 +265,7 @@ public class BridgeApplicationDelegate {
         mLastUpdateTime = lastupdatetime;
         mIsUpdated = isUpdated;
         mApkPath = apkPath;
+        mdexLoadBooster = dexLoadBooster;
         PackageManagerDelegate.delegatepackageManager(rawApplication.getBaseContext());
     }
 
@@ -279,6 +281,7 @@ public class BridgeApplicationDelegate {
         RuntimeVariables.sAppLastUpdateTime = mLastUpdateTime;
         RuntimeVariables.sApkPath = mApkPath;
         RuntimeVariables.delegateResources = mRawApplication.getResources();
+        RuntimeVariables.sDexLoadBooster = mdexLoadBooster;
         if(!TextUtils.isEmpty(mInstalledVersionName)){
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;
         }

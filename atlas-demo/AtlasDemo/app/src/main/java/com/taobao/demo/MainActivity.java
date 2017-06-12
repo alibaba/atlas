@@ -15,11 +15,13 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.middleware.dialog.Dialog;
 import com.taobao.android.ActivityGroupDelegate;
@@ -40,6 +42,7 @@ public class MainActivity extends AppCompatActivity
             switch (item.getItemId()) {
                 case R.id.navigation_home:
                     switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
+                    Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
                     return true;
                 case R.id.navigation_dashboard:
                     switchToActivity("second","com.taobao.secondbundle.SecondBundleActivity");

@@ -211,31 +211,19 @@ package android.taobao.atlas.framework;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Properties;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.Application;
 import android.app.Dialog;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.ResolveInfo;
-import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Looper;
-import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
-import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
 import android.taobao.atlas.runtime.SecurityHandler;
 import android.taobao.atlas.util.ApkUtils;
-import android.taobao.atlas.util.DexLoadBooster;
 import android.taobao.atlas.util.WrapperUtil;
 import android.text.TextUtils;
 import android.util.Log;
@@ -248,17 +236,11 @@ import android.taobao.atlas.hack.AssertionArrayException;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.ActivityManagerDelegate;
 import android.taobao.atlas.runtime.BundleLifecycleHandler;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.runtime.ClassNotFoundInterceptorCallback;
 import android.taobao.atlas.runtime.DelegateClassLoader;
 import android.taobao.atlas.runtime.FrameworkLifecycleHandler;
 import android.taobao.atlas.runtime.InstrumentationHook;
 import android.taobao.atlas.runtime.RuntimeVariables;
-
-import com.taobao.android.runtime.RuntimeUtils;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static android.taobao.atlas.runtime.InstrumentationHook.sOnIntentRedirectListener;
 
@@ -332,7 +314,13 @@ public class Atlas {
 
     public void startup(Application application,boolean isUpdated) {
         if(!RuntimeVariables.safeMode) {
-            DexLoadBooster.init(application.getBaseContext());
+            if(application.getPackageManager().equals("com.taobao.taobao")) {
+                try {
+                    RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled").invoke(RuntimeVariables.sDexLoadBooster, false);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
             if (!WrapperUtil.isDebugMode(application) && ApkUtils.isRootSystem()) {
                 Atlas.getInstance().addBundleListener(new SecurityHandler());
             }

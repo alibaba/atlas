@@ -206,7 +206,7 @@
  *
  */
 
-package android.taobao.atlas.util;
+package android.taobao.atlas.startup;
 
 import android.content.Context;
 import android.util.Log;
@@ -214,7 +214,11 @@ import android.util.Log;
 import com.taobao.android.runtime.AndroidRuntime;
 import com.taobao.android.runtime.Dex2OatService;
 import com.uc.browser.aerie.DalvikPatch;
+
+import java.io.IOException;
 import java.lang.reflect.Method;
+
+import dalvik.system.DexFile;
 
 /**
  * Created by guanjie on 2017/2/14.
@@ -222,7 +226,10 @@ import java.lang.reflect.Method;
 
 public class DexLoadBooster {
 
-    public static void init(Context context){
+    public DexLoadBooster(){
+    }
+
+    public void init(Context context){
         boolean isTaobao = "com.taobao.taobao".equals(context.getPackageName());
         if(isYunOS()) {
             Log.d("RuntimeUtils", "- RuntimeUtils init: isYunOS. Invalid disable");
@@ -239,13 +246,22 @@ public class DexLoadBooster {
         if (!AndroidRuntime.getInstance().isEnabled()) {
             return;
         }
-        if(isTaobao) {
-            AndroidRuntime.getInstance().setVerificationEnabled(false);
-        }
         DalvikPatch.patchIfPossible();
     }
 
-    private static boolean isYunOS() {
+    public void setVerificationEnabled(boolean enabled){
+        AndroidRuntime.getInstance().setVerificationEnabled(enabled);
+    }
+
+    public DexFile loadDex(Context context,String sourcePathName, String outputPathName, int flags, boolean interpretOnly) throws IOException {
+        return AndroidRuntime.getInstance().loadDex(context, sourcePathName, outputPathName, flags, interpretOnly);
+    }
+
+    public boolean isOdexValid(String outputPathName){
+        return AndroidRuntime.getInstance().isOdexValid(outputPathName);
+    }
+
+    private boolean isYunOS() {
         String version = null;
         String vmName = null;
         try {
