@@ -285,6 +285,15 @@ public class FileNameUtils {
         return outFileName;
     }
 
+    public static String getUniqueFileName(String name, String type) {
+        String outFileName = name.replace(".jar","") + "_" + type;
+        if (outFileNames.contains(outFileName)) {
+            outFileName = outFileName + index.incrementAndGet();
+        }
+        outFileNames.add(outFileName);
+        return outFileName;
+    }
+
     private static MavenCoordinates getMavenCoordinate(String path) {
         File file = new File(path);
         File parentDir = file.getParentFile();

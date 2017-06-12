@@ -212,7 +212,6 @@ package com.taobao.android.builder.adapter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.taobao.android.builder.tools.EnvHelper;
 import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
 import com.taobao.android.builder.tools.sign.AndroidSigner;
 
@@ -243,24 +242,11 @@ public class BuilderAdapter {
      * 主bundle的本地jar一直开启
      */
     public boolean localJarEnabled = true;
-
-    /**
-     * 开启 dex， proguard 缓存
-     */
-    public boolean fileCacheEnabled = false;
-
     /**
      * 标准格式的依赖
      */
     public boolean prettyDependencyFormat = true;
 
-    public boolean dexCacheEnabled = false;
-
     public List<String> buildInfos = new ArrayList<>();
-
-    public boolean isBuildCacheEnabled(){
-        return fileCacheEnabled || EnvHelper.getEnv("atlasBuildCacheEnabled", false);
-        //return false;
-    }
 
 }

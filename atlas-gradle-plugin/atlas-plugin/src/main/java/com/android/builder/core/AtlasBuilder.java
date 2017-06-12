@@ -275,11 +275,13 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.taobao.android.AaptLib;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.hook.dex.DexByteCodeConverterHook;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.MD5Util;
+import com.taobao.android.builder.tools.PathUtil;
 import com.taobao.android.builder.tools.Profiler;
 import com.taobao.android.builder.tools.cache.FileCacheCenter;
 import com.taobao.android.builder.tools.cache.FileCacheException;
@@ -307,7 +309,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
     private static Logger sLogger = LoggerFactory.getLogger(AtlasBuilder.class);
 
-    public static final String PRE_DEXCACHE_TYPE = "pre-dex-0.06";
+    public static final String PRE_DEXCACHE_TYPE = "pre-dex-0.09";
 
     protected AtlasExtension atlasExtension;
 
@@ -889,16 +891,12 @@ public class AtlasBuilder extends AndroidBuilder {
             fileName = "aapt.exe";
         }
         String aaptPath = "aapt/" + osName + "/" + fileName;
-        File aaptFile = new File(AtlasBuilder.class.getClassLoader().getResource(aaptPath).getFile());
+        File aaptFile = new File(AaptLib.class.getClassLoader().getResource(aaptPath).getFile());
         if (aaptFile.isFile()) {
             return aaptFile;
         }
 
-        String path = AtlasBuilder.class.getProtectionDomain()
-            .getCodeSource()
-            .getLocation()
-            .getFile();
-        File jarFile = new File(path);
+        File jarFile = PathUtil.getJarFile(AaptLib.class);
         File jarFolder = new File(jarFile.getParentFile(),
                                   FilenameUtils.getBaseName(jarFile.getName()));
         jarFolder.mkdirs();
@@ -930,7 +928,7 @@ public class AtlasBuilder extends AndroidBuilder {
             Profiler.release();
         }
 
-        if (AtlasBuildContext.sBuilderAdapter.isBuildCacheEnabled() && inputs.size() > 1) {
+        if ( atlasExtension.getTBuildConfig().isDexCacheEnabled() && inputs.size() > 1) {
 
             Profiler.enter("jar2dex");
 
@@ -1081,7 +1079,7 @@ public class AtlasBuilder extends AndroidBuilder {
                               @NonNull ProcessOutputHandler processOutputHandler)
         throws IOException, InterruptedException, ProcessException {
 
-        if (!AtlasBuildContext.sBuilderAdapter.dexCacheEnabled || multiDex) {
+        if (!atlasExtension.getTBuildConfig().isDexCacheEnabled() || multiDex) {
             super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler);
             return;
         }
@@ -1103,7 +1101,7 @@ public class AtlasBuilder extends AndroidBuilder {
             if (StringUtils.isNotEmpty(md5)) {
 
                 try {
-                    FileCacheCenter.fetchFile(PRE_DEXCACHE_TYPE,md5, false, true, dexFile);
+                    FileCacheCenter.fetchFile(PRE_DEXCACHE_TYPE,md5, false, atlasExtension.getTBuildConfig().isDexNetworkCacheEnabled(), dexFile);
                 } catch (FileCacheException e) {
                     sLogger.error(e.getMessage(),e);
                 }
@@ -1155,7 +1153,7 @@ public class AtlasBuilder extends AndroidBuilder {
         if (StringUtils.isNotEmpty(md5) && dexFile.exists()) {
 
             try {
-                FileCacheCenter.cacheFile(PRE_DEXCACHE_TYPE,md5, dexFile, true);
+                FileCacheCenter.cacheFile(PRE_DEXCACHE_TYPE,md5, dexFile, atlasExtension.getTBuildConfig().isDexNetworkCacheEnabled());
             } catch (FileCacheException e) {
                 sLogger.error(e.getMessage(),e);
             }
@@ -1337,6 +1335,8 @@ public class AtlasBuilder extends AndroidBuilder {
         sLogger.debug("use DexByteCodeConverterHook......");
         return dexByteCodeConverter;
     }
+
+
     public static interface MultiDexer {
 
         public Collection<File> repackageJarList(Collection<File> files) throws IOException;
