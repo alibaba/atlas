@@ -236,8 +236,10 @@ import org.osgi.framework.FrameworkListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -521,7 +523,7 @@ public final class Framework {
                 }
             }
         }
-        if(bundleDir.exists()) {
+        if(bundleDir!=null && bundleDir.exists()) {
             String[] temp = bundleDir.list();
             if(temp!=null) {
                 for (String tmp : temp) {
@@ -530,7 +532,7 @@ public final class Framework {
             }
         }
         Log.e("Framework","restoreExisted: "+location+"| "+bundleUniqueTag +"| "+bundleDir);
-        if(bundleDir==null && BaselineInfoManager.instance().isUpdated(location)){
+        if((bundleDir==null || !new File(bundleDir,bundleUniqueTag).exists()) && BaselineInfoManager.instance().isUpdated(location)){
             //出现无法恢复的情况，立即回滚
             if(getCurProcessName().equals(RuntimeVariables.androidApplication.getPackageName())) {
                 Map<String, Object> detail = new HashMap<>();
@@ -544,8 +546,7 @@ public final class Framework {
                     }
                 },1000);
             }
-        }
-        
+        }        
         if(!installingBundles.containsKey(location) && ((bundleDir!=null&&bundleDir.exists()) || dexPatchDir!=null&&dexPatchDir.exists())){
             try {
                 lockSuccess = BundleLock.ReadLock(location);
@@ -638,6 +639,11 @@ public final class Framework {
                     }else{
                         new BundleImpl(bundleDir, locations[i], null, files[i],null, false,dexPatchVersions[i]);
                     }
+//                    Log.e("Framework","info of "+bundleDir+"newTag: "+newBundleTag[i]);
+//                    String[] list = bundleDir.list();
+//                    for(String temp : list){
+//                        Log.e("Framework",temp);
+//                    }
                 }
                 if(upgrade){
                     updateBundles.put(locations[i],newBundleTag[i]);
