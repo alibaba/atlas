@@ -556,7 +556,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             boolean multiDex = isMultiDexEnabled;
             DexTransform dexTransform = new DexTransform(dexOptions,
                                                          config.getBuildType().isDebuggable(),
-                                                         multiDex,
+                                                         false /*multiDex*/,
                                                          isMultiDexEnabled && isLegacyMultiDexMode ? mainDexListFile
                                                              : null,
                                                          variantScope.getPreDexOutputDir(),
