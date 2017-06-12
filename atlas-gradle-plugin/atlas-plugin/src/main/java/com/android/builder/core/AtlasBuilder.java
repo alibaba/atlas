@@ -1035,6 +1035,7 @@ public class AtlasBuilder extends AndroidBuilder {
         } else {
             DefaultDexOptions myDexOptions = DefaultDexOptions.copyOf(dexOptions);
             if (dexOptions.getAdditionalParameters().contains("--useMyDex")){
+                dexOptions.getAdditionalParameters().remove("--useMyDex");
                 myDexOptions.setDexInProcess(true);
                 useMyDex = true;
                 if (inputs.size() > 1){
@@ -1147,6 +1148,7 @@ public class AtlasBuilder extends AndroidBuilder {
             defaultDexOptions.setDexInProcess(true);
         }
         if (defaultDexOptions.getAdditionalParameters().contains("--useMyDex")){
+            defaultDexOptions.getAdditionalParameters().remove("--useMyDex");
             useMyDex = true;
         }
         sLogger.info("[mtldex] pre dex for {} {}",
@@ -1167,7 +1169,6 @@ public class AtlasBuilder extends AndroidBuilder {
         sLogger.warn("dex success " + dexFile.getAbsolutePath() + "->" + inputFile.getAbsolutePath());
 
         if (StringUtils.isNotEmpty(md5) && dexFile.exists()) {
-
             try {
                 FileCacheCenter.cacheFile(PRE_DEXCACHE_TYPE,md5, dexFile, atlasExtension.getTBuildConfig().isDexNetworkCacheEnabled());
             } catch (FileCacheException e) {

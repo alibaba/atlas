@@ -232,6 +232,8 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.DefaultDexOptions;
+import com.android.builder.core.DexOptions;
 import com.android.dex.Dex;
 import com.android.dex.DexException;
 import com.android.dx.command.dexer.DxContext;
@@ -302,8 +304,12 @@ public class PackageAwbsTask extends BaseTask {
         final Map<String, Long[]> monitors = new HashMap<String, Long[]>();
         long startTime = System.currentTimeMillis();
 
+        final DexOptions dexOptions;
         if (appVariantContext.getBuildType().getDexConfig()!= null && appVariantContext.getBuildType().getDexConfig().isUseMyDex()) {
-            androidConfig.getDexOptions().additionalParameters("--useMyDex");
+            dexOptions = DefaultDexOptions.copyOf(androidConfig.getDexOptions());
+            dexOptions.getAdditionalParameters().add("--useMyDex");
+        }else {
+            dexOptions = androidConfig.getDexOptions();
         }
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
@@ -336,7 +342,7 @@ public class PackageAwbsTask extends BaseTask {
                                                          .getVariantConfiguration()
                                                          .isMultiDexEnabled(),
                                                  null,
-                                                 androidConfig.getDexOptions(),
+                                                 dexOptions,
                                                  outputHandler, true);
                         //create package
 
