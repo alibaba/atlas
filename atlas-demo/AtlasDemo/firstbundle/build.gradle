@@ -12,7 +12,7 @@ atlas {
     }
 }
 group = 'com.atlas.demo'
-version = '1.0.14'
+version = '1.0.0'
 
 
 android {
