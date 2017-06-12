@@ -247,6 +247,8 @@ public class BuilderAdapter {
      */
     public boolean prettyDependencyFormat = true;
 
+    public boolean pushCacheToNetwork = true;
+
     public List<String> buildInfos = new ArrayList<>();
 
 }

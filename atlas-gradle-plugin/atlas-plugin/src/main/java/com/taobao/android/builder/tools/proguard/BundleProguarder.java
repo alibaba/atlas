@@ -221,6 +221,7 @@ import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.google.common.collect.Lists;
+import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.ReflectUtils;
@@ -576,7 +577,7 @@ public class BundleProguarder {
             FileUtils.copyFileToDirectory(usageCfg, tmpDir);
         }
 
-        FileCacheCenter.cacheFile(CACHE_TYPE, result.key, tmpDir, isRemoteCacheEnabled(appVariantContext));
+        FileCacheCenter.cacheFile(CACHE_TYPE, result.key, tmpDir, AtlasBuildContext.sBuilderAdapter.pushCacheToNetwork && isRemoteCacheEnabled(appVariantContext));
 
     }
 }
