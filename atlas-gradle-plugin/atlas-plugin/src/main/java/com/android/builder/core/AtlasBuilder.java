@@ -1034,8 +1034,8 @@ public class AtlasBuilder extends AndroidBuilder {
                          finishTime - endDexTime);
         } else {
             DefaultDexOptions myDexOptions = DefaultDexOptions.copyOf(dexOptions);
-            if (dexOptions.getAdditionalParameters().contains("--useMyDex")){
-                dexOptions.getAdditionalParameters().remove("--useMyDex");
+            if (myDexOptions.getAdditionalParameters().contains("--useMyDex")){
+                myDexOptions.getAdditionalParameters().remove("--useMyDex");
                 myDexOptions.setDexInProcess(true);
                 useMyDex = true;
                 if (inputs.size() > 1){
