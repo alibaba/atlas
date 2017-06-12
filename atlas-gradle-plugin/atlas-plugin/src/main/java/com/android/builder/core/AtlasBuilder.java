@@ -322,6 +322,7 @@ public class AtlasBuilder extends AndroidBuilder {
     private JavaProcessExecutor javaProcessExecutor;
 
     private boolean verboseExec;
+    private boolean useMyDex;
 
 
     /**
@@ -1033,11 +1034,21 @@ public class AtlasBuilder extends AndroidBuilder {
                          endDexTime - startTime,
                          finishTime - endDexTime);
         } else {
+            DefaultDexOptions myDexOptions = DefaultDexOptions.copyOf(dexOptions);
+            if (dexOptions.getAdditionalParameters().contains("--useMyDex")){
+                myDexOptions.setDexInProcess(true);
+                useMyDex = true;
+                if (inputs.size() > 1){
+                    myDexOptions.setJavaMaxHeapSize("500m");
+                }
+            }
+
+
             super.convertByteCode(inputs,
                                   outDexFolder,
                                   multidex,
                                   mainDexList,
-                                  dexOptions,
+                                  myDexOptions,
                                   processOutputHandler);
         }
 
@@ -1123,15 +1134,13 @@ public class AtlasBuilder extends AndroidBuilder {
         dexFile.delete();
 
         //todo  设置dexOptions
-        DefaultDexOptions defaultDexOptions = new DefaultDexOptions();
-
-        //外部已经启动了多线程，尽量少一点
-        defaultDexOptions.setThreadCount(dexOptions.getThreadCount());
-        defaultDexOptions.setAdditionalParameters(dexOptions.getAdditionalParameters());
-        defaultDexOptions.setJumboMode(dexOptions.getJumboMode());
+        DefaultDexOptions defaultDexOptions = DefaultDexOptions.copyOf(dexOptions);
         if (!multiDex){
             defaultDexOptions.setJavaMaxHeapSize("500m");
             defaultDexOptions.setDexInProcess(true);
+        }
+        if (defaultDexOptions.getAdditionalParameters().contains("--useMyDex")){
+            useMyDex = true;
         }
         sLogger.info("[mtldex] pre dex for {} {}",
                      inputFile.getAbsolutePath(),
@@ -1326,7 +1335,7 @@ public class AtlasBuilder extends AndroidBuilder {
     @NonNull
     public DexByteCodeConverter getDexByteCodeConverter() {
 
-        if (AtlasBuildContext.appVariantContext.getBuildType().getDexConfig()==null||!AtlasBuildContext.appVariantContext.getBuildType().getDexConfig().isUseMyDex()){
+        if (!useMyDex){
             return super.getDexByteCodeConverter();
         }
         if (dexByteCodeConverter == null){

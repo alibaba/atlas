@@ -209,12 +209,6 @@
 
 package com.taobao.android.builder.tasks.app.prepare;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -237,6 +231,12 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FD_AAR_LIBS;
@@ -285,7 +285,6 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
     @TaskAction
     void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
-
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
                                                                                    0);
