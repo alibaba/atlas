@@ -424,12 +424,9 @@ public class DelegateResources extends Resources {
         public AssetManager updateAssetManager(AssetManager manager,String newAssetPath,int assetType)throws Exception{
             AssetManager targetManager = null;
             if(assetType == BUNDLE_RES){
-                if(supportExpandAssetManager()){
-                    targetManager = updateAssetManagerWithAppend(manager, newAssetPath,assetType);
-                }else{
-                    targetManager = createNewAssetManager(manager,newAssetPath,true,assetType);
-                }
-                updateAssetPathList(newAssetPath,true);
+                boolean append = findResByAssetIndexDescending();
+                targetManager = createNewAssetManager(manager,newAssetPath,append,assetType);
+                updateAssetPathList(newAssetPath,append);
             }else{
                 File newAssetsDir = new File(new File(newAssetPath).getParent(),"newAssets");
                 if(newAssetsDir.exists() && new File(newAssetsDir,"assets").exists()){
