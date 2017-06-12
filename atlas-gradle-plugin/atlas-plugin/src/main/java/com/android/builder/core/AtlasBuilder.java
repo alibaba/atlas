@@ -308,7 +308,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
     private static Logger sLogger = LoggerFactory.getLogger(AtlasBuilder.class);
 
-    public static final String PRE_DEXCACHE_TYPE = "pre-dex-0.09";
+    public static final String PRE_DEXCACHE_TYPE = "pre-dex-0.10";
 
     protected AtlasExtension atlasExtension;
 
@@ -1038,9 +1038,9 @@ public class AtlasBuilder extends AndroidBuilder {
                 myDexOptions.getAdditionalParameters().remove("--useMyDex");
                 myDexOptions.setDexInProcess(true);
                 useMyDex = true;
-                if (inputs.size() > 1){
-                    myDexOptions.setJavaMaxHeapSize("500m");
-                }
+                //if (inputs.size() > 1){
+                myDexOptions.setJavaMaxHeapSize("500m");
+                //}
             }
 
             super.convertByteCode(inputs,
@@ -1143,14 +1143,16 @@ public class AtlasBuilder extends AndroidBuilder {
 
         //todo  设置dexOptions
         DefaultDexOptions defaultDexOptions = DefaultDexOptions.copyOf(dexOptions);
-        if (!multiDex){
-            defaultDexOptions.setJavaMaxHeapSize("500m");
-            defaultDexOptions.setDexInProcess(true);
-        }
         if (defaultDexOptions.getAdditionalParameters().contains("--useMyDex")){
             defaultDexOptions.getAdditionalParameters().remove("--useMyDex");
             useMyDex = true;
         }
+
+        if (!multiDex || useMyDex ){
+            defaultDexOptions.setJavaMaxHeapSize("500m");
+            defaultDexOptions.setDexInProcess(true);
+        }
+
         sLogger.info("[mtldex] pre dex for {} {}",
                      inputFile.getAbsolutePath(),
                      outFile.getAbsolutePath());
