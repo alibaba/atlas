@@ -302,7 +302,20 @@ public class TBuildConfig {
 
     private boolean incremental = false;
 
+    @Config(message = "是否使用快速proguard", order = 16, advance = true, group = "atlas")
     private boolean fastProguard = false;
+
+    @Config(message = "是否使用proguard缓存", order = 17, advance = true, group = "atlas")
+    private boolean proguardCacheEnabled = true;
+
+    @Config(message = "是否使用远程proguard缓存", order = 16, advance = true, group = "atlas")
+    private boolean proguardNetworkCacheEnabled = false;
+
+    @Config(message = "是否使用dex缓存", order = 17, advance = true, group = "atlas")
+    private boolean dexCacheEnabled = true;
+
+    @Config(message = "是否使用远程dex缓存", order = 18, advance = true, group = "atlas")
+    private boolean dexNetworkCacheEnabled = false;
 
     private int proguardParallelCount = 8;
 
@@ -524,5 +537,37 @@ public class TBuildConfig {
 
     public void setProguardParallelCount(int proguardParallelCount) {
         this.proguardParallelCount = proguardParallelCount;
+    }
+
+    public boolean isProguardCacheEnabled() {
+        return proguardCacheEnabled;
+    }
+
+    public void setProguardCacheEnabled(boolean proguardCacheEnabled) {
+        this.proguardCacheEnabled = proguardCacheEnabled;
+    }
+
+    public boolean isProguardNetworkCacheEnabled() {
+        return proguardNetworkCacheEnabled;
+    }
+
+    public void setProguardNetworkCacheEnabled(boolean proguardNetworkCacheEnabled) {
+        this.proguardNetworkCacheEnabled = proguardNetworkCacheEnabled;
+    }
+
+    public boolean isDexCacheEnabled() {
+        return dexCacheEnabled;
+    }
+
+    public void setDexCacheEnabled(boolean dexCacheEnabled) {
+        this.dexCacheEnabled = dexCacheEnabled;
+    }
+
+    public boolean isDexNetworkCacheEnabled() {
+        return dexNetworkCacheEnabled;
+    }
+
+    public void setDexNetworkCacheEnabled(boolean dexNetworkCacheEnabled) {
+        this.dexNetworkCacheEnabled = dexNetworkCacheEnabled;
     }
 }

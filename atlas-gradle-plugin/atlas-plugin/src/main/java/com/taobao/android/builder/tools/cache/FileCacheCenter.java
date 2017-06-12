@@ -212,7 +212,6 @@ package com.taobao.android.builder.tools.cache;
 import java.io.File;
 import java.io.IOException;
 
-import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tools.log.FileLogger;
 import org.apache.commons.io.FileUtils;
 
@@ -223,7 +222,7 @@ import org.apache.commons.io.FileUtils;
  */
 public class FileCacheCenter {
 
-    public static final boolean BUILD_CACHE_ENABLED = AtlasBuildContext.sBuilderAdapter.isBuildCacheEnabled();
+    public static final boolean BUILD_CACHE_ENABLED = true;
     private static FileLogger logger = FileLogger.getInstance("filecache");
 
     public static Cache networkCache;
