@@ -1290,7 +1290,7 @@ public class AtlasBuilder extends AndroidBuilder {
     @NonNull
     public DexByteCodeConverter getDexByteCodeConverter() {
 
-        if (AtlasBuildContext.appVariantContext.getBuildType().getDexConfig()==null||!AtlasBuildContext.appVariantContext.getBuildType().getDexConfig().isUseMyDex()){
+        if (AtlasBuildContext.appVariantContext == null||AtlasBuildContext.appVariantContext.getBuildType().getDexConfig()==null||!AtlasBuildContext.appVariantContext.getBuildType().getDexConfig().isUseMyDex()){
             return super.getDexByteCodeConverter();
         }
         if (dexByteCodeConverter == null){

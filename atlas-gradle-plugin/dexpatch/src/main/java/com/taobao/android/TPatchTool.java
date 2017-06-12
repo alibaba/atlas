@@ -304,6 +304,9 @@ public class TPatchTool extends BasePatchTool {
 
     private final PathMatcher pathMatcher = new PathMatcher();
 
+    List<String>bundles = Lists.newArrayList("libsgmain.so","libsguatrace.so","libsgavmp.so","libsgmisc.so","libsgsecuritybody.so");
+
+
     private final String ANDROID_MANIFEST = "AndroidManifest.xml";
 
 
@@ -532,6 +535,9 @@ public class TPatchTool extends BasePatchTool {
     }
 
     private boolean isBundleFile(File file) {
+        if (bundles.contains(file.getName())){
+            return true;
+        }
     if (whiteList != null){
         for (String bundleName:whiteList){
             if (file.getAbsolutePath().endsWith(bundleName)){

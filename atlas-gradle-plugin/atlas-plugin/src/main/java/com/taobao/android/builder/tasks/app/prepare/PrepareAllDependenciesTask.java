@@ -209,12 +209,6 @@
 
 package com.taobao.android.builder.tasks.app.prepare;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -236,6 +230,12 @@ import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
 /**
  * 1. 自己控制并发，可以提高性能
  * 2. solib 的解压准备
@@ -249,6 +249,8 @@ public class PrepareAllDependenciesTask extends BaseTask {
     AppVariantOutputContext appVariantOutputContext;
 
     AtlasDependencyTree atlasDependencyTree;
+
+    AppVariantContext appVariantContext;
 
     @InputFiles
     public List<File> getInputDependencies() {
@@ -280,7 +282,7 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
     @TaskAction
     void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
-
+        AtlasBuildContext.appVariantContext = appVariantContext;
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
                                                                                    0);
@@ -367,9 +369,11 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAllDependenciesTask> {
 
+        AppVariantContext appVariantContext;
         public ConfigAction(AppVariantContext appVariantContext,
                             BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
         }
 
         @Override
@@ -386,7 +390,7 @@ public class PrepareAllDependenciesTask extends BaseTask {
         public void execute(PrepareAllDependenciesTask prepareAllDependenciesTask) {
 
             super.execute(prepareAllDependenciesTask);
-
+            prepareAllDependenciesTask.appVariantContext =appVariantContext;
             prepareAllDependenciesTask.appVariantOutputContext = getAppVariantOutputContext();
 
             prepareAllDependenciesTask.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
