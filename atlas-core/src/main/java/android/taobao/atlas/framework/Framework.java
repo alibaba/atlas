@@ -498,7 +498,7 @@ public final class Framework {
             File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
             if(externalStorages!=null && externalStorages.length>0){
                 for(File tmpDir : externalStorages){
-                    if(getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+bundleUniqueTag).exists()) {
+                    if(tmpDir!=null && getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+bundleUniqueTag).exists()) {
                         bundleDir = new File(tmpDir,location);
                         break;
                     }
@@ -513,7 +513,7 @@ public final class Framework {
                 File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
                 if(externalStorages!=null && externalStorages.length>0){
                     for(File tmpDir : externalStorages){
-                        if(getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+BundleArchive.DEXPATCH_DIR+dexPatchVersion).exists()) {
+                        if(tmpDir!=null && getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+BundleArchive.DEXPATCH_DIR+dexPatchVersion).exists()) {
                             bundleDir = new File(tmpDir,location);
                             break;
                         }
@@ -589,7 +589,7 @@ public final class Framework {
             File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
             if(externalStorages!=null && externalStorages.length>0){
                 for(File externalStorage : externalStorages){
-                    if(getStorageState(externalStorage).equals(Environment.MEDIA_MOUNTED) && externalStorage.getUsableSpace()>50*1024*1024) {
+                    if(externalStorage!=null && getStorageState(externalStorage).equals(Environment.MEDIA_MOUNTED) && externalStorage.getUsableSpace()>50*1024*1024) {
                         updateStorageDir = externalStorage;
                     }
                 }
@@ -623,7 +623,7 @@ public final class Framework {
                     Constructor cons = KernalBundleClass.getDeclaredConstructor(File.class,File.class,String.class,long.class);
                     cons.setAccessible(true);
                     if(upgrade) {
-                        cons.newInstance(bundleDir, files[i], newBundleTag[i], -1);
+                        cons.newInstance(bundleDir, files[i], makeMainDexUniqueTag(newBaselineVersion,newBundleTag[i]), -1);
                     }else{
                         cons.newInstance(bundleDir, files[i],null,dexPatchVersions[i]);                    }
                 } else {
@@ -638,11 +638,6 @@ public final class Framework {
                     }else{
                         new BundleImpl(bundleDir, locations[i], null, files[i],null, false,dexPatchVersions[i]);
                     }
-//                    Log.e("Framework","info of "+bundleDir+"newTag: "+newBundleTag[i]);
-//                    String[] list = bundleDir.list();
-//                    for(String temp : list){
-//                        Log.e("Framework",temp);
-//                    }
                 }
                 if(upgrade){
                     updateBundles.put(locations[i],newBundleTag[i]);
@@ -679,6 +674,13 @@ public final class Framework {
                 }
             }
         }
+    }
+
+    private static String makeMainDexUniqueTag(String appVersion,String maindexTag){
+        if(maindexTag.startsWith(appVersion)){
+            return maindexTag;
+        }
+        return appVersion+"_"+maindexTag;
     }
 
     public static void rollback(){
@@ -782,7 +784,7 @@ public final class Framework {
             File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
             if(externalStorages!=null && externalStorages.length>0){
                 for(File tmpDir : externalStorages){
-                    if(getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+bundleUniqueId).exists()) {
+                    if(tmpDir!=null && getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+bundleUniqueId).exists()) {
                         bundleDir = new File(tmpDir,location);
                         File file = getInstalledBundleInternal(location,bundleUniqueId,bundleDir);
                         if(file.exists()){
@@ -798,7 +800,7 @@ public final class Framework {
     private static File getInstalledBundleInternal(String bundleName,String bundleUniqueId,File bundleDir){
         if(bundleDir!=null && bundleDir.exists()){
             if(isKernalBundle(bundleName)){
-                File file = new File(bundleDir,bundleUniqueId+File.separator+"com_taobao_maindex.zip");
+                File file = new File(bundleDir,makeMainDexUniqueTag(BaselineInfoManager.instance().currentVersionName(),bundleUniqueId)+File.separator+"com_taobao_maindex.zip");
                 if(file.exists()){
                     return file;
                 }
@@ -827,7 +829,7 @@ public final class Framework {
             File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
             if(externalStorages!=null && externalStorages.length>0){
                 for(File tmpDir : externalStorages){
-                    if(getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && tmpDir.getUsableSpace()>20*1024*1024) {
+                    if(tmpDir!=null && getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && tmpDir.getUsableSpace()>20*1024*1024) {
                         externalStorageDir = tmpDir;
                         break;
                     }
@@ -843,6 +845,7 @@ public final class Framework {
     public static File[] getExternalFilesDirs(Context context, String type) {
         final int version = Build.VERSION.SDK_INT;
         if (version >= 19) {
+            //返回结果可能存在null值
             return context.getExternalFilesDirs(type);
         } else {
             return new File[] { context.getExternalFilesDir(type) };

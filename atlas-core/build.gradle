@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
+// apply from: 'http://gitlab.alibaba-inc.com/android-build-system/buildscript/raw/master/mtl-publish.gradle'
 
 buildscript {
 
@@ -15,9 +16,6 @@ buildscript {
     }
 }
 repositories {
-//    flatDir {
-//        dirs 'libs'
-//    }
     mavenCentral()
     jcenter()
 
@@ -25,7 +23,7 @@ repositories {
 
 group = 'com.taobao.android'
 description = """atlas_core"""
-version '5.0.7.10'
+version '5.0.7.11-SNAPSHOT'
 
 
 sourceCompatibility = 1.7
@@ -34,11 +32,6 @@ targetCompatibility = 1.7
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-//
-//    compile(name: 'dalvik_hack', version:'3.0.0.5',ext: 'aar')
-//    compile(name: 'dalvikpatch', version:'1.0.0.4',ext: 'aar')
-//
-//    compile(name: 'android-art-interpret', version:'3.0.0.5',ext: 'aar')
 }
 
 tasks.whenTaskAdded {task ->

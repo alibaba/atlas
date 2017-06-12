@@ -487,7 +487,7 @@ public class BundleReleaser {
             if (!checkDexValid(dexFile)) {
                 return false;
             }
-            if(!hasReleased && Build.VERSION.SDK_INT>=21) {
+            if(!hasReleased && Build.VERSION.SDK_INT>=21 && Build.VERSION.SDK_INT<26) {
                 KernalConstants.dexBooster.isOdexValid(optimizedPath);
             }
             return true;

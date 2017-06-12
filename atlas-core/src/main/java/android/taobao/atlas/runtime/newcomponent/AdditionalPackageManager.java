@@ -443,7 +443,10 @@ public class AdditionalPackageManager {
         Hack.HackedMethod PackageParser_parsePackage = null;
         final String[] outError = new String[1];
         try {
-            if (Build.VERSION.SDK_INT > 20) {
+            if(Build.VERSION.SDK_INT>=26){
+                PackageParser_parsePackage = AtlasHacks.PackageParser.method("parseBaseApk",String.class,Resources.class, XmlResourceParser.class, int.class, String[].class);
+                return PackageParser_parsePackage.invoke(packageParserObj, RuntimeVariables.androidApplication.getPackageName(),resources, parser, 0, outError);
+            }else if (Build.VERSION.SDK_INT > 20) {
                 PackageParser_parsePackage = AtlasHacks.PackageParser.method("parseBaseApk", Resources.class, XmlResourceParser.class, int.class, String[].class);
                 return PackageParser_parsePackage.invoke(packageParserObj, resources, parser, 0, outError);
             }else{

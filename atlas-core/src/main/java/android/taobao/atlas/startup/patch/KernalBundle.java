@@ -292,6 +292,7 @@ public class KernalBundle{
 
     public static boolean checkLoadKernalDebugPatch(Application application){
         if(Build.VERSION.SDK_INT<21) {
+            //暂时只支持art设备的debug调试
             return false;
         }
 
@@ -358,15 +359,22 @@ public class KernalBundle{
         if(dexPatchVersion>0) {
             try {
                 bundleDir = dexPatchDir;
-                archive = new KernalBundleArchive(KernalConstants.baseContext, dexPatchDir, version, dexPatchVersion, process);
+                archive = new KernalBundleArchive(KernalConstants.baseContext, dexPatchDir, "", dexPatchVersion, process);
             }catch(Throwable e){
                 bundleDir = updateDir;
-                archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, version, dexPatchVersion, process);
+                archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, makeMainDexUniqueTag(KernalVersionManager.instance().currentVersionName(),version), dexPatchVersion, process);
             }
         }else{
             bundleDir = updateDir;
-            archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, version, dexPatchVersion, process);
+            archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, makeMainDexUniqueTag(KernalVersionManager.instance().currentVersionName(),version), dexPatchVersion, process);
         }
+    }
+
+    private String makeMainDexUniqueTag(String appVersion,String maindexTag){
+        if(maindexTag.startsWith(appVersion)){
+            return maindexTag;
+        }
+        return appVersion+"_"+maindexTag;
     }
 
     public void patchKernalDex() throws Exception {

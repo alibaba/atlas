@@ -233,6 +233,7 @@ import android.taobao.atlas.util.log.impl.AtlasAlarmer;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.WindowManager;
 
 import java.lang.reflect.Field;
@@ -380,8 +381,12 @@ public class BridgeApplicationDelegate {
                 public void onConfigurationChanged(Configuration newConfig) {
                     DisplayMetrics newMetrics = new DisplayMetrics();
                     if(RuntimeVariables.delegateResources!=null){
-                        ((WindowManager) RuntimeVariables.androidApplication
-                                .getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getMetrics(newMetrics);
+                        WindowManager manager = (WindowManager) RuntimeVariables.androidApplication.getSystemService(Context.WINDOW_SERVICE);
+                        if(manager==null || manager.getDefaultDisplay()==null){
+                            Log.e("BridgeApplication","get windowmanager service failed");
+                            return;
+                        }
+                        manager.getDefaultDisplay().getMetrics(newMetrics);
                         RuntimeVariables.delegateResources.updateConfiguration(newConfig,newMetrics);
                         try {
                             Method method = Resources.class.getDeclaredMethod("updateSystemConfiguration",
