@@ -286,7 +286,7 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
     @TaskAction
     void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
-        AtlasBuildContext.appVariantContext = appVariantContext;
+
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
                                                                                    0);
