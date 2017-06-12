@@ -286,7 +286,6 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
     @TaskAction
     void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
-
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
                                                                                    0);
