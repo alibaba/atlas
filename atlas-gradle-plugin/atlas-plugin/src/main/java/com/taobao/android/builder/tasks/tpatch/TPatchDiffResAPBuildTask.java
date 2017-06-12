@@ -247,7 +247,6 @@ import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.google.common.collect.Iterators;
-import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.diff.DiffResExtractor;
@@ -259,6 +258,7 @@ import org.dom4j.DocumentException;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.api.tasks.TaskAction;
 
@@ -282,6 +282,7 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
 
     private String packageForR;
 
+    @OutputFile
     private File packageOutputFile;
 
     private VariantType type;
@@ -563,7 +564,7 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
                     //TODO
                     ApkFileList baseApkFiles = JSON.parseObject(FileUtils.readFileToString(
                         baseApkFileList), ApkFileList.class);
-                    ApkFileList currentApkFiles = AtlasBuildContext.finalApkFileList;
+                    ApkFileList currentApkFiles = appVariantContext.getApkFiles().finalApkFileList;
 
                     Set<String> diffFiles = new HashSet<String>();
                     HashMap<String, String> baseFiles = baseApkFiles.getMainBundle();

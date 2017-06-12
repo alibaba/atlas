@@ -218,21 +218,20 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.core.AndroidBuilder;
 import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.manager.Version;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.PathUtil;
+import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.guide.AtlasExtensionOutput;
-
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -250,8 +249,9 @@ public class LogDependenciesTask extends BaseTask {
     @TaskAction
     void generate() {
 
+        AtlasBuildContext.appVariantContext = appVariantContext;
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                getVariantName());
+            getVariantName());
 
         if (null == atlasDependencyTree) {
             return;
@@ -262,7 +262,7 @@ public class LogDependenciesTask extends BaseTask {
         File dependenciesFile = new File(getProject().getBuildDir(), "outputs/dependencies.txt");
         File versionProperties = new File(getProject().getBuildDir(), "outputs/version.properties");
         File buildInfo = new File(getProject().getBuildDir(), "outputs/build.txt");
-
+        File pluginDependencies =  new File(getProject().getBuildDir(), "outputs/pluginDependencies.txt");
         File atlasConfig = new File(getProject().getBuildDir(), "outputs/atlasConfig.json");
 
         appBuildInfo.setDependencyTreeFile(treeFile);
@@ -291,6 +291,19 @@ public class LogDependenciesTask extends BaseTask {
             e.printStackTrace();
         }
 
+        //输出运行时的插件依赖列表
+        try {
+            //ClassLoader cl = ClassLoader.getSystemClassLoader();
+            URL[] urls = ((URLClassLoader)LogDependenciesTask.class.getClassLoader()).getURLs();
+            List<String> libraries = new ArrayList<>();
+            for (URL url : urls) {
+                libraries.add(url.getFile());
+            }
+            FileUtils.writeLines(pluginDependencies, libraries);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         try {
             FileUtils.writeStringToFile(dependenciesFile,
                                         JSON.toJSONString(atlasDependencyTree.getDependencyJson()));
@@ -304,18 +317,15 @@ public class LogDependenciesTask extends BaseTask {
             e.printStackTrace();
         }
 
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("gradleVersion:")
-                .append(getProject().getGradle().getGradleVersion())
-                .append("\r\n");
-        stringBuilder.append("mtlVersion:")
-                .append(Version.ANDROID_GRADLE_PLUGIN_VERSION)
-                .append("\r\n");
-        stringBuilder.append("androidVersion:")
-                .append(PathUtil.getJarFile(AndroidBuilder.class))
-                .append("\r\n");
         try {
-            FileUtils.writeStringToFile(buildInfo, stringBuilder.toString());
+            List<String> lines = new ArrayList<>();
+            lines.add("gradleVersion:" + getProject().getGradle().getGradleVersion());
+            lines.add("androidPluginVersion:" + com.android.builder.Version.ANDROID_GRADLE_PLUGIN_VERSION);
+            lines.add("buildToolsVersion:" + appVariantContext.getAppExtension().getBuildToolsVersion());
+            lines.add("compileSdkVersion:" + appVariantContext.getAppExtension().getCompileSdkVersion());
+            lines.add("atlasPluginVersion:" + FileNameUtils.getJarVersionName(LogDependenciesTask.class));
+            lines.addAll(AtlasBuildContext.sBuilderAdapter.buildInfos);
+            FileUtils.writeLines(buildInfo, lines);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -323,13 +333,14 @@ public class LogDependenciesTask extends BaseTask {
         try {
             FileUtils.write(atlasConfig,
                             JSON.toJSONString(new AtlasExtensionOutput(appVariantContext.getAtlasExtension(),
-                                                                       appVariantContext.getBuildType().getName()), true));
+                                                                       appVariantContext.getBuildType().getName()),
+                                              true));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         if (null != AtlasBuildContext.conflictDependencies &&
-                !AtlasBuildContext.conflictDependencies.isEmpty()) {
+            !AtlasBuildContext.conflictDependencies.isEmpty()) {
             try {
                 FileUtils.writeLines(new File(getProject().getBuildDir(),
                                               "outputs/warning-dependencyConflict.properties"),
@@ -339,11 +350,12 @@ public class LogDependenciesTask extends BaseTask {
             }
 
             if (appVariantContext.getAtlasExtension()
-                    .getTBuildConfig()
-                    .isAbortIfDependencyConflict()) {
+                .getTBuildConfig()
+                .isAbortIfDependencyConflict()) {
                 throw new GradleException("依赖冲突，具体见warning-dependencyConflict.properties");
             }
         }
+
     }
 
     private List<String> getSortVersionList(AtlasDependencyTree atlasDependencyTree) {

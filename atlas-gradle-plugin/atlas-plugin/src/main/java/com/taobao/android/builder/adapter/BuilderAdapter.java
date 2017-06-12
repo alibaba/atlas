@@ -209,6 +209,9 @@
 
 package com.taobao.android.builder.adapter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.taobao.android.builder.tools.cache.FileCache;
 import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
 import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
@@ -250,5 +253,7 @@ public class BuilderAdapter {
     public boolean prettyDependencyFormat = true;
 
     public boolean dexCacheEnabled = false;
+
+    public List<String> buildInfos = new ArrayList<>();
 
 }

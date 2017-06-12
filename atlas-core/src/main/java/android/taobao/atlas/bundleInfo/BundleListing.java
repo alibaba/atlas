@@ -222,31 +222,8 @@ public class BundleListing implements Serializable{
 
     private LinkedHashMap<String,BundleInfo> bundles = new LinkedHashMap<String,BundleInfo>();
 
-    public static BundleListing clone(BundleListing source){
-        BundleListing listing = new BundleListing();
-        if(source.getBundles()==null){
-            return listing;
-        }
-        LinkedHashMap<String,BundleInfo> infos = new LinkedHashMap<String,BundleInfo>();
-
-        Iterator<Map.Entry<String, BundleInfo>> iterator = source.getBundles().entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, BundleInfo> entry = iterator.next();
-            BundleInfo newInfo = BundleInfo.cloneWithoutUrl(entry.getValue());
-            infos.put(entry.getKey(),newInfo);
-        }
-        listing.setBundles(infos);
-        return listing;
-    }
-
     public LinkedHashMap<String,BundleInfo> getBundles() {
         return bundles;
-    }
-
-    public void insertBundle(BundleInfo bundle){
-        if(bundle!=null){
-            bundles.put(bundle.getPkgName(),bundle);
-        }
     }
 
     public void setBundles(LinkedHashMap<String,BundleInfo> bundles) {
@@ -258,12 +235,10 @@ public class BundleListing implements Serializable{
         private String name;
         private String pkgName;
 		private String applicationName;
-        private long size;
         private String version;
         private String desc;
         private String url;
         private String md5;
-        private String host;
         private boolean isInternal = true;
         private List<String> dependency;
         private List<String> totalDependency;
@@ -271,7 +246,16 @@ public class BundleListing implements Serializable{
         private HashMap<String,Boolean> services;
         private HashMap<String,Boolean> receivers;
         private HashMap<String,Boolean> contentProviders;
-        private boolean hasSO;
+        private String unique_tag;
+        private long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
 
         public boolean isInternal() {
             return isInternal;
@@ -279,14 +263,6 @@ public class BundleListing implements Serializable{
 
         public void setIsInternal(boolean isInternal) {
             this.isInternal = isInternal;
-        }
-
-        public String getHost() {
-            return host;
-        }
-
-        public void setHost(String host) {
-            this.host = host;
         }
         
         public String getApplicationName() {
@@ -313,12 +289,12 @@ public class BundleListing implements Serializable{
             this.contentProviders = contentProviders;
         }
 
-        public boolean isHasSO() {
-            return hasSO;
+        public String getUnique_tag() {
+            return unique_tag;
         }
 
-        public void setHasSO(boolean hasSO) {
-            this.hasSO = hasSO;
+        public void setUnique_tag(String unique_tag) {
+            this.unique_tag = unique_tag;
         }
 
         public String getMd5() {
@@ -334,8 +310,6 @@ public class BundleListing implements Serializable{
         }
 
         public void setUrl(String url) {
-
-            Log.d("BundleListing","url = "+url);
             this.url = url;
         }
 
@@ -361,14 +335,6 @@ public class BundleListing implements Serializable{
 
         public void setPkgName(String pkgName) {
             this.pkgName = pkgName;
-        }
-
-        public long getSize() {
-            return size;
-        }
-
-        public void setSize(long size) {
-            this.size = size;
         }
 
         public String getVersion() {
@@ -449,58 +415,30 @@ public class BundleListing implements Serializable{
         }
 
         private void findBundleTransitively(String location,List<String> bundlesListForInstall){
-            //打断循环依赖
-            if(bundlesListForInstall.contains(location)){
-                return;
-            }
+//            //打断循环依赖
+            findBundleTransitivelyInternal(location,bundlesListForInstall,location);
+        }
+
+        private void findBundleTransitivelyInternal(String location,List<String> bundlesListForInstall,final String root){
+//            //打断循环依赖
             if(!bundlesListForInstall.contains(location)) {
                 bundlesListForInstall.add(0,location);
+            }else{
+                if(!location.equals(root)) {
+                    bundlesListForInstall.remove(location);
+                    bundlesListForInstall.add(0, location);
+                }
+                return;
             }
+
             List<String> singleLevelDependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
             if(singleLevelDependencies!=null){
                 for(String dependepcy : singleLevelDependencies){
                     if(dependepcy!=null){
-                        findBundleTransitively(dependepcy,bundlesListForInstall);
+                        findBundleTransitivelyInternal(dependepcy,bundlesListForInstall,root);
                     }
                 }
             }
-        }
-
-
-
-        public static BundleInfo cloneWithoutUrl(BundleInfo source){
-            BundleInfo info = new BundleInfo();
-            info.setName(source.getName());
-            info.setPkgName(source.getPkgName());
-            info.setSize(source.getSize());
-            info.setApplicationName(source.getApplicationName());
-            info.setVersion(source.getVersion());
-            info.setDesc(source.getDesc());
-            info.setMd5(source.getMd5());
-            info.setHost(source.getHost());
-            info.setIsInternal(source.isInternal());
-            info.setHasSO(source.isHasSO());
-            if(source.getDependency()!=null) {
-                ArrayList dependency = new ArrayList<String>(source.getDependency());
-                info.setDependency(dependency);
-            }
-            if(source.getActivities()!=null) {
-                HashMap<String,Boolean> activies = new HashMap<String,Boolean>(source.getActivities());
-                info.setActivities(activies);
-            }
-            if(source.getServices()!=null) {
-                HashMap<String,Boolean> services = new HashMap<String,Boolean>(source.getServices());
-                info.setServices(services);
-            }
-            if(source.getReceivers()!=null) {
-                HashMap<String,Boolean> receivers = new HashMap<String,Boolean>(source.getReceivers());
-                info.setReceivers(receivers);
-            }
-            if(source.getContentProviders()!=null) {
-                HashMap<String,Boolean> providers = new HashMap<String,Boolean>(source.getContentProviders());
-                info.setContentProviders(providers);
-            }
-            return info;
         }
     }
 }

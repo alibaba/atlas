@@ -1,0 +1,15 @@
+@startuml
+autoNumber
+
+-> AtlasBridgeApplication : attachBaseContext
+AtlasBridgeApplication -> BridgeApplicationDelegate : attachBaseContext
+BridgeApplicationDelegate ->AtlasHacks : defineAndVerify
+BridgeApplicationDelegate -> DemoPreLaunch : preLaunch
+BridgeApplicationDelegate -> Atlas : init
+-> AtlasBridgeApplication : onCreate
+AtlasBridgeApplication -> BridgeApplicationDelegate : onCreate
+‘BridgeApplicationDelegate -> AdditionalActivityManagerProxy : startRegisterReceivers’
+BridgeApplicationDelegate -> DemoApplication : attach
+BridgeApplicationDelegate  -> Atlas : startup
+BridgeApplicationDelegate -> DemoApplication : onCreate
+@enduml

@@ -87,7 +87,7 @@ Atlas开源的代码内容主要包括以下几个模块：
 		2. build/outputs/apk/xx.ap , 构建的基线包， 里面包含 apk 和其他的打包中间配置
 		3. build/outputs/dependencyTree-debug.json , 整个工程的依赖树
 		4. build/outputs/atlasConfig.json , 整个打包的 atlas 配置参数
-	2. TPatch构建 **./gradlew clean assembleDebug -				DapVersion=1.0.0 -DversionName=1.0.1**
+	2. TPatch构建 **./gradlew clean assembleDebug -DapVersion=1.0.0 -DversionName=1.0.1**
 	
 		apVersion表示被动态部署应用的基线版本，versionName表示动态部署后新的versionName
 

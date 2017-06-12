@@ -496,7 +496,7 @@ public class SmaliCodeUtils {
         options.noParameterRegisters = false;
         options.useLocalsDirective = true;
         options.useSequentialLabels = true;
-        options.outputDebugInfo = true;
+        options.outputDebugInfo = false;
         options.addCodeOffsets = false;
         options.jobs = -1;
         options.noAccessorComments = false;

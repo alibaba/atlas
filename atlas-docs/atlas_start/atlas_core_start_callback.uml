@@ -1,0 +1,15 @@
+@startuml
+
+node “dev” {
+   [code]-> [gradle]	
+}
+
+node “atlas compile” {
+   [gradle]->[FrameworkProperties]
+   [FrameworkProperties]->[dex]
+} 
+
+node “runtime”{
+   [dex]->[getFrameworkProperty]
+}
+@enduml

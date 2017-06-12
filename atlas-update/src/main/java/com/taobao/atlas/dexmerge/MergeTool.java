@@ -206,7 +206,6 @@ public class MergeTool {
             if(isDiff && (entry.getName().endsWith("classes.dex"))){
                 patchDex = entry;
                 isPatchHasDex =true;
-                MergeExcutorServices.needMergeCount.incrementAndGet();
                 continue;
             }
             ZipEntry newEntry = null;
@@ -265,20 +264,17 @@ public class MergeTool {
                 bo.flush();
             }
         }else {
-            MergeExcutorServices.successCount.incrementAndGet();
         }
 
         closeQuitely(out);
         closeQuitely(bo);
     }
 
-    private static void dexMerge(String bundleName,ZipFile source, ZipEntry patchDex, OutputStream newDexStream, MergeExcutorServices.PrepareCallBack prepareCallBack) {
+    private static void dexMerge(String bundleName,ZipFile source, ZipEntry patchDex, OutputStream newDexStream, MergeExcutorServices.PrepareCallBack prepareCallBack) throws IOException {
 
-        try {
+
             prepareCallBack.prepareMerge(bundleName,source, patchDex, newDexStream);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
 
     }
 

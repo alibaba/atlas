@@ -209,6 +209,13 @@
 
 package com.taobao.android.builder.tools.bundleinfo;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+
+import com.android.build.gradle.internal.api.ApkFiles;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -221,52 +228,44 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.tasks.StopExecutionException;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-
 /**
  * Created by wuzhong on 16/6/15.
  */
 public class ApkFileListUtils {
 
-    private static boolean inited = false;
-
     /**
      * 记录apk文件的资源信息
      */
-    public static void recordApkFileInfos(AppVariantContext appVariantContext) {
+    public static ApkFiles recordApkFileInfos(AppVariantContext appVariantContext) {
 
-        if (inited) {
-            return;
-        }
-        inited = true;
+        ApkFiles apkFiles = new ApkFiles();
 
         List<File> mainBundleResFolders = new ArrayList<File>();
         mainBundleResFolders.add(appVariantContext.getScope().getVariantData().mergeResourcesTask.getOutputDir());
         prepareApkFileList(appVariantContext.getScope().getVariantData().mergeAssetsTask.getOutputDir(),
-                "assets");
+                           "assets", apkFiles);
         for (File resFolder : mainBundleResFolders) {
-            prepareApkFileList(resFolder, "res");
+            prepareApkFileList(resFolder, "res", apkFiles);
         }
 
         // 记录各自bundle的资源信息
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getScope().
-                getVariantConfiguration().getFullName());
+            getVariantConfiguration().getFullName());
         if (null == dependencyTree) {
             throw new StopExecutionException("DependencyTree cannot be null!");
         }
 
         List<AwbBundle> libs = dependencyTree.getAwbBundles();
+
         for (AwbBundle awbLib : libs) {
             File mergeAssertFolder = appVariantContext.getMergeAssets(awbLib);
             File mergeResFolder = appVariantContext.getMergeResources(awbLib);
             String awbName = awbLib.getName();
-            prepareApkFileList(mergeAssertFolder, "assets", awbName);
-            prepareApkFileList(mergeResFolder, "res", awbName);
+            prepareApkFileList(mergeAssertFolder, "assets", awbName, apkFiles);
+            prepareApkFileList(mergeResFolder, "res", awbName, apkFiles);
         }
+
+        return apkFiles;
     }
 
     /**
@@ -274,7 +273,7 @@ public class ApkFileListUtils {
      *
      * @return
      */
-    protected static void prepareApkFileList(File folder, String prefixName) {
+    protected static void prepareApkFileList(File folder, String prefixName, ApkFiles apkFiles) {
         if (!folder.exists()) {
             return;
         }
@@ -285,15 +284,15 @@ public class ApkFileListUtils {
                 String relativePath = prefixName + File.separator + PathUtil.toRelative(folder, file.getAbsolutePath());
                 String md5 = MD5Util.getFileMD5(file);
                 if (isImageFile(relativePath)) {
-                    AtlasBuildContext.apkFileList.put(relativePath, md5);
+                    apkFiles.apkFileList.put(relativePath, md5);
                 }
-                AtlasBuildContext.finalApkFileList.put(relativePath, md5);
+                apkFiles.finalApkFileList.put(relativePath, md5);
             }
         }
 
     }
 
-    protected static void prepareApkFileList(File folder, String prefixName, String awbName) {
+    protected static void prepareApkFileList(File folder, String prefixName, String awbName, ApkFiles apkFiles) {
         if (!folder.exists()) {
             return;
         }
@@ -304,21 +303,21 @@ public class ApkFileListUtils {
                 String relativePath = prefixName + File.separator + PathUtil.toRelative(folder, file.getAbsolutePath());
                 String md5 = MD5Util.getFileMD5(file);
                 if (isImageFile(relativePath)) {
-                    if (null == AtlasBuildContext.apkFileList.getAwbs().get(awbName)) {
-                        AtlasBuildContext.apkFileList.getAwbs().put(awbName, new HashMap<String, String>());
+                    if (null == apkFiles.apkFileList.getAwbs().get(awbName)) {
+                        apkFiles.apkFileList.getAwbs().put(awbName, new HashMap<String, String>());
                     }
-                    AtlasBuildContext.apkFileList.getAwbs().get(awbName).put(relativePath, md5);
+                    apkFiles.apkFileList.getAwbs().get(awbName).put(relativePath, md5);
                 }
-                if (null == AtlasBuildContext.finalApkFileList.getAwbs().get(awbName)) {
-                    AtlasBuildContext.finalApkFileList.getAwbs().put(awbName, new HashMap<String, String>());
+                if (null == apkFiles.finalApkFileList.getAwbs().get(awbName)) {
+                    apkFiles.finalApkFileList.getAwbs().put(awbName, new HashMap<String, String>());
                 }
-                AtlasBuildContext.finalApkFileList.getAwbs().get(awbName).put(relativePath, md5);
+                apkFiles.finalApkFileList.getAwbs().get(awbName).put(relativePath, md5);
             }
         }
 
     }
 
-    private static String[] IMG_EXTENSIONS = new String[]{".png", ".jpg"};
+    private static String[] IMG_EXTENSIONS = new String[] {".png", ".jpg"};
 
     private static boolean isImageFile(String name) {
         for (String imgExt : IMG_EXTENSIONS) {
@@ -328,7 +327,6 @@ public class ApkFileListUtils {
         }
         return false;
     }
-
 
     public static class PureFileFilter implements IOFileFilter {
         @Override
@@ -345,17 +343,23 @@ public class ApkFileListUtils {
         }
     }
 
-    public static final String[] DEFAULTEXCLUDES = new String[]{"**/*~", "**/#*#", "**/.#*", "**/%*%", "**/._*", "**/CVS", "**/CVS/**", "**/.cvsignore", "**/RCS", "**/RCS/**", "**/SCCS", "**/SCCS/**", "**/vssver.scc", "**/.svn", "**/.svn/**", "**/.arch-ids", "**/.arch-ids/**", "**/.bzr", "**/.bzr/**", "**/.MySCMServerInfo", "**/.DS_Store", "**/.metadata", "**/.metadata/**", "**/.hg", "**/.hg/**", "**/.git", "**/.git/**", "**/BitKeeper", "**/BitKeeper/**", "**/ChangeSet", "**/ChangeSet/**", "**/_darcs", "**/_darcs/**", "**/.darcsrepo", "**/.darcsrepo/**", "**/-darcs-backup*", "**/.darcs-temp-mail"};
+    public static final String[] DEFAULTEXCLUDES = new String[] {"**/*~", "**/#*#", "**/.#*", "**/%*%", "**/._*",
+        "**/CVS", "**/CVS/**", "**/.cvsignore", "**/RCS", "**/RCS/**", "**/SCCS", "**/SCCS/**", "**/vssver.scc",
+        "**/.svn", "**/.svn/**", "**/.arch-ids", "**/.arch-ids/**", "**/.bzr", "**/.bzr/**", "**/.MySCMServerInfo",
+        "**/.DS_Store", "**/.metadata", "**/.metadata/**", "**/.hg", "**/.hg/**", "**/.git", "**/.git/**",
+        "**/BitKeeper", "**/BitKeeper/**", "**/ChangeSet", "**/ChangeSet/**", "**/_darcs", "**/_darcs/**",
+        "**/.darcsrepo", "**/.darcsrepo/**", "**/-darcs-backup*", "**/.darcs-temp-mail"};
+
     private static boolean isIgnore(String name) {
         for (String pattern : DEFAULTEXCLUDES) {
-            if (match(pattern, name,true)) {
+            if (match(pattern, name, true)) {
                 return true;
             }
         }
         return false;
     }
 
-    public static   boolean match(String pattern, String str, boolean isCaseSensitive) {
+    public static boolean match(String pattern, String str, boolean isCaseSensitive) {
         char[] patArr = pattern.toCharArray();
         char[] strArr = str.toCharArray();
         int patIdxStart = 0;
@@ -365,32 +369,32 @@ public class ApkFileListUtils {
         boolean containsStar = false;
 
         int i;
-        for(i = 0; i < patArr.length; ++i) {
-            if(patArr[i] == 42) {
+        for (i = 0; i < patArr.length; ++i) {
+            if (patArr[i] == 42) {
                 containsStar = true;
                 break;
             }
         }
 
         char ch;
-        if(!containsStar) {
-            if(patIdxEnd != strIdxEnd) {
+        if (!containsStar) {
+            if (patIdxEnd != strIdxEnd) {
                 return false;
             } else {
-                for(i = 0; i <= patIdxEnd; ++i) {
+                for (i = 0; i <= patIdxEnd; ++i) {
                     ch = patArr[i];
-                    if(ch != 63 && !equals(ch, strArr[i], isCaseSensitive)) {
+                    if (ch != 63 && !equals(ch, strArr[i], isCaseSensitive)) {
                         return false;
                     }
                 }
 
                 return true;
             }
-        } else if(patIdxEnd == 0) {
+        } else if (patIdxEnd == 0) {
             return true;
         } else {
-            while((ch = patArr[patIdxStart]) != 42 && strIdxStart <= strIdxEnd) {
-                if(ch != 63 && !equals(ch, strArr[strIdxStart], isCaseSensitive)) {
+            while ((ch = patArr[patIdxStart]) != 42 && strIdxStart <= strIdxEnd) {
+                if (ch != 63 && !equals(ch, strArr[strIdxStart], isCaseSensitive)) {
                     return false;
                 }
 
@@ -398,17 +402,17 @@ public class ApkFileListUtils {
                 ++strIdxStart;
             }
 
-            if(strIdxStart > strIdxEnd) {
-                for(i = patIdxStart; i <= patIdxEnd; ++i) {
-                    if(patArr[i] != 42) {
+            if (strIdxStart > strIdxEnd) {
+                for (i = patIdxStart; i <= patIdxEnd; ++i) {
+                    if (patArr[i] != 42) {
                         return false;
                     }
                 }
 
                 return true;
             } else {
-                while((ch = patArr[patIdxEnd]) != 42 && strIdxStart <= strIdxEnd) {
-                    if(ch != 63 && !equals(ch, strArr[strIdxEnd], isCaseSensitive)) {
+                while ((ch = patArr[patIdxEnd]) != 42 && strIdxStart <= strIdxEnd) {
+                    if (ch != 63 && !equals(ch, strArr[strIdxEnd], isCaseSensitive)) {
                         return false;
                     }
 
@@ -416,27 +420,27 @@ public class ApkFileListUtils {
                     --strIdxEnd;
                 }
 
-                if(strIdxStart > strIdxEnd) {
-                    for(i = patIdxStart; i <= patIdxEnd; ++i) {
-                        if(patArr[i] != 42) {
+                if (strIdxStart > strIdxEnd) {
+                    for (i = patIdxStart; i <= patIdxEnd; ++i) {
+                        if (patArr[i] != 42) {
                             return false;
                         }
                     }
 
                     return true;
                 } else {
-                    while(patIdxStart != patIdxEnd && strIdxStart <= strIdxEnd) {
+                    while (patIdxStart != patIdxEnd && strIdxStart <= strIdxEnd) {
                         i = -1;
 
                         int patLength;
-                        for(patLength = patIdxStart + 1; patLength <= patIdxEnd; ++patLength) {
-                            if(patArr[patLength] == 42) {
+                        for (patLength = patIdxStart + 1; patLength <= patIdxEnd; ++patLength) {
+                            if (patArr[patLength] == 42) {
                                 i = patLength;
                                 break;
                             }
                         }
 
-                        if(i == patIdxStart + 1) {
+                        if (i == patIdxStart + 1) {
                             ++patIdxStart;
                         } else {
                             patLength = i - patIdxStart - 1;
@@ -445,10 +449,10 @@ public class ApkFileListUtils {
                             int i1 = 0;
 
                             label132:
-                            while(i1 <= strLength - patLength) {
-                                for(int j = 0; j < patLength; ++j) {
+                            while (i1 <= strLength - patLength) {
+                                for (int j = 0; j < patLength; ++j) {
                                     ch = patArr[patIdxStart + j + 1];
-                                    if(ch != 63 && !equals(ch, strArr[strIdxStart + i1 + j], isCaseSensitive)) {
+                                    if (ch != 63 && !equals(ch, strArr[strIdxStart + i1 + j], isCaseSensitive)) {
                                         ++i1;
                                         continue label132;
                                     }
@@ -458,7 +462,7 @@ public class ApkFileListUtils {
                                 break;
                             }
 
-                            if(foundIdx == -1) {
+                            if (foundIdx == -1) {
                                 return false;
                             }
 
@@ -467,8 +471,8 @@ public class ApkFileListUtils {
                         }
                     }
 
-                    for(i = patIdxStart; i <= patIdxEnd; ++i) {
-                        if(patArr[i] != 42) {
+                    for (i = patIdxStart; i <= patIdxEnd; ++i) {
+                        if (patArr[i] != 42) {
                             return false;
                         }
                     }
@@ -479,9 +483,9 @@ public class ApkFileListUtils {
         }
     }
 
-    private static   boolean equals(char c1, char c2, boolean isCaseSensitive) {
-        return c1 == c2?true:!isCaseSensitive && (Character.toUpperCase(c1) == Character.toUpperCase(c2) || Character.toLowerCase(c1) == Character.toLowerCase(c2));
+    private static boolean equals(char c1, char c2, boolean isCaseSensitive) {
+        return c1 == c2 ? true : !isCaseSensitive && (Character.toUpperCase(c1) == Character.toUpperCase(c2)
+            || Character.toLowerCase(c1) == Character.toLowerCase(c2));
     }
-
 
 }

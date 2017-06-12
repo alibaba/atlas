@@ -227,11 +227,13 @@ public @interface Config {
     public static final String PROCESS = "process";
     public static final String FEATURE = "feature";
 
+    String title() default "";
+
     String message() default "";
 
     int order() default 0;
 
     boolean advance() default false;
 
-    String group() default "";
+    String group() default "base";
 }

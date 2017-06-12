@@ -420,13 +420,7 @@ import org.jf.dexlib2.iface.Field;
 import org.jf.dexlib2.iface.Method;
 import org.jf.dexlib2.immutable.ImmutableClassDef;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by lilong on 16/7/1.
@@ -453,6 +447,10 @@ public abstract class AbIClassDef implements IClassDef {
         basicType.put("[C","char[]");
         basicType.put("[S","short[]");
         basicType.put("[B","byte[]");
+        basicType.put("[Z","boolean[]");
+        basicType.put("[V","void[]");
+
+
 
     }
 
@@ -476,9 +474,7 @@ public abstract class AbIClassDef implements IClassDef {
         }
         String reSuperClass = reSuperClass(superClass);
         for (Annotation annotation:annotations){
-            if (type.startsWith("Landroid/taobao/atlas/bundleInfo/AtlasBundleInfoManager;")){
-                System.out.println("xxxx");
-            }
+
             immutableAnnotations.add(reAnnotation(annotation));
         }
         for (Field field:fields){

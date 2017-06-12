@@ -3,6 +3,7 @@ package com.taobao.demo;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -14,14 +15,17 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.middleware.dialog.Dialog;
 import com.taobao.android.ActivityGroupDelegate;
+import com.taobao.update.Updater;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -38,6 +42,7 @@ public class MainActivity extends AppCompatActivity
             switch (item.getItemId()) {
                 case R.id.navigation_home:
                     switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
+                    Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
                     return true;
                 case R.id.navigation_dashboard:
                     switchToActivity("second","com.taobao.secondbundle.SecondBundleActivity");
@@ -145,6 +150,19 @@ public class MainActivity extends AppCompatActivity
             dialog.show();
 
 
+        } else if (id == R.id.nav_dex_patch) {
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... voids) {
+                    Updater.dexPatchUpdate(getBaseContext());
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Void aVoid) {
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                }
+            }.execute();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);

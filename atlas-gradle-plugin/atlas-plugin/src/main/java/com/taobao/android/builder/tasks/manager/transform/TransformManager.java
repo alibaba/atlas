@@ -220,6 +220,7 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
 import com.google.common.collect.Lists;
+import com.taobao.android.builder.tools.ReflectUtils;
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskCollection;
@@ -270,6 +271,12 @@ public class TransformManager {
         for (TransformTask transformTask : baseTransforms) {
 
             Transform newTransform = createTransform(appVariantContext, baseVariantOutputData, newTransformClazz);
+
+            try {
+                ReflectUtils.updateField(newTransform,"oldTransform", transformTask.getTransform());
+            } catch (Throwable e) {
+
+            }
 
             replaceTransformTask(transformTask, newTransform);
 

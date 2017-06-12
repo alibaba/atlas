@@ -209,20 +209,20 @@
 
 package com.taobao.android.builder.tasks.manager;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by wuzhong on 16/6/26.
  */
 public class TaskQueryHelper<T extends Task> {
 
-    public static <T> List<T> findTask(Project project, Class<? extends Task> clazz, BaseVariantData vod) {
+    public static <T extends Task> List<T> findTask(Project project, Class<T> clazz, BaseVariantData vod) {
 
         Task[] androidTasks = project.getTasks().withType(clazz).toArray(new Task[0]);
 
@@ -231,7 +231,7 @@ public class TaskQueryHelper<T extends Task> {
         List<Task> taskList = new ArrayList();
         for (Task task : androidTasks) {
             if (task instanceof DefaultAndroidTask) {
-                if (variantName.equals(((DefaultAndroidTask) task).getVariantName())) {
+                if (variantName.equals(((DefaultAndroidTask)task).getVariantName())) {
                     taskList.add(task);
                 }
             } else {
@@ -243,9 +243,8 @@ public class TaskQueryHelper<T extends Task> {
             }
 
         }
-        return (List<T>) taskList;
+        return (List<T>)taskList;
     }
-
 
     public static <T> List<T> findTask(Project project, Class<? extends Task> clazz) {
         Task[] androidTasks = project.getTasks().withType(clazz).toArray(new Task[0]);
@@ -253,7 +252,7 @@ public class TaskQueryHelper<T extends Task> {
         for (Task task : androidTasks) {
             taskList.add(task);
         }
-        return (List<T>) taskList;
+        return (List<T>)taskList;
     }
 
 }

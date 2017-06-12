@@ -205,7 +205,7 @@ public class ActivityGroupDelegate {
                     performLaunchChildActivity(container,key,intent);
                 }
             } catch (ClassNotFoundException e) {
-                Log.e("ActivityGroupDelegate",e.getCause().toString());
+                Log.e("ActivityGroupDelegate","",e);
             }
         }
 

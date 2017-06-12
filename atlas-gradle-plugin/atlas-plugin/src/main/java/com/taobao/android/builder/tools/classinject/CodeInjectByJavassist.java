@@ -209,41 +209,22 @@
 
 package com.taobao.android.builder.tools.classinject;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.alibaba.fastjson.JSON;
+import javassist.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
-
-import com.alibaba.fastjson.JSON;
-
-import javassist.CannotCompileException;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtConstructor;
-import javassist.CtField;
-import javassist.CtMethod;
-import javassist.CtNewMethod;
-import javassist.Modifier;
-import javassist.NotFoundException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 通过Javassist进行代码注入操作
@@ -271,7 +252,18 @@ public class CodeInjectByJavassist {
                 CtMethod ctMethod = CtNewMethod.getter("getVersion", ctField);
                 ctMethod.setModifiers(Modifier.PUBLIC);
                 CtField.Initializer initializer = CtField.Initializer.constant(injectParam.version);
+                try {
+                    cc.removeField(ctField);
+
+                }catch (Exception e){
+
+                }
                 cc.addField(ctField, initializer);
+                try {
+                    cc.removeMethod(ctMethod);
+                }catch (Exception e){
+
+                }
                 cc.addMethod(ctMethod);
                 logger.info(
                     "[android.taobao.atlas.framework.FrameworkProperties] inject version " +
@@ -291,6 +283,7 @@ public class CodeInjectByJavassist {
                 output.put("preLaunch", injectParam.preLaunch);
                 output.put("group", injectParam.group);
                 output.put("outApp", injectParam.outApp);
+                output.put("unit_tag", injectParam.unit_tag);
                 FileUtils.write(injectParam.outputFile, JSON.toJSONString(output, true));
             }
 

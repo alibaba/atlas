@@ -208,8 +208,9 @@
 
 package android.taobao.atlas.util.log.impl;
 
-import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.log.IMonitor;
+
+import java.util.Map;
 
 public class AtlasMonitor {
 
@@ -228,7 +229,7 @@ public class AtlasMonitor {
     public static final String DD_BUNDLE_MISMATCH = "dd_bundle_mismatch";
 
 
-    public static AtlasMonitor getInstance(){
+    public static synchronized AtlasMonitor getInstance(){
     	if (singleton == null){
     		singleton = new AtlasMonitor();
     	}
@@ -239,9 +240,9 @@ public class AtlasMonitor {
     	externalMonitor = monitor;
     }
 
-    public void trace(String stage, boolean isSuccess, String errCode, String errMsg, String detail) {
-        if(externalMonitor!=null){
-        	externalMonitor.trace(stage, isSuccess, errCode, errMsg, detail, FileUtils.getAvailableDisk());
+ 	public void report(String errCode, Map<String, Object> detail, Throwable throwable) {
+        if(externalMonitor != null) {
+            externalMonitor.report(errCode, detail, throwable);
         }
-	}
+    }
 }

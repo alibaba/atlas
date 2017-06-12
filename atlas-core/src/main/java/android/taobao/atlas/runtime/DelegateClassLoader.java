@@ -208,7 +208,8 @@
 
 package android.taobao.atlas.runtime;
 
-import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import android.content.ComponentName;
@@ -224,10 +225,22 @@ import org.osgi.framework.Bundle;
 import android.taobao.atlas.framework.Framework;
 import android.util.Log;
 
-public class DelegateClassLoader extends ClassLoader {
+import dalvik.system.PathClassLoader;
+
+public class DelegateClassLoader extends PathClassLoader {
     
     public DelegateClassLoader(ClassLoader cl){
-        super(cl);
+        super(".",cl);
+    }
+
+    public void addDexPath(String dexPath) {
+        try {
+            Method addDexMethod = findMethod(getParent(),"addDexPath",new Class[]{String.class});
+            addDexMethod.setAccessible(true);
+            addDexMethod.invoke(getParent(),dexPath);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -237,37 +250,24 @@ public class DelegateClassLoader extends ClassLoader {
 
     @Override
     protected Class<?> findClass(String className) throws ClassNotFoundException {
-        if(className.contains("dexmerge")){
-            Log.e("AtlasBridgeApplcation","find : "+className);
-        }
         Class<?> clazz = null;
-        try {
-            clazz = loadFromInstalledBundles(className,false);
-        }catch(Throwable e){
-
-        }finally {
-            if (clazz == null) {
-                if (Thread.currentThread().getId() != Looper.getMainLooper().getThread().getId()) {
-                    BundleUtil.checkBundleStateSyncOnChildThread(className);
-                } else {
-                    BundleUtil.checkBundleStateSyncOnUIThread(className);
-                }
-                clazz = loadFromInstalledBundles(className, true);
-                if (clazz != null)
-                    return clazz;
-
-                ComponentName comp = new ComponentName(RuntimeVariables.androidApplication.getPackageName(),className);
-                if (isProvider(comp)){
-                    return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeProvider");
-                }else if(isReceiver(comp)){
-                    return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeReceiver");
-                }
-
-                throw new ClassNotFoundException("Can't find class " + className + printExceptionInfo());
-            }else{
-                return clazz;
-            }
+        if (Thread.currentThread().getId() != Looper.getMainLooper().getThread().getId()) {
+            BundleUtil.checkBundleStateSyncOnChildThread(className);
+        } else {
+            BundleUtil.checkBundleStateSyncOnUIThread(className);
         }
+        clazz = loadFromInstalledBundles(className, true);
+        if (clazz != null)
+            return clazz;
+
+        ComponentName comp = new ComponentName(RuntimeVariables.androidApplication.getPackageName(),className);
+        if (isProvider(comp)){
+            return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeProvider");
+        }else if(isReceiver(comp)){
+            return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeReceiver");
+        }
+
+        throw new ClassNotFoundException("Can't find class " + className + printExceptionInfo());
     }
     
     private String printExceptionInfo(){
@@ -392,6 +392,22 @@ public class DelegateClassLoader extends ClassLoader {
         }
 
         return false;
+    }
+
+    public static Method findMethod(Object instance, String methodName,Class[] args) throws NoSuchMethodException {
+        for (Class<?> clazz = instance.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
+            try {
+                Method method = clazz.getDeclaredMethod(methodName,args);
+                if (!method.isAccessible()) {
+                    method.setAccessible(true);
+                }
+                return method;
+            } catch (NoSuchMethodException e) {
+                // ignore and search next
+            }
+        }
+
+        throw new NoSuchMethodException("Field " + methodName + " not found in " + instance.getClass());
     }
 
 }

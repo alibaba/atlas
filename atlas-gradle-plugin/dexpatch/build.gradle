@@ -21,14 +21,16 @@ dependencies {
     compile 'org.smali:baksmali:2.0.6'
     compile 'org.antlr:antlr-runtime:3.5.2'
     compile 'org.apache.commons:commons-lang3:3.4'
-//    compile 'com.taobao.android:taobao-dx:1.12.1.1'
     compile 'org.apache.commons:commons-compress:1.4.1'
     compile "com.android.tools:common:24.3.1"
     compile "com.alibaba:fastjson:1.1.46.android"
     compile "org.apache.httpcomponents:httpclient:4.4"
+    compile 'io.reactivex.rxjava2:rxjava:2.0.1'
+    compile 'org.reactivestreams:reactive-streams:1.0.0@jar'
 
 }
 
 
 group 'com.taobao.android'
-version "1.4.0.0"
+
+version "1.4.0.9-rc9"

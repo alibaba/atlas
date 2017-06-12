@@ -1,6 +1,10 @@
 package com.taobao.atlas.update;
 
+import android.content.Context;
+import android.taobao.atlas.versionInfo.BaselineInfoManager;
+import android.text.TextUtils;
 import android.util.Log;
+import android.util.Pair;
 
 import com.taobao.atlas.dexmerge.MergeCallback;
 import com.taobao.atlas.update.exception.MergeException;
@@ -13,6 +17,10 @@ import org.osgi.framework.BundleException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by wuzhong on 2016/11/23.
@@ -28,6 +36,11 @@ public class AtlasUpdater {
      * @throws BundleException
      */
     public static void update(UpdateInfo updateInfo, File patchFile) throws MergeException, BundleException {
+
+        if (null == updateInfo || updateInfo.dexPatch){
+            //with dexPatch,please call "dexPatchUpdate"
+            return;
+        }
 
         MergeCallback mergeCallback = new MergeCallback() {
             @Override
@@ -53,10 +66,94 @@ public class AtlasUpdater {
 
         patchInstaller.install();
 
-        new PatchCleaner().clearUpdatePath(updateInfo.workDir.getAbsolutePath());
+        PatchCleaner.clearUpdatePath(updateInfo.workDir.getAbsolutePath());
 
 
     }
 
+
+    public static void dexpatchUpdate(Context context, UpdateInfo updateInfo, File patchFile, final IDexpatchMonitor monitor) {
+
+        if (null == updateInfo || !updateInfo.dexPatch){
+            return;
+        }
+        //检查版本，只有versionName相等
+        //并所有bundle的dexpatchVersion都大于对应bundle的dexpatchbundle时，才会执行dexpatch操作
+        String versionName = null;
+        try {
+            versionName = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (TextUtils.isEmpty(versionName) || !versionName.equals(updateInfo.baseVersion)) {
+            return;
+        }
+        Iterator<UpdateInfo.Item> itemIterator = updateInfo.updateBundles.iterator();
+        while (itemIterator.hasNext()) {
+            UpdateInfo.Item item = itemIterator.next();
+            if (item.dexpatchVersion <= BaselineInfoManager.instance().getDexPatchBundleVersion(item.name)) {
+                itemIterator.remove();
+            }
+        }
+        if (updateInfo.updateBundles.isEmpty()){
+            return;
+        }
+
+        //开始merge
+        PatchMerger patchMerger = null;
+        try {
+            patchMerger = new PatchMerger(updateInfo, patchFile, null);
+            patchMerger.merge();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (patchMerger == null) {
+            return;
+        } else {
+            List<UpdateInfo.Item> result = new ArrayList<>();
+            for (int i = 0; i < updateInfo.updateBundles.size(); i++) {
+                UpdateInfo.Item item = updateInfo.updateBundles.get(i);
+                if (patchMerger.mergeOutputs.containsKey(item.name)) {//对于merge成功的bundle列表进行更新
+                    Pair<String, UpdateInfo.Item> pair = patchMerger.mergeOutputs.get(item.name);
+                    boolean succeed = new File(pair.first).exists();
+                    if (succeed) {
+                        result.add(item);
+                    }
+                    if (monitor != null) {
+                        monitor.merge(succeed, item.name, item.dexpatchVersion, "");
+                    }
+                }
+            }
+            updateInfo.updateBundles = result;
+        }
+
+
+        try {
+            PatchInstaller patchInstaller = new PatchInstaller(patchMerger.mergeOutputs, updateInfo);
+            patchInstaller.install();
+        } catch (BundleException e) {
+            e.printStackTrace();
+        }
+
+        ConcurrentHashMap<String, Long> installList = BaselineInfoManager.instance().getDexPatchBundles();
+        if (installList == null || installList.size() == 0) {
+            return;
+        }
+
+        if (null != monitor){
+            for (UpdateInfo.Item item : updateInfo.updateBundles){
+                boolean succeed = installList.containsKey(item.name) && item.dexpatchVersion == installList.get(item.name);
+                monitor.install(succeed,item.name, item.dexpatchVersion, "");
+            }
+        }
+
+        PatchCleaner.clearUpdatePath(updateInfo.workDir.getAbsolutePath());
+    }
+
+    public interface IDexpatchMonitor {
+        public void merge(boolean success, String bundleName, long version, String errMsg);
+        public void install(boolean success, String bundleName, long version, String errMsg);
+    }
 
 }

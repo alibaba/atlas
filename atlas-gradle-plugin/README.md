@@ -2,6 +2,21 @@
 
 ## changelog
 
+### TODO
+
+1. unit tag diff bundle 不变
+2. tBuildConfig.minPackageId 可设置最小的自动分配packageId，默认35（10进制）开始
+
+
+### 2.3.1.rc15
+
+1. bundleInfo 增加unique_tag
+2. 增加fastMultiDex功能，该功能需要关闭android里的multidexEnabled，充分利用predex和dexcache。配置开关 `atlas.multiDexConfigs.debug.fastMultiDex=true`
+
+### 2.3.1.rc11
+
+1. 支持bundle配置proguard规则，仅支持keep和dontwarn
+
 ### 2.3.0.alpha15
 
 1. 支持手淘灰度版本

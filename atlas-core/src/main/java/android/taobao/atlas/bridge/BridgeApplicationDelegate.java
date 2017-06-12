@@ -233,6 +233,7 @@ import android.taobao.atlas.util.log.impl.AtlasAlarmer;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.WindowManager;
 
 import java.lang.reflect.Field;
@@ -249,14 +250,23 @@ public class BridgeApplicationDelegate {
     private Application mRawApplication;
     private String mInstalledVersionName;
     private String mCurrentProcessname;
+    private long   mInstalledVersionCode;
+    private long   mLastUpdateTime;
     private boolean mIsUpdated;
+    private String mApkPath;
+    private Object mdexLoadBooster;
     private List<ProviderInfo> mBoundApplication_provider;
 
-    public BridgeApplicationDelegate(Application rawApplication,String processname,String installedVersion,boolean isUpdated){
+    public BridgeApplicationDelegate(Application rawApplication,String processname,String installedVersion,
+                                     long versioncode,long lastupdatetime,String apkPath,boolean isUpdated,Object dexLoadBooster){
         mRawApplication = rawApplication;
         mCurrentProcessname = processname;
         mInstalledVersionName = installedVersion;
+        mInstalledVersionCode = versioncode;
+        mLastUpdateTime = lastupdatetime;
         mIsUpdated = isUpdated;
+        mApkPath = apkPath;
+        mdexLoadBooster = dexLoadBooster;
         PackageManagerDelegate.delegatepackageManager(rawApplication.getBaseContext());
     }
 
@@ -267,7 +277,12 @@ public class BridgeApplicationDelegate {
             throw new RuntimeException(e);
         }
         RuntimeVariables.androidApplication = mRawApplication;
+        RuntimeVariables.sCurrentProcessName = mCurrentProcessname;
+        RuntimeVariables.sInstalledVersionCode = mInstalledVersionCode;
+        RuntimeVariables.sAppLastUpdateTime = mLastUpdateTime;
+        RuntimeVariables.sApkPath = mApkPath;
         RuntimeVariables.delegateResources = mRawApplication.getResources();
+        RuntimeVariables.sDexLoadBooster = mdexLoadBooster;
         if(!TextUtils.isEmpty(mInstalledVersionName)){
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;
         }
@@ -366,8 +381,12 @@ public class BridgeApplicationDelegate {
                 public void onConfigurationChanged(Configuration newConfig) {
                     DisplayMetrics newMetrics = new DisplayMetrics();
                     if(RuntimeVariables.delegateResources!=null){
-                        ((WindowManager) RuntimeVariables.androidApplication
-                                .getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getMetrics(newMetrics);
+                        WindowManager manager = (WindowManager) RuntimeVariables.androidApplication.getSystemService(Context.WINDOW_SERVICE);
+                        if(manager==null || manager.getDefaultDisplay()==null){
+                            Log.e("BridgeApplication","get windowmanager service failed");
+                            return;
+                        }
+                        manager.getDefaultDisplay().getMetrics(newMetrics);
                         RuntimeVariables.delegateResources.updateConfiguration(newConfig,newMetrics);
                         try {
                             Method method = Resources.class.getDeclaredMethod("updateSystemConfiguration",

@@ -208,24 +208,21 @@
 
 package android.taobao.atlas.versionInfo;
 
-import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.os.Process;
-import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.WrapperUtil;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by guanjie on 15/9/10.
@@ -235,6 +232,8 @@ public class BaselineInfoManager{
     private static BaselineInfoManager sBaseInfoManager;
 
     private Object mVersionManager;
+    private String dexPatchStorageLocation;
+    private String updateBundleStorageLocation;
 
     public synchronized static BaselineInfoManager instance(){
         if(sBaseInfoManager==null){
@@ -276,27 +275,62 @@ public class BaselineInfoManager{
         return null;
     }
 
-    public String getDexPatchBundleVersion(String bundleName){
+//    public String getDexPatchStorageLocation(){
+//        if(dexPatchStorageLocation==null) {
+//            try {
+//                dexPatchStorageLocation = (String) mVersionManager.getClass().getDeclaredField("DEXPATCH_STORAGE_LOCATION").get(mVersionManager);
+//            } catch (Throwable e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        return dexPatchStorageLocation;
+//    }
+//
+//    public String getUpdateStorageLocation(){
+//        if(updateBundleStorageLocation==null) {
+//            try {
+//                updateBundleStorageLocation = (String) mVersionManager.getClass().getDeclaredField("CURRENT_STORAGE_LOCATION").get(mVersionManager);
+//            } catch (Throwable e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        return updateBundleStorageLocation;
+//    }
+
+    public long getDexPatchBundleVersion(String bundleName){
         try {
-            return (String)mVersionManager.getClass().getDeclaredMethod("getDexPatchBundleVersion",String.class).invoke(mVersionManager,bundleName);
+            return (long)mVersionManager.getClass().getDeclaredMethod("getDexPatchBundleVersion",String.class).invoke(mVersionManager,bundleName);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    public ConcurrentHashMap<String,Long> getDexPatchBundles(){
+        try {
+            Field dexPatchBundles = mVersionManager.getClass().getDeclaredField("dexPatchBundles");
+            if (!dexPatchBundles.isAccessible()){
+                dexPatchBundles.setAccessible(true);
+            }
+            return (ConcurrentHashMap<String,Long>) dexPatchBundles.get(mVersionManager);
         } catch (Throwable e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public boolean isDexPatched(String bundleName){
+    public boolean isUpdated(String bundleName){
         try {
-            return (boolean)mVersionManager.getClass().getDeclaredMethod("isDexPatched",String.class).invoke(mVersionManager,bundleName);
+            return (boolean)mVersionManager.getClass().getDeclaredMethod("isUpdated",String.class).invoke(mVersionManager,bundleName);
         } catch (Throwable e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    public boolean isChanged(String bundleName){
+    public boolean isDexPatched(String bundleName){
         try {
-            return (boolean)mVersionManager.getClass().getDeclaredMethod("isChanged",String.class).invoke(mVersionManager,bundleName);
+            return (boolean)mVersionManager.getClass().getDeclaredMethod("isDexPatched",String.class).invoke(mVersionManager,bundleName);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -319,15 +353,6 @@ public class BaselineInfoManager{
             e.printStackTrace();
         }
         return "";
-    }
-
-    public long dexPatchVersion(){
-        try {
-            return (long)mVersionManager.getClass().getDeclaredMethod("dexPatchVersion").invoke(mVersionManager);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return 0;
     }
 
     public void rollbackHardly(){
@@ -356,64 +381,33 @@ public class BaselineInfoManager{
         return new HashMap<String,String>().keySet();
     }
 
-    public void checkUpdateBundles(String storageDir){
-        Set<String> updateBundles = getUpdateBundles();
-        if(updateBundles==null){
-            return;
-        }
-        for (String str : updateBundles) {
-            if(!TextUtils.isEmpty(str)){
-                Log.e("BaselineInfomanager","check update bundle : "+str);
-                if(!new File(storageDir,str).exists() && AtlasBundleInfoManager.instance().isInternalBundle(str)){
-                    Log.e("BaselineInfomanager","check update bundle invalid: "+str);
-                    rollbackHardly();
-                    try {
-                        Method killChild = mVersionManager.getClass().getDeclaredMethod("killChildProcesses",Context.class);
-                        killChild.invoke(mVersionManager,RuntimeVariables.androidApplication.getApplicationContext());
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                    }
-                    android.os.Process.killProcess(Process.myPid());
-                }
-            }
-        }
-    }
-
-    public void superRollback(boolean dexPatch){
+    private void rollbackInternal(){
         try {
-            mVersionManager.getClass().getDeclaredMethod("rollback",boolean.class).invoke(mVersionManager,dexPatch);
+            mVersionManager.getClass().getDeclaredMethod("rollback").invoke(mVersionManager);
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 
-    public void rollback(boolean dexPatch){
-        if(dexPatch || !TextUtils.isEmpty(lastVersionName())) {
+    public void rollback(){
+        if (!TextUtils.isEmpty(lastVersionName())) {
             List<String> bundles = new ArrayList<String>(getUpdateBundles());
             PackageInfo info = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication);
-            if (RuntimeVariables.sCachePreVersionBundles && bundles!=null && !info.versionName.equals(lastVersionName()) && bundles.size() > 0) {
-                //回滚到上个版本
-                if(!dexPatch) {
-                    if (!Atlas.getInstance().restoreBundle(bundles.toArray(new String[bundles.size()]))) {
-                        rollbackHardly();
-                        return;
-                    }
-                }
-                superRollback(dexPatch);
+            if (RuntimeVariables.sCachePreVersionBundles && bundles != null && !info.versionName.equals(lastVersionName()) && bundles.size() > 0) {
+                rollbackInternal();
             } else {
                 //回滚到安装时期
                 rollbackHardly();
             }
-        }else{
+        } else {
             rollbackHardly();
         }
-
     }
 
-    public void saveBaselineInfo(String newBaselineVersion, List<Pair<String,String>> infos, boolean dexPatch,boolean cachePreVersion) throws IOException {
+    public void saveBaselineInfo(String newBaselineVersion, HashMap<String,String> infos,String storageLocation) throws IOException{
         try {
-            mVersionManager.getClass().getDeclaredMethod("saveBaselineInfo",String.class,List.class,boolean.class,boolean.class).invoke(
-                    mVersionManager,newBaselineVersion,infos,dexPatch,cachePreVersion
+            mVersionManager.getClass().getDeclaredMethod("saveUpdateInfo",String.class,HashMap.class,boolean.class,String.class).invoke(
+                    mVersionManager,newBaselineVersion,infos,RuntimeVariables.sCachePreVersionBundles,storageLocation
             );
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -422,31 +416,21 @@ public class BaselineInfoManager{
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
-    }
 
-        public void saveBaselineInfo(String newBaselineVersion, List<UpdateBundleInfo> infos) throws IOException{
-        List<Pair<String,String>> updateInfoPairs = new ArrayList<Pair<String, String>>();
-        for(UpdateBundleInfo info : infos){
-            updateInfoPairs.add(new Pair<String, String>(info.name,info.version));
-        }
-
-        saveBaselineInfo(newBaselineVersion,updateInfoPairs,false,RuntimeVariables.sCachePreVersionBundles);
         WrapperUtil.persisitKeyPointLog(newBaselineVersion);
     }
 
-    public void saveBaselineInfo(long dexPatchVersion, List<UpdateBundleInfo> infos) throws IOException{
-        List<Pair<String,String>> updateInfoPairs = new ArrayList<Pair<String, String>>();
-        for(UpdateBundleInfo info : infos){
-            updateInfoPairs.add(new Pair<String, String>(info.name,info.version));
+    public void saveDexPathInfo(HashMap<String,String> infos,String storageLocation) throws IOException{
+        try {
+            mVersionManager.getClass().getDeclaredMethod("saveDexPatchInfo",HashMap.class,String.class).invoke(
+                    mVersionManager,infos,storageLocation);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
         }
-
-        saveBaselineInfo(dexPatchVersion+"",updateInfoPairs,true,RuntimeVariables.sCachePreVersionBundles);
-    }
-
-    public static class UpdateBundleInfo{
-        public String name;
-        public String version;
-        public String size;
     }
 
 }

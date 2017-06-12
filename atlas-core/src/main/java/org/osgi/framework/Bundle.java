@@ -1,9 +1,6 @@
 
 package org.osgi.framework;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.Dictionary;
 import java.net.URL;
 
 /**
@@ -85,27 +82,10 @@ public abstract interface Bundle
 	 */
     public static final int RESOLVED = 0x00000004;
 
-    /**
-	 * This bundle is in the process of starting.
-	 *
-	 * <p>A bundle is in the <tt>STARTING</tt> state when the {@link #start}method
-	 * is active. A bundle will be in this state when the bundle's
-	 * {@link BundleActivator#start}is called. If this method completes
-	 * without exception, then the bundle has successfully started and will move to the
-	 * <tt>ACTIVE</tt> state.
-	 * <p>The value of <tt>STARTING</tt> is 0x00000008.
-	 */
+
     public static final int STARTING = 0x00000008;
 
-    /**
-	 * This bundle is in the process of stopping.
-	 *
-	 * <p>A bundle is in the <tt>STOPPING</tt> state when the {@link #stop}method
-	 * is active. A bundle will be in this state when the bundle's
-	 * {@link BundleActivator#stop}method is called. When this method completes
-	 * the bundle is stopped and will move to the <tt>RESOLVED</tt> state.
-	 * <p>The value of <tt>STOPPING</tt> is 0x00000010.
-	 */
+
     public static final int STOPPING = 0x00000010;
 
     /**
@@ -127,263 +107,10 @@ public abstract interface Bundle
 	 */
     public abstract int getState();
 
-    /**
-	 * Starts this bundle.
-	 *
-	 * If the Framework implements the optional Start Level service and the
-	 * current start level is less than this bundle's start level, then the
-	 * Framework must persistently mark this bundle as started and delay the
-	 * starting of this bundle until the Framework's current start level becomes
-	 * equal or more than the bundle's start level.
-	 * <p>Otherwise, the following steps are required to start a bundle:
-	 * <ol>
-	 * <li>If this bundle's state is <tt>UNINSTALLED</tt> then
-	 * an <tt>IllegalStateException</tt> is thrown.
-	 *
-	 * <li>If this bundle's state is <tt>STARTING</tt> or <tt>STOPPING</tt>
-	 * then this method will wait for this bundle to
-	 * change state before continuing. If this does not occur
-	 * in a reasonable time, a <tt>BundleException</tt> is thrown to indicate
-	 * this bundle was unable to be started.
-	 *
-	 * <li>If this bundle's state is <tt>ACTIVE</tt> then this method returns immediately.
-	 *
-	 * <li>If this bundle's state is not <tt>RESOLVED</tt>,
-	 * an attempt is made to resolve this bundle's package dependencies.
-	 * If the Framework cannot resolve this bundle, a <tt>BundleException</tt> is thrown.
-	 *
-	 * <li>This bundle's state is set to <tt>STARTING</tt>.
-	 *
-	 * <li>The {@link BundleActivator#start}method of this
-	 * bundle's <tt>BundleActivator</tt>, if one is specified, is called.
-	 * If the <tt>BundleActivator</tt> is invalid or throws an exception, this bundle's state
-	 * is set back to <tt>RESOLVED</tt>.
-	 * <br>Any services registered by the bundle will be unregistered.
-	 * <br>Any services used by the bundle will be released.
-	 * <br>Any listeners registered by the bundle will be removed.
-	 * <br>A <tt>BundleException</tt> is then thrown.
-	 *
-	 * <li> If this bundle's state is <tt>UNINSTALLED</tt>,
-	 * because the bundle was uninstalled while the <tt>BundleActivator.start</tt>
-	 * method was running, a <tt>BundleException</tt> is thrown.
-	 *
-	 * <li>Since it is recorded that this bundle has been started, when
-	 * the Framework is restarted this bundle will be automatically started.
-	 *
-	 * <li>This bundle's state is set to <tt>ACTIVE</tt>.
-	 *
-	 * <li>A bundle event of type {@link BundleEvent#STARTED}is broadcast.
-	 * </ol>
-	 *
-	 * <b>Preconditions</b>
-	 * <ul>
-	 * <li><tt>getState()</tt> in {<tt>INSTALLED</tt>}, {<tt>RESOLVED</tt>}.
-	 * </ul>
-	 * <b>Postconditions, no exceptions thrown</b>
-	 * <ul>
-	 * <li><tt>getState()</tt> in {<tt>ACTIVE</tt>}.
-	 * <li><tt>BundleActivator.start()</tt> has been called and did not throw an exception.
-	 * </ul>
-	 * <b>Postconditions, when an exception is thrown</b>
-	 * <ul>
-	 * <li><tt>getState()</tt> not in {<tt>STARTING</tt>}, {<tt>ACTIVE</tt>}.
-	 * </ul>
-	 *
-	 * @exception BundleException If this bundle couldn't be started.
-	 * This could be because a code dependency could not be resolved or
-	 * the specified <tt>BundleActivator</tt> could not be loaded or threw an exception.
-	 * @exception java.lang.IllegalStateException If this
-	 * bundle has been uninstalled or this bundle tries to change its own state.
-	 * @exception java.lang.SecurityException If the caller does not have
-	 * the appropriate <tt>AdminPermisson</tt>, and the Java Runtime Environment
-	 * supports permissions.
-	 */
+
     public abstract void start() throws BundleException;
 
-    /**
-	 * Stops this bundle.
-	 *
-	 * <p> The following steps are required to stop a bundle:
-	 * <ol>
-	 * <li>If this bundle's state is <tt>UNINSTALLED</tt> then
-	 * an <tt>IllegalStateException</tt> is thrown.
-	 *
-	 * <li>If this bundle's state is <tt>STARTING</tt> or <tt>STOPPING</tt>
-	 * then this method will wait for this bundle to
-	 * change state before continuing. If this does not occur
-	 * in a reasonable time, a <tt>BundleException</tt> is thrown to indicate
-	 * this bundle was unable to be stopped.
-	 *
-	 * <li>If this bundle's state is not <tt>ACTIVE</tt> then this method returns immediately.
-	 *
-	 * <li> This bundle's state is set to <tt>STOPPING</tt>.
-	 *
-	 * <li>Since it is recorded that this bundle has been stopped,
-	 * Framework is restarted this bundle will not be automatically started.
-	 *
-	 * <li>The {@link BundleActivator#stop}method of this
-	 * bundle's <tt>BundleActivator</tt>, if one is specified, is called.
-	 * If this method throws an exception, it will continue to stop this bundle.
-	 * A <tt>BundleException</tt> will be thrown after completion of the
-	 * remaining steps.
-	 *
-	 * <li>Any services registered by this bundle must be unregistered.
-	 * <li>Any services used by this bundle must be released.
-	 * <li>Any listeners registered by this bundle must be removed.
-	 *
-	 * <li> If this bundle's state is <tt>UNINSTALLED</tt>,
-	 * because the bundle was uninstalled while the <tt>BundleActivator.stop</tt>
-	 * method was running, a <tt>BundleException</tt> must be thrown.
-	 *
-	 * <li>This bundle's state is set to <tt>RESOLVED</tt>.
-	 *
-	 * <li>A bundle event of type {@link BundleEvent#STOPPED}is broadcast.
-	 * </ol>
-	 *
-	 * <b>Preconditions</b>
-	 * <ul>
-	 * <li><tt>getState()</tt> in {<tt>ACTIVE</tt>}.
-	 * </ul>
-	 * <b>Postconditions, no exceptions thrown</b>
-	 * <ul>
-	 * <li><tt>getState()</tt> not in {<tt>ACTIVE</tt>, <tt>STOPPING</tt>}.
-	 * <li><tt>BundleActivator.stop</tt> has been called and did not throw an exception.
-	 * </ul>
-	 * <b>Postconditions, when an exception is thrown</b>
-	 * <ul>
-	 * <li>None.
-	 * </ul>
-	 *
-	 * @exception BundleException If this bundle's
-	 * <tt>BundleActivator</tt> could not be loaded or threw an exception.
-	 * @exception java.lang.IllegalStateException If this
-	 * bundle has been uninstalled or this bundle tries to change its own state.
-	 * @exception java.lang.SecurityException If the caller does not have
-	 * the appropriate <tt>AdminPermission</tt>, and the Java Runtime Environment
-	 * supports permissions.
-	 */
     public abstract void stop() throws BundleException;
-
-    /**
-	 * Updates this bundle.
-	 *
-	 * <p>If this bundle's state is <tt>ACTIVE</tt>, it will be stopped
-	 * before the update and started after the update successfully completes.
-	 *
-	 * <p>If the bundle being updated has exported any packages, these
-	 * packages will not be updated. Instead, the previous package version will remain
-	 * exported until the <tt>PackageAdmin.refreshPackages</tt> method has been
-	 * has been called or the Framework is relaunched.
-	 *
-	 * <p> The following steps are required to update a bundle:
-	 * <ol>
-	 * <li>If this bundle's state is <tt>UNINSTALLED</tt> then
-	 * an <tt>IllegalStateException</tt> is thrown.
-	 *
-	 * <li>If this bundle's state is <tt>ACTIVE</tt>, <tt>STARTING</tt> or <tt>STOPPING</tt>,
-	 * the bundle is stopped as described in the <tt>Bundle.stop</tt> method.
-	 * If <tt>Bundle.stop</tt> throws an exception, the exception is rethrown
-	 * terminating the update.
-	 *
-	 * <li>The download location of the new version of this bundle
-	 * is determined from either the bundle's {@link Constants#BUNDLE_UPDATELOCATION} Manifest
-	 * header (if available) or the bundle's original location.
-	 *
-	 * <li>The location is interpreted in an implementation dependent manner,
-	 * typically as a URL, and the new version of this bundle is obtained from
-	 * this location.
-	 *
-	 * <li>The new version of this bundle is installed. If the Framework is
-	 * unable to install the new version of this bundle, the original version
-	 * of this bundle will be restored and a <tt>BundleException</tt> will be thrown
-	 * after completion of the remaining steps.
-	 *
-	 * <li>If the bundle has declared an Bundle-RequiredExecutionEnvironment header, then
-	 * the listed execution environments must be verified against the installed
-	 * execution environments. If they do not all match, the original version
-	 * of this bundle will be restored and a <tt>BundleException</tt> will be thrown
-	 * after completion of the remaining steps.
-	 *
-	 * <li>This bundle's state is set to <tt>INSTALLED</tt>.
-	 *
-	 *
-	 * <li> If this bundle has not declared an <tt>Import-Package</tt> header
-	 * in its Manifest file (specifically, this bundle does not depend on any packages from
-	 * other bundles), this bundle's state may be set to <tt>RESOLVED</tt>.
-	 *
-	 * <li>If the new version of this bundle was successfully installed,
-	 * a bundle event of type {@link BundleEvent#UPDATED}is broadcast.
-	 *
-	 * <li>If this bundle's state was originally <tt>ACTIVE</tt>,
-	 * the updated bundle is started as described in the <tt>Bundle.start</tt> method.
-	 * If <tt>Bundle.start</tt> throws an exception, a Framework event of
-	 * type {@link FrameworkEvent#ERROR}is broadcast containing the exception.
-	 * </ol>
-	 *
-	 * <b>Preconditions</b>
-	 * <ul>
-	 * <li><tt>getState()</tt> not in {<tt>UNINSTALLED</tt>}.
-	 * </ul>
-	 * <b>Postconditions, no exceptions thrown</b>
-	 * <ul>
-	 * <li><tt>getState()</tt> in
-	 * {<tt>INSTALLED</tt>, <tt>RESOLVED</tt>, <tt>ACTIVE</tt>}.
-	 * <li>This bundle has been updated.
-	 * </ul>
-	 * <b>Postconditions, when an exception is thrown</b>
-	 * <ul>
-	 * <li><tt>getState()</tt> in {<tt>INSTALLED</tt>, <tt>RESOLVED</tt>, <tt>ACTIVE</tt>}.
-	 * <li>Original bundle is still used; no update occurred.
-	 * </ul>
-	 *
-	 * @exception BundleException If the update fails.
-	 * @exception java.lang.IllegalStateException If this
-	 * bundle has been uninstalled or this bundle tries to change its own state.
-	 * @exception java.lang.SecurityException If the caller does not have
-	 * the appropriate <tt>AdminPermission</tt>, and the Java Runtime Environment
-	 * supports permissions.
-	 * @see #stop()
-	 * @see #start()
-	 */
-//    public abstract void update() throws BundleException;
-
-//    /**
-//	 * Updates this bundle from an <tt>InputStream</tt>.
-//	 *
-//	 * <p>This method performs all the steps listed in <tt>Bundle.update()</tt>, except the bundle
-//	 * will be read from the supplied <tt>InputStream</tt>, rather than a <tt>URL</tt>.
-//	 * <p>This method will always close the <tt>InputStream</tt>
-//	 * when it is done, even if an exception is thrown.
-//	 *
-//	 * @param in The <tt>InputStream</tt> from which to read the new bundle.
-//	 * @exception BundleException If the provided stream cannot be read or the update fails.
-//	 * @exception java.lang.IllegalStateException If this
-//	 * bundle has been uninstalled or this bundle tries to change its own state.
-//	 * @exception java.lang.SecurityException If the caller does not have
-//	 * the appropriate <tt>AdminPermission</tt>, and the Java Runtime Environment
-//	 * supports permissions.
-//	 * @see #update()
-//	 */
-//    public abstract void update(InputStream in) throws BundleException;
-
-    /**
-	 * Updates this bundle from an <tt>File</tt>.
-	 *
-	 * <p>This method performs all the steps listed in <tt>Bundle.update()</tt>, except the bundle
-	 * will be read from the supplied <tt>File</tt>, rather than a <tt>URL</tt>.
-	 * <p>This method will try to move <tt>File</tt>
-	 *
-	 * @param file The <tt>File</tt> from which to read the new bundle.
-	 * @param version The <tt>File</tt> from which to read the new bundle.
-	 * @exception BundleException If the provided stream cannot be read or the update fails.
-	 * @exception java.lang.IllegalStateException If this
-	 * bundle has been uninstalled or this bundle tries to change its own state.
-	 * @exception java.lang.SecurityException If the caller does not have
-	 * the appropriate <tt>AdminPermission</tt>, and the Java Runtime Environment
-	 * supports permissions.
-	 * @see #update()
-	 */
-    public abstract void update(File file,String version,long dexPathVersion) throws BundleException;
 
     /**
 	 * Uninstalls this bundle.
@@ -444,35 +171,6 @@ public abstract interface Bundle
     public abstract void uninstall() throws BundleException;
 
     /**
-	 * Returns this bundle's Manifest headers and values.
-	 * This method returns all the Manifest headers and values
-	 * from the main section of the bundle's Manifest file; that is, all lines prior
-	 * to the first blank line.
-	 *
-	 * <p>Manifest header names are case-insensitive. The methods of the returned
-	 * <tt>Dictionary</tt> object will operate on header names in a case-insensitive manner.
-	 *
-	 * <p>For example, the following Manifest headers and values are included
-	 * if they are present in the Manifest file:
-	 * <pre>
-	 * Bundle-Name
-	 * Bundle-Vendor
-	 * Bundle-Version
-	 * Bundle-Description
-	 * Bundle-DocURL
-	 * Bundle-ContactAddress
-	 * </pre>
-	 * <p>This method will continue to return Manifest header information
-	 * while this bundle is in the <tt>UNINSTALLED</tt> state.
-	 *
-	 * @return A <tt>Dictionary</tt> object containing this bundle's Manifest headers and values.
-	 *
-	 * @exception java.lang.SecurityException If the caller does not have
-	 * the <tt>AdminPermission</tt>, and the Java Runtime Environment supports permissions.
-	 */
-    public abstract Dictionary<String,String> getHeaders();
-
-    /**
 	 * Returns this bundle's identifier. The bundle is assigned a unique identifier by the Framework
 	 * when it is installed in the OSGi environment.
 	 *
@@ -492,47 +190,8 @@ public abstract interface Bundle
 	 */
     public abstract long getBundleId();
 
-    /**
-	 * Returns this bundle's location identifier.
-	 *
-	 * <p>The bundle location identifier is the location passed to
-	 * {@link BundleContext#installBundle}when a bundle is installed.
-	 *
-	 * <p>This method will continue to return this bundle's location
-	 * identifier while this bundle is in the <tt>UNINSTALLED</tt> state.
-	 *
-	 * @return The string representation of this bundle's location identifier.
-	 * @exception java.lang.SecurityException If the caller does not have
-	 * the appropriate <tt>AdminPermission</tt>, and the Java Runtime Environment
-	 * supports permissions.
-	 */
-    public abstract String getLocation();
 
-    /**
-	 * Determines if this bundle has the specified permissions.
-	 *
-	 * <p>If the Java Runtime Environment does not support permissions,
-	 * this method always returns <tt>true</tt>.
-	 * <p><tt>permission</tt> is of type <tt>Object</tt> to
-	 * avoid referencing the <tt>java.security.Permission</tt> class
-	 * directly. This is to allow the Framework to be implemented in Java
-	 * environments which do not support permissions.
-	 *
-	 * <p>If the Java Runtime Environment does support permissions, this
-	 * bundle and all its resources including nested JAR files, belong
-	 * to the same <tt>java.security.ProtectionDomain</tt>; that is, they will share
-	 * the same set of permissions.
-	 *
-	 * @param permission The permission to verify.
-	 *
-	 * @return <tt>true</tt> if this bundle has the specified permission or
-	 * the permissions possessed by this bundle imply the specified permission;
-	 * <tt>false</tt> if this bundle does not have the specified permission or <tt>permission</tt>
-	 * is not an <tt>instanceof</tt> <tt>java.security.Permission</tt>.
-	 *
-	 * @exception java.lang.IllegalStateException If this bundle has been uninstalled.
-	 */
-    public abstract boolean hasPermission(Object permission);
+    public abstract String getLocation();
 
     /**
 	 * Find the specified resource in this bundle.

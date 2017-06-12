@@ -209,11 +209,28 @@
 
 package com.taobao.atlas.manifest;
 
+import java.io.File;
+import java.io.IOException;
+
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.builder.tools.xml.XmlHelper;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.junit.Test;
+
 /**
  * Created by wuzhong on 2017/4/13.
  */
 public class ManifestTest {
 
+    @Test
+    public void test() throws DocumentException, IOException {
+        System.out.printf("123");
 
+        Document document =  XmlHelper.readXml(new File("/Users/wuzhong/Downloads/AndroidManifest.xml"));
+
+        ManifestFileUtils.printlnPermissions(document);
+
+    }
 
 }

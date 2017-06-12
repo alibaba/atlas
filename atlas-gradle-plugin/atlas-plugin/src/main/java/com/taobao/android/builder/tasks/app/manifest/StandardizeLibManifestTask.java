@@ -271,8 +271,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
     @TaskAction
     public void preProcess() throws IOException, DocumentException, InterruptedException {
 
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(
-            "StandardizeLibManifestTask", getLogger(), 0);
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("StandardizeLibManifestTask",
+                                                                                   getLogger(), 0);
         List<Runnable> runnables = new ArrayList<>();
 
         ManifestInfo mainManifestFileObject = getManifestFileObject(mainManifestFile);
@@ -300,9 +300,9 @@ public class StandardizeLibManifestTask extends DefaultTask {
                         //getLogger().error(file.getAbsolutePath() + " -> " + modifyManifest
                         //    .getAbsolutePath());
 
-                        ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file,
-                                                                       mainManifestFileObject,
-                                                                       true);
+                        ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file, mainManifestFileObject,
+                                                                       true, appVariantContext.getAtlasExtension()
+                                                                           .getTBuildConfig().isIncremental());
 
                     } catch (Throwable e) {
                         e.printStackTrace();
@@ -332,13 +332,10 @@ public class StandardizeLibManifestTask extends DefaultTask {
             Element root = document.getRootElement();// 得到根节点
             for (Attribute attribute : root.attributes()) {
                 if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                    manifestFileObject.addManifestProperty(attribute.getNamespacePrefix() +
-                                                               ":" +
-                                                               attribute.getName(),
+                    manifestFileObject.addManifestProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
                                                            attribute.getValue());
                 } else {
-                    manifestFileObject.addManifestProperty(attribute.getName(),
-                                                           attribute.getValue());
+                    manifestFileObject.addManifestProperty(attribute.getName(), attribute.getValue());
                 }
             }
             Element useSdkElement = root.element("uses-sdk");
@@ -346,26 +343,20 @@ public class StandardizeLibManifestTask extends DefaultTask {
             if (null != useSdkElement) {
                 for (Attribute attribute : useSdkElement.attributes()) {
                     if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                        manifestFileObject.addUseSdkProperty(attribute.getNamespacePrefix() +
-                                                                 ":" +
-                                                                 attribute.getName(),
+                        manifestFileObject.addUseSdkProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
                                                              attribute.getValue());
                     } else {
-                        manifestFileObject.addUseSdkProperty(attribute.getName(),
-                                                             attribute.getValue());
+                        manifestFileObject.addUseSdkProperty(attribute.getName(), attribute.getValue());
                     }
                 }
             }
             if (null != applicationElement) {
                 for (Attribute attribute : applicationElement.attributes()) {
                     if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                        manifestFileObject.addApplicationProperty(attribute.getNamespacePrefix() +
-                                                                      ":" +
-                                                                      attribute.getName(),
-                                                                  attribute.getValue());
+                        manifestFileObject.addApplicationProperty(
+                            attribute.getNamespacePrefix() + ":" + attribute.getName(), attribute.getValue());
                     } else {
-                        manifestFileObject.addApplicationProperty(attribute.getName(),
-                                                                  attribute.getValue());
+                        manifestFileObject.addApplicationProperty(attribute.getName(), attribute.getValue());
                     }
                 }
             }
@@ -378,8 +369,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
         private final AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext variantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
             super(variantContext, baseVariantOutputData);
             this.appVariantContext = variantContext;
         }
@@ -414,8 +404,10 @@ public class StandardizeLibManifestTask extends DefaultTask {
             baseVariantOutputData.manifestProcessorTask.doFirst(
                 new PreProcessManifestAction(appVariantContext, baseVariantOutputData));
 
-            baseVariantOutputData.manifestProcessorTask.doLast(
-                new PostProcessManifestAction(appVariantContext, baseVariantOutputData));
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+                baseVariantOutputData.manifestProcessorTask.doLast(
+                    new PostProcessManifestAction(appVariantContext, baseVariantOutputData));
+            }
 
         }
 

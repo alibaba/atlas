@@ -223,7 +223,7 @@ public class BundleUtil {
             return false;
         }
         BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
-        if(impl==null){
+        if(impl==null || !impl.checkValidate()){
             BundleInstaller installer = BundleInstallerFetcher.obtainInstaller();
             installer.installTransitivelySync(new String[]{bundleName});
         }
@@ -236,7 +236,7 @@ public class BundleUtil {
             return false;
         }
         BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
-        if(impl==null){
+        if(impl==null || !impl.checkValidate()){
             BundleInstaller installer = BundleInstallerFetcher.obtainInstaller();
             installer.installTransitivelySync(new String[]{bundleName});
         }

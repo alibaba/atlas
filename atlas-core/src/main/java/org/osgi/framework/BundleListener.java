@@ -21,7 +21,7 @@ import java.util.EventListener;
  * @see BundleEvent
  */
 
-public abstract interface BundleListener extends EventListener {
+public interface BundleListener extends EventListener {
 	/**
 	 * Receives notification that a bundle has had a lifecycle change.
 	 * 

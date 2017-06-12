@@ -208,13 +208,9 @@
 
 package android.taobao.atlas.framework.bundlestorage;
 
-import android.taobao.atlas.framework.Atlas;
-import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.util.StringUtils;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
-import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
@@ -223,101 +219,44 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.jar.Manifest;
 
-public class BundleArchive implements Archive {
+public class BundleArchive {
 
-    public final static String                           REVISION_DIRECTORY = "version";
-    public final static String DEPRECATED_MARK = Framework.DEPRECATED_MARK;
     public final static String DEXPATCH_DIR = "dexpatch/";
-
-    private File                                         bundleDir;
-
-    // Maps a Long revision number to a BundleRevision.
-    private final SortedMap<Long, BundleArchiveRevision> revisions          = new TreeMap<Long, BundleArchiveRevision>();
-
+    private File                                         bundleDir = null;
     private  final BundleArchiveRevision                currentRevision;
 
-    public BundleArchive(String location,File bundleDir,long wantedRevisionNum,long dexPatchVersion) throws IOException {
-        final File[] f = bundleDir.listFiles();
-        String processName = RuntimeVariables.getProcessName(RuntimeVariables.androidApplication);
-        long rev;
-        if (!processName.equals(RuntimeVariables.androidApplication.getPackageName())) {
-            rev = wantedRevisionNum;
-            File revisionDir = new File(bundleDir, REVISION_DIRECTORY + "." + String.valueOf(rev));
-            if (new File(revisionDir, DEPRECATED_MARK).exists()) {
-                throw new IOException("bundle has been deprecated");
-            }
-
-        } else {
-            if (f != null) {
-                for (final File element : f) {
-                    if (element.getName().startsWith(REVISION_DIRECTORY)) {
-                        if (!new File(element, DEPRECATED_MARK).exists()) {
-                            final long v = Long.parseLong(StringUtils.substringAfter(element.getName(), "."));
-                            if (v > 0) {
-                                revisions.put(v, null);
-                            }
-                        } else {
-                            if (!TextUtils.isEmpty(processName) && processName.equals(RuntimeVariables.androidApplication.getPackageName())) {
-                                Framework.deleteDirectory(element);
-                            }
-                        }
-                    }
-                }
-            }
-            if (revisions.isEmpty() && dexPatchVersion<=0) {
-                try {
-                    if (!TextUtils.isEmpty(processName) && processName.equals(RuntimeVariables.androidApplication.getPackageName())) {
-                        Log.d("BundleArchive", "delete bundle " + location);
-                        Framework.deleteDirectory(bundleDir);
-                    }
-                } catch (Exception e) {
-                }
-                throw new IOException("No valid revisions in bundle archive directory: " + bundleDir);
-            }
-
-            int maxValidRevNum = BaselineInfoManager.instance().isCachePreVersion() ? 2 : 1;
-            if (revisions.size() > maxValidRevNum) {
-                try {
-                    File old = new File(bundleDir, String.format("%s%s%s", REVISION_DIRECTORY, ".", revisions.firstKey()));
-                    if (old.exists()) {
-                        Framework.deleteDirectory(old);
-                    }
-                    if(old.exists()){
-                        new File(old,DEPRECATED_MARK).createNewFile();
-                    }
-                } catch (Exception e) {
-                }
-            }
-            rev = revisions.lastKey();
-        }
-
+    // reload
+    public BundleArchive(String location,File bundleDir,String uniqueTag,long dexPatchVersion) throws IOException {
         this.bundleDir = bundleDir;
+        if (RuntimeVariables.sCurrentProcessName.equals(RuntimeVariables.androidApplication.getPackageName()) && !Framework.updateHappend) {
+            purge(uniqueTag,dexPatchVersion);
+        }
         File revisionDir ;
         if(dexPatchVersion>0){
             //dexpatch
-            rev = dexPatchVersion;
-            revisionDir = new File(bundleDir,DEXPATCH_DIR+rev);
-        }else{
-            File dexPatchDir = new File(bundleDir,DEXPATCH_DIR);
-            if(dexPatchDir.exists()){
-                Framework.deleteDirectory(dexPatchDir);
+            revisionDir = new File(bundleDir,DEXPATCH_DIR+dexPatchVersion);
+            if(!revisionDir.exists()){
+                revisionDir = new File(bundleDir, uniqueTag);
             }
-            revisionDir = new File(bundleDir, REVISION_DIRECTORY + "." + String.valueOf(rev));
-
+        }else{
+            revisionDir = new File(bundleDir, uniqueTag);
+        }
+        if(!revisionDir.exists()){
+            if(BaselineInfoManager.instance().isUpdated(location)){
+                throw new MisMatchException("can not find bundle");
+            }else{
+                throw new IOException("can not find bundle");
+            }
         }
         BundleArchiveRevision archiveRevision = null;
         try {
-            archiveRevision = new BundleArchiveRevision(location, rev, revisionDir);
-        } catch (MisMatchException e) {
+            archiveRevision = new BundleArchiveRevision(location, revisionDir);
+        } catch (IOException e) {
             archiveRevision = null;
             throw e;
         } finally {
             if(archiveRevision!=null) {
-                this.revisions.put(rev, archiveRevision);
                 this.currentRevision = archiveRevision;
             }else {
                 currentRevision = null;
@@ -325,63 +264,49 @@ public class BundleArchive implements Archive {
         }
     }
 
-    public BundleArchive(String location,File bundleDir, InputStream input,String version,long dexPatchVersion) throws IOException{
+    //create
+    public BundleArchive(String location,File bundleDir, InputStream input,String uniqueTag,long dexPatchVersion) throws IOException{
         if(dexPatchVersion>0){
             this.bundleDir = bundleDir;
             long rev = dexPatchVersion;
             File revisionDir = new File(bundleDir, DEXPATCH_DIR + dexPatchVersion);
-            currentRevision = new BundleArchiveRevision(location, rev, revisionDir, input, version);
+            currentRevision = new BundleArchiveRevision(location, revisionDir, input);
         }else {
             this.bundleDir = bundleDir;
-            long rev = 1;
-            File revisionDir = new File(bundleDir, REVISION_DIRECTORY + "." + String.valueOf(rev));
-            currentRevision = new BundleArchiveRevision(location, rev, revisionDir, input, version);
-            this.revisions.put(rev, currentRevision);
+            File revisionDir = new File(bundleDir, uniqueTag);
+            currentRevision = new BundleArchiveRevision(location, revisionDir, input);
         }
     }
 
-    public BundleArchive(String location,File bundleDir, File file,String version,long dexPatchVersion) throws IOException{
+    //create
+    public BundleArchive(String location,File bundleDir, File file,String uniqueTag,long dexPatchVersion) throws IOException{
         if(dexPatchVersion>0){
             this.bundleDir = bundleDir;
-            long rev = dexPatchVersion;
             File revisionDir = new File(bundleDir, DEXPATCH_DIR + dexPatchVersion);
-            currentRevision = new BundleArchiveRevision(location, rev, revisionDir, file, version);
+            currentRevision = new BundleArchiveRevision(location, revisionDir, file);
         }else {
             this.bundleDir = bundleDir;
-            long rev = 1;
-            File revisionDir = new File(bundleDir, REVISION_DIRECTORY + "." + String.valueOf(rev));
-            currentRevision = new BundleArchiveRevision(location, rev, revisionDir, file, version);
-            this.revisions.put(rev, currentRevision);
+            File revisionDir = new File(bundleDir, uniqueTag);
+            currentRevision = new BundleArchiveRevision(location, revisionDir, file);
         }
     }
 
-    @Override
-    public BundleArchiveRevision newRevision(String location,File bundleDir, File input,String version,long dexPatchVersion) throws IOException {
-        if(!Framework.getCurProcessName().equals(RuntimeVariables.androidApplication.getPackageName())){
+    //update
+    public BundleArchiveRevision newRevision(String location,File bundleDir, File input,String uniqueTag,long dexPatchVersion) throws IOException {
+        if(!RuntimeVariables.sCurrentProcessName.equals(RuntimeVariables.androidApplication.getPackageName())){
             throw new RuntimeException("can not update bundle in child process");
         }
         if(dexPatchVersion>0){
             File revisionDir = new File(bundleDir, DEXPATCH_DIR + dexPatchVersion);
-            BundleArchiveRevision newRevision = new BundleArchiveRevision(location, dexPatchVersion, revisionDir, input, version);
+            BundleArchiveRevision newRevision = new BundleArchiveRevision(location, revisionDir, input);
             return newRevision;
-            //patch rev no need to put
-            //revisions.put(rev, newRevision);
         }else {
-            long rev = revisions.lastKey();
-            while (true) {
-                rev++;
-                File revisionDir = new File(bundleDir, REVISION_DIRECTORY + "." + String.valueOf(rev));
-                if (revisionDir.exists()) {
-                    continue;
-                }
-                BundleArchiveRevision newRevision = new BundleArchiveRevision(location, rev, revisionDir, input, version);
-                revisions.put(rev, newRevision);
-                return newRevision;
-            }
+            File revisionDir = new File(bundleDir, uniqueTag);
+            BundleArchiveRevision newRevision = new BundleArchiveRevision(location, revisionDir, input);
+            return newRevision;
         }
     }
 
-    @Override
     public BundleArchiveRevision getCurrentRevision() {
         return currentRevision;
     }
@@ -401,26 +326,11 @@ public class BundleArchive implements Archive {
     public void optDexFile() {
     	currentRevision.optDexFile();
     }
-    
-    public InputStream openAssetInputStream(String fileName) throws IOException {
-    	return currentRevision.openAssetInputStream(fileName);
-    }
-    
-    public InputStream openNonAssetInputStream(String fileName) throws IOException {
-    	return currentRevision.openNonAssetInputStream(fileName);
-    }
 
-    @Override
-    public Manifest getManifest() throws IOException {
-        return currentRevision.getManifest();
-    }
-
-    @Override
     public Class<?> findClass(String className, ClassLoader cl) throws ClassNotFoundException {
         return currentRevision.findClass(className, cl);
     }
 
-    @Override
     public File findLibrary(String fileName) {
         return currentRevision.findSoLibrary(fileName);
     }
@@ -428,80 +338,42 @@ public class BundleArchive implements Archive {
     /**
      * Returns an enumeration of URLs for the resource with the specified name.
      */
-    @Override
     public List<URL> getResources(String resName) throws IOException {
         return currentRevision.getResources(resName);
-    }
-
-    @Override
-    public boolean isUpdated() {
-       return currentRevision.isUpdated();
     }
 
     /**
      * This method removes all old revisions associated with the archive and keeps only the current revision.
      **/
-    @Override
-    public void purge() throws Exception {
-        if (revisions.size() <= 1) {
-            return;
-        }
-        long currentRevNumb = currentRevision.getRevisionNum();
-        for (long key : revisions.keySet()) {
-            if (key != currentRevNumb) {
-                File revisionDir = new File(bundleDir, REVISION_DIRECTORY + "." + String.valueOf(key));
-                if (revisionDir.exists()) {
-                    Framework.deleteDirectory(revisionDir);
-                }
-            }
-        }
-        revisions.clear();
-        revisions.put(currentRevNumb, currentRevision);
-    }
-
-    public static boolean downgradeRevision(String location,File bundleDir,boolean forceDelete) throws IOException{
-        File[] revisionFiles = bundleDir.listFiles(new FilenameFilter() {
+    public synchronized void purge(final String uniqueTag, final long dexPatchVersion) {
+        // remove old dexpatch
+        File dexPatchDir = new File(bundleDir,DEXPATCH_DIR);
+        File[] dexPatchs = dexPatchDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String filename) {
-                if (filename.startsWith(REVISION_DIRECTORY) && !new File(dir+File.separator+filename, DEPRECATED_MARK).exists()) {
+                if(dexPatchVersion>0 && !filename.equals(dexPatchVersion+"")){
                     return true;
                 }
                 return false;
             }
         });
-        if (revisionFiles != null && revisionFiles.length > 0) {
-            File deprecatedDir = revisionFiles[revisionFiles.length - 1];
-            if(forceDelete){
-                try {
-                    BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(location);
-                    if (impl != null && impl.getArchive().getCurrentRevision() != null) {
-                        if (impl.getArchive().getCurrentRevision().getRevisionDir().equals(deprecatedDir)) {
-                            return true;
-                        }
-                    }
-                }catch(Throwable e){}
-                //deprecatedDir.delete();
-                Framework.deleteDirectory(deprecatedDir);
-            }
-            if(deprecatedDir.exists()) {
-                File deprecatedFile = new File(deprecatedDir, DEPRECATED_MARK);
-                deprecatedFile.createNewFile();
-                if(!deprecatedFile.exists()){
-                    return false;
+        if(dexPatchs!=null){
+            for(File patch : dexPatchs){
+                if(patch.isDirectory()) {
+                    Framework.deleteDirectory(patch);
                 }
             }
-            Log.d("BundleArchive","downgrade "+bundleDir);
-            return true;
         }
-        return false;
-    }
 
-    @Override
-    public void close() {
+        // remove old update version
+        File[] dirs = bundleDir.listFiles();
+        for(File dir : dirs){
+            if(dir.isDirectory() && !dir.getName().contains("dexpatch") && !dir.getName().equals(uniqueTag)){
+                Log.e("BundleArchive","purge "+bundleDir +" : "+dir.getName());
+                Framework.deleteDirectory(dir);
+            }
+        }
 
-    }
-    public SortedMap<Long, BundleArchiveRevision> getBundleArchiveRevisions(){
-        return revisions;
     }
 
     public static class MisMatchException extends RuntimeException{

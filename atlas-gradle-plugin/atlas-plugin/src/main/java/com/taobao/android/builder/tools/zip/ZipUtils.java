@@ -305,6 +305,49 @@ public class ZipUtils {
         return fileNames;
     }
 
+    public static List<String> extractZipFolderToFolder(final File zipFile, final String path, final String destination, String encoding) {
+        List<String> fileNames = new ArrayList<String>();
+        String dest = destination;
+        if (!destination.endsWith(File.separator)) {
+            dest = destination + File.separator;
+        }
+        ZipFile file;
+        try {
+            file = null;
+            if (null == encoding) {
+                file = new ZipFile(zipFile);
+            } else {
+                file = new ZipFile(zipFile, encoding);
+            }
+            Enumeration<ZipArchiveEntry> en = file.getEntries();
+            ZipArchiveEntry ze = null;
+            while (en.hasMoreElements()) {
+                ze = en.nextElement();
+                String name = ze.getName();
+                if (name.startsWith(path)) {
+                    File f = new File(dest, FilenameUtils.getName(name));
+
+                    if (ze.isDirectory()) {
+                        f.mkdirs();
+                        continue;
+                    } else {
+                        f.getParentFile().mkdirs();
+                        InputStream is = file.getInputStream(ze);
+                        OutputStream os = new FileOutputStream(f);
+                        IOUtils.copy(is, os);
+                        is.close();
+                        os.close();
+                        fileNames.add(f.getAbsolutePath());
+                    }
+                }
+            }
+            file.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return fileNames;
+    }
+
     /**
      * <p>
      * isZipFile.

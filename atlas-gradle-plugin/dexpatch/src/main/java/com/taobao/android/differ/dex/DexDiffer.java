@@ -425,16 +425,14 @@ import com.taobao.android.utils.DexCompareUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.dexbacked.*;
+import org.jf.dexlib2.iface.Annotation;
 import org.jf.dexlib2.iface.value.EncodedValue;
 import org.jf.dexlib2.util.ReferenceUtil;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Dex文件差异性获取的类
@@ -670,10 +668,16 @@ public class DexDiffer {
             // TODO: 首先判断方法的声明，包括access flag等是否一致
 
             // 如果方法二边都存在,1. 判断实现
+            Set<? extends Annotation>newAnnotations = newMethod.getAnnotations();
+            Set<? extends Annotation>baseAnnotations = baseMethod.getAnnotations();
+            int newAcc = newMethod.getAccessFlags();
+            int baseAcc = baseMethod.getAccessFlags();
+
             DexBackedMethodImplementation newMethodImplementation = newMethod.getImplementation();
             DexBackedMethodImplementation baseMethodImplementation = baseMethod.getImplementation();
             // 判断2个方法是否一致
-            if (!DexCompareUtils.compareMethod(newMethodImplementation, baseMethodImplementation)) {
+            if (!DexCompareUtils.compareMethod(newMethodImplementation, baseMethodImplementation)||
+                    !equalsImpl(baseAnnotations,newAnnotations)||newAcc!=baseAcc) {
                 methodDiffInfo.setType(DiffType.MODIFY);
                 classDiffInfo.getModifyMethods().add(methodDiffInfo);
 
@@ -694,6 +698,7 @@ public class DexDiffer {
         }
         return false;
     }
+
 
     /**
      * 比较二个dex中的类的字段差异性
@@ -783,16 +788,6 @@ public class DexDiffer {
             throw new RuntimeException("Not a valid dalvik class name");
         }
         return StringUtils.replace(className.substring(1, className.length() - 1), "/", ".");
-    }
-
-
-    public static void main(String[] args) throws IOException {
-        File dexFile = new File("/Users/shenghua/Downloads/taobao-android.apk/classes.dex");
-        DexBackedDexFile baseBackedDexFile = DexFileFactory.loadDexFile(dexFile, 19, true);
-        for (DexBackedClassDef classDef : baseBackedDexFile.getClasses()) {
-            System.out.println(classDef.getType());
-        }
-
     }
 
 

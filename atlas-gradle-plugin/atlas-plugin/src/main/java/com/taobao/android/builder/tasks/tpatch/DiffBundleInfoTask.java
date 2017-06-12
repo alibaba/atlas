@@ -209,7 +209,19 @@
 
 package com.taobao.android.builder.tasks.tpatch;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -219,16 +231,13 @@ import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.diff.DependencyCompareUtils;
 import com.taobao.android.builder.dependency.diff.DependencyDiff;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.DiffType;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Attribute;
@@ -243,13 +252,6 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
 
 /**
  * Created by wuzhong on 16/6/24.
@@ -328,6 +330,13 @@ public class DiffBundleInfoTask extends BaseTask {
             throw new GradleException(e.getMessage(), e);
         }
 
+        Map<String,String> tagMap = new HashMap<>();
+        JSONObject jsonObject = (JSONObject)JSON.parse(FileUtils.readFileToString(new File(apDir, "atlasFrameworkProperties.json")));
+        JSONArray jsonArray = jsonObject.getJSONArray("bundleInfo");
+        for (JSONObject obj : jsonArray.toArray(new JSONObject[0])){
+            tagMap.put(obj.getString("pkgName"), obj.getString("unique_tag"));
+        }
+
         // 1. 首先添加主bundle
         ArtifactBundleInfo mainBundleInfo = getMainArtifactBundInfo(mainfestFile);
         mainBundleInfo.setBaseVersion(apVersion);
@@ -340,10 +349,13 @@ public class DiffBundleInfoTask extends BaseTask {
         } else {
             mainBundleInfo.setDiffType(DiffType.NONE);
         }
+
+        mainBundleInfo.setSrcUnitTag(jsonObject.getString("unit_tag"));
+        mainBundleInfo.setUnitTag(appVariantOutputContext.getVariantContext().unit_tag);
+
         artifactBundleInfos.add(mainBundleInfo);
 
         // 2. 添加各自的bundle
-
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 appVariantOutputContext.getVariantContext().
                         getVariantConfiguration().getFullName());
@@ -359,12 +371,18 @@ public class DiffBundleInfoTask extends BaseTask {
             awbBundleInfo.setApplicationName(bundleInfo.getApplicationName());
             awbBundleInfo.setArtifactId(awbBundle.getResolvedCoordinates().getArtifactId());
             awbBundleInfo.setName(bundleInfo.getName());
+            //历史bundle的tag todo
+            awbBundleInfo.setSrcUnitTag(tagMap.get(bundleInfo.getPkgName()));
+            awbBundleInfo.setUnitTag(bundleInfo.getUnique_tag());
             String version = bundleInfo.getVersion();
             if (version.indexOf("@") > 0) {
                 String[] arr = version.split("@");
                 version = arr[arr.length - 1];
             }
             awbBundleInfo.setVersion(version);
+
+            //TODO
+            bundleInfo.getUnique_tag();
 
             String libBundleName = getBundleName(awbBundle);
             if (dependencyDiff.getAwbDiffs().contains(libBundleName)) {
@@ -468,6 +486,10 @@ public class DiffBundleInfoTask extends BaseTask {
 
             super.execute(diffBundleInfoTask);
 
+            if (!appVariantContext.getAtlasExtension().isAtlasEnabled()){
+                diffBundleInfoTask.setEnabled(false);
+            }
+
             final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope.getVariantOutputData();
             final GradleVariantConfiguration config = scope.getVariantScope()
                     .getVariantConfiguration();
@@ -496,26 +518,7 @@ public class DiffBundleInfoTask extends BaseTask {
                                         new Callable<DependencyDiff>() {
                                             @Override
                                             public DependencyDiff call() throws Exception {
-
-                                                if (null !=
-                                                        appVariantContext.apContext.getApExploredFolder() &&
-                                                        appVariantContext.apContext.getApExploredFolder()
-                                                                .exists()) {
-                                                    DependencyJson dependencyJson = AtlasBuildContext.androidDependencyTrees
-                                                            .get(scope.getVariantOutputData().variantData
-                                                                         .getName())
-                                                            .getDependencyJson();
-                                                    File baseDependencyFile = new File(
-                                                            appVariantContext.apContext.getApExploredFolder(),
-                                                            "dependencies.txt");
-                                                    if (baseDependencyFile.exists()) {
-                                                        DependencyDiff dependencyDiff = DependencyCompareUtils
-                                                                .diff(baseDependencyFile,
-                                                                      dependencyJson);
-                                                        return dependencyDiff;
-                                                    }
-                                                }
-                                                return null;
+                                                return appVariantContext.getDependencyDiff();
                                             }
                                         });
 

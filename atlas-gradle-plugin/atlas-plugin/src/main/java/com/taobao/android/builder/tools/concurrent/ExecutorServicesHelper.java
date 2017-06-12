@@ -247,7 +247,7 @@ public class ExecutorServicesHelper {
 
     private boolean hasException;
 
-    private GradleException exception;
+    private Throwable exception;
 
     public void execute(List<Runnable> runnables) throws InterruptedException {
 
@@ -274,7 +274,7 @@ public class ExecutorServicesHelper {
                                                 size);
                             runnable.run();
                         }
-                    } catch (GradleException gradleException) {
+                    } catch (Throwable gradleException) {
                         hasException = true;
                         exception = gradleException;
                     } finally {

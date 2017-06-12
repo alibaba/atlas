@@ -208,32 +208,45 @@
 
 package android.taobao.atlas.framework.bundlestorage;
 
-import android.content.res.AssetManager;
-import android.os.Build;
-import android.os.Environment;
-import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
-import android.taobao.atlas.bundleInfo.BundleListing;
-import android.taobao.atlas.framework.Framework;
-import android.taobao.atlas.util.*;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
-import android.taobao.atlas.versionInfo.BaselineInfoManager;
-import android.text.TextUtils;
-import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.runtime.RuntimeVariables;
-import android.util.Log;
-import dalvik.system.DexClassLoader;
-import dalvik.system.DexFile;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import android.app.PreVerifier;
+import android.content.Context;
+import android.os.Build;
+import android.support.multidex.MultiDex;
+import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.framework.Framework;
+import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.util.ApkUtils;
+import android.taobao.atlas.util.AtlasFileLock;
+import android.taobao.atlas.util.IOUtil;
+import android.taobao.atlas.util.StringUtils;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
+import android.text.TextUtils;
+import android.util.Log;
+import dalvik.system.DexClassLoader;
+import dalvik.system.DexFile;
 
 public class BundleArchiveRevision {
 
@@ -242,20 +255,12 @@ public class BundleArchiveRevision {
     final static String  REFERENCE_PROTOCOL = "reference:";
     final static String  FILE_PROTOCOL      = "file:";
     final static String  BUNDLE_FILE_NAME   = "bundle.zip";
-    final static String  INTERNAL_BUNDLE_FlAG = "internal";
-    final static String UPDATED_MARK="markUpdated";
-    /**
-     * bundle updated by dynamic deploy
-     */
-    Boolean mMarkUpdated;
+    private DexFile patchDexFileForDebug;
     /**
      * the bundle revision file location.
      */
     private final String revisionLocation;
-    private final String containerVersion;
-    private final long   revisionNum;
     private final File   revisionDir;
-    private final String version;
     private final String location;
 
     private final File   bundleFile;
@@ -266,78 +271,43 @@ public class BundleArchiveRevision {
 
     //There is no DexFile on yunos 2.x, so we use DexClassLoader;
     private ClassLoader  dexClassLoader;
+    private boolean externalStorage = false;
 
-    BundleArchiveRevision(String location,long revisionNum, File revisionDir, InputStream inputStream,String v) throws IOException{
-        this.revisionNum = revisionNum;
+    //create
+    BundleArchiveRevision(String location, File revisionDir, InputStream inputStream) throws IOException{
+        if (Boolean.FALSE.booleanValue()){
+            String.valueOf(PreVerifier.class);
+        }
+
         this.revisionDir = revisionDir;
         this.location = location;
-        version = v;
         if (!this.revisionDir.exists()) {
             this.revisionDir.mkdirs();
+        }
+        if(revisionDir.getAbsolutePath().startsWith(RuntimeVariables.androidApplication.getFilesDir().getAbsolutePath())){
+            externalStorage = false;
+        }else{
+            externalStorage = true;
         }
         this.revisionLocation = FILE_PROTOCOL;
         this.bundleFile = new File(revisionDir, BUNDLE_FILE_NAME);
         ApkUtils.copyInputStreamToFile(inputStream, bundleFile);
         installSoLib(bundleFile);
-        containerVersion = Framework.getContainerVersion();
         updateMetadata();
-        if(Build.CPU_ABI.contains("x86")){
-            try {
-                new File(revisionDir, INTERNAL_BUNDLE_FlAG).createNewFile();
-            }catch(Throwable e){
-
-            }
-        }
     }
 
-    /**
-     * create bundle revision. if file is writable then move it to revisionDir, otherwise create meta file and reference
-     * to it
-     *
-     * @param revisionNum
-     * @param revisionDir
-     * @param file
-     * @throws IOException
-     */
-    BundleArchiveRevision(String location,long revisionNum, File revisionDir, File file,String v) throws IOException{
-        this.revisionNum = revisionNum;
+    //create
+    BundleArchiveRevision(String location, File revisionDir, File file) throws IOException{
         this.revisionDir = revisionDir;
         this.location = location;
-        version = v;
-        boolean hasSO = false;
-        Log.e("BundleArchiveRevision",revisionDir+"");
-        if (AtlasBundleInfoManager.instance().getHasSO(location)){
-            hasSO = true;
-        }
         if (!this.revisionDir.exists()) {
             this.revisionDir.mkdirs();
         }
-
-//        if (file.canWrite()) {
-//            if (isSameDriver(revisionDir, file)) {
-//                this.revisionLocation = FILE_PROTOCOL;
-//                this.bundleFile = new File(revisionDir, BUNDLE_FILE_NAME);
-//                file.renameTo(bundleFile);
-//            } else {
-//                this.revisionLocation = FILE_PROTOCOL;
-//                this.bundleFile = new File(revisionDir, BUNDLE_FILE_NAME);
-//                ApkUtils.copyInputStreamToFile(new FileInputStream(file), bundleFile);
-//            }
-//            installSoLib(bundleFile);
-//        } else {// can not write
-//            if ((AtlasHacks.LexFile != null && AtlasHacks.LexFile.getmClass() != null) ||
-//                    (android.os.Build.HARDWARE.toLowerCase().contains("mt65") && file.getName().endsWith(".so"))){
-//                // 在阿里云2.x手机上使用的是LEX
-//                this.revisionLocation = FILE_PROTOCOL;
-//                this.bundleFile = new File(revisionDir, BUNDLE_FILE_NAME);
-//                ApkUtils.copyInputStreamToFile(new FileInputStream(file), bundleFile);
-//                installSoLib(bundleFile);
-//            } else {
-//                this.revisionLocation = REFERENCE_PROTOCOL + file.getAbsolutePath();
-//                this.bundleFile = file;
-//                installSoLib(file);
-//            }
-//        }
+        if(revisionDir.getAbsolutePath().startsWith(RuntimeVariables.androidApplication.getFilesDir().getAbsolutePath())){
+            externalStorage = false;
+        }else{
+            externalStorage = true;
+        }
         if(shouldCopyInstallFile(file)){
             if (isSameDriver(revisionDir, file)) {
                 this.revisionLocation = FILE_PROTOCOL;
@@ -357,39 +327,25 @@ public class BundleArchiveRevision {
             this.bundleFile = file;
             installSoLib(file);
         }
-        containerVersion = Framework.getContainerVersion();
         updateMetadata();
-
     }
 
-
-    BundleArchiveRevision(String location,long revisionNum, File revisionDir) throws IOException{
+    //reload
+    BundleArchiveRevision(String location, File revisionDir) throws IOException{
         this.location = location;
+        if(revisionDir.getAbsolutePath().startsWith(RuntimeVariables.androidApplication.getFilesDir().getAbsolutePath())){
+            externalStorage = false;
+        }else{
+            externalStorage = true;
+        }
         File metafile = new File(revisionDir, "meta");
         if (metafile.exists()) {
             DataInputStream in = new DataInputStream(new FileInputStream(metafile));
             this.revisionLocation = in.readUTF();
-            this.containerVersion = in.readUTF();
-            this.version = in.readUTF();
-            in.close();
-
-            if(!BaselineInfoManager.instance().isDexPatched(location)) {
-                String wantedVersion = BaselineInfoManager.instance().getBaseBundleVersion(location);
-                BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-                if (containerVersion == null ||
-                        (!TextUtils.isEmpty(Framework.getContainerVersion()) && !containerVersion.equals(Framework.getContainerVersion())) ||
-                        (!TextUtils.isEmpty(version) && !TextUtils.isEmpty(wantedVersion) && !version.equals(wantedVersion)) ||
-                        (!TextUtils.isEmpty(info.getVersion()) && version!=null&&!version.equals("-1") && !version.equals(info.getVersion()) && !Framework.isDeubgMode())) {
-                    throw new BundleArchive.MisMatchException("mismatch bundle version" + revisionDir.getAbsolutePath());
-                }
-            }
+            IOUtil.quietClose(in);
+            this.revisionDir = revisionDir;
         } else {
             throw new IOException("Could not find meta file in " + revisionDir.getAbsolutePath());
-        }
-        this.revisionNum = revisionNum;
-        this.revisionDir = revisionDir;
-        if (!this.revisionDir.exists()) {
-            this.revisionDir.mkdirs();
         }
         if (StringUtils.startWith(this.revisionLocation, REFERENCE_PROTOCOL)) {
             this.bundleFile = new File(StringUtils.substringAfter(this.revisionLocation, REFERENCE_PROTOCOL));
@@ -407,8 +363,6 @@ public class BundleArchiveRevision {
                 || (AtlasHacks.LexFile != null && AtlasHacks.LexFile.getmClass() != null)
                 || (android.os.Build.HARDWARE.toLowerCase().contains("mt65") && bundleFile.getName().endsWith(".so"))
                 ){
-            Log.e("BundleArchiveRevision","bundle patch: "+bundleFile.getAbsolutePath());
-            Log.e("BundleArchiveRevision","native lib path: "+RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir);
             return true;
         }else{
             return false;
@@ -429,44 +383,12 @@ public class BundleArchiveRevision {
             FileOutputStream fos = new FileOutputStream(file);
             out = new DataOutputStream(fos);
             out.writeUTF(revisionLocation);
-            out.writeUTF(containerVersion);
-            out.writeUTF(version);
             out.flush();
-            // fos.getFD().sync(); //this may be time-consuming
         } catch (IOException e) {
-            String avliableSpace = "";
-            long filesSize = 0;
-            long databasesSize = 0;
-            long prefSize = 0;
-            long rootSize = 0;
-            try{
-                 avliableSpace = FileUtils.getUsableSpace(Environment.getDataDirectory())+"M";
-                 File rootDir = new File(String.format("/data/data/%s/"),RuntimeVariables.androidApplication.getPackageName());
-                 rootSize = FileUtils.folderSize(rootDir);
-                 filesSize = FileUtils.folderSize(new File(rootDir, "files"));
-                 databasesSize = FileUtils.folderSize(new File(rootDir, "databases"));
-                 prefSize = FileUtils.folderSize(new File(rootDir, "shared_prefs"));
-
-            }catch(Throwable e2){}
-
-            throw new IOException("Could not save meta data " + file.getAbsolutePath()+" avliableSpace = " + avliableSpace +
-            		"rootSize = " + rootSize + " filesSize = " + filesSize + " databasesSize =  " + databasesSize + " prefSize =" + prefSize, e);
-
+            throw new IOException("Could not save meta data ", e);
         } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            IOUtil.quietClose(out);
         }
-    }
-
-
-
-    public long getRevisionNum() {
-        return revisionNum;
     }
 
     public File getRevisionDir() {
@@ -482,11 +404,6 @@ public class BundleArchiveRevision {
         if(file.exists() && file.isFile() && file.length()>0){
             return file;
         }
-//        String abi = "armeabi";
-//        if(Build.CPU_ABI.contains("x86")){
-//            abi = "x86";
-//        }
-//        String extractTag = String.format("%s%s/%s","lib/",abi,libraryName);
         if(bundleFile!=null){
             ZipFile bundleZip = null;
             try{
@@ -508,23 +425,13 @@ public class BundleArchiveRevision {
                 if(file.exists() && file.isFile()){
                     return file;
                 }
-                quiteClose(bundleZip);
+                IOUtil.quietClose(bundleZip);
             }catch(Throwable e){}
             finally {
-                quiteClose(bundleZip);
+                IOUtil.quietClose(bundleZip);
             }
         }
         return null;
-    }
-
-    private void quiteClose(ZipFile zip){
-        try {
-            if (zip != null) {
-                zip.close();
-            }
-        }catch(Throwable e){
-
-        }
     }
 
     public boolean isDexOpted() {
@@ -569,21 +476,33 @@ public class BundleArchiveRevision {
             }
 
             if (dexFile == null){
-                dexFile = com.taobao.android.runtime.RuntimeUtils.loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
-                //dexFile = DexFile.loadDex(bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+                if(!externalStorage || (externalStorage && Build.VERSION.SDK_INT>=21 && MultiDex.IS_VM_MULTIDEX_CAPABLE)) {
+                    boolean interpretOnly = externalStorage ? true : false;
+                    if(bundleFile.getUsableSpace()<5*1024*1024){
+                        interpretOnly = true;
+                    }
+                    //兼容7。0 动态部署过后不同classloader下对classcast
+                    dexFile = (DexFile) RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex",Context.class,String.class, String.class, int.class, boolean.class).invoke(
+                            RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
+//                    dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
+                }else{
+                    Method m=Class.forName("android.taobao.atlas.util.DexFileCompat")
+                            .getDeclaredMethod("loadDex", Context.class,String.class,String.class,int.class);
+                    dexFile= (DexFile) m.invoke(null,RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+                    //dexFile = DexFileCompat.loadDex(RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+                }
             }
             //9月份版本明天发布先不集成
 //            isDexOptDone = checkDexValid(dexFile);
             isDexOptDone = true;
-        } catch (IOException e) {
-//            AtlasMonitor.getInstance().trace(AtlasMonitor.DEXOPT_FAIL, location, AtlasMonitor.DEXOPT_FAIL_MSG,
-//            		FileUtils.getDataAvailableSpace());
+        } catch (Exception e) {
             if (odexFile.exists()) {
                 odexFile.delete();
             }
             Log.e("Framework","Failed optDexFile '" + bundleFile.getAbsolutePath() + "' >>> ", e);
-            AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_DEXOPT_FAIL,
-                    false, "0", e==null?"":e.getMessage(), bundleFile.getName());
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("optDexFile", bundleFile.getAbsolutePath());
+            AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_DEXOPT_FAIL, detail, e);
         } finally {
             AtlasFileLock.getInstance().unLock(odexFile);
         }
@@ -650,8 +569,9 @@ public class BundleArchiveRevision {
                 }
             }
         }catch(IOException e){
-            AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_SOLIB_UNZIP_FAIL,
-                    false, "0", e==null?"":e.getMessage(), bundle.getName());
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("installSoLib", bundle.getAbsolutePath());
+            AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_SOLIB_UNZIP_FAIL, detail, e);
             throw e;
         }finally{
         	if(null!=zip){
@@ -690,72 +610,6 @@ public class BundleArchiveRevision {
         }
     }
 
-    public InputStream openAssetInputStream(String fileName) throws IOException {
-        try {
-            AssetManager assmgr = AssetManager.class.newInstance();
-            int cookie = (Integer) AtlasHacks.AssetManager_addAssetPath.invoke(assmgr, bundleFile.getAbsolutePath());
-            if (cookie != 0) {
-                return assmgr.open(fileName);
-            }
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            Log.e("Framework","Exception while openNonAssetInputStream >>>", e.getTargetException());
-        }
-        return null;
-    }
-
-    public InputStream openNonAssetInputStream(String fileName) throws IOException {
-        try {
-            AssetManager assmgr = AssetManager.class.newInstance();
-            int cookie = (Integer) AtlasHacks.AssetManager_addAssetPath.invoke(assmgr, bundleFile.getAbsolutePath());
-            if (cookie != 0) {
-                return assmgr.openNonAssetFd(cookie, fileName).createInputStream();
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public Manifest getManifest() throws IOException {
-        if (manifest != null) {
-            return manifest;
-        }
-
-        InputStream input = null;
-        try {
-            AssetManager assmgr = AssetManager.class.newInstance();
-            int cookie = (Integer) AtlasHacks.AssetManager_addAssetPath.invoke(assmgr, bundleFile.getAbsolutePath());
-            if (cookie != 0) {
-                try {
-                    input = assmgr.open("OSGI.MF");
-                    manifest = new Manifest(input);
-                    return manifest;
-                } catch (FileNotFoundException e) {
-//                    log.warn("Could not find OSGI.MF in " + bundleFile.getAbsolutePath());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            } else {
-//                AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, location, AtlasMonitor.OSGI_ADD_PATH_FAILED_MSG,
-//                        FileUtils.getDataAvailableSpace());
-            }
-        } catch (Exception e) {
-//            AtlasMonitor.getInstance().trace(AtlasMonitor.BUNDLE_INSTALL_FAIL, location, AtlasMonitor.OSGI_ADD_PATH_FAILED_MSG,
-//                    FileUtils.getDataAvailableSpace());
-        } finally {
-            if (input != null) {
-                input.close();
-            }
-        }
-
-        return null;
-    }
-
-
     Class<?> findClass(String className, ClassLoader cl) throws ClassNotFoundException {
         try {
             Class<?> clazz = null;
@@ -793,8 +647,16 @@ public class BundleArchiveRevision {
             }
 
             if (dexFile == null){
-//                loadDex(new File(revisionDir, BUNDLE_ODEX_FILE));
                 optDexFile();
+            }
+            if(Framework.isDeubgMode()){
+                clazz = findPatchClass(className,cl);
+                if(clazz!=null){
+                    return clazz;
+                }
+                if(patchDexFileForDebug!=null){
+                    return clazz;
+                }
             }
             clazz = dexFile.loadClass(className, cl);
             return clazz;
@@ -808,6 +670,37 @@ public class BundleArchiveRevision {
             } else {
                 Log.e("Framework","Exception while find class in archive revision: " + bundleFile.getAbsolutePath(), e);
             }
+        }
+        return null;
+    }
+
+    private Class findPatchClass(String clazz,ClassLoader cl){
+        if(patchDexFileForDebug==null){
+            File debugBundleDir = new File(RuntimeVariables.androidApplication.getExternalFilesDir("debug_storage"),location);
+            File patchFile = new File(debugBundleDir,"patch.zip");
+            if(patchFile.exists()){
+                try {
+//                    patchDexFileForDebug = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication,
+//                            patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
+                    //兼容7。0 动态部署过后不同classloader下对classcast
+                    RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex",Context.class,String.class, String.class, int.class, boolean.class).invoke(
+                            RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        if(patchDexFileForDebug!=null){
+            return patchDexFileForDebug.loadClass(clazz,cl);
+        }
+        return null;
+    }
+
+    public String getDebugPatchFilePath(){
+        File debugBundleDir = new File(RuntimeVariables.androidApplication.getExternalFilesDir("debug_storage"),location);
+        File patchFile = new File(debugBundleDir,"patch.zip");
+        if(patchFile.exists()){
+            return patchFile.getAbsolutePath();
         }
         return null;
     }
@@ -837,15 +730,6 @@ public class BundleArchiveRevision {
         return results;
     }
 
-    void close() throws Exception {
-        if (zipFile != null) {
-            zipFile.close();
-        }
-        if (dexFile != null) {
-            dexFile.close();
-        }
-    }
-
     private boolean isSameDriver(File file1, File file2) {
         String mount1 = StringUtils.substringBetween(file1.getAbsolutePath(), "/", "/");
         String mount2 = StringUtils.substringBetween(file2.getAbsolutePath(), "/", "/");
@@ -856,37 +740,5 @@ public class BundleArchiveRevision {
         if (this.zipFile == null) {
             this.zipFile = new ZipFile(bundleFile, ZipFile.OPEN_READ);
         }
-    }
-
-    public String getVersion(){
-        return TextUtils.isEmpty(version) ? "" : version;
-    }
-
-    /**
-     * TODO 如何判断bundle是否更新过
-     * @return
-     */
-    public boolean isUpdated(){
-        return getMarkUpdate(revisionDir);
-    }
-    private boolean getMarkUpdate(File bundleDir){
-        /**
-         * 在一次运行中，更新标记状态保持不变；
-         */
-        if(mMarkUpdated!=null){
-            return mMarkUpdated;
-        }
-        try{
-            File mUpdated = new File(bundleDir, UPDATED_MARK);
-            if(mUpdated!=null&&mUpdated.exists()){
-                mMarkUpdated=true;
-            }else{
-                mMarkUpdated=false;
-            }
-        }catch (Throwable e){
-            return false;
-        }
-        return mMarkUpdated;
-
     }
 }

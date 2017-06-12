@@ -21,7 +21,9 @@ public class UpdateInfo implements Serializable{
      */
     public String updateVersion;
 
-    public long  dexPatchVersion;
+    public boolean dexPatch;
+
+    public boolean lowDisk = false;
 
     /**
      * 更新的模块列表信息
@@ -45,15 +47,22 @@ public class UpdateInfo implements Serializable{
         /**
          * bundle 版本信息
          */
-        public String version;
-        /**
-         * bundle 的代码仓库对应的版本
-         */
-        public String srcVersion;
+//        public String version;
+//        /**
+//         * bundle 的代码仓库对应的版本
+//         */
+//        public String srcVersion;
+
+        public String unitTag;
+        public String srcUnitTag;
         /**
          * 依赖的 bundle 列表
          */
         public List<String> dependency;
+
+        public long dexpatchVersion = -1;
+
+        public boolean reset = false;
     }
 
 }

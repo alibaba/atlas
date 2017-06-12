@@ -216,7 +216,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -259,7 +261,7 @@ import org.xml.sax.InputSource;
  */
 public class ManifestFileUtils {
 
-    private static Logger logger = LoggerFactory.getLogger(ManifestFileUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(ManifestFileUtils.class);
 
     public static String[] SYSTEM_PERMISSION = new String[] {"android.permission", "com.android"};
 
@@ -271,14 +273,11 @@ public class ManifestFileUtils {
      * @param baseBunfleInfoFile
      * @param manifestOptions
      */
-    public static Result postProcessManifests(File mainManifest,
-                                              Map<String, File> libManifestMap,
-                                              Multimap<String, File> libDependenciesMaps,
-                                              File baseBunfleInfoFile,
-                                              ManifestOptions manifestOptions,
-                                              boolean addMultiDex,
-                                              boolean isInstantRun,
-                                              Set<String> remoteBundles) throws IOException, DocumentException {
+    public static Result postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
+                                              Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
+                                              ManifestOptions manifestOptions, boolean addMultiDex,
+                                              boolean isInstantRun, Set<String> remoteBundles)
+        throws IOException, DocumentException {
 
         Result result = new Result();
 
@@ -289,29 +288,21 @@ public class ManifestFileUtils {
         Document document = XmlHelper.readXml(inputFile);
 
         if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists()) {
-            addApplicationMetaData(document,
-                                   libManifestMap,
-                                   baseBunfleInfoFile,
-                                   manifestOptions,
-                                   remoteBundles);
+            addApplicationMetaData(document, libManifestMap, baseBunfleInfoFile, manifestOptions, remoteBundles);
         }
 
         if (null != manifestOptions && manifestOptions.isAddAtlasProxyComponents()) {
-            AtlasProxy.addAtlasProxyClazz(document,  manifestOptions.getAtlasProxySkipChannels(), result);
+            AtlasProxy.addAtlasProxyClazz(document, manifestOptions.getAtlasProxySkipChannels(), result);
         }
 
         if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
-            addBundleLocationToDestManifest(document,
-                                            libManifestMap,
-                                            libDependenciesMaps,
-                                            manifestOptions);
+            addBundleLocationToDestManifest(document, libManifestMap, libDependenciesMaps, manifestOptions);
         }
         if (null != manifestOptions && manifestOptions.isReplaceApplication()) {
             replaceManifestApplicationName(document);
         }
 
-        if ((null != manifestOptions && manifestOptions.isAddMultiDexMetaData()) ||
-            addMultiDex) {
+        if ((null != manifestOptions && manifestOptions.isAddMultiDexMetaData()) || addMultiDex) {
             addMultiDexMetaData(document);
         }
         if (null != manifestOptions && manifestOptions.isRemoveProvider()) {
@@ -326,8 +317,9 @@ public class ManifestFileUtils {
 
         XmlHelper.saveDocument(document, mainManifest);
 
-        return result;
+        printlnPermissions(document);
 
+        return result;
     }
 
     /**
@@ -370,20 +362,14 @@ public class ManifestFileUtils {
      * @param baseBunfleInfoFile
      * @param manifestOptions
      */
-    private static void addApplicationMetaData(Document document,
-                                               Map<String, File> libManifestMap,
-                                               File baseBunfleInfoFile,
-                                               ManifestOptions manifestOptions,
+    private static void addApplicationMetaData(Document document, Map<String, File> libManifestMap,
+                                               File baseBunfleInfoFile, ManifestOptions manifestOptions,
                                                Set<String> remoteBundles) throws IOException, DocumentException {
         Map<String, BundleInfo> bundleFileMap = Maps.newHashMap();
         // 解析基础信息
-        if (null != baseBunfleInfoFile &&
-            baseBunfleInfoFile.exists() &&
-            baseBunfleInfoFile.canRead()) {
+        if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists() && baseBunfleInfoFile.canRead()) {
             String bundleBaseInfo = FileUtils.readFileToString(baseBunfleInfoFile, "utf-8");
-            bundleFileMap = JSON.parseObject(bundleBaseInfo,
-                                             new TypeReference<Map<String, BundleInfo>>() {
-                                             });
+            bundleFileMap = JSON.parseObject(bundleBaseInfo, new TypeReference<Map<String, BundleInfo>>() {});
         }
         Map<String, LibBundleInfo> awbManifestMap = Maps.newHashMap();
         for (Map.Entry<String, File> entry : libManifestMap.entrySet()) {
@@ -402,11 +388,8 @@ public class ManifestFileUtils {
                 if (null != applicationElement) {
                     applicationName = applicationElement.attributeValue("name");
                 }
-                LibBundleInfo libBundleInfo = new LibBundleInfo(artifactId,
-                                                                packageName,
-                                                                applicationName,
-                                                                bundleFileMap.get(libName),
-                                                                libName);
+                LibBundleInfo libBundleInfo = new LibBundleInfo(artifactId, packageName, applicationName,
+                                                                bundleFileMap.get(libName), libName);
                 awbManifestMap.put(artifactId, libBundleInfo);
             }
         }
@@ -427,11 +410,8 @@ public class ManifestFileUtils {
                     if (null != bundleInfo && bundleInfo.getDependency() != null) {
                         bundleDepValue = StringUtils.join(bundleInfo.getDependency(), "|");
                     }
-                    String value = libBundleInfo.applicationName +
-                        "," +
-                        !remoteBundles.contains(libBundleInfo.libName) +
-                        "," +
-                        bundleDepValue;
+                    String value = libBundleInfo.applicationName + "," + !remoteBundles.contains(libBundleInfo.libName)
+                        + "," + bundleDepValue;
                     logger.info("[bundleInfo] add bundle value : " + value + " to manifest");
                     metaData.addAttribute("android:name", "bundle_" + bundlePackageName);
                     metaData.addAttribute("android:value", value);
@@ -452,10 +432,7 @@ public class ManifestFileUtils {
 
         String libName;
 
-        public LibBundleInfo(String name,
-                             String packageName,
-                             String applicationName,
-                             BundleInfo bundleInfo,
+        public LibBundleInfo(String name, String packageName, String applicationName, BundleInfo bundleInfo,
                              String libName) {
             this.name = name;
             this.packageName = packageName;
@@ -473,8 +450,7 @@ public class ManifestFileUtils {
      * @param manifestOptions
      * @throws DocumentException
      */
-    private static void addBundleLocationToDestManifest(Document document,
-                                                        Map<String, File> libManifestMap,
+    private static void addBundleLocationToDestManifest(Document document, Map<String, File> libManifestMap,
                                                         Multimap<String, File> libDependenciesMaps,
                                                         ManifestOptions manifestOptions) throws DocumentException {
         Table<String, String, String> bundleInfoTable = HashBasedTable.create();
@@ -506,8 +482,7 @@ public class ManifestFileUtils {
                     Document libDocument = reader.read(libManifest);// 读取XML文件
                     Element libRoot = libDocument.getRootElement();// 得到根节点
                     String packageName = packageNameMap.get(key);
-                    List<? extends Node> nodes = libRoot.selectNodes(
-                        "//activity|//service|//receiver");
+                    List<? extends Node> nodes = libRoot.selectNodes("//activity|//service|//receiver");
                     for (Node node : nodes) {
                         Element e = (Element)node;
                         String name = e.attributeValue("name");
@@ -545,8 +520,7 @@ public class ManifestFileUtils {
         }
         Element root = document.getRootElement();// 得到根节点
         // 更新launch信息
-        if (manifestOptions.getRetainLaunches() != null &&
-            manifestOptions.getRetainLaunches().size() > 0) {
+        if (manifestOptions.getRetainLaunches() != null && manifestOptions.getRetainLaunches().size() > 0) {
             List<? extends Node> nodes = root.selectNodes(
                 "//activity/intent-filter/category|//activity-alias/intent-filter/category");
             for (Node node : nodes) {
@@ -572,11 +546,31 @@ public class ManifestFileUtils {
      * @param document
      * @param manifestOptions
      */
-    private static void updatePermission(Document document, ManifestOptions manifestOptions) {
+    private static void updatePermission(Document document, ManifestOptions manifestOptions) throws IOException {
         if (null == manifestOptions) {
             return;
         }
+
         Element root = document.getRootElement();// 得到根节点
+
+        if (null != manifestOptions.getPermissionListFile() && manifestOptions.getPermissionListFile().exists()) {
+            List<String> whiteList = FileUtils.readLines(manifestOptions.getPermissionListFile());
+            List<Node> nodes = new ArrayList<>();
+            nodes.addAll(root.selectNodes("//permission"));
+            nodes.addAll(root.selectNodes("//uses-permission"));
+
+            for (Node node : nodes) {
+                Element element = (Element)node;
+                String name = element.attributeValue("name");
+                if (!whiteList.contains(name)) {
+                    logger.warn("[permission] remove " + name);
+                    element.getParent().remove(element);
+                }
+            }
+
+            return;
+        }
+
         // 更新自定义权限
         if (manifestOptions.isRemoveCustomPermission()) {
             List<? extends Node> nodes = root.selectNodes("//permission");
@@ -591,8 +585,8 @@ public class ManifestFileUtils {
                     }
                 }
                 // 如果存在着自定义权限
-                if (null != manifestOptions.getRetainPermissions() &&
-                    manifestOptions.getRetainPermissions().size() > 0) {
+                if (null != manifestOptions.getRetainPermissions()
+                    && manifestOptions.getRetainPermissions().size() > 0) {
                     for (String retainPermission : manifestOptions.getRetainPermissions()) {
                         if (name.startsWith(retainPermission)) {
                             retain = true;
@@ -607,8 +601,8 @@ public class ManifestFileUtils {
         }
 
         // 更新系统权限
-        if (null != manifestOptions.getRemoveSystemPermissions() &&
-            manifestOptions.getRemoveSystemPermissions().size() > 0) {
+        if (null != manifestOptions.getRemoveSystemPermissions()
+            && manifestOptions.getRemoveSystemPermissions().size() > 0) {
             List<? extends Node> nodes = root.selectNodes("//uses-permission");
             for (Node node : nodes) {
                 Element element = (Element)node;
@@ -619,6 +613,28 @@ public class ManifestFileUtils {
                 }
             }
         }
+    }
+
+    public static void printlnPermissions(Document document) throws IOException {
+        Element root = document.getRootElement();// 得到根节点
+        List<Node> nodes = new ArrayList<>();
+        nodes.addAll(root.selectNodes("//permission"));
+        nodes.addAll(root.selectNodes("//uses-permission"));
+
+        Set<String> permissons = new HashSet<>();
+        for (Node node : nodes) {
+            Element element = (Element)node;
+            String name = element.attributeValue("name");
+            permissons.add(name);
+        }
+
+        logger.warn("[permission] start >>>>>>>> ");
+        List<String> lines = new ArrayList<>(permissons);
+        Collections.sort(lines);
+        for (String name : lines){
+            logger.warn(name);
+        }
+        logger.warn("[permission] end <<<<<<<<< ");
     }
 
     /**
@@ -682,16 +698,36 @@ public class ManifestFileUtils {
     //
     //}
 
+    public static void updatePreProcessBaseManifestFile(File modifyManifest, File orgManifestFile)
+        throws IOException, DocumentException {
+
+        Document document = XmlHelper.readXml(orgManifestFile);// 读取XML文件
+
+        Element root = document.getRootElement();// 得到根节点
+        root.addNamespace("tools", "http://schemas.android.com/tools");
+        Element applicationElement = root.element("application");
+
+        //判断是否有application，需要删除掉
+        if (null != applicationElement) {
+            applicationElement.addAttribute("tools:replace",
+                                            "android:name,android:icon,android:allowBackup,android:label,"
+                                                + "android:supportsRtl");
+        }
+
+        XmlHelper.saveDocument(document, modifyManifest);
+    }
+
     /**
      * 更新libManifest文件
      *
      * @param modifyManifest
      * @param mainManifestFileObject param updateSdkVersion
+     * @param incremental
      */
-    public static void updatePreProcessManifestFile(File modifyManifest,
-                                                    File orgManifestFile,
-                                                    ManifestInfo mainManifestFileObject,
-                                                    boolean updateSdkVersion) throws IOException, DocumentException {
+
+    public static void updatePreProcessManifestFile(File modifyManifest, File orgManifestFile,
+                                                    ManifestInfo mainManifestFileObject, boolean updateSdkVersion,
+                                                    boolean incremental) throws IOException, DocumentException {
 
         Document document = XmlHelper.readXml(orgManifestFile);// 读取XML文件
 
@@ -757,6 +793,14 @@ public class ManifestFileUtils {
         fillFullClazzName(root, packageName, "provider");
         fillFullClazzName(root, packageName, "receiver");
         fillFullClazzName(root, packageName, "service");
+        if (incremental) {
+            root.addNamespace("tools", "http://schemas.android.com/tools");
+            List<? extends Node> nodes = root.selectNodes("//application/*");
+            for (Node node : nodes) {
+                Element element = (Element)node;
+                element.addAttribute("tools:node", "replace");
+            }
+        }
 
         XmlHelper.saveDocument(document, modifyManifest);
     }
@@ -781,8 +825,7 @@ public class ManifestFileUtils {
      * @param replaceAttrs
      * @param removeAttrs
      */
-    private static void updateApplicationElement(Element element,
-                                                 Map<String, String> replaceAttrs,
+    private static void updateApplicationElement(Element element, Map<String, String> replaceAttrs,
                                                  List<String> removeAttrs) {
         for (Map.Entry<String, String> entry : replaceAttrs.entrySet()) {
             String key = entry.getKey();
@@ -843,8 +886,7 @@ public class ManifestFileUtils {
         XPath xpath = AndroidXPathFactory.newXPath();
 
         try {
-            version = xpath.evaluate("/manifest/@package",
-                                     new InputSource(new FileInputStream(manifestFile)));
+            version = xpath.evaluate("/manifest/@package", new InputSource(new FileInputStream(manifestFile)));
             manifestMap.put(manifestFile.getAbsolutePath(), version);
             return version;
         } catch (XPathExpressionException e) {
@@ -895,9 +937,26 @@ public class ManifestFileUtils {
         return versionName;
     }
 
+    public static String getVersionCode(File androidManifestFile) throws IOException, DocumentException {
+        SAXReader reader = new SAXReader();
+        String versionCode = "";
+        if (androidManifestFile.exists()) {
+            Document document = reader.read(androidManifestFile);// 读取XML文件
+            Element root = document.getRootElement();// 得到根节点
+            if ("manifest".equalsIgnoreCase(root.getName())) {
+                List<Attribute> attributes = root.attributes();
+                for (Attribute attr : attributes) {
+                    if (StringUtils.equalsIgnoreCase(attr.getName(), "versionCode")) {
+                        versionCode = attr.getValue();
+                    }
+                }
+            }
+        }
+        return versionCode;
+    }
+
     public static void removeProvider(File androidManifestFile) throws IOException, DocumentException {
-        File backupFile = new File(androidManifestFile.getParentFile(),
-                                   "AndroidManifest-backup.xml");
+        File backupFile = new File(androidManifestFile.getParentFile(), "AndroidManifest-backup.xml");
         FileUtils.deleteQuietly(backupFile);
         FileUtils.moveFile(androidManifestFile, backupFile);
 
@@ -953,8 +1012,8 @@ public class ManifestFileUtils {
         }
     }
 
-    public static void createPatchManifest(File mainManifest, File originalManifest,
-                                           File destManifest) throws IOException, DocumentException {
+    public static void createPatchManifest(File mainManifest, File originalManifest, File destManifest)
+        throws IOException, DocumentException {
 
         Document document = XmlHelper.readXml(mainManifest);
         Document baseDoc = XmlHelper.readXml(originalManifest);
@@ -997,5 +1056,4 @@ public class ManifestFileUtils {
 
         return nodes;
     }
-
 }

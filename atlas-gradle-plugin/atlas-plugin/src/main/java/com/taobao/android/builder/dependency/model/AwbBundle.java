@@ -209,6 +209,13 @@
 
 package com.taobao.android.builder.dependency.model;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
@@ -217,14 +224,8 @@ import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import com.taobao.android.builder.tools.manifest.ManifestHelper;
-
 import org.apache.commons.lang.StringUtils;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import org.gradle.api.artifacts.ModuleIdentifier;
 
 /**
  * Created by shenghua.nish on 2016-05-06 下午5:46.
@@ -245,14 +246,16 @@ public class AwbBundle {
     //当前模块本身, 主bundle为空， 否则为awb本身
     private AndroidLibrary androidLibrary;
 
-    private List<AndroidLibrary> androidLibraries = new ArrayList<>();
+    private final List<AndroidLibrary> androidLibraries = new ArrayList<>();
 
-    private List<JavaLibrary> javaLibraries = new ArrayList<>();
+    private final List<JavaLibrary> javaLibraries = new ArrayList<>();
 
     //兼容老的模式，逐步废弃到 androidLibrary
-    private List<SoLibrary> soLibraries = new ArrayList<>();
+    private final List<SoLibrary> soLibraries = new ArrayList<>();
 
     private File mergedManifest;
+
+    private Map<ModuleIdentifier, String> baseAwbDependencies;
 
     public AwbBundle() {
         mainBundle = true;
@@ -332,7 +335,12 @@ public class AwbBundle {
     public String getPackageName() {
 
         if (StringUtils.isEmpty(packageName)) {
-            packageName = ManifestFileUtils.getPackage(androidLibrary.getManifest());
+            File manifest = androidLibrary.getManifest();
+            if (!manifest.exists()) {
+                return null;
+            }
+
+            packageName = ManifestFileUtils.getPackage(manifest);
         }
 
         return packageName;
@@ -341,13 +349,20 @@ public class AwbBundle {
     public String getAwbSoName() {
         if (org.apache.commons.lang3.StringUtils.isEmpty(soFileName)) {
             String packageName = getPackageName();
+            if (packageName == null) {
+                return null;
+            }
+
             soFileName = "lib" + StringUtils.replace(packageName, ".", "_") + ".so";
         }
         return soFileName;
     }
 
+    public File getManifest() {return androidLibrary.getManifest();}
+
     /**
      * 获取所有的相关jar
+     *
      * @return
      */
     public List<File> getLibraryJars() {
@@ -379,12 +394,14 @@ public class AwbBundle {
 
     /**
      * 获取所有的相关aars
+     *
      * @return
      */
     public List<AndroidLibrary> getAllLibraryAars() {
         List<AndroidLibrary> libraries = Lists.newArrayList();
-
-        libraries.add(androidLibrary);
+        if (null != androidLibrary) {
+            libraries.add(androidLibrary);
+        }
         libraries.addAll(androidLibraries);
 
         return libraries;
@@ -408,5 +425,28 @@ public class AwbBundle {
 
     public boolean isMainBundle() {
         return mainBundle;
+    }
+
+    public List<String> getAllDependencies() {
+        List<String> list = new ArrayList<>();
+        for (AndroidLibrary androidL : getAllLibraryAars()) {
+            list.add(androidL.getResolvedCoordinates().toString());
+        }
+        for (JavaLibrary javaLibrary : getJavaLibraries()) {
+            list.add(javaLibrary.getResolvedCoordinates().toString());
+        }
+        for (SoLibrary soLibrary : getSoLibraries()) {
+            list.add(soLibrary.getResolvedCoordinates().toString());
+        }
+        Collections.sort(list);
+        return list;
+    }
+
+    public Map<ModuleIdentifier, String> getBaseAwbDependencies() {
+        return baseAwbDependencies;
+    }
+
+    public void setBaseAwbDependencies(Map<ModuleIdentifier, String> baseAwbDependencies) {
+        this.baseAwbDependencies = baseAwbDependencies;
     }
 }
