@@ -217,6 +217,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.VariantContext;
@@ -326,6 +327,8 @@ public class PrepareAPTask extends BaseTask {
                 Dependency dependency = project.getDependencies().create(apDependency);
                 Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
                 configuration.setTransitive(false);
+                configuration.getResolutionStrategy().cacheChangingModulesFor(0, TimeUnit.MILLISECONDS);
+                configuration.getResolutionStrategy().cacheDynamicVersionsFor(0, TimeUnit.MILLISECONDS);
                 for (File file : configuration.getFiles()) {
                     if (file.getName().endsWith(".ap")) {
                         apBaseFile = file;
