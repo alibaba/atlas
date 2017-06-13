@@ -285,6 +285,9 @@ public class ApDependencies /*extends BaseTask*/ {
         DependencyJson apDependencyJson;
         try (ZipFile zip = new ZipFile(apBaseFile)) {
             ZipEntry entry = zip.getEntry(DEPENDENCIES_FILENAME);
+            if (entry == null) {
+                throw new IllegalStateException("dependencies.txt is missing from location: " + apBaseFile);
+            }
             try (InputStream in = zip.getInputStream(entry)) {
                 apDependencyJson = JSON.parseObject(IOUtils.toString(in, StandardCharsets.UTF_8), DependencyJson.class);
             }
