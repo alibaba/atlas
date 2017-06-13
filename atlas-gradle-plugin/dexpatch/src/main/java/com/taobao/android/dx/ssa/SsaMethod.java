@@ -90,17 +90,17 @@ public final class SsaMethod {
     private boolean backMode;
 
     /**
-     * @param rmeth rop-form method to convert from
+     * @param ropMethod rop-form method to convert from
      * @param paramWidth the total width, in register-units, of the
      * method's parameters
      * @param isStatic {@code true} if this method has no {@code this}
      * pointer argument
      */
-    public static SsaMethod newFromRopMethod(RopMethod rmeth,
+    public static SsaMethod newFromRopMethod(RopMethod ropMethod,
             int paramWidth, boolean isStatic) {
-        SsaMethod result = new SsaMethod(rmeth, paramWidth, isStatic);
+        SsaMethod result = new SsaMethod(ropMethod, paramWidth, isStatic);
 
-        result.convertRopToSsaBlocks(rmeth);
+        result.convertRopToSsaBlocks(ropMethod);
 
         return result;
     }
@@ -496,10 +496,6 @@ public final class SsaMethod {
 
         if (oldSource != null) {
             int reg = oldSource.getReg();
-            if (reg == newSource.getReg()) {
-                // No need to remove the instruction from the use list then immediately re-add it.
-                return;
-            }
             useList[reg].remove(insn);
         }
 

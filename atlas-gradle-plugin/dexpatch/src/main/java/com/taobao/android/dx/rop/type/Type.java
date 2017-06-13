@@ -17,9 +17,7 @@
 package com.taobao.android.dx.rop.type;
 
 import com.taobao.android.dx.util.Hex;
-import com.google.common.collect.MapMaker;
-
-import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Representation of a value type, such as may appear in a field, in a
@@ -32,10 +30,8 @@ public final class Type implements TypeBearer, Comparable<Type> {
      * {@code non-null;} intern table mapping string descriptors to
      * instances
      */
-    private static final Map<String, Type> internTable =
-        new MapMaker()
-            .weakValues()
-            .makeMap();
+    private static final HashMap<String, Type> internTable =
+        new HashMap<String, Type>(500);
 
     /** basic type constant for {@code void} */
     public static final int BT_VOID = 0;

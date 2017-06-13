@@ -209,19 +209,9 @@
 
 package com.taobao.android.builder.tools.multidex;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import com.android.dex.Dex;
-import com.android.dex.DexIndexOverflowException;
-import com.android.dx.command.dexer.DxContext;
-import com.android.dx.merge.CollisionPolicy;
+import com.taobao.android.dex.Dex;
+import com.taobao.android.dex.DexIndexOverflowException;
+import com.taobao.android.dx.merge.CollisionPolicy;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.apache.commons.lang.StringUtils;
@@ -229,6 +219,11 @@ import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by wuzhong on 2017/5/31.
@@ -257,13 +252,13 @@ public class DexMerger {
 
     }
 
-    public DexMerger(MultiDexConfig multiDexConfig, Map<File, Dex> dexFileMap) throws IOException {
 
+    public DexMerger(MultiDexConfig multiDexConfig, Map<File, Dex> fileDexMap) {
         this.multiDexConfig = multiDexConfig;
-        this.fileList = dexFileMap.keySet().stream().sorted(new FileComparator()).collect(Collectors.toList());
+        this.fileList = fileDexMap.keySet().stream().sorted(new FileComparator()).collect(Collectors.toList());
 
         for (File file : fileList) {
-            Dex dex = dexFileMap.get(file);
+            Dex dex = fileDexMap.get(file);
             jarDexMap.put(file, dex);
         }
 
@@ -333,9 +328,8 @@ public class DexMerger {
 
     private void mergeDex(File outDexFolder, List<Dex> tmpList, int index, Dex[] mergedList) throws IOException {
 
-        com.android.dx.merge.DexMerger dexMerger = new com.android.dx.merge.DexMerger(tmpList.toArray(new Dex[0]),
-                                                                                      CollisionPolicy.KEEP_FIRST,
-                                                                                      new DxContext());
+        com.taobao.android.dx.merge.DexMerger dexMerger = new com.taobao.android.dx.merge.DexMerger(tmpList.toArray(new Dex[0]),
+                                                                                      CollisionPolicy.KEEP_FIRST);
 
         dexMerger.setCompactWasteThreshold(1024);
 

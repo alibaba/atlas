@@ -18,6 +18,7 @@ package com.taobao.android.dx.dex.file;
 
 import com.taobao.android.dex.DexFormat;
 import com.taobao.android.dex.DexIndexOverflowException;
+import com.taobao.android.dx.command.dexer.Main;
 
 import java.util.Formatter;
 import java.util.Map;
@@ -70,7 +71,8 @@ public abstract class MemberIdsSection extends UniformItemSection {
         Formatter formatter = new Formatter();
         try {
             String memberType = this instanceof MethodIdsSection ? "method" : "field";
-            formatter.format("Too many %s references: %d; max is %d.%n%n" +
+            formatter.format("Too many %s references: %d; max is %d.%n" +
+                    new Main().getTooManyIdsErrorMessage() + "%n" +
                     "References by package:",
                     memberType, items().size(), DexFormat.MAX_MEMBER_IDX + 1);
             for (Map.Entry<String, AtomicInteger> entry : membersByPackage.entrySet()) {

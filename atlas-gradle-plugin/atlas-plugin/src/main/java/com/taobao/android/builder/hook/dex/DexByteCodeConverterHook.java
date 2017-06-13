@@ -137,17 +137,11 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             throws IOException, ProcessException {
         final String submission = Joiner.on(',').join(builder.getInputs());
         mLogger.verbose("Dexing in-process : %1$s", submission);
-        try {
-            sDexExecutorService.submit(() -> {
-                Stopwatch stopwatch = Stopwatch.createStarted();
-                ProcessResult result = DexWrapperHook.run(builder, dexOptions, outputHandler);
-                result.assertNormalExitValue();
-                mLogger.verbose("Dexing %1$s took %2$s.", submission, stopwatch.toString());
-                return null;
-            }).get();
-        } catch (Exception e) {
-            throw new ProcessException(e);
-        }
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        ProcessResult result = DexWrapperHook.run(builder, dexOptions, outputHandler);
+        result.assertNormalExitValue();
+        mLogger.verbose("Dexing %1$s took %2$s.", submission, stopwatch.toString());
+
     }
 
     private void dexOutOfProcess(

@@ -16,9 +16,7 @@
 
 package com.taobao.android.dx.rop.type;
 
-import com.google.common.collect.MapMaker;
-
-import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Representation of a method descriptor. Instances of this class are
@@ -27,10 +25,8 @@ import java.util.Map;
  */
 public final class Prototype implements Comparable<Prototype> {
     /** {@code non-null;} intern table mapping string descriptors to instances */
-    private static final Map<String, Prototype> internTable =
-        new MapMaker()
-            .weakValues()
-            .makeMap();
+    private static final HashMap<String, Prototype> internTable =
+        new HashMap<String, Prototype>(500);
 
     /** {@code non-null;} method descriptor */
     private final String descriptor;

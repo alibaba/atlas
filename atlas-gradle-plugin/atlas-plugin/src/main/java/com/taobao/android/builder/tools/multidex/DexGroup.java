@@ -209,15 +209,15 @@
 
 package com.taobao.android.builder.tools.multidex;
 
+import com.taobao.android.dex.Dex;
+import com.taobao.android.dex.DexIndexOverflowException;
+import com.taobao.android.dex.FieldId;
+import com.taobao.android.dex.MethodId;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.android.dex.Dex;
-import com.android.dex.DexIndexOverflowException;
-import com.android.dex.FieldId;
-import com.android.dex.MethodId;
 
 public class DexGroup {
 

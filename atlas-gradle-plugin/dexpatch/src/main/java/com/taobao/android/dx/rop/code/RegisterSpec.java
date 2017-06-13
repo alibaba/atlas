@@ -29,8 +29,6 @@ import java.util.HashMap;
  */
 public final class RegisterSpec
         implements TypeBearer, ToHuman, Comparable<RegisterSpec> {
-    private static boolean DISABLE_INTERNING = true;
-
     /** {@code non-null;} string to prefix register numbers with */
     public static final String PREFIX = "v";
 
@@ -64,10 +62,6 @@ public final class RegisterSpec
      */
     private static RegisterSpec intern(int reg, TypeBearer type,
             LocalItem local) {
-        if (DISABLE_INTERNING) {
-            return new RegisterSpec(reg, type, local);
-        }
-
         synchronized (theInterns) {
             theInterningItem.set(reg, type, local);
             RegisterSpec found = theInterns.get(theInterningItem);
@@ -446,10 +440,6 @@ public final class RegisterSpec
 
         if ((other == null) || (reg != other.getReg())) {
             return null;
-        }
-
-        if (this.equals(other.reg, other.type, other.local)) {
-            return this;
         }
 
         LocalItem resultLocal =

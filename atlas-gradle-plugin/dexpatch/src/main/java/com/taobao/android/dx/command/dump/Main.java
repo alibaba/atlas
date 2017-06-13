@@ -26,6 +26,8 @@ import java.io.UnsupportedEncodingException;
  */
 public class Main {
 
+    static Args parsedArgs = new Args();
+
     /**
      * This class is uninstantiable.
      */
@@ -38,8 +40,6 @@ public class Main {
      */
     public static void main(String[] args) {
         int at = 0;
-
-        Args parsedArgs = new Args();
 
         for (/*at*/; at < args.length; at++) {
             String arg = args[at];
@@ -94,7 +94,7 @@ public class Main {
                     }
                     bytes = HexParser.parse(src);
                 }
-                processOne(name, bytes, parsedArgs);
+                processOne(name, bytes);
             } catch (ParseException ex) {
                 System.err.println("\ntrouble parsing:");
                 if (parsedArgs.debug) {
@@ -112,7 +112,7 @@ public class Main {
      * @param name {@code non-null;} name of the file
      * @param bytes {@code non-null;} contents of the file
      */
-    private static void processOne(String name, byte[] bytes, Args parsedArgs) {
+    private static void processOne(String name, byte[] bytes) {
         if (parsedArgs.dotDump) {
             DotDumper.dump(bytes, name, parsedArgs);
         } else if (parsedArgs.basicBlocks) {

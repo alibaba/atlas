@@ -241,10 +241,6 @@ import com.taobao.android.utils.CommandUtils;
 import com.taobao.android.utils.PathMatcher;
 import com.taobao.android.utils.SmaliCodeUtils;
 import com.taobao.android.utils.ZipUtils;
-
-import com.taobao.common.dexpatcher.DexPatchApplier;
-import com.taobao.common.dexpatcher.DexPatchGenerator;
-import com.taobao.dex.Dex;
 import com.taobao.update.UpdateInfo;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;

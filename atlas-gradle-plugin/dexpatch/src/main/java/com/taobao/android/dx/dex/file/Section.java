@@ -211,6 +211,7 @@ public abstract class Section {
     public final void prepare() {
         throwIfPrepared();
         prepare0();
+        System.out.println("prepare type:"+name +"in "+file);
         prepared = true;
     }
 
@@ -250,7 +251,7 @@ public abstract class Section {
      */
     protected final void throwIfPrepared() {
         if (prepared) {
-            throw new RuntimeException("already prepared");
+            throw new RuntimeException("already prepared "+name +"in "+file);
         }
     }
 

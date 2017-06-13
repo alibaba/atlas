@@ -235,11 +235,15 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.builder.symbols.RGeneration;
 import com.android.builder.symbols.SymbolIo;
 import com.android.builder.symbols.SymbolTable;
-import com.android.dex.Dex;
-import com.android.dx.command.dexer.DxContext;
-import com.android.dx.merge.CollisionPolicy;
-import com.android.dx.merge.DexMerger;
-import com.android.ide.common.process.*;
+import com.taobao.android.dex.Dex;
+import com.taobao.android.dx.merge.CollisionPolicy;
+import com.taobao.android.dx.merge.DexMerger;
+import com.android.ide.common.process.JavaProcessExecutor;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessInfo;
+import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.ide.common.process.ProcessResult;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.signing.KeytoolException;
 import com.android.io.FileWrapper;
@@ -996,8 +1000,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
                 } else {
                     DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
-                                                        CollisionPolicy.KEEP_FIRST,
-                                                        new DxContext());
+                                                        CollisionPolicy.KEEP_FIRST);
                     Dex dex = dexMerger.merge();
 
                     File dexFile = new File(outDexFolder, "classes.dex");

@@ -209,38 +209,18 @@
 
 package com.taobao.android.builder.tools.multidex;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
-
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.transforms.JarMerger;
 import com.android.builder.core.AtlasBuilder.MultiDexer;
-import com.android.dex.Dex;
-import com.android.dx.command.dexer.DxContext;
-import com.android.dx.merge.CollisionPolicy;
-import com.android.dx.merge.DexMerger;
 import com.google.common.base.Joiner;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.dex.Dex;
+import com.taobao.android.dx.merge.CollisionPolicy;
+import com.taobao.android.dx.merge.DexMerger;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
@@ -251,6 +231,13 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proguard.obfuscate.MappingReader;
+
+import java.io.*;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
@@ -515,8 +502,7 @@ public class FastMultiDexer implements MultiDexer {
     @Override
     public void dexMerge(Map<File, Dex> fileDexMap, File outDexFolder) throws IOException {
 
-        com.taobao.android.builder.tools.multidex.DexMerger dexMerger = new com.taobao.android.builder.tools.multidex
-            .DexMerger(multiDexConfig, fileDexMap);
+        com.taobao.android.builder.tools.multidex.DexMerger dexMerger = new com.taobao.android.builder.tools.multidex.DexMerger(multiDexConfig, fileDexMap);
 
         List<DexGroup> dexDtos = dexMerger.group();
 
@@ -526,7 +512,7 @@ public class FastMultiDexer implements MultiDexer {
 
     private void mergeDex(File outDexFolder, List<Dex> tmpList, int index, Dex[] mergedList) throws IOException {
 
-        DexMerger dexMerger = new DexMerger(tmpList.toArray(new Dex[0]), CollisionPolicy.KEEP_FIRST, new DxContext());
+        DexMerger dexMerger = new DexMerger(tmpList.toArray(new Dex[0]), CollisionPolicy.KEEP_FIRST);
         Dex dex = dexMerger.merge();
 
         mergedList[index] = dex;
