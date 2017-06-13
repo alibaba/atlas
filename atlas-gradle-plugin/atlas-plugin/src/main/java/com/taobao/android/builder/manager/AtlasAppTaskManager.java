@@ -554,9 +554,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 DefaultDexOptions dexOptions = (DefaultDexOptions)ReflectUtils.getField(transformTask.getTransform(),
                                                                                         "dexOptions");
                 dexOptions.setPreDexLibraries(false);
-                if (appVariantContext.getBuildType().getDexConfig()!= null && appVariantContext.getBuildType().getDexConfig().isUseMyDex()){
-                    dexOptions.getAdditionalParameters().add("--useMyDex");
-                }
 
                 VariantScope variantScope = appVariantContext.getScope();
                 GradleVariantConfiguration config = appVariantContext.getVariantData().getVariantConfiguration();
@@ -603,6 +600,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 DefaultDexOptions dexOptions = (DefaultDexOptions)ReflectUtils.getField(transformTask.getTransform(),
                                                                                         "dexOptions");
                 dexOptions.setPreDexLibraries(false);
+                if (appVariantContext.getBuildType().getDexConfig()!= null && appVariantContext.getBuildType().getDexConfig().isUseMyDex()){
+                    dexOptions.getAdditionalParameters().add("--useMyDex");
+                }
             }
         }
     }
