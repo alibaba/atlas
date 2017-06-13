@@ -933,7 +933,7 @@ public class AtlasBuilder extends AndroidBuilder {
             List<File> outputs = new ArrayList<>();
 
             if (fastMultiDex) {
-                ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, 0);
+                ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, inputs.size() > 8 ? 8 : inputs.size());
                 List<Runnable> runnables = new ArrayList<>();
                 for (File input : inputs) {
 
