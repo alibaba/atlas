@@ -256,6 +256,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.taobao.android.AaptLib;
+import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.hook.dex.DexByteCodeConverterHook;
 import com.taobao.android.builder.tools.FileNameUtils;
@@ -296,7 +297,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
     private static Logger sLogger = LoggerFactory.getLogger(AtlasBuilder.class);
 
-    public static final String PRE_DEXCACHE_TYPE = "pre-dex-0.10";
+    public static final String PRE_DEXCACHE_TYPE = "pre-dex-0.11";
 
     protected AtlasExtension atlasExtension;
 
@@ -1160,7 +1161,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
         if (StringUtils.isNotEmpty(md5) && dexFile.exists()) {
             try {
-                FileCacheCenter.cacheFile(PRE_DEXCACHE_TYPE,md5, dexFile, atlasExtension.getTBuildConfig().isDexNetworkCacheEnabled());
+                FileCacheCenter.cacheFile(PRE_DEXCACHE_TYPE, md5, dexFile, AtlasBuildContext.sBuilderAdapter.pushCacheToNetwork && atlasExtension.getTBuildConfig().isDexNetworkCacheEnabled());
             } catch (FileCacheException e) {
                 sLogger.error(e.getMessage(),e);
             }
