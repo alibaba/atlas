@@ -266,7 +266,7 @@ public class BundleReleaser {
             externalStorage = true;
         }
         if (!(Looper.getMainLooper() == Looper.myLooper())) {
-            if (Looper.myLooper() != null)
+            if (Looper.myLooper() == null)
                 Looper.prepare();
         }
         handler = new Handler(new Handler.Callback() {
@@ -355,6 +355,7 @@ public class BundleReleaser {
             }
         }
     }
+
 
     public void release(final ReleaseType releaseType) throws IOException {
                 switch (releaseType) {
