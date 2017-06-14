@@ -300,7 +300,6 @@ public class TPatchTool extends BasePatchTool {
 
     private final PathMatcher pathMatcher = new PathMatcher();
 
-    List<String>bundles = Lists.newArrayList("libsgmain.so","libsguatrace.so","libsgavmp.so","libsgmisc.so","libsgsecuritybody.so");
 
 
     private final String ANDROID_MANIFEST = "AndroidManifest.xml";
@@ -455,6 +454,7 @@ public class TPatchTool extends BasePatchTool {
             }
         }
         for (final File soFile : soFiles) {
+            System.out.println("do patch:"+soFile.getAbsolutePath());
             final String relativePath = PathUtils.toRelative(newApkUnzipFolder,
                     soFile.getAbsolutePath());
             if (null != notIncludeFiles && pathMatcher.match(notIncludeFiles, relativePath)) {
@@ -531,15 +531,14 @@ public class TPatchTool extends BasePatchTool {
     }
 
     private boolean isBundleFile(File file) {
-        if (bundles.contains(file.getName())){
-            return true;
-        }
-    if (whiteList != null){
+    if (whiteList.size() > 1){
         for (String bundleName:whiteList){
             if (file.getAbsolutePath().endsWith(bundleName)){
                 return true;
             }
         }
+    }else {
+        return PatchUtils.isBundleFile(file);
     }
 
     return false;
