@@ -297,7 +297,7 @@ public class ApContext {
     public void setApExploredFolder(File apExploredFolder) {
         this.apExploredFolder = apExploredFolder;
         this.baseManifest = new File(apExploredFolder, ANDROID_MANIFEST_XML);
-        this.baseMainManifest = new File(apExploredFolder, "_" + ANDROID_MANIFEST_XML);
+        this.baseMainManifest = new File(apExploredFolder, "incremental/" + ANDROID_MANIFEST_XML);
         this.baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
         this.extractedBaseApkFolder = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
         this.baseRemoteBundlesFolder = new File(apExploredFolder, AP_REMOTE_BUNDLES_DIRECTORY);

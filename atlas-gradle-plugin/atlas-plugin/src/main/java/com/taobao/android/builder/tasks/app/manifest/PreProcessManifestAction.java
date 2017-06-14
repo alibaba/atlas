@@ -251,7 +251,6 @@ public class PreProcessManifestAction implements Action<Task> {
 
     @Override
     public void execute(Task task) {
-
         AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
 
         ManifestProcessorTask manifestProcessorTask = baseVariantOutputData.manifestProcessorTask;
@@ -259,26 +258,33 @@ public class PreProcessManifestAction implements Action<Task> {
         Set<String> notMergedArtifacts = Sets.newHashSet();
 
         if (null != atlasExtension.getManifestOptions() && null != atlasExtension.getManifestOptions()
-                                                                                 .getNotMergedBundles()) {
+            .getNotMergedBundles()) {
             notMergedArtifacts = atlasExtension.getManifestOptions().getNotMergedBundles();
         }
 
         if (manifestProcessorTask instanceof MergeManifests) {
-
             MergeManifests mergeManifests = (MergeManifests)manifestProcessorTask;
 
-            VariantScope variantScope = appVariantContext.getScope();
-            GradleVariantConfiguration config = variantScope.getVariantConfiguration();
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
-
-            List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(appVariantContext,
-                                                                                      dependencyTree,
-                                                                                      atlasExtension);
-
             List<ManifestProvider> allManifest = new ArrayList<>();
-            allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
-            allManifest.addAll(bundleProviders);
-            allManifest.add(new BundleManifestProvider(appVariantContext.apContext.getBaseManifest()));
+            // 动态部署不合并AndroidManifest
+            if (appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
+                .getPatchConfig().isCreateTPatch()) {
+                VariantScope variantScope = appVariantContext.getScope();
+                GradleVariantConfiguration config = variantScope.getVariantConfiguration();
+                AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
+
+                List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(appVariantContext,
+                                                                                          dependencyTree,
+                                                                                          atlasExtension);
+
+                allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
+                allManifest.addAll(bundleProviders);
+            }
+
+            // 增量编译基线AndroidManifest
+            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+                allManifest.add(new BundleManifestProvider(appVariantContext.apContext.getBaseManifest()));
+            }
 
             //if (sLogger.isInfoEnabled()) {
             //    for (ManifestProvider manifestProvider : allManifest) {

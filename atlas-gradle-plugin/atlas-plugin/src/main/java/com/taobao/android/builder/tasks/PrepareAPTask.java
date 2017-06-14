@@ -293,6 +293,7 @@ public class PrepareAPTask extends BaseTask {
         this.explodedDir = explodedDir;
     }
 
+    @Input
     public boolean isIncremental() {
         return incremental;
     }
