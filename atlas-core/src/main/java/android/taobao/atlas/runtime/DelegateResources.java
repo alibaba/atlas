@@ -209,6 +209,7 @@
 package android.taobao.atlas.runtime;
 
 
+import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -220,6 +221,7 @@ import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -408,8 +410,10 @@ public class DelegateResources extends Resources {
                         sDefaultAssetPathList.put(path,Boolean.FALSE);
                     }
                 }
-            }catch(Throwable e){
-                sDefaultAssetPathList = new HashMap<String,Boolean>(0);
+            }catch (Throwable e){}finally {
+                if(sDefaultAssetPathList==null){
+                    sDefaultAssetPathList = new HashMap<String,Boolean>(0);
+                }
             }
         }
         private LinkedHashMap<String,Boolean> assetPathCache = null;
@@ -497,6 +501,7 @@ public class DelegateResources extends Resources {
          * @return
          * @throws Exception
          */
+        private static String sWebviewPath = null;
         private AssetManager createNewAssetManager(AssetManager srcManager,String newAssetPath,boolean append,int type) throws Exception{
             AssetManager newAssetManager = AssetManager.class.newInstance();
             List<String> runtimeAdditionalAssets = new ArrayList<String>();
@@ -507,6 +512,23 @@ public class DelegateResources extends Resources {
                     if(currentPath.toLowerCase().contains("webview") || currentPath.toLowerCase().contains("chrome")) {
                         runtimeAdditionalAssets.add(currentPath);
                     }
+                }
+            }
+            if(Build.VERSION.SDK_INT>=24) {
+                //7.0版本 webivew 特殊path下的兜底策略
+                if(TextUtils.isEmpty(sWebviewPath)) {
+                    try {
+                        PackageInfo info = (PackageInfo) Class.forName("android.webkit.WebViewFactory").getDeclaredMethod("getLoadedPackageInfo").invoke(null);
+                        if (info != null && info.applicationInfo != null) {
+                            sWebviewPath = info.applicationInfo.sourceDir;
+                        }
+                    } catch (Throwable throwable) {
+                        throwable.printStackTrace();
+                    }
+                }
+                if(!TextUtils.isEmpty(sWebviewPath) && !runtimeAdditionalAssets.contains(sWebviewPath)){
+                    Log.e("DelegateResource","special webviewPath: "+sWebviewPath);
+                    runtimeAdditionalAssets.add(sWebviewPath);
                 }
             }
             sFailedAsssetPath.clear();
@@ -609,6 +631,7 @@ public class DelegateResources extends Resources {
                     }
                 }
             }
+
             if(cookie==0){
                 sFailedAsssetPath.add(path);
             } else {

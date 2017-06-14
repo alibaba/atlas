@@ -23,7 +23,7 @@ repositories {
 
 group = 'com.taobao.android'
 description = """atlas_core"""
-version '5.0.7.11'
+version '5.0.7.16'
 
 
 sourceCompatibility = 1.7
