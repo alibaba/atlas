@@ -214,6 +214,7 @@ import java.io.IOException;
 
 import com.alibaba.fastjson.JSON;
 
+import com.taobao.android.builder.tools.proguard.KeepOnlyConfigurationParser;
 import org.junit.Test;
 
 /**

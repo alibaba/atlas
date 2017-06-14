@@ -414,14 +414,10 @@ package com.taobao.android.tpatch.utils;
  *
  */
 
-import com.taobao.android.dex.Dex;
-import com.taobao.android.dx.merge.CollisionPolicy;
-import com.taobao.android.dx.merge.DexMerger;
-import org.apache.commons.lang3.StringUtils;
+import com.taobao.android.dx.command.dexer.Main;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -458,34 +454,32 @@ public class DexBuilderUtils {
         commandArgs.toArray(args);
 //        Main.Arguments arguments = new Main.Arguments();
 //        arguments.parse(args);
-        int result = new com.taobao.android.dx.command.dexer.Main().run(args,null,null);
-        if (result != 0) {
-            throw new IOException("Build " + inJar + " to " + outDex + " error,error result:" + result +",command is:" + StringUtils.join(commandArgs, " "));
-        }
+        new Main().main(args);
+
         return outDex;
     }
 
 
 
-    /**
-     * 合并dex
-     * @param dexs
-     * @param outDexFile
-     * @param policy
-     * @return
-     * @throws IOException
-     */
-    public static File mergeDex(List<File> dexs, File outDexFile,CollisionPolicy policy) throws IOException {
-        List<Dex> dexList = new ArrayList<Dex>();
-        for (File dexFile : dexs) {
-            dexList.add(new Dex(dexFile));
-        }
-//        Dex[] dexArray = new Dex[dexList.size()];
-//        dexList.toArray(dexArray);
-        DexMerger merger = new DexMerger(dexList, policy);
-        Dex outDex = merger.merge();
-        outDex.writeTo(outDexFile);
-        return outDexFile;
-    }
+//    /**
+//     * 合并dex
+//     * @param dexs
+//     * @param outDexFile
+//     * @param policy
+//     * @return
+//     * @throws IOException
+//     */
+//    public static File mergeDex(List<File> dexs, File outDexFile,CollisionPolicy policy) throws IOException {
+//        List<Dex> dexList = new ArrayList<Dex>();
+//        for (File dexFile : dexs) {
+//            dexList.add(new Dex(dexFile));
+//        }
+////        Dex[] dexArray = new Dex[dexList.size()];
+////        dexList.toArray(dexArray);
+//        DexMerger merger = new DexMerger(dexList.toArray(), policy);
+//        Dex outDex = merger.merge();
+//        outDex.writeTo(outDexFile);
+//        return outDexFile;
+//    }
 
 }

@@ -487,6 +487,16 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
                     TransformManager.replaceTransformTask(appVariantContext, vod, ProGuardTransform.class,
                                                           AtlasProguardTransform.class);
+                }
+
+                try {
+                    hookFastDex(appVariantContext);
+                    hookFastMultiDex(appVariantContext);
+                } catch (Exception e) {
+                    throw new GradleException(e.getMessage(), e);
+                }
+
+                for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
                     if (atlasExtension.getTBuildConfig().isIncremental()) {
                         final VariantOutputScope variantOutputScope = vod.getScope();
                         InstantRunPatchingPolicy patchingPolicy = variantScope.getInstantRunBuildContext()
@@ -523,12 +533,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                         awoInstallTask.dependsOn(tasks, variantOutputScope.getVariantScope().getPackageApplicationTask()
                             .getName());
                     }
-                }
-
-                try {
-                    hookFastMultiDex(appVariantContext);
-                } catch (Exception e) {
-                    throw new GradleException(e.getMessage(), e);
                 }
 
             }
@@ -583,4 +587,24 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             }
         }
     }
+
+    //关闭掉系统的proguardtransform
+    private void hookFastDex(AppVariantContext appVariantContext) throws Exception {
+
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()) {
+
+            List<TransformTask> list = TransformManager.findTransformTaskByTransformType(appVariantContext,
+                                                                                         DexTransform.class);
+            for (TransformTask transformTask : list) {
+
+                DefaultDexOptions dexOptions = (DefaultDexOptions)ReflectUtils.getField(transformTask.getTransform(),
+                                                                                        "dexOptions");
+                dexOptions.setPreDexLibraries(false);
+                if (appVariantContext.getBuildType().getDexConfig()!= null && appVariantContext.getBuildType().getDexConfig().isUseMyDex()){
+                    dexOptions.getAdditionalParameters().add("--useMyDex");
+                }
+            }
+        }
+    }
+
 }

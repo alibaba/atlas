@@ -541,7 +541,7 @@ public final class SsaBasicBlock {
     /**
      * Attaches block to an exit block if necessary. If this block
      * is not an exit predecessor or is the exit block, this block does
-     * nothing. For use by {@link SsaMethod#makeExitBlock}
+     * nothing. For use by {@link com.taobao.android.dx.ssa.SsaMethod#makeExitBlock}
      *
      * @param exitBlock {@code non-null;} exit block
      */

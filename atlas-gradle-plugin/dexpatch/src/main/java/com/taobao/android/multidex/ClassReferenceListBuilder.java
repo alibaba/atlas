@@ -17,10 +17,14 @@
 package com.taobao.android.multidex;
 
 import com.taobao.android.dx.cf.direct.DirectClassFile;
+import com.taobao.android.dx.cf.iface.FieldList;
+import com.taobao.android.dx.cf.iface.MethodList;
 import com.taobao.android.dx.rop.cst.Constant;
-import com.taobao.android.dx.rop.cst.ConstantPool;
+import com.taobao.android.dx.rop.cst.CstBaseMethodRef;
+import com.taobao.android.dx.rop.cst.CstFieldRef;
 import com.taobao.android.dx.rop.cst.CstType;
-import com.taobao.android.dx.rop.type.Type;
+import com.taobao.android.dx.rop.type.Prototype;
+import com.taobao.android.dx.rop.type.StdTypeList;
 import com.taobao.android.dx.rop.type.TypeList;
 
 import java.io.FileNotFoundException;
@@ -37,8 +41,8 @@ import java.util.zip.ZipFile;
 public class ClassReferenceListBuilder {
     private static final String CLASS_EXTENSION = ".class";
 
-    private Path path;
-    private Set<String> classNames = new HashSet<String>();
+    private final Path path;
+    private final Set<String> classNames = new HashSet<String>();
 
     public ClassReferenceListBuilder(Path path) {
         this.path = path;
@@ -83,8 +87,7 @@ public class ClassReferenceListBuilder {
                     throw new IOException("Class " + name +
                             " is missing form original class path " + path, e);
                 }
-
-                addDependencies(classFile.getConstantPool());
+                addDependencies(classFile);
             }
         }
     }
@@ -93,22 +96,48 @@ public class ClassReferenceListBuilder {
         return classNames;
     }
 
-    private void addDependencies(ConstantPool pool) {
-        for (Constant constant : pool.getEntries()) {
+    private void addDependencies(DirectClassFile classFile) {
+        for (Constant constant : classFile.getConstantPool().getEntries()) {
             if (constant instanceof CstType) {
-                Type type = ((CstType) constant).getClassType();
-                String descriptor = type.getDescriptor();
-                if (descriptor.endsWith(";")) {
-                    int lastBrace = descriptor.lastIndexOf('[');
-                    if (lastBrace < 0) {
-                        addClassWithHierachy(descriptor.substring(1, descriptor.length()-1));
-                    } else {
-                        assert descriptor.length() > lastBrace + 3
-                        && descriptor.charAt(lastBrace + 1) == 'L';
-                        addClassWithHierachy(descriptor.substring(lastBrace + 2,
-                                descriptor.length() - 1));
-                    }
-                }
+                checkDescriptor(((CstType) constant).getClassType().getDescriptor());
+            } else if (constant instanceof CstFieldRef) {
+                checkDescriptor(((CstFieldRef) constant).getType().getDescriptor());
+            } else if (constant instanceof CstBaseMethodRef) {
+                checkPrototype(((CstBaseMethodRef) constant).getPrototype());
+            }
+        }
+
+        FieldList fields = classFile.getFields();
+        int nbField = fields.size();
+        for (int i = 0; i < nbField; i++) {
+          checkDescriptor(fields.get(i).getDescriptor().getString());
+        }
+
+        MethodList methods = classFile.getMethods();
+        int nbMethods = methods.size();
+        for (int i = 0; i < nbMethods; i++) {
+          checkPrototype(Prototype.intern(methods.get(i).getDescriptor().getString()));
+        }
+    }
+
+    private void checkPrototype(Prototype proto) {
+      checkDescriptor(proto.getReturnType().getDescriptor());
+      StdTypeList args = proto.getParameterTypes();
+      for (int i = 0; i < args.size(); i++) {
+          checkDescriptor(args.get(i).getDescriptor());
+      }
+    }
+
+    private void checkDescriptor(String typeDescriptor) {
+        if (typeDescriptor.endsWith(";")) {
+            int lastBrace = typeDescriptor.lastIndexOf('[');
+            if (lastBrace < 0) {
+                addClassWithHierachy(typeDescriptor.substring(1, typeDescriptor.length()-1));
+            } else {
+                assert typeDescriptor.length() > lastBrace + 3
+                && typeDescriptor.charAt(lastBrace + 1) == 'L';
+                addClassWithHierachy(typeDescriptor.substring(lastBrace + 2,
+                        typeDescriptor.length() - 1));
             }
         }
     }

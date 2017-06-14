@@ -1,15 +1,5 @@
 package com.taobao.android.builder.tasks.app.bundle;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -22,10 +12,6 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
-import com.android.dex.DexException;
-import com.android.dx.command.dexer.DxContext;
-import com.android.dx.merge.CollisionPolicy;
-import com.android.dx.merge.DexMerger;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
 import com.android.ide.common.blame.parser.DexParser;
@@ -35,18 +21,23 @@ import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.dex.DexException;
+import com.taobao.android.dx.merge.CollisionPolicy;
+import com.taobao.android.dx.merge.DexMerger;
 import org.gradle.api.Action;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.Nested;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.ParallelizableTask;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -156,10 +147,9 @@ public class Dex extends BaseTask {
             if (entry == null) {
                 throw new DexException("Expected classes.dex in " + dexBaseFile);
             }
-            DxContext context = new DxContext();
             File file = new File(outFolder, "classes.dex");
-            com.android.dex.Dex merged = new DexMerger(new com.android.dex.Dex[] {new com.android.dex.Dex(file),
-                new com.android.dex.Dex(files.getInputStream(entry))}, CollisionPolicy.KEEP_FIRST, context).merge();
+            com.taobao.android.dex.Dex merged = new DexMerger(new com.taobao.android.dex.Dex[]{new com.taobao.android.dex.Dex(file),
+                new com.taobao.android.dex.Dex(files.getInputStream(entry))}, CollisionPolicy.KEEP_FIRST).merge();
             merged.writeTo(file);
         }
     }

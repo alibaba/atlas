@@ -16,7 +16,6 @@
 
 package com.taobao.android.dx.rop.cst;
 
-import com.taobao.android.dx.command.Main;
 import com.taobao.android.dx.rop.type.Type;
 import com.taobao.android.dx.util.ByteArray;
 import com.taobao.android.dx.util.Hex;
@@ -220,20 +219,6 @@ public final class CstString extends TypedConstant {
     /** {@inheritDoc} */
     @Override
     protected int compareTo0(Constant other) {
-        if(Main.dexClassesList.size() > 0){
-            if (Main.dexClassesList.containsKey(string)&&Main.dexClassesList.containsKey(((CstString) other).string)){
-                System.out.println(string+"------>"+((CstString) other).string);
-                return Main.dexClassesList.get(string)-Main.dexClassesList.get(((CstString) other).string);
-            }else if (Main.dexClassesList.containsKey(string)&&!Main.dexClassesList.containsKey(((CstString) other).string)){
-                System.out.println(string+"------>1"+((CstString) other).string);
-
-                return -1;
-            }else if (!Main.dexClassesList.containsKey(string)&&Main.dexClassesList.containsKey(((CstString)other).string)){
-                System.out.println(string+"------>2"+((CstString) other).string);
-
-                return 1;
-            }
-        }
         return string.compareTo(((CstString) other).string);
     }
 

@@ -209,6 +209,12 @@
 
 package com.taobao.android.builder.tasks.tpatch;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.zip.ZipEntry;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
@@ -220,12 +226,6 @@ import org.apache.commons.io.FileUtils;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.zip.ZipEntry;
 
 /**
  * Created by wuzhong on 2016/9/27.
@@ -298,7 +298,7 @@ public class TPatchDiffApkBuildTask extends BaseTask {
 
         @Override
         public String getName() {
-            return scope.getTaskName("Create", "TPatchDiffApk");
+            return scope.getTaskName("createTPatchDiffApk");
         }
 
         @Override

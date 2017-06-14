@@ -4,12 +4,10 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.DexProcessBuilder;
-import com.android.dx.command.dexer.DxContext;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
-import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import com.taobao.android.dx.command.DxConsole;
 import com.taobao.android.dx.command.dexer.Main;
@@ -31,9 +29,11 @@ public class DexWrapperHook {
         ProcessOutput output = outputHandler.createOutput();
         int res;
         try {
-            DxConsole dxConsole = new DxConsole(output.getStandardOutput(), output.getErrorOutput());
+//            DxConsole.out = outputHandler.createOutput().getStandardOutput();
+//            DxConsole.err = outputHandler.createOutput().getErrorOutput();
+            DxConsole dxConsole = new DxConsole();
             Main.Arguments args = buildArguments(processBuilder, dexOptions, dxConsole);
-            res = new Main().run(args,dxConsole);
+            res = new Main().run(args);
         } finally {
             output.close();
         }
@@ -72,8 +72,8 @@ public class DexWrapperHook {
         // Other:
         args.verbose = processBuilder.isVerbose();
         // due to b.android.com/82031
-        args.optimize = true;
-        args.numThreads = Objects.firstNonNull(dexOptions.getThreadCount(), 4);
+//        args.optimize = true;
+        args.numThreads = 1;
         args.forceJumbo = dexOptions.getJumboMode();
         if (dexOptions.getAdditionalParameters().contains("--debug")) {
             args.debug = true;

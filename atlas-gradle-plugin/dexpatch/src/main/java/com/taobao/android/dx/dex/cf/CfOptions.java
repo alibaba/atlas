@@ -46,7 +46,4 @@ public class CfOptions {
 
     /** where to issue warnings to */
     public PrintStream warn = System.err;
-
-    /** where to collect statistics */
-    public CodeStatistics codeStatistics;
 }

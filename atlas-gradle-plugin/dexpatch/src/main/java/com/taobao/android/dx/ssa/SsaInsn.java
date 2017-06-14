@@ -71,7 +71,7 @@ public abstract class SsaInsn implements ToHuman, Cloneable {
     }
 
     /**
-     * Like {@link Insn getResult()}.
+     * Like {@link com.taobao.android.dx.rop.code.Insn getResult()}.
      *
      * @return result register
      */
@@ -93,7 +93,7 @@ public abstract class SsaInsn implements ToHuman, Cloneable {
     }
 
     /**
-     * Like {@link Insn getSources()}.
+     * Like {@link com.taobao.android.dx.rop.code.Insn getSources()}.
      *
      * @return {@code non-null;} sources list
      */
@@ -193,7 +193,7 @@ public abstract class SsaInsn implements ToHuman, Cloneable {
      * may be the result register, or for {@code mark-local} insns
      * it may be the source.
      *
-     * @see Insn#getLocalAssignment()
+     * @see com.taobao.android.dx.rop.code.Insn#getLocalAssignment()
      *
      * @return {@code null-ok;} a local-associated register spec or null
      */
@@ -237,9 +237,8 @@ public abstract class SsaInsn implements ToHuman, Cloneable {
      *
      * @return true if this insn is considered to have a side effect beyond
      * that of assigning to the result reg.
-     * @param optimizer
      */
-    public abstract boolean hasSideEffect(Optimizer optimizer);
+    public abstract boolean hasSideEffect();
 
     /**
      * @return true if this is a move (but not a move-operand or

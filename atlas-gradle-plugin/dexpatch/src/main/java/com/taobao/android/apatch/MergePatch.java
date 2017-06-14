@@ -216,8 +216,6 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Date;
-import java.util.Arrays;
-import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -274,8 +272,8 @@ public class MergePatch extends Build {
             dexs[0] = dexA;
             dexs[1] = dexB;
 //            List<Dex>dexes = new ArrayList<>();
-            List<Dex>dexes = Arrays.asList(dexs);
-            DexMerger dexMerger = new DexMerger(dexes, CollisionPolicy.FAIL);
+//            List<Dex>dexes = Arrays.asList(dexs);
+            DexMerger dexMerger = new DexMerger(dexs, CollisionPolicy.FAIL);
             dexMerger.merge().writeTo(dexFile);
         }
     }

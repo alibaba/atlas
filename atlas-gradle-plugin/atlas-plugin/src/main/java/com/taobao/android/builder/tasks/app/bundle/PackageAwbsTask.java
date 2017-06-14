@@ -217,11 +217,8 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.dex.Dex;
-import com.android.dex.DexException;
-import com.android.dx.command.dexer.DxContext;
-import com.android.dx.merge.CollisionPolicy;
-import com.android.dx.merge.DexMerger;
+import com.android.builder.core.DefaultDexOptions;
+import com.android.builder.core.DexOptions;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
 import com.android.ide.common.blame.parser.DexParser;
@@ -235,24 +232,22 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-
+import com.taobao.android.builder.tools.log.FileLogger;
+import com.taobao.android.dex.Dex;
+import com.taobao.android.dex.DexException;
+import com.taobao.android.dx.merge.CollisionPolicy;
+import com.taobao.android.dx.merge.DexMerger;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import javax.annotation.Nullable;
 
 public class PackageAwbsTask extends BaseTask {
 
@@ -302,6 +297,14 @@ public class PackageAwbsTask extends BaseTask {
         final Map<String, Long[]> monitors = new HashMap<String, Long[]>();
         long startTime = System.currentTimeMillis();
 
+        final DexOptions dexOptions;
+        if (appVariantContext.getBuildType().getDexConfig()!= null && appVariantContext.getBuildType().getDexConfig().isUseMyDex()) {
+            dexOptions = DefaultDexOptions.copyOf(androidConfig.getDexOptions());
+            dexOptions.getAdditionalParameters().add("--useMyDex");
+        }else {
+            dexOptions = androidConfig.getDexOptions();
+        }
+
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
             runnables.add(new Runnable() {
@@ -332,7 +335,7 @@ public class PackageAwbsTask extends BaseTask {
                                                          .getVariantConfiguration()
                                                          .isMultiDexEnabled(),
                                                  null,
-                                                 androidConfig.getDexOptions(),
+                                                 dexOptions,
                                                  outputHandler, true);
                         //create package
 
@@ -364,10 +367,9 @@ public class PackageAwbsTask extends BaseTask {
                                 if (entry == null) {
                                     throw new DexException("Expected classes.dex in " + baseAwb);
                                 }
-                                DxContext context = new DxContext();
                                 File file = new File(dexOutputFile, "classes.dex");
                                 Dex merged = new DexMerger(new Dex[]{new Dex(file), new Dex(files.getInputStream(
-                                        entry))}, CollisionPolicy.KEEP_FIRST, context).merge();
+                                        entry))}, CollisionPolicy.KEEP_FIRST).merge();
                                 merged.writeTo(file);
                                 javaResourcesLocations.add(baseAwb);
                             }
@@ -413,22 +415,20 @@ public class PackageAwbsTask extends BaseTask {
 
         executorServicesHelper.execute(runnables);
 
-        if (getLogger().isInfoEnabled()) {
+        getLogger().info(">>>>> packageAwbs >>>>>>>>>>>>");
 
-            getLogger().info(">>>>> packageAwbs >>>>>>>>>>>>");
-
-            getLogger().info("totalTime is " + (System.currentTimeMillis() - startTime));
-            getLogger().info("dexTotalTime is " + dexTotalTime);
-            getLogger().info("packageTotalTime is " + packageTotalTime);
-
-            String format = "[packageawb]  bundle:%50s  dexTime: %10d  packageTime: %10d ";
-            for (String bundle : monitors.keySet()) {
-                Long[] value = monitors.get(bundle);
-                getLogger().info(String.format(format, bundle, value[0], value[1]));
-            }
-
-            getLogger().info(">>>>> packageAwbs >>>>>>>>>>>>");
+        FileLogger fileLogger = FileLogger.getInstance("packageAwbs");
+        fileLogger.log("totalTime is " + (System.currentTimeMillis() - startTime));
+        fileLogger.log("dexTotalTime is " + dexTotalTime);
+        fileLogger.log("packageTotalTime is " + packageTotalTime);
+        String format = "[packageawb]  bundle:%50s  dexTime: %10d  packageTime: %10d ";
+        for (String bundle : monitors.keySet()) {
+            Long[] value = monitors.get(bundle);
+            fileLogger.log(String.format(format, bundle, value[0], value[1]));
         }
+
+        getLogger().info(">>>>> packageAwbs >>>>>>>>>>>>");
+
     }
 
     private File getOutputFile(AwbBundle awbBundle) {

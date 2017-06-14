@@ -249,7 +249,6 @@ public class LogDependenciesTask extends BaseTask {
     @TaskAction
     void generate() {
 
-        AtlasBuildContext.appVariantContext = appVariantContext;
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
             getVariantName());
 

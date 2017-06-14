@@ -149,7 +149,7 @@ public final class LocalVariableList extends FixedSizeList {
 
     /**
      * Gets the local variable information in this instance which matches
-     * the given {@link Item}
+     * the given {@link com.taobao.android.dx.cf.code.LocalVariableList.Item}
      * in all respects but the type descriptor and signature, if any.
      *
      * @param item {@code non-null;} local variable information to match

@@ -15,8 +15,6 @@ import com.taobao.android.tpatch.utils.MD5Util;
 import com.taobao.android.tpatch.utils.PathUtils;
 import com.taobao.android.utils.CommandUtils;
 import com.taobao.android.utils.ZipUtils;
-import com.taobao.common.dexpatcher.DexPatchApplier;
-import com.taobao.common.dexpatcher.DexPatchGenerator;
 import io.reactivex.*;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
@@ -474,19 +472,6 @@ public class PatchFileBuilder {
 
 
 
-    private void createHisBundleDex(FileDef curFileDef, FileDef fileDef, File destFile, File newBundleFile) throws IOException {
-        if (fileDef == null){
-            FileUtils.copyFile(curFileDef.file,destFile);
-        }else {
-            DexPatchApplier dexPatchApplier = new DexPatchApplier(getBaseDexFile(newBundleFile,true),fileDef.file);
-            File tempFile = new File(destFile.getParentFile(),"merge.dex");
-            dexPatchApplier.executeAndSaveTo(tempFile);
-            DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(tempFile,getBaseDexFile(newBundleFile,false));
-            dexPatchGenerator.executeAndSaveTo(destFile);
-            FileUtils.deleteQuietly(tempFile);
-
-        }
-    }
 
     private File getBaseDexFile(File newBundleFile,boolean base) {
         File newApkUnzipFolder = new File(newBundleFile.getAbsolutePath().split("lib/armeabi")[0]);
