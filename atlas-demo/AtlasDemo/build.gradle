@@ -19,6 +19,9 @@ buildscript {
 
 subprojects {
     repositories {
+        maven {
+            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+        }
         jcenter()
     }
 }

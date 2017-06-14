@@ -284,7 +284,6 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     public static HackedField<ContextThemeWrapper, Theme>       ContextThemeWrapper_mTheme;
     public static HackedField<ContextThemeWrapper, Resources>   ContextThemeWrapper_mResources;
     public static HackedField<ContextWrapper, Context>          ContextWrapper_mBase;
-//    public static HackedField<Resources, Object>                Resources_mAssets;
     public static HackedField<Object, ArrayList<Object>>        PackageParser$Component_intents;
     public static HackedField<Object, String>                   PackageParser$Package_packageName;
     public static HackedField<Object, ArrayList<Object>>                                    PackageParser$Package_activities;
@@ -306,6 +305,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     // Methods
     public static HackedMethod                                  ActivityThread_currentActivityThread;
     public static HackedMethod                                  AssetManager_addAssetPath;
+    public static HackedMethod                                  AssetManager_addAssetPathAsSharedLibrary;
     public static HackedMethod                                  Application_attach;
     public static HackedMethod                                  ClassLoader_findLibrary;
     public static HackedMethod                                  DexClassLoader_findClass;
@@ -456,6 +456,9 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
 
         ActivityThread_currentActivityThread = ActivityThread.method("currentActivityThread");
         AssetManager_addAssetPath = AssetManager.method("addAssetPath", String.class);
+        if(Build.VERSION.SDK_INT>=24) {
+            AssetManager_addAssetPathAsSharedLibrary = AssetManager.method("addAssetPathAsSharedLibrary", String.class);
+        }
         Application_attach = Application.method("attach", Context.class);
         PackageParser$Component_getComponentName = PackageParser$Component.method("getComponentName");
         ClassLoader_findLibrary = ClassLoader.method("findLibrary", String.class);
@@ -480,6 +483,12 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         if(Build.VERSION.SDK_INT>25 || (Build.VERSION.SDK_INT==25 && Build.VERSION.PREVIEW_SDK_INT>0)) {
             ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, android.app.ContentProviderHolder.class,
                     ProviderInfo.class, boolean.class, boolean.class, boolean.class);
+        }else if(Build.VERSION.SDK_INT==14){
+            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, android.app.ContentProviderHolder.class,
+                    ProviderInfo.class, boolean.class);
+        }else if(Build.VERSION.SDK_INT==15){
+            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, android.app.ContentProviderHolder.class,
+                    ProviderInfo.class, boolean.class,boolean.class);
         }else{
             ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, IActivityManager.ContentProviderHolder.class,
                     ProviderInfo.class, boolean.class, boolean.class, boolean.class);
