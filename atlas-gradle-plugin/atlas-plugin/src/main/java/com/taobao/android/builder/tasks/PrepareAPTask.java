@@ -313,10 +313,10 @@ public class PrepareAPTask extends BaseTask {
      */
     @TaskAction
     void generate() throws IOException, DocumentException {
-        File apBaseFile = getApBaseFile();
         File explodedDir = getExplodedDir();
-
         FileUtils.cleanOutputDir(explodedDir);
+
+        File apBaseFile = getApBaseFile();
 
         if (apBaseFile != null) {
             BetterZip.unzipDirectory(apBaseFile, explodedDir);
