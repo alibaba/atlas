@@ -13,6 +13,7 @@ import com.android.builder.testing.api.DeviceProvider;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.utils.ILogger;
+import com.google.common.base.Preconditions;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
@@ -37,6 +38,7 @@ public class PullBaseApkTask extends BaseTask {
         deviceProvider.init();
 
         List<? extends DeviceConnector> devices = deviceProvider.getDevices();
+        Preconditions.checkState(devices.size() == 1, "There must be exactly one device");
     }
 
     @InputFile
