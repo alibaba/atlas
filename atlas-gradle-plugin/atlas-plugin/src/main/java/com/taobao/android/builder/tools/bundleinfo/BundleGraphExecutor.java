@@ -323,6 +323,9 @@ public class BundleGraphExecutor {
                     if (null == child) {
                         child = new BundleItem();
                         child.bundleInfo = bundleInfoMap.get(dependency);
+                        if (null == child.bundleInfo){
+                            throw new GradleException("bundle dependency is error , not bundle found for " + dependency + " ; which may define in " + bundleInfo.getPkgName());
+                        }
                         bundleItemMap.put(dependency, child);
                     }
 

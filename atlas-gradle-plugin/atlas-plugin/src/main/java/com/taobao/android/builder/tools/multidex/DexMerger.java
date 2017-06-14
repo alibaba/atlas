@@ -209,27 +209,32 @@
 
 package com.taobao.android.builder.tools.multidex;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.taobao.android.builder.extension.MultiDexConfig;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.dex.Dex;
 import com.taobao.android.dex.DexIndexOverflowException;
 import com.taobao.android.dx.merge.CollisionPolicy;
-import com.taobao.android.builder.extension.MultiDexConfig;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
 /**
  * Created by wuzhong on 2017/5/31.
  */
 public class DexMerger {
 
+    public static final String FASTMAINDEX_JAR = "fastmaindex";
     private static Logger logger = LoggerFactory.getLogger(DexMerger.class);
 
     private MultiDexConfig multiDexConfig;
@@ -351,6 +356,17 @@ public class DexMerger {
 
     private void addDexByRule(List<DexGroup> dexDtos) {
 
+        DexGroup fistDto = new DexGroup();
+        fistDto.firstDex = (true);
+        dexDtos.add(0, fistDto);
+        for (File file : fileList) {
+            if (file.getParentFile().getName().equals(FASTMAINDEX_JAR)){
+                Dex dex = jarDexMap.get(file);
+                fistDto.addDex(dex);
+                dexList.remove(dex);
+            }
+        }
+
         if (StringUtils.isEmpty(multiDexConfig.getDexSplitRules())) {
             return;
         }
@@ -362,11 +378,17 @@ public class DexMerger {
                 continue;
             }
             String[] items = rule.split(",");
-            DexGroup dexDto = new DexGroup();
-            dexDto.firstDex = (i == 0);
-            dexDtos.add(i, dexDto);
+
+            DexGroup dexDto = null;
+            if(0 == i){
+                dexDto = fistDto;
+            }else{
+                fistDto : new DexGroup();
+                dexDtos.add(i, dexDto);
+            }
+
             for (File file : fileList) {
-                if (match(items, file)) {
+                if (match(items, file)  || ( 0 == i && file.getName().equals(FASTMAINDEX_JAR) ) ) {
                     Dex dex = jarDexMap.get(file);
                     if (!dexDto.addDex(dex)) {
                         throw new DexIndexOverflowException(file.getAbsolutePath() + " can't add to dex" + i);

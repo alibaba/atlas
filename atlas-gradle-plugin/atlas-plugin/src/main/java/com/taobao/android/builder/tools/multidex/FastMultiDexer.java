@@ -209,6 +209,25 @@
 
 package com.taobao.android.builder.tools.multidex;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.transforms.JarMerger;
@@ -231,13 +250,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proguard.obfuscate.MappingReader;
-
-import java.io.*;
-import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
@@ -313,7 +325,7 @@ public class FastMultiDexer implements MultiDexer {
         }
 
         List<File> result = new ArrayList<>();
-        File maindexJar = new File(dir, "fastmaindex.jar");
+        File maindexJar = new File(dir, com.taobao.android.builder.tools.multidex.DexMerger.FASTMAINDEX_JAR + ".jar");
 
         JarOutputStream mainJarOuputStream = new JarOutputStream(
             new BufferedOutputStream(new FileOutputStream(maindexJar)));
