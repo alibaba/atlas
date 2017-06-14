@@ -214,22 +214,28 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AwbTransform;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.BaseProguardAction;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.Profiler;
@@ -240,6 +246,7 @@ import com.taobao.android.builder.tools.proguard.BundleProguarder;
 import com.taobao.android.builder.tools.proguard.KeepOnlyConfigurationParser;
 import com.taobao.android.builder.tools.proguard.domain.Input;
 import org.gradle.api.GradleException;
+import proguard.ClassPath;
 import proguard.Configuration;
 import proguard.ParseException;
 
@@ -254,6 +261,11 @@ public class AtlasProguardTransform extends ProGuardTransform {
     private TBuildConfig buildConfig;
 
     List<File> defaultProguardFiles = new ArrayList<>();
+
+    @Override
+    public Set<ContentType> getOutputTypes() {
+        return TransformManager.CONTENT_CLASS;
+    }
 
     public AtlasProguardTransform(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
         super(appVariantContext.getScope(), false);
@@ -416,6 +428,31 @@ public class AtlasProguardTransform extends ProGuardTransform {
         appVariantContext.getProject().getLogger().info("applyConfigurationFile :" + file);
         super.applyConfigurationFile(file);
     }
+
+    private static void handleQualifiedContent(
+        @NonNull ClassPath classPath,
+        @NonNull QualifiedContent content,
+        @Nullable List<String> baseFilter) {
+        List<String> filter = baseFilter;
+
+        if (!content.getContentTypes().contains(QualifiedContent.DefaultContentType.CLASSES)) {
+            // if the content is not meant to contain classes, we ignore them
+            // in case they are present.
+            ImmutableList.Builder<String> builder = ImmutableList.builder();
+            if (filter != null) {
+                builder.addAll(filter);
+            }
+            builder.add("!**.class");
+            filter = builder.build();
+        } else if (!content.getContentTypes().contains(QualifiedContent.DefaultContentType.RESOURCES)) {
+            // if the content is not meant to contain resources, we ignore them
+            // in case they are present (by accepting only classes.)
+            filter = ImmutableList.of("**.class");
+        }
+
+        inputJar(classPath, content.getFile(), filter);
+    }
+
 
     public void applyLibConfigurationFile(@NonNull File file) throws IOException, ParseException {
         KeepOnlyConfigurationParser parser =
