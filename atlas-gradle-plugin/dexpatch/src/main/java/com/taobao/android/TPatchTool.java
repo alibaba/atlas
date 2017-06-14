@@ -533,7 +533,7 @@ public class TPatchTool extends BasePatchTool {
     private boolean isBundleFile(File file) {
     if (whiteList.size() > 1){
         for (String bundleName:whiteList){
-            if (file.getAbsolutePath().endsWith(bundleName)){
+            if (file.getAbsolutePath().replace("\\","/").endsWith(bundleName)){
                 return true;
             }
         }
