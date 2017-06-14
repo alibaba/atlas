@@ -248,12 +248,9 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
-
 /**
  */
 public class PrepareAPTask extends BaseTask {
-
     private ApContext apContext;
 
     private File apFile;
@@ -262,11 +259,9 @@ public class PrepareAPTask extends BaseTask {
 
     private File explodedDir;
 
+    private boolean incremental;
+
     private AtlasDependencyTree dependencyTree;
-
-    private Set<String> awbBundles;
-
-    private VariantContext variantContext;
 
     @InputFile
     @Optional
@@ -298,14 +293,18 @@ public class PrepareAPTask extends BaseTask {
         this.explodedDir = explodedDir;
     }
 
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
+    }
+
     @Input
     @Optional
     public Set<String> getAwbBundles() {
-        return awbBundles;
-    }
-
-    public void setAwbBundles(Set<String> awbBundles) {
-        this.awbBundles = awbBundles;
+        return Sets.newHashSet(Iterables.transform(dependencyTree.getAwbBundles(), AwbBundle::getAwbSoName));
     }
 
     /**
@@ -313,20 +312,14 @@ public class PrepareAPTask extends BaseTask {
      */
     @TaskAction
     void generate() throws IOException, DocumentException {
-
         File apBaseFile = getApBaseFile();
         File explodedDir = getExplodedDir();
 
         FileUtils.cleanOutputDir(explodedDir);
 
-        boolean incremental = variantContext.getAtlasExtension().getTBuildConfig().isIncremental();
-        if (incremental && apBaseFile == null || !apBaseFile.isFile()) {
-            throw new IllegalStateException("apBaseFile is missing");
-        }
-
-        if (null != apBaseFile && apBaseFile.exists()) {
-            BetterZip.unzipDirectory(apBaseFile, getExplodedDir());
-            if (incremental) {
+        if (apBaseFile != null) {
+            BetterZip.unzipDirectory(apBaseFile, explodedDir);
+            if (isIncremental()) {
                 extractBaseBundles();
                 generateMainManifest(explodedDir);
             }
@@ -337,7 +330,11 @@ public class PrepareAPTask extends BaseTask {
         File apBaseFile = null;
 
         File apFile = getApFile();
-        if (null != apFile && apFile.exists()) {
+        if (apFile != null) {
+            if (!apFile.exists()) {
+                throw new IllegalArgumentException("apFile file " + apFile.getAbsolutePath() + " does not exist.");
+            }
+
             apBaseFile = apFile;
         } else {
             String apDependency = getApDependency();
@@ -353,6 +350,11 @@ public class PrepareAPTask extends BaseTask {
                 }
             }
         }
+
+        if (isIncremental() && apBaseFile == null) {
+            throw new IllegalStateException("apBaseFile is missing");
+        }
+
         return apBaseFile;
     }
 
@@ -363,8 +365,7 @@ public class PrepareAPTask extends BaseTask {
                 String awbSoName = awbBundle.getAwbSoName();
                 File awbFile = new File(apContext.getBaseRemoteBundlesFolder(), awbSoName);
                 if (!awbFile.exists()) {
-                    awbFile = BetterZip.extractFile(apContext.getBaseApk(),
-                                                    "lib/armeabi/" + awbSoName,
+                    awbFile = BetterZip.extractFile(apContext.getBaseApk(), "lib/armeabi/" + awbSoName,
                                                     apContext.getBaseAwbsFolder());
                 }
                 extractAwb(awbFile, awbSoName);
@@ -396,7 +397,7 @@ public class PrepareAPTask extends BaseTask {
         if (null != applicationElement) {
             applicationElement.addAttribute("tools:replace",
                                             "android:name,android:icon,android:allowBackup,android:label,"
-                                            + "android:supportsRtl");
+                                                + "android:supportsRtl");
             applicationElement.clearContent();
         }
 
@@ -419,27 +420,20 @@ public class PrepareAPTask extends BaseTask {
             return PrepareAPTask.class;
         }
 
+        //
         @Override
         public void execute(PrepareAPTask prepareAPTask) {
-
             super.execute(prepareAPTask);
+            prepareAPTask.apContext = variantContext.apContext;
 
-            //
             TBuildType tBuildType = variantContext.getBuildType();
-
             if (StringUtils.isNotEmpty(tBuildType.getBaseApDependency())) {
                 variantContext.apContext.setApDependency(tBuildType.getBaseApDependency());
             }
-
             variantContext.apContext.setApFile(tBuildType.getBaseApFile());
 
-            prepareAPTask.variantContext = variantContext;
-            prepareAPTask.apContext = variantContext.apContext;
-
-            File explodedDir = variantContext.getProject().file(
-                variantContext.getProject().getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES + "/exploded-ap"
-                + "/");
-            variantContext.apContext.setApExploredFolder(explodedDir);
+            variantContext.apContext.setApExploredFolder(
+                variantContext.getProject().file(scope.getGlobalScope().getIntermediatesDir() + "/exploded-ap/"));
 
             ConventionMappingHelper.map(prepareAPTask, "apFile", new Callable<File>() {
                 @Override
@@ -461,22 +455,13 @@ public class PrepareAPTask extends BaseTask {
             ConventionMappingHelper.map(prepareAPTask, "explodedDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return explodedDir;
+                    return variantContext.apContext.getApExploredFolder();
                 }
             });
 
-            if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                AtlasDependencyTree dependencyTree
-                    = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
-                prepareAPTask.dependencyTree = dependencyTree;
-                ConventionMappingHelper.map(prepareAPTask, "awbBundles", new Callable<Set<String>>() {
-                    @Override
-                    public Set<String> call() throws Exception {
-                        return Sets.newHashSet(Iterables.transform(dependencyTree.getAwbBundles(),
-                                                                   AwbBundle::getAwbSoName));
-                    }
-                });
-            }
+            prepareAPTask.incremental = variantContext.getAtlasExtension().getTBuildConfig().isIncremental();
+            prepareAPTask.dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                variantContext.getVariantName());
         }
     }
 }
