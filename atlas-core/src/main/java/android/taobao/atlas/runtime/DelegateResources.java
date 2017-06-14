@@ -424,9 +424,8 @@ public class DelegateResources extends Resources {
         public AssetManager updateAssetManager(AssetManager manager,String newAssetPath,int assetType)throws Exception{
             AssetManager targetManager = null;
             if(assetType == BUNDLE_RES){
-                boolean append = findResByAssetIndexDescending();
-                targetManager = createNewAssetManager(manager,newAssetPath,append,assetType);
-                updateAssetPathList(newAssetPath,append);
+                targetManager = createNewAssetManager(manager,newAssetPath,true,assetType);
+                updateAssetPathList(newAssetPath,true);
             }else{
                 File newAssetsDir = new File(new File(newAssetPath).getParent(),"newAssets");
                 if(newAssetsDir.exists() && new File(newAssetsDir,"assets").exists()){
@@ -480,12 +479,12 @@ public class DelegateResources extends Resources {
         }
 
         private AssetManager updateAssetManagerWithAppend(AssetManager manager,String newAssetPath,int type) throws Exception{
-            appendAssetPath(manager, newAssetPath);
+            appendAssetPath(manager, newAssetPath,false);
             /**
              * 追加主apk新的assets内容
              */
             if(type == APK_RES && sAssetsPatchDir!=null){
-                appendAssetPath(manager,sAssetsPatchDir);
+                appendAssetPath(manager,sAssetsPatchDir,false);
             }
             return manager;
         }
@@ -505,25 +504,25 @@ public class DelegateResources extends Resources {
             for(String currentPath : currentPaths){
                 if(!sDefaultAssetPathList.containsKey(currentPath) && !assetPathCache.containsKey(currentPath)
                         && !preAssetPathCache.containsKey(currentPath) && !currentPath.equals(newAssetPath)){
-                    if(currentPath.toLowerCase().contains("webview")) {
+                    if(currentPath.toLowerCase().contains("webview") || currentPath.toLowerCase().contains("chrome")) {
                         runtimeAdditionalAssets.add(currentPath);
                     }
                 }
             }
             sFailedAsssetPath.clear();
             if(!append){
-                appendAssetPath(newAssetManager,newAssetPath);
+                appendAssetPath(newAssetManager,newAssetPath,false);
             }
                 //顺序添加,逆序加入assetmanager
             if(preAssetPathCache!=null){
                 if(preAssetPathCache.size()==1){
                     Iterator<Map.Entry<String, Boolean>> iterator = preAssetPathCache.entrySet().iterator();
-                    appendAssetPath(newAssetManager, iterator.next().getKey());
+                    appendAssetPath(newAssetManager, iterator.next().getKey(),false);
                 }else {
                     ListIterator<Map.Entry<String,Boolean>> i=new ArrayList<Map.Entry<String,Boolean>>(preAssetPathCache.entrySet()).listIterator(preAssetPathCache.size());
                     while(i.hasPrevious()) {
                         Map.Entry<String, Boolean> entry=i.previous();
-                        appendAssetPath(newAssetManager, entry.getKey());
+                        appendAssetPath(newAssetManager, entry.getKey(),false);
                     }
                 }
             }
@@ -533,19 +532,23 @@ public class DelegateResources extends Resources {
                 while(iterator.hasNext()){
                     Map.Entry<String,Boolean> entry = iterator.next();
                     if(!sDefaultAssetPathList.containsKey(entry.getKey())) {
-                        appendAssetPath(newAssetManager,entry.getKey());
+                        appendAssetPath(newAssetManager,entry.getKey(),false);
                     }
                 }
             }
 
             if(append){
-                appendAssetPath(newAssetManager,newAssetPath);
+                appendAssetPath(newAssetManager,newAssetPath,false);
             }
 
             //add additional assets
             if(!runtimeAdditionalAssets.isEmpty()){
                 for(String additional : runtimeAdditionalAssets){
-                    appendAssetPath(newAssetManager,additional);
+                    if(Build.VERSION.SDK_INT<24) {
+                        appendAssetPath(newAssetManager, additional, false);
+                    }else{
+                        appendAssetPath(newAssetManager, additional, true);
+                    }
                 }
             }
 
@@ -553,7 +556,7 @@ public class DelegateResources extends Resources {
              * 追加主apk新的assets内容
              */
             if(sAssetsPatchDir!=null){
-                appendAssetPath(newAssetManager,sAssetsPatchDir);
+                appendAssetPath(newAssetManager,sAssetsPatchDir,false);
             }
 
 
@@ -594,34 +597,38 @@ public class DelegateResources extends Resources {
 
         }
 
-        private boolean appendAssetPath(AssetManager asset,String path) throws Exception{
+        private boolean appendAssetPath(AssetManager asset,String path,boolean shared) throws Exception{
             int cookie = 0;
             boolean result = false;
-            try{
-                if ((cookie = Integer.parseInt(AtlasHacks.AssetManager_addAssetPath.invoke(asset, path).toString())) == 0){
-                    // if failed try three times
-                    int i = 0;
-                    for (i = 0; i < 3; i++){
-                        if ((cookie=Integer.parseInt(AtlasHacks.AssetManager_addAssetPath.invoke(asset, path).toString())) != 0){
-                            break;
-                        }
+            if ((cookie=addAssetPathInternal(asset,path,shared)) == 0){
+                // if failed try three times
+                int i = 0;
+                for (i = 0; i < 3; i++){
+                    if ((cookie=addAssetPathInternal(asset,path,shared)) != 0){
+                        break;
                     }
                 }
-                if(cookie==0){
-                    sFailedAsssetPath.add(path);
-                } else {
-                    result = true;
-                }
-            }catch(NumberFormatException e){}
-
+            }
+            if(cookie==0){
+                sFailedAsssetPath.add(path);
+            } else {
+                result = true;
+            }
             if (!result) {
-//                AtlasMonitor.getInstance().trace(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL,
-//                        false, "0", "","");
                 Map<String, Object> detail = new HashMap<>();
                 detail.put("appendAssetPath", path);
                 AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL, detail, new RuntimeException());
             }
             return result;
+        }
+
+        private int addAssetPathInternal(AssetManager asset,String path,boolean shared) throws Exception{
+            if(shared){
+                //7.0
+                return (int)AtlasHacks.AssetManager_addAssetPathAsSharedLibrary.invoke(asset,path);
+            }else {
+                return (int) AtlasHacks.AssetManager_addAssetPath.invoke(asset, path);
+            }
         }
 
         public static ArrayList<String> getAssetPath(AssetManager manager){

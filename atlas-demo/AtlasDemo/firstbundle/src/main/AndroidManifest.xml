@@ -12,8 +12,10 @@
         <service
             android:name=".FirstBundleService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true" />
 
+        <activity android:name=".WebViewDemoActivity"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>

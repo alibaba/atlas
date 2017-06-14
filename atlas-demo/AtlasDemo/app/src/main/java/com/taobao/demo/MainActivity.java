@@ -112,8 +112,9 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            ContentResolver resolver = getContentResolver();
-            resolver.query(Uri.parse("content://com.test.abc/ccc"),null,null,null,null);
+            Intent intent = new Intent();
+            intent.setClassName(this,"com.taobao.firstbundle.WebViewDemoActivity");
+            startActivity(intent);
             return true;
         }
 
@@ -138,6 +139,7 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_manage) {
 
             Intent intent = new Intent();
+                intent.setPackage(getPackageName());
             intent.setClassName(this,"com.taobao.demo.RemoteDemoActivity");
             startActivity(intent);
 

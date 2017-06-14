@@ -1,6 +1,6 @@
 include 'atlas-plugin'
 //include 'dexpatch'
-//include 'aapt'
+include 'aapt'
 //include 'atlas-plugin'
 //include 'dexpatch'
 findProject(':atlas-plugin')?.name = 'atlasplugin'

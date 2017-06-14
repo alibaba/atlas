@@ -108,9 +108,18 @@ public class ContentProviderBridge extends ContentProvider{
                 }
                 try {
                     Object activityThread = AndroidHack.getActivityThread();
+                    Object newHolder = null;
                     if(activityThread!=null) {
-                        Object newHolder = AtlasHacks.ActivityThread_installProvider.invoke(
-                                activityThread,RuntimeVariables.androidApplication,original,info,false,true,true);
+                        if(Build.VERSION.SDK_INT==14){
+                            newHolder = AtlasHacks.ActivityThread_installProvider.invoke(
+                                    activityThread, RuntimeVariables.androidApplication, original, info, false);
+                        }else if(Build.VERSION.SDK_INT==15){
+                            newHolder = AtlasHacks.ActivityThread_installProvider.invoke(
+                                    activityThread, RuntimeVariables.androidApplication, original, info, false, true);
+                        }else {
+                            newHolder = AtlasHacks.ActivityThread_installProvider.invoke(
+                                activityThread, RuntimeVariables.androidApplication, original, info, false, true, true);
+                        }
                         holder = newHolder;
                         providerRecord.put(info.authority,holder);
                     }
