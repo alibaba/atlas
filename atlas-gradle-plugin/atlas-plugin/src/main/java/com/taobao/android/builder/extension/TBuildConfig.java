@@ -272,7 +272,7 @@ public class TBuildConfig {
     private Boolean aaptConstantId = true;
 
     @Config(message = "注入核心的bundle信息", advance = true, order = 10, group = "atlas")
-    private Boolean classInject = true;
+    private Boolean classInject = false;
 
     @Config(title = "主dex插桩", message = "老版本的主dex动态部署，已经废弃", advance = true, order = 11, group = "atlas")
     private Boolean doPreverify = false;
