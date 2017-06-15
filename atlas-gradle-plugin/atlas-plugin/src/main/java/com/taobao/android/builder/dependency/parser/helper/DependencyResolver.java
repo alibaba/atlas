@@ -340,8 +340,8 @@ public class DependencyResolver {
                                    Set<String> resolvedDependencies) {
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
 
-        if (checkForExclusion(configDependencies, moduleVersion, artifacts.get(moduleVersion),
-                              resolvedComponentResult)) {
+        if (checkForExclusion(configDependencies, moduleVersion, artifacts.get(moduleVersion), resolvedComponentResult,
+                              parent)) {
             return;
         }
         if (apDependencies != null && parent != null && parent.getType().equals("awb") && apDependencies.isMainLibrary(
@@ -448,7 +448,7 @@ public class DependencyResolver {
 
     private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion,
                                       List<ResolvedArtifact> moduleArtifacts,
-                                      ResolvedComponentResult resolvedComponentResult) {
+                                      ResolvedComponentResult resolvedComponentResult, ResolvedDependencyInfo parent) {
         if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
             return true;
         }
@@ -465,8 +465,9 @@ public class DependencyResolver {
                 return false;
             }
             // TODO: 强制不忽略
+            // 一级依赖不忽略
             // 版本号太低忽略
-            if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
+            if (/*parent != null &&*/ apDependencies.hasSameResolvedDependency(moduleVersion)) {
                 return true;
             }
         }

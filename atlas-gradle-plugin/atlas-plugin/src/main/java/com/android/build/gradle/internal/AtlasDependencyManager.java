@@ -220,7 +220,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.builder.dependency.level2.AndroidDependency;
-import com.google.common.collect.Iterables;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.parser.AtlasDepTreeParser;
@@ -233,7 +232,6 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.ResolvedArtifact;
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedComponentResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -337,23 +335,8 @@ public class AtlasDependencyManager extends DependencyManager {
             return true;
         }
         if (apDependencies != null) {
-            if (moduleArtifacts != null) {
-                // awb不忽略
-                if (Iterables.getLast(moduleArtifacts).getType().equals("awb")) {
-                    return false;
-                }
-            }
             // AtlasDependencyTree同步
             if (!atlasDependencyTree.getMainBundle().containsDependency(moduleVersion)) {
-                return true;
-            }
-            // 工程依赖不忽略
-            if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
-                return false;
-            }
-            // TODO: 强制不忽略
-            // 版本号太低忽略
-            if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                 return true;
             }
         }

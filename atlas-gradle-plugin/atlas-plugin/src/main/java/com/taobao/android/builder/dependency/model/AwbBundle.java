@@ -474,6 +474,10 @@ public class AwbBundle {
         return list;
     }
 
+    public void setBaseAwbDependencies(Map<ModuleIdentifier, String> baseAwbDependencies) {
+        this.baseAwbDependencies = baseAwbDependencies;
+    }
+
     public Map<ModuleIdentifier, String> getBaseAwbDependencies() {
         return baseAwbDependencies;
     }
@@ -498,11 +502,7 @@ public class AwbBundle {
     }
 
     private static boolean compareWithoutVersion(ModuleVersionIdentifier moduleVersion, MavenCoordinates coordinates) {
-        return Objects.equal(moduleVersion.getGroup(), coordinates.getGroupId())
-               && Objects.equal(moduleVersion.getName(), coordinates.getArtifactId());
-    }
-
-    public void setBaseAwbDependencies(Map<ModuleIdentifier, String> baseAwbDependencies) {
-        this.baseAwbDependencies = baseAwbDependencies;
+        return Objects.equal(moduleVersion.getGroup(), coordinates.getGroupId()) && Objects.equal(
+            moduleVersion.getName(), coordinates.getArtifactId());
     }
 }
