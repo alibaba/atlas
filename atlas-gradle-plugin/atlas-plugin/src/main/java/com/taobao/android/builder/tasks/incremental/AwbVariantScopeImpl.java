@@ -1,10 +1,13 @@
 package com.taobao.android.builder.tasks.incremental;
 
+import java.util.Collection;
+
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScopeImpl;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 
 /**
@@ -23,5 +26,13 @@ public class AwbVariantScopeImpl extends VariantScopeImpl {
     @Override
     public String getTaskName(String prefix, String suffix) {
         return super.getTaskName(prefix, suffix) + "ForAwb" + awbBundle.getName();
+    }
+
+    @Override
+    public Collection<String> getDirectorySegments() {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        builder.add(awbBundle.getName());
+        builder.addAll(super.getDirectorySegments());
+        return builder.build();
     }
 }

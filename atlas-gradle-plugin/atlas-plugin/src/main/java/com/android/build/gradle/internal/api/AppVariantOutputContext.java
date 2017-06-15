@@ -229,6 +229,8 @@ import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.TransformGlobalScope;
 import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.scope.VariantScopeImpl;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -241,6 +243,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
+import com.taobao.android.builder.tasks.incremental.AwbVariantScopeImpl;
 import com.taobao.android.object.ArtifactBundleInfo;
 import org.gradle.api.tasks.compile.JavaCompile;
 
@@ -262,6 +265,8 @@ public class AppVariantOutputContext {
     private final Map<String, JavaCompile> awbJavacTasks = Maps.newHashMap();
 
     private final Map<String, ProcessAwbAndroidResources> awbAndroidResourcesMap = Maps.newHashMap();
+
+    private final Map<String, VariantScope> awbVariantScopeMap = Maps.newHashMap();
 
     private final Map<String, TransformManager> awbTransformManagerMap = Maps.newHashMap();
 
@@ -314,7 +319,7 @@ public class AppVariantOutputContext {
     public File getAwbProcessResourcePackageOutputFile(AwbBundle awbBundle) {
         return new File(outputScope.getGlobalScope().getIntermediatesDir(),
                         "res/" + awbBundle.getName() + "/resources-" + outputScope.getVariantOutputData().getBaseName()
-                        + ".ap_");
+                            + ".ap_");
     }
 
     public Map<String, ProcessAwbAndroidResources> getAwbAndroidResourcesMap() {
@@ -323,14 +328,14 @@ public class AppVariantOutputContext {
 
     public File getJAwbavaOutputDir(AwbBundle awbBundle) {
         return new File(outputScope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-classes/" + variantData.getVariantConfiguration().getDirName() + "/"
-                        + awbBundle.getName());
+                        "/awb-classes/" + variantData.getVariantConfiguration().getDirName() + "/" + awbBundle
+                            .getName());
     }
 
     public File getAwbJavaDependencyCache(AwbBundle awbBundle) {
         return new File(outputScope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-dependency-cache/" + variantData.getVariantConfiguration().getDirName() + "/"
-                        + awbBundle.getName());
+                        "/awb-dependency-cache/" + variantData.getVariantConfiguration().getDirName() + "/" + awbBundle
+                            .getName());
     }
 
     public File getAwbSolib(AwbBundle awbBundle) {
@@ -341,8 +346,8 @@ public class AppVariantOutputContext {
     public synchronized Map<String, AwbTransform> getAwbTransformMap() {
         //TODO
         if (awbTransformMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree
-                = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
+            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 //生成AwbTransform对象
                 AwbTransform awbTransform = new AwbTransform(awbBundle);
@@ -356,17 +361,30 @@ public class AppVariantOutputContext {
         return awbTransformMap;
     }
 
+    public Map<String, VariantScope> getAwbVariantScopeMap() {
+        if (awbVariantScopeMap.isEmpty()) {
+            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                variantContext.getVariantName());
+            for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
+                VariantScopeImpl scope = new AwbVariantScopeImpl(outputScope.getVariantScope().getGlobalScope(),
+                                                                 getAwbTransformManagerMap().get(awbBundle.getName()),
+                                                                 variantData, awbBundle);
+
+                awbVariantScopeMap.put(awbBundle.getName(), scope);
+            }
+        }
+        return awbVariantScopeMap;
+    }
+
     //生成Awb TransformManager防止冲突
     public Map<String, TransformManager> getAwbTransformManagerMap() {
         if (awbTransformManagerMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree
-                = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
+            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 TransformManager transformManager = new TransformManager(new AndroidTaskRegistry(),
-                                                                         outputScope.getVariantScope()
-                                                                                    .getGlobalScope()
-                                                                                    .getAndroidBuilder()
-                                                                                    .getErrorReporter(),
+                                                                         outputScope.getVariantScope().getGlobalScope()
+                                                                             .getAndroidBuilder().getErrorReporter(),
                                                                          ThreadRecorder.get()) {
                     @Override
                     public <T extends Transform> Optional<AndroidTask<TransformTask>> addTransform(
@@ -451,7 +469,7 @@ public class AppVariantOutputContext {
         String awbOutputName = awbBundle.getAwbSoName();
         File file = new File(outFolder,
                              "remote-bundles-" + variantData.getVariantConfiguration().getDirName() + File.separator
-                             + awbOutputName);
+                                 + awbOutputName);
         file.getParentFile().mkdirs();
         awbBundle.outputBundleFile = file;
         return file;
@@ -465,7 +483,7 @@ public class AppVariantOutputContext {
     public File getApkOutputFile(boolean checkExist) {
         File file = outputScope.getGlobalScope().getProject().file(
             outputScope.getGlobalScope().getApkLocation() + "/" + outputScope.getGlobalScope().getProjectBaseName()
-            + "-" + outputScope.getVariantOutputData().getBaseName() + ".apk");
+                + "-" + outputScope.getVariantOutputData().getBaseName() + ".apk");
 
         if (checkExist && !file.exists()) {
             file = outputScope.getFinalPackage();
@@ -487,7 +505,7 @@ public class AppVariantOutputContext {
     public File getMappingTxt() {
         File proguardOut = new File(
             String.valueOf(variantData.getScope().getGlobalScope().getBuildDir()) + "/" + FD_OUTPUTS + "/mapping/"
-            + variantData.getScope().getVariantConfiguration().getDirName());
+                + variantData.getScope().getVariantConfiguration().getDirName());
         return new File(proguardOut, "mapping.txt");
     }
 
