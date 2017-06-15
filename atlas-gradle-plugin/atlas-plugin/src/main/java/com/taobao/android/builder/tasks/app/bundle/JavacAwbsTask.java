@@ -221,6 +221,8 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -322,6 +324,10 @@ public class JavacAwbsTask extends BaseTask {
                 return;
             }
             for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+                VariantScope awbScope = appVariantOutputContext.getAwbVariantScopeMap().get(awbBundle.getName());
+                awbScope.setJavacTask(
+                    new AndroidTask<>(scope.getTaskName("compileAwb", "JavaWithJavac[" + awbBundle.getName() + "]"),
+                                      JavaCompile.class));
                 TransformManager transformManager = appVariantOutputContext.getAwbTransformManagerMap().get(
                     awbBundle.getName());
                 transformManager.addStream(OriginalStream.builder().addContentType(DefaultContentType.CLASSES).addScope(
