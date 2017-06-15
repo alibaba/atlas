@@ -351,6 +351,7 @@ public class AtlasDependencyManager extends DependencyManager {
             if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
                 return false;
             }
+            // TODO: 强制不忽略
             // 版本号太低忽略
             if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                 return true;

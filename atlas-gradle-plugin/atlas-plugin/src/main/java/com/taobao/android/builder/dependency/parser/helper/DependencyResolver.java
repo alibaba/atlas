@@ -456,13 +456,16 @@ public class DependencyResolver {
             if (moduleArtifacts != null) {
                 // 如果同时找到多个依赖，暂时没法判断是那个真正有用
                 ResolvedArtifact resolvedArtifact = Iterables.getFirst(moduleArtifacts, null);
-                if (resolvedArtifact != null && "awb".equals(resolvedArtifact.getType())) {
+                if (resolvedArtifact != null && resolvedArtifact.getType().equals("awb")) {
                     return false;
                 }
             }
+            // 工程依赖不忽略
             if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
                 return false;
             }
+            // TODO: 强制不忽略
+            // 版本号太低忽略
             if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                 return true;
             }
