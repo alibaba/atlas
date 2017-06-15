@@ -314,12 +314,10 @@ public class Atlas {
 
     public void startup(Application application,boolean isUpdated) {
         if(!RuntimeVariables.safeMode) {
-            if(application.getPackageManager().equals("com.taobao.taobao")) {
-                try {
-                    RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled").invoke(RuntimeVariables.sDexLoadBooster, false);
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
+            try {
+                RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled",boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
             if (!WrapperUtil.isDebugMode(application) && ApkUtils.isRootSystem()) {
                 Atlas.getInstance().addBundleListener(new SecurityHandler());

@@ -473,7 +473,6 @@ public class AndroidHack {
                         final Object newTypedArrayPool = typedArrayConstructor.newInstance(poolSize);
                         typedArrayPoolField.set(resources, newTypedArrayPool);
                     } catch (Throwable ignored) {
-                        ignored.printStackTrace();
                     }
                 }
                 if(res!=null) {

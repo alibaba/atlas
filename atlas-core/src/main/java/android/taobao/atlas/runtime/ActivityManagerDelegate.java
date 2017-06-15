@@ -354,6 +354,11 @@ public class ActivityManagerDelegate extends Interception.InterceptionHandler {
                     }
                 }
             }catch(Throwable e){}
+            try{
+                return super.invoke(proxy, method, args);
+            }catch(Throwable e){
+                return 0;
+            }
         }else if(name.equals("startActivity")){
             // 解决某些自带LBE机制系统hook Instrumentation, 导致atlas本身hook Instrumentation不正常，如不会回调execstartactivity
             Instrumentation hookInstrumentation = AndroidHack.getInstrumentation();
