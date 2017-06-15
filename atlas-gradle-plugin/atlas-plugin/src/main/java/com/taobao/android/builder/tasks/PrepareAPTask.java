@@ -379,7 +379,9 @@ public class PrepareAPTask extends BaseTask {
             public Object doCall(CopySpec cs) {
                 cs.from(getProject().zipTree(awbFile));
                 cs.into(apContext.getExtractedBaseAwbFolder(awbSoName));
-                cs.exclude("classes*.dex");
+                // TODO:支持多dex
+                cs.rename("classes.dex", "classes2.dex");
+                //cs.exclude("classes*.dex");
 
                 return cs;
             }

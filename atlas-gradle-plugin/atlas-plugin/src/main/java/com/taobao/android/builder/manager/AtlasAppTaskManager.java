@@ -215,7 +215,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.android.annotations.NonNull;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidGradleOptions;
@@ -509,16 +508,16 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope.getVariantData();
             final GradleVariantConfiguration config = variantData.getVariantConfiguration();
             VariantScope awbScope = appVariantOutputContext.getAwbVariantScopeMap().get(awbBundle.getName());
-            taskManager.createPostCompilationTasks(tasks, awbScope);
             com.android.build.gradle.internal.pipeline.TransformManager transformManager = appVariantOutputContext
                 .getAwbTransformManagerMap().get(awbBundle.getName());
-            //  dex任务
+            //dex任务
             //依赖库
             transformManager.addStream(OriginalStream.builder().addContentTypes(
                 com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_JARS).addScope(
                 Scope.EXTERNAL_LIBRARIES).setJars(
                 () -> appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName()).getInputLibraries())
                                            .build());
+            taskManager.createPostCompilationTasks(tasks, awbScope);
             //boolean isMultiDexEnabled = config.isMultiDexEnabled();
             //AndroidConfig extension = variantScope.getGlobalScope().getExtension();
             //// Switch to native multidex if possible when using instant run.
@@ -662,20 +661,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         awoInstallVariantTask.dependsOn(tasks, preIncrementalInstallVariantTask);
         awoInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().
             getPackageApplicationTask().getName());
-    }
-
-    private boolean isLegacyMultidexMode(@NonNull VariantScope variantScope) {
-        return false;
-        // return variantScope.getVariantData().getVariantConfiguration().isLegacyMultiDexMode() && (getIncrementalMode(
-        //     variantScope.getVariantConfiguration()) == IncrementalMode.NONE
-        //                                                                                           || variantScope
-        //
-        // .getInstantRunBuildContext()
-        //
-        // .getPatchingPolicy()
-        //                                                                                              ==
-        //
-        // InstantRunPatchingPolicy.PRE_LOLLIPOP);
     }
 
     // 配置基线包
