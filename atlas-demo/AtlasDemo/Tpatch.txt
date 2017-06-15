@@ -21,6 +21,14 @@
 
 7、 点击动态部署页面红色按钮执行动态部署
 
-8、 修改了某个bundle做动态部署的时候请更新版本号，因为差量会基于版本号对比。
+8、 后续继续做想要的修改，我们要变成1.0.2 (某个bundle做动态部署的时候请更新版本号，因为差量会基于版本号对比)
+	../gradlew clean assembleDebug -DapVersion=1.0.0 -DversionName=1.0.2   这时候会生成两个  patch-1.0.2@1.0.0.tpatch  patch-1.0.2@1.0.1.tpatch
 
-9、 如果做了多次动态部署后，需要从头开始测试，请先清楚AtlasDemo根目录下的hisTpatch文件夹。
+	根据你目前的app版本，重复6步骤，推送对应版本的update-**.json,和对应的tpatch文件。
+
+9、 后续继续做想要的修改，我们要变成1.0.3 (某个bundle做动态部署的时候请更新版本号，因为差量会基于版本号对比)
+	../gradlew clean assembleDebug -DapVersion=1.0.0 -DversionName=1.0.3   这时候会生成两个  patch-1.0.3@1.0.0.tpatch  patch-1.0.3@1.0.1.tpatch  patch-1.0.3@1.0.0.tpatch
+
+	根据你目前的app版本，重复6步骤，推送对应版本的update-**.json,和对应的tpatch文件。	
+
+10、 如果做了多次动态部署后，需要从头开始测试，请先清楚AtlasDemo根目录下的hisTpatch文件夹。
