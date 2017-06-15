@@ -307,7 +307,6 @@ import com.taobao.android.builder.tasks.incremental.IncrementalInstallVariantTas
 import com.taobao.android.builder.tasks.incremental.PreIncrementalBuildTask;
 import com.taobao.android.builder.tasks.incremental.PreIncrementalInstallVariantTask;
 import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
-import com.taobao.android.builder.tasks.incremental.PullBaseApkTask;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tasks.manager.TaskQueryHelper;
@@ -369,7 +368,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAllDependenciesTask.ConfigAction.class, null));
 
-                mtlTaskContextList.add(new MtlTaskContext(PullBaseApkTask.ConfigAction.class, null));
+                //mtlTaskContextList.add(new MtlTaskContext(PullBaseApkTask.ConfigAction.class, null));
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
                 if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
                     mtlTaskContextList.add(new MtlTaskContext(PreIncrementalBuildTask.ConfigAction.class, null));
