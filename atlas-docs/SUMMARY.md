@@ -16,7 +16,7 @@
     * [dexpatch使用教程](update/dexpatch_use_guide.md)
     * [一些限制](update/guide.md)
 * FAQ
-	 * [问答](faq/question.md)
+    * [问答](faq/question.md)
     * [故障排查](faq/help.md)
 * 源码分析
     * [Atlas之Gradle配置](code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.md)
