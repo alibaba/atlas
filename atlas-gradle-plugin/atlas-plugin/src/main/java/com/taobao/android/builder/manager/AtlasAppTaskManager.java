@@ -517,6 +517,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 Scope.EXTERNAL_LIBRARIES).setJars(
                 () -> appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName()).getInputLibraries())
                                            .build());
+            //多dex问题
             taskManager.createPostCompilationTasks(tasks, awbScope);
             //boolean isMultiDexEnabled = config.isMultiDexEnabled();
             //AndroidConfig extension = variantScope.getGlobalScope().getExtension();
