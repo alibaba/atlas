@@ -207,45 +207,132 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package com.taobao.android.builder.tools.multidex.mutli;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.transforms.JarMerger;
+import com.taobao.android.builder.extension.MultiDexConfig;
+import com.taobao.android.builder.tools.FileNameUtils;
+import com.taobao.android.builder.tools.multidex.dex.DexMerger;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Created by wuzhong on 2017/6/16.
+ */
+public class JarRefactor {
+
+    private static Logger logger = LoggerFactory.getLogger(JarRefactor.class);
+
+    private AppVariantContext appVariantContext;
+    private MultiDexConfig multiDexConfig;
+
+    public JarRefactor(AppVariantContext appVariantContext,
+                       MultiDexConfig multiDexConfig) {
+        this.appVariantContext = appVariantContext;
+        this.multiDexConfig = multiDexConfig;
     }
+
+    public Collection<File> repackageJarList(Collection<File> files) throws IOException {
+
+        List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files);
+
+        List<File> jarList = new ArrayList<>();
+        List<File> folderList = new ArrayList<>();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                folderList.add(file);
+            } else {
+                jarList.add(file);
+            }
+        }
+
+        File dir = new File(appVariantContext.getScope().getGlobalScope().getIntermediatesDir(),
+                            "fastmultidex/" + appVariantContext.getVariantName());
+        FileUtils.deleteDirectory(dir);
+        dir.mkdirs();
+
+        if (!folderList.isEmpty()) {
+            File mergedJar = new File(dir, "jarmerging/combined.jar");
+            mergedJar.getParentFile().mkdirs();
+            mergedJar.delete();
+            mergedJar.createNewFile();
+            JarMerger jarMerger = new JarMerger(mergedJar);
+            for (File folder : folderList) {
+                jarMerger.addFolder(folder);
+            }
+            jarMerger.close();
+            if (mergedJar.length() > 0) {
+                jarList.add(mergedJar);
+            }
+        }
+
+        List<File> result = new ArrayList<>();
+        File maindexJar = new File(dir, DexMerger.FASTMAINDEX_JAR + ".jar");
+
+        JarOutputStream mainJarOuputStream = new JarOutputStream(
+            new BufferedOutputStream(new FileOutputStream(maindexJar)));
+
+        for (File jar : jarList) {
+            File outJar = new File(dir, FileNameUtils.getUniqueJarName(jar) + ".jar");
+            result.add(outJar);
+            JarFile jarFile = new JarFile(jar);
+            JarOutputStream jos = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(outJar)));
+            Enumeration<JarEntry> jarFileEntries = jarFile.entries();
+            while (jarFileEntries.hasMoreElements()) {
+                JarEntry ze = jarFileEntries.nextElement();
+                String pathName = ze.getName();
+                if (mainDexList.contains(pathName)) {
+                    copyStream(jarFile.getInputStream(ze), mainJarOuputStream, ze, pathName);
+                } else {
+                    copyStream(jarFile.getInputStream(ze), jos, ze, pathName);
+                }
+            }
+            jarFile.close();
+            IOUtils.closeQuietly(jos);
+        }
+        IOUtils.closeQuietly(mainJarOuputStream);
+
+        Collections.sort(result, new NameComparator());
+
+        result.add(0, maindexJar);
+
+        return result;
+    }
+
+    private void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
+        try {
+
+            ZipEntry newEntry = new ZipEntry(pathName);
+            // Make sure there is date and time set.
+            if (ze.getTime() != -1) {
+                newEntry.setTime(ze.getTime()); newEntry.setCrc(ze.getCrc()); // If found set it into output file.
+            }
+            jos.putNextEntry(newEntry);
+            IOUtils.copy(inputStream, jos);
+            IOUtils.closeQuietly(inputStream);
+        } catch (Exception e) {
+            //throw new GradleException("copy stream exception", e);
+            //e.printStackTrace();
+            logger.error("copy stream exception >>> " + pathName + " >>>" + e.getMessage());
+        }
+    }
+
 }
-tasks.findByName("test").enabled=false
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-
-    compile "com.taobao.android:aapt:2.3.1.rc2"
-
-    compile "com.taobao.android:dex_patch:1.4.0.9-rc16"
-
-    testCompile "junit:junit:4.11"
-}
-
-version = '2.3.1.beta59.youku-SNAPSHOT'
-

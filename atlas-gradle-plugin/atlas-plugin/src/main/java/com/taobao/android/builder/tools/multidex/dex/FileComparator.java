@@ -207,14 +207,11 @@
  *
  */
 
-package com.taobao.android.builder.tools.multidex;
+package com.taobao.android.builder.tools.multidex.dex;
 
 import java.io.File;
 import java.util.Comparator;
 
-/**
- * Created by wuzhong on 2017/5/31.
- */
 public class FileComparator implements Comparator<File> {
 
     @Override

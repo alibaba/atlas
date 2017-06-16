@@ -215,8 +215,8 @@ import java.util.Collection;
 import java.util.List;
 
 import com.taobao.android.builder.extension.MultiDexConfig;
-import com.taobao.android.builder.tools.multidex.DexGroup;
-import com.taobao.android.builder.tools.multidex.DexMerger;
+import com.taobao.android.builder.tools.multidex.dex.DexGroup;
+import com.taobao.android.builder.tools.multidex.dex.DexMerger;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 

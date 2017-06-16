@@ -207,45 +207,189 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
+package com.taobao.android.builder.tools.multidex.mutli;
 
-repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-    mavenLocal()
-    jcenter()
-}
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.google.common.base.Joiner;
+import com.taobao.android.builder.extension.MultiDexConfig;
+import com.taobao.android.builder.extension.TBuildConfig;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.NotFoundException;
+import org.apache.commons.io.FileUtils;
+import org.gradle.api.GradleException;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import proguard.obfuscate.MappingReader;
+
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+
+/**
+ * Created by wuzhong on 2017/6/16.
+ */
+public class MainDexLister {
+
+    private static Logger logger = LoggerFactory.getLogger(MainDexLister.class);
+
+    private AppVariantContext appVariantContext;
+    private MultiDexConfig multiDexConfig;
+
+    public MainDexLister(AppVariantContext appVariantContext,
+                         MultiDexConfig multiDexConfig) {
+        this.appVariantContext = appVariantContext;
+        this.multiDexConfig = multiDexConfig;
     }
+
+    public List<String> getMainDexList(Collection<File> files) {
+
+        GradleVariantConfiguration config = appVariantContext.getVariantConfiguration();
+
+        Set<String> mainDexList = new HashSet<String>();
+
+        //混淆的map
+        //Map<String, String> classMap = getClassObfMap(config);
+
+        File manifest = appVariantContext.getVariantData().getOutputs().get(0).manifestProcessorTask
+            .getManifestOutputFile();
+
+        String applicationName = ManifestFileUtils.getApplicationName(manifest);
+
+        ClassPool classPool = new ClassPool();
+
+        try {
+            for (File file : files) {
+                if (file.isFile()) {
+                    classPool.insertClassPath(file.getAbsolutePath());
+                } else {
+                    classPool.appendClassPath(file.getAbsolutePath());
+                }
+            }
+        } catch (NotFoundException e) {
+            throw new GradleException(e.getMessage(), e);
+        }
+
+        TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
+
+        HashSet handleList = new HashSet<String>();
+        Set<String> headClasses = new HashSet<>();
+
+        headClasses.add(applicationName);
+        headClasses.add("android.taobao.atlas.bridge.BridgeApplicationDelegate");
+        headClasses.addAll(multiDexConfig.getFirstDexClasses());
+
+        String preLaunchStr = tBuildConfig.getPreLaunch();
+        if (!org.apache.commons.lang3.StringUtils.isEmpty(preLaunchStr)) {
+            String[] launchArray = preLaunchStr.split("\\|");
+            if (launchArray.length > 0) {
+                for (String launchItem : launchArray) {
+                    String[] launchInfo = launchItem.split(":");
+                    String clazzName = launchInfo[0];
+                    headClasses.add(clazzName);
+                }
+            }
+        }
+
+        for (String headClass : headClasses) {
+            addRefClazz(classPool, headClass, mainDexList, handleList);
+        }
+
+        //get manifest
+        List<String> maindexListClazz = new ArrayList<String>();
+        for (String newLine : mainDexList) {
+            newLine = newLine.replaceAll("\\.", "/") + ".class";
+            maindexListClazz.add(newLine);
+        }
+
+        try {
+            FileUtils.writeLines(new File(appVariantContext.getProject().getBuildDir(), "outputs/maindexlist.txt"),
+                                 mainDexList);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return maindexListClazz;
+    }
+
+    private Map<String, String> getClassObfMap(GradleVariantConfiguration config) {
+        Map<String, String> classMap = new HashMap<String, String>();
+        boolean isMinifyEnabled = config.isMinifyEnabled();
+        File proguardOut = new File(Joiner.on(File.separatorChar).join(
+            String.valueOf(appVariantContext.getScope().getGlobalScope().getBuildDir()), FD_OUTPUTS, "mapping",
+            appVariantContext.getScope().getVariantConfiguration().getDirName()));
+        File mappingFile = new File(proguardOut, "mapping.txt");
+        // 解析mapping文件,生成新的mainDexListFile
+        if (isMinifyEnabled && mappingFile.exists()) {
+            MappingReader mappingReader = new MappingReader(mappingFile);
+            MappingReaderProcess process = new MappingReaderProcess();
+            try {
+                mappingReader.pump(process);
+            } catch (IOException e) {
+                throw new GradleException(e.getMessage(), e);
+            }
+            classMap = process.classMapping;
+        }
+        return classMap;
+    }
+
+    @Nullable
+    private String getRealClazz(Map<String, String> classMap, String line) {
+        String realClazz = classMap.isEmpty() ? line : classMap.get(line);
+        if (null == realClazz) {
+            realClazz = line;
+        }
+        return realClazz;
+    }
+
+    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, Set<String> handleList) {
+
+        if (handleList.contains(clazz)) {
+            return;
+        }
+
+        //增加黑名单
+        if (!multiDexConfig.getMainDexBlackList().isEmpty()) {
+            for (String blackItem : multiDexConfig.getMainDexBlackList()) {
+                if (clazz.startsWith(blackItem)) {
+                    return;
+                }
+            }
+        }
+
+        try {
+
+            CtClass ctClass = classPool.get(clazz);
+
+            if (null != ctClass) {
+
+                logger.info("[MainDex] add " + clazz + " to main dex list");
+                classList.add(clazz);
+                handleList.add(clazz);
+
+                Collection<String> references = ctClass.getRefClasses();
+
+                if (null == references) {
+                    return;
+                }
+
+                for (String clazz2 : references) {
+                    addRefClazz(classPool, clazz2, classList, handleList);
+                }
+            }
+        } catch (Throwable e) {
+        }
+    }
+
 }
-tasks.findByName("test").enabled=false
-
-dependencies {
-    compile localGroovy()
-    compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
-    compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
-
-    compile "com.taobao.android:aapt:2.3.1.rc2"
-
-    compile "com.taobao.android:dex_patch:1.4.0.9-rc16"
-
-    testCompile "junit:junit:4.11"
-}
-
-version = '2.3.1.beta59.youku-SNAPSHOT'
-

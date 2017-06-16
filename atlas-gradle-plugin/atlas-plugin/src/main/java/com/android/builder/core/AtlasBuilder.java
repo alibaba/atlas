@@ -209,6 +209,21 @@
 
 package com.android.builder.core;
 
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -235,9 +250,6 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.builder.symbols.RGeneration;
 import com.android.builder.symbols.SymbolIo;
 import com.android.builder.symbols.SymbolTable;
-import com.taobao.android.dex.Dex;
-import com.taobao.android.dx.merge.CollisionPolicy;
-import com.taobao.android.dx.merge.DexMerger;
 import com.android.ide.common.process.JavaProcessExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
@@ -272,6 +284,9 @@ import com.taobao.android.builder.tools.cache.FileCacheException;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.ZipUtils;
+import com.taobao.android.dex.Dex;
+import com.taobao.android.dx.merge.CollisionPolicy;
+import com.taobao.android.dx.merge.DexMerger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
@@ -280,14 +295,6 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.StopExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.util.*;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -937,7 +944,9 @@ public class AtlasBuilder extends AndroidBuilder {
             List<File> outputs = new ArrayList<>();
 
             if (fastMultiDex) {
-                ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, inputs.size() > 8 ? 8 : inputs.size());
+                //TODO fixme
+                //ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, inputs.size() > 8 ? 8 : inputs.size());
+                ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, 1);
                 List<Runnable> runnables = new ArrayList<>();
                 for (File input : inputs) {
 

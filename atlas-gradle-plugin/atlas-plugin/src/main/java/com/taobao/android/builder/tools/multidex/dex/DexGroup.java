@@ -207,28 +207,68 @@
  *
  */
 
-package com.taobao.android.builder.tools.multidex;
+package com.taobao.android.builder.tools.multidex.dex;
 
-import java.io.File;
+import com.taobao.android.dex.Dex;
+import com.taobao.android.dex.DexIndexOverflowException;
+import com.taobao.android.dex.FieldId;
+import com.taobao.android.dex.MethodId;
 
-import org.apache.commons.io.comparator.NameFileComparator;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-/**
- * Created by wuzhong on 2017/5/9.
- */
-public class NameComparator extends NameFileComparator {
+public class DexGroup {
 
-    @Override
-    public int compare(File file1, File file2) {
+    public static final int MAX_FIELD_IDS = 65530;
+    public static final int MAX_METHOD_IDS = 65530;
+    public static final int MAX_METHOD_IDS_FIRSTDEX = 65000;
 
-        if (file1.getName().startsWith("combined")) {
-            return 1;
+    public boolean firstDex;
+
+    public List<Dex> dexs = new ArrayList<>();
+
+    public int methods = 0;
+    public int fields = 0;
+    public Set<String> strings = new HashSet<>();
+
+    public boolean addDex(Dex dex) {
+
+        int ms = dex.getTableOfContents().methodIds.size;
+        int fs = dex.getTableOfContents().fieldIds.size;
+
+        Set<String> newstrings = new HashSet<>(strings);
+        newstrings.addAll(dex.strings());
+
+        if (fs >= MAX_FIELD_IDS) {
+            throw new DexIndexOverflowException("field ID not in [0, 0xffff]: " + fs);
+        }
+        if (methods + ms >= (firstDex ? MAX_METHOD_IDS_FIRSTDEX : MAX_METHOD_IDS) || fields + fs >= MAX_FIELD_IDS || newstrings.size() >= MAX_FIELD_IDS) {
+            return false;
         }
 
-        if (file2.getName().startsWith("combined")) {
-            return -1;
-        }
+        dexs.add(dex);
+        methods += ms;
+        fields += fs;
+        strings = newstrings;
 
-        return super.compare(file1, file2);
+        return true;
+    }
+
+    private Set<String> getMethods(Dex dex) {
+        Set<String> sets = new HashSet<>();
+        for (MethodId mi : dex.methodIds()) {
+            sets.add(mi.toString());
+        }
+        return sets;
+    }
+
+    private Set<String> getFields(Dex dex) {
+        Set<String> sets = new HashSet<>();
+        for (FieldId filedId : dex.fieldIds()) {
+            sets.add(filedId.toString());
+        }
+        return sets;
     }
 }
