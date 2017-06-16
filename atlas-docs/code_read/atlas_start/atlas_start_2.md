@@ -1,11 +1,11 @@
 ---
-title: Atlas启动过程(下)
+title: Atlas之启动过程(二)
 date: 2017-05-03 15:00:00
 ---
 
 # 概述
 
-接[上篇][atlas_start_1] ,继续 6-10 步的启动过程。
+接上篇 [Atlasz之启动过程(一)][atlas_start_1] ,继续 6-10 步的启动过程。
 
 ![][atlas_core_start_img]
 
@@ -246,7 +246,7 @@ private void started(){
 ```
 简化了大部分代码，只关注核心逻辑。代码读取`RuntimeVariables`上的字段`autoStartBundles`,这个值是在gradle中配置的`com.taobao.firstbundle`，然后开始异步加载firstbundle
 
-bundle的加载过程和加载触发时机请参考 [atlas之bundle加载过程][atals_bundle_load](正在准备中)，这里不在讨论。
+bundle的加载过程和加载触发时机请参考 [Atlas之bundle加载过程][atals_bundle_load]，这里不在讨论。
 
 # 10. DemoApplication.onCreate
 
@@ -267,7 +267,7 @@ public void onCreate() {
 
 [atlas_start_1]: atlas_start_1.md
 [atlas_gradle_apk]: atlas_gradle_apk.md
-[atals_bundle_load]: bundle_load.md
+[atals_bundle_load]: ../../code_read/atlas_bundle_load/atlas_bundle_load.md
 
 [atlas_core_start_img]: atlas_core_start_img.svg
 [atlas_java_startup_img]: atlas_java_startup_img.svg
