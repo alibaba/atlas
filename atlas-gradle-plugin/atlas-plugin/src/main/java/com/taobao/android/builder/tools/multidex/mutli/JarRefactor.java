@@ -290,23 +290,44 @@ public class JarRefactor {
         JarOutputStream mainJarOuputStream = new JarOutputStream(
             new BufferedOutputStream(new FileOutputStream(maindexJar)));
 
+        //先排序
+        Collections.sort(jarList, new NameComparator());
+
         for (File jar : jarList) {
             File outJar = new File(dir, FileNameUtils.getUniqueJarName(jar) + ".jar");
             result.add(outJar);
             JarFile jarFile = new JarFile(jar);
             JarOutputStream jos = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(outJar)));
             Enumeration<JarEntry> jarFileEntries = jarFile.entries();
+
+            List<String> pathList = new ArrayList<>();
             while (jarFileEntries.hasMoreElements()) {
                 JarEntry ze = jarFileEntries.nextElement();
                 String pathName = ze.getName();
                 if (mainDexList.contains(pathName)) {
                     copyStream(jarFile.getInputStream(ze), mainJarOuputStream, ze, pathName);
-                } else {
-                    copyStream(jarFile.getInputStream(ze), jos, ze, pathName);
+                    pathList.add(pathName);
                 }
             }
+
+            if (!pathList.isEmpty()) {
+                jarFileEntries = jarFile.entries();
+                while (jarFileEntries.hasMoreElements()) {
+                    JarEntry ze = jarFileEntries.nextElement();
+                    String pathName = ze.getName();
+                    if (!pathList.contains(pathName)) {
+                        copyStream(jarFile.getInputStream(ze), jos, ze, pathName);
+                    }
+                }
+            }
+
             jarFile.close();
             IOUtils.closeQuietly(jos);
+
+            if (pathList.isEmpty()) {
+                FileUtils.copyFile(jar, outJar);
+            }
+
         }
         IOUtils.closeQuietly(mainJarOuputStream);
 
@@ -323,7 +344,8 @@ public class JarRefactor {
             ZipEntry newEntry = new ZipEntry(pathName);
             // Make sure there is date and time set.
             if (ze.getTime() != -1) {
-                newEntry.setTime(ze.getTime()); newEntry.setCrc(ze.getCrc()); // If found set it into output file.
+                newEntry.setTime(ze.getTime());
+                newEntry.setCrc(ze.getCrc()); // If found set it into output file.
             }
             jos.putNextEntry(newEntry);
             IOUtils.copy(inputStream, jos);

@@ -945,8 +945,8 @@ public class AtlasBuilder extends AndroidBuilder {
 
             if (fastMultiDex) {
                 //TODO fixme
-                //ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, inputs.size() > 8 ? 8 : inputs.size());
-                ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, 1);
+                ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, inputs.size() > 8 ? 8 : inputs.size());
+                //ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, 1);
                 List<Runnable> runnables = new ArrayList<>();
                 for (File input : inputs) {
 
