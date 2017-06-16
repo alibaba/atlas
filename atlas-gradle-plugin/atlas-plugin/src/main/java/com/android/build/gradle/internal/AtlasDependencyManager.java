@@ -209,7 +209,6 @@
 
 package com.android.build.gradle.internal;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -317,14 +316,7 @@ public class AtlasDependencyManager extends DependencyManager {
         } catch (Exception e) {
             throw new GradleException("process awo exception", e);
         }
-
-        // 最终Ap文件
-        File baseApFile = ApDependencies.getBaseApFile(project, tBuildType);
-        if (baseApFile == null) {
-            return null;
-        }
-
-        return new ApDependencies(project, baseApFile);
+        return ApDependencies.getApDependencies(project, tBuildType);
     }
 
     @Override

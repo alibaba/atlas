@@ -325,6 +325,16 @@ public class ApDependencies /*extends BaseTask*/ {
         return apBaseFile;
     }
 
+    public static ApDependencies getApDependencies(Project project, TBuildType tBuildType) {
+        // 最终Ap文件
+        File baseApFile = getBaseApFile(project, tBuildType);
+        if (baseApFile == null) {
+            return null;
+        }
+
+        return new ApDependencies(project, baseApFile);
+    }
+
     private DependencyJson getDependencyJson(File apBaseFile) {
         DependencyJson apDependencyJson;
         try (ZipFile zip = new ZipFile(apBaseFile)) {
@@ -370,6 +380,10 @@ public class ApDependencies /*extends BaseTask*/ {
 
     public boolean isMainLibrary(ModuleIdentifier moduleIdentifier) {
         return mMainDependenciesMap.containsKey(moduleIdentifier);
+    }
+
+    public boolean isAwbLibrary(ModuleIdentifier moduleIdentifier) {
+        return mAwbDependenciesMap.containsKey(moduleIdentifier);
     }
 
     public boolean hasSameResolvedDependency(ResolvedArtifact artifact) {
