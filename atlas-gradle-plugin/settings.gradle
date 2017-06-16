@@ -5,3 +5,4 @@ include 'aapt'
 //include 'dexpatch'
 findProject(':atlas-plugin')?.name = 'atlasplugin'
 findProject(':dexpatch')?.name = 'dex_patch'
+//

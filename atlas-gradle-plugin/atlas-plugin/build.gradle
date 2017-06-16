@@ -247,5 +247,5 @@ dependencies {
     testCompile "junit:junit:4.11"
 }
 
-version = '2.3.1.beta56'
+version = '2.3.1.beta58'
 

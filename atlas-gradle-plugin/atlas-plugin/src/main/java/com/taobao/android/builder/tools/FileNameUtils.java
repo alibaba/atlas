@@ -216,8 +216,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import static com.android.SdkConstants.DOT_JAR;
 
@@ -262,14 +264,20 @@ public class FileNameUtils {
         }
 
         if (StringUtils.isEmpty(newFileName)) {
-            newFileName = inputFile
-                .getParentFile()
-                .getParentFile()
-                .getParentFile()
-                .getName() +
-                "-" +
-                inputFile.getParentFile().getParentFile().getName() +
-                DOT_JAR;
+            if (inputFile.getAbsolutePath().contains(".android/build-cache/")){
+                File androidManifest = new File(inputFile.getParentFile(),"AndroidManifest.xml");
+                if (!androidManifest.exists()){
+                    androidManifest = new File(inputFile.getParentFile().getParentFile(),"AndroidManifest.xml");
+                }
+                if (androidManifest.exists()){
+                    newFileName = ManifestFileUtils.getPackage(androidManifest).replace(".","");
+                }else {
+                    System.err.println("input file " + inputFile.getAbsolutePath() + " is not found unque name !");
+                    newFileName = "nogav";
+                }
+            }else {
+                newFileName = getNameByParent(inputFile);
+            }
         }
 
         String outFileName = newFileName;
@@ -283,6 +291,18 @@ public class FileNameUtils {
         outFileNames.add(outFileName);
 
         return outFileName;
+    }
+
+    @NotNull
+    private static String getNameByParent(File inputFile) {
+        return inputFile
+            .getParentFile()
+            .getParentFile()
+            .getParentFile()
+            .getName() +
+            "-" +
+            inputFile.getParentFile().getParentFile().getName() +
+            DOT_JAR;
     }
 
     public static String getUniqueFileName(String name, String type) {
