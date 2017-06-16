@@ -224,7 +224,6 @@ import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
 import com.android.builder.model.MavenCoordinates;
 import com.android.utils.ILogger;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -340,18 +339,8 @@ public class DependencyResolver {
                                    Set<String> resolvedDependencies) {
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
 
-        if (checkForExclusion(configDependencies, moduleVersion, artifacts.get(moduleVersion), resolvedComponentResult,
-                              parent)) {
+        if (checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult, parent)) {
             return;
-        }
-        if (apDependencies != null && parent != null && parent.getType().equals("awb") && apDependencies.isMainLibrary(
-            moduleVersion.getModule())) {
-            if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
-                return;
-            } else {
-                addDependencyToRoot(dependencyResult);
-                parent = null;
-            }
         }
 
         if (moduleVersion.getName().equals("support-annotations") && moduleVersion.getGroup().equals(
@@ -446,19 +435,27 @@ public class DependencyResolver {
         }
     }
 
+    // 尽量忽略原则
     private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion,
-                                      List<ResolvedArtifact> moduleArtifacts,
                                       ResolvedComponentResult resolvedComponentResult, ResolvedDependencyInfo parent) {
         if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
             return true;
         }
         if (apDependencies != null) {
-            if (moduleArtifacts != null) {
-                // 如果同时找到多个依赖，暂时没法判断是那个真正有用
-                ResolvedArtifact resolvedArtifact = Iterables.getFirst(moduleArtifacts, null);
-                if (resolvedArtifact != null && resolvedArtifact.getType().equals("awb")) {
-                    return false;
-                }
+            // awb依赖不忽略
+            if (parent == null && apDependencies.isAwbLibrary(moduleVersion.getModule())) {
+                return false;
+            }
+            // awb忽略host的依赖
+            if (parent != null && parent.getType().equals("awb") && apDependencies.isMainLibrary(
+                moduleVersion.getModule())) {
+                /*if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
+                    return;
+                } else {
+                    addDependencyToRoot(dependencyResult);
+                    parent = null;
+                }*/
+                return true;
             }
             // 工程依赖不忽略
             if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
