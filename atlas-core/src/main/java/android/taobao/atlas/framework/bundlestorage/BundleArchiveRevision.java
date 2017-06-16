@@ -683,8 +683,10 @@ public class BundleArchiveRevision {
 //                    patchDexFileForDebug = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication,
 //                            patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
                     //兼容7。0 动态部署过后不同classloader下对classcast
+                    File internalDebugBundleDir = new File(new File(RuntimeVariables.androidApplication.getFilesDir(),"debug_storage"),location);
+                    internalDebugBundleDir.mkdirs();
                     RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex",Context.class,String.class, String.class, int.class, boolean.class).invoke(
-                            RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
+                            RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, patchFile.getAbsolutePath(), new File(internalDebugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
