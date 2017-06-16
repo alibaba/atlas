@@ -209,6 +209,12 @@
 
 package com.taobao.android.builder.tasks.app.prepare;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -232,11 +238,6 @@ import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FD_AAR_LIBS;
 
@@ -340,18 +341,28 @@ public class PrepareAllDependenciesTask extends BaseTask {
         executorServicesHelper.execute(runnables);
 
         Project project = getProject();
+        //TODO localjar for main dex must on
+        for( AndroidLibrary androidLibrary : atlasDependencyTree.getMainBundle().getAllLibraryAars()){
+            List<File> localJars = getLocalJars(androidLibrary.getFolder());
+            //System.out.println("get local libs");
+            for (File file : localJars) {
+                project.getLogger().info("add local jar to dependency " + file.getAbsolutePath() + "->" + androidLibrary
+                    .getResolvedCoordinates().toString());
+            }
+            androidLibrary.getLocalJars().addAll(localJars);
+        }
+
         if (isLocalJarEnabled(project)) {
-            for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
+            List<AndroidLibrary> bundleLibraries = new ArrayList<>(atlasDependencyTree.getAllAndroidLibrarys());
+            bundleLibraries.removeAll(atlasDependencyTree.getMainBundle().getAllLibraryAars());
+            for (final AndroidLibrary aarBundle : bundleLibraries) {
                 List<File> localJars = getLocalJars(aarBundle.getFolder());
                 //System.out.println("get local libs");
                 for (File file : localJars) {
                     project.getLogger().info("add local jar to dependency " + file.getAbsolutePath() + "->" + aarBundle
                         .getResolvedCoordinates().toString());
                 }
-
                 aarBundle.getLocalJars().addAll(localJars);
-
-                //getLocalJars(project, bundle, androidDependency);
             }
         }
 
