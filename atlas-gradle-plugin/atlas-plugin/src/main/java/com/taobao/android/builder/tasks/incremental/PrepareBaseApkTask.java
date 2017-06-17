@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.OutputFile;
 
 import static com.android.SdkConstants.DOT_DEX;
 
@@ -194,7 +194,7 @@ public class PrepareBaseApkTask extends IncrementalTask {
         this.dexFilesCount = dexFilesCount;
     }
 
-    @OutputDirectory
+    @OutputFile
     public File getOutputFile() {
         return outputFile;
     }
