@@ -106,22 +106,16 @@ public class IncrementalInstallVariantTask extends BaseTask {
         Collection<File> awbApkFiles = getAwbApkFiles();
         if (awbApkFiles != null) {
             for (File awbApkFile : awbApkFiles) {
-                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}",
-                                      awbApkFile,
-                                      device.getName(),
-                                      projectName,
-                                      variantName);
+                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", awbApkFile, device.getName(),
+                                      projectName, variantName);
 
                 installPatch(awbApkFile, getAwbPackageName(awbApkFile));
             }
         }
         if (mainDexFile != null) {
 
-            getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}",
-                                  mainDexFile,
-                                  device.getName(),
-                                  projectName,
-                                  variantName);
+            getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}", mainDexFile, device.getName(),
+                                  projectName, variantName);
 
             installPatch(mainDexFile, "com.taobao.maindex");
             // AwoInstaller.installAwoSo(getBuilder(),
@@ -130,21 +124,17 @@ public class IncrementalInstallVariantTask extends BaseTask {
             //                           getLogger(),
             //                           "libcom_taobao_maindex.so");
         }
-        getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}",
-                              getAppPackageName(),
-                              device.getName(),
-                              projectName,
+        getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", getAppPackageName(), device.getName(), projectName,
                               variantName);
         runCommand(Arrays.asList("shell", "am force-stop " + getAppPackageName()));
-        runCommand(Arrays.asList("shell",
-                                 "monkey" + " -p " + getAppPackageName() + " -c android.intent.category.LAUNCHER 1"));
+        runCommand(
+            Arrays.asList("shell", "monkey" + " -p " + getAppPackageName() + " -c android.intent.category.LAUNCHER 1"));
         // runCommand(Arrays.asList("shell" ,"am start" + " -n " + getAppPackageName() + " -a android.intent.action.MAIN"
         //                          + " -c android.intent.category.LAUNCHER"));
         if (successfulInstallCount == 0) {
             throw new GradleException("Failed to install on any devices.");
         } else {
-            getLogger().quiet("Installed on {} {}.",
-                              successfulInstallCount,
+            getLogger().quiet("Installed on {} {}.", successfulInstallCount,
                               successfulInstallCount == 1 ? "device" : "devices");
         }
     }
@@ -164,7 +154,7 @@ public class IncrementalInstallVariantTask extends BaseTask {
     private boolean installPatch(File patch, String name) {
 
         String PATCH_INSTALL_DIRECTORY = PATCH_INSTALL_DIRECTORY_PREFIX + getAppPackageName()
-                                         + PATCH_INSTALL_DIRECTORY_SUFFIX;
+            + PATCH_INSTALL_DIRECTORY_SUFFIX;
         List<String> cmd = Arrays.asList("push", patch.getAbsolutePath(), PATCH_INSTALL_DIRECTORY + name + PATCH_NAME);
         return runCommand(cmd);
     }
@@ -294,13 +284,10 @@ public class IncrementalInstallVariantTask extends BaseTask {
             incrementalInstallVariantTask.setGroup(TaskManager.INSTALL_GROUP);
             incrementalInstallVariantTask.setProjectName(scope.getGlobalScope().getProject().getName());
             incrementalInstallVariantTask.setVariantData(scope.getVariantData());
-            incrementalInstallVariantTask.setTimeOutInMs(scope.getGlobalScope()
-                                                              .getExtension()
-                                                              .getAdbOptions()
-                                                              .getTimeOutInMs());
-            incrementalInstallVariantTask.setProcessExecutor(scope.getGlobalScope()
-                                                                  .getAndroidBuilder()
-                                                                  .getProcessExecutor());
+            incrementalInstallVariantTask.setTimeOutInMs(
+                scope.getGlobalScope().getExtension().getAdbOptions().getTimeOutInMs());
+            incrementalInstallVariantTask.setProcessExecutor(
+                scope.getGlobalScope().getAndroidBuilder().getProcessExecutor());
             ConventionMappingHelper.map(incrementalInstallVariantTask, "adbExe", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
@@ -309,8 +296,7 @@ public class IncrementalInstallVariantTask extends BaseTask {
                 }
             });
 
-            ConventionMappingHelper.map(incrementalInstallVariantTask,
-                                        "appPackageName",
+            ConventionMappingHelper.map(incrementalInstallVariantTask, "appPackageName",
                                         variantConfiguration::getApplicationId);
             ConventionMappingHelper.map(incrementalInstallVariantTask, "mainDexFile", new Callable<File>() {
 
@@ -325,8 +311,7 @@ public class IncrementalInstallVariantTask extends BaseTask {
                     return getAppVariantOutputContext().getApkOutputFile(true);
                 }
             });
-            ConventionMappingHelper.map(incrementalInstallVariantTask,
-                                        "awbApkFiles",
+            ConventionMappingHelper.map(incrementalInstallVariantTask, "awbApkFiles",
                                         appVariantContext::getAwbApkFiles);
         }
     }

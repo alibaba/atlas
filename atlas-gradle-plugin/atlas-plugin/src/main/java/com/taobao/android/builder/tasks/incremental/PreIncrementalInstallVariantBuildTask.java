@@ -12,7 +12,7 @@ import org.gradle.api.tasks.TaskAction;
  * Created by chenhjohn on 2017/5/31.
  */
 
-public class PreIncrementalInstallVariantTask extends DefaultAndroidTask {
+public class PreIncrementalInstallVariantBuildTask extends DefaultAndroidTask {
 
     private AppVariantContext appVariantContext;
 
@@ -26,9 +26,9 @@ public class PreIncrementalInstallVariantTask extends DefaultAndroidTask {
         patchConfig.setCreateTPatch(true);
     }
 
-    public static class ConfigAction extends MtlBaseTaskAction<PreIncrementalInstallVariantTask> {
+    public static class ConfigAction extends MtlBaseTaskAction<PreIncrementalInstallVariantBuildTask> {
 
-        private AppVariantContext appVariantContext;
+        private final AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
@@ -41,12 +41,12 @@ public class PreIncrementalInstallVariantTask extends DefaultAndroidTask {
         }
 
         @Override
-        public Class<PreIncrementalInstallVariantTask> getType() {
-            return PreIncrementalInstallVariantTask.class;
+        public Class<PreIncrementalInstallVariantBuildTask> getType() {
+            return PreIncrementalInstallVariantBuildTask.class;
         }
 
         @Override
-        public void execute(PreIncrementalInstallVariantTask task) {
+        public void execute(PreIncrementalInstallVariantBuildTask task) {
 
             super.execute(task);
             task.appVariantContext = appVariantContext;

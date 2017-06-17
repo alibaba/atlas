@@ -247,6 +247,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.MergeManifests;
+import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.AtlasBuilder;
@@ -283,7 +284,7 @@ import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
 import com.taobao.android.builder.tasks.incremental.AwoInstallTask;
 import com.taobao.android.builder.tasks.incremental.IncrementalInstallVariantTask;
 import com.taobao.android.builder.tasks.incremental.PreIncrementalBuildTask;
-import com.taobao.android.builder.tasks.incremental.PreIncrementalInstallVariantTask;
+import com.taobao.android.builder.tasks.incremental.PreIncrementalInstallVariantBuildTask;
 import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
 import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask.ConfigAction;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
@@ -302,6 +303,7 @@ import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
 import org.gradle.api.Action;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -491,6 +493,39 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
     //增量任务
     private void createIncrementalPackagingTask(AppVariantContext appVariantContext, TaskFactory tasks,
                                                 VariantScope variantScope, BaseVariantOutputData vod) {
+        createAwbsPackagingTasks(appVariantContext, variantScope, vod);
+
+        //解压基线包
+        AndroidTask<PrepareBaseApkTask> prepareBaseApkTask = androidTasks.create(tasks, new ConfigAction(variantScope,
+                                                                                                         () -> appVariantContext.apContext
+                                                                                                             .getBaseApk(),
+                                                                                                         () -> appVariantContext.apContext
+                                                                                                             .getBaseIncrementalApk(),
+                                                                                                         () ->
+                                                                                                             appVariantContext
+                                                                                                                 .getBuildType()
+                                                                                                                 != null
+                                                                                                                 &&
+                                                                                                                 appVariantContext
+                                                                                                                     .getBuildType()
+                                                                                                                     .getPatchConfig()
+                                                                                                                     != null
+                                                                                                                 && appVariantContext
+                                                                                                                 .getBuildType()
+                                                                                                                 .getPatchConfig()
+                                                                                                                 .isCreateTPatch()));
+
+        //解压基线包依赖dex任务
+        for (TransformStream stream : variantScope.getTransformManager().getStreams(StreamFilter.DEX)) {
+            // TODO Optimize to avoid creating too many actions
+            prepareBaseApkTask.dependsOn(tasks, stream.getDependencies());
+        }
+        variantScope.getPackageApplicationTask().dependsOn(tasks, prepareBaseApkTask);
+        createIncrementalInstallTasks(appVariantContext, variantScope, vod);
+    }
+
+    private void createAwbsPackagingTasks(AppVariantContext appVariantContext, VariantScope variantScope,
+                                          BaseVariantOutputData vod) {
         final VariantOutputScope variantOutputScope = vod.getScope();
         InstantRunPatchingPolicy patchingPolicy = variantScope.getInstantRunBuildContext().getPatchingPolicy();
         AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(vod);
@@ -549,54 +584,34 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             packageAwbsTask.setEnabled(false);
             packageAwbsTask.dependsOn(packageAwb.get(tasks));
         }
+    }
 
-        //解压基线包
-        AndroidTask<PrepareBaseApkTask> prepareBaseApkTask = androidTasks.create(tasks, new ConfigAction(variantScope,
-                                                                                                         () -> appVariantContext.apContext
-                                                                                                             .getBaseApk(),
-                                                                                                         () -> appVariantContext.apContext
-                                                                                                             .getBaseIncrementalApk(),
-                                                                                                         () ->
-                                                                                                             appVariantContext
-                                                                                                                 .getBuildType()
-                                                                                                                 != null
-                                                                                                                 &&
-                                                                                                                 appVariantContext
-                                                                                                                     .getBuildType()
-                                                                                                                     .getPatchConfig()
-                                                                                                                     != null
-                                                                                                                 && appVariantContext
-                                                                                                                 .getBuildType()
-                                                                                                                 .getPatchConfig()
-                                                                                                                 .isCreateTPatch()));
-
-        //解压基线包依赖dex任务
-        for (TransformStream stream : variantScope.getTransformManager().getStreams(StreamFilter.DEX)) {
-            // TODO Optimize to avoid creating too many actions
-            prepareBaseApkTask.dependsOn(tasks, stream.getDependencies());
-        }
-        variantScope.getPackageApplicationTask().dependsOn(tasks, prepareBaseApkTask);
+    private void createIncrementalInstallTasks(AppVariantContext appVariantContext, VariantScope variantScope,
+                                               BaseVariantOutputData vod) {
+        //模块独立调试安装
+        AndroidTask<PackageApplication> packageApplicationTask = variantScope.
+            getPackageApplicationTask();
+        AndroidTask<DefaultTask> preIncrementalInstallTask = androidTasks.create(tasks, variantScope
+            .getTaskName("preIncrementalInstall"), task -> {
+        });
+        preIncrementalInstallTask.dependsOn(tasks, packageApplicationTask.getName());
 
         //模块独立调试配置任务                                                                                                 vod));
-        AndroidTask<PreIncrementalInstallVariantTask> preIncrementalInstallVariantTask = androidTasks.create(tasks,
-                                                                                                             new PreIncrementalInstallVariantTask.ConfigAction(
-                                                                                                                 appVariantContext,
-                                                                                                                 vod));
+        AndroidTask<PreIncrementalInstallVariantBuildTask> preIncrementalInstallVariantBuildTask = androidTasks.create(
+            tasks, new PreIncrementalInstallVariantBuildTask.ConfigAction(appVariantContext, vod));
+        preIncrementalInstallTask.dependsOn(tasks, preIncrementalInstallVariantBuildTask);
+
         // 多模块独立调试安装
         AndroidTask<IncrementalInstallVariantTask> incrementalInstallVariantTask = androidTasks.create(tasks,
                                                                                                        new IncrementalInstallVariantTask.ConfigAction(
                                                                                                            appVariantContext,
                                                                                                            vod));
-        incrementalInstallVariantTask.dependsOn(tasks, preIncrementalInstallVariantTask);
-        incrementalInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().
-            getPackageApplicationTask().getName());
+        incrementalInstallVariantTask.dependsOn(tasks, preIncrementalInstallTask);
 
         // awo单模块独立调试安装
         AndroidTask<AwoInstallTask> awoInstallVariantTask = androidTasks.create(tasks, new AwoInstallTask.ConfigAction(
             appVariantContext, vod));
-        awoInstallVariantTask.dependsOn(tasks, preIncrementalInstallVariantTask);
-        awoInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().
-            getPackageApplicationTask().getName());
+        awoInstallVariantTask.dependsOn(tasks, preIncrementalInstallTask);
     }
 
     private void hookFastMultiDex(AppVariantContext appVariantContext) throws Exception {
