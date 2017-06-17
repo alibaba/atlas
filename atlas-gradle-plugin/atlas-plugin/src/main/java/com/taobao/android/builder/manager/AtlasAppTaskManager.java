@@ -285,6 +285,7 @@ import com.taobao.android.builder.tasks.incremental.IncrementalInstallVariantTas
 import com.taobao.android.builder.tasks.incremental.PreIncrementalBuildTask;
 import com.taobao.android.builder.tasks.incremental.PreIncrementalInstallVariantTask;
 import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask;
+import com.taobao.android.builder.tasks.incremental.PrepareBaseApkTask.ConfigAction;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tasks.manager.TaskQueryHelper;
@@ -346,8 +347,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAllDependenciesTask.ConfigAction.class, null));
 
-                //mtlTaskContextList.add(new MtlTaskContext(PullBaseApkTask.ConfigAction.class, null));
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
+                //增量preBuild任务
                 if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
                     mtlTaskContextList.add(new MtlTaskContext(PreIncrementalBuildTask.ConfigAction.class, null));
                 }
@@ -406,10 +407,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 }
 
                 mtlTaskContextList.add(new MtlTaskContext(TransformTask.class));
-                // 增量整包编译
-                if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                    createIncrementalPrepareBaseApkTask(appVariantContext, mtlTaskContextList);
-                }
 
                 mtlTaskContextList.add(new MtlTaskContext(PackageAwbsTask.ConfigAction.class, null));
                 final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
@@ -428,11 +425,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                              return ImmutableList.of(appVariantContext
                                                                                                          .getAwbApkOutputDir());
                                                                          }
-                                                                     })
-                                                                     // .setFolder(variantScope
-                                                                     // .getSourceFoldersJavaResDestinationDir())
-                                                                     // .setDependency(processJavaResourcesTask.getName())
-                                                                     .build());
+                                                                     }).build());
                 }
 
                 mtlTaskContextList.add(new MtlTaskContext("package"));
@@ -480,7 +473,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
                     TransformManager.replaceTransformTask(appVariantContext, vod, ProGuardTransform.class,
                                                           AtlasProguardTransform.class);
-                    // 增量编译
+                    // 增量编译任务
                     if (atlasExtension.getTBuildConfig().isIncremental()) {
                         createIncrementalPackagingTask(appVariantContext, tasks, variantScope, vod);
                     }
@@ -495,6 +488,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         });
     }
 
+    //增量任务
     private void createIncrementalPackagingTask(AppVariantContext appVariantContext, TaskFactory tasks,
                                                 VariantScope variantScope, BaseVariantOutputData vod) {
         final VariantOutputScope variantOutputScope = vod.getScope();
@@ -504,6 +498,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             appVariantOutputContext.getVariantContext().
                 getVariantConfiguration().getFullName());
 
+        //awb任务
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
             final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope.getVariantData();
             final GradleVariantConfiguration config = variantData.getVariantConfiguration();
@@ -519,157 +514,89 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                            .build());
             //多dex问题
             taskManager.createPostCompilationTasks(tasks, awbScope);
-            //boolean isMultiDexEnabled = config.isMultiDexEnabled();
-            //AndroidConfig extension = variantScope.getGlobalScope().getExtension();
-            //// Switch to native multidex if possible when using instant run.
-            //boolean isLegacyMultiDexMode = isLegacyMultidexMode(variantScope);
-            //
-            //// create dex transform
-            //DefaultDexOptions dexOptions = DefaultDexOptions.copyOf(extension.getDexOptions());
-            //
-            //File mainDexListFile = variantScope.getMainDexListFile();
-            //boolean multiDex = isMultiDexEnabled;
-            //DexTransform dexTransform = new DexTransform(dexOptions, config.getBuildType().isDebuggable(), false /*multiDex*/,
-            //                                             isMultiDexEnabled && isLegacyMultiDexMode ? mainDexListFile
-            //                                                 : null, variantScope.getPreDexOutputDir(),
-            //                                             variantScope.getGlobalScope().getAndroidBuilder(),
-            //                                             project.getLogger(), variantScope.getInstantRunBuildContext(),
-            //                                             AndroidGradleOptions.getBuildCache(
-            //                                                 variantScope.getGlobalScope().getProject())) {
-            //    @Override
-            //    public Collection<SecondaryFile> getSecondaryFiles() {
-            //
-            //        ImmutableList.Builder<SecondaryFile> builder = ImmutableList.builder();
-            //        builder.addAll(super.getSecondaryFiles());
-            //        String awbSoName = awbBundle.getAwbSoName();
-            //        if (awbSoName != null) {
-            //            File baseAwb = appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbSoName);
-            //            if (baseAwb != null) {
-            //                builder.add(SecondaryFile.nonIncremental(baseAwb));
-            //            }
-            //        }
-            //        return builder.build();
-            //    }
-            //
-            //    @Override
-            //    public Map<String, Object> getParameterInputs() {
-            //        return super.getParameterInputs();
-            //    }
-            //
-            //    @Override
-            //    public void transform(TransformInvocation transformInvocation)
-            //        throws TransformException, IOException, InterruptedException {
-            //        super.transform(transformInvocation);
-            //        boolean isIncremental = transformInvocation.isIncremental();
-            //        TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
-            //        Preconditions.checkNotNull(outputProvider, "Missing output object for transform " + getName());
-            //        // Gather a full list of all inputs.
-            //        List<JarInput> jarInputs = Lists.newArrayList();
-            //        List<DirectoryInput> directoryInputs = Lists.newArrayList();
-            //        for (TransformInput input : transformInvocation.getInputs()) {
-            //            jarInputs.addAll(input.getJarInputs());
-            //            directoryInputs.addAll(input.getDirectoryInputs());
-            //            try {
-            //                // if only one scope or no per-scope dexing, just do a single pass that
-            //                // runs dx on everything.
-            //                if ((jarInputs.size() + directoryInputs.size()) == 1 || !dexOptions.getPreDexLibraries()) {
-            //                    // since there is only one dex file, we can merge all the scopes into the full
-            //                    // application one.
-            //                    File outputDir = outputProvider.getContentLocation("main", getOutputTypes(),
-            //                                                                       com.android.build.gradle.internal.pipeline.TransformManager.SCOPE_FULL_PROJECT,
-            //                                                                       Format.DIRECTORY);
-            //                    mergeDex(outputDir, appVariantOutputContext.getVariantContext().apContext
-            //                        .getBaseAwb(awbBundle.getAwbSoName()));
-            //                } else {
-            //                    // Figure out if we need to do a dx merge.
-            //                    // The ony case we don't need it is in native multi-dex mode when doing debug
-            //                    // builds. This saves build time at the expense of too many dex files which is fine.
-            //                    // FIXME dx cannot receive dex files to merge inside a folder. They have to be in a
-            //                    // jar. Need to fix in dx.
-            //                    boolean needMerge = !multiDex || mainDexListFile != null;// || !debugMode;
-            //                    if (needMerge) {
-            //                        File outputDir = outputProvider.getContentLocation("main",
-            //                                                                           com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_DEX,
-            //                                                                           com.android.build.gradle.internal.pipeline.TransformManager.SCOPE_FULL_PROJECT,
-            //                                                                           Format.DIRECTORY);
-            //                        mergeDex(outputDir, appVariantOutputContext.getVariantContext().apContext
-            //                            .getBaseAwb(awbBundle.getAwbSoName()));
-            //                    }
-            //                }
-            //            } catch (Exception e) {
-            //                throw new TransformException(e);
-            //            }
-            //        }
-            //    }
-            //
-            //    private void mergeDex(File outputDir, File baseAwb) throws IOException {
-            //        File file = new File(outputDir, "classes.dex");
-            //        ZipFile zipFile = new ZipFile(baseAwb);
-            //        ZipEntry entry = zipFile.getEntry(DexFormat.DEX_IN_JAR_NAME);
-            //        if (entry != null) {
-            //            DxContext context = new DxContext();
-            //            com.android.dex.Dex merged = new DexMerger(
-            //                new com.android.dex.Dex[] {new com.android.dex.Dex(file),
-            //                    new com.android.dex.Dex(zipFile.getInputStream(entry))}, CollisionPolicy.KEEP_FIRST,
-            //                context).merge();
-            //            merged.writeTo(file);
-            //            zipFile.close();
-            //        } else {
-            //            throw new DexException("Expected " + DexFormat.DEX_IN_JAR_NAME + " in " + file);
-            //        }
-            //    }
-            //};
-            //
-            //Optional<AndroidTask<TransformTask>> dexTask = transformManager.addTransform(tasks, variantScope,
-            //                                                                             dexTransform);
 
-            //最终打包
+            //Awb最终打包
             PackagingScope packagingScope = new AwbPackagingScope(variantOutputScope, appVariantContext, awbBundle);
 
             AndroidTask<PackageAwb> packageAwb = androidTasks.create(tasks,
                                                                      new PackageAwb.StandardConfigAction(packagingScope,
                                                                                                          patchingPolicy));
+            //解压基线包
+            AndroidTask<PrepareBaseApkTask> prepareBaseApkTask = androidTasks.create(tasks, new ConfigAction(awbScope,
+                                                                                                             () -> appVariantContext.apContext
+                                                                                                                 .getBaseAwb(
+                                                                                                                     awbBundle
+                                                                                                                         .getAwbSoName()),
+                                                                                                             () -> appVariantContext.apContext
+                                                                                                                 .getIncrementalBaseAwbFile(
+                                                                                                                     awbBundle
+                                                                                                                         .getAwbSoName()),
+                                                                                                             () -> false));
 
             for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {
                 // TODO Optimize to avoid creating too many actions
+                //依赖解压基线包任务
+                packageAwb.dependsOn(tasks, prepareBaseApkTask);
+                //解压基线包依赖dex任务
+                prepareBaseApkTask.dependsOn(tasks, stream.getDependencies());
+                //最终打包依赖dex任务
                 packageAwb.dependsOn(tasks, stream.getDependencies());
             }
 
-            // 合并任务
+            // 合并多个Awb任务
             PackageAwbsTask packageAwbsTask = Iterators.getOnlyElement(
                 TaskQueryHelper.findTask(project, PackageAwbsTask.class, vod.variantData).iterator());
             packageAwbsTask.setEnabled(false);
             packageAwbsTask.dependsOn(packageAwb.get(tasks));
         }
 
-        // 安装
-        AndroidTask<IncrementalInstallVariantTask> incrementalInstallVariantTask = androidTasks.create(tasks,
-                                                                                                       new IncrementalInstallVariantTask.ConfigAction(
-                                                                                                           appVariantContext,
-                                                                                                           vod));
+        //解压基线包
+        AndroidTask<PrepareBaseApkTask> prepareBaseApkTask = androidTasks.create(tasks, new ConfigAction(variantScope,
+                                                                                                         () -> appVariantContext.apContext
+                                                                                                             .getBaseApk(),
+                                                                                                         () -> appVariantContext.apContext
+                                                                                                             .getBaseIncrementalApk(),
+                                                                                                         () ->
+                                                                                                             appVariantContext
+                                                                                                                 .getBuildType()
+                                                                                                                 != null
+                                                                                                                 &&
+                                                                                                                 appVariantContext
+                                                                                                                     .getBuildType()
+                                                                                                                     .getPatchConfig()
+                                                                                                                     != null
+                                                                                                                 && appVariantContext
+                                                                                                                 .getBuildType()
+                                                                                                                 .getPatchConfig()
+                                                                                                                 .isCreateTPatch()));
 
+        //解压基线包依赖dex任务
+        for (TransformStream stream : variantScope.getTransformManager().getStreams(StreamFilter.DEX)) {
+            // TODO Optimize to avoid creating too many actions
+            prepareBaseApkTask.dependsOn(tasks, stream.getDependencies());
+        }
+        variantScope.getPackageApplicationTask().dependsOn(tasks, prepareBaseApkTask);
+
+        //模块独立调试配置任务                                                                                                 vod));
         AndroidTask<PreIncrementalInstallVariantTask> preIncrementalInstallVariantTask = androidTasks.create(tasks,
                                                                                                              new PreIncrementalInstallVariantTask.ConfigAction(
                                                                                                                  appVariantContext,
                                                                                                                  vod));
+        // 多模块独立调试安装
+        AndroidTask<IncrementalInstallVariantTask> incrementalInstallVariantTask = androidTasks.create(tasks,
+                                                                                                       new IncrementalInstallVariantTask.ConfigAction(
+                                                                                                           appVariantContext,
+                                                                                                           vod));
         incrementalInstallVariantTask.dependsOn(tasks, preIncrementalInstallVariantTask);
         incrementalInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().
             getPackageApplicationTask().getName());
 
-        // 安装
+        // awo单模块独立调试安装
         AndroidTask<AwoInstallTask> awoInstallVariantTask = androidTasks.create(tasks, new AwoInstallTask.ConfigAction(
             appVariantContext, vod));
         awoInstallVariantTask.dependsOn(tasks, preIncrementalInstallVariantTask);
         awoInstallVariantTask.dependsOn(tasks, variantOutputScope.getVariantScope().
             getPackageApplicationTask().getName());
-    }
-
-    // 配置基线包
-    private void createIncrementalPrepareBaseApkTask(final AppVariantContext appVariantContext,
-                                                     List<MtlTaskContext> mtlTaskContextList) {
-        mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTask.ConfigAction.class, null));// .
-        final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
-        VariantScope variantScope = appVariantContext.getVariantData().getScope();
     }
 
     private void hookFastMultiDex(AppVariantContext appVariantContext) throws Exception {

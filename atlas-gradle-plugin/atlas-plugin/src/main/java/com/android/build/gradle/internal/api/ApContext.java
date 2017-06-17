@@ -244,13 +244,19 @@ public class ApContext {
 
     public static final String DEPENDENCIES_FILENAME = "dependencies.txt";
 
+    public static final String INCREMENTAL_DIR_NAME = "incremental/";
+
     private String apDependency;
 
     private File apFile;
 
+    private File apIncrementalFolder;
+
     private File apExploredFolder;
 
     private File baseApk;
+
+    private File baseIncrementalApk;
 
     private File extractedBaseApkFolder;
 
@@ -260,7 +266,7 @@ public class ApContext {
 
     private File baseAwbsFolder;
 
-    private File extractedBaseAwbsFolder;
+    private File baseIncrementalAwbsFolder;
 
     private File baseManifest;
 
@@ -297,24 +303,27 @@ public class ApContext {
     public void setApExploredFolder(File apExploredFolder) {
         this.apExploredFolder = apExploredFolder;
         this.baseManifest = new File(apExploredFolder, ANDROID_MANIFEST_XML);
-        this.baseMainManifest = new File(apExploredFolder, "incremental/" + ANDROID_MANIFEST_XML);
+        this.baseMainManifest = new File(apExploredFolder, INCREMENTAL_DIR_NAME + ANDROID_MANIFEST_XML);
         this.baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
         this.extractedBaseApkFolder = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
         this.baseRemoteBundlesFolder = new File(apExploredFolder, AP_REMOTE_BUNDLES_DIRECTORY);
         this.baseAwosFolder = new File(apExploredFolder, AP_INLINE_AWO_DIRECTORY);
         this.baseAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_DIRECTORY);
-        this.extractedBaseAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
+        this.baseIncrementalAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
         this.basePackageIdFile = new File(apExploredFolder, PACKAGE_ID_PROPERTIES_FILENAME);
         this.baseAtlasFrameworkPropertiesFile = new File(apExploredFolder, ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
         this.baseDependenciesFile = new File(apExploredFolder, DEPENDENCIES_FILENAME);
+
+        this.apIncrementalFolder = new File(apExploredFolder, INCREMENTAL_DIR_NAME);
+        this.baseIncrementalApk = new File(apIncrementalFolder, AP_INLINE_APK_FILENAME);
     }
 
     public File getBaseApk() {
         return baseApk;
     }
 
-    public File getExtractedBaseApkFolder() {
-        return extractedBaseApkFolder;
+    public File getBaseIncrementalApk() {
+        return baseIncrementalApk;
     }
 
     public File getBaseAwbsFolder() {
@@ -346,6 +355,10 @@ public class ApContext {
     }
 
     public File getBaseAwb(String soFileName) {
+        if (soFileName == null) {
+            return null;
+        }
+
         File file = FileUtils.join(baseAwbsFolder, soFileName);
         if (!file.exists()) {
             file = FileUtils.join(baseRemoteBundlesFolder, soFileName);
@@ -356,20 +369,19 @@ public class ApContext {
         return file;
     }
 
-    public File getExtractedBaseAwbFolder(String soFileName) {
-        // remove the extension
-        int pos = soFileName.lastIndexOf('.');
-        if (pos != -1) {
-            soFileName = soFileName.substring(0, pos);
-        }
-        return FileUtils.join(extractedBaseAwbsFolder, soFileName);
-    }
-
     public File getBaseAwbTextSymbol(AwbBundle awbBundle) {
         return FileUtils.join(baseAwosFolder, awbBundle.getPackageName() + ".R.txt");
     }
 
-    public File getExtractedBaseAwbsFolder() {
-        return extractedBaseAwbsFolder;
+    public File getIncrementalBaseAwbFile(String awbSoName) {
+        if (awbSoName == null) {
+            return null;
+        }
+        // remove the extension
+        int pos = awbSoName.lastIndexOf('.');
+        if (pos != -1) {
+            awbSoName = awbSoName.substring(0, pos);
+        }
+        return new File(FileUtils.join(baseIncrementalAwbsFolder, awbSoName), AP_INLINE_APK_FILENAME);
     }
 }

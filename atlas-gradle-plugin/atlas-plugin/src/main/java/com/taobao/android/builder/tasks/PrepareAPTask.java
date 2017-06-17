@@ -233,7 +233,6 @@ import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.xml.XmlHelper;
 import com.taobao.android.builder.tools.zip.BetterZip;
-import groovy.lang.Closure;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -241,7 +240,6 @@ import org.dom4j.Element;
 import org.gradle.api.Nullable;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.file.CopySpec;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Optional;
@@ -366,26 +364,11 @@ public class PrepareAPTask extends BaseTask {
                 String awbSoName = awbBundle.getAwbSoName();
                 File awbFile = new File(apContext.getBaseRemoteBundlesFolder(), awbSoName);
                 if (!awbFile.exists()) {
-                    awbFile = BetterZip.extractFile(apContext.getBaseApk(), "lib/armeabi/" + awbSoName,
-                                                    apContext.getBaseAwbsFolder());
+                    BetterZip.extractFile(apContext.getBaseApk(), "lib/armeabi/" + awbSoName,
+                                          apContext.getBaseAwbsFolder());
                 }
-                extractAwb(awbFile, awbSoName);
             }
         }
-    }
-
-    private void extractAwb(final File awbFile, String awbSoName) {
-        getProject().copy(new Closure(PrepareAPTask.class) {
-            public Object doCall(CopySpec cs) {
-                cs.from(getProject().zipTree(awbFile));
-                cs.into(apContext.getExtractedBaseAwbFolder(awbSoName));
-                // TODO:支持多dex
-                cs.rename("classes.dex", "classes2.dex");
-                //cs.exclude("classes*.dex");
-
-                return cs;
-            }
-        });
     }
 
     // 生成增量空的AndroidManifest.xml

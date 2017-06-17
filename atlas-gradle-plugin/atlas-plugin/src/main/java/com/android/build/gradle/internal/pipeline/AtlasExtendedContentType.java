@@ -33,7 +33,7 @@ public enum AtlasExtendedContentType implements QualifiedContent.ContentType {
             builder.add(extendedContentType);
         }
         try {
-            Field field = ExtendedContentType.class.getDeclaredField("");
+            Field field = ExtendedContentType.class.getDeclaredField("allContentTypes");
             field.setAccessible(true);
             Field modifiersField = Field.class.getDeclaredField("modifiers");
             modifiersField.setAccessible(true);

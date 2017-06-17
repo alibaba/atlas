@@ -6,6 +6,7 @@ import java.util.Set;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -129,8 +130,8 @@ public class AwbPackagingScope implements PackagingScope {
             && awbBundle.getBaseAwbDependencies() != null && awbBundle.getBaseAwbDependencies().size() > 1) {
             String awbSoName = awbBundle.getAwbSoName();
             if (awbSoName != null) {
-                File baseAwb
-                    = appVariantOutputContext.getVariantContext().apContext.getExtractedBaseAwbFolder(awbSoName);
+                ApContext apContext = appVariantOutputContext.getVariantContext().apContext;
+                File baseAwb = apContext.getIncrementalBaseAwbFile(awbSoName);
                 javaResourcesLocations.add(baseAwb);
             }
         }
