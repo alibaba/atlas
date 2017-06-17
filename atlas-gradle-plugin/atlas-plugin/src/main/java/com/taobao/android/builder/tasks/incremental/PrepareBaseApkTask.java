@@ -30,7 +30,6 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.gradle.api.Project;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputDirectory;
@@ -64,18 +63,23 @@ public class PrepareBaseApkTask extends IncrementalTask {
     protected void doFullTaskAction() throws IOException {
         File outputFile = getOutputFile();
         FileUtils.deleteIfExists(outputFile);
-        Project project = getProject();
         File baseApk = getBaseApk();
-        int dexFilesCount = getDexFilesCount();
         ZFile baseApApkZip = new ZFile(baseApk);
         ZFile baseApkZip = new ZFile(outputFile);
+
+        //解压apk
         Predicate<String> predicate;
         if (isCreateTPatch()) {
+            //解压classes.dex文件
             predicate = s -> !s.endsWith(DOT_DEX);
         } else {
+            // 不解压签名文件
             predicate = s -> "res/drawable/abc_wb_textfield_cdf.jpg".equals(s) || s.startsWith("META-INF/");
         }
         baseApkZip.mergeFrom(baseApApkZip, predicate);
+
+        //向后移动classes.dex文件
+        int dexFilesCount = getDexFilesCount();
         if (dexFilesCount > 0) {
             int i;
             for (i = 1; ; i++) {
@@ -85,16 +89,21 @@ public class PrepareBaseApkTask extends IncrementalTask {
                 }
             }
             for (i--; i > 0; i--) {
-                StoredEntry entry = baseApkZip.get("classes" + (i == 1 ? "" : i) + ".dex");
-                //entry.delete();
-                delete(baseApkZip, entry);
-                CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
-                String name = "classes" + (i + dexFilesCount) + ".dex";
-                setName(cdh, name);
-                addToEntries(baseApkZip, entry);
+                String name = "classes" + (i == 1 ? "" : i) + ".dex";
+                String to = "classes" + (i + dexFilesCount) + ".dex";
+                renameTo(baseApkZip, name, to);
             }
         }
         baseApkZip.close();
+    }
+
+    private static void renameTo(ZFile zFile, String name, String to) {
+        StoredEntry entry = zFile.get(name);
+        //entry.delete();
+        delete(zFile, entry);
+        CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
+        setName(cdh, to);
+        addToEntries(zFile, entry);
     }
 
     private static Field sName;
