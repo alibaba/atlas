@@ -348,7 +348,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAllDependenciesTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
-                //增量preBuild任务
+                //增量任务
                 if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
                     mtlTaskContextList.add(new MtlTaskContext(PreIncrementalBuildTask.ConfigAction.class, null));
                 }
