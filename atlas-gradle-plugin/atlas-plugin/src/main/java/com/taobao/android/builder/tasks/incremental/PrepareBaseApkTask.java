@@ -77,12 +77,15 @@ public class PrepareBaseApkTask extends IncrementalTask {
         }
         baseApkZip.mergeFrom(baseApApkZip, predicate);
         if (dexFilesCount > 0) {
-            for (int i = 1; ; i++) {
+            int i;
+            for (i = 1; ; i++) {
                 StoredEntry entry = baseApApkZip.get("classes" + (i == 1 ? "" : i) + ".dex");
                 if (entry == null) {
                     break;
                 }
-                entry = baseApkZip.get("classes" + (i == 1 ? "" : i) + ".dex");
+            }
+            for (i--; i > 0; i--) {
+                StoredEntry entry = baseApkZip.get("classes" + (i == 1 ? "" : i) + ".dex");
                 //entry.delete();
                 delete(baseApkZip, entry);
                 CentralDirectoryHeader cdh = entry.getCentralDirectoryHeader();
