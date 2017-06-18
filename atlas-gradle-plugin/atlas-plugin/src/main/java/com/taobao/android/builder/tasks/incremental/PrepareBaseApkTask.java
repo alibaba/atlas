@@ -91,13 +91,13 @@ public class PrepareBaseApkTask extends IncrementalTask {
             for (i--; i > 0; i--) {
                 String name = "classes" + (i == 1 ? "" : i) + ".dex";
                 String to = "classes" + (i + dexFilesCount) + ".dex";
-                renameTo(baseApkZip, name, to);
+                renameEntry(baseApkZip, name, to);
             }
         }
         baseApkZip.close();
     }
 
-    private static void renameTo(ZFile zFile, String name, String to) {
+    private static void renameEntry(ZFile zFile, String name, String to) {
         StoredEntry entry = zFile.get(name);
         //entry.delete();
         delete(zFile, entry);
