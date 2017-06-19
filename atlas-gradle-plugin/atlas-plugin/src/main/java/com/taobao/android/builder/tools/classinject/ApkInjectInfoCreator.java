@@ -243,9 +243,9 @@ public class ApkInjectInfoCreator {
 
         injectParam.version = appVariantContext.getVariantConfiguration().getVersionName();
 
-        AtlasDependencyTree atlasDependencyTree
-            = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getScope().
-            getVariantConfiguration().getFullName());
+        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+            appVariantContext.getScope().
+                getVariantConfiguration().getFullName());
 
         List<BasicBundleInfo> basicBundleInfos = new ArrayList<BasicBundleInfo>();
 
@@ -303,14 +303,14 @@ public class ApkInjectInfoCreator {
         //    autoStartBundles.add(0, updateConfig.getSdkPkgName());
         //}
         //
-        injectParam.autoStartBundles = StringUtils.join(appVariantContext.getAtlasExtension()
-                                                                         .getTBuildConfig()
-                                                                         .getAutoStartBundles(), ",");
+        injectParam.autoStartBundles = StringUtils.join(
+            appVariantContext.getAtlasExtension().getTBuildConfig().getAutoStartBundles(), ",");
         injectParam.preLaunch = appVariantContext.getAtlasExtension().getTBuildConfig().getPreLaunch();
         mergeBundleInfos(appVariantContext, injectParam);
         return injectParam;
     }
 
+    // 增量编译atlasFrameworkProperties.json基线包合并
     public void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam) {
         if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
             File atlasFrameworkPropertiesFile = new File(appVariantContext.apContext.getApExploredFolder(),
@@ -323,8 +323,8 @@ public class ApkInjectInfoCreator {
                                                                       });
             FrameworkProperties atlasFrameworkProperties;
             try {
-                atlasFrameworkProperties = JSON.parseObject(Files.toString(atlasFrameworkPropertiesFile,
-                                                                           Charsets.UTF_8), FrameworkProperties.class);
+                atlasFrameworkProperties = JSON.parseObject(
+                    Files.toString(atlasFrameworkPropertiesFile, Charsets.UTF_8), FrameworkProperties.class);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -334,7 +334,7 @@ public class ApkInjectInfoCreator {
             for (BasicBundleInfo basicBundleInfo : basicBundleInfos) {
                 BasicBundleInfo baseBasicBundleInfo = Iterables.find(baseBundleInfos,
                                                                      input -> basicBundleInfo.getPkgName()
-                                                                                             .equals(input.getPkgName()));
+                                                                         .equals(input.getPkgName()));
 
                 if (baseBasicBundleInfo == null) {
                     mergeBasicBundleInfos.add(basicBundleInfo);
