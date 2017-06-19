@@ -215,72 +215,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.tasks.PrepareLibraryTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
+import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.model.SoLibrary;
-import com.taobao.android.builder.dependency.parser.DependencyLocationManager;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-import org.apache.commons.io.FileUtils;
 import org.dom4j.DocumentException;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectories;
+import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.util.GUtil;
+
+import static com.android.SdkConstants.DOT_JAR;
+import static com.android.SdkConstants.FD_AAR_LIBS;
 
 /**
- * 1. 自己控制并发，可以提高性能
- * 2. solib 的解压准备
+ * 1. 增加localjar
  *
  * @author wuzhong
  */
-public class PrepareAllDependenciesTask extends BaseTask {
+public class AddLocalJarTask extends BaseTask {
 
-    static final String taskName = "prepareAllDependencies";
-
-    AppVariantOutputContext appVariantOutputContext;
+    static final String taskName = "addLocalJar";
 
     AtlasDependencyTree atlasDependencyTree;
 
     AppVariantContext appVariantContext;
-
-    @InputFiles
-    public List<File> getInputDependencies() {
-
-        List<File> files = new ArrayList<>();
-
-        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            files.add(soLibrary.getSoLibFile());
-        }
-
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-            files.add(aarBundle.getBundle());
-        }
-
-        return files;
-    }
-
-    @OutputDirectories
-    public List<File> getOutputDirs() {
-        List<File> files = new ArrayList<>();
-        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            files.add(soLibrary.getFolder());
-        }
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-            files.add(aarBundle.getFolder());
-        }
-        return files;
-    }
-
-    ;
 
     @TaskAction
     void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
@@ -288,91 +250,67 @@ public class PrepareAllDependenciesTask extends BaseTask {
                                                                                    getLogger(),
                                                                                    0);
 
-        List<Runnable> runnables = new ArrayList<>();
-
-        for (final SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            runnables.add(new Runnable() {
-                @Override
-                public void run() {
-
-                    LibraryCache.unzipAar(soLibrary.getSoLibFile(), soLibrary.getFolder(), getProject());
-
-                }
-            });
-        }
-
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-
-            if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getFolder())) {
-
-                runnables.add(new Runnable() {
-
-                    @Override
-                    public void run() {
-
-                        getLogger().info(
-                            "prepare1 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
-
-                        if (aarBundle.getFolder().exists()) {
-                            try {
-                                FileUtils.deleteDirectory(aarBundle.getFolder());
-                                aarBundle.getFolder().mkdirs();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        PrepareLibraryTask.extract(aarBundle.getBundle(), aarBundle.getFolder(), getProject());
-
-                    }
-                });
-
-            } else {
-                getLogger().info(
-                    "prepare2 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
-                prepareLibrary(aarBundle);
+        Project project = getProject();
+        //TODO localjar for main dex must on
+        for( AndroidLibrary androidLibrary : atlasDependencyTree.getMainBundle().getAllLibraryAars()){
+            List<File> localJars = getLocalJars(androidLibrary.getFolder());
+            //System.out.println("get local libs");
+            for (File file : localJars) {
+                project.getLogger().info("add local jar to dependency " + file.getAbsolutePath() + "->" + androidLibrary
+                    .getResolvedCoordinates().toString());
             }
-
+            androidLibrary.getLocalJars().addAll(localJars);
         }
 
-        executorServicesHelper.execute(runnables);
+        if (isLocalJarEnabled(project)) {
+            List<AndroidLibrary> bundleLibraries = new ArrayList<>(atlasDependencyTree.getAllAndroidLibrarys());
+            bundleLibraries.removeAll(atlasDependencyTree.getMainBundle().getAllLibraryAars());
+            for (final AndroidLibrary aarBundle : bundleLibraries) {
+                List<File> localJars = getLocalJars(aarBundle.getFolder());
+                //System.out.println("get local libs");
+                for (File file : localJars) {
+                    project.getLogger().info("add local jar to dependency " + file.getAbsolutePath() + "->" + aarBundle
+                        .getResolvedCoordinates().toString());
+                }
+                aarBundle.getLocalJars().addAll(localJars);
+            }
+        }
 
     }
 
-    private void prepareLibrary(AndroidLibrary library) {
-        getLogger().info("prepare bundle " + library.getResolvedCoordinates());
-
-        String bundleName = GUtil.toCamelCase(library.getName().replaceAll("\\:", " "));
-
-        String taskName = "prepare" + bundleName + "Library";
-
-        if (null != getProject().getTasks().findByName(taskName)) {
-            return;
+    private boolean isLocalJarEnabled(Project project) {
+        boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
+        if (project.hasProperty("localJarEnabled")) {
+            localJarEnabled = "true".equals(project.property("localJarEnabled"));
         }
-
-        PrepareLibraryTask prepareLibraryTask = getProject().getTasks().create(
-            taskName, PrepareLibraryTask.class);
-
-        prepareLibraryTask.setDescription("Prepare " + library.getName());
-        prepareLibraryTask.setVariantName("");
-
-        prepareLibraryTask.init(
-            library.getBundle(),
-            library.getFolder(),
-            AndroidGradleOptions.getBuildCache(getProject()),
-            library.getResolvedCoordinates());
-
-        AtlasBuildContext.dependencyTraceMap.put(library.getFolder().getAbsolutePath(),
-                                                 library.getResolvedCoordinates());
-
-        prepareLibraryTask.execute();
-
+        return localJarEnabled;
     }
 
-    public static class ConfigAction extends MtlBaseTaskAction<PrepareAllDependenciesTask> {
+    private List<File> getLocalJars(File rootDir) {
+        List<File> localJars = Lists.newArrayList();
+        List<File> rootDirs = new ArrayList<>();
+        rootDirs.add(new File(rootDir, FD_AAR_LIBS));
+        rootDirs.add(new File(rootDir, "jars/"+FD_AAR_LIBS));
+
+        for (File root : rootDirs){
+            File[] jarList = root.listFiles();
+            if (jarList != null) {
+                for (File jars : jarList) {
+                    if (jars.isFile() && jars.getName().endsWith(DOT_JAR)) {
+                        localJars.add(jars);
+                    }
+                }
+            }
+        }
+
+        return localJars;
+    }
+
+
+
+    public static class ConfigAction extends MtlBaseTaskAction<AddLocalJarTask> {
 
         AppVariantContext appVariantContext;
-
         public ConfigAction(AppVariantContext appVariantContext,
                             BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
@@ -385,19 +323,17 @@ public class PrepareAllDependenciesTask extends BaseTask {
         }
 
         @Override
-        public Class<PrepareAllDependenciesTask> getType() {
-            return PrepareAllDependenciesTask.class;
+        public Class<AddLocalJarTask> getType() {
+            return AddLocalJarTask.class;
         }
 
         @Override
-        public void execute(PrepareAllDependenciesTask prepareAllDependenciesTask) {
+        public void execute(AddLocalJarTask localJarTask) {
 
-            super.execute(prepareAllDependenciesTask);
-            prepareAllDependenciesTask.appVariantContext = appVariantContext;
-            prepareAllDependenciesTask.appVariantOutputContext = getAppVariantOutputContext();
-
-            prepareAllDependenciesTask.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                prepareAllDependenciesTask.getVariantName());
+            super.execute(localJarTask);
+            localJarTask.appVariantContext =appVariantContext;
+            localJarTask.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                localJarTask.getVariantName());
         }
     }
 }
