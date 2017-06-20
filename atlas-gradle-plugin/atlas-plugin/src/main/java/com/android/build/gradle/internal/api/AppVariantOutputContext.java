@@ -472,6 +472,7 @@ public class AppVariantOutputContext {
             if (variantAbiFilters.size() > 1) {
                 Collection<String> deviceAbis = Arrays.asList(abiString.split(","));
                 for (String abi : deviceAbis) {
+                    // The entry that comes in first (i.e. with a lower index) has the higher priority.
                     if (variantAbiFilters.contains(abi)) {
                         return abi;
                     }
