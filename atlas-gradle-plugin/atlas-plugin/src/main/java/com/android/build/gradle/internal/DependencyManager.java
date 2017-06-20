@@ -224,6 +224,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.AppPlugin;
 import com.android.build.gradle.internal.dependency.DependencyGraph;
 import com.android.build.gradle.internal.dependency.MutableDependencyDataMap;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -834,7 +835,10 @@ public class DependencyManager {
                         }
 
                         // if we don't have one, need to create it.
-                        if (EXT_LIB_ARCHIVE.equals(artifact.getExtension())) {
+                        if (EXT_LIB_ARCHIVE.equals(artifact.getExtension()) ||
+                            //不是app工程，并且是awb依赖
+                            ("awb".equals(artifact.getExtension())  && !project.getPlugins().hasPlugin(AppPlugin.class))) {
+
                             if (DEBUG_DEPENDENCY) {
                                 printIndent(indent, "TYPE: AAR");
                             }
