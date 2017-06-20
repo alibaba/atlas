@@ -243,27 +243,28 @@ public class DependencyGroup {
                            Configuration bundleClasspath,
                            Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
 
-        Set<? extends DependencyResult> compileDependencies = new HashSet<>(compileClasspath.getIncoming()
+        Set<? extends DependencyResult> compileDependencies = compileClasspath.getIncoming()
                                                                                 .getResolutionResult()
                                                                                 .getRoot()
-                                                                                .getDependencies());
+                                                                                .getDependencies();
 
-        Set<DependencyResult> bundleCompileDependencies = new HashSet<>(bundleClasspath.getIncoming()
+        Set<? extends DependencyResult> bundleCompileDependencies = bundleClasspath.getIncoming()
                                                                             .getResolutionResult()
                                                                             .getRoot()
-                                                                            .getDependencies());
+                                                                            .getDependencies();
 
+
+
+        Set<String> bundleSets = getBundleDependencies(compileClasspath, bundleCompileDependencies);
         //分析出 compileDependencies 中的bundle依赖
-        for (DependencyResult dependencyResult : new HashSet<>(compileDependencies)) {
-
+        for (DependencyResult dependencyResult : compileDependencies) {
             if (DependencyConvertUtils.isAwbDependency(dependencyResult, artifacts)) {
-                bundleCompileDependencies.add(dependencyResult);
-                compileDependencies.remove(dependencyResult);
+                bundleSets.add(dependencyResult.toString());
             }
 
         }
 
-        Set<String> bundleSets = getBundleDependencies(compileClasspath, bundleCompileDependencies);
+
         Set<String> bundleAddedSets = new HashSet<>();
         for (DependencyResult dependencyResult : compileDependencies) {
             if (!bundleSets.contains(dependencyResult.toString())) {
