@@ -211,6 +211,7 @@ package com.android.build.gradle.internal.api;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -453,19 +454,31 @@ public class AppVariantOutputContext {
     }
 
     public File getAwbPackageOutputFile(AwbBundle awbBundle) {
-        Project project = outputScope.getGlobalScope().getProject();
-        String abiString = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
-        Collection<String> variantAbiFilters = outputScope.getVariantScope().getVariantConfiguration()
-            .getSupportedAbis();
-        if (!abiString.isEmpty() && variantAbiFilters.size() > 1) {
-        } else {
-        }
         String awbOutputName = awbBundle.getAwbSoName();
-        File file = new File(variantContext.getAwbApkOutputDir(), "lib/armeabi" + File.separator + awbOutputName);
+        File file = new File(variantContext.getAwbApkOutputDir(),
+                             "lib/" + findSupportedAbi() + File.separator + awbOutputName);
         file.getParentFile().mkdirs();
 
         awbBundle.outputBundleFile = file;
         return file;
+    }
+
+    public String findSupportedAbi() {
+        Project project = outputScope.getGlobalScope().getProject();
+        String abiString = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
+        if (!abiString.isEmpty()) {
+            Collection<String> variantAbiFilters = outputScope.getVariantScope().getVariantConfiguration()
+                .getSupportedAbis();
+            if (variantAbiFilters.size() > 1) {
+                Collection<String> deviceAbis = Arrays.asList(abiString.split(","));
+                for (String abi : deviceAbis) {
+                    if (variantAbiFilters.contains(abi)) {
+                        return abi;
+                    }
+                }
+            }
+        }
+        return "armeabi";
     }
 
     /**
@@ -474,6 +487,7 @@ public class AppVariantOutputContext {
      * @param awbBundle
      * @return
      */
+
     public File getAwbPackageOutAppOutputFile(AwbBundle awbBundle) {
         File outFolder = outputScope.getGlobalScope().getOutputsDir();
         String awbOutputName = awbBundle.getAwbSoName();
