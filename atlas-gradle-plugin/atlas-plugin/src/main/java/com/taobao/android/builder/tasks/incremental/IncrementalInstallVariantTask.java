@@ -1,7 +1,8 @@
 package com.taobao.android.builder.tasks.incremental;
 
 import java.io.File;
-import java.util.Arrays;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -17,10 +18,17 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.sdk.SdkInfo;
+import com.android.builder.testing.ConnectedDevice;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
+import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.IDevice;
+import com.android.ddmlib.MultiLineReceiver;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
+import com.android.ddmlib.SyncException;
+import com.android.ddmlib.TimeoutException;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.utils.ILogger;
@@ -39,8 +47,6 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
-
-import static com.taobao.android.builder.tasks.awo.utils.AwoInstaller.setAdbInitialized;
 
 /**
  * @author chenhjohn
@@ -83,7 +89,9 @@ public class IncrementalInstallVariantTask extends BaseTask {
     }
 
     @TaskAction
-    public void install() throws DeviceException, ProcessException, InterruptedException {
+    public void install()
+        throws DeviceException, ProcessException, InterruptedException, TimeoutException, AdbCommandRejectedException,
+               SyncException, IOException, ShellCommandUnresponsiveException {
         final ILogger iLogger = getILogger();
         DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(), getTimeOutInMs(), iLogger);
         deviceProvider.init();
@@ -91,48 +99,65 @@ public class IncrementalInstallVariantTask extends BaseTask {
         String variantName = variantConfig.getFullName();
         int successfulInstallCount = 0;
         List<? extends DeviceConnector> devices = deviceProvider.getDevices();
-        for (final DeviceConnector device : devices) {
-        }
-        if (devices.size() > 1) {
-            throw new RuntimeException("too much devices be connected,please disconnect the others and try again");
-        }
-        successfulInstallCount = 1;
-        setAdbInitialized(true);
-        DeviceConnector device = Iterables.getOnlyElement(devices);
-        File mainDexFile = getMainDexFile();
-        Collection<File> awbApkFiles = getAwbApkFiles();
-        if (awbApkFiles != null) {
-            for (File awbApkFile : awbApkFiles) {
-                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", awbApkFile, device.getName(),
+        for (final IDevice device : Iterables.transform(devices, IncrementalInstallVariantTask::getDevice)) {
+            Collection<File> awbApkFiles = getAwbApkFiles();
+            if (awbApkFiles != null) {
+                for (File awbApkFile : awbApkFiles) {
+                    getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", awbApkFile, device.getName(),
+                                          projectName, variantName);
+
+                    installPatch(device, awbApkFile, getAwbPackageName(awbApkFile));
+                }
+            }
+
+            File mainDexFile = getMainDexFile();
+            if (mainDexFile != null) {
+                getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}", mainDexFile, device.getName(),
                                       projectName, variantName);
 
-                installPatch(awbApkFile, getAwbPackageName(awbApkFile));
+                installPatch(device, mainDexFile, "com.taobao.maindex");
             }
-        }
-        if (mainDexFile != null) {
-
-            getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}", mainDexFile, device.getName(),
+            getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", getAppPackageName(), device.getName(),
                                   projectName, variantName);
+            device.executeShellCommand(
+                "am " + "broadcast " + "-a " + "com.taobao.atlas.intent.PATCH_APP " + "-e " + "pkg "
+                    + getAppPackageName(), //$NON-NLS-1$
+                new MultiLineReceiver() {
+                    @Override
+                    public void processNewLines(String[] lines) {
+                    }
 
-            installPatch(mainDexFile, "com.taobao.maindex");
-            // AwoInstaller.installAwoSo(getBuilder(),
-            //                           mainDexFile,
-            //                           getAppPackageName(),
-            //                           getLogger(),
-            //                           "libcom_taobao_maindex.so");
+                    @Override
+                    public boolean isCancelled() {
+                        return false;
+                    }
+                });
+            successfulInstallCount++;
         }
-        getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", getAppPackageName(), device.getName(), projectName,
-                              variantName);
-        runCommand(Arrays.asList("shell", "am force-stop " + getAppPackageName()));
-        runCommand(
-            Arrays.asList("shell", "monkey" + " -p " + getAppPackageName() + " -c android.intent.category.LAUNCHER 1"));
-        // runCommand(Arrays.asList("shell" ,"am start" + " -n " + getAppPackageName() + " -a android.intent.action.MAIN"
-        //                          + " -c android.intent.category.LAUNCHER"));
+
         if (successfulInstallCount == 0) {
             throw new GradleException("Failed to install on any devices.");
         } else {
             getLogger().quiet("Installed on {} {}.", successfulInstallCount,
                               successfulInstallCount == 1 ? "device" : "devices");
+        }
+    }
+
+    private static Field sDevice;
+
+    private static IDevice getDevice(DeviceConnector device) {
+        if (sDevice == null) {
+            try {
+                sDevice = ConnectedDevice.class.getDeclaredField("iDevice");
+                sDevice.setAccessible(true);
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        try {
+            return (IDevice)sDevice.get(device);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -148,12 +173,11 @@ public class IncrementalInstallVariantTask extends BaseTask {
         return name.substring(3).replace("_", ".");
     }
 
-    private boolean installPatch(File patch, String name) {
-
+    private void installPatch(IDevice device, File patch, String name)
+        throws TimeoutException, AdbCommandRejectedException, SyncException, IOException {
         String PATCH_INSTALL_DIRECTORY = PATCH_INSTALL_DIRECTORY_PREFIX + getAppPackageName()
             + PATCH_INSTALL_DIRECTORY_SUFFIX;
-        List<String> cmd = Arrays.asList("push", patch.getAbsolutePath(), PATCH_INSTALL_DIRECTORY + name + PATCH_NAME);
-        return runCommand(cmd);
+        device.pushFile(patch.getAbsolutePath(), PATCH_INSTALL_DIRECTORY);
     }
 
     private boolean runCommand(List<String> cmd) {
