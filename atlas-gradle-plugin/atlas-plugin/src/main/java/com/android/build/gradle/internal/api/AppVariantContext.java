@@ -210,19 +210,20 @@
 package com.android.build.gradle.internal.api;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
-import com.android.utils.FileUtils;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -303,19 +304,21 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     }
 
     public File getAwbLibraryDirForDataBinding(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getIntermediatesDir() + "/transforms-awbs/databinding/"
-                        + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+        return new File(
+            scope.getGlobalScope().getIntermediatesDir() + "/transforms-awbs/databinding/" + getVariantConfiguration()
+                .getDirName() + "/" + awbBundle.getName());
     }
 
     public File getAwbLayoutInfoOutputForDataBinding(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getIntermediatesDir() + "/data-binding-info-awbs/"
-                        + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+        return new File(
+            scope.getGlobalScope().getIntermediatesDir() + "/data-binding-info-awbs/" + getVariantConfiguration()
+                .getDirName() + "/" + awbBundle.getName());
     }
 
     public File getJAwbavaOutputDir(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-classes/" + variantData.getVariantConfiguration().getDirName() + "/"
-                        + awbBundle.getName());
+                        "/awb-classes/" + variantData.getVariantConfiguration().getDirName() + "/" + awbBundle
+                            .getName());
     }
 
     public File getAwbClassOutputForDataBinding(AwbBundle awbBundle) {
@@ -324,14 +327,16 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     }
 
     public File getAwbLayoutFolderOutputForDataBinding(AwbBundle awbBundle) {
-        return new File(scope.getGlobalScope().getIntermediatesDir() + "/data-binding-layout-out-awb/"
-                        + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+        return new File(
+            scope.getGlobalScope().getIntermediatesDir() + "/data-binding-layout-out-awb/" + getVariantConfiguration()
+                .getDirName() + "/" + awbBundle.getName());
     }
 
     public File getAwbDataBindingMergeArtifacts(AwbBundle awbBundle) {
 
-        return new File(scope.getGlobalScope().getIntermediatesDir() + "/data-binding-compiler-awbs/"
-                        + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+        return new File(
+            scope.getGlobalScope().getIntermediatesDir() + "/data-binding-compiler-awbs/" + getVariantConfiguration()
+                .getDirName() + "/" + awbBundle.getName());
 
         //return new File(scope.getBuildFolderForDataBindingCompiler() +  "-" + awbBundle.getName(),
         //                     DataBindingBuilder.ARTIFACT_FILES_DIR_FROM_LIBS);
@@ -350,18 +355,18 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public File getModifyManifest(AndroidLibrary androidLibrary) {
         return new File(getModifyManifestDir(),
-                        androidLibrary.getResolvedCoordinates().getGroupId() + "."
-                        + androidLibrary.getResolvedCoordinates().getArtifactId() + ".xml");
+                        androidLibrary.getResolvedCoordinates().getGroupId() + "." + androidLibrary
+                            .getResolvedCoordinates().getArtifactId() + ".xml");
     }
 
     @NonNull
     public Collection<File> getAwbApkFiles() {
-        File awbApkOutputDir = getAwbApkOutputDir();
-        if (!awbApkOutputDir.exists()) {
+        File awbSoOutputDir = getAwbSoOutputDir();
+        if (!awbSoOutputDir.exists()) {
             return null;
         }
 
-        return FileUtils.find(awbApkOutputDir, Pattern.compile("\\.so$"));
+        return ImmutableList.copyOf(awbSoOutputDir.listFiles());
     }
 
     public File getAwbApkOutputDir() {
@@ -387,13 +392,11 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public AppVariantOutputContext getAppVariantOutputContext(BaseVariantOutputData vod) {
 
-        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)this.getOutputContextMap()
-                                                                                       .get(vod.getFullName());
+        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)this.getOutputContextMap().get(
+            vod.getFullName());
 
         if (null == appVariantOutputContext) {
-            appVariantOutputContext = new AppVariantOutputContext(vod.getFullName(),
-                                                                  this,
-                                                                  vod.getScope(),
+            appVariantOutputContext = new AppVariantOutputContext(vod.getFullName(), this, vod.getScope(),
                                                                   vod.variantData);
             this.getOutputContextMap().put(vod.getFullName(), appVariantOutputContext);
         }
@@ -404,5 +407,27 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     public File getAtlaSourceDir() {
         return new File(scope.getGlobalScope().getGeneratedDir(),
                         "source/atlascore/" + getVariantConfiguration().getDirName());
+    }
+
+    public File getAwbSoOutputDir() {
+        return new File(getAwbApkOutputDir(), "lib/" + findSupportedAbi());
+    }
+
+    public String findSupportedAbi() {
+        Project project = getProject();
+        String abiString = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
+        if (!abiString.isEmpty()) {
+            Collection<String> variantAbiFilters = getScope().getVariantConfiguration().getSupportedAbis();
+            if (variantAbiFilters.size() > 1) {
+                Collection<String> deviceAbis = Arrays.asList(abiString.split(","));
+                for (String abi : deviceAbis) {
+                    // The entry that comes in first (i.e. with a lower index) has the higher priority.
+                    if (variantAbiFilters.contains(abi)) {
+                        return abi;
+                    }
+                }
+            }
+        }
+        return "armeabi";
     }
 }

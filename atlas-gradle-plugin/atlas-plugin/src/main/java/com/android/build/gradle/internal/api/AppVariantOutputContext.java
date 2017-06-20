@@ -211,14 +211,11 @@ package com.android.build.gradle.internal.api;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
@@ -231,7 +228,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.builder.profile.ThreadRecorder;
-import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -239,7 +235,6 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
 import com.taobao.android.builder.tasks.incremental.AwbVariantScopeImpl;
 import com.taobao.android.object.ArtifactBundleInfo;
-import org.gradle.api.Project;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
@@ -251,7 +246,7 @@ public class AppVariantOutputContext {
 
     private final String name;
 
-    private final AppVariantContext variantContext;
+    final AppVariantContext variantContext;
 
     private final VariantOutputScope outputScope;
 
@@ -405,31 +400,11 @@ public class AppVariantOutputContext {
 
     public File getAwbPackageOutputFile(AwbBundle awbBundle) {
         String awbOutputName = awbBundle.getAwbSoName();
-        File file = new File(variantContext.getAwbApkOutputDir(),
-                             "lib/" + findSupportedAbi() + File.separator + awbOutputName);
+        File file = new File(variantContext.getAwbSoOutputDir(), awbOutputName);
         file.getParentFile().mkdirs();
 
         awbBundle.outputBundleFile = file;
         return file;
-    }
-
-    public String findSupportedAbi() {
-        Project project = outputScope.getGlobalScope().getProject();
-        String abiString = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
-        if (!abiString.isEmpty()) {
-            Collection<String> variantAbiFilters = outputScope.getVariantScope().getVariantConfiguration()
-                .getSupportedAbis();
-            if (variantAbiFilters.size() > 1) {
-                Collection<String> deviceAbis = Arrays.asList(abiString.split(","));
-                for (String abi : deviceAbis) {
-                    // The entry that comes in first (i.e. with a lower index) has the higher priority.
-                    if (variantAbiFilters.contains(abi)) {
-                        return abi;
-                    }
-                }
-            }
-        }
-        return "armeabi";
     }
 
     /**
