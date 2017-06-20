@@ -216,20 +216,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
-import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.pipeline.TransformTask;
-import com.android.build.gradle.internal.pipeline.TransformTask.ConfigActionCallback;
-import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
-import com.android.build.gradle.internal.scope.TransformGlobalScope;
-import com.android.build.gradle.internal.scope.TransformVariantScope;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.scope.VariantScopeImpl;
@@ -240,7 +232,6 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.builder.profile.ThreadRecorder;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -389,48 +380,7 @@ public class AppVariantOutputContext {
                 TransformManager transformManager = new TransformManager(new AndroidTaskRegistry(),
                                                                          outputScope.getVariantScope().getGlobalScope()
                                                                              .getAndroidBuilder().getErrorReporter(),
-                                                                         ThreadRecorder.get()) {
-                    @Override
-                    public <T extends Transform> Optional<AndroidTask<TransformTask>> addTransform(
-                        TaskFactory taskFactory, TransformVariantScope scope, T transform,
-                        ConfigActionCallback<T> callback) {
-                        return super.addTransform(taskFactory, new TransformVariantScope() {
-
-                            @Override
-                            public String getFullVariantName() {
-                                return scope.getFullVariantName();
-                            }
-
-                            @Override
-                            public TransformGlobalScope getGlobalScope() {
-                                return scope.getGlobalScope();
-                            }
-
-                            @Override
-                            public String getTaskName(String prefix) {
-                                return scope.getTaskName(prefix) + awbBundle.getName();
-                            }
-
-                            @Override
-                            public String getTaskName(String prefix, String suffix) {
-                                return scope.getTaskName(prefix, suffix) + awbBundle.getName();
-                            }
-
-                            @Override
-                            public String getDirName() {
-                                return scope.getDirName();
-                            }
-
-                            @Override
-                            public Collection<String> getDirectorySegments() {
-                                ImmutableList.Builder<String> builder = ImmutableList.builder();
-                                builder.add(awbBundle.getName());
-                                builder.addAll(scope.getDirectorySegments());
-                                return builder.build();
-                            }
-                        }, transform, callback);
-                    }
-                };
+                                                                         ThreadRecorder.get());
                 awbTransformManagerMap.put(awbBundle.getName(), transformManager);
             }
         }
