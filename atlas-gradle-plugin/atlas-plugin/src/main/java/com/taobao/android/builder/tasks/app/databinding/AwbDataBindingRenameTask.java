@@ -265,6 +265,10 @@ public class AwbDataBindingRenameTask extends BaseTask {
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getDataBindingBundles().contains(awbBundle.getPackageName())){
+                continue;
+            }
+
             if (!awbBundle.isDataBindEnabled()) {
                 continue;
             }

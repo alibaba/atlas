@@ -251,13 +251,15 @@ public class JavacAwbsTask extends BaseTask {
         boolean isDatabindEnabled = null != androidExtension.getDataBinding() && androidExtension.getDataBinding()
             .isEnabled();
 
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName, getLogger(),
-                                                                                   isDatabindEnabled ? 1 : 0);
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName, getLogger(),0);
+        ExecutorServicesHelper executorServicesHelper2 = new ExecutorServicesHelper(taskName+"databinding", getLogger(),
+                                                                                    1);
         List<Runnable> runnables = new ArrayList<>();
+        List<Runnable> runnables2 = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
-            runnables.add(new Runnable() {
+            Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
 
@@ -285,11 +287,18 @@ public class JavacAwbsTask extends BaseTask {
                     }
 
                 }
-            });
+            };
+
+            if (appVariantOutputContext.getVariantContext().isDataBindEnabled(awbBundle)){
+                runnables2.add(runnable);
+            }else {
+                runnables.add(runnable);
+            }
 
         }
 
         executorServicesHelper.execute(runnables);
+        executorServicesHelper2.execute(runnables2);
 
     }
 
