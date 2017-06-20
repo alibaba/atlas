@@ -464,7 +464,7 @@ public class DependencyResolver {
             // TODO: 强制不忽略
             // 一级依赖不忽略
             // 版本号太低忽略
-            if (/*parent != null &&*/ apDependencies.hasSameResolvedDependency(moduleVersion)) {
+            if (parent != null && apDependencies.hasSameResolvedDependency(moduleVersion)) {
                 return true;
             }
         }
