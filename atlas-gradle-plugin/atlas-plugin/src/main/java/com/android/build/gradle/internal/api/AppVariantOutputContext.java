@@ -219,6 +219,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.android.build.api.transform.Transform;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -237,6 +238,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.builder.profile.ThreadRecorder;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -245,6 +247,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
 import com.taobao.android.builder.tasks.incremental.AwbVariantScopeImpl;
 import com.taobao.android.object.ArtifactBundleInfo;
+import org.gradle.api.Project;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
@@ -450,6 +453,13 @@ public class AppVariantOutputContext {
     }
 
     public File getAwbPackageOutputFile(AwbBundle awbBundle) {
+        Project project = outputScope.getGlobalScope().getProject();
+        String abiString = Strings.nullToEmpty(AndroidGradleOptions.getBuildTargetAbi(project));
+        Collection<String> variantAbiFilters = outputScope.getVariantScope().getVariantConfiguration()
+            .getSupportedAbis();
+        if (!abiString.isEmpty() && variantAbiFilters.size() > 1) {
+        } else {
+        }
         String awbOutputName = awbBundle.getAwbSoName();
         File file = new File(variantContext.getAwbApkOutputDir(), "lib/armeabi" + File.separator + awbOutputName);
         file.getParentFile().mkdirs();
