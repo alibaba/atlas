@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 import com.android.annotations.NonNull;
@@ -70,8 +69,6 @@ public class IncrementalInstallVariantTask extends BaseTask {
     private BaseVariantData<? extends BaseVariantOutputData> variantData;
 
     private File mainDexFile;
-
-    Set<String> awbBundles;
 
     private Collection<File> awbApkFiles;
 
