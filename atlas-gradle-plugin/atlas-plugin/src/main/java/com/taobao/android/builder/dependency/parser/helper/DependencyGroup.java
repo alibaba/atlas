@@ -228,8 +228,12 @@ import org.gradle.api.artifacts.UnknownConfigurationException;
 import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DependencyGroup {
+
+    private static Logger logger = LoggerFactory.getLogger(DependencyGroup.class);
 
     public List<DependencyResult> compileDependencies = new ArrayList<>();
     public List<DependencyResult> bundleDependencies = new ArrayList<>();
@@ -259,7 +263,12 @@ public class DependencyGroup {
         //分析出 compileDependencies 中的bundle依赖
         for (DependencyResult dependencyResult : compileDependencies) {
             if (DependencyConvertUtils.isAwbDependency(dependencyResult, artifacts)) {
-                bundleSets.add(dependencyResult.toString());
+                String name = dependencyResult.toString();
+                if (!bundleSets.contains(name)) {
+                    bundleSets.add(name);
+                    logger.error("please use bundleCompile for " + name);
+                }
+
             }
 
         }

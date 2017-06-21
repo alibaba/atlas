@@ -228,7 +228,7 @@ tasks.findByName("test").enabled=false
 dependencies {
     compile localGroovy()
     compile gradleApi()
-    compile "com.android.tools.build:gradle:2.3.1"
+    compile "com.android.tools.build:gradle:2.3.3"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
     compile "com.alibaba:fastjson:1.2.6"
@@ -247,5 +247,4 @@ dependencies {
     testCompile "junit:junit:4.11"
 }
 
-version = '2.3.1.beta59.youku-SNAPSHOT'
-
+version = '2.3.3.beta1'
