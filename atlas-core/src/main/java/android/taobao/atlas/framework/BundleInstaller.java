@@ -653,13 +653,9 @@ public class BundleInstaller implements Callable{
     }
 
     private boolean isBundleFileTimeStampMatched(String location,File file){
-//        if(!file.exists() || !AtlasBundleInfoManager.instance().isInternalBundle(location)){
-//            return false;
-//        }
-//        if(file.lastModified() == getTimeStampInApk()){
-//            return true;
-//        }
-//        return false;
+        if(!file.exists() || !AtlasBundleInfoManager.instance().isInternalBundle(location)){
+            return false;
+        }
         return true;
     }
 

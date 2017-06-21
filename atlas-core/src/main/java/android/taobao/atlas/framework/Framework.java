@@ -828,7 +828,7 @@ public final class Framework {
     }
 
     private static File createBundleStorage(String bundleName){
-        if(new File(STORAGE_LOCATION).getUsableSpace()>10*1024*1024){
+        if(new File(STORAGE_LOCATION).getUsableSpace()>5*1024*1024){
             return new File(STORAGE_LOCATION,bundleName);
         }else{
             File externalStorageDir = null;
