@@ -34,8 +34,6 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 
-import static com.android.SdkConstants.DOT_DEX;
-
 /**
  * @author chenhjohn
  * @date 2017/4/24
@@ -71,27 +69,27 @@ public class PrepareBaseApkTask extends IncrementalTask {
         Predicate<String> predicate;
         if (isCreateTPatch()) {
             //解压classes.dex文件
-            predicate = s -> !s.endsWith(DOT_DEX);
+            // predicate = s -> !s.endsWith(DOT_DEX);
         } else {
             // 不解压签名文件
             predicate = s -> "res/drawable/abc_wb_textfield_cdf.jpg".equals(s) || s.startsWith("META-INF/");
-        }
-        baseApkZip.mergeFrom(baseApApkZip, predicate);
+            baseApkZip.mergeFrom(baseApApkZip, predicate);
 
-        //向后移动classes.dex文件
-        int dexFilesCount = getDexFilesCount();
-        if (dexFilesCount > 0) {
-            int i;
-            for (i = 1; ; i++) {
-                StoredEntry entry = baseApApkZip.get("classes" + (i == 1 ? "" : i) + ".dex");
-                if (entry == null) {
-                    break;
+            //向后移动classes.dex文件
+            int dexFilesCount = getDexFilesCount();
+            if (dexFilesCount > 0) {
+                int i;
+                for (i = 1; ; i++) {
+                    StoredEntry entry = baseApApkZip.get("classes" + (i == 1 ? "" : i) + ".dex");
+                    if (entry == null) {
+                        break;
+                    }
                 }
-            }
-            for (i--; i > 0; i--) {
-                String name = "classes" + (i == 1 ? "" : i) + ".dex";
-                String to = "classes" + (i + dexFilesCount) + ".dex";
-                renameEntry(baseApkZip, name, to);
+                for (i--; i > 0; i--) {
+                    String name = "classes" + (i == 1 ? "" : i) + ".dex";
+                    String to = "classes" + (i + dexFilesCount) + ".dex";
+                    renameEntry(baseApkZip, name, to);
+                }
             }
         }
         baseApkZip.close();

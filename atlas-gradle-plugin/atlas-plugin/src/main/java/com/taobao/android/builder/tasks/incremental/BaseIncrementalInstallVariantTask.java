@@ -242,7 +242,10 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
                 public ImmutableSet<File> call() {
                     ImmutableSet.Builder<File> builder = ImmutableSet.builder();
                     //Awb
-                    builder.addAll(appVariantContext.getAwbApkFiles());
+                    Collection awbApkFiles = appVariantContext.getAwbApkFiles();
+                    if (awbApkFiles != null) {
+                        builder.addAll(awbApkFiles);
+                    }
                     //Main
                     AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                         incrementalInstallVariantTask.getVariantName());
