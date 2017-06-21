@@ -118,7 +118,9 @@ public class IncrementalInstallVariantTask extends BaseTask {
             String appPackageName = getAppPackageName();
             getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", appPackageName, device.getName(), projectName,
                                   variantName);
+            //退到后台
             device.executeShellCommand("input keyevent 3",
+                                       //
                                        //$NON-NLS-1$
                                        new MultiLineReceiver() {
                                            @Override
@@ -131,7 +133,8 @@ public class IncrementalInstallVariantTask extends BaseTask {
                                            }
                                        });
 
-            device.executeShellCommand("am " + "kill " + appPackageName,
+            //杀死进程
+            device.executeShellCommand("am " + "force-stop " + appPackageName,
                                        //$NON-NLS-1$
                                        new MultiLineReceiver() {
                                            @Override
@@ -143,6 +146,32 @@ public class IncrementalInstallVariantTask extends BaseTask {
                                                return false;
                                            }
                                        });
+            /*device.executeShellCommand("am " + "kill " + appPackageName,
+                                       //$NON-NLS-1$
+                                       new MultiLineReceiver() {
+                                           @Override
+                                           public void processNewLines(String[] lines) {
+                                           }
+
+                                           @Override
+                                           public boolean isCancelled() {
+                                               return false;
+                                           }
+                                       });*/
+            /*device.executeShellCommand(
+                "am " + "broadcast " + "-a " + "com.taobao.atlas.intent.PATCH_APP " + "-e " + "pkg " + appPackageName,
+                //$NON-NLS-1$
+                new MultiLineReceiver() {
+                    @Override
+                    public void processNewLines(String[] lines) {
+                    }
+
+                    @Override
+                    public boolean isCancelled() {
+                        return false;
+                    }
+                });*/
+            //启动
             device.executeShellCommand("monkey " + "-p " + appPackageName + " -c android.intent.category.LAUNCHER 1",
                                        //$NON-NLS-1$
                                        new MultiLineReceiver() {
@@ -155,19 +184,6 @@ public class IncrementalInstallVariantTask extends BaseTask {
                                                return false;
                                            }
                                        });
-            // device.executeShellCommand(
-            //     "am " + "broadcast " + "-a " + "com.taobao.atlas.intent.PATCH_APP " + "-e " + "pkg " + appPackageName,
-            //     //$NON-NLS-1$
-            //     new MultiLineReceiver() {
-            //         @Override
-            //         public void processNewLines(String[] lines) {
-            //         }
-            //
-            //         @Override
-            //         public boolean isCancelled() {
-            //             return false;
-            //         }
-            //     });
             successfulInstallCount++;
         }
 
