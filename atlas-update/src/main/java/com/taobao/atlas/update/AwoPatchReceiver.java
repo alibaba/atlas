@@ -1,40 +1,22 @@
 package com.taobao.atlas.update;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.List;
+
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.ApkUtils;
-import android.taobao.atlas.versionInfo.BaselineInfoManager;
-import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
-import com.taobao.atlas.update.exception.MergeException;
-import com.taobao.atlas.update.model.UpdateInfo;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.osgi.framework.BundleException;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /**
  * Created by guanjie on 2017/1/23.
@@ -66,6 +48,7 @@ public class AwoPatchReceiver extends BroadcastReceiver{
             if (intent.getAction().equals(PATCH_ACTION)) {
                 Toast.makeText(context.getApplicationContext(), "DebugPatch安装中,请稍后...", Toast.LENGTH_LONG).show();
                 doPatch();
+                restart();
             }else if (intent.getAction().equals(ROLLBACK_ACTION)) {
                 Toast.makeText(context.getApplicationContext(), "动态部署回滚,请稍后...", Toast.LENGTH_LONG).show();
             }
@@ -105,7 +88,6 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                     }
                 }
             }
-            restart();
         }catch(Throwable e){
             e.printStackTrace();
         }
