@@ -11,12 +11,9 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.MultiLineReceiver;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
 import com.android.utils.FileUtils;
-import org.gradle.api.Task;
-import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.ParallelizableTask;
 
 /**
@@ -33,39 +30,21 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
 
     public static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "/files/debug_storage/";
 
-    public IncrementalInstallVariantTask() {
-        this.getOutputs().upToDateWhen(new Spec<Task>() {
-            @Override
-            public boolean isSatisfiedBy(Task task) {
-                getLogger().debug("Install task is always run.");
-                return false;
-            }
-        });
-    }
-
     @Override
     protected void install(String projectName, String variantName, String appPackageName, IDevice device,
-                           Collection<File> awbApkFiles, File mainDexFile)
-        throws TimeoutException, AdbCommandRejectedException, SyncException, IOException,
-               ShellCommandUnresponsiveException {
+                           Collection<File> apkFiles) throws Exception {
         //安装awb
+        //安装mainDex
         String patchInstallDirectory = getPatchInstallDirectory();
-        if (awbApkFiles != null) {
-            for (File awbApkFile : awbApkFiles) {
-                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", awbApkFile, device.getName(),
-                                      projectName, variantName);
+        if (apkFiles != null) {
+            for (File apkFile : apkFiles) {
+                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", apkFile, device.getName(), projectName,
+                                      variantName);
 
-                installPatch(device, awbApkFile, getAwbPackageName(awbApkFile), patchInstallDirectory);
+                installPatch(device, apkFile, getAwbPackageName(apkFile), patchInstallDirectory);
             }
         }
 
-        //安装mainDex
-        if (mainDexFile != null) {
-            getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}", mainDexFile, device.getName(),
-                                  projectName, variantName);
-
-            installPatch(device, mainDexFile, "com.taobao.maindex", patchInstallDirectory);
-        }
         getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", appPackageName, device.getName(), projectName,
                               variantName);
         //退到后台

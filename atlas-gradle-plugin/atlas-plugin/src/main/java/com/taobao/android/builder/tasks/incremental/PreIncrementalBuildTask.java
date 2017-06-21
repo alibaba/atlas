@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.AtlasExtendedContentType;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
@@ -83,8 +84,8 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
             } else {
                 taskName = apkVariantOutputData.getScope().getTaskName("generate", "AtlasSources");
                 getLogger().warn("Skipped " + taskName + " : required atlasFrameworkPropertiesFile not found "
-                                 + atlasFrameworkPropertiesFile + '\n'
-                                 + "Please check and update your baseline project atlasplugin.");
+                                     + atlasFrameworkPropertiesFile + '\n'
+                                     + "Please check and update your baseline project atlasplugin.");
                 getProject().getTasks().getByName(taskName).setEnabled(false);
             }
         }
@@ -98,10 +99,15 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
         });
         // 动态部署增量编译不打包Awb
         if (appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                                                                                           .getPatchConfig()
-                                                                                           .isCreateTPatch()) {
+            .getPatchConfig().isCreateTPatch()) {
             builder.addContentType(ExtendedContentType.NATIVE_LIBS);
+        } else {
+            AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
+                apkVariantOutputData);
+            ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask, "outputFile",
+                                        appVariantOutputContext::getPatchApkOutputFile);
         }
+
         appVariantContext.getScope().getTransformManager().addStream(builder.build());
     }
 

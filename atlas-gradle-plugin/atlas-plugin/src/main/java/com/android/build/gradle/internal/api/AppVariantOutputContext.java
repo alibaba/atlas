@@ -430,6 +430,10 @@ public class AppVariantOutputContext {
                         "/awb-jnis/" + variantData.getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
     }
 
+    public File getPatchApkOutputFile() {
+        return new File(outputScope.getGlobalScope().getApkLocation(), "libcom_taobao_maindex.so");
+    }
+
     public File getApkOutputFile(boolean checkExist) {
         File file = outputScope.getGlobalScope().getProject().file(
             outputScope.getGlobalScope().getApkLocation() + "/" + outputScope.getGlobalScope().getProjectBaseName()

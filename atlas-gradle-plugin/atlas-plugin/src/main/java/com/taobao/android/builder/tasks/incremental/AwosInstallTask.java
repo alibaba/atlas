@@ -30,24 +30,15 @@ public class AwosInstallTask extends IncrementalInstallVariantTask {
 
     @Override
     protected void install(String projectName, String variantName, String appPackageName, IDevice device,
-                           Collection<File> awbApkFiles, File mainDexFile)
-        throws TimeoutException, AdbCommandRejectedException, SyncException, IOException,
-               ShellCommandUnresponsiveException {
+                           Collection<File> apkFiles) throws Exception {
         String patchInstallDirectory = getPatchInstallDirectory();
-        if (awbApkFiles != null) {
-            for (File awbApkFile : awbApkFiles) {
-                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", awbApkFile, device.getName(),
-                                      projectName, variantName);
-                installPatch(device, awbApkFile, awbApkFile.getName(), patchInstallDirectory, getAppPackageName());
-            }
-        }
-
         //安装mainDex
-        if (mainDexFile != null) {
-            getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}", mainDexFile, device.getName(),
-                                  projectName, variantName);
-
-            installPatch(device, mainDexFile, "libcom_taobao_maindex.so", patchInstallDirectory, getAppPackageName());
+        if (apkFiles != null) {
+            for (File apkFile : apkFiles) {
+                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", apkFile, device.getName(), projectName,
+                                      variantName);
+                installPatch(device, apkFile, apkFile.getName(), patchInstallDirectory, getAppPackageName());
+            }
         }
     }
 

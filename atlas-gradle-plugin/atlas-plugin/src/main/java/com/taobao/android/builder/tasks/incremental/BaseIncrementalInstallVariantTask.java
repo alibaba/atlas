@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import com.android.annotations.NonNull;
@@ -13,7 +14,7 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
@@ -21,16 +22,12 @@ import com.android.builder.sdk.SdkInfo;
 import com.android.builder.testing.ConnectedDevice;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceConnector;
-import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
-import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.SyncException;
-import com.android.ddmlib.TimeoutException;
-import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.res2.FileStatus;
 import com.android.utils.ILogger;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -40,13 +37,12 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.TaskAction;
 
 /**
  * Created by chenhjohn on 2017/6/21.
  */
 
-abstract class BaseIncrementalInstallVariantTask extends BaseTask {
+abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
     private static Field sDevice;
 
     private File adbExe;
@@ -61,9 +57,7 @@ abstract class BaseIncrementalInstallVariantTask extends BaseTask {
 
     private BaseVariantData<? extends BaseVariantOutputData> variantData;
 
-    private File mainDexFile;
-
-    private Collection<File> awbApkFiles;
+    private Collection<File> apkFiles;
 
     private static IDevice getDevice(DeviceConnector device) {
         if (sDevice == null) {
@@ -81,37 +75,65 @@ abstract class BaseIncrementalInstallVariantTask extends BaseTask {
         }
     }
 
-    @TaskAction
-    public void install()
-        throws DeviceException, ProcessException, InterruptedException, TimeoutException, AdbCommandRejectedException,
-               SyncException, IOException, ShellCommandUnresponsiveException {
-        final ILogger iLogger = getILogger();
-        DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(), getTimeOutInMs(), iLogger);
-        deviceProvider.init();
-        VariantConfiguration variantConfig = variantData.getVariantConfiguration();
-        String variantName = variantConfig.getFullName();
-        int successfulInstallCount = 0;
-        List<? extends DeviceConnector> devices = deviceProvider.getDevices();
-        for (final IDevice device : Iterables.transform(devices, BaseIncrementalInstallVariantTask::getDevice)) {
-            Collection<File> awbApkFiles = getAwbApkFiles();
-            File mainDexFile = getMainDexFile();
-            install(projectName, variantName, getAppPackageName(), device, awbApkFiles, mainDexFile);
+    @Override
+    protected boolean isIncremental() {
+        return true;
+    }
 
-            successfulInstallCount++;
-        }
+    @Override
+    protected void doFullTaskAction() throws IOException {
+        install(getApkFiles());
+    }
 
-        if (successfulInstallCount == 0) {
-            throw new GradleException("Failed to install on any devices.");
-        } else {
-            getLogger().quiet("Installed on {} {}.", successfulInstallCount,
-                              successfulInstallCount == 1 ? "device" : "devices");
+    private void install(Collection<File> apkFiles) {
+        try {
+            final ILogger iLogger = getILogger();
+            DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(), getTimeOutInMs(), iLogger);
+            deviceProvider.init();
+            VariantConfiguration variantConfig = variantData.getVariantConfiguration();
+            String variantName = variantConfig.getFullName();
+            int successfulInstallCount = 0;
+            List<? extends DeviceConnector> devices = deviceProvider.getDevices();
+            for (final IDevice device : Iterables.transform(devices, BaseIncrementalInstallVariantTask::getDevice)) {
+                try {
+                    install(projectName, variantName, getAppPackageName(), device, apkFiles);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                successfulInstallCount++;
+            }
+
+            if (successfulInstallCount == 0) {
+                throw new GradleException("Failed to install on any devices.");
+            } else {
+                getLogger().quiet("Installed on {} {}.", successfulInstallCount,
+                                  successfulInstallCount == 1 ? "device" : "devices");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
+    @Override
+    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
+        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+        for (final Map.Entry<File, FileStatus> entry : changedInputs.entrySet()) {
+            FileStatus status = entry.getValue();
+            switch (status) {
+                case NEW:
+                case CHANGED:
+                    builder.add(entry.getKey());
+                    break;
+                case REMOVED:
+                    break;
+            }
+        }
+        install(builder.build());
+    }
+
     protected abstract void install(String projectName, String variantName, String appPackageName, IDevice device,
-                                    Collection<File> awbApkFiles, File mainDexFile)
-        throws TimeoutException, AdbCommandRejectedException, SyncException, IOException,
-               ShellCommandUnresponsiveException;
+                                    Collection<File> apkFiles) throws Exception;
 
     @InputFile
     public File getAdbExe() {
@@ -164,24 +186,14 @@ abstract class BaseIncrementalInstallVariantTask extends BaseTask {
         this.variantData = variantData;
     }
 
-    @InputFile
-    @Optional
-    public File getMainDexFile() {
-        return mainDexFile;
-    }
-
-    public void setMainDexFile(File maindexFile) {
-        this.mainDexFile = maindexFile;
-    }
-
     @InputFiles
     @Optional
-    public Collection<File> getAwbApkFiles() {
-        return awbApkFiles;
+    public Collection<File> getApkFiles() {
+        return apkFiles;
     }
 
-    public void setAwbApkFiles(Collection<File> awbApkFiles) {
-        this.awbApkFiles = awbApkFiles;
+    public void setApkFiles(Collection<File> apkFiles) {
+        this.apkFiles = apkFiles;
     }
 
     public abstract static class ConfigAction<T extends BaseIncrementalInstallVariantTask>
@@ -224,21 +236,23 @@ abstract class BaseIncrementalInstallVariantTask extends BaseTask {
             ConventionMappingHelper.map(incrementalInstallVariantTask, "appPackageName",
                                         variantConfiguration::getApplicationId);
             //TODO 先根据依赖判断
-            ConventionMappingHelper.map(incrementalInstallVariantTask, "mainDexFile", new Callable<File>() {
+            ConventionMappingHelper.map(incrementalInstallVariantTask, "apkFiles", new Callable<ImmutableSet<File>>() {
 
                 @Override
-                public File call() {
+                public ImmutableSet<File> call() {
+                    ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+                    //Awb
+                    builder.addAll(appVariantContext.getAwbApkFiles());
+                    //Main
                     AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                         incrementalInstallVariantTask.getVariantName());
                     List<String> allDependencies = atlasDependencyTree.getMainBundle().getAllDependencies();
-                    if (allDependencies.size() == 0) {
-                        return null;
+                    if (allDependencies.size() > 0) {
+                        builder.add(getAppVariantOutputContext().getPatchApkOutputFile());
                     }
-                    return getAppVariantOutputContext().getApkOutputFile(true);
+                    return builder.build();
                 }
             });
-            ConventionMappingHelper.map(incrementalInstallVariantTask, "awbApkFiles",
-                                        appVariantContext::getAwbApkFiles);
         }
     }
 }
