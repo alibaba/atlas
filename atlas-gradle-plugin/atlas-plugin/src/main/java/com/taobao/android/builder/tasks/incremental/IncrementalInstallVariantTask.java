@@ -98,6 +98,7 @@ public class IncrementalInstallVariantTask extends BaseTask {
         int successfulInstallCount = 0;
         List<? extends DeviceConnector> devices = deviceProvider.getDevices();
         for (final IDevice device : Iterables.transform(devices, IncrementalInstallVariantTask::getDevice)) {
+            //安装awb
             Collection<File> awbApkFiles = getAwbApkFiles();
             if (awbApkFiles != null) {
                 for (File awbApkFile : awbApkFiles) {
@@ -108,6 +109,7 @@ public class IncrementalInstallVariantTask extends BaseTask {
                 }
             }
 
+            //安装mainDex
             File mainDexFile = getMainDexFile();
             if (mainDexFile != null) {
                 getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}", mainDexFile, device.getName(),
