@@ -353,6 +353,7 @@ public class IncrementalInstallVariantTask extends BaseTask {
 
             ConventionMappingHelper.map(incrementalInstallVariantTask, "appPackageName",
                                         variantConfiguration::getApplicationId);
+            //TODO 先根据依赖判断
             ConventionMappingHelper.map(incrementalInstallVariantTask, "mainDexFile", new Callable<File>() {
 
                 @Override
