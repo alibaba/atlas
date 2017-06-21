@@ -105,7 +105,7 @@ public class AwoPatchReceiver extends BroadcastReceiver{
             Log.d("PatchReceiver", "no activity");
 
         }
-        RuntimeVariables.androidApplication.startActivity(intent);
+        // RuntimeVariables.androidApplication.startActivity(intent);
         kill();
         android.os.Process.killProcess(android.os.Process.myPid());
         // System.exit(0);
