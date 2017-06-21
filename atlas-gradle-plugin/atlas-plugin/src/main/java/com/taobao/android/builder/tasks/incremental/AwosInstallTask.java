@@ -61,6 +61,7 @@ public class AwosInstallTask extends IncrementalInstallVariantTask {
                     return false;
                 }
             });
+        //循环监听
         int sleepTime = 1000;
         while (hasBinary(device, patchInstallDirectory)) {
             try {
