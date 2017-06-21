@@ -105,25 +105,31 @@ public class AwoPatchReceiver extends BroadcastReceiver{
                     }
                 }
             }
-            Intent intent = RuntimeVariables.androidApplication.getPackageManager().getLaunchIntentForPackage(RuntimeVariables.androidApplication.getPackageName());
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                    Intent.FLAG_ACTIVITY_NEW_TASK);
-            ResolveInfo info = RuntimeVariables.androidApplication.getPackageManager().resolveActivity(intent, 0);
-            if (info != null) {
-                Log.d("PatchReceiver", info.activityInfo.name);
-            } else {
-                Log.d("PatchReceiver", "no activity");
-
-            }
-            RuntimeVariables.androidApplication.startActivity(intent);
-            kill();
-            System.exit(0);
+            restart();
         }catch(Throwable e){
             e.printStackTrace();
         }
     }
 
-        private void kill() {
+    private void restart() {
+        Intent
+            intent = RuntimeVariables.androidApplication.getPackageManager().getLaunchIntentForPackage(RuntimeVariables.androidApplication.getPackageName());
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                Intent.FLAG_ACTIVITY_NEW_TASK);
+        ResolveInfo info = RuntimeVariables.androidApplication.getPackageManager().resolveActivity(intent, 0);
+        if (info != null) {
+            Log.d("PatchReceiver", info.activityInfo.name);
+        } else {
+            Log.d("PatchReceiver", "no activity");
+
+        }
+        RuntimeVariables.androidApplication.startActivity(intent);
+        kill();
+        android.os.Process.killProcess(android.os.Process.myPid());
+        // System.exit(0);
+    }
+
+    private void kill() {
             try {
                 ActivityManager am = (ActivityManager) RuntimeVariables.androidApplication.getSystemService(Context.ACTIVITY_SERVICE);
                 List<ActivityManager.RunningAppProcessInfo> a = am.getRunningAppProcesses();
