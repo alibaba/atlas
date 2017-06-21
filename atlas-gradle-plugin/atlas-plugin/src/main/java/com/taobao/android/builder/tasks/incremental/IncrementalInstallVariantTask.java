@@ -36,8 +36,6 @@ import com.google.common.collect.Iterables;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.command.CommandExecutor;
-import com.taobao.android.builder.tools.command.ExecutionException;
 import org.gradle.api.GradleException;
 import org.gradle.api.Task;
 import org.gradle.api.specs.Spec;
@@ -117,11 +115,12 @@ public class IncrementalInstallVariantTask extends BaseTask {
 
                 installPatch(device, mainDexFile, "com.taobao.maindex");
             }
-            getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", getAppPackageName(), device.getName(),
-                                  projectName, variantName);
+            String appPackageName = getAppPackageName();
+            getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", appPackageName, device.getName(), projectName,
+                                  variantName);
             device.executeShellCommand(
-                "am " + "broadcast " + "-a " + "com.taobao.atlas.intent.PATCH_APP " + "-e " + "pkg "
-                    + getAppPackageName(), //$NON-NLS-1$
+                "am " + "broadcast " + "-a " + "com.taobao.atlas.intent.PATCH_APP " + "-e " + "pkg " + appPackageName,
+                //$NON-NLS-1$
                 new MultiLineReceiver() {
                     @Override
                     public void processNewLines(String[] lines) {
@@ -176,26 +175,8 @@ public class IncrementalInstallVariantTask extends BaseTask {
     private void installPatch(IDevice device, File patch, String name)
         throws TimeoutException, AdbCommandRejectedException, SyncException, IOException {
         String PATCH_INSTALL_DIRECTORY = PATCH_INSTALL_DIRECTORY_PREFIX + getAppPackageName()
-            + PATCH_INSTALL_DIRECTORY_SUFFIX;
+            + PATCH_INSTALL_DIRECTORY_SUFFIX + name + PATCH_NAME;
         device.pushFile(patch.getAbsolutePath(), PATCH_INSTALL_DIRECTORY);
-    }
-
-    private boolean runCommand(List<String> cmd) {
-        CommandExecutor executor = CommandExecutor.Factory.createDefaultCommmandExecutor();
-        executor.setLogger(getLogger());
-        executor.setCaptureStdOut(true);
-        executor.setCaptureStdErr(true);
-        try {
-            executor.executeCommand(getAdbExe().getAbsolutePath(), cmd, false);
-            return true;
-        } catch (ExecutionException e) {
-            throw new RuntimeException("Error while trying to push patch to device ", e);
-        } finally {
-            String errout = executor.getStandardError();
-            if ((errout != null) && (errout.trim().length() > 0)) {
-                getLogger().error(errout);
-            }
-        }
     }
 
     @InputFile
