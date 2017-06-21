@@ -17,6 +17,9 @@
         <item
             android:id="@+id/nav_dex_patch"
             android:title="dex_patch模拟" />
+        <item
+            android:id="@+id/nav_databind_bundle"
+            android:title="databinding模拟" />
     </group>
 
     <item android:title="Communicate">

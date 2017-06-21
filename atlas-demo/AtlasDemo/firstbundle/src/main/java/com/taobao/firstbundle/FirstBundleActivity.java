@@ -1,16 +1,12 @@
 package com.taobao.firstbundle;
 
-import android.content.ContentResolver;
-import android.content.res.Resources;
 import android.net.Uri;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.Toast;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 import com.taobao.firstbundle.fragment.BlankFragment;
-
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import com.taobao.publicBundle.Tools;
 
 public class FirstBundleActivity extends AppCompatActivity implements BlankFragment.OnFragmentInteractionListener {
 
@@ -18,6 +14,10 @@ public class FirstBundleActivity extends AppCompatActivity implements BlankFragm
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_firstbundle);
+
+//        bundleCompile
+        Log.e("providedComple awb", "invoke tools at public bundle  Tools.getCurrentTime() > " + Tools.getCurrentTime());
+
 //        Toast.makeText(this,"dsfsfs",Toast.LENGTH_LONG).show();
     }
 

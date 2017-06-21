@@ -59,6 +59,7 @@ atlas {
         outOfApkBundles = ['remotebundle']
         preLaunch = 'com.taobao.demo.DemoPreLaunch'
         classInject false
+        dataBindingBundles = ['com.taobao.databindbundle']
     }
 
     manifestOptions {
@@ -100,7 +101,7 @@ dependencies {
     bundleCompile project(':secondbundle')
     bundleCompile project(':remotebundle')
     bundleCompile project(':publicbundle')
-    //    bundleCompile project(':databindbundle')
+    bundleCompile project(':databindbundle')
 
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
