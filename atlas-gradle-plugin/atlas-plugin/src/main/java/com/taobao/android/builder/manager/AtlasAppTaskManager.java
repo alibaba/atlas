@@ -282,6 +282,7 @@ import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
 import com.taobao.android.builder.tasks.incremental.AwoInstallTask;
+import com.taobao.android.builder.tasks.incremental.AwosInstallTask;
 import com.taobao.android.builder.tasks.incremental.IncrementalInstallVariantTask;
 import com.taobao.android.builder.tasks.incremental.PreIncrementalBuildTask;
 import com.taobao.android.builder.tasks.incremental.PreIncrementalInstallVariantBuildTask;
@@ -600,6 +601,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         AndroidTask<PreIncrementalInstallVariantBuildTask> preIncrementalInstallVariantBuildTask = androidTasks.create(
             tasks, new PreIncrementalInstallVariantBuildTask.ConfigAction(appVariantContext, vod));
         preIncrementalInstallTask.dependsOn(tasks, preIncrementalInstallVariantBuildTask);
+
+        // 多模块独立调试安装旧版本
+        AndroidTask<AwosInstallTask> awosInstallTask = androidTasks.create(tasks, new AwosInstallTask.ConfigAction(
+            appVariantContext, vod));
+        awosInstallTask.dependsOn(tasks, preIncrementalInstallTask);
 
         // 多模块独立调试安装
         AndroidTask<IncrementalInstallVariantTask> incrementalInstallVariantTask = androidTasks.create(tasks,
