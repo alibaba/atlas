@@ -306,6 +306,8 @@ public class TPatchTask extends BaseTask {
         TPatchTool tPatchTool = new TPatchTool(apkBO,
                                                newApkBO,
                                                patchContext.diffBundleDex);
+        //TODO
+        //tPatchTool.setVersionList();
 
         List<Pair<BundleBO, BundleBO>> remoteBundles = new ArrayList<>();
 
