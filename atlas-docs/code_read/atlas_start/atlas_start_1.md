@@ -1,5 +1,5 @@
 ---
-title: Atlas之启动过程(上)
+title: Atlas之启动过程(一)
 date: 2017-05-02 15:00:00
 ---
 
@@ -254,7 +254,7 @@ public class FrameworkProperties{
 
 从反编译后的代码可以看到，"prelaunch"对应的内容是`com.taobao.demo.DemoPreLaunch`,那么这个值是在 __什么时候写入又是在哪里配置__ 的呢？
 
-大家回想一下，在之前[Atlas之由gradle开始到apk结束][atlas_gradle_apk]中提到过，atlas的gradle插件在编译期搞了很多事情，我们看gradle中的设置
+大家回想一下，在之前[Atlas之Gradle配置][atlas_gradle_apk]中提到过，atlas的gradle插件在编译期搞了很多事情，我们看gradle中的设置
 
 ```gradle
 atlas{
@@ -394,7 +394,7 @@ __那么问题来了__，有些provider是存在于bundle中的，主dex中并�
 上篇先到这里，各位先喝口水，再来下篇的分析。
 
 [tianweishu_note]: http://weishu.me/
-[atlas_gradle_apk]: www.baidu.com
+[atlas_gradle_apk]: ../../code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.md
 [demo_github]: https://github.com/alibaba/atlas
 [atlas_framework_property]: atlas_framework_property.svg
 [atlas_meta_data]: atlas_meta_data.png

@@ -1,5 +1,5 @@
 ---
-title: atlas从gradle到apk
+title: Atlas之Gradle配置
 ---
 
 # 概述

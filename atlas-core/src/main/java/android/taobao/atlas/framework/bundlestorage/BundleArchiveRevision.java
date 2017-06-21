@@ -492,6 +492,9 @@ public class BundleArchiveRevision {
                     //dexFile = DexFileCompat.loadDex(RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
                 }
             }
+            if(Framework.isDeubgMode()){
+                optPatchDexFile();
+            }
             //9月份版本明天发布先不集成
 //            isDexOptDone = checkDexValid(dexFile);
             isDexOptDone = true;
@@ -675,27 +678,28 @@ public class BundleArchiveRevision {
     }
 
     private Class findPatchClass(String clazz,ClassLoader cl){
-        if(patchDexFileForDebug==null){
-            File debugBundleDir = new File(RuntimeVariables.androidApplication.getExternalFilesDir("debug_storage"),location);
-            File patchFile = new File(debugBundleDir,"patch.zip");
-            if(patchFile.exists()){
-                try {
-//                    patchDexFileForDebug = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication,
-//                            patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
-                    //兼容7。0 动态部署过后不同classloader下对classcast
-                    File internalDebugBundleDir = new File(new File(RuntimeVariables.androidApplication.getFilesDir(),"debug_storage"),location);
-                    internalDebugBundleDir.mkdirs();
-                    RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex",Context.class,String.class, String.class, int.class, boolean.class).invoke(
-                            RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, patchFile.getAbsolutePath(), new File(internalDebugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
-                } catch (Throwable e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
         if(patchDexFileForDebug!=null){
             return patchDexFileForDebug.loadClass(clazz,cl);
         }
         return null;
+    }
+
+    private void optPatchDexFile() {
+        File debugBundleDir = new File(RuntimeVariables.androidApplication.getExternalFilesDir("debug_storage"), location);
+        File patchFile = new File(debugBundleDir,"patch.zip");
+        if(patchFile.exists()){
+            try {
+//                    patchDexFileForDebug = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication,
+//                            patchFile.getAbsolutePath(), new File(debugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
+                //兼容7。0 动态部署过后不同classloader下对classcast
+                File internalDebugBundleDir = new File(new File(RuntimeVariables.androidApplication.getFilesDir(),"debug_storage"),location);
+                internalDebugBundleDir.mkdirs();
+                patchDexFileForDebug= (DexFile)RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex", Context.class, String.class, String.class, int.class, boolean.class).invoke(
+                        RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, patchFile.getAbsolutePath(), new File(internalDebugBundleDir,"patch.dex").getAbsolutePath(), 0,true);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public String getDebugPatchFilePath(){
