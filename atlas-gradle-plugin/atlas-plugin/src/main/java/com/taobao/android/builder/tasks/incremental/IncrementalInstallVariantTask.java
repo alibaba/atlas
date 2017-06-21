@@ -98,56 +98,72 @@ public class IncrementalInstallVariantTask extends BaseTask {
         int successfulInstallCount = 0;
         List<? extends DeviceConnector> devices = deviceProvider.getDevices();
         for (final IDevice device : Iterables.transform(devices, IncrementalInstallVariantTask::getDevice)) {
-            //安装awb
             Collection<File> awbApkFiles = getAwbApkFiles();
-            if (awbApkFiles != null) {
-                for (File awbApkFile : awbApkFiles) {
-                    getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", awbApkFile, device.getName(),
-                                          projectName, variantName);
-
-                    installPatch(device, awbApkFile, getAwbPackageName(awbApkFile));
-                }
-            }
-
-            //安装mainDex
             File mainDexFile = getMainDexFile();
-            if (mainDexFile != null) {
-                getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}", mainDexFile, device.getName(),
+            install(variantName, device, awbApkFiles, mainDexFile);
+
+            successfulInstallCount++;
+        }
+
+        if (successfulInstallCount == 0) {
+            throw new GradleException("Failed to install on any devices.");
+        } else {
+            getLogger().quiet("Installed on {} {}.", successfulInstallCount,
+                              successfulInstallCount == 1 ? "device" : "devices");
+        }
+    }
+
+    protected void install(String variantName, IDevice device, Collection<File> awbApkFiles, File mainDexFile)
+        throws TimeoutException, AdbCommandRejectedException, SyncException, IOException,
+               ShellCommandUnresponsiveException {
+        //安装awb
+        if (awbApkFiles != null) {
+            for (File awbApkFile : awbApkFiles) {
+                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", awbApkFile, device.getName(),
                                       projectName, variantName);
 
-                installPatch(device, mainDexFile, "com.taobao.maindex");
+                installPatch(device, awbApkFile, getAwbPackageName(awbApkFile));
             }
-            String appPackageName = getAppPackageName();
-            getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", appPackageName, device.getName(), projectName,
-                                  variantName);
-            //退到后台
-            device.executeShellCommand("input keyevent 3",
-                                       //
-                                       //$NON-NLS-1$
-                                       new MultiLineReceiver() {
-                                           @Override
-                                           public void processNewLines(String[] lines) {
-                                           }
+        }
 
-                                           @Override
-                                           public boolean isCancelled() {
-                                               return false;
-                                           }
-                                       });
+        //安装mainDex
+        if (mainDexFile != null) {
+            getLogger().lifecycle("Installing mainDex '{}' on '{}' for {}:{}", mainDexFile, device.getName(),
+                                  projectName, variantName);
 
-            //杀死进程
-            device.executeShellCommand("am " + "force-stop " + appPackageName,
-                                       //$NON-NLS-1$
-                                       new MultiLineReceiver() {
-                                           @Override
-                                           public void processNewLines(String[] lines) {
-                                           }
+            installPatch(device, mainDexFile, "com.taobao.maindex");
+        }
+        String appPackageName = getAppPackageName();
+        getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", appPackageName, device.getName(), projectName,
+                              variantName);
+        //退到后台
+        device.executeShellCommand("input keyevent 3",
+                                   //
+                                   //$NON-NLS-1$
+                                   new MultiLineReceiver() {
+                                       @Override
+                                       public void processNewLines(String[] lines) {
+                                       }
 
-                                           @Override
-                                           public boolean isCancelled() {
-                                               return false;
-                                           }
-                                       });
+                                       @Override
+                                       public boolean isCancelled() {
+                                           return false;
+                                       }
+                                   });
+
+        //杀死进程
+        device.executeShellCommand("am " + "force-stop " + appPackageName,
+                                   //$NON-NLS-1$
+                                   new MultiLineReceiver() {
+                                       @Override
+                                       public void processNewLines(String[] lines) {
+                                       }
+
+                                       @Override
+                                       public boolean isCancelled() {
+                                           return false;
+                                       }
+                                   });
             /*device.executeShellCommand("am " + "kill " + appPackageName,
                                        //$NON-NLS-1$
                                        new MultiLineReceiver() {
@@ -173,28 +189,19 @@ public class IncrementalInstallVariantTask extends BaseTask {
                         return false;
                     }
                 });*/
-            //启动
-            device.executeShellCommand("monkey " + "-p " + appPackageName + " -c android.intent.category.LAUNCHER 1",
-                                       //$NON-NLS-1$
-                                       new MultiLineReceiver() {
-                                           @Override
-                                           public void processNewLines(String[] lines) {
-                                           }
+        //启动
+        device.executeShellCommand("monkey " + "-p " + appPackageName + " -c android.intent.category.LAUNCHER 1",
+                                   //$NON-NLS-1$
+                                   new MultiLineReceiver() {
+                                       @Override
+                                       public void processNewLines(String[] lines) {
+                                       }
 
-                                           @Override
-                                           public boolean isCancelled() {
-                                               return false;
-                                           }
-                                       });
-            successfulInstallCount++;
-        }
-
-        if (successfulInstallCount == 0) {
-            throw new GradleException("Failed to install on any devices.");
-        } else {
-            getLogger().quiet("Installed on {} {}.", successfulInstallCount,
-                              successfulInstallCount == 1 ? "device" : "devices");
-        }
+                                       @Override
+                                       public boolean isCancelled() {
+                                           return false;
+                                       }
+                                   });
     }
 
     private static Field sDevice;
