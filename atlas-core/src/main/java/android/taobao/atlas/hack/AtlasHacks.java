@@ -345,14 +345,13 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
             if (atlasHacks.mExceptionArray != null) {
                 // 校验存在失败
                 sIsReflectAvailable = false;
-                throw atlasHacks.mExceptionArray;
             } else {
                 // 校验成功
                 sIsReflectAvailable = true;
             }
         } catch (HackAssertionException e) {
             sIsReflectAvailable = false;
-            e.printStackTrace();
+            throw atlasHacks.mExceptionArray;
         } finally {
             Hack.setAssertionFailureHandler(null);
             sIsReflectChecked = true;

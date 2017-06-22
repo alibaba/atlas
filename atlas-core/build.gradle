@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
-// apply from: 'http://gitlab.alibaba-inc.com/android-build-system/buildscript/raw/master/mtl-publish.gradle'
+ apply from: 'http://gitlab.alibaba-inc.com/android-build-system/buildscript/raw/master/mtl-publish.gradle'
 
 buildscript {
 
@@ -23,7 +23,7 @@ repositories {
 
 group = 'com.taobao.android'
 description = """atlas_core"""
-version '5.0.7.16'
+version '5.0.7.166-SNAPSHOT'
 
 
 sourceCompatibility = 1.7

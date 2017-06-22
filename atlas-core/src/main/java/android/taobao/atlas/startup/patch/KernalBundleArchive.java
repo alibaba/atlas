@@ -423,7 +423,7 @@ import java.util.zip.ZipFile;
 
     private File mappingInternalDirectory(){
         if(!revisionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())){
-            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(),String.format("storage/%s",revisionDir.getName()));
+            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(),String.format("storage/com.taobao.maindex/%s",revisionDir.getName()));
             return internalLibDir;
         }else{
             return revisionDir;
