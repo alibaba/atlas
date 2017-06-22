@@ -541,7 +541,10 @@ public class TPatchTool extends BasePatchTool {
         apkDiff.setBaseApkVersion(baseApkBO.getVersionName());
         apkDiff.setNewApkVersion(newApkBO.getVersionName());
         apkDiff.setBundleDiffResults(bundleDiffResults);
-        apkDiff.setNewApkMd5(MD5Util.getFileMD5String(newApkBO.getApkFile()));
+        boolean newApkFileExist = newApkBO.getApkFile().exists() && newApkBO.getApkFile().isFile();
+        if (newApkFileExist) {
+            apkDiff.setNewApkMd5(MD5Util.getFileMD5String(newApkBO.getApkFile()));
+        }
         apkDiff.setFileName(newApkBO.getApkName());
         apkPatchInfos.setBaseApkVersion(baseApkBO.getVersionName());
         apkPatchInfos.setNewApkVersion(newApkBO.getVersionName());
@@ -551,7 +554,9 @@ public class TPatchTool extends BasePatchTool {
         FileUtils.writeStringToFile(diffTxtFile, JSON.toJSONString(apkDiff));
         FileUtils.writeStringToFile(patchInfoFile, JSON.toJSONString(apkPatchInfos));
         FileUtils.copyFileToDirectory(diffTxtFile, outPatchDir.getParentFile(), true);
-        FileUtils.copyFileToDirectory(newApkBO.getApkFile(), outPatchDir.getParentFile(), true);
+        if (newApkFileExist) {
+            FileUtils.copyFileToDirectory(newApkBO.getApkFile(), outPatchDir.getParentFile(), true);
+        }
         Profiler.release();
 
         logger.warning(Profiler.dump());

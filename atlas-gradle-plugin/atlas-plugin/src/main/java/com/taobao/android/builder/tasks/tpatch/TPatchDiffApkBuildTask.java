@@ -275,7 +275,11 @@ public class TPatchDiffApkBuildTask extends BaseTask {
 
         Profiler.enter("rezip");
 
-        BetterZip.zipDirectory(tmpWorkDir,diffAPkFile);
+        if (getProject().hasProperty("atlas.createDiffApk")) {
+            BetterZip.zipDirectory(tmpWorkDir, diffAPkFile);
+        }else {
+            FileUtils.moveDirectory(tmpWorkDir,diffAPkFile);
+        }
 
         //ZipUtils.rezip(diffAPkFile, tmpWorkDir, zipEntityMap);
         Profiler.release();
