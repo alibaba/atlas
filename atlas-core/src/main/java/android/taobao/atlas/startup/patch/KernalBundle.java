@@ -305,9 +305,12 @@ public class KernalBundle{
                 if(patchFile.exists()){
                     loadKernalPatch = true;
                     KernalBundle bundle = new KernalBundle();
-                    DexFile dexFile = (DexFile)KernalConstants.dexBooster.loadDex(KernalConstants.baseContext,patchFile.getAbsolutePath(),
+                    DexFile dexFile = (DexFile)KernalConstants.dexBooster.loadDex(KernalConstants.baseContext,KernalConstants.baseContext.getApplicationInfo().sourceDir,
+                                                                                  new File(patchFile.getParent(),"base.dex").getAbsolutePath(),0,true) ;
+
+                    DexFile patchDexFile = (DexFile)KernalConstants.dexBooster.loadDex(KernalConstants.baseContext,patchFile.getAbsolutePath(),
                             new File(patchFile.getParent(),"patch.dex").getAbsolutePath(),0,true) ;
-                    bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(), patchFile, new DexFile[]{dexFile}, null,
+                    bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(), patchFile, new DexFile[]{patchDexFile,dexFile}, null,
                                                true /*(app_info.flags & ApplicationInfo.FLAG_VM_SAFE_MODE) != 0*/);
                     bundle.replacePathClassLoaderIfNeed(application);
                     Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");

@@ -247,18 +247,18 @@ import static android.taobao.atlas.runtime.InstrumentationHook.sOnIntentRedirect
 public class Atlas {
 
     public static String sAPKSource ;
-    protected static Atlas instance;
     public static boolean Downgrade_H5 = false;
     public static boolean isDebug;
 
     private Atlas(){
     }
 
-    public static synchronized Atlas getInstance() {
-        if (instance == null) {
-            instance = new Atlas();
-        }
-        return instance;
+    private static class SingleTonHolder{
+        private final static Atlas INSTANCE = new Atlas();
+    }
+
+    public static Atlas getInstance() {
+       return SingleTonHolder.INSTANCE;
     }
 
     private BundleLifecycleHandler    bundleLifecycleHandler;
