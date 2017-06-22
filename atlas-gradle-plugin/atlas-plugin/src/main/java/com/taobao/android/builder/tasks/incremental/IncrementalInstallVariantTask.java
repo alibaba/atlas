@@ -117,8 +117,7 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
 
     private void installPatch(IDevice device, File patch, String name, String patchInstallDirectory)
         throws TimeoutException, AdbCommandRejectedException, SyncException, IOException {
-        patchInstallDirectory = FileUtils.join(patchInstallDirectory, name, PATCH_NAME);
-        device.pushFile(patch.getAbsolutePath(), patchInstallDirectory);
+        device.pushFile(patch.getAbsolutePath(), FileUtils.join(patchInstallDirectory, name, PATCH_NAME));
     }
 
     private String getPatchInstallDirectory() {
