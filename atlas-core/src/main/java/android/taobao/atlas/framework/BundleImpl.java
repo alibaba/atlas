@@ -351,7 +351,7 @@ public final class BundleImpl implements Bundle {
     	if ( this.classloader == null){
 	        // create the bundle classloader
             List<String> dependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
-            String nativeLibDir = getArchive().getCurrentRevision().getRevisionDir().getAbsolutePath()+"/lib"+":"
+            String nativeLibDir = getArchive().getCurrentRevision().mappingInternalDirectory().getAbsolutePath()+"/lib"+":"
                     + RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir+":"
                     +System.getProperty("java.library.path");
             if(dependencies!=null) {
@@ -359,7 +359,7 @@ public final class BundleImpl implements Bundle {
                     BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(str);
                     if (impl != null) {
                         nativeLibDir += ":";
-                        File dependencyLibDir = new File(impl.getArchive().getCurrentRevision().getRevisionDir(), "lib");
+                        File dependencyLibDir = new File(impl.getArchive().getCurrentRevision().mappingInternalDirectory(), "lib");
                         nativeLibDir += dependencyLibDir;
                     }
                 }
