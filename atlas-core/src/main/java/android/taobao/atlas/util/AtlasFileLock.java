@@ -225,13 +225,11 @@ import android.util.Log;
 
 public class AtlasFileLock {
 
-    private static AtlasFileLock singleton;
-    
+	private static class SingleTonHolder{
+		private final static AtlasFileLock INSTANCE = new AtlasFileLock();
+	}
     public static AtlasFileLock getInstance(){
-    	if (singleton == null){
-    		singleton = new AtlasFileLock();
-    	}
-		return singleton;
+		return SingleTonHolder.INSTANCE;
     }
     
 	private class FileLockCount{

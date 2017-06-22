@@ -249,11 +249,13 @@ public class KernalVersionManager {
     public ConcurrentHashMap<String,Long> dexPatchBundles = new ConcurrentHashMap<>();
 
     public boolean cachePreVersion = false;
-    public synchronized static KernalVersionManager instance(){
-        if(sBaseInfoManager==null){
-            sBaseInfoManager = new KernalVersionManager();
-        }
-        return sBaseInfoManager;
+
+    private static class SingleTonHolder{
+        private final static KernalVersionManager INSTANCE = new KernalVersionManager();
+    }
+
+    public static KernalVersionManager instance(){
+        return SingleTonHolder.INSTANCE;
     }
 
     @Override
