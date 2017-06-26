@@ -2,11 +2,12 @@
 
 buildscript {
     repositories {
-        maven {
-            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
-        }
         mavenLocal()
         jcenter()
+        maven {
+//            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+            url "http://maven.aliyun.com/nexus/content/groups/public"
+        }
     }
     configurations.all {
         resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
@@ -19,10 +20,11 @@ buildscript {
 
 subprojects {
     repositories {
-        maven {
-            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
-        }
         jcenter()
+        maven {
+//            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+            url "http://maven.aliyun.com/nexus/content/groups/public"
+        }
     }
 }
 

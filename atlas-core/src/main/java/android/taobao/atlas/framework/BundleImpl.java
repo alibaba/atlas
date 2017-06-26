@@ -208,10 +208,13 @@
 
 package android.taobao.atlas.framework;
 
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.DelegateResources;
+import android.taobao.atlas.util.WrapperUtil;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.util.Log;
@@ -224,8 +227,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class BundleImpl implements Bundle {
 
@@ -346,7 +351,7 @@ public final class BundleImpl implements Bundle {
     	if ( this.classloader == null){
 	        // create the bundle classloader
             List<String> dependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
-            String nativeLibDir = getArchive().getCurrentRevision().getRevisionDir().getAbsolutePath()+"/lib"+":"
+            String nativeLibDir = getArchive().getCurrentRevision().mappingInternalDirectory().getAbsolutePath()+"/lib"+":"
                     + RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir+":"
                     +System.getProperty("java.library.path");
             if(dependencies!=null) {
@@ -354,7 +359,7 @@ public final class BundleImpl implements Bundle {
                     BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(str);
                     if (impl != null) {
                         nativeLibDir += ":";
-                        File dependencyLibDir = new File(impl.getArchive().getCurrentRevision().getRevisionDir(), "lib");
+                        File dependencyLibDir = new File(impl.getArchive().getCurrentRevision().mappingInternalDirectory(), "lib");
                         nativeLibDir += dependencyLibDir;
                     }
                 }
@@ -501,6 +506,30 @@ public final class BundleImpl implements Bundle {
 
         return true;
     }
+
+//    public void updateValidBundleCache(){
+//        long lastUpdateTime = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).lastUpdateTime;
+//        if(lastUpdateTime>0) {
+//            SharedPreferences preferences = RuntimeVariables.androidApplication.getSharedPreferences("valid_bundle_info"+"",0);
+//            Set<String> bundles = preferences.getStringSet(""+lastUpdateTime,new HashSet<String>());
+//            if(!bundles.contains(location)){
+//                bundles.add(location);
+//                preferences.edit().putStringSet(""+lastUpdateTime,bundles).apply();
+//            }
+//        }
+//    }
+//
+//    public static boolean isBundleSuccessedInstalledBefore(String location){
+//        long lastUpdateTime = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).lastUpdateTime;
+//        if(lastUpdateTime>0) {
+//            SharedPreferences preferences = RuntimeVariables.androidApplication.getSharedPreferences("valid_bundle_info"+"",0);
+//            Set<String> bundles = preferences.getStringSet(""+lastUpdateTime,null);
+//            if(bundles!=null && bundles.contains(location)){
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
 
     public boolean isDisabled(){

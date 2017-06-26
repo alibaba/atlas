@@ -399,8 +399,30 @@ public class BundleArchiveRevision {
         return bundleFile;
     }
 
+    public File mappingInternalDirectory(){
+        if(externalStorage){
+            File internalLibDir = new File(RuntimeVariables.androidApplication.getFilesDir(),String.format("storage/%s/%s",location,revisionDir.getName()));
+            int retryCount = 2;
+            do{
+                if(!internalLibDir.exists()){
+                    internalLibDir.mkdirs();
+                }
+                if(internalLibDir.exists()){
+                    break;
+                }
+                retryCount--;
+            }while(retryCount>0);
+            if(!internalLibDir.exists()){
+                Log.e("BundleArchiveRevision","create internal LibDir Failed : "+location);
+            }
+            return internalLibDir;
+        }else{
+            return revisionDir;
+        }
+    }
+
     public File findSoLibrary(String libraryName){
-        File file = new File(String.format("%s%s%s%s",revisionDir,File.separator,"lib",File.separator),libraryName);
+        File file = new File(String.format("%s%s%s%s",mappingInternalDirectory(),File.separator,"lib",File.separator),libraryName);
         if(file.exists() && file.isFile() && file.length()>0){
             return file;
         }
@@ -585,7 +607,7 @@ public class BundleArchiveRevision {
 
     private void extractEntry(ZipFile zip ,ZipEntry zipEntry) throws IOException{
         String entryName = zipEntry.getName();
-        String targetPath = String.format("%s%s%s%s%s",revisionDir,File.separator,"lib",File.separator,
+        String targetPath = String.format("%s%s%s%s%s",mappingInternalDirectory(),File.separator,"lib",File.separator,
                 entryName.substring(entryName.lastIndexOf(File.separator)+1,entryName.length()));
         if (zipEntry.isDirectory()) {
             File decompressDirFile = new File(targetPath);

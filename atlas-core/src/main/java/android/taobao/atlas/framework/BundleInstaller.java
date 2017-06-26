@@ -639,7 +639,7 @@ public class BundleInstaller implements Callable{
         if(!bundleFile.exists()){
             bundleFile = new File(RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir,bundleFileName);
         }
-        if(isBundleFileTimeStampMatched(location,bundleFile)){
+        if(isBundleFileMatched(location,bundleFile)){
             mTmpBundleSourceFile = bundleFile;
             Log.e("BundleInstaller","find valid bundle : "+bundleFile.getAbsolutePath());
         }else{
@@ -652,26 +652,16 @@ public class BundleInstaller implements Callable{
         }
     }
 
-    private boolean isBundleFileTimeStampMatched(String location,File file){
-//        if(!file.exists() || !AtlasBundleInfoManager.instance().isInternalBundle(location)){
-//            return false;
-//        }
-//        if(file.lastModified() == getTimeStampInApk()){
-//            return true;
-//        }
-//        return false;
-        return true;
-    }
-
-    private static long timeStampInApk = -11021836;
-    private synchronized long getTimeStampInApk(){
-        try {
-            if (timeStampInApk == -11021836) {
-                timeStampInApk = ApkUtils.getApk().getEntry("classes.dex").getTime();
-            }
-        }finally {
-            return timeStampInApk>0 ? timeStampInApk : 0;
+    private boolean isBundleFileMatched(String location,File file){
+        if(!file.exists() || !AtlasBundleInfoManager.instance().isInternalBundle(location)){
+            return false;
         }
+        BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
+        if(info!=null && info.getSize()>0 && info.getSize()!=file.length()){
+            Log.e("BundleInstaller","wanted size: "+info.getSize()+"| realSize: "+file.length());
+            return false;
+        }
+        return true;
     }
 
     private Bundle installBundleFromApk(String bundleName) throws Exception{

@@ -213,13 +213,14 @@ import android.graphics.drawable.Drawable;
 import android.taobao.atlas.R;
 import android.util.AttributeSet;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class DefaultProgress extends LinearLayout {
+public class DefaultProgress extends FrameLayout {
 
-    private TextView mTextView;
+//    private TextView mTextView;
     private ImageView mProgressView;
     private DefaultProgressDrawable mProgressDrawable;
 
@@ -229,8 +230,8 @@ public class DefaultProgress extends LinearLayout {
         this.mProgressDrawable.setCallback(this);
         View.inflate(context, R.layout.atlas_progress, this);
         this.mProgressView = (ImageView)this.findViewById(R.id.at_circularProgress);
-        this.mTextView = (TextView) this.findViewById(R.id.at_progressText);
-        this.setOrientation(LinearLayout.VERTICAL);
+//        this.mTextView = (TextView) this.findViewById(R.id.at_progressText);
+//        this.setOrientation(LinearLayout.VERTICAL);
         this.mProgressDrawable.setRingColor(0xFF999999);
         this.mProgressDrawable.setRingWidth(2*context.getResources().getDisplayMetrics().density);
         int  ringSize = (int)(32*context.getResources().getDisplayMetrics().density);
@@ -238,8 +239,8 @@ public class DefaultProgress extends LinearLayout {
         this.mProgressView.getLayoutParams().width = ringSize;
         this.mProgressView.getLayoutParams().height =ringSize;
         this.mProgressView.setImageDrawable(this.mProgressDrawable);
-        this.mTextView.setTextSize(0,14*context.getResources().getDisplayMetrics().density);
-        this.mTextView.setTextColor(0xFF999999);
+//        this.mTextView.setTextSize(0,14*context.getResources().getDisplayMetrics().density);
+//        this.mTextView.setTextColor(0xFF999999);
         this.setBackgroundDrawable(context.getResources().getDrawable(R.drawable.atlas_waitview));
         this.setAlpha(1.0F);
     }
