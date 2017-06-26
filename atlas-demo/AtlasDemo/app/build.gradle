@@ -87,7 +87,7 @@ atlas {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile('com.taobao.android:atlas_core:5.0.7.166-SNAPSHOT@aar') {
+    compile('com.taobao.android:atlas_core:5.0.7.26@aar') {
 
         transitive = true
     }
