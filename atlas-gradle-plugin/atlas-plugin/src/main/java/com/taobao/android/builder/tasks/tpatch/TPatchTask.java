@@ -306,6 +306,10 @@ public class TPatchTask extends BaseTask {
         TPatchTool tPatchTool = new TPatchTool(apkBO,
                                                newApkBO,
                                                patchContext.diffBundleDex);
+        //TODO
+        if (null != patchContext.patchVersions) {
+            tPatchTool.setVersionList(patchContext.patchVersions);
+        }
 
         List<Pair<BundleBO, BundleBO>> remoteBundles = new ArrayList<>();
 
@@ -525,6 +529,8 @@ public class TPatchTask extends BaseTask {
                         .isOnlyIncrementInMain();
                     tPatchContext.appSignName = tBuildType.getPatchConfig().getAppSignName();
 
+                    tPatchContext.patchVersions = tBuildType.getPatchConfig().getPatchVersions();
+
                     return tPatchContext;
                 }
             });
@@ -564,6 +570,8 @@ public class TPatchTask extends BaseTask {
 
         //    @Parameter(property = "android.patch.mainBundleName", defaultValue = "libcom_taobao_maindex")
         public String mainBundleName;
+
+        public List<String> patchVersions;
 
         public Set<ArtifactBundleInfo> artifactBundleInfos;
 

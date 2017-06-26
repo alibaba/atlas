@@ -282,7 +282,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         assert null != processAwbAndroidResources;
 
         javacTask.source(processAwbAndroidResources.getSourceOutputDir());
-        if (scope.getGlobalScope().getExtension().getDataBinding().isEnabled() && awbBundle.isDataBindEnabled()) {
+        if (appVariantOutputContext.getVariantContext().isDataBindEnabled(awbBundle) && awbBundle.isDataBindEnabled()) {
             javacTask.source(appVariantOutputContext.getVariantContext()
                                  .getAwbClassOutputForDataBinding(awbBundle));
         }

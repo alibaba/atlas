@@ -207,68 +207,28 @@
  *
  */
 
-package com.taobao.android.builder.tools.multidex;
+package com.taobao.android.builder.tools.multidex.mutli;
 
-import com.taobao.android.dex.Dex;
-import com.taobao.android.dex.DexIndexOverflowException;
-import com.taobao.android.dex.FieldId;
-import com.taobao.android.dex.MethodId;
+import java.io.File;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.apache.commons.io.comparator.NameFileComparator;
 
-public class DexGroup {
+/**
+ * Created by wuzhong on 2017/5/9.
+ */
+public class NameComparator extends NameFileComparator {
 
-    public static final int MAX_FIELD_IDS = 65530;
-    public static final int MAX_METHOD_IDS = 65530;
-    public static final int MAX_METHOD_IDS_FIRSTDEX = 65000;
+    @Override
+    public int compare(File file1, File file2) {
 
-    public boolean firstDex;
-
-    public List<Dex> dexs = new ArrayList<>();
-
-    public int methods = 0;
-    public int fields = 0;
-    public Set<String> strings = new HashSet<>();
-
-    public boolean addDex(Dex dex) {
-
-        int ms = dex.getTableOfContents().methodIds.size;
-        int fs = dex.getTableOfContents().fieldIds.size;
-
-        Set<String> newstrings = new HashSet<>(strings);
-        newstrings.addAll(dex.strings());
-
-        if (fs >= MAX_FIELD_IDS) {
-            throw new DexIndexOverflowException("field ID not in [0, 0xffff]: " + fs);
-        }
-        if (methods + ms >= (firstDex ? MAX_METHOD_IDS_FIRSTDEX : MAX_METHOD_IDS) || fields + fs >= MAX_FIELD_IDS || newstrings.size() >= MAX_FIELD_IDS) {
-            return false;
+        if (file1.getName().startsWith("combined")) {
+            return 1;
         }
 
-        dexs.add(dex);
-        methods += ms;
-        fields += fs;
-        strings = newstrings;
-
-        return true;
-    }
-
-    private Set<String> getMethods(Dex dex) {
-        Set<String> sets = new HashSet<>();
-        for (MethodId mi : dex.methodIds()) {
-            sets.add(mi.toString());
+        if (file2.getName().startsWith("combined")) {
+            return -1;
         }
-        return sets;
-    }
 
-    private Set<String> getFields(Dex dex) {
-        Set<String> sets = new HashSet<>();
-        for (FieldId filedId : dex.fieldIds()) {
-            sets.add(filedId.toString());
-        }
-        return sets;
+        return super.compare(file1, file2);
     }
 }

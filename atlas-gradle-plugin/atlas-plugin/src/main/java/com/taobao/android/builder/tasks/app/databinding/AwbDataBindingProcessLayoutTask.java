@@ -253,6 +253,10 @@ public class AwbDataBindingProcessLayoutTask extends BaseTask {
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getDataBindingBundles().contains(awbBundle.getPackageName())){
+                continue;
+            }
+
             tasks.add(new Runnable() {
                 @Override
                 public void run() {

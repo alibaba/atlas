@@ -206,140 +206,190 @@
  *
  *
  */
-package com.taobao.android.builder.tools.concurrent;
 
+package com.taobao.android.builder.tools.multidex.mutli;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
+import java.util.Map;
+import java.util.Set;
 
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.google.common.base.Joiner;
+import com.taobao.android.builder.extension.MultiDexConfig;
+import com.taobao.android.builder.extension.TBuildConfig;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.NotFoundException;
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import proguard.obfuscate.MappingReader;
 
-public class ExecutorServicesHelper {
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
-    // 启动的线程数
-    private ExecutorService executorService = null;
+/**
+ * Created by wuzhong on 2017/6/16.
+ */
+public class MainDexLister {
 
-    private Logger logger;
+    private static Logger logger = LoggerFactory.getLogger(MainDexLister.class);
 
-    private String name;
+    private AppVariantContext appVariantContext;
+    private MultiDexConfig multiDexConfig;
 
-    private int threadCount;
-
-    public ExecutorServicesHelper(String name, Logger logger, int threadCount) {
-
-        this.name = name;
-        this.logger = logger;
-
-        if (threadCount == 0) {
-            threadCount = (Runtime.getRuntime().availableProcessors() / 2) + 1;
-        }
-
-        this.threadCount = threadCount;
-        //
+    public MainDexLister(AppVariantContext appVariantContext,
+                         MultiDexConfig multiDexConfig) {
+        this.appVariantContext = appVariantContext;
+        this.multiDexConfig = multiDexConfig;
     }
 
-    public AtomicInteger index = new AtomicInteger(0);
+    public List<String> getMainDexList(Collection<File> files) {
 
-    private boolean hasException;
+        GradleVariantConfiguration config = appVariantContext.getVariantConfiguration();
 
-    private Throwable exception;
+        Set<String> mainDexList = new HashSet<String>();
 
-    public void execute(List<Runnable> runnables) throws InterruptedException {
+        //混淆的map
+        //Map<String, String> classMap = getClassObfMap(config);
 
-        if (runnables.isEmpty()) {
-            return;
-        }
+        File manifest = appVariantContext.getVariantData().getOutputs().get(0).manifestProcessorTask
+            .getManifestOutputFile();
 
-        Stream<Runnable> stream = runnables.stream();
-        if (threadCount > 1) {
-            stream = stream.parallel();
-        }
+        String applicationName = ManifestFileUtils.getApplicationName(manifest);
 
-        stream.forEach((Runnable runnable) -> {
-            try {
+        ClassPool classPool = new ClassPool();
 
-                if (!hasException) {
-                    info("excute " +
-                             name +
-                             " task at " +
-                             index.incrementAndGet() +
-                             "/" +
-                             runnables.size());
-                    runnable.run();
+        try {
+            for (File file : files) {
+                if (file.isFile()) {
+                    classPool.insertClassPath(file.getAbsolutePath());
+                } else {
+                    classPool.appendClassPath(file.getAbsolutePath());
                 }
-            } catch (Throwable gradleException) {
-                hasException = true;
-                exception = gradleException;
             }
-        });
-
-        if (hasException) {
-            throw new GradleException(exception.getMessage(), exception);
+        } catch (NotFoundException e) {
+            throw new GradleException(e.getMessage(), e);
         }
+
+        TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
+
+        HashSet handleList = new HashSet<String>();
+        Set<String> headClasses = new HashSet<>();
+
+        headClasses.add(applicationName);
+        headClasses.add("android.taobao.atlas.bridge.BridgeApplicationDelegate");
+        headClasses.addAll(multiDexConfig.getFirstDexClasses());
+
+        String preLaunchStr = tBuildConfig.getPreLaunch();
+        if (!org.apache.commons.lang3.StringUtils.isEmpty(preLaunchStr)) {
+            String[] launchArray = preLaunchStr.split("\\|");
+            if (launchArray.length > 0) {
+                for (String launchItem : launchArray) {
+                    String[] launchInfo = launchItem.split(":");
+                    String clazzName = launchInfo[0];
+                    headClasses.add(clazzName);
+                }
+            }
+        }
+
+        for (String headClass : headClasses) {
+            addRefClazz(classPool, headClass, mainDexList, handleList);
+        }
+
+        //get manifest
+        List<String> maindexListClazz = new ArrayList<String>();
+        for (String newLine : mainDexList) {
+            newLine = newLine.replaceAll("\\.", "/") + ".class";
+            maindexListClazz.add(newLine);
+        }
+
+        try {
+            FileUtils.writeLines(new File(appVariantContext.getProject().getBuildDir(), "outputs/maindexlist.txt"),
+                                 mainDexList);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return maindexListClazz;
     }
 
-    public <T> void execute(BlockingQueue<T> blockingQueue,
-                            Handler<T> handler) throws InterruptedException {
+    private Map<String, String> getClassObfMap(GradleVariantConfiguration config) {
+        Map<String, String> classMap = new HashMap<String, String>();
+        boolean isMinifyEnabled = config.isMinifyEnabled();
+        File proguardOut = new File(Joiner.on(File.separatorChar).join(
+            String.valueOf(appVariantContext.getScope().getGlobalScope().getBuildDir()), FD_OUTPUTS, "mapping",
+            appVariantContext.getScope().getVariantConfiguration().getDirName()));
+        File mappingFile = new File(proguardOut, "mapping.txt");
+        // 解析mapping文件,生成新的mainDexListFile
+        if (isMinifyEnabled && mappingFile.exists()) {
+            MappingReader mappingReader = new MappingReader(mappingFile);
+            MappingReaderProcess process = new MappingReaderProcess();
+            try {
+                mappingReader.pump(process);
+            } catch (IOException e) {
+                throw new GradleException(e.getMessage(), e);
+            }
+            classMap = process.classMapping;
+        }
+        return classMap;
+    }
 
-        if (blockingQueue.isEmpty()) {
+    @Nullable
+    private String getRealClazz(Map<String, String> classMap, String line) {
+        String realClazz = classMap.isEmpty() ? line : classMap.get(line);
+        if (null == realClazz) {
+            realClazz = line;
+        }
+        return realClazz;
+    }
+
+    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, Set<String> handleList) {
+
+        if (handleList.contains(clazz)) {
             return;
         }
 
-        if (null == this.executorService){
-            this.executorService = Executors.newFixedThreadPool(threadCount);
-        }
-
-        final CountDownLatch countDownLatch = new CountDownLatch(this.threadCount);
-
-        for (int i = 0; i < this.threadCount; i++) {
-            this.executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-
-                    try {
-
-                        while (true) {
-
-                            T t = blockingQueue.poll();
-
-                            if (null == t) {
-                                break;
-                            }
-
-                            handler.handle(t);
-                        }
-                    } catch (GradleException gradleException) {
-                        hasException = true;
-                        exception = gradleException;
-                    } finally {
-                        countDownLatch.countDown();
-                    }
+        //增加黑名单
+        if (!multiDexConfig.getMainDexBlackList().isEmpty()) {
+            for (String blackItem : multiDexConfig.getMainDexBlackList()) {
+                if (clazz.startsWith(blackItem)) {
+                    return;
                 }
-            });
+            }
         }
 
-        countDownLatch.await();
+        try {
 
-        if (hasException) {
-            throw new GradleException(exception.getMessage(), exception);
+            CtClass ctClass = classPool.get(clazz);
+
+            if (null != ctClass) {
+
+                logger.info("[MainDex] add " + clazz + " to main dex list");
+                classList.add(clazz);
+                handleList.add(clazz);
+
+                Collection<String> references = ctClass.getRefClasses();
+
+                if (null == references) {
+                    return;
+                }
+
+                for (String clazz2 : references) {
+                    addRefClazz(classPool, clazz2, classList, handleList);
+                }
+            }
+        } catch (Throwable e) {
         }
     }
 
-    private void info(String msg) {
-        if (null != logger) {
-            logger.info(msg);
-        } else {
-            System.out.println(msg);
-        }
-    }
-
-    public static interface Handler<T> {
-
-        public void handle(T t);
-    }
 }

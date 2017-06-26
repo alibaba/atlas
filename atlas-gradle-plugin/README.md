@@ -2,10 +2,21 @@
 
 ## changelog
 
-### TODO
+### 2.3.3.beta1
 
-1. unit tag diff bundle 不变
+0. 升级android builder 到 2.3.3版本
+1. unit tag 非 diff bundle 保持 不变
 2. tBuildConfig.minPackageId 可设置最小的自动分配packageId，默认35（10进制）开始
+3. 加强对插件配置使用的校验
+      1. 不推荐在atlasplugin之前添加google官方的插件，推荐让atlasplugin自动依赖传递进来
+      2. bundle之前的依赖推荐使用bundleCompile， 如果使用compile awb，会有警告日志
+      3. awb 之间允许使用 providedCompile 依赖
+4. databinding优化，后续bundle的databinding需要独立配置是否启用
+
+        tBuildConfig.dataBindingBundles 
+        配置值为 bundle 的packageName 
+        类型为 Set<String>
+        代码： com.taobao.android.builder.extension.TBuildConfig.dataBindingBundles
 
 
 ### 2.3.1.rc15

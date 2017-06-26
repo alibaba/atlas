@@ -271,6 +271,10 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getDataBindingBundles().contains(awbBundle.getPackageName())){
+                continue;
+            }
+
             runnables.add(new Runnable() {
                 @Override
                 public void run() {

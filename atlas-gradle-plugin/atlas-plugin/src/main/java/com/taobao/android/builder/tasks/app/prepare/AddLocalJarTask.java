@@ -206,140 +206,134 @@
  *
  *
  */
-package com.taobao.android.builder.tools.concurrent;
 
+package com.taobao.android.builder.tasks.app.prepare;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
+import java.util.concurrent.ExecutionException;
 
-import org.gradle.api.GradleException;
-import org.slf4j.Logger;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.model.AndroidLibrary;
+import com.google.common.collect.Lists;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import org.dom4j.DocumentException;
+import org.gradle.api.Project;
+import org.gradle.api.tasks.TaskAction;
 
-public class ExecutorServicesHelper {
+import static com.android.SdkConstants.DOT_JAR;
+import static com.android.SdkConstants.FD_AAR_LIBS;
 
-    // 启动的线程数
-    private ExecutorService executorService = null;
+/**
+ * 1. 增加localjar
+ *
+ * @author wuzhong
+ */
+public class AddLocalJarTask extends BaseTask {
 
-    private Logger logger;
+    static final String taskName = "addLocalJar";
 
-    private String name;
+    AtlasDependencyTree atlasDependencyTree;
 
-    private int threadCount;
+    AppVariantContext appVariantContext;
 
-    public ExecutorServicesHelper(String name, Logger logger, int threadCount) {
+    @TaskAction
+    void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
+                                                                                   getLogger(),
+                                                                                   0);
 
-        this.name = name;
-        this.logger = logger;
-
-        if (threadCount == 0) {
-            threadCount = (Runtime.getRuntime().availableProcessors() / 2) + 1;
-        }
-
-        this.threadCount = threadCount;
-        //
-    }
-
-    public AtomicInteger index = new AtomicInteger(0);
-
-    private boolean hasException;
-
-    private Throwable exception;
-
-    public void execute(List<Runnable> runnables) throws InterruptedException {
-
-        if (runnables.isEmpty()) {
-            return;
-        }
-
-        Stream<Runnable> stream = runnables.stream();
-        if (threadCount > 1) {
-            stream = stream.parallel();
-        }
-
-        stream.forEach((Runnable runnable) -> {
-            try {
-
-                if (!hasException) {
-                    info("excute " +
-                             name +
-                             " task at " +
-                             index.incrementAndGet() +
-                             "/" +
-                             runnables.size());
-                    runnable.run();
-                }
-            } catch (Throwable gradleException) {
-                hasException = true;
-                exception = gradleException;
+        Project project = getProject();
+        //TODO localjar for main dex must on
+        for( AndroidLibrary androidLibrary : atlasDependencyTree.getMainBundle().getAllLibraryAars()){
+            List<File> localJars = getLocalJars(androidLibrary.getFolder());
+            //System.out.println("get local libs");
+            for (File file : localJars) {
+                project.getLogger().info("add local jar to dependency " + file.getAbsolutePath() + "->" + androidLibrary
+                    .getResolvedCoordinates().toString());
             }
-        });
-
-        if (hasException) {
-            throw new GradleException(exception.getMessage(), exception);
+            androidLibrary.getLocalJars().addAll(localJars);
         }
+
+        if (isLocalJarEnabled(project)) {
+            List<AndroidLibrary> bundleLibraries = new ArrayList<>(atlasDependencyTree.getAllAndroidLibrarys());
+            bundleLibraries.removeAll(atlasDependencyTree.getMainBundle().getAllLibraryAars());
+            for (final AndroidLibrary aarBundle : bundleLibraries) {
+                List<File> localJars = getLocalJars(aarBundle.getFolder());
+                //System.out.println("get local libs");
+                for (File file : localJars) {
+                    project.getLogger().info("add local jar to dependency " + file.getAbsolutePath() + "->" + aarBundle
+                        .getResolvedCoordinates().toString());
+                }
+                aarBundle.getLocalJars().addAll(localJars);
+            }
+        }
+
     }
 
-    public <T> void execute(BlockingQueue<T> blockingQueue,
-                            Handler<T> handler) throws InterruptedException {
-
-        if (blockingQueue.isEmpty()) {
-            return;
+    private boolean isLocalJarEnabled(Project project) {
+        boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
+        if (project.hasProperty("localJarEnabled")) {
+            localJarEnabled = "true".equals(project.property("localJarEnabled"));
         }
+        return localJarEnabled;
+    }
 
-        if (null == this.executorService){
-            this.executorService = Executors.newFixedThreadPool(threadCount);
-        }
+    private List<File> getLocalJars(File rootDir) {
+        List<File> localJars = Lists.newArrayList();
+        List<File> rootDirs = new ArrayList<>();
+        rootDirs.add(new File(rootDir, FD_AAR_LIBS));
+        rootDirs.add(new File(rootDir, "jars/"+FD_AAR_LIBS));
 
-        final CountDownLatch countDownLatch = new CountDownLatch(this.threadCount);
-
-        for (int i = 0; i < this.threadCount; i++) {
-            this.executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-
-                    try {
-
-                        while (true) {
-
-                            T t = blockingQueue.poll();
-
-                            if (null == t) {
-                                break;
-                            }
-
-                            handler.handle(t);
-                        }
-                    } catch (GradleException gradleException) {
-                        hasException = true;
-                        exception = gradleException;
-                    } finally {
-                        countDownLatch.countDown();
+        for (File root : rootDirs){
+            File[] jarList = root.listFiles();
+            if (jarList != null) {
+                for (File jars : jarList) {
+                    if (jars.isFile() && jars.getName().endsWith(DOT_JAR)) {
+                        localJars.add(jars);
                     }
                 }
-            });
+            }
         }
 
-        countDownLatch.await();
-
-        if (hasException) {
-            throw new GradleException(exception.getMessage(), exception);
-        }
+        return localJars;
     }
 
-    private void info(String msg) {
-        if (null != logger) {
-            logger.info(msg);
-        } else {
-            System.out.println(msg);
+
+
+    public static class ConfigAction extends MtlBaseTaskAction<AddLocalJarTask> {
+
+        AppVariantContext appVariantContext;
+        public ConfigAction(AppVariantContext appVariantContext,
+                            BaseVariantOutputData baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
         }
-    }
 
-    public static interface Handler<T> {
+        @Override
+        public String getName() {
+            return scope.getTaskName(taskName);
+        }
 
-        public void handle(T t);
+        @Override
+        public Class<AddLocalJarTask> getType() {
+            return AddLocalJarTask.class;
+        }
+
+        @Override
+        public void execute(AddLocalJarTask localJarTask) {
+
+            super.execute(localJarTask);
+            localJarTask.appVariantContext =appVariantContext;
+            localJarTask.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                localJarTask.getVariantName());
+        }
     }
 }

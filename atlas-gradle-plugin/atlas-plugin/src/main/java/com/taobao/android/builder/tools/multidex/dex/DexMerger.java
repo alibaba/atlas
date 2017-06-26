@@ -206,140 +206,253 @@
  *
  *
  */
-package com.taobao.android.builder.tools.concurrent;
 
+package com.taobao.android.builder.tools.multidex.dex;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import com.taobao.android.builder.extension.MultiDexConfig;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import com.taobao.android.builder.tools.multidex.FastMultiDexer;
+import com.taobao.android.dex.Dex;
+import com.taobao.android.dex.DexIndexOverflowException;
+import com.taobao.android.dx.merge.CollisionPolicy;
+import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ExecutorServicesHelper {
+/**
+ * Created by wuzhong on 2017/5/31.
+ */
+public class DexMerger {
 
-    // 启动的线程数
-    private ExecutorService executorService = null;
+    public static final String FASTMAINDEX_JAR = "fastmaindex";
+    private static Logger logger = LoggerFactory.getLogger(DexMerger.class);
 
-    private Logger logger;
+    private MultiDexConfig multiDexConfig;
+    private List<File> fileList;
 
-    private String name;
+    private LinkedHashMap<File, Dex> jarDexMap = new LinkedHashMap<>();
+    public List<Dex> dexList = new ArrayList<>();
 
-    private int threadCount;
+    public DexMerger(MultiDexConfig multiDexConfig, Collection<File> fileList) throws IOException {
 
-    public ExecutorServicesHelper(String name, Logger logger, int threadCount) {
+        this.multiDexConfig = multiDexConfig;
+        this.fileList = fileList.stream().sorted(new FileComparator()).collect(Collectors.toList());
 
-        this.name = name;
-        this.logger = logger;
-
-        if (threadCount == 0) {
-            threadCount = (Runtime.getRuntime().availableProcessors() / 2) + 1;
+        for (File file : fileList) {
+            Dex dex = new Dex(file);
+            jarDexMap.put(file, dex);
         }
 
-        this.threadCount = threadCount;
-        //
+        dexList = new ArrayList<>(jarDexMap.values());
+
     }
 
-    public AtomicInteger index = new AtomicInteger(0);
+    public DexMerger(MultiDexConfig multiDexConfig, Map<File, Dex> fileDexMap) {
+        this.multiDexConfig = multiDexConfig;
+        this.fileList = fileDexMap.keySet().stream().sorted(new FileComparator()).collect(Collectors.toList());
 
-    private boolean hasException;
-
-    private Throwable exception;
-
-    public void execute(List<Runnable> runnables) throws InterruptedException {
-
-        if (runnables.isEmpty()) {
-            return;
+        for (File file : fileList) {
+            Dex dex = fileDexMap.get(file);
+            jarDexMap.put(file, dex);
         }
 
-        Stream<Runnable> stream = runnables.stream();
-        if (threadCount > 1) {
-            stream = stream.parallel();
-        }
+        dexList = new ArrayList<>(jarDexMap.values());
 
-        stream.forEach((Runnable runnable) -> {
-            try {
-
-                if (!hasException) {
-                    info("excute " +
-                             name +
-                             " task at " +
-                             index.incrementAndGet() +
-                             "/" +
-                             runnables.size());
-                    runnable.run();
-                }
-            } catch (Throwable gradleException) {
-                hasException = true;
-                exception = gradleException;
-            }
-        });
-
-        if (hasException) {
-            throw new GradleException(exception.getMessage(), exception);
-        }
     }
 
-    public <T> void execute(BlockingQueue<T> blockingQueue,
-                            Handler<T> handler) throws InterruptedException {
+    public List<DexGroup> group() {
 
-        if (blockingQueue.isEmpty()) {
-            return;
-        }
+        List<DexGroup> dexGroupList = new ArrayList<>();
 
-        if (null == this.executorService){
-            this.executorService = Executors.newFixedThreadPool(threadCount);
-        }
+        addDexByRule(dexGroupList);
 
-        final CountDownLatch countDownLatch = new CountDownLatch(this.threadCount);
+        addDexLimited(dexGroupList, true);
 
-        for (int i = 0; i < this.threadCount; i++) {
-            this.executorService.execute(new Runnable() {
+        return dexGroupList;
+
+    }
+
+    public void executeMerge(File outDexFolder, List<DexGroup> dexGroupList) {
+
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("dexmerge", LoggerFactory
+            .getLogger(FastMultiDexer.class), dexGroupList.size());
+        List<Runnable> runnables = new ArrayList<>(dexGroupList.size());
+
+        Dex[] mergedList = new Dex[dexGroupList.size()];
+        for (int i = 0; i < dexGroupList.size(); i++) {
+            final List<Dex> dexes = dexGroupList.get(i).dexs;
+            final int index = i;
+            runnables.add(new Runnable() {
                 @Override
                 public void run() {
-
                     try {
-
-                        while (true) {
-
-                            T t = blockingQueue.poll();
-
-                            if (null == t) {
-                                break;
-                            }
-
-                            handler.handle(t);
-                        }
-                    } catch (GradleException gradleException) {
-                        hasException = true;
-                        exception = gradleException;
-                    } finally {
-                        countDownLatch.countDown();
+                        mergeDex(outDexFolder, dexes, index, mergedList);
+                    } catch (Throwable e) {
+                        throw new GradleException(e.getMessage(), e);
                     }
                 }
             });
         }
 
-        countDownLatch.await();
+        try {
+            executorServicesHelper.execute(runnables);
+        } catch (InterruptedException e) {
+            throw new GradleException(e.getMessage(), e);
+        }
 
-        if (hasException) {
-            throw new GradleException(exception.getMessage(), exception);
+        if (!dexList.isEmpty()) {
+            mergeSmallDexs(outDexFolder, mergedList);
+        }
+
+    }
+
+    private void mergeSmallDexs(File outDexFolder, Dex[] mergedList) {
+        List<DexGroup> dexGroupList = new ArrayList<>();
+        for (int i = 0; i < mergedList.length; i++) {
+            DexGroup dexGroup = new DexGroup();
+            dexGroup.firstDex = (0 == i);
+            dexGroup.addDex(mergedList[i]);
+            dexGroupList.add(i, dexGroup);
+        }
+
+        addDexLimited(dexGroupList, false);
+
+        executeMerge(outDexFolder, dexGroupList);
+    }
+
+    private void mergeDex(File outDexFolder, List<Dex> tmpList, int index, Dex[] mergedList) throws IOException {
+
+        com.taobao.android.dx.merge.DexMerger dexMerger = new com.taobao.android.dx.merge.DexMerger(
+            tmpList.toArray(new Dex[0]),
+            CollisionPolicy.KEEP_FIRST);
+
+        dexMerger.setCompactWasteThreshold(1024);
+
+        Dex dex = dexMerger.merge();
+
+        mergedList[index] = dex;
+
+        if (dexList.isEmpty()) {
+            logger.warn("dexCount of {}, methods {} , fields {}", index, dex.getTableOfContents().methodIds.size,
+                        dex.getTableOfContents().fieldIds.size);
+
+            String name = "classes" + (0 == index ? "" : String.valueOf(index + 1)) + ".dex";
+
+            File dexFile = new File(outDexFolder, name);
+
+            dex.writeTo(dexFile);
         }
     }
 
-    private void info(String msg) {
-        if (null != logger) {
-            logger.info(msg);
-        } else {
-            System.out.println(msg);
+    private void addDexByRule(List<DexGroup> dexDtos) {
+
+        DexGroup fistDto = new DexGroup();
+        fistDto.firstDex = (true);
+        dexDtos.add(0, fistDto);
+        for (File file : fileList) {
+            if (file.getParentFile().getName().equals(FASTMAINDEX_JAR)) {
+                Dex dex = jarDexMap.get(file);
+                fistDto.addDex(dex);
+                dexList.remove(dex);
+            }
         }
+
+        if (StringUtils.isEmpty(multiDexConfig.getDexSplitRules())) {
+            return;
+        }
+
+        String[] rules = multiDexConfig.getDexSplitRules().split(";");
+        for (int i = 0; i < rules.length; i++) {
+            String rule = rules[i];
+            if (StringUtils.isEmpty(rule)) {
+                continue;
+            }
+            String[] items = rule.split(",");
+
+            DexGroup dexDto = null;
+            if (0 == i) {
+                dexDto = fistDto;
+            } else {
+                fistDto:
+                new DexGroup();
+                dexDtos.add(i, dexDto);
+            }
+
+            for (File file : fileList) {
+                if (match(items, file) || (0 == i && file.getName().equals(FASTMAINDEX_JAR))) {
+                    Dex dex = jarDexMap.get(file);
+                    if (!dexDto.addDex(dex)) {
+                        throw new DexIndexOverflowException(file.getAbsolutePath() + " can't add to dex" + i);
+                    }
+                    dexList.remove(dex);
+                }
+            }
+        }
+
     }
 
-    public static interface Handler<T> {
+    private void addDexLimited(List<DexGroup> dexDtos, boolean limited) {
 
-        public void handle(T t);
+        int dexCount = multiDexConfig.getDexCount();
+        if (dexCount == 0) {
+            dexCount = Integer.MAX_VALUE;
+        }
+
+        int index = 0;
+        DexGroup dexDto = getDexDto(dexDtos, index);
+        for (Dex dex : new ArrayList<>(dexList)) {
+            //如果不能加入进去，需要重新扩展一个dex
+            while (!dexDto.addDex(dex)) {
+
+                if (limited && index >= dexCount) {
+                    return;
+                }
+
+                dexDto = getDexDto(dexDtos, index++);
+
+            }
+            dexList.remove(dex);
+        }
+
     }
+
+    @NotNull
+    private DexGroup getDexDto(List<DexGroup> dexDtos, int index) {
+        if (dexDtos.size() <= index) {
+            DexGroup dexDto = new DexGroup();
+            dexDtos.add(index, dexDto);
+            return dexDto;
+        }
+
+        DexGroup dexDto = dexDtos.get(index);
+        if (null == dexDto) {
+            dexDto = new DexGroup();
+            if (index == 0) {
+                dexDto.firstDex = true;
+            }
+            dexDtos.add(index, dexDto);
+        }
+        return dexDto;
+    }
+
+    private boolean match(String[] items, File file) {
+        for (String artiId : items) {
+            if (file.getParentFile().getName().contains(artiId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

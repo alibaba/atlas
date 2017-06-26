@@ -44,7 +44,7 @@ android {
     //        dev {
     //            minSdkVersion 14
     //        }
-    //
+    
     //        beta {
     //            minSdkVersion 21
     //        }
@@ -59,6 +59,7 @@ atlas {
         outOfApkBundles = ['remotebundle']
         preLaunch = 'com.taobao.demo.DemoPreLaunch'
         classInject false
+        dataBindingBundles = ['com.taobao.databindbundle']
     }
 
     manifestOptions {
@@ -86,7 +87,7 @@ atlas {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile('com.taobao.android:atlas_core:5.0.7.166-SNAPSHOT@aar') {
+    compile('com.taobao.android:atlas_core:5.0.7.26@aar') {
 
         transitive = true
     }
@@ -100,7 +101,7 @@ dependencies {
     bundleCompile project(':secondbundle')
     bundleCompile project(':remotebundle')
     bundleCompile project(':publicbundle')
-    //    bundleCompile project(':databindbundle')
+    bundleCompile project(':databindbundle')
 
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'

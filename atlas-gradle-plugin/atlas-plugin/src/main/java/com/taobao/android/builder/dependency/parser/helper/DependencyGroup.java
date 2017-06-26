@@ -217,16 +217,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import com.android.build.gradle.internal.ide.DependencyConvertUtils;
 import com.taobao.android.builder.AtlasPlugin;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.UnknownConfigurationException;
 import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DependencyGroup {
+
+    private static Logger logger = LoggerFactory.getLogger(DependencyGroup.class);
 
     public List<DependencyResult> compileDependencies = new ArrayList<>();
     public List<DependencyResult> bundleDependencies = new ArrayList<>();
@@ -237,19 +244,36 @@ public class DependencyGroup {
     public Map<String, Set<String>> bundleProvidedMap = new HashMap<>();
 
     public DependencyGroup(Configuration compileClasspath,
-                           Configuration bundleClasspath) {
+                           Configuration bundleClasspath,
+                           Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
 
         Set<? extends DependencyResult> compileDependencies = compileClasspath.getIncoming()
-            .getResolutionResult()
-            .getRoot()
-            .getDependencies();
+                                                                                .getResolutionResult()
+                                                                                .getRoot()
+                                                                                .getDependencies();
 
         Set<? extends DependencyResult> bundleCompileDependencies = bundleClasspath.getIncoming()
-            .getResolutionResult()
-            .getRoot()
-            .getDependencies();
+                                                                            .getResolutionResult()
+                                                                            .getRoot()
+                                                                            .getDependencies();
+
+
 
         Set<String> bundleSets = getBundleDependencies(compileClasspath, bundleCompileDependencies);
+        //分析出 compileDependencies 中的bundle依赖
+        for (DependencyResult dependencyResult : compileDependencies) {
+            if (DependencyConvertUtils.isAwbDependency(dependencyResult, artifacts)) {
+                String name = dependencyResult.toString();
+                if (!bundleSets.contains(name)) {
+                    bundleSets.add(name);
+                    logger.error("please use bundleCompile for " + name);
+                }
+
+            }
+
+        }
+
+
         Set<String> bundleAddedSets = new HashSet<>();
         for (DependencyResult dependencyResult : compileDependencies) {
             if (!bundleSets.contains(dependencyResult.toString())) {

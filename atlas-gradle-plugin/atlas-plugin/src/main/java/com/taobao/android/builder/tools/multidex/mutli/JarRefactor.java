@@ -206,140 +206,155 @@
  *
  *
  */
-package com.taobao.android.builder.tools.concurrent;
 
+package com.taobao.android.builder.tools.multidex.mutli;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
 
-import org.gradle.api.GradleException;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.transforms.JarMerger;
+import com.taobao.android.builder.extension.MultiDexConfig;
+import com.taobao.android.builder.tools.FileNameUtils;
+import com.taobao.android.builder.tools.multidex.dex.DexMerger;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ExecutorServicesHelper {
+/**
+ * Created by wuzhong on 2017/6/16.
+ */
+public class JarRefactor {
 
-    // 启动的线程数
-    private ExecutorService executorService = null;
+    private static Logger logger = LoggerFactory.getLogger(JarRefactor.class);
 
-    private Logger logger;
+    private AppVariantContext appVariantContext;
+    private MultiDexConfig multiDexConfig;
 
-    private String name;
-
-    private int threadCount;
-
-    public ExecutorServicesHelper(String name, Logger logger, int threadCount) {
-
-        this.name = name;
-        this.logger = logger;
-
-        if (threadCount == 0) {
-            threadCount = (Runtime.getRuntime().availableProcessors() / 2) + 1;
-        }
-
-        this.threadCount = threadCount;
-        //
+    public JarRefactor(AppVariantContext appVariantContext,
+                       MultiDexConfig multiDexConfig) {
+        this.appVariantContext = appVariantContext;
+        this.multiDexConfig = multiDexConfig;
     }
 
-    public AtomicInteger index = new AtomicInteger(0);
+    public Collection<File> repackageJarList(Collection<File> files) throws IOException {
 
-    private boolean hasException;
+        List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files);
 
-    private Throwable exception;
-
-    public void execute(List<Runnable> runnables) throws InterruptedException {
-
-        if (runnables.isEmpty()) {
-            return;
-        }
-
-        Stream<Runnable> stream = runnables.stream();
-        if (threadCount > 1) {
-            stream = stream.parallel();
-        }
-
-        stream.forEach((Runnable runnable) -> {
-            try {
-
-                if (!hasException) {
-                    info("excute " +
-                             name +
-                             " task at " +
-                             index.incrementAndGet() +
-                             "/" +
-                             runnables.size());
-                    runnable.run();
-                }
-            } catch (Throwable gradleException) {
-                hasException = true;
-                exception = gradleException;
+        List<File> jarList = new ArrayList<>();
+        List<File> folderList = new ArrayList<>();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                folderList.add(file);
+            } else {
+                jarList.add(file);
             }
-        });
-
-        if (hasException) {
-            throw new GradleException(exception.getMessage(), exception);
-        }
-    }
-
-    public <T> void execute(BlockingQueue<T> blockingQueue,
-                            Handler<T> handler) throws InterruptedException {
-
-        if (blockingQueue.isEmpty()) {
-            return;
         }
 
-        if (null == this.executorService){
-            this.executorService = Executors.newFixedThreadPool(threadCount);
+        File dir = new File(appVariantContext.getScope().getGlobalScope().getIntermediatesDir(),
+                            "fastmultidex/" + appVariantContext.getVariantName());
+        FileUtils.deleteDirectory(dir);
+        dir.mkdirs();
+
+        if (!folderList.isEmpty()) {
+            File mergedJar = new File(dir, "jarmerging/combined.jar");
+            mergedJar.getParentFile().mkdirs();
+            mergedJar.delete();
+            mergedJar.createNewFile();
+            JarMerger jarMerger = new JarMerger(mergedJar);
+            for (File folder : folderList) {
+                jarMerger.addFolder(folder);
+            }
+            jarMerger.close();
+            if (mergedJar.length() > 0) {
+                jarList.add(mergedJar);
+            }
         }
 
-        final CountDownLatch countDownLatch = new CountDownLatch(this.threadCount);
+        List<File> result = new ArrayList<>();
+        File maindexJar = new File(dir, DexMerger.FASTMAINDEX_JAR + ".jar");
 
-        for (int i = 0; i < this.threadCount; i++) {
-            this.executorService.execute(new Runnable() {
-                @Override
-                public void run() {
+        JarOutputStream mainJarOuputStream = new JarOutputStream(
+            new BufferedOutputStream(new FileOutputStream(maindexJar)));
 
-                    try {
+        //先排序
+        Collections.sort(jarList, new NameComparator());
 
-                        while (true) {
+        for (File jar : jarList) {
+            File outJar = new File(dir, FileNameUtils.getUniqueJarName(jar) + ".jar");
+            result.add(outJar);
+            JarFile jarFile = new JarFile(jar);
+            JarOutputStream jos = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(outJar)));
+            Enumeration<JarEntry> jarFileEntries = jarFile.entries();
 
-                            T t = blockingQueue.poll();
+            List<String> pathList = new ArrayList<>();
+            while (jarFileEntries.hasMoreElements()) {
+                JarEntry ze = jarFileEntries.nextElement();
+                String pathName = ze.getName();
+                if (mainDexList.contains(pathName)) {
+                    copyStream(jarFile.getInputStream(ze), mainJarOuputStream, ze, pathName);
+                    pathList.add(pathName);
+                }
+            }
 
-                            if (null == t) {
-                                break;
-                            }
-
-                            handler.handle(t);
-                        }
-                    } catch (GradleException gradleException) {
-                        hasException = true;
-                        exception = gradleException;
-                    } finally {
-                        countDownLatch.countDown();
+            if (!pathList.isEmpty()) {
+                jarFileEntries = jarFile.entries();
+                while (jarFileEntries.hasMoreElements()) {
+                    JarEntry ze = jarFileEntries.nextElement();
+                    String pathName = ze.getName();
+                    if (!pathList.contains(pathName)) {
+                        copyStream(jarFile.getInputStream(ze), jos, ze, pathName);
                     }
                 }
-            });
+            }
+
+            jarFile.close();
+            IOUtils.closeQuietly(jos);
+
+            if (pathList.isEmpty()) {
+                FileUtils.copyFile(jar, outJar);
+            }
+
         }
+        IOUtils.closeQuietly(mainJarOuputStream);
 
-        countDownLatch.await();
+        Collections.sort(result, new NameComparator());
 
-        if (hasException) {
-            throw new GradleException(exception.getMessage(), exception);
+        result.add(0, maindexJar);
+
+        return result;
+    }
+
+    private void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
+        try {
+
+            ZipEntry newEntry = new ZipEntry(pathName);
+            // Make sure there is date and time set.
+            if (ze.getTime() != -1) {
+                newEntry.setTime(ze.getTime());
+                newEntry.setCrc(ze.getCrc()); // If found set it into output file.
+            }
+            jos.putNextEntry(newEntry);
+            IOUtils.copy(inputStream, jos);
+            IOUtils.closeQuietly(inputStream);
+        } catch (Exception e) {
+            //throw new GradleException("copy stream exception", e);
+            //e.printStackTrace();
+            logger.error("copy stream exception >>> " + pathName + " >>>" + e.getMessage());
         }
     }
 
-    private void info(String msg) {
-        if (null != logger) {
-            logger.info(msg);
-        } else {
-            System.out.println(msg);
-        }
-    }
-
-    public static interface Handler<T> {
-
-        public void handle(T t);
-    }
 }

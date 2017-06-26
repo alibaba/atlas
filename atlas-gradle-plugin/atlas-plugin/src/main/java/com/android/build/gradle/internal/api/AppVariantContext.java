@@ -511,4 +511,14 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
         file.mkdirs();
         return file;
     }
+
+    public boolean isDataBindEnabled(AwbBundle awbBundle){
+
+        if( null == appExtension.getDataBinding() || !appExtension.getDataBinding().isEnabled()) {
+            return false;
+        }
+
+        return atlasExtension.getTBuildConfig().getDataBindingBundles().contains(awbBundle.getPackageName());
+
+    }
 }

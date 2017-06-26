@@ -264,7 +264,10 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
     @Override
     public Set<ContentType> getOutputTypes() {
-        return TransformManager.CONTENT_CLASS;
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()){
+            return TransformManager.CONTENT_CLASS;
+        }
+        return super.getOutputTypes();
     }
 
     public AtlasProguardTransform(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {

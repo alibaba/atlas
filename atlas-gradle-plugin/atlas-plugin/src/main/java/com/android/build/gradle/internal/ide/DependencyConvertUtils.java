@@ -212,6 +212,7 @@ package com.android.build.gradle.internal.ide;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.dependency.level2.AndroidDependency;
@@ -225,7 +226,10 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.ResolvedArtifact;
+import org.gradle.api.artifacts.result.DependencyResult;
+import org.gradle.api.artifacts.result.ResolvedDependencyResult;
 
 /**
  * 依赖对象转换的工具类
@@ -372,4 +376,20 @@ public class DependencyConvertUtils {
                                         artifact.getExtension(),
                                         artifact.getClassifier());
     }
+
+    public static boolean isAwbDependency(DependencyResult dependencyResult,
+                                          Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
+        if (dependencyResult instanceof ResolvedDependencyResult) {
+            ResolvedDependencyResult resolvedDependencyResult = (ResolvedDependencyResult)dependencyResult;
+            ModuleVersionIdentifier moduleVersionIdentifier = resolvedDependencyResult.getSelected().getModuleVersion();
+            List<ResolvedArtifact> resolvedArtifacts = artifacts.get(moduleVersionIdentifier);
+
+            if (resolvedArtifacts.size() > 0) {
+                ResolvedArtifact resolvedArtifact = resolvedArtifacts.get(0);
+                return ("awb".equals(resolvedArtifact.getType()));
+            }
+        }
+        return false;
+    }
+
 }

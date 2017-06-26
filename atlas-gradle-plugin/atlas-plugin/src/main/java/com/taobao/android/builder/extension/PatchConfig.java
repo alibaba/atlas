@@ -210,7 +210,9 @@
 package com.taobao.android.builder.extension;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.google.common.collect.Sets;
@@ -271,6 +273,8 @@ public class PatchConfig {
     private String buildId = "";
 
     private boolean tpatchWriteBuildInfo = true;
+
+    private List<String> patchVersions = new ArrayList<>();
 
     public PatchConfig(String name) {
         this.name = name;
@@ -453,5 +457,13 @@ public class PatchConfig {
 
     public void setAppSignName(String appSignName) {
         this.appSignName = appSignName;
+    }
+
+    public List<String> getPatchVersions() {
+        return patchVersions;
+    }
+
+    public void setPatchVersions(List<String> patchVersions) {
+        this.patchVersions = patchVersions;
     }
 }

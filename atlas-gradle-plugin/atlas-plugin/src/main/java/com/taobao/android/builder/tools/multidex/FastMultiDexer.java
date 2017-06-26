@@ -209,49 +209,23 @@
 
 package com.taobao.android.builder.tools.multidex;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.transforms.JarMerger;
 import com.android.builder.core.AtlasBuilder.MultiDexer;
-import com.google.common.base.Joiner;
 import com.taobao.android.builder.extension.MultiDexConfig;
-import com.taobao.android.builder.extension.TBuildConfig;
-import com.taobao.android.builder.tools.FileNameUtils;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.builder.tools.multidex.dex.DexGroup;
+import com.taobao.android.builder.tools.multidex.mutli.JarRefactor;
 import com.taobao.android.dex.Dex;
 import com.taobao.android.dx.merge.CollisionPolicy;
 import com.taobao.android.dx.merge.DexMerger;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.NotFoundException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import proguard.obfuscate.MappingReader;
-
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 /**
  * Created by wuzhong on 2017/5/8.
@@ -292,229 +266,15 @@ public class FastMultiDexer implements MultiDexer {
     @Override
     public Collection<File> repackageJarList(Collection<File> files) throws IOException {
 
-        List<String> mainDexList = getMainDexList(files);
+        return new JarRefactor(appVariantContext, multiDexConfig).repackageJarList(files);
 
-        List<File> jarList = new ArrayList<>();
-        List<File> folderList = new ArrayList<>();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                folderList.add(file);
-            } else {
-                jarList.add(file);
-            }
-        }
-
-        File dir = new File(appVariantContext.getScope().getGlobalScope().getIntermediatesDir(),
-                            "fastmultidex/" + appVariantContext.getVariantName());
-        FileUtils.deleteDirectory(dir);
-        dir.mkdirs();
-
-        if (!folderList.isEmpty()) {
-            File mergedJar = new File(dir, "jarmerging/combined.jar");
-            mergedJar.getParentFile().mkdirs();
-            mergedJar.delete();
-            mergedJar.createNewFile();
-            JarMerger jarMerger = new JarMerger(mergedJar);
-            for (File folder : folderList) {
-                jarMerger.addFolder(folder);
-            }
-            jarMerger.close();
-            if (mergedJar.length() > 0) {
-                jarList.add(mergedJar);
-            }
-        }
-
-        List<File> result = new ArrayList<>();
-        File maindexJar = new File(dir, com.taobao.android.builder.tools.multidex.DexMerger.FASTMAINDEX_JAR + ".jar");
-
-        JarOutputStream mainJarOuputStream = new JarOutputStream(
-            new BufferedOutputStream(new FileOutputStream(maindexJar)));
-        for (File jar : jarList) {
-            File outJar = new File(dir, FileNameUtils.getUniqueJarName(jar) + ".jar");
-            result.add(outJar);
-            JarFile jarFile = new JarFile(jar);
-            JarOutputStream jos = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(outJar)));
-            Enumeration<JarEntry> jarFileEntries = jarFile.entries();
-            while (jarFileEntries.hasMoreElements()) {
-                JarEntry ze = jarFileEntries.nextElement();
-                String pathName = ze.getName();
-                if (mainDexList.contains(pathName)) {
-                    copyStream(jarFile.getInputStream(ze), mainJarOuputStream, ze, pathName);
-                } else {
-                    copyStream(jarFile.getInputStream(ze), jos, ze, pathName);
-                }
-            }
-            jarFile.close();
-            IOUtils.closeQuietly(jos);
-        }
-        IOUtils.closeQuietly(mainJarOuputStream);
-
-        Collections.sort(result, new NameComparator());
-
-        result.add(0, maindexJar);
-
-        return result;
-    }
-
-    protected void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
-        try {
-
-            ZipEntry newEntry = new ZipEntry(pathName);
-            // Make sure there is date and time set.
-            if (ze.getTime() != -1) {
-                newEntry.setTime(ze.getTime()); // If found set it into output file.
-            }
-            jos.putNextEntry(newEntry);
-            IOUtils.copy(inputStream, jos);
-            IOUtils.closeQuietly(inputStream);
-        } catch (Exception e) {
-            throw new GradleException("copy stream exception", e);
-        }
-    }
-
-    public List<String> getMainDexList(Collection<File> files) {
-
-        GradleVariantConfiguration config = appVariantContext.getVariantConfiguration();
-
-        Set<String> mainDexList = new HashSet<String>();
-
-        //混淆的map
-        //Map<String, String> classMap = getClassObfMap(config);
-
-        File manifest = appVariantContext.getVariantData().getOutputs().get(0).manifestProcessorTask
-            .getManifestOutputFile();
-
-        String applicationName = ManifestFileUtils.getApplicationName(manifest);
-
-        ClassPool classPool = new ClassPool();
-
-        try {
-            for (File file : files) {
-                if (file.isFile()) {
-                    classPool.insertClassPath(file.getAbsolutePath());
-                } else {
-                    classPool.appendClassPath(file.getAbsolutePath());
-                }
-            }
-        } catch (NotFoundException e) {
-            throw new GradleException(e.getMessage(), e);
-        }
-
-        TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
-
-        HashSet handleList = new HashSet<String>();
-        Set<String> headClasses = new HashSet<>();
-
-        headClasses.add(applicationName);
-        headClasses.add("android.taobao.atlas.bridge.BridgeApplicationDelegate");
-        headClasses.addAll(multiDexConfig.getFirstDexClasses());
-
-        String preLaunchStr = tBuildConfig.getPreLaunch();
-        if (!org.apache.commons.lang3.StringUtils.isEmpty(preLaunchStr)) {
-            String[] launchArray = preLaunchStr.split("\\|");
-            if (launchArray.length > 0) {
-                for (String launchItem : launchArray) {
-                    String[] launchInfo = launchItem.split(":");
-                    String clazzName = launchInfo[0];
-                    headClasses.add(clazzName);
-                }
-            }
-        }
-
-        for (String headClass : headClasses) {
-            addRefClazz(classPool, headClass, mainDexList, handleList);
-        }
-
-        //get manifest
-        List<String> maindexListClazz = new ArrayList<String>();
-        for (String newLine : mainDexList) {
-            newLine = newLine.replaceAll("\\.", "/") + ".class";
-            maindexListClazz.add(newLine);
-        }
-
-        try {
-            FileUtils.writeLines(new File(appVariantContext.getProject().getBuildDir(), "outputs/maindexlist.txt"),
-                                 mainDexList);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return maindexListClazz;
-    }
-
-    private Map<String, String> getClassObfMap(GradleVariantConfiguration config) {
-        Map<String, String> classMap = new HashMap<String, String>();
-        boolean isMinifyEnabled = config.isMinifyEnabled();
-        File proguardOut = new File(Joiner.on(File.separatorChar).join(
-            String.valueOf(appVariantContext.getScope().getGlobalScope().getBuildDir()), FD_OUTPUTS, "mapping",
-            appVariantContext.getScope().getVariantConfiguration().getDirName()));
-        File mappingFile = new File(proguardOut, "mapping.txt");
-        // 解析mapping文件,生成新的mainDexListFile
-        if (isMinifyEnabled && mappingFile.exists()) {
-            MappingReader mappingReader = new MappingReader(mappingFile);
-            MappingReaderProcess process = new MappingReaderProcess();
-            try {
-                mappingReader.pump(process);
-            } catch (IOException e) {
-                throw new GradleException(e.getMessage(), e);
-            }
-            classMap = process.classMapping;
-        }
-        return classMap;
-    }
-
-    @Nullable
-    private String getRealClazz(Map<String, String> classMap, String line) {
-        String realClazz = classMap.isEmpty() ? line : classMap.get(line);
-        if (null == realClazz) {
-            realClazz = line;
-        }
-        return realClazz;
-    }
-
-    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, Set<String> handleList) {
-
-        if (handleList.contains(clazz)) {
-            return;
-        }
-
-        //增加黑名单
-        if (!multiDexConfig.getMainDexBlackList().isEmpty()) {
-            for (String blackItem : multiDexConfig.getMainDexBlackList()) {
-                if (clazz.startsWith(blackItem)) {
-                    return;
-                }
-            }
-        }
-
-        try {
-
-            CtClass ctClass = classPool.get(clazz);
-
-            if (null != ctClass) {
-
-                logger.info("[MainDex] add " + clazz + " to main dex list");
-                classList.add(clazz);
-                handleList.add(clazz);
-
-                Collection<String> references = ctClass.getRefClasses();
-
-                if (null == references) {
-                    return;
-                }
-
-                for (String clazz2 : references) {
-                    addRefClazz(classPool, clazz2, classList, handleList);
-                }
-            }
-        } catch (Throwable e) {
-        }
     }
 
     @Override
     public void dexMerge(Map<File, Dex> fileDexMap, File outDexFolder) throws IOException {
 
-        com.taobao.android.builder.tools.multidex.DexMerger dexMerger = new com.taobao.android.builder.tools.multidex.DexMerger(multiDexConfig, fileDexMap);
+        com.taobao.android.builder.tools.multidex.dex.DexMerger dexMerger
+            = new com.taobao.android.builder.tools.multidex.dex.DexMerger(multiDexConfig, fileDexMap);
 
         List<DexGroup> dexDtos = dexMerger.group();
 

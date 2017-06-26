@@ -18,7 +18,8 @@ android {
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
-
+        //bundle的自有配置
+        consumerProguardFiles 'proguard-rules.pro'
 
     }
     buildTypes {

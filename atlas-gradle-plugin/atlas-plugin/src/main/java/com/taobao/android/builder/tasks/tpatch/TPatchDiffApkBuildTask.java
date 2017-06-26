@@ -211,7 +211,6 @@ package com.taobao.android.builder.tasks.tpatch;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
 
@@ -221,6 +220,8 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.Profiler;
+import com.taobao.android.builder.tools.zip.BetterZip;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.tasks.InputFile;
@@ -243,6 +244,9 @@ public class TPatchDiffApkBuildTask extends BaseTask {
         apkFile = getApkFile();
         diffAPkFile = getDiffAPkFile();
 
+        Profiler.start("build tpatch apk");
+
+        Profiler.enter("prepare dir");
         File tmpWorkDir = new File(diffAPkFile.getParentFile(), "tmp-apk");
         if (tmpWorkDir.exists()) {
             FileUtils.deleteDirectory(tmpWorkDir);
@@ -251,8 +255,10 @@ public class TPatchDiffApkBuildTask extends BaseTask {
             tmpWorkDir.mkdirs();
         }
 
-        Map zipEntityMap = new HashMap();
-        ZipUtils.unzip(apkFile, tmpWorkDir.getAbsolutePath(), "UTF-8", zipEntityMap, true);
+        BetterZip.unzipDirectory(apkFile,tmpWorkDir);
+
+        //Map zipEntityMap = new HashMap();
+        //ZipUtils.unzip(apkFile, tmpWorkDir.getAbsolutePath(), "UTF-8", zipEntityMap, true);
 
         FileUtils.deleteDirectory(new File(tmpWorkDir, "assets"));
         FileUtils.deleteDirectory(new File(tmpWorkDir, "res"));
@@ -264,12 +270,24 @@ public class TPatchDiffApkBuildTask extends BaseTask {
         ZipUtils.unzip(getResourceFile(), resdir.getAbsolutePath(), "UTF-8", new HashMap<String, ZipEntry>(), true);
 
         FileUtils.copyDirectory(resdir, tmpWorkDir);
-        ZipUtils.rezip(diffAPkFile, tmpWorkDir, zipEntityMap);
+
+        Profiler.release();
+
+        Profiler.enter("rezip");
+
+        if (getProject().hasProperty("atlas.createDiffApk")) {
+            BetterZip.zipDirectory(tmpWorkDir, diffAPkFile);
+        }else {
+            FileUtils.moveDirectory(tmpWorkDir,diffAPkFile);
+        }
+
+        //ZipUtils.rezip(diffAPkFile, tmpWorkDir, zipEntityMap);
+        Profiler.release();
 
         FileUtils.deleteDirectory(tmpWorkDir);
         FileUtils.deleteDirectory(resdir);
 
-
+        getLogger().warn(Profiler.dump());
 
     }
 
