@@ -263,6 +263,7 @@ import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.StopExecutionException;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+import static com.taobao.android.builder.AtlasBuildContext.appVariantContext;
 
 @ParallelizableTask
 public class ProcessAwbAndroidResources extends IncrementalTask {
@@ -352,38 +353,13 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         //增加awb模块编译所需要的额外参数
         addAaptOptions();
         AaptPackageProcessBuilder aaptPackageCommandBuilder = new AaptPackageProcessBuilder(manifestFileToPackage,
-                                                                                            getAaptOptions()).setAssetsFolder(
-            getAssetsDir())
-                                                                                                             .setResFolder(
-                                                                                                                 getResDir())
-                                                                                                             .setLibraries(
-                                                                                                                 getLibraries())
-                                                                                                             .setPackageForR(
-                                                                                                                 getPackageForR())
-                                                                                                             .setSourceOutputDir(
-                                                                                                                 absolutePath(
-                                                                                                                     srcOut))
-                                                                                                             .setSymbolOutputDir(
-                                                                                                                 absolutePath(
-                                                                                                                     getTextSymbolOutputDir()))
-                                                                                                             .setResPackageOutput(
-                                                                                                                 absolutePath(
-                                                                                                                     resOutBaseNameFile))
-                                                                                                             .setProguardOutput(
-                                                                                                                 absolutePath(
-                                                                                                                     getProguardOutputFile()))
-                                                                                                             .setType(
-                                                                                                                 getType())
-                                                                                                             .setDebuggable(
-                                                                                                                 getDebuggable())
-                                                                                                             .setPseudoLocalesEnabled(
-                                                                                                                 getPseudoLocalesEnabled())
-                                                                                                             .setResourceConfigs(
-                                                                                                                 getResourceConfigs())
-                                                                                                             .setSplits(
-                                                                                                                 getSplits())
-                                                                                                             .setPreferredDensity(
-                                                                                                                 getPreferredDensity());
+                                                                                            getAaptOptions())
+            .setAssetsFolder(getAssetsDir()).setResFolder(getResDir()).setLibraries(getLibraries()).setPackageForR(
+                getPackageForR()).setSourceOutputDir(absolutePath(srcOut)).setSymbolOutputDir(
+                absolutePath(getTextSymbolOutputDir())).setResPackageOutput(absolutePath(resOutBaseNameFile))
+            .setProguardOutput(absolutePath(getProguardOutputFile())).setType(getType()).setDebuggable(getDebuggable())
+            .setPseudoLocalesEnabled(getPseudoLocalesEnabled()).setResourceConfigs(getResourceConfigs()).setSplits(
+                getSplits()).setPreferredDensity(getPreferredDensity());
 
         @NonNull
         AtlasBuilder builder = (AtlasBuilder)getBuilder();
@@ -396,9 +372,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
         ProcessOutputHandler processOutputHandler = new LoggedProcessOutputHandler(getILogger());
         try {
-            builder.processAwbResources(aaptPackageCommandBuilder,
-                                        getEnforceUniquePackageName(),
-                                        processOutputHandler,
+            builder.processAwbResources(aaptPackageCommandBuilder, getEnforceUniquePackageName(), processOutputHandler,
                                         getMainSymbolFile());
             if (resOutBaseNameFile != null) {
                 if (instantRunBuildContext.isInInstantRunMode()) {
@@ -532,7 +506,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         public void execute(@NonNull ProcessAwbAndroidResources processResources) {
             final BaseVariantOutputData variantOutputData = scope.getVariantOutputData();
             final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantScope()
-                                                                                      .getVariantData();
+                .getVariantData();
             final GradleVariantConfiguration config = variantData.getVariantConfiguration();
             appVariantOutputContext.getAwbAndroidResourcesMap().put(awbBundle.getName(), processResources);
 
@@ -552,11 +526,11 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 public File call() throws Exception {
                     File mainRTxt = new File(variantOutputData.processResourcesTask.getTextSymbolOutputDir(), "R.txt");
 
-                    if (!mainRTxt.exists()) {AtlasExtension atlasExtension = appVariantOutputContext.getVariantContext()
-                                                                                                    .getAtlasExtension();
+                    if (!mainRTxt.exists()) {
+                        AtlasExtension atlasExtension = appVariantOutputContext.getVariantContext().getAtlasExtension();
                         File explodedDir = atlasExtension.getProject().file(
                             atlasExtension.getProject().getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES
-                            + "/exploded-ap" + "/");
+                                + "/exploded-ap" + "/");
                         mainRTxt = new File(explodedDir, "R.txt");
                     }
                     return mainRTxt;
@@ -573,7 +547,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
                     String value = AtlasBuildContext.customPackageIdMaps.get(
                         awbBundle.getResolvedCoordinates().getGroupId() + ":" + awbBundle.getResolvedCoordinates()
-                                                                                         .getArtifactId());
+                            .getArtifactId());
                     if (org.apache.commons.lang.StringUtils.isEmpty(value)) {
                         throw new GradleException("package id is empaty" + awbBundle);
                     }
@@ -591,8 +565,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             ConventionMappingHelper.map(processResources, "sktPackageName", new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    String packageName
-                        = ManifestFileUtils.getApplicationId(variantOutputData.manifestProcessorTask.getManifestOutputFile());
+                    String packageName = ManifestFileUtils.getApplicationId(
+                        variantOutputData.manifestProcessorTask.getManifestOutputFile());
                     if (null != packageName) {
                         return packageName;
                     } else {
@@ -609,9 +583,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             //                    .getFilter(com.android.build.OutputFile.DENSITY) == null
             //                    && variantData.generateRClassTask == null) {
             //                variantData.generateRClassTask = processResources;
-            processResources.enforceUniquePackageName = scope.getGlobalScope()
-                                                             .getExtension()
-                                                             .getEnforceUniquePackageName();
+            processResources.enforceUniquePackageName = scope.getGlobalScope().getExtension()
+                .getEnforceUniquePackageName();
 
             ConventionMappingHelper.map(processResources, "libraries", new Callable<List<? extends AndroidLibrary>>() {
                 @Override
@@ -673,8 +646,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 public File call() throws Exception {
 
                     DataBindingOptions dataBindingOptions = appVariantOutputContext.getVariantContext()
-                                                                                   .getAppExtension()
-                                                                                   .getDataBinding();
+                        .getAppExtension().getDataBinding();
 
                     File file = null;
                     if (null != dataBindingOptions && dataBindingOptions.isEnabled()) {
@@ -701,7 +673,13 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 ConventionMappingHelper.map(processResources, "baselineFile", new Callable<File>() {
                     @Override
                     public File call() throws Exception {
-                        return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
+                        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()
+                            && awbBundle.getBaseAwbDependencies() != null
+                            && awbBundle.getBaseAwbDependencies().size() > 1) {
+                            return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
+                                awbBundle.getAwbSoName());
+                        }
+                        return null;
                     }
                 });
 
@@ -714,8 +692,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             }
 
             if (generateResourcePackage) {
-                processResources.setPackageOutputFile(appVariantOutputContext.getAwbProcessResourcePackageOutputFile(
-                    awbBundle));
+                processResources.setPackageOutputFile(
+                    appVariantOutputContext.getAwbProcessResourcePackageOutputFile(awbBundle));
             }
 
             processResources.setType(config.getType());
@@ -737,12 +715,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 public Collection<String> call() throws Exception {
                     Collection<String> resConfigs = config.getMergedFlavor().getResourceConfigurations();
                     if (resConfigs.size() == 1 && Iterators.getOnlyElement(resConfigs.iterator()).equals("auto")) {
-                        if (scope.getGlobalScope()
-                                 .getAndroidBuilder()
-                                 .getTargetInfo()
-                                 .getBuildTools()
-                                 .getRevision()
-                                 .getMajor() >= 21) {
+                        if (scope.getGlobalScope().getAndroidBuilder().getTargetInfo().getBuildTools().getRevision()
+                            .getMajor() >= 21) {
                             return variantData.discoverListOfResourceConfigsNotDensities();
                         } else {
                             return variantData.discoverListOfResourceConfigs();
@@ -756,8 +730,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 @Override
                 @Nullable
                 public String call() throws Exception {
-                    String variantFilter = variantOutputData.getMainOutputFile()
-                                                            .getFilter(com.android.build.OutputFile.DENSITY);
+                    String variantFilter = variantOutputData.getMainOutputFile().getFilter(
+                        com.android.build.OutputFile.DENSITY);
                     if (variantFilter != null) {
                         return variantFilter;
                     }
