@@ -948,6 +948,7 @@ public class AtlasBuilder extends AndroidBuilder {
                 ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, inputs.size() > 8 ? 8 : inputs.size());
                 //ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("maindex", sLogger, 1);
                 List<Runnable> runnables = new ArrayList<>();
+                Profiler.enter("predex");
                 for (File input : inputs) {
 
                     final File dexDir = getDexOutputDir(input, tmpDir, outputs);
@@ -967,6 +968,8 @@ public class AtlasBuilder extends AndroidBuilder {
                     outputs.add(dexDir);
                 }
                 executorServicesHelper.execute(runnables);
+                Profiler.release();
+
             } else {
                 for (File input : inputs) {
 

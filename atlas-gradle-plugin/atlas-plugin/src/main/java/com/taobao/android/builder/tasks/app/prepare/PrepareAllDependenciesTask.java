@@ -209,7 +209,6 @@
 
 package com.taobao.android.builder.tasks.app.prepare;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -231,8 +230,6 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.apache.commons.io.FileUtils;
 import org.dom4j.DocumentException;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
 
@@ -252,38 +249,37 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
     AppVariantContext appVariantContext;
 
-    @InputFiles
-    public List<File> getInputDependencies() {
-
-        List<File> files = new ArrayList<>();
-
-        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            files.add(soLibrary.getSoLibFile());
-        }
-
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-            files.add(aarBundle.getBundle());
-        }
-
-        return files;
-    }
-
-    @OutputDirectories
-    public List<File> getOutputDirs() {
-        List<File> files = new ArrayList<>();
-        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            files.add(soLibrary.getFolder());
-        }
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-            files.add(aarBundle.getFolder());
-        }
-        return files;
-    }
-
-    ;
+    ////@InputFiles
+    //public List<File> getInputDependencies() {
+    //
+    //    List<File> files = new ArrayList<>();
+    //
+    //    for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
+    //        files.add(soLibrary.getSoLibFile());
+    //    }
+    //
+    //    for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
+    //        files.add(aarBundle.getBundle());
+    //    }
+    //
+    //    return files;
+    //}
+    //
+    ////@OutputDirectories
+    //public List<File> getOutputDirs() {
+    //    List<File> files = new ArrayList<>();
+    //    for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
+    //        files.add(soLibrary.getFolder());
+    //    }
+    //    for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
+    //        files.add(aarBundle.getFolder());
+    //    }
+    //    return files;
+    //}
 
     @TaskAction
     void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
+
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
                                                                                    0);

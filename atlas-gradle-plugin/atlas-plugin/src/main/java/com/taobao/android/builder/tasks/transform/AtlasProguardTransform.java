@@ -238,6 +238,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
+import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.Profiler;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.log.FileLogger;
@@ -245,6 +246,7 @@ import com.taobao.android.builder.tools.proguard.AtlasProguardHelper;
 import com.taobao.android.builder.tools.proguard.BundleProguarder;
 import com.taobao.android.builder.tools.proguard.KeepOnlyConfigurationParser;
 import com.taobao.android.builder.tools.proguard.domain.Input;
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import proguard.ClassPath;
 import proguard.Configuration;
@@ -264,7 +266,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
     @Override
     public Set<ContentType> getOutputTypes() {
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()){
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()) {
             return TransformManager.CONTENT_CLASS;
         }
         return super.getOutputTypes();
@@ -373,15 +375,20 @@ public class AtlasProguardTransform extends ProGuardTransform {
         File bundleKeep = AtlasProguardHelper.generateBundleKeepCfg(appVariantContext);
         Profiler.release();
 
-
         Input input = new Input();
         AwbTransform awbTransform = new AwbTransform(new AwbBundle());
         input.getAwbBundles().add(awbTransform);
 
+        List<File> unProguardJars = new ArrayList<>();
         //输入input
         for (TransformInput transformInput : invocation.getInputs()) {
             for (JarInput jarInput : transformInput.getJarInputs()) {
-                awbTransform.getInputLibraries().add(jarInput.getFile());
+                File file = jarInput.getFile();
+                if (file.getName().startsWith("combined-rmerge")) {
+                    unProguardJars.add(file);
+                } else {
+                    awbTransform.getInputLibraries().add(file);
+                }
             }
             for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
                 awbTransform.getInputLibraries().add(directoryInput.getFile());
@@ -391,6 +398,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
         //输入 librarys
         input.getLibraries().addAll(
             appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true));
+        input.getLibraries().addAll(unProguardJars);
 
         //默认proguard 配置
         input.getDefaultProguardFiles().addAll(defaultProguardFiles);
@@ -411,6 +419,15 @@ public class AtlasProguardTransform extends ProGuardTransform {
         Profiler.enter("executeproguard");
         BundleProguarder.execute(appVariantContext, input);
         Profiler.release();
+
+        for (File jar : unProguardJars) {
+
+            File to = invocation.getOutputProvider().getContentLocation(FileNameUtils.getUniqueJarName(jar),
+                                                                        getOutputTypes(), getScopes(),
+                                                                        Format.JAR);
+            FileUtils.copyFile(jar, to);
+
+        }
 
     }
 
@@ -455,7 +472,6 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
         inputJar(classPath, content.getFile(), filter);
     }
-
 
     public void applyLibConfigurationFile(@NonNull File file) throws IOException, ParseException {
         KeepOnlyConfigurationParser parser =
