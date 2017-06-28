@@ -345,7 +345,6 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
             if (atlasHacks.mExceptionArray != null) {
                 // 校验存在失败
                 sIsReflectAvailable = false;
-                throw atlasHacks.mExceptionArray;
             } else {
                 // 校验成功
                 sIsReflectAvailable = true;
@@ -477,13 +476,15 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         }
 
         ActivityThread_installContentProviders = ActivityThread.method("installContentProviders",Context.class,List.class);
-        if(Build.VERSION.SDK_INT>25 || (Build.VERSION.SDK_INT==25 && Build.VERSION.PREVIEW_SDK_INT>0)) {
-            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, android.app.ContentProviderHolder.class,
-                    ProviderInfo.class, boolean.class, boolean.class, boolean.class);
-        }else{
-            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, IActivityManager.ContentProviderHolder.class,
-                    ProviderInfo.class, boolean.class, boolean.class, boolean.class);
-        }
+        try {
+            if (Build.VERSION.SDK_INT > 25 || (Build.VERSION.SDK_INT == 25 && Build.VERSION.PREVIEW_SDK_INT > 0)) {
+                ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, android.app.ContentProviderHolder.class,
+                        ProviderInfo.class, boolean.class, boolean.class, boolean.class);
+            } else {
+                ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, IActivityManager.ContentProviderHolder.class,
+                        ProviderInfo.class, boolean.class, boolean.class, boolean.class);
+            }
+        }catch (Throwable e){}
         Service_attach = Service.method("attach",Context.class,ActivityThread.getmClass(),String.class,IBinder.class,Application.getmClass(),Object.class);
     }
 
