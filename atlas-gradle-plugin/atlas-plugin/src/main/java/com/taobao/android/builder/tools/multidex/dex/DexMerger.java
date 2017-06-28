@@ -374,21 +374,20 @@ public class DexMerger {
 
         String[] rules = multiDexConfig.getDexSplitRules().split(";");
         for (int i = 0; i < rules.length; i++) {
-            String rule = rules[i];
-            if (StringUtils.isEmpty(rule)) {
-                continue;
-            }
-            String[] items = rule.split(",");
 
             DexGroup dexDto = null;
             if (0 == i) {
                 dexDto = fistDto;
             } else {
-                fistDto:
-                new DexGroup();
+                dexDto = new DexGroup();
                 dexDtos.add(i, dexDto);
             }
 
+            String rule = rules[i];
+            if (StringUtils.isEmpty(rule)) {
+                continue;
+            }
+            String[] items = rule.split(",");
             for (File file : fileList) {
                 if (match(items, file) || (0 == i && file.getName().equals(FASTMAINDEX_JAR))) {
                     Dex dex = jarDexMap.get(file);

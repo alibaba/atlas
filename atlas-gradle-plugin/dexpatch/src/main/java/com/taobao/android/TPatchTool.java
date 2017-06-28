@@ -667,6 +667,8 @@ public class TPatchTool extends BasePatchTool {
 
         DiffType modifyType = getModifyType(newBundleFile.getName());
 
+        long startTime = System.currentTimeMillis();
+
         logger.warning(">>> start to process bundle for patch " + bundleName + " >> difftype " + modifyType.toString() + " createALl:" + createAll);
 
         if (modifyType == DiffType.ADD) {
@@ -689,6 +691,8 @@ public class TPatchTool extends BasePatchTool {
                               baseBundleUnzipFolder);
             }
         }
+
+        logger.warning(">>> fininsh to process bundle for patch " + bundleName + " >> difftype " + modifyType.toString() + " consume:" + (System.currentTimeMillis() - startTime));
     }
 
     private void doBundlePatch(File newBundleFile, File baseBundleFile, File patchTmpDir, String bundleName,

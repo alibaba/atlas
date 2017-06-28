@@ -242,9 +242,9 @@ dependencies {
 
     compile "com.taobao.android:aapt:2.3.1.rc2"
 
-    compile "com.taobao.android:dex_patch:1.4.1"
+    compile "com.taobao.android:dex_patch:1.4.2"
 
     testCompile "junit:junit:4.11"
 }
 
-version = '2.3.3.beta3'
+version = '2.3.3.beta4'
