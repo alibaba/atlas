@@ -119,11 +119,16 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
         ImmutableList.Builder<File> builder = ImmutableList.builder();
         for (final Map.Entry<File, FileStatus> entry : changedInputs.entrySet()) {
+            File file = entry.getKey();
             FileStatus status = entry.getValue();
             switch (status) {
                 case NEW:
                 case CHANGED:
-                    builder.add(entry.getKey());
+                    if ("libcom_taobao_maindex.so".equals(file.getName())) {
+                    } else {
+                        builder.add(file);
+                    }
+
                     break;
                 case REMOVED:
                     break;
