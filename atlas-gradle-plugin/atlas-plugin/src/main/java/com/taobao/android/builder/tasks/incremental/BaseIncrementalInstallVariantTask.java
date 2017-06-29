@@ -28,7 +28,6 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.res2.FileStatus;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -118,7 +117,7 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
 
     @Override
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
-        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+        ImmutableList.Builder<File> builder = ImmutableList.builder();
         for (final Map.Entry<File, FileStatus> entry : changedInputs.entrySet()) {
             FileStatus status = entry.getValue();
             switch (status) {
