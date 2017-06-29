@@ -27,6 +27,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.res2.FileStatus;
 import com.android.utils.ILogger;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -236,11 +237,11 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
             ConventionMappingHelper.map(incrementalInstallVariantTask, "appPackageName",
                                         variantConfiguration::getApplicationId);
             //TODO 先根据依赖判断
-            ConventionMappingHelper.map(incrementalInstallVariantTask, "apkFiles", new Callable<ImmutableSet<File>>() {
+            ConventionMappingHelper.map(incrementalInstallVariantTask, "apkFiles", new Callable<ImmutableList<File>>() {
 
                 @Override
-                public ImmutableSet<File> call() {
-                    ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+                public ImmutableList<File> call() {
+                    ImmutableList.Builder<File> builder = ImmutableList.builder();
                     //Awb
                     Collection awbApkFiles = appVariantContext.getAwbApkFiles();
                     if (awbApkFiles != null) {
