@@ -248,6 +248,7 @@ public class KernalBundle{
      */
     KernalBundleArchive archive;
     private Class FrameworkPropertiesClazz ;
+    private NClassLoader replaceClassLoader;
 
     public static String KERNAL_BUNDLE_NAME = "com.taobao.maindex";
 
@@ -272,8 +273,7 @@ public class KernalBundle{
         if (kernalUpdateDir.exists() || kernalDexPatchDir.exists()) {
             try {
                 kernalBundle = new KernalBundle(kernalUpdateDir,kernalDexPatchDir,KernalVersionManager.instance().getBaseBundleVersion(KERNAL_BUNDLE_NAME),currentProcessName);
-                kernalBundle.patchKernalDex();
-                kernalBundle.replacePathClassLoaderIfNeed(application);
+                kernalBundle.patchKernalDex(application);
                 kernalBundle.patchKernalResource(application);
                 return true;
             } catch (Exception e) {
@@ -312,7 +312,15 @@ public class KernalBundle{
                             new File(patchFile.getParent(),"patch.dex").getAbsolutePath(),0,true) ;
                     bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(), patchFile, new DexFile[]{patchDexFile,dexFile}, null,
                                                true /*(app_info.flags & ApplicationInfo.FLAG_VM_SAFE_MODE) != 0*/);
-                    bundle.replacePathClassLoaderIfNeed(application);
+                    if(bundle.needReplaceClassLoader(application)){
+                        NClassLoader loader = new NClassLoader(".",KernalBundle.class.getClassLoader());
+                        try {
+                            NClassLoader.replacePathClassLoader(KernalConstants.baseContext,KernalBundle.class.getClassLoader(),loader);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    bundle.prepareRuntimeVariables(application);
                     Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
                     DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
                             .invoke(DelegateResourcesClazz, patchFile.getAbsolutePath());
@@ -379,11 +387,17 @@ public class KernalBundle{
         return appVersion+"_"+maindexTag;
     }
 
-    public void patchKernalDex() throws Exception {
+    public void patchKernalDex(Application application) throws Exception {
         DexFile[] dexFile = archive.getOdexFile();
         if ((dexFile != null&&dexFile.length>0) || archive.getLibraryDirectory().exists()) {
             installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive.getArchiveFile(),archive.getOdexFile(),archive.getLibraryDirectory());
-            FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length-1].loadClass("android.taobao.atlas.framework.FrameworkProperties",ClassLoader.getSystemClassLoader());
+            boolean needReplaceClassLoader = needReplaceClassLoader(application);
+            if(!needReplaceClassLoader) {
+                FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length - 1].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
+            }else{
+                replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader());
+                FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length - 1].loadClass("android.taobao.atlas.framework.FrameworkProperties", replaceClassLoader);
+            }
             if(FrameworkPropertiesClazz==null && isDeubgMode()){
                 Log.e("KernalBundle","main dex is not match, library awo test?");
                 return;
@@ -398,47 +412,47 @@ public class KernalBundle{
                     throw new RuntimeException("maindex version is not mismatch");
                 }
             }
+            if(needReplaceClassLoader){
+                try {
+                    NClassLoader.replacePathClassLoader(KernalConstants.baseContext,KernalBundle.class.getClassLoader(),replaceClassLoader);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            prepareRuntimeVariables(application);
         }
     }
 
-    public void replacePathClassLoaderIfNeed(Application application){
-        ClassLoader originalClassLoader = null;
+    public boolean needReplaceClassLoader(Application application){
         if(Build.VERSION.SDK_INT>=24) {
-            originalClassLoader = application.getClassLoader();
             ClassLoader loader = getClass().getClassLoader();
-
             boolean needReplace = false;
             do{
                 if(loader.getClass().getName().equals(PathClassLoader.class.getName())){
                     needReplace = true;
                     break;
                 }
-            }
-            while((loader=loader.getParent())!=null);
-            if(needReplace){
-                try {
-                    NClassLoader.replacePathClassLoader(KernalConstants.baseContext,KernalBundle.class.getClassLoader());
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
+            }while((loader=loader.getParent())!=null);
+            return needReplace;
+        }else{
+            return false;
         }
+    }
 
+    public void prepareRuntimeVariables(Application application){
         try {
             Class RuntimeVariablesClass = application.getClassLoader().loadClass("android.taobao.atlas.runtime.RuntimeVariables");
-            if(originalClassLoader!=null) {
-                RuntimeVariablesClass.getDeclaredField("sRawClassLoader").set(RuntimeVariablesClass, originalClassLoader);
-            }
-            if(FrameworkPropertiesClazz!=null){
+            RuntimeVariablesClass.getDeclaredField("sRawClassLoader").set(RuntimeVariablesClass, KernalBundle.class.getClassLoader());
+            if (FrameworkPropertiesClazz != null) {
                 RuntimeVariablesClass.getDeclaredField("FrameworkPropertiesClazz").set(RuntimeVariablesClass, FrameworkPropertiesClazz);
-            }else if(!isDeubgMode()){
+            } else if (!isDeubgMode()) {
                 throw new RuntimeException("FrameworkPropertiesClazz find error,will be rollback!");
             }
-            RuntimeVariablesClass.getDeclaredField("sCurrentProcessName").set(RuntimeVariablesClass,KernalConstants.PROCESS);
-            RuntimeVariablesClass.getDeclaredField("androidApplication").set(RuntimeVariablesClass,application);
-            RuntimeVariablesClass.getDeclaredField("delegateResources").set(RuntimeVariablesClass,KernalConstants.baseContext.getResources());
-        } catch (Throwable e) {
-            e.printStackTrace();
+            RuntimeVariablesClass.getDeclaredField("sCurrentProcessName").set(RuntimeVariablesClass, KernalConstants.PROCESS);
+            RuntimeVariablesClass.getDeclaredField("androidApplication").set(RuntimeVariablesClass, application);
+            RuntimeVariablesClass.getDeclaredField("delegateResources").set(RuntimeVariablesClass, KernalConstants.baseContext.getResources());
+        }catch(Throwable e){
+            throw new RuntimeException(e);
         }
     }
 
@@ -620,6 +634,7 @@ public class KernalBundle{
                 }else{
                     expandFieldList(dexPathList, "nativeLibraryDirectories", libraryDirectory);
                 }
+
                 if(Build.VERSION.SDK_INT>=23){
                     Object nativeLibraryElement = makeNativeLibraryElement(libraryDirectory);
                     expandFieldArray(dexPathList, "nativeLibraryPathElements", new Object[]{nativeLibraryElement});
@@ -653,16 +668,17 @@ public class KernalBundle{
             try {
                 Class Element = Class.forName("dalvik.system.DexPathList$Element");
                 Constructor cons = getElementConstructor(Element, constructorArgs1);
+                File apkFile = new File(KernalConstants.baseContext.getApplicationInfo().sourceDir);
                 if (cons != null) {
-                    objects[i] = cons.newInstance(null, false, new File(KernalConstants.baseContext.getApplicationInfo().sourceDir), dex[i]);
+                    objects[i] = cons.newInstance(apkFile, false, apkFile, dex[i]);
                 } else {
                     cons = getElementConstructor(Element, constructorArgs2);
                     if (cons != null) {
-                        objects[i] =  cons.newInstance(null, null, dex[i]);
+                        objects[i] =  cons.newInstance(apkFile, apkFile, dex[i]);
                     } else {
                         cons = getElementConstructor(Element, constructorArgs3);
                         if (cons != null) {
-                            objects[i] = cons.newInstance(null, null, dex[i]);
+                            objects[i] = cons.newInstance(apkFile, null, dex[i]);
                         }
                     }
                 }
@@ -676,16 +692,26 @@ public class KernalBundle{
 
     // for api level >=23
     public static Object makeNativeLibraryElement(File dir) throws IOException{
-        try{
-            Class Element = Class.forName("dalvik.system.DexPathList$Element");
-            Constructor cons = getElementConstructor(Element,constructorArgs1);
-            if(cons!=null){
-                return cons.newInstance(dir,true, null,null);
-            }else{
-                throw new IOException("make nativeElement fail | error constructor");
+        if(Build.VERSION.SDK_INT>25 || Build.VERSION.SDK_INT==25&&Build.VERSION.PREVIEW_SDK_INT>0) {
+            try {
+                Class NativeLibraryElement = Class.forName("dalvik.system.DexPathList$NativeLibraryElement");
+                Class[] oconstructorArgs = {File.class};
+                return NativeLibraryElement.getDeclaredConstructor(oconstructorArgs).newInstance(dir);
+            }catch (Exception e) {
+                throw new IOException("make nativeElement fail", e);
             }
-        }catch(Exception e){
-            throw new IOException("make nativeElement fail",e);
+        }else {
+            try {
+                Class Element = Class.forName("dalvik.system.DexPathList$Element");
+                Constructor cons = getElementConstructor(Element, constructorArgs1);
+                if (cons != null) {
+                    return cons.newInstance(dir, true, null, null);
+                } else {
+                    throw new IOException("make nativeElement fail | error constructor");
+                }
+            } catch (Exception e) {
+                throw new IOException("make nativeElement fail", e);
+            }
         }
     }
 

@@ -292,7 +292,7 @@ public class AtlasBundleInfoManager {
      * Get all dependent bundles for the designated bundle
      */
     public List<String> getDependencyForBundle(String bundleName){
-        if(mCurrentBundleListing==null){
+        if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
             return null;
         }
         BundleListing.BundleInfo bundleInfo = mCurrentBundleListing.getBundles().get(bundleName);
@@ -310,7 +310,7 @@ public class AtlasBundleInfoManager {
     }
 
     public boolean isInternalBundle(String bundleName){
-        if(mCurrentBundleListing==null){
+        if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
             return true;
         }
         BundleListing.BundleInfo info = mCurrentBundleListing.getBundles().get(bundleName);
@@ -322,7 +322,7 @@ public class AtlasBundleInfoManager {
     }
 
     public String getBundleForComponet(String componentName){
-        if(mCurrentBundleListing==null){
+        if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
             return null;
         }
         Iterator<Map.Entry<String, BundleListing.BundleInfo>> iterator = mCurrentBundleListing.getBundles().entrySet().iterator();
@@ -351,7 +351,7 @@ public class AtlasBundleInfoManager {
     }
 
     public BundleListing.BundleInfo getBundleInfo(String name){
-        if(mCurrentBundleListing==null){
+        if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
             return null;
         }
         BundleListing.BundleInfo info = mCurrentBundleListing.getBundles().get(name);
@@ -363,7 +363,7 @@ public class AtlasBundleInfoManager {
     }
 
     private void updateBundleListingWithExtraInfo(){
-        if(mCurrentBundleListing==null){
+        if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
             return;
         }
         String fileName = String.format("%s%s.json","bundleInfo-", WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).versionName);

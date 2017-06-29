@@ -212,8 +212,6 @@ import android.content.Context;
 import android.os.Looper;
 import android.taobao.atlas.startup.patch.releaser.BundleReleaser;
 import android.text.TextUtils;
-import android.util.Log;
-
 import dalvik.system.DexFile;
 import java.io.*;
 import java.nio.ByteBuffer;

@@ -322,16 +322,13 @@ public class ActivityTaskMgr {
                             if (wrapper != null && ((ContextWrapper)wrapper).getBaseContext() == activity) {
                                 Field mTintResourcesField = TintContextWrapper.getDeclaredField("mResources");
                                 mTintResourcesField.setAccessible(true);
-                                Field mTintThemeField = TintContextWrapper.getDeclaredField("mTheme");
-                                mTintThemeField.setAccessible(true);
-                                mTintThemeField.set(wrapper,null);
-                                mTintResourcesField.set(wrapper,null);
+                                mTintResourcesField.set(wrapper,RuntimeVariables.delegateResources);
                                 break;
                             }
                         }
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
 
             }

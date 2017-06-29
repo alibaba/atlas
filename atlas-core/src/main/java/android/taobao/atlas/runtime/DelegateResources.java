@@ -222,6 +222,9 @@ import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
+
+import org.xmlpull.v1.XmlPullParser;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -243,6 +246,7 @@ public class DelegateResources extends Resources {
     private static String sKernalPathPath = null;
     private static String sAssetsPatchDir = null;
     private Resources origin;
+    private HashMap<String,Resources> bundleResourceWalkRound = new HashMap<>();
 
 
     /**
@@ -274,9 +278,53 @@ public class DelegateResources extends Resources {
 
         }
         if(result==null && exception!=null){
+            TypedValue value = new TypedValue();
+            Log.e("DelegateResources","compare:"+(this==RuntimeVariables.delegateResources));
+            getValue(id,value,true);
+            if(value!=null){
+                Log.e("DelegateResources",String.format("ID: %s|cookie: %s|string: %s",id,value.assetCookie,value.string));
+                try {
+                    String assetsPath = (String) AssetManager.class.getMethod("getCookieName", int.class).invoke(getAssets(), value.assetCookie);
+                    Log.e("DelegateResources","target Path: "+assetsPath);
+                    if(!new File(assetsPath).exists()){
+                        Log.e("DelegateResources","target Path is not exist");
+                    }
+                    XmlResourceParser parser = getLayoutWalkRound(assetsPath,id);
+                    if(parser!=null){
+                        Map<String, Object> detail = new HashMap<>();
+                        detail.put("walkroundgetLayout", assetsPath);
+                        AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_DEXOPT_FAIL, detail, exception);
+                        return parser;
+                    }
+                }catch(Throwable e){
+                }
+            }
+
             throw exception;
         }
         return result;
+    }
+
+    private XmlResourceParser getLayoutWalkRound(final String assetsPath,final int id){
+        try {
+            Resources res = bundleResourceWalkRound.get(assetsPath);
+            if(res==null) {
+                synchronized (assetsPath) {
+                    if ((res = bundleResourceWalkRound.get(assetsPath)) == null) {
+                        AssetManager newAssetManager = AssetManager.class.newInstance();
+                        AtlasHacks.AssetManager_addAssetPath.invoke(newAssetManager, assetsPath);
+                        res = new Resources(newAssetManager, getDisplayMetrics(), getConfiguration());
+                        bundleResourceWalkRound.put(assetsPath, res);
+                    }
+                }
+            }
+            if(res!=null) {
+                return res.getLayout(id);
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public Drawable getDrawable(int id, Theme theme) throws NotFoundException {

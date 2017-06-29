@@ -466,10 +466,10 @@ public class BundleArchiveRevision {
     	}
 
         if (AtlasHacks.LexFile != null && AtlasHacks.LexFile.getmClass() != null) {
-            File lexFile = new File(revisionDir, BUNDLE_LEX_FILE);
+            File lexFile = new File(mappingInternalDirectory(), BUNDLE_LEX_FILE);
             return lexFile.exists() && lexFile.length() > 0;
         }
-        File odexFile = new File(revisionDir, BUNDLE_ODEX_FILE);
+        File odexFile = new File(mappingInternalDirectory(), BUNDLE_ODEX_FILE);
         return odexFile.exists() && odexFile.length() > 0;
     }
 
@@ -482,12 +482,12 @@ public class BundleArchiveRevision {
         if (AtlasHacks.LexFile != null && AtlasHacks.LexFile.getmClass() != null) {
             //yunos
             // TODO: need also cover logic of filelocks for YunOS.
-            new DexClassLoader(bundleFile.getAbsolutePath(), revisionDir.getAbsolutePath(), null, ClassLoader.getSystemClassLoader());
+            new DexClassLoader(bundleFile.getAbsolutePath(), mappingInternalDirectory().getAbsolutePath(), null, ClassLoader.getSystemClassLoader());
             isDexOptDone = true;
             return;
         }
 
-        File odexFile = new File(revisionDir, BUNDLE_ODEX_FILE);
+        File odexFile = new File(mappingInternalDirectory(), BUNDLE_ODEX_FILE);
 
         long START = 0;
         START = System.currentTimeMillis();
@@ -508,10 +508,9 @@ public class BundleArchiveRevision {
                             RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
 //                    dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
                 }else{
-                    Method m=Class.forName("android.taobao.atlas.util.DexFileCompat")
+                    Method m=Class.forName("android.taobao.atlas.startup.DexFileCompat")
                             .getDeclaredMethod("loadDex", Context.class,String.class,String.class,int.class);
                     dexFile= (DexFile) m.invoke(null,RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
-                    //dexFile = DexFileCompat.loadDex(RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
                 }
             }
             if(Framework.isDeubgMode()){

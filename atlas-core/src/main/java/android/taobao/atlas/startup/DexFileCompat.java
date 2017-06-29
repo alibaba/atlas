@@ -1,4 +1,4 @@
-package android.taobao.atlas.util;
+package android.taobao.atlas.startup;
 
 import android.content.Context;
 import android.os.Build;
