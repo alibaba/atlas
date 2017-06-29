@@ -39,6 +39,19 @@ public class AwosInstallTask extends IncrementalInstallVariantTask {
                                       variantName);
                 installPatch(device, apkFile, apkFile.getName(), patchInstallDirectory, getAppPackageName());
             }
+            //启动
+            device.executeShellCommand("monkey " + "-p " + appPackageName + " -c android.intent.category.LAUNCHER 1",
+                                       //$NON-NLS-1$
+                                       new MultiLineReceiver() {
+                                           @Override
+                                           public void processNewLines(String[] lines) {
+                                           }
+
+                                           @Override
+                                           public boolean isCancelled() {
+                                               return false;
+                                           }
+                                       });
         }
     }
 
