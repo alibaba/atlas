@@ -228,6 +228,7 @@ import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
 import com.android.sdklib.repository.legacy.LegacyDownloader;
 import com.android.utils.StdLogger;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tools.MD5Util;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 
@@ -246,12 +247,12 @@ public class ApDownloader {
 
     public /*static*/ File downloadAP(String mtlConfigUrl, File root) throws Exception {
         String downloadUrl = getDownloadUrl(mtlConfigUrl);
-        //
-        // File file = new File(root, MD5Util.getMD5(downloadUrl) + ".ap");
-        // if (file.exists()) {
-        //     return file;
-        // }
-        //
+
+        File file = new File(root, MD5Util.getMD5(downloadUrl) + ".ap");
+        if (file.exists()) {
+            return file;
+        }
+
         URL downloadApi = new URL(downloadUrl);
         // System.out.println("start to download ap from " + downloadUrl);
         //
@@ -260,7 +261,8 @@ public class ApDownloader {
         // FileUtils.copyURLToFile(downloadApi, file);
         ProgressIndicator stdOutputProgress = getNewDownloadProgress();
         Downloader downloader = getDownloader();
-        return downloader.downloadFully(downloadApi, stdOutputProgress);
+        downloader.downloadFully(downloadApi, file, (String)null, stdOutputProgress);
+        return file;
     }
 
     private String getDownloadUrl(String mtlConfigUrl) throws IOException {
