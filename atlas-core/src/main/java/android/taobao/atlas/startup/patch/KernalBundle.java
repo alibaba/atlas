@@ -553,7 +553,7 @@ public class KernalBundle{
     }
 
     private static boolean replaceElement(Object instance,String fieldName,Object replaceElement) throws NoSuchFieldException,IllegalArgumentException,
-             IllegalAccessException{
+            IllegalAccessException{
         boolean replaceSuccess = false;
         Field jlrField = findField(instance, fieldName);
         Object[] original = (Object[]) jlrField.get(instance);
@@ -662,23 +662,31 @@ public class KernalBundle{
     static Class[] constructorArgs2 = {File.class, File.class, DexFile.class};
     static Class[] constructorArgs1 = {File.class, boolean.class, File.class, DexFile.class};
 
+    static Class[] constructorArgsO = {DexFile.class,File.class};
+
+
     public static Object[] makeDexElement(File file,DexFile[] dex) throws Exception{
         Object []objects = new Object[dex.length];
         for (int i = 0; i < dex.length; i ++) {
             try {
                 Class Element = Class.forName("dalvik.system.DexPathList$Element");
-                Constructor cons = getElementConstructor(Element, constructorArgs1);
-                File apkFile = new File(KernalConstants.baseContext.getApplicationInfo().sourceDir);
-                if (cons != null) {
-                    objects[i] = cons.newInstance(apkFile, false, apkFile, dex[i]);
-                } else {
-                    cons = getElementConstructor(Element, constructorArgs2);
+                if(Build.VERSION.SDK_INT>25 || Build.VERSION.SDK_INT==25&&Build.VERSION.PREVIEW_SDK_INT>0){
+                    Constructor cons = getElementConstructor(Element, constructorArgsO);
+                    objects[i] = cons.newInstance(dex[i],file);
+                }else {
+                    File apkFile = new File(KernalConstants.baseContext.getApplicationInfo().sourceDir);
+                    Constructor cons = getElementConstructor(Element, constructorArgs1);
                     if (cons != null) {
-                        objects[i] =  cons.newInstance(apkFile, apkFile, dex[i]);
+                        objects[i] = cons.newInstance(apkFile, false, apkFile, dex[i]);
                     } else {
-                        cons = getElementConstructor(Element, constructorArgs3);
+                        cons = getElementConstructor(Element, constructorArgs2);
                         if (cons != null) {
-                            objects[i] = cons.newInstance(apkFile, null, dex[i]);
+                            objects[i] = cons.newInstance(apkFile, apkFile, dex[i]);
+                        } else {
+                            cons = getElementConstructor(Element, constructorArgs3);
+                            if (cons != null) {
+                                objects[i] = cons.newInstance(apkFile, null, dex[i]);
+                            }
                         }
                     }
                 }
