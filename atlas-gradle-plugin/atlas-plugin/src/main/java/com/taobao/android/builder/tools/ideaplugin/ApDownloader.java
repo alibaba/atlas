@@ -233,6 +233,8 @@ import org.gradle.api.Project;
  * Created by wuzhong on 16/8/29.
  */
 public class ApDownloader {
+    private static final Pattern MTL_PATTERN = Pattern.compile("buildConfigId=(\\d+)");
+
     private final Project project;
 
     public ApDownloader(Project project) {
@@ -241,14 +243,11 @@ public class ApDownloader {
     //    String matcher = "buildConfigId=(\\d+)";
 
     public static File downloadAP(String mtlConfigUrl, File root) throws Exception {
-
-        Pattern p = Pattern.compile("buildConfigId=(\\d+)");
-        Matcher m = p.matcher(mtlConfigUrl);
-
+        Matcher matcher = MTL_PATTERN.matcher(mtlConfigUrl);
         String configId = "";
 
-        if (m.find()) {
-            configId = m.group(1);
+        if (matcher.find()) {
+            configId = matcher.group(1);
         }
 
         String apiUrl = "http://" + AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl
