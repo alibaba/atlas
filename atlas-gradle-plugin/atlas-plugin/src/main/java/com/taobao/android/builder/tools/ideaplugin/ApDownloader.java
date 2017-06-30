@@ -209,10 +209,6 @@
 
 package com.taobao.android.builder.tools.ideaplugin;
 
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.tools.MD5Util;
-import org.apache.commons.io.FileUtils;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -220,12 +216,29 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.android.build.gradle.AndroidGradleOptions;
+import com.android.repository.api.Channel;
+import com.android.repository.api.Downloader;
+import com.android.repository.api.SettingsController;
+import com.android.repository.impl.downloader.LocalFileAwareDownloader;
+import com.android.repository.io.FileOpUtils;
+import com.android.sdklib.repository.legacy.LegacyDownloader;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tools.MD5Util;
+import org.apache.commons.io.FileUtils;
+import org.gradle.api.Nullable;
+import org.gradle.api.Project;
+
 /**
  * Created by wuzhong on 16/8/29.
  */
 public class ApDownloader {
+    private final Project project;
 
-//    String matcher = "buildConfigId=(\\d+)";
+    public ApDownloader(Project project) {
+        this.project = project;
+    }
+    //    String matcher = "buildConfigId=(\\d+)";
 
     public static File downloadAP(String mtlConfigUrl, File root) throws Exception {
 
@@ -238,12 +251,11 @@ public class ApDownloader {
             configId = m.group(1);
         }
 
-        String apiUrl = "http://" +
-                AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl + "/rpc/androidPlugin/getAp.json?buildConfigId=" + configId;
+        String apiUrl = "http://" + AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl
+            + "/rpc/androidPlugin/getAp.json?buildConfigId=" + configId;
 
         URL api = new URL(apiUrl);
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(api.openStream()));
+        BufferedReader in = new BufferedReader(new InputStreamReader(api.openStream()));
 
         String inputLine = in.readLine();
         in.close();
@@ -262,8 +274,29 @@ public class ApDownloader {
 
         FileUtils.copyURLToFile(downloadApi, file);
         return file;
-
     }
 
+    private SettingsController getSettingsController() {
+        return new SettingsController() {
+            @Override
+            public boolean getForceHttp() {
+                return false;
+            }
 
+            @Override
+            public void setForceHttp(boolean force) {
+                // Default, doesn't allow to set force HTTP.
+            }
+
+            @Nullable
+            @Override
+            public Channel getChannel() {
+                return AndroidGradleOptions.getSdkChannel(project);
+            }
+        };
+    }
+
+    private Downloader getDownloader() {
+        return new LocalFileAwareDownloader(new LegacyDownloader(FileOpUtils.create(), getSettingsController()));
+    }
 }
