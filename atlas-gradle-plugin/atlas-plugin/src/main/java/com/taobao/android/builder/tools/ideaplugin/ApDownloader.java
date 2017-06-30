@@ -277,7 +277,8 @@ public class ApDownloader {
         FileUtils.copyURLToFile(downloadApi, file);
         ProgressIndicator stdOutputProgress = getNewDownloadProgress();
         Downloader downloader = getDownloader();
-        downloader return file;
+        downloader.downloadFully(downloadApi, stdOutputProgress);
+        return file;
     }
 
     private SettingsController getSettingsController() {
