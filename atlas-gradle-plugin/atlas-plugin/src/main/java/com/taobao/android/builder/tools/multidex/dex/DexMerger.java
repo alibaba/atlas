@@ -389,7 +389,10 @@ public class DexMerger {
             }
             String[] items = rule.split(",");
             for (File file : fileList) {
-                if (match(items, file) || (0 == i && file.getName().equals(FASTMAINDEX_JAR))) {
+                if (match(items, file) || (0 == i && file.getAbsolutePath().contains(FASTMAINDEX_JAR))) {
+
+                    logger.warn("FASTMULTIDEX put file " + file.getAbsolutePath() + " to dex " + i);
+
                     Dex dex = jarDexMap.get(file);
                     if (!dexDto.addDex(dex)) {
                         throw new DexIndexOverflowException(file.getAbsolutePath() + " can't add to dex" + i);

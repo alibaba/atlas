@@ -209,11 +209,12 @@
 
 package com.taobao.android.builder.tools.sign;
 
-import com.android.builder.signing.DefaultSigningConfig;
-import com.android.builder.signing.SigningException;
-
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+
+import com.android.builder.signing.DefaultSigningConfig;
+import com.android.builder.signing.SigningException;
 
 /**
  * Created by wuzhong on 2016/12/6.
@@ -225,5 +226,10 @@ public class AndroidSigner {
         return LocalSignHelper.sign(inFile, outFile, signingConfig, "");
     }
 
+
+    public boolean signFile(File inFile, File outFile, DefaultSigningConfig signingConfig, Map params) throws IOException,
+                                                                                                       SigningException {
+        return signFile(inFile,outFile,signingConfig);
+    }
 
 }
