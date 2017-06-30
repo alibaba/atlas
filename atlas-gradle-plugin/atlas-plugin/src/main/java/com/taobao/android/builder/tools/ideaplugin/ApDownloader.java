@@ -219,10 +219,13 @@ import java.util.regex.Pattern;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.repository.api.Channel;
 import com.android.repository.api.Downloader;
+import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.SettingsController;
 import com.android.repository.impl.downloader.LocalFileAwareDownloader;
 import com.android.repository.io.FileOpUtils;
+import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
 import com.android.sdklib.repository.legacy.LegacyDownloader;
+import com.android.utils.StdLogger;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tools.MD5Util;
 import org.apache.commons.io.FileUtils;
@@ -272,6 +275,7 @@ public class ApDownloader {
         File tmpFile = new File(file.getParentFile(), String.valueOf(System.currentTimeMillis()));
 
         FileUtils.copyURLToFile(downloadApi, file);
+        ProgressIndicator stdOutputProgress = getNewDownloadProgress();
         return file;
     }
 
@@ -297,5 +301,9 @@ public class ApDownloader {
 
     private Downloader getDownloader() {
         return new LocalFileAwareDownloader(new LegacyDownloader(FileOpUtils.create(), getSettingsController()));
+    }
+
+    private static ProgressIndicator getNewDownloadProgress() {
+        return new LoggerProgressIndicatorWrapper(new StdLogger(StdLogger.Level.VERBOSE));
     }
 }
