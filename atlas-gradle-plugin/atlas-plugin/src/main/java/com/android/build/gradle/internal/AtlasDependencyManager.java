@@ -309,7 +309,7 @@ public class AtlasDependencyManager extends DependencyManager {
         //TODO 最开始下载Ap
         // 下载Ap
         try {
-            new AwoPropHandler().process(tBuildType, atlasExtension.getBundleConfig());
+            new AwoPropHandler(project).process(tBuildType, atlasExtension.getBundleConfig());
         } catch (Exception e) {
             throw new GradleException("process awo exception", e);
         }

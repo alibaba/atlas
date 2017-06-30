@@ -233,7 +233,8 @@ import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 
 /**
- * Created by wuzhong on 16/8/29.
+ * @author wuzhong
+ * @date 16/8/29
  */
 public class ApDownloader {
     private static final Pattern MTL_PATTERN = Pattern.compile("buildConfigId=(\\d+)");
@@ -243,9 +244,8 @@ public class ApDownloader {
     public ApDownloader(Project project) {
         this.project = project;
     }
-    //    String matcher = "buildConfigId=(\\d+)";
 
-    public /*static*/ File downloadAP(String mtlConfigUrl, File root) throws Exception {
+    public File downloadAP(String mtlConfigUrl, File root) throws IOException {
         String downloadUrl = getDownloadUrl(mtlConfigUrl);
 
         File file = new File(root, MD5Util.getMD5(downloadUrl) + ".ap");
@@ -254,11 +254,7 @@ public class ApDownloader {
         }
 
         URL downloadApi = new URL(downloadUrl);
-        // System.out.println("start to download ap from " + downloadUrl);
-        //
-        // File tmpFile = new File(file.getParentFile(), String.valueOf(System.currentTimeMillis()));
-        //
-        // FileUtils.copyURLToFile(downloadApi, file);
+        System.out.println("start to download ap from " + downloadUrl);
         ProgressIndicator stdOutputProgress = getNewDownloadProgress();
         Downloader downloader = getDownloader();
         downloader.downloadFully(downloadApi, file, (String)null, stdOutputProgress);
@@ -268,7 +264,6 @@ public class ApDownloader {
     private String getDownloadUrl(String mtlConfigUrl) throws IOException {
         Matcher matcher = MTL_PATTERN.matcher(mtlConfigUrl);
         String configId = "";
-
         if (matcher.find()) {
             configId = matcher.group(1);
         }
