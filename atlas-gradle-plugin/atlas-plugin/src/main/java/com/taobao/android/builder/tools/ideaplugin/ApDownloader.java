@@ -245,7 +245,7 @@ public class ApDownloader {
     }
     //    String matcher = "buildConfigId=(\\d+)";
 
-    public static File downloadAP(String mtlConfigUrl, File root) throws Exception {
+    public /*static*/ File downloadAP(String mtlConfigUrl, File root) throws Exception {
         Matcher matcher = MTL_PATTERN.matcher(mtlConfigUrl);
         String configId = "";
 
@@ -276,7 +276,8 @@ public class ApDownloader {
 
         FileUtils.copyURLToFile(downloadApi, file);
         ProgressIndicator stdOutputProgress = getNewDownloadProgress();
-        return file;
+        Downloader downloader = getDownloader();
+        downloader return file;
     }
 
     private SettingsController getSettingsController() {
