@@ -1,4 +1,3 @@
-
 /*
  *
  *
@@ -210,62 +209,91 @@
 
 package com.taobao.android.builder.tools.ideaplugin;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
 import com.taobao.android.builder.extension.BundleConfig;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tools.EnvHelper;
 import org.apache.commons.lang3.StringUtils;
-import org.gradle.api.tasks.StopExecutionException;
+import org.gradle.api.Project;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.util.Properties;
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
  * Created by wuzhong on 16/9/1.
  */
 public class AwoPropHandler {
 
+    public static final String PROP_AWO = "awoprop";
+
     public static final String MTL_URL = "mtl_url";
+
     public static final String AP_PATH = "ap_path";
+
     public static final String REFRESH_AP = "refreshAp";
+
     public static final String SUPPORT_DYN = "support_dyn";
+
     public static final String SUPPORT_APK = "support_apk";
 
+    private final Project project;
+
+    private String apPath;
+
+    private boolean refreshAp;
+
+    private String mtlUrl;
+
+    private final String awoProp;
+
+    public AwoPropHandler(Project project) {
+        this.project = project;
+
+        awoProp = EnvHelper.getEnv(PROP_AWO);
+        if (StringUtils.isEmpty(awoProp)) {
+            Properties properties = new Properties();
+            try {
+                properties.load(new FileInputStream(awoProp));
+            } catch (IOException ex) {
+                throw new RuntimeException(awoProp + ": trouble reading", ex);
+            }
+
+            apPath = properties.getProperty(AP_PATH);
+            refreshAp = "true".equals(properties.getProperty(REFRESH_AP));
+            mtlUrl = properties.getProperty(MTL_URL);
+        } else if (!StringUtils.isEmpty(EnvHelper.getEnv(MTL_URL))) {
+            mtlUrl = EnvHelper.getEnv(MTL_URL);
+            refreshAp = "true".equals(EnvHelper.getEnv(REFRESH_AP));
+        }
+    }
+
     public void process(TBuildType buildType, BundleConfig bundleConfig) throws Exception {
-
-        String propfile = EnvHelper.getEnv("awoprop");
-
-        if (StringUtils.isEmpty(propfile)) {
+        if (StringUtils.isEmpty(mtlUrl)) {
             return;
         }
 
-        Properties properties = new Properties();
-        properties.load(new FileInputStream(propfile));
+        // if (!refreshAp && StringUtils.isNotEmpty(apPath) && new File(apPath).exists()) {
+        //     //not need download
+        //     System.out.println("[awo] ap file exist");
+        // }
 
-        String ap_path = properties.getProperty(AP_PATH);
-        boolean refresh_ap = "true".equals(properties.getProperty(REFRESH_AP));
-        String mtl_url = properties.getProperty(MTL_URL);
+        apPath = new ApDownloader(project).downloadAP(mtlUrl, getAwoDir()).getAbsolutePath();
+        // Properties properties = new Properties();
+        // properties.setProperty(AP_PATH, apPath);
+        // properties.store(new FileOutputStream(propfile), "update path");
 
-        if (!refresh_ap && StringUtils.isNotEmpty(ap_path) && new File(ap_path).exists()) {
-            //not need download
-            System.out.println("[awo] ap file exist");
-        }
-
-        if (StringUtils.isEmpty(mtl_url)) {
-            throw new StopExecutionException("mtl_url is not configed");
-        }
-
-        ap_path = ApDownloader.downloadAP(mtl_url, new File(propfile).getParentFile()).getAbsolutePath();
-        properties.setProperty(AP_PATH, ap_path);
-        properties.store(new FileOutputStream(propfile), "update path");
-
-        buildType.setBaseApFile(new File(ap_path));
+        buildType.setBaseApFile(new File(apPath));
 
         bundleConfig.setAwoBuildEnabled(true);
-        bundleConfig.setAwoDynDeploy("true".equals(properties.getProperty(SUPPORT_DYN, "true")));
-        bundleConfig.setAwoApkBuild("true".equals(properties.getProperty(SUPPORT_APK, "true")));
+        // bundleConfig.setAwoDynDeploy("true".equals(properties.getProperty(SUPPORT_DYN, "true")));
+        // bundleConfig.setAwoApkBuild("true".equals(properties.getProperty(SUPPORT_APK, "true")));
     }
 
+    private File getAwoDir() {
+        return new File(new File(project.getBuildDir(), FD_INTERMEDIATES), "awo/");
+    }
 }
 
