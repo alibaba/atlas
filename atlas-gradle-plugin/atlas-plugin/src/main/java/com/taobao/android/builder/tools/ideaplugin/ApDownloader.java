@@ -260,8 +260,7 @@ public class ApDownloader {
         // FileUtils.copyURLToFile(downloadApi, file);
         ProgressIndicator stdOutputProgress = getNewDownloadProgress();
         Downloader downloader = getDownloader();
-        File file = downloader.downloadFully(downloadApi, stdOutputProgress);
-        return file;
+        return downloader.downloadFully(downloadApi, stdOutputProgress);
     }
 
     private String getDownloadUrl(String mtlConfigUrl) throws IOException {
