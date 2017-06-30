@@ -12,8 +12,9 @@ import java.io.InputStreamReader;
 public class CommandUtils {
 
     public static void exec(File workingDir,String command) {
+        String[]commands = command.split(" ");
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
+            ProcessBuilder processBuilder = new ProcessBuilder(commands);
             processBuilder.directory(workingDir);
             Process process = processBuilder.start();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -23,7 +24,17 @@ public class CommandUtils {
             }
             process.waitFor();
             process.destroy();
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            if (commands[0].equals("zip")){
+                try {
+                    ZipUtils.addFileAndDirectoryToZip(new File(commands[2]),workingDir);
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+
+            }else if (commands[0].equals("unzip")){
+                ZipUtils.unzip(new File(commands[1]),commands[3]);
+            }
             e.printStackTrace();
         }
     }

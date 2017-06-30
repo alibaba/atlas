@@ -207,6 +207,15 @@
  */
 package com.taobao.android;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
+import java.util.Set;
+
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
@@ -217,18 +226,10 @@ import com.taobao.android.tpatch.model.ApkBO;
 import com.taobao.android.tpatch.model.BundleBO;
 import com.taobao.android.tpatch.utils.HttpClientUtils;
 import com.taobao.android.utils.CommandUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Created by shenghua.nish on 2016-03-19 下午9:51.
@@ -295,23 +296,35 @@ public class BasePatchTool {
      * @return
      */
     public boolean isModifyBundle(String bundleSoFileName) {
+
+        DiffType diffType = getModifyType(bundleSoFileName);
+
+        if (diffType == DiffType.NONE){
+            return false;
+        }
+
+        return DiffType.ADD.equals(diffType) || DiffType.MODIFY.equals(diffType);
+
+    }
+
+
+    public DiffType getModifyType(String bundleSoFileName) {
         for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
             String packageName = artifactBundleInfo.getPkgName();
             if (null == packageName) {
-                return false;
+                return DiffType.NONE;
             }
             String bundleName = "lib" + packageName.replace('.', '_') + ".so";
             if (bundleName.equals(bundleSoFileName)) {
                 if (null != logger) {
                     logger.info("[BundleDiffType]" + bundleSoFileName + ":" + artifactBundleInfo.getDiffType());
                 }
-                if (DiffType.ADD.equals(artifactBundleInfo.getDiffType()) || DiffType.MODIFY.equals(artifactBundleInfo.getDiffType())) {
-                    return true;
-                }
+                return artifactBundleInfo.getDiffType();
             }
         }
-        return false;
+        return DiffType.NONE;
     }
+
 
     public String getBundleName(String bundleSoFileName) {
         return FilenameUtils.getBaseName(bundleSoFileName.replace("lib", ""));
@@ -340,7 +353,7 @@ public class BasePatchTool {
      *
      * @param outPatchDir
      */
-    protected File unzipApk(File outPatchDir) {
+    protected File unzipApk(File outPatchDir) throws IOException {
         File unzipFolder = new File(outPatchDir, "unzip");
         if (!unzipFolder.exists()){
             unzipFolder.mkdirs();
@@ -348,7 +361,13 @@ public class BasePatchTool {
         File baseApkUnzipFolder = new File(unzipFolder, BASE_APK_UNZIP_NAME);
         File newApkUnzipFolder = new File(unzipFolder, NEW_APK_UNZIP_NAME);
         CommandUtils.exec(outPatchDir,"unzip "+baseApkBO.getApkFile().getAbsolutePath()+" -d "+baseApkUnzipFolder.getAbsolutePath());
-        CommandUtils.exec(outPatchDir,"unzip "+newApkBO.getApkFile().getAbsolutePath()+" -d "+ newApkUnzipFolder.getAbsolutePath());
+
+        if (newApkBO.getApkFile().isDirectory()){
+            FileUtils.moveDirectory(newApkBO.getApkFile(), newApkUnzipFolder);
+        }else {
+            CommandUtils.exec(outPatchDir,"unzip "+newApkBO.getApkFile().getAbsolutePath()+" -d "+ newApkUnzipFolder.getAbsolutePath());
+        }
+
         return unzipFolder;
     }
 

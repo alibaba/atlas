@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'com.taobao.atlas'
 
 atlas {
-    bundleConfig{
+    bundleConfig {
         awbBundle true
     }
     buildTypes {
@@ -12,7 +12,7 @@ atlas {
     }
 }
 group = 'com.atlas.demo'
-version = '1.0.0'
+version = '1.0.1'
 
 
 android {
@@ -34,16 +34,17 @@ android {
         }
     }
 
-    dataBinding{
-        enabled=true
+    dataBinding {
+        enabled = true
     }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     providedCompile project(':middlewarelibrary')
-//    bundleCompile project(':publicbundle')
+    providedCompile project(':publicbundle')
 
+    compile 'com.android.support.constraint:constraint-layout:1.0.0'
     providedCompile 'com.android.support:support-v4:25.3.0'
     providedCompile 'com.android.support:appcompat-v7:25.1.0'
     providedCompile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'

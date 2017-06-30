@@ -473,7 +473,6 @@ public class AndroidHack {
                         final Object newTypedArrayPool = typedArrayConstructor.newInstance(poolSize);
                         typedArrayPoolField.set(resources, newTypedArrayPool);
                     } catch (Throwable ignored) {
-                        ignored.printStackTrace();
                     }
                 }
                 if(res!=null) {
@@ -491,9 +490,6 @@ public class AndroidHack {
                         final Object wrapper = wrappRef != null ? wrappRef.get() : null;
                         Field mTintResourcesField = TintContextWrapper.getDeclaredField("mResources");
                         mTintResourcesField.setAccessible(true);
-                        Field mTintThemeField = TintContextWrapper.getDeclaredField("mTheme");
-                        mTintThemeField.setAccessible(true);
-                        mTintThemeField.set(wrapper,null);
                         Object obj = mTintResourcesField.get(wrapper);
                         Field mResourceField = findField(obj,"mResources");
                         mResourceField.set(obj,resources);

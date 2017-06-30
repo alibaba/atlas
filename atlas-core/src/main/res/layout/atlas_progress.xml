@@ -4,16 +4,14 @@
         android:id="@+id/at_circularProgress"
         android:layout_width="32dp"
         android:layout_height="32dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="12dp"
-        android:layout_marginTop="20dp"/>
+        android:layout_gravity="center"/>
 
-    <TextView
-        android:id="@+id/at_progressText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="初始化..."
-        android:textColor="#FF999999"
-        android:textSize="14dp" />
+    <!--<TextView-->
+        <!--android:id="@+id/at_progressText"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center_horizontal"-->
+        <!--android:text="加载中..."-->
+        <!--android:textColor="#FF999999"-->
+        <!--android:textSize="14dp" />-->
 </merge>

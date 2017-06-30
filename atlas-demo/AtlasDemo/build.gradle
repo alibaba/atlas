@@ -2,24 +2,29 @@
 
 buildscript {
     repositories {
-        maven {
-            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
-        }
         mavenLocal()
         jcenter()
+        maven {
+//            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+            url "http://maven.aliyun.com/nexus/content/groups/public"
+        }
     }
     configurations.all {
         resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:2.3.1.rc25"
+        classpath "com.taobao.android:atlasplugin:2.3.3.rc1"
     }
 }
 
 subprojects {
     repositories {
         jcenter()
+        maven {
+//            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+            url "http://maven.aliyun.com/nexus/content/groups/public"
+        }
     }
 }
 

@@ -216,10 +216,14 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.internal.AtlasDependencyManager;
+import com.android.build.gradle.internal.DependencyManager;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
 import com.taobao.android.builder.tasks.helper.AtlasListTask;
+import com.taobao.android.builder.tools.PathUtil;
 import com.taobao.android.builder.tools.PluginTypeUtils;
+import com.taobao.android.builder.tools.log.LogOutputListener;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -261,6 +265,8 @@ public class AtlasPlugin implements Plugin<Project> {
     public void apply(Project project) {
 
         this.project = project;
+
+        LogOutputListener.addListener(project);
 
         checkPluginSetup();
 
@@ -351,6 +357,11 @@ public class AtlasPlugin implements Plugin<Project> {
             String errorMessage = "android.enableBuildCache is disabled by atlas, we will open it later, "
                 + "\r\n please `add android.enableBuildCache false` to gradle.properties";
             //throw new StopExecutionException(errorMessage);
+        }
+
+        if(!PathUtil.getJarFile(DependencyManager.class).getAbsolutePath().equals(PathUtil.getJarFile(AtlasDependencyManager.class).getAbsolutePath())){
+            throw new StopExecutionException("please remove the google plugin `classpath 'com.android.tools.build:gradle:xxx'` in buildscript dependencies \n"
+                                                 + "it will be auto include by atlasplugin");
         }
 
     }

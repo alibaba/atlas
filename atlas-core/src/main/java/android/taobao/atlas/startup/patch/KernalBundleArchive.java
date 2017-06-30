@@ -255,7 +255,7 @@ import java.util.zip.ZipFile;
         if (revisionDir==null || !revisionDir.exists()) {
             throw new IOException("can not find kernal bundle");
         }
-        libraryDirectory = new File(revisionDir,"lib");
+        libraryDirectory = new File(mappingInternalDirectory(),"lib");
         File bundleFile = new File(revisionDir, BUNDLE_NAME);
         boolean success = new KernalBundleRelease(revisionDir,true).release(bundleFile,true);
         if (!success||odexFile == null){
@@ -285,7 +285,7 @@ import java.util.zip.ZipFile;
             hasResources = true;
         }
         zip.close();
-        libraryDirectory = new File(revisionDir, "lib");
+        libraryDirectory = new File(mappingInternalDirectory(), "lib");
         boolean success = new KernalBundleRelease(revisionDir,false).release(bundleFile,false);
         if (!success||odexFile == null){
             throw new IOException("process mainDex failed!");
@@ -416,6 +416,15 @@ import java.util.zip.ZipFile;
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private File mappingInternalDirectory(){
+        if(!revisionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())){
+            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(),String.format("storage/com.taobao.maindex/%s",revisionDir.getName()));
+            return internalLibDir;
+        }else{
+            return revisionDir;
         }
     }
 

@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Container for local variable information for a particular {@link
- * SsaMethod}.
+ * com.taobao.android.dx.ssa.SsaMethod}.
  * Stolen from {@link com.taobao.android.dx.rop.code.LocalVariableInfo}.
  */
 public class LocalVariableInfo         extends MutabilityControl {
@@ -32,7 +32,7 @@ public class LocalVariableInfo         extends MutabilityControl {
     private final int regCount;
 
     /**
-     * {@code non-null;} {@link RegisterSpecSet} to use when indicating a block
+     * {@code non-null;} {@link com.taobao.android.dx.rop.code.RegisterSpecSet} to use when indicating a block
      * that has no locals; it is empty and immutable but has an appropriate
      * max size for the method
      */

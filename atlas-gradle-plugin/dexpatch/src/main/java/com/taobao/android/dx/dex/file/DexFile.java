@@ -496,6 +496,7 @@ public final class DexFile {
          * add items happen before the calls to the sections that get
          * added to.
          */
+
         classDefs.prepare();
         classData.prepare();
         wordData.prepare();
@@ -568,14 +569,14 @@ public final class DexFile {
                 out.writeZeroes(one.getFileOffset() - out.getCursor());
                 one.writeTo(out);
             } catch (RuntimeException ex) {
-                ExceptionWithContext ewc;
+                ExceptionWithContext ec;
                 if (ex instanceof ExceptionWithContext) {
-                    ewc = (ExceptionWithContext) ex;
+                    ec = (ExceptionWithContext) ex;
                 } else {
-                    ewc = new ExceptionWithContext(ex);
+                    ec = new ExceptionWithContext(ex);
                 }
-                ewc.addContext("...while writing section " + i);
-                throw ewc;
+                ec.addContext("...while writing section " + i);
+                throw ec;
             }
         }
 

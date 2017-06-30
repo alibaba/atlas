@@ -208,15 +208,16 @@
  */
 package com.taobao.android.builder.tools.concurrent;
 
-import org.gradle.api.GradleException;
-import org.slf4j.Logger;
-
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+
+import org.gradle.api.GradleException;
+import org.slf4j.Logger;
 
 public class ExecutorServicesHelper {
 
@@ -239,8 +240,7 @@ public class ExecutorServicesHelper {
         }
 
         this.threadCount = threadCount;
-
-        this.executorService = Executors.newFixedThreadPool(threadCount);
+        //
     }
 
     public AtomicInteger index = new AtomicInteger(0);
@@ -255,36 +255,28 @@ public class ExecutorServicesHelper {
             return;
         }
 
-        final CountDownLatch countDownLatch = new CountDownLatch(runnables.size());
-        final int size = runnables.size();
-
-        for (final Runnable runnable : runnables) {
-            this.executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-
-                    try {
-
-                        if (!hasException) {
-                            info("excute " +
-                                                name +
-                                                " task at " +
-                                                index.incrementAndGet() +
-                                                "/" +
-                                                size);
-                            runnable.run();
-                        }
-                    } catch (Throwable gradleException) {
-                        hasException = true;
-                        exception = gradleException;
-                    } finally {
-                        countDownLatch.countDown();
-                    }
-                }
-            });
+        Stream<Runnable> stream = runnables.stream();
+        if (threadCount > 1) {
+            stream = stream.parallel();
         }
 
-        countDownLatch.await();
+        stream.forEach((Runnable runnable) -> {
+            try {
+
+                if (!hasException) {
+                    info("excute " +
+                             name +
+                             " task at " +
+                             index.incrementAndGet() +
+                             "/" +
+                             runnables.size());
+                    runnable.run();
+                }
+            } catch (Throwable gradleException) {
+                hasException = true;
+                exception = gradleException;
+            }
+        });
 
         if (hasException) {
             throw new GradleException(exception.getMessage(), exception);
@@ -296,6 +288,10 @@ public class ExecutorServicesHelper {
 
         if (blockingQueue.isEmpty()) {
             return;
+        }
+
+        if (null == this.executorService){
+            this.executorService = Executors.newFixedThreadPool(threadCount);
         }
 
         final CountDownLatch countDownLatch = new CountDownLatch(this.threadCount);
@@ -334,10 +330,10 @@ public class ExecutorServicesHelper {
         }
     }
 
-    private void info(String msg){
-        if (null != logger){
+    private void info(String msg) {
+        if (null != logger) {
             logger.info(msg);
-        }else {
+        } else {
             System.out.println(msg);
         }
     }

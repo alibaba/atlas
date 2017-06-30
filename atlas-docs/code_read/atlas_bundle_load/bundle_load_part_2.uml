@@ -1,0 +1,18 @@
+@startuml
+autonumber 8
+
+
+BundleInstaller --> BundleInstaller : call
+
+BundleInstaller --> Framework : installNewBundle
+
+Framework --> BundleImpl : new
+BundleImpl --> BundleImpl : resolveBundle 
+
+BundleImpl --> BundleClassLoader : new 
+BundleImpl --> BundleLifecycleHandler : loaded
+BundleLifecycleHandler --> DelegateResources : addBundleResources
+
+Framework --> BundleImpl : optDexFile
+
+@enduml

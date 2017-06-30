@@ -277,22 +277,14 @@ public class BundleInstaller implements Callable{
                         BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
                         if (impl == null || !impl.checkValidate()) {
                             Log.d("BundleInstaller", "idle install bundle : " + bundleName);
-                            BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{bundleName});
-                            if (listener != null) {
-                                listener.onFinished();
-                            }
+                            BundleInstallerFetcher.obtainInstaller().installTransitivelyAsync(new String[]{bundleName},listener);
                             return true;
                         }
                     }
                     return true;
                 }
             };
-            sBundleHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Looper.myQueue().addIdleHandler(sIdleHandler);
-                }
-            });
+            Looper.myQueue().addIdleHandler(sIdleHandler);
         }
     }
 
@@ -647,7 +639,7 @@ public class BundleInstaller implements Callable{
         if(!bundleFile.exists()){
             bundleFile = new File(RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir,bundleFileName);
         }
-        if(isBundleFileTimeStampMatched(location,bundleFile)){
+        if(isBundleFileMatched(location,bundleFile)){
             mTmpBundleSourceFile = bundleFile;
             Log.e("BundleInstaller","find valid bundle : "+bundleFile.getAbsolutePath());
         }else{
@@ -660,25 +652,16 @@ public class BundleInstaller implements Callable{
         }
     }
 
-    private boolean isBundleFileTimeStampMatched(String location,File file){
+    private boolean isBundleFileMatched(String location,File file){
         if(!file.exists() || !AtlasBundleInfoManager.instance().isInternalBundle(location)){
             return false;
         }
-        if(file.lastModified() == getTimeStampInApk()){
-            return true;
+        BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
+        if(info!=null && info.getSize()>0 && info.getSize()!=file.length()){
+            Log.e("BundleInstaller","wanted size: "+info.getSize()+"| realSize: "+file.length());
+            return false;
         }
-        return false;
-    }
-
-    private static long timeStampInApk = -11021836;
-    private synchronized long getTimeStampInApk(){
-        try {
-            if (timeStampInApk == -11021836) {
-                timeStampInApk = ApkUtils.getApk().getEntry("classes.dex").getTime();
-            }
-        }finally {
-            return timeStampInApk>0 ? timeStampInApk : 0;
-        }
+        return true;
     }
 
     private Bundle installBundleFromApk(String bundleName) throws Exception{

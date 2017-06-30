@@ -137,17 +137,11 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             throws IOException, ProcessException {
         final String submission = Joiner.on(',').join(builder.getInputs());
         mLogger.verbose("Dexing in-process : %1$s", submission);
-        try {
-            sDexExecutorService.submit(() -> {
-                Stopwatch stopwatch = Stopwatch.createStarted();
-                ProcessResult result = DexWrapperHook.run(builder, dexOptions, outputHandler);
-                result.assertNormalExitValue();
-                mLogger.verbose("Dexing %1$s took %2$s.", submission, stopwatch.toString());
-                return null;
-            }).get();
-        } catch (Exception e) {
-            throw new ProcessException(e);
-        }
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        ProcessResult result = DexWrapperHook.run(builder, dexOptions, outputHandler);
+        result.assertNormalExitValue();
+        mLogger.verbose("Dexing %1$s took %2$s.", submission, stopwatch.toString());
+
     }
 
     private void dexOutOfProcess(
@@ -219,56 +213,59 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         if (!dexOptions.getDexInProcess()) {
             mIsDexInProcess = false;
             return false;
+        }else {
+            mIsDexInProcess = true;
+            return true;
         }
 
-        // Requested memory for dex.
-        long requestedHeapSize;
-        if (dexOptions.getJavaMaxHeapSize() != null) {
-            Optional<Long> heapSize = parseSizeToBytes(dexOptions.getJavaMaxHeapSize());
-            if (heapSize.isPresent()) {
-                requestedHeapSize = heapSize.get();
-            } else {
-                mLogger.warning(
-                        "Unable to parse dex options size parameter '%1$s', assuming %2$s bytes.",
-                        dexOptions.getJavaMaxHeapSize(),
-                        DEFAULT_DEX_HEAP_SIZE);
-                requestedHeapSize = DEFAULT_DEX_HEAP_SIZE;
-            }
-        } else {
-            requestedHeapSize = DEFAULT_DEX_HEAP_SIZE;
-        }
-        // Approximate heap size requested.
-        long requiredHeapSizeHeuristic = requestedHeapSize + NON_DEX_HEAP_SIZE;
-        // Get the heap size defined by the user. This value will be compared with
-        // requiredHeapSizeHeuristic, which we suggest the user set in their gradle.properties file.
-        long maxMemory = getUserDefinedHeapSize();
-
-        if (requiredHeapSizeHeuristic > maxMemory) {
-            String dexOptionsComment = "";
-            if (dexOptions.getJavaMaxHeapSize() != null) {
-                dexOptionsComment = String.format(
-                        " (based on the dexOptions.javaMaxHeapSize = %s)",
-                        dexOptions.getJavaMaxHeapSize());
-            }
-
-            mLogger.warning("\nRunning dex as a separate process.\n\n"
-                            + "To run dex in process, the Gradle daemon needs a larger heap.\n"
-                            + "It currently has %1$d MB.\n"
-                            + "For faster builds, increase the maximum heap size for the "
-                            + "Gradle daemon to at least %2$s MB%3$s.\n"
-                            + "To do this set org.gradle.jvmargs=-Xmx%2$sM in the "
-                            + "project gradle.properties.\n"
-                            + "For more information see "
-                            + "https://docs.gradle.org/current/userguide/build_environment.html\n",
-                    maxMemory / (1024 * 1024),
-                    // Add -1 and + 1 to round up the division
-                    ((requiredHeapSizeHeuristic - 1) / (1024 * 1024)) + 1,
-                    dexOptionsComment);
-            mIsDexInProcess = false;
-            return false;
-        }
-        mIsDexInProcess = true;
-        return true;
+//        // Requested memory for dex.
+//        long requestedHeapSize;
+//        if (dexOptions.getJavaMaxHeapSize() != null) {
+//            Optional<Long> heapSize = parseSizeToBytes(dexOptions.getJavaMaxHeapSize());
+//            if (heapSize.isPresent()) {
+//                requestedHeapSize = heapSize.get();
+//            } else {
+//                mLogger.warning(
+//                        "Unable to parse dex options size parameter '%1$s', assuming %2$s bytes.",
+//                        dexOptions.getJavaMaxHeapSize(),
+//                        DEFAULT_DEX_HEAP_SIZE);
+//                requestedHeapSize = DEFAULT_DEX_HEAP_SIZE;
+//            }
+//        } else {
+//            requestedHeapSize = DEFAULT_DEX_HEAP_SIZE;
+//        }
+//        // Approximate heap size requested.
+//        long requiredHeapSizeHeuristic = requestedHeapSize + NON_DEX_HEAP_SIZE;
+//        // Get the heap size defined by the user. This value will be compared with
+//        // requiredHeapSizeHeuristic, which we suggest the user set in their gradle.properties file.
+//        long maxMemory = getUserDefinedHeapSize();
+//
+//        if (requiredHeapSizeHeuristic > maxMemory) {
+//            String dexOptionsComment = "";
+//            if (dexOptions.getJavaMaxHeapSize() != null) {
+//                dexOptionsComment = String.format(
+//                        " (based on the dexOptions.javaMaxHeapSize = %s)",
+//                        dexOptions.getJavaMaxHeapSize());
+//            }
+//
+//            mLogger.warning("\nRunning dex as a separate process.\n\n"
+//                            + "To run dex in process, the Gradle daemon needs a larger heap.\n"
+//                            + "It currently has %1$d MB.\n"
+//                            + "For faster builds, increase the maximum heap size for the "
+//                            + "Gradle daemon to at least %2$s MB%3$s.\n"
+//                            + "To do this set org.gradle.jvmargs=-Xmx%2$sM in the "
+//                            + "project gradle.properties.\n"
+//                            + "For more information see "
+//                            + "https://docs.gradle.org/current/userguide/build_environment.html\n",
+//                    maxMemory / (1024 * 1024),
+//                    // Add -1 and + 1 to round up the division
+//                    ((requiredHeapSizeHeuristic - 1) / (1024 * 1024)) + 1,
+//                    dexOptionsComment);
+//            mIsDexInProcess = false;
+//            return false;
+//        }
+//        mIsDexInProcess = true;
+//        return true;
 
     }
 

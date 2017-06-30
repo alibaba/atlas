@@ -272,7 +272,7 @@ public class TBuildConfig {
     private Boolean aaptConstantId = true;
 
     @Config(message = "注入核心的bundle信息", advance = true, order = 10, group = "atlas")
-    private Boolean classInject = true;
+    private Boolean classInject = false;
 
     @Config(title = "主dex插桩", message = "老版本的主dex动态部署，已经废弃", advance = true, order = 11, group = "atlas")
     private Boolean doPreverify = false;
@@ -301,6 +301,23 @@ public class TBuildConfig {
     private Set<String> insideOfApkBundles = Sets.newHashSet();
 
     private boolean incremental = false;
+
+    @Config(message = "是否使用快速proguard", order = 16, advance = true, group = "atlas")
+    private boolean fastProguard = false;
+
+    @Config(message = "是否使用proguard缓存", order = 17, advance = true, group = "atlas")
+    private boolean proguardCacheEnabled = true;
+
+    @Config(message = "是否使用远程proguard缓存", order = 16, advance = true, group = "atlas")
+    private boolean proguardNetworkCacheEnabled = false;
+
+    @Config(message = "是否使用dex缓存", order = 17, advance = true, group = "atlas")
+    private boolean dexCacheEnabled = true;
+
+    @Config(message = "是否使用远程dex缓存", order = 18, advance = true, group = "atlas")
+    private boolean dexNetworkCacheEnabled = false;
+
+    private int proguardParallelCount = 8;
 
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;
@@ -504,5 +521,53 @@ public class TBuildConfig {
 
     public void setMinPackageId(int minPackageId) {
         this.minPackageId = minPackageId;
+    }
+
+    public boolean isFastProguard() {
+        return fastProguard;
+    }
+
+    public void setFastProguard(boolean fastProguard) {
+        this.fastProguard = fastProguard;
+    }
+
+    public int getProguardParallelCount() {
+        return proguardParallelCount;
+    }
+
+    public void setProguardParallelCount(int proguardParallelCount) {
+        this.proguardParallelCount = proguardParallelCount;
+    }
+
+    public boolean isProguardCacheEnabled() {
+        return proguardCacheEnabled;
+    }
+
+    public void setProguardCacheEnabled(boolean proguardCacheEnabled) {
+        this.proguardCacheEnabled = proguardCacheEnabled;
+    }
+
+    public boolean isProguardNetworkCacheEnabled() {
+        return proguardNetworkCacheEnabled;
+    }
+
+    public void setProguardNetworkCacheEnabled(boolean proguardNetworkCacheEnabled) {
+        this.proguardNetworkCacheEnabled = proguardNetworkCacheEnabled;
+    }
+
+    public boolean isDexCacheEnabled() {
+        return dexCacheEnabled;
+    }
+
+    public void setDexCacheEnabled(boolean dexCacheEnabled) {
+        this.dexCacheEnabled = dexCacheEnabled;
+    }
+
+    public boolean isDexNetworkCacheEnabled() {
+        return dexNetworkCacheEnabled;
+    }
+
+    public void setDexNetworkCacheEnabled(boolean dexNetworkCacheEnabled) {
+        this.dexNetworkCacheEnabled = dexNetworkCacheEnabled;
     }
 }

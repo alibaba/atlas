@@ -229,9 +229,8 @@ public class NClassLoader extends PathClassLoader{
         super(dexPath, parent);
     }
 
-    public static void replacePathClassLoader(Context base,ClassLoader original) throws Exception {
-        NClassLoader loader = new NClassLoader(".",original.getParent());
-
+    public static void replacePathClassLoader(Context base,ClassLoader original,NClassLoader target) throws Exception {
+        NClassLoader loader = target;
         Field pathListField = findField(original, "pathList");
         pathListField.setAccessible(true);
         Object originPathListObject = pathListField.get(original);

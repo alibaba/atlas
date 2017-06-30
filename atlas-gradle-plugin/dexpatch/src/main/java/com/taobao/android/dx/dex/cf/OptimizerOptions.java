@@ -34,17 +34,24 @@ public class OptimizerOptions {
      * should be optimized. {@code null} if this constraint was not
      * specified on the command line
      */
-    private HashSet<String> optimizeList;
+    private static HashSet<String> optimizeList;
 
     /**
      * {@code null-ok;} hash set of class name + method names that should NOT
      * be optimized.  null if this constraint was not specified on the
      * command line
      */
-    private HashSet<String> dontOptimizeList;
+    private static HashSet<String> dontOptimizeList;
 
     /** true if the above lists have been loaded */
-    private boolean optimizeListsLoaded;
+    private static boolean optimizeListsLoaded;
+
+    /**
+     * This class is uninstantiable.
+     */
+    private OptimizerOptions() {
+        // This space intentionally left blank.
+    }
 
     /**
      * Loads the optimize/don't optimize lists from files.
@@ -52,7 +59,7 @@ public class OptimizerOptions {
      * @param optimizeListFile Pathname
      * @param dontOptimizeListFile Pathname
      */
-    public void loadOptimizeLists(String optimizeListFile,
+    public static void loadOptimizeLists(String optimizeListFile,
             String dontOptimizeListFile) {
         if (optimizeListsLoaded) {
             return;
@@ -130,7 +137,7 @@ public class OptimizerOptions {
         steps.remove(Optimizer.OptionalStep.CONST_COLLECTOR);
 
         RopMethod skipRopMethod
-                = new Optimizer().optimize(nonOptRmeth,
+                = Optimizer.optimize(nonOptRmeth,
                         paramSize, isStatic, args.localInfo, advice, steps);
 
         int normalInsns
@@ -156,7 +163,7 @@ public class OptimizerOptions {
      * @param canonicalMethodName name of method being considered
      * @return true if it should be optimized
      */
-    public boolean shouldOptimize(String canonicalMethodName) {
+    public static boolean shouldOptimize(String canonicalMethodName) {
         // Optimize only what's in the optimize list.
         if (optimizeList != null) {
             return optimizeList.contains(canonicalMethodName);

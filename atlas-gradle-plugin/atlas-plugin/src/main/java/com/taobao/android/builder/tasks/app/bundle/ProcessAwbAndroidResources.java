@@ -208,6 +208,17 @@
  */
 package com.taobao.android.builder.tasks.app.bundle;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -215,7 +226,6 @@ import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
-import com.android.build.gradle.internal.dsl.DataBindingOptions;
 import com.android.build.gradle.internal.incremental.FileType;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -237,7 +247,6 @@ import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
@@ -250,17 +259,6 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.StopExecutionException;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
 
 @ParallelizableTask
 public class ProcessAwbAndroidResources extends IncrementalTask {
@@ -658,12 +656,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 @Override
                 public File call() throws Exception {
 
-                    DataBindingOptions dataBindingOptions = appVariantOutputContext.getVariantContext()
-                            .getAppExtension()
-                            .getDataBinding();
-
                     File file = null;
-                    if (null != dataBindingOptions && dataBindingOptions.isEnabled()) {
+                    if (appVariantOutputContext.getVariantContext().isDataBindEnabled(awbBundle)) {
                         file = appVariantOutputContext.getVariantContext()
                                 .getAwbLayoutFolderOutputForDataBinding(awbBundle);
                     } else {

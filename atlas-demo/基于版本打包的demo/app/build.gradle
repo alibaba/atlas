@@ -4,7 +4,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:2.2.3.rc+"
+        classpath "com.taobao.android:atlasplugin:2.3.1.beta55"
     }
 }
 
@@ -52,8 +52,8 @@ configurations.all {
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 24
+    buildToolsVersion "25.0.2"
 
     compileOptions.encoding = 'UTF-8'
 

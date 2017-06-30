@@ -18,6 +18,7 @@ package com.taobao.android.dx.dex.file;
 
 import com.taobao.android.dex.DexFormat;
 import com.taobao.android.dex.DexIndexOverflowException;
+import com.taobao.android.dx.command.dexer.Main;
 import com.taobao.android.dx.rop.cst.Constant;
 import com.taobao.android.dx.rop.cst.CstType;
 import com.taobao.android.dx.rop.type.Type;
@@ -85,7 +86,8 @@ public final class TypeIdsSection extends UniformItemSection {
 
         if (sz > DexFormat.MAX_TYPE_IDX + 1) {
             throw new DexIndexOverflowException("Too many type references: " + sz +
-                    "; max is " + (DexFormat.MAX_TYPE_IDX + 1) + ".\n");
+                    "; max is " + (DexFormat.MAX_TYPE_IDX + 1) + ".\n" +
+                    new Main().getTooManyIdsErrorMessage());
         }
 
         if (out.annotates()) {
@@ -103,10 +105,7 @@ public final class TypeIdsSection extends UniformItemSection {
      * @param type {@code non-null;} the type to intern
      * @return {@code non-null;} the interned reference
      */
-    public TypeIdItem intern(Type type) {
-        if (type.getDescriptor().equals("L;")){
-            System.out.println("xxxx");
-        }
+    public synchronized TypeIdItem intern(Type type) {
         if (type == null) {
             throw new NullPointerException("type == null");
         }
@@ -137,9 +136,6 @@ public final class TypeIdsSection extends UniformItemSection {
         throwIfPrepared();
 
         Type typePerSe = type.getClassType();
-        if (typePerSe.getDescriptor().equals("L;")){
-            System.out.println("xxxxxx");
-        }
         TypeIdItem result = typeIds.get(typePerSe);
 
         if (result == null) {

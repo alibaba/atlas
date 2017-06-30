@@ -221,8 +221,13 @@ import java.util.List;
 
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Profiler {
+
+    public static Logger sLogger = LoggerFactory.getLogger(Profiler.class);
+
     private static final ThreadLocal entryStack = new ThreadLocal();
 
     public Profiler() {

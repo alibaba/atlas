@@ -18,17 +18,12 @@ package com.taobao.android.dx.command;
 
 import com.taobao.android.dx.Version;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.util.HashMap;
-
 /**
  * Main class for dx. It recognizes enough options to be able to dispatch
  * to the right "actual" main.
  */
 public class Main {
-    private static final String USAGE_MESSAGE =
+    private static String USAGE_MESSAGE =
         "usage:\n" +
         "  dx --dex [--debug] [--verbose] [--positions=<style>] " +
         "[--no-locals]\n" +
@@ -38,7 +33,7 @@ public class Main {
         "[--dump-width=<n>]\n" +
         "  [--dump-method=<name>[*]] [--verbose-dump] [--no-files] " +
         "[--core-library]\n" +
-        "  [--num-threads=<n>] [--incremental] [--force-jumbo]\n" +
+        "  [--num-threads=<n>] [--incremental] [--force-jumbo] [--no-warning]\n" +
         "  [--multi-dex [--main-dex-list=<file> [--minimal-main-dex]]\n" +
         "  [--input-list=<file>]\n" +
         "  [<file>.class | <file>.{zip,jar,apk} | <directory>] ...\n" +
@@ -93,18 +88,10 @@ public class Main {
     /**
      * Run!
      */
-
-    public static HashMap<String,Integer>dexClassesList = new HashMap<String, Integer>();
-
     public static void main(String[] args) {
         boolean gotCmd = false;
         boolean showUsage = false;
-        args = new String[10];
-        args[0] = "--dex";
-        args[1] = "--output=/Users/lilong/Downloads/3.dex";
 
-        args[2] = "/Users/lilong/Documents/main_builder/build/patch/powermsg-patch.jar";
-//        dexClassesList = getClassList(new File("/Users/lilong/Documents/main_builder/HotClassList"));
         try {
             for (int i = 0; i < args.length; i++) {
                 String arg = args[i];
@@ -116,7 +103,7 @@ public class Main {
 
                 gotCmd = true;
                 if (arg.equals("--dex")) {
-                    com.taobao.android.dx.command.dexer.Main.main(without(args, i));
+                    new com.taobao.android.dx.command.dexer.Main().main(without(args, i));
                     break;
                 } else if (arg.equals("--dump")) {
                     com.taobao.android.dx.command.dump.Main.main(without(args, i));
@@ -198,30 +185,5 @@ public class Main {
         System.arraycopy(orig, 0, newa, 0, n);
         System.arraycopy(orig, n + 1, newa, n, len - n);
         return newa;
-    }
-
-
-    private static HashMap<String,Integer> getClassList(File file) {
-        HashMap<String,Integer>classList = new HashMap<String, Integer>();
-        if (!file.exists()) {
-            return classList;
-        }
-        String line;
-        try {
-            FileReader in = new FileReader(file);
-            BufferedReader br = new BufferedReader(in);
-            line = br.readLine();
-            int i = 0;
-            while (line != null) {
-                classList.put(line,i);
-                line = br.readLine();
-                i++;
-            }
-
-        } catch (Exception e) {
-
-        }
-        return classList;
-
     }
 }

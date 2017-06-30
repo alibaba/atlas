@@ -16,16 +16,38 @@
 
 package com.taobao.android.dx.cf.cst;
 
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_Class;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_Double;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_Fieldref;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_Float;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_Integer;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_InterfaceMethodref;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_Long;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_Methodref;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_NameAndType;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_String;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_Utf8;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_MethodHandle;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_MethodType;
+import static com.taobao.android.dx.cf.cst.ConstantTags.CONSTANT_InvokeDynamic;
 import com.taobao.android.dx.cf.iface.ParseException;
 import com.taobao.android.dx.cf.iface.ParseObserver;
-import com.taobao.android.dx.rop.cst.*;
+import com.taobao.android.dx.rop.cst.Constant;
+import com.taobao.android.dx.rop.cst.CstDouble;
+import com.taobao.android.dx.rop.cst.CstFieldRef;
+import com.taobao.android.dx.rop.cst.CstFloat;
+import com.taobao.android.dx.rop.cst.CstInteger;
+import com.taobao.android.dx.rop.cst.CstInterfaceMethodRef;
+import com.taobao.android.dx.rop.cst.CstLong;
+import com.taobao.android.dx.rop.cst.CstMethodRef;
+import com.taobao.android.dx.rop.cst.CstNat;
+import com.taobao.android.dx.rop.cst.CstString;
+import com.taobao.android.dx.rop.cst.CstType;
+import com.taobao.android.dx.rop.cst.StdConstantPool;
 import com.taobao.android.dx.rop.type.Type;
 import com.taobao.android.dx.util.ByteArray;
 import com.taobao.android.dx.util.Hex;
-
 import java.util.BitSet;
-
-import static com.taobao.android.dx.cf.cst.ConstantTags.*;
 
 /**
  * Parser for a constant pool embedded in a class file.

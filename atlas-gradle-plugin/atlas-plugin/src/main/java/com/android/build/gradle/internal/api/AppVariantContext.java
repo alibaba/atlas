@@ -497,11 +497,28 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public ApkFiles getApkFiles() {
 
-        if (null != apkFiles){
+        if (null != apkFiles) {
             return apkFiles;
         }
 
         apkFiles = ApkFileListUtils.recordApkFileInfos(this);
         return apkFiles;
+    }
+
+    public File getAwbProguardDir(AwbBundle awbBundle) {
+        File file = new File(scope.getGlobalScope().getIntermediatesDir(),
+                        "awb-proguard/" + getVariantConfiguration().getDirName() + "/" + awbBundle.getName());
+        file.mkdirs();
+        return file;
+    }
+
+    public boolean isDataBindEnabled(AwbBundle awbBundle){
+
+        if( null == appExtension.getDataBinding() || !appExtension.getDataBinding().isEnabled()) {
+            return false;
+        }
+
+        return atlasExtension.getTBuildConfig().getDataBindingBundles().contains(awbBundle.getPackageName());
+
     }
 }

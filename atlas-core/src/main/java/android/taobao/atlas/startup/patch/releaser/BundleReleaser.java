@@ -218,7 +218,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.taobao.atlas.startup.patch.KernalConstants;
-import android.taobao.atlas.util.DexFileCompat;
+import android.taobao.atlas.startup.DexFileCompat;
 import android.util.Log;
 import dalvik.system.DexFile;
 import java.io.File;
@@ -266,7 +266,8 @@ public class BundleReleaser {
             externalStorage = true;
         }
         if (!(Looper.getMainLooper() == Looper.myLooper())) {
-            Looper.prepare();
+            if (Looper.myLooper() == null)
+                Looper.prepare();
         }
         handler = new Handler(new Handler.Callback() {
             @Override
@@ -355,6 +356,7 @@ public class BundleReleaser {
         }
     }
 
+
     public void release(final ReleaseType releaseType) throws IOException {
                 switch (releaseType) {
                     case DEX:
@@ -429,6 +431,7 @@ public class BundleReleaser {
 
         if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
             KernalConstants.dexBooster.setVerificationEnabled(true);
+            Log.e(TAG,"enable verify");
         }
         final CountDownLatch countDownLatch = new CountDownLatch(validDexes.length);
         for (int i = 0;i < validDexes.length;i++) {
@@ -441,6 +444,9 @@ public class BundleReleaser {
                     try {
                         if(!externalStorage) {
                             dexFiles[j] = DexFile.loadDex(validDexes[j].getPath(), optimizedPath, 0);
+                            if(!new File(optimizedPath).exists()){
+                                Log.e(TAG,"odex not exist");
+                            }
                         }else{
                             //interpretOnly
                             if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {
@@ -507,6 +513,7 @@ public class BundleReleaser {
                 }
                 return false;
             } catch (Throwable e) {
+                e.printStackTrace();
                 return false;
             }
         }

@@ -209,6 +209,8 @@
 package android.taobao.atlas.startup.patch.releaser;
 
 import android.os.Build;
+import android.taobao.atlas.startup.patch.KernalConstants;
+import android.util.Log;
 
 import java.io.*;
 import java.util.Enumeration;
@@ -240,7 +242,7 @@ public class NativeLibReleaser {
                 while(numAttempts<3 && !isExtractionSuccessful) {
                     numAttempts++;
                     try {
-                        String targetPath = String.format("%s%s%s%s%s", reversionDir, File.separator, "lib", File.separator,
+                        String targetPath = String.format("%s%s%s%s%s", mappingInternalDirectory(reversionDir), File.separator, "lib", File.separator,
                                 entryName.substring(entryName.lastIndexOf(File.separator) + 1, entryName.length()));
                         if (zipEntry.isDirectory()) {
                             File decompressDirFile = new File(targetPath);
@@ -281,5 +283,27 @@ public class NativeLibReleaser {
         }
 
         return true;
+    }
+
+    private static File mappingInternalDirectory(File revisionDir){
+        if(!revisionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())){
+            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(),String.format("storage/com.taobao.maindex/%s",revisionDir.getName()));
+            int retryCount = 2;
+            do{
+                if(!internalLibDir.exists()){
+                    internalLibDir.mkdirs();
+                }
+                if(internalLibDir.exists()){
+                    break;
+                }
+                retryCount--;
+            }while(retryCount>0);
+            if(!internalLibDir.exists()){
+                Log.e("BundleArchiveRevision","create internal LibDir Failed : com.taobao.maindex");
+            }
+            return internalLibDir;
+        }else{
+            return revisionDir;
+        }
     }
 }

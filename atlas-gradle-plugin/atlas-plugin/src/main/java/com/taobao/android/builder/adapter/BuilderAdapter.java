@@ -212,8 +212,6 @@ package com.taobao.android.builder.adapter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.taobao.android.builder.tools.cache.FileCache;
-import com.taobao.android.builder.tools.cache.FileCache.SimpleFileCache;
 import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
 import com.taobao.android.builder.tools.sign.AndroidSigner;
 
@@ -230,8 +228,6 @@ public class BuilderAdapter {
 
     public ApkInjectInfoCreator apkInjectInfoCreator = new ApkInjectInfoCreator();
 
-    public FileCache fileCache = new SimpleFileCache();
-
     public String tpatchHistoryUrl = "";
 
     public boolean packageRemoteAwbInJni = true;
@@ -246,13 +242,12 @@ public class BuilderAdapter {
      * 主bundle的本地jar一直开启
      */
     public boolean localJarEnabled = true;
-
     /**
      * 标准格式的依赖
      */
     public boolean prettyDependencyFormat = true;
 
-    public boolean dexCacheEnabled = false;
+    public boolean pushCacheToNetwork = true;
 
     public List<String> buildInfos = new ArrayList<>();
 

@@ -227,6 +227,7 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.signing.DefaultSigningConfig;
+import com.android.builder.signing.SigningException;
 import com.android.utils.Pair;
 import com.taobao.android.TPatchTool;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -305,6 +306,10 @@ public class TPatchTask extends BaseTask {
         TPatchTool tPatchTool = new TPatchTool(apkBO,
                                                newApkBO,
                                                patchContext.diffBundleDex);
+        //TODO
+        if (null != patchContext.patchVersions) {
+            tPatchTool.setVersionList(patchContext.patchVersions);
+        }
 
         List<Pair<BundleBO, BundleBO>> remoteBundles = new ArrayList<>();
 
@@ -372,34 +377,7 @@ public class TPatchTask extends BaseTask {
                                patchContext.appSignName);
             getLogger().info("finish  do patch");
 
-            File baseVesrionApk = new File(patchContext.newApk.getParentFile(),
-                                           patchContext.newApk.getName()
-                                               .replace(".apk", "-" + baseApkVersion + ".apk"));
-            FileUtils.copyFile(patchContext.getBaseApk(), baseVesrionApk);
-            if (patchContext.writeBuildInfo && StringUtils.isNotEmpty(patchContext.buildId)) {
-                File buildFile = new File(getOutPatchFolder(), "build.txt");
-                FileUtils.writeStringToFile(buildFile,
-                                            patchContext.buildId +
-                                                "," +
-                                                patchContext.versionName +
-                                                "," +
-                                                apkFileList.getMainBundle().get("classes.dex"));
-                if (buildFile != null && buildFile.exists()) {
-                    getLogger().info("add build file to apk!");
-                    BuildHelper.writeFileToApk(buildFile, baseVesrionApk, "assets/build.txt");
-                }
-
-                String bundleInfoFileName = "bundleInfo-" +
-                    appVariantContext.getVariantConfiguration().getVersionName() +  ".json";
-                File bundleInfoFile = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),
-                                               bundleInfoFileName);
-                if (bundleInfoFile.exists()){
-                    getLogger().info("add " + bundleInfoFileName + " to apk!");
-                    BuildHelper.writeFileToApk(bundleInfoFile, baseVesrionApk, "assets/" + bundleInfoFileName);
-                }
-
-                BuildHelper.reSign(baseVesrionApk, signingConfig);
-            }
+            //resignBaseApk(baseApkVersion, apkFileList);
 
             FileUtils.forceDelete(patchContext.newApk);
 
@@ -407,6 +385,37 @@ public class TPatchTask extends BaseTask {
             throw new GradleException(e.getMessage(), e);
         }
 
+    }
+
+    private void resignBaseApk(String baseApkVersion, ApkFileList apkFileList) throws IOException, SigningException {
+        File baseVesrionApk = new File(patchContext.newApk.getParentFile(),
+                                       patchContext.newApk.getName()
+                                           .replace(".apk", "-" + baseApkVersion + ".apk"));
+        FileUtils.copyFile(patchContext.getBaseApk(), baseVesrionApk);
+        if (patchContext.writeBuildInfo && StringUtils.isNotEmpty(patchContext.buildId)) {
+            File buildFile = new File(getOutPatchFolder(), "build.txt");
+            FileUtils.writeStringToFile(buildFile,
+                                        patchContext.buildId +
+                                            "," +
+                                            patchContext.versionName +
+                                            "," +
+                                            apkFileList.getMainBundle().get("classes.dex"));
+            if (buildFile != null && buildFile.exists()) {
+                getLogger().info("add build file to apk!");
+                BuildHelper.writeFileToApk(buildFile, baseVesrionApk, "assets/build.txt");
+            }
+
+            String bundleInfoFileName = "bundleInfo-" +
+                appVariantContext.getVariantConfiguration().getVersionName() +  ".json";
+            File bundleInfoFile = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),
+                                           bundleInfoFileName);
+            if (bundleInfoFile.exists()){
+                getLogger().info("add " + bundleInfoFileName + " to apk!");
+                BuildHelper.writeFileToApk(bundleInfoFile, baseVesrionApk, "assets/" + bundleInfoFileName);
+            }
+
+            BuildHelper.reSign(baseVesrionApk, signingConfig);
+        }
     }
 
     @OutputDirectory
@@ -435,7 +444,7 @@ public class TPatchTask extends BaseTask {
 
         @Override
         public String getName() {
-            return scope.getTaskName("Create", "TPatch");
+            return scope.getTaskName("createTPatch");
         }
 
         @Override
@@ -520,6 +529,8 @@ public class TPatchTask extends BaseTask {
                         .isOnlyIncrementInMain();
                     tPatchContext.appSignName = tBuildType.getPatchConfig().getAppSignName();
 
+                    tPatchContext.patchVersions = tBuildType.getPatchConfig().getPatchVersions();
+
                     return tPatchContext;
                 }
             });
@@ -559,6 +570,8 @@ public class TPatchTask extends BaseTask {
 
         //    @Parameter(property = "android.patch.mainBundleName", defaultValue = "libcom_taobao_maindex")
         public String mainBundleName;
+
+        public List<String> patchVersions;
 
         public Set<ArtifactBundleInfo> artifactBundleInfos;
 

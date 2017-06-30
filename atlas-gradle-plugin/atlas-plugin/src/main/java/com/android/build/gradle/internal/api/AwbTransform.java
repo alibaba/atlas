@@ -209,13 +209,13 @@
 
 package com.android.build.gradle.internal.api;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 
 /**
  * Awb的依赖文件的传递

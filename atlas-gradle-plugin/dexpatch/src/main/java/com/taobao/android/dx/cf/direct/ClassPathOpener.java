@@ -139,9 +139,6 @@ public class ClassPathOpener {
      * from {@code Consumer.processFileBytes()}.
      */
     public boolean process() {
-        if (pathname == null){
-            return true;
-        }
         File file = new File(pathname);
 
         return processOne(file, true);
@@ -245,9 +242,6 @@ public class ClassPathOpener {
      */
     private boolean processArchive(File file) throws IOException {
         ZipFile zip = new ZipFile(file);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(40000);
-        byte[] buf = new byte[20000];
-        boolean any = false;
 
         ArrayList<? extends ZipEntry> entriesList
                 = Collections.list(zip.entries());
@@ -262,28 +256,31 @@ public class ClassPathOpener {
 
         consumer.onProcessArchiveStart(file);
 
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(40000);
+        byte[] buf = new byte[20000];
+        boolean any = false;
+
         for (ZipEntry one : entriesList) {
-            if (one.isDirectory()) {
-                continue;
-            }
+            final boolean isDirectory = one.isDirectory();
 
             String path = one.getName();
             if (filter.accept(path)) {
-                InputStream in = zip.getInputStream(one);
+                final byte[] bytes;
+                if (!isDirectory) {
+                    InputStream in = zip.getInputStream(one);
 
-                baos.reset();
-                for (;;) {
-                    int amt = in.read(buf);
-                    if (amt < 0) {
-                        break;
+                    baos.reset();
+                    int read;
+                    while ((read = in.read(buf)) != -1) {
+                        baos.write(buf, 0, read);
                     }
 
-                    baos.write(buf, 0, amt);
+                    in.close();
+                    bytes = baos.toByteArray();
+                } else {
+                    bytes = new byte[0];
                 }
 
-                in.close();
-
-                byte[] bytes = baos.toByteArray();
                 any |= consumer.processFileBytes(path, one.getTime(), bytes);
             }
         }

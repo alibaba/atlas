@@ -22,7 +22,6 @@ import com.taobao.android.dx.rop.type.Type;
 import com.taobao.android.dx.rop.type.TypeList;
 import com.taobao.android.dx.util.AnnotatedOutput;
 import com.taobao.android.dx.util.Hex;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.TreeMap;
@@ -116,7 +115,9 @@ public final class ClassDefsSection extends UniformItemSection {
             // Elucidate the exception.
             throw new NullPointerException("clazz == null");
         }
-
+        if (classDefs.get(type)!= null){
+            return;
+        }
         throwIfPrepared();
 
         if (classDefs.get(type) != null) {

@@ -209,6 +209,12 @@
 
 package com.taobao.android.builder.manager;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Consumer;
+
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.AppExtension;
@@ -233,7 +239,11 @@ import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.*;
+import com.android.build.gradle.tasks.AidlCompile;
+import com.android.build.gradle.tasks.GenerateBuildConfig;
+import com.android.build.gradle.tasks.MergeManifests;
+import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.DefaultDexOptions;
 import com.google.common.base.Supplier;
@@ -263,6 +273,7 @@ import com.taobao.android.builder.tasks.app.merge.MergeAssetAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeManifestAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeResAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeSoLibTask;
+import com.taobao.android.builder.tasks.app.prepare.AddLocalJarTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
@@ -288,12 +299,6 @@ import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * MTL插件编译apk的任务管理
@@ -333,11 +338,14 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(appVariantContext.getVariantData().preBuildTask));
 
                 mtlTaskContextList.add(new MtlTaskContext(LogDependenciesTask.ConfigAction.class, null));
+
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareDependenciesTask.class));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAllDependenciesTask.ConfigAction.class, null));
+
+                mtlTaskContextList.add(new MtlTaskContext(AddLocalJarTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(appVariantContext.getVariantData().mergeAssetsTask));
 
@@ -487,6 +495,16 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
                     TransformManager.replaceTransformTask(appVariantContext, vod, ProGuardTransform.class,
                                                           AtlasProguardTransform.class);
+                }
+
+                try {
+                    hookFastDex(appVariantContext);
+                    hookFastMultiDex(appVariantContext);
+                } catch (Exception e) {
+                    throw new GradleException(e.getMessage(), e);
+                }
+
+                for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
                     if (atlasExtension.getTBuildConfig().isIncremental()) {
                         final VariantOutputScope variantOutputScope = vod.getScope();
                         InstantRunPatchingPolicy patchingPolicy = variantScope.getInstantRunBuildContext()
@@ -523,12 +541,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                         awoInstallTask.dependsOn(tasks, variantOutputScope.getVariantScope().getPackageApplicationTask()
                             .getName());
                     }
-                }
-
-                try {
-                    hookFastMultiDex(appVariantContext);
-                } catch (Exception e) {
-                    throw new GradleException(e.getMessage(), e);
                 }
 
             }
@@ -583,4 +595,24 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             }
         }
     }
+
+    //关闭掉系统的proguardtransform
+    private void hookFastDex(AppVariantContext appVariantContext) throws Exception {
+
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()) {
+
+            List<TransformTask> list = TransformManager.findTransformTaskByTransformType(appVariantContext,
+                                                                                         DexTransform.class);
+            for (TransformTask transformTask : list) {
+
+                DefaultDexOptions dexOptions = (DefaultDexOptions)ReflectUtils.getField(transformTask.getTransform(),
+                                                                                        "dexOptions");
+                dexOptions.setPreDexLibraries(false);
+                if (appVariantContext.getBuildType().getDexConfig()!= null && appVariantContext.getBuildType().getDexConfig().isUseMyDex()){
+                    dexOptions.getAdditionalParameters().add("--useMyDex");
+                }
+            }
+        }
+    }
+
 }

@@ -395,28 +395,33 @@ public class ManifestHelper {
         for (Node node : serviceNodes) {
             Element element = (Element)node;
             Attribute attribute = element.attribute("name");
-            bundleInfo.getServices().add(attribute.getValue());
+            addToList(bundleInfo.getServices(),attribute.getValue());
         }
         List<? extends Node> receiverNodes = root.selectNodes("//receiver");
         for (Node node : receiverNodes) {
             Element element = (Element)node;
             Attribute attribute = element.attribute("name");
-            bundleInfo.getReceivers().add(attribute.getValue());
+            addToList(bundleInfo.getReceivers(),attribute.getValue());
         }
         List<? extends Node> providerNodes = root.selectNodes("//provider");
         for (Node node : providerNodes) {
             Element element = (Element)node;
             Attribute attribute = element.attribute("name");
-
-            bundleInfo.getContentProviders().add(attribute.getValue());
+            addToList(bundleInfo.getContentProviders(),attribute.getValue());
         }
         List<? extends Node> activityNodes = root.selectNodes("//activity");
         for (Node node : activityNodes) {
             Element element = (Element)node;
             Attribute attribute = element.attribute("name");
-
-            bundleInfo.getActivities().add(attribute.getValue());
+            addToList(bundleInfo.getActivities(),attribute.getValue());
         }
+    }
+
+    private static void addToList(List<String> list, String value){
+        if (StringUtils.isEmpty(value) || list.contains(value)){
+            return;
+        }
+        list.add(value);
     }
 
     public static List<ManifestProvider> convert(List<ManifestProvider> manifestProviders,
