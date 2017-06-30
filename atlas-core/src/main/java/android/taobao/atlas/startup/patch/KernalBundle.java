@@ -276,7 +276,7 @@ public class KernalBundle{
                 kernalBundle.patchKernalDex(application);
                 kernalBundle.patchKernalResource(application);
                 return true;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
                 kernalBundle = null;
                 deleteDirectory(kernalUpdateDir);

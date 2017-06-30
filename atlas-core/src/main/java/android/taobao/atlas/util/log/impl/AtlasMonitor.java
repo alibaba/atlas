@@ -224,6 +224,8 @@ public class AtlasMonitor {
     public static final String CONTAINER_DEXOPT_FAIL = "container_dexopt_fail";
     public static final String CONTAINER_APPEND_ASSETPATH_FAIL = "container_append_assetpath_fail";
     public static final String CONTAINER_BUNDLEINFO_PARSE_FAIL = "container_bundleinfo_parse_fail";
+    public static final String WALKROUND_GETLAYOUT = "walkround_getlayout";
+
 
     //动态部署稳定性stage
     public static final String DD_BUNDLE_MISMATCH = "dd_bundle_mismatch";

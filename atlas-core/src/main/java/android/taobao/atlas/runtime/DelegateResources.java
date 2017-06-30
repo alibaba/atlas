@@ -218,6 +218,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.util.ApkUtils;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -227,6 +228,7 @@ import android.util.TypedValue;
 import org.xmlpull.v1.XmlPullParser;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -279,7 +281,19 @@ public class DelegateResources extends Resources {
         }
         if(result==null && exception!=null){
             TypedValue value = new TypedValue();
+            boolean flag = (this==RuntimeVariables.delegateResources);
             Log.e("DelegateResources","compare:"+(this==RuntimeVariables.delegateResources));
+            if(!flag){
+                try{
+                    XmlResourceParser parser = RuntimeVariables.delegateResources.getLayout(id);
+                    if(parser!=null){
+                        Map<String, Object> detail = new HashMap<>();
+                        detail.put("walkroundgetLayout", "");
+                        AtlasMonitor.getInstance().report("walkround_Runtimevariables", detail, exception);
+                        return parser;
+                    }
+                }catch (Throwable e){}
+            }
             getValue(id,value,true);
             if(value!=null){
                 Log.e("DelegateResources",String.format("ID: %s|cookie: %s|string: %s",id,value.assetCookie,value.string));
@@ -293,7 +307,7 @@ public class DelegateResources extends Resources {
                     if(parser!=null){
                         Map<String, Object> detail = new HashMap<>();
                         detail.put("walkroundgetLayout", assetsPath);
-                        AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_DEXOPT_FAIL, detail, exception);
+                        AtlasMonitor.getInstance().report(AtlasMonitor.WALKROUND_GETLAYOUT, detail, exception);
                         return parser;
                     }
                 }catch(Throwable e){
@@ -312,7 +326,14 @@ public class DelegateResources extends Resources {
                 synchronized (assetsPath) {
                     if ((res = bundleResourceWalkRound.get(assetsPath)) == null) {
                         AssetManager newAssetManager = AssetManager.class.newInstance();
-                        AtlasHacks.AssetManager_addAssetPath.invoke(newAssetManager, assetsPath);
+                        File walkroundBackupAsset = new File(RuntimeVariables.androidApplication.getFilesDir(),new File(assetsPath).getName()+".backup.zip");
+                        if(!walkroundBackupAsset.exists() || walkroundBackupAsset.length() == new File(assetsPath).length()) {
+                            if(walkroundBackupAsset.exists()){
+                                walkroundBackupAsset.delete();
+                            }
+                            ApkUtils.copyInputStreamToFile(new FileInputStream(assetsPath), walkroundBackupAsset);
+                        }
+                        AtlasHacks.AssetManager_addAssetPath.invoke(newAssetManager, walkroundBackupAsset);
                         res = new Resources(newAssetManager, getDisplayMetrics(), getConfiguration());
                         bundleResourceWalkRound.put(assetsPath, res);
                     }
