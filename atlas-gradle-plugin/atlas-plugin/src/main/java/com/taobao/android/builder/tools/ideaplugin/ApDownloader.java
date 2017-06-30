@@ -211,6 +211,7 @@ package com.taobao.android.builder.tools.ideaplugin;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.regex.Matcher;
@@ -227,8 +228,6 @@ import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
 import com.android.sdklib.repository.legacy.LegacyDownloader;
 import com.android.utils.StdLogger;
 import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.tools.MD5Util;
-import org.apache.commons.io.FileUtils;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 
@@ -246,6 +245,26 @@ public class ApDownloader {
     //    String matcher = "buildConfigId=(\\d+)";
 
     public /*static*/ File downloadAP(String mtlConfigUrl, File root) throws Exception {
+        String downloadUrl = getDownloadUrl(mtlConfigUrl);
+        //
+        // File file = new File(root, MD5Util.getMD5(downloadUrl) + ".ap");
+        // if (file.exists()) {
+        //     return file;
+        // }
+        //
+        URL downloadApi = new URL(downloadUrl);
+        // System.out.println("start to download ap from " + downloadUrl);
+        //
+        // File tmpFile = new File(file.getParentFile(), String.valueOf(System.currentTimeMillis()));
+        //
+        // FileUtils.copyURLToFile(downloadApi, file);
+        ProgressIndicator stdOutputProgress = getNewDownloadProgress();
+        Downloader downloader = getDownloader();
+        File file = downloader.downloadFully(downloadApi, stdOutputProgress);
+        return file;
+    }
+
+    private String getDownloadUrl(String mtlConfigUrl) throws IOException {
         Matcher matcher = MTL_PATTERN.matcher(mtlConfigUrl);
         String configId = "";
 
@@ -262,23 +281,7 @@ public class ApDownloader {
         String inputLine = in.readLine();
         in.close();
 
-        String downloadUrl = inputLine.trim().replace("\"", "").replace("\\", "");
-
-        File file = new File(root, MD5Util.getMD5(downloadUrl) + ".ap");
-        if (file.exists()) {
-            return file;
-        }
-
-        URL downloadApi = new URL(downloadUrl);
-        System.out.println("start to download ap from " + downloadUrl);
-
-        File tmpFile = new File(file.getParentFile(), String.valueOf(System.currentTimeMillis()));
-
-        FileUtils.copyURLToFile(downloadApi, file);
-        ProgressIndicator stdOutputProgress = getNewDownloadProgress();
-        Downloader downloader = getDownloader();
-        downloader.downloadFully(downloadApi, stdOutputProgress);
-        return file;
+        return inputLine.trim().replace("\"", "").replace("\\", "");
     }
 
     private SettingsController getSettingsController() {
