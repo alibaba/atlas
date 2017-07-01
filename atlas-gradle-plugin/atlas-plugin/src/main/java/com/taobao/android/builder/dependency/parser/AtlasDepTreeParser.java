@@ -226,6 +226,7 @@ import com.android.build.gradle.internal.ide.DependencyConvertUtils;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils.Type;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
+import com.android.builder.model.Library;
 import com.android.utils.ILogger;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -376,19 +377,35 @@ public class AtlasDepTreeParser {
         }
 
         if (apDependencies != null) {
-            for (AndroidLibrary androidL : mainBundle.getAndroidLibraries()) {
+            for (Library library : mainBundle.getAndroidLibraries()) {
                 ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
-                    androidL.getResolvedCoordinates().getGroupId(), androidL.getResolvedCoordinates().getArtifactId());
+                    library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
                 if (apDependencies.isAwbLibrary(moduleIdentifier)) {
                     ParsedModuleStringNotation parsedNotation = apDependencies.getAwb(moduleIdentifier);
                     AwbBundle awbBundle = atlasDependencyTree.getAwbBundle(
                         DefaultModuleIdentifier.newId(parsedNotation.getGroup(), parsedNotation.getName()));
-                    awbBundle.getAndroidLibraries().add(androidL);
+                    awbBundle.getAndroidLibraries().add((AndroidLibrary)library);
                 }
             }
-            for (JavaLibrary javaLibrary : mainBundle.getJavaLibraries()) {
+            for (Library library : mainBundle.getJavaLibraries()) {
+                ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
+                    library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
+                if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                    ParsedModuleStringNotation parsedNotation = apDependencies.getAwb(moduleIdentifier);
+                    AwbBundle awbBundle = atlasDependencyTree.getAwbBundle(
+                        DefaultModuleIdentifier.newId(parsedNotation.getGroup(), parsedNotation.getName()));
+                    awbBundle.getJavaLibraries().add((JavaLibrary)library);
+                }
             }
-            for (SoLibrary soLibrary : mainBundle.getSoLibraries()) {
+            for (Library library : mainBundle.getSoLibraries()) {
+                ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
+                    library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
+                if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                    ParsedModuleStringNotation parsedNotation = apDependencies.getAwb(moduleIdentifier);
+                    AwbBundle awbBundle = atlasDependencyTree.getAwbBundle(
+                        DefaultModuleIdentifier.newId(parsedNotation.getGroup(), parsedNotation.getName()));
+                    awbBundle.getSoLibraries().add((SoLibrary)library);
+                }
             }
         }
 

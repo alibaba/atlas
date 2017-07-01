@@ -222,6 +222,8 @@ import java.util.zip.ZipFile;
 import com.alibaba.fastjson.JSON;
 
 import com.android.annotations.Nullable;
+import com.android.builder.model.Library;
+import com.android.builder.model.MavenCoordinates;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.HashBasedTable;
@@ -365,12 +367,39 @@ public class ApDependencies /*extends BaseTask*/ {
         mDependenciesTable.put(moduleIdentifier, awb, version);
     }
 
+    public boolean isMainLibrary(Library library) {
+        MavenCoordinates coordinates = library.getResolvedCoordinates();
+        return isMainLibrary(coordinates.getGroupId(), coordinates.getArtifactId());
+    }
+
+    public boolean isMainLibrary(String group, String name) {
+        return isMainLibrary(DefaultModuleIdentifier.newId(group, name));
+    }
+
     public boolean isMainLibrary(ModuleIdentifier moduleIdentifier) {
         return getAwb(moduleIdentifier) == MAIN_DEX;
     }
 
+    public boolean isAwb(Library library) {
+        MavenCoordinates coordinates = library.getResolvedCoordinates();
+        return isAwb(coordinates.getGroupId(), coordinates.getArtifactId());
+    }
+
+    public boolean isAwb(String group, String name) {
+        return isAwb(DefaultModuleIdentifier.newId(group, name));
+    }
+
     public boolean isAwb(ModuleIdentifier moduleIdentifier) {
         return "awb".equals(getAwb(moduleIdentifier).getArtifactType());
+    }
+
+    public boolean isAwbLibrary(Library library) {
+        MavenCoordinates coordinates = library.getResolvedCoordinates();
+        return isAwbLibrary(coordinates.getGroupId(), coordinates.getArtifactId());
+    }
+
+    public boolean isAwbLibrary(String group, String name) {
+        return isAwbLibrary(DefaultModuleIdentifier.newId(group, name));
     }
 
     public boolean isAwbLibrary(ModuleIdentifier moduleIdentifier) {
