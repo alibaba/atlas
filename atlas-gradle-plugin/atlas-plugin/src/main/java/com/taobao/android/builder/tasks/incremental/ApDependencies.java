@@ -224,8 +224,9 @@ import com.alibaba.fastjson.JSON;
 import com.android.annotations.Nullable;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Table;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.extension.TBuildType;
 import org.apache.commons.io.IOUtils;
@@ -234,7 +235,6 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
-import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.DefaultVersionComparator;
@@ -253,17 +253,18 @@ public class ApDependencies /*extends BaseTask*/ {
 
     private static final Logger LOGGER = Logging.getLogger(ApDependencies.class);
 
+    private static final ParsedModuleStringNotation MAIN_DEX = new ParsedModuleStringNotation(
+        "com.taobao.android.mainDex:apk:unspecified");
+
     // ----- PUBLIC TASK API -----
     //不适用Ap依赖解析
+
     private final DependencyHandler dependencies;
 
     private final Comparator<String> versionComparator = new DefaultVersionComparator().asStringComparator();
 
-    private final Map<ModuleIdentifier, String> mFlatDependenciesMap = Maps.newHashMap();
-
-    private final Map<ModuleIdentifier, String> mMainDependenciesMap = Maps.newHashMap();
-
-    private final Map<ModuleIdentifier, Map<ModuleIdentifier, String>> mAwbDependenciesMap = Maps.newHashMap();
+    private final Table<ModuleIdentifier, ParsedModuleStringNotation, String> mDependenciesTable = HashBasedTable
+        .create();
 
     private final DependencyJson apDependencyJson;
 
@@ -275,16 +276,16 @@ public class ApDependencies /*extends BaseTask*/ {
 
         //mainDex
         for (String mainDex : apDependencyJson.getMainDex()) {
-            addDependency(mainDex, mMainDependenciesMap);
+            addDependency(mainDex, ApDependencies.MAIN_DEX);
         }
         //awb
         for (Map.Entry<String, ArrayList<String>> entry : apDependencyJson.getAwbs().entrySet()) {
             String awb = entry.getKey();
-            Map<ModuleIdentifier, String> awbDependencies = getAwbDependencies(awb);
-            addDependency(awb, awbDependencies);
+            ParsedModuleStringNotation parsedAwbModuleStringNotation = new ParsedModuleStringNotation(awb);
+            addDependency(awb, parsedAwbModuleStringNotation);
             ArrayList<String> dependenciesString = entry.getValue();
             for (String dependencyString : dependenciesString) {
-                addDependency(dependencyString, awbDependencies);
+                addDependency(dependencyString, parsedAwbModuleStringNotation);
             }
         }
     }
@@ -351,47 +352,39 @@ public class ApDependencies /*extends BaseTask*/ {
         return apDependencyJson;
     }
 
-    public Map<ModuleIdentifier, String> getAwbDependencies(String group, String name) {
-        ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(group, name);
-        return mAwbDependenciesMap.get(moduleIdentifier);
-    }
-
     private Map<ModuleIdentifier, String> getAwbDependencies(String awb) {
         ParsedModuleStringNotation parsedNotation = new ParsedModuleStringNotation(awb);
-        String group = parsedNotation.getGroup();
-        String name = parsedNotation.getName();
-        ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(group, name);
-        Map<ModuleIdentifier, String> awbDependencies = mAwbDependenciesMap.get(moduleIdentifier);
-        if (awbDependencies == null) {
-            awbDependencies = Maps.newHashMap();
-            mAwbDependenciesMap.put(moduleIdentifier, awbDependencies);
-        }
-        return awbDependencies;
+        return mDependenciesTable.column(parsedNotation);
     }
 
-    private void addDependency(String dependencyString, Map<ModuleIdentifier, String> awb) {
+    private void addDependency(String dependencyString, ParsedModuleStringNotation awb) {
         ParsedModuleStringNotation parsedNotation = new ParsedModuleStringNotation(dependencyString);
         ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(parsedNotation.getGroup(),
                                                                           parsedNotation.getName());
         String version = parsedNotation.getVersion();
-        awb.put(moduleIdentifier, version);
-        mFlatDependenciesMap.put(moduleIdentifier, version);
+        mDependenciesTable.put(moduleIdentifier, awb, version);
     }
 
     public boolean isMainLibrary(ModuleIdentifier moduleIdentifier) {
-        return mMainDependenciesMap.containsKey(moduleIdentifier);
+        return getAwb(moduleIdentifier) == MAIN_DEX;
+    }
+
+    public boolean isAwb(ModuleIdentifier moduleIdentifier) {
+        return "awb".equals(getAwb(moduleIdentifier).getArtifactType());
     }
 
     public boolean isAwbLibrary(ModuleIdentifier moduleIdentifier) {
-        return mAwbDependenciesMap.containsKey(moduleIdentifier);
+        ParsedModuleStringNotation awb = getAwb(moduleIdentifier);
+        return !(awb == MAIN_DEX) && !("awb".equals(awb.getArtifactType()));
     }
 
-    public boolean hasSameResolvedDependency(ResolvedArtifact artifact) {
-        return hasSameResolvedDependency(artifact.getModuleVersion().getId());
+    public ParsedModuleStringNotation getAwb(ModuleIdentifier moduleIdentifier) {
+        return Iterables.getOnlyElement(mDependenciesTable.row(moduleIdentifier).entrySet()).getKey();
     }
 
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {
-        String mainVersion = mFlatDependenciesMap.get(moduleVersion.getModule());
+        String mainVersion = Iterables.getOnlyElement(mDependenciesTable.row(moduleVersion.getModule()).entrySet())
+            .getValue();
         if (mainVersion == null) {
             return false;
         }

@@ -219,6 +219,7 @@ import java.util.Map;
 import com.android.builder.core.DefaultManifestParser;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
+import com.android.builder.model.Library;
 import com.android.builder.model.MavenCoordinates;
 import com.android.manifmerger.ManifestProvider;
 import com.google.common.base.Objects;
@@ -264,7 +265,6 @@ public class AwbBundle {
     }
 
     public AwbBundle(ResolvedDependencyInfo resolvedDependencyInfo, AndroidLibrary androidLibrary) {
-
         this.androidLibrary = androidLibrary;
 
         this.name = resolvedDependencyInfo.getGroup() + "-" + resolvedDependencyInfo.getName();
@@ -457,6 +457,20 @@ public class AwbBundle {
 
     public boolean isMainBundle() {
         return mainBundle;
+    }
+
+    public List<Library> getAllLibraries() {
+        List<Library> list = new ArrayList<>();
+        for (Library androidL : getAllLibraryAars()) {
+            list.add(androidL);
+        }
+        for (Library javaLibrary : getJavaLibraries()) {
+            list.add(javaLibrary);
+        }
+        for (Library soLibrary : getSoLibraries()) {
+            list.add(soLibrary);
+        }
+        return list;
     }
 
     public List<String> getAllDependencies() {

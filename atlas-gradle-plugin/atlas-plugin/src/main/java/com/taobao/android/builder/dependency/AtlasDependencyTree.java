@@ -223,6 +223,7 @@ import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.tasks.incremental.ApDependencies;
+import org.gradle.api.artifacts.ModuleIdentifier;
 
 /**
  * Android的编译的依赖库
@@ -276,6 +277,15 @@ public class AtlasDependencyTree {
 
     public List<AwbBundle> getAwbBundles() {
         return awbBundles;
+    }
+
+    public AwbBundle getAwbBundle(ModuleIdentifier moduleIdentifier) {
+        for (AwbBundle awbBundle : getAwbBundles()) {
+            if (awbBundle.getName().equals(moduleIdentifier.getGroup() + "-" + moduleIdentifier.getName())) {
+                return awbBundle;
+            }
+        }
+        return null;
     }
 
     public void setAwbBundles(List<AwbBundle> awbBundles) {

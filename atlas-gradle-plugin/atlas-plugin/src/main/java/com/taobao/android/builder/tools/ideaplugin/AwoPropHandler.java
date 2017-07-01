@@ -253,7 +253,7 @@ public class AwoPropHandler {
         this.project = project;
 
         awoProp = EnvHelper.getEnv(PROP_AWO);
-        if (StringUtils.isEmpty(awoProp)) {
+        if (!StringUtils.isEmpty(awoProp)) {
             Properties properties = new Properties();
             try {
                 properties.load(new FileInputStream(awoProp));
@@ -275,6 +275,7 @@ public class AwoPropHandler {
             return;
         }
 
+        // TODO 不强制刷新
         // if (!refreshAp && StringUtils.isNotEmpty(apPath) && new File(apPath).exists()) {
         //     //not need download
         //     System.out.println("[awo] ap file exist");

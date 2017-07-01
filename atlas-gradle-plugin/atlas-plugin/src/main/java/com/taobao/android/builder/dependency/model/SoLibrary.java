@@ -209,21 +209,21 @@
 
 package com.taobao.android.builder.dependency.model;
 
+import java.io.File;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
+import com.android.builder.model.Library;
 import com.android.builder.model.MavenCoordinates;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
-
 import org.gradle.api.artifacts.ResolvedArtifact;
-
-import java.io.File;
 
 /**
  * Solib的依赖
  * Created by shenghua.nish on 2016-05-03 下午4:18.
  */
-public class SoLibrary {
+public class SoLibrary implements Library {
 
     @Nullable
     private final MavenCoordinates mResolvedCoordinates;
@@ -234,7 +234,7 @@ public class SoLibrary {
     /**
      * 解压的文件夹
      */
-    private File mSoLibFolder;
+    private final File mSoLibFolder;
 
     @NonNull
     public File getFolder() {
@@ -249,9 +249,7 @@ public class SoLibrary {
         this.mSoLibFolder = resolvedDependencyInfo.getExplodedDir();
     }
 
-    public SoLibrary(@Nullable MavenCoordinates mResolvedCoordinates,
-                     File mSoLibFile,
-                     File mSoLibFolder) {
+    public SoLibrary(@Nullable MavenCoordinates mResolvedCoordinates, File mSoLibFile, File mSoLibFolder) {
         this.mResolvedCoordinates = mResolvedCoordinates;
         this.mSoLibFile = mSoLibFile;
         this.mSoLibFolder = mSoLibFolder;
@@ -261,23 +259,39 @@ public class SoLibrary {
         return mSoLibFile;
     }
 
+    @Override
     public String getName() {
         return mResolvedCoordinates.getArtifactId() + "@" + mResolvedCoordinates.getPackaging();
     }
 
+    @Override
     public MavenCoordinates getResolvedCoordinates() {
         return mResolvedCoordinates;
     }
 
     @Override
+    public String getProject() {
+        return null;
+    }
+
+    @Override
+    public MavenCoordinates getRequestedCoordinates() {
+        return null;
+    }
+
+    @Override
+    public boolean isSkipped() {
+        return false;
+    }
+
+    @Override
+    public boolean isProvided() {
+        return false;
+    }
+
+    @Override
     public String toString() {
-        return "SoLib{" +
-                "mResolvedCoordinates=" +
-                mResolvedCoordinates +
-                ", mSoLibFile=" +
-                mSoLibFile +
-                ", mSoLibFolder=" +
-                mSoLibFolder +
-                '}';
+        return "SoLib{" + "mResolvedCoordinates=" + mResolvedCoordinates + ", mSoLibFile=" + mSoLibFile
+            + ", mSoLibFolder=" + mSoLibFolder + '}';
     }
 }

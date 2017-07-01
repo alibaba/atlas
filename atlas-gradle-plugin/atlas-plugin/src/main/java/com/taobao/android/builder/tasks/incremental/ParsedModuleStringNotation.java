@@ -33,8 +33,8 @@ public class ParsedModuleStringNotation {
         count++;
         if (count < 2 || count > 5) {
             throw new IllegalDependencyNotation("Supplied String module notation '" + moduleNotation
-                                                + "' is invalid. Example notations: 'org.gradle:gradle-core:2.2', "
-                                                + "'org.mockito:mockito-core:1.9.5:javadoc'.");
+                                                    + "' is invalid. Example notations: 'org.gradle:gradle-core:2.2', "
+                                                    + "'org.mockito:mockito-core:1.9.5:javadoc'.");
         }
     }
 
@@ -72,5 +72,9 @@ public class ParsedModuleStringNotation {
 
     public String getClassifier() {
         return classifier;
+    }
+
+    public String getArtifactType() {
+        return artifactType;
     }
 }

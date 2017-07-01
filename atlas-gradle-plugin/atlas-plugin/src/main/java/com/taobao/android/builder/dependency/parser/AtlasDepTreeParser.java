@@ -236,6 +236,7 @@ import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.dependency.parser.helper.DependencyGroup;
 import com.taobao.android.builder.dependency.parser.helper.DependencyResolver;
 import com.taobao.android.builder.tasks.incremental.ApDependencies;
+import com.taobao.android.builder.tasks.incremental.ParsedModuleStringNotation;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -246,6 +247,7 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.result.DependencyResult;
+import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.specs.Specs;
 
 import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
@@ -350,26 +352,43 @@ public class AtlasDepTreeParser {
     }
 
     private AtlasDependencyTree toAtlasDependencyTree() {
-
         AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies, apDependencies);
 
         //设置依赖关系
+        AwbBundle mainBundle = atlasDependencyTree.getMainBundle();
         for (ResolvedDependencyInfo dependencyInfo : mResolvedDependencies) {
 
             if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
 
                 AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo, project);
                 if (apDependencies != null) {
-                    Map<ModuleIdentifier, String> awbDependencies = apDependencies.getAwbDependencies(
-                        dependencyInfo.getGroup(), dependencyInfo.getName());
-                    bundle.setBaseAwbDependencies(awbDependencies);
+                    // Map<ModuleIdentifier, String> awbDependencies = apDependencies.getAwbDependencies(
+                    //     dependencyInfo.getGroup(), dependencyInfo.getName());
+                    // bundle.setBaseAwbDependencies(awbDependencies);
                 }
                 atlasDependencyTree.getAwbBundles().add(bundle);
 
                 collect(dependencyInfo, bundle);
             } else {
 
-                collect(dependencyInfo, atlasDependencyTree.getMainBundle());
+                collect(dependencyInfo, mainBundle);
+            }
+        }
+
+        if (apDependencies != null) {
+            for (AndroidLibrary androidL : mainBundle.getAndroidLibraries()) {
+                ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
+                    androidL.getResolvedCoordinates().getGroupId(), androidL.getResolvedCoordinates().getArtifactId());
+                if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                    ParsedModuleStringNotation parsedNotation = apDependencies.getAwb(moduleIdentifier);
+                    AwbBundle awbBundle = atlasDependencyTree.getAwbBundle(
+                        DefaultModuleIdentifier.newId(parsedNotation.getGroup(), parsedNotation.getName()));
+                    awbBundle.getAndroidLibraries().add(androidL);
+                }
+            }
+            for (JavaLibrary javaLibrary : mainBundle.getJavaLibraries()) {
+            }
+            for (SoLibrary soLibrary : mainBundle.getSoLibraries()) {
             }
         }
 

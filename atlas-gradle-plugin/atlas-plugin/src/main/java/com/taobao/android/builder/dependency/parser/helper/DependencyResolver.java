@@ -443,9 +443,13 @@ public class DependencyResolver {
         }
         if (apDependencies != null) {
             // awb依赖不忽略
-            if (parent == null && apDependencies.isAwbLibrary(moduleVersion.getModule())) {
+            if (parent == null && apDependencies.isAwb(moduleVersion.getModule())) {
                 return false;
             }
+            // // host依赖awb间接依赖忽略
+            // if (parent == null && apDependencies.isAwbLibrary(moduleVersion.getModule())) {
+            //     return true;
+            // }
             // awb忽略host的依赖
             if (parent != null && parent.getType().equals("awb") && apDependencies.isMainLibrary(
                 moduleVersion.getModule())) {
