@@ -408,7 +408,12 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
     public ParsedModuleStringNotation getAwb(ModuleIdentifier moduleIdentifier) {
-        return Iterables.getOnlyElement(mDependenciesTable.row(moduleIdentifier).entrySet()).getKey();
+        Map<ParsedModuleStringNotation, String> row = mDependenciesTable.row(moduleIdentifier);
+        if (row.size() == 0) {
+            return MAIN_DEX;
+        }
+
+        return Iterables.getOnlyElement(row.entrySet()).getKey();
     }
 
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {
