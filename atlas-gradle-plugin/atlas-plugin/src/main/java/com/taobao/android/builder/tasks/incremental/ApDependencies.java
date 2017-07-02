@@ -258,6 +258,8 @@ public class ApDependencies /*extends BaseTask*/ {
     private static final ParsedModuleStringNotation MAIN_DEX = new ParsedModuleStringNotation(
         "com.taobao.android.mainDex:apk:unspecified");
 
+    private static final String AWB = "awb";
+
     // ----- PUBLIC TASK API -----
     //不适用Ap依赖解析
 
@@ -404,7 +406,7 @@ public class ApDependencies /*extends BaseTask*/ {
 
     public boolean isAwbLibrary(ModuleIdentifier moduleIdentifier) {
         ParsedModuleStringNotation awb = getAwb(moduleIdentifier);
-        return !(awb == MAIN_DEX) && !("awb".equals(awb.getArtifactType()));
+        return !(awb == MAIN_DEX) && !(AWB.equals(awb.getArtifactType()));
     }
 
     public ParsedModuleStringNotation getAwb(ModuleIdentifier moduleIdentifier) {
