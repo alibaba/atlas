@@ -417,11 +417,11 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {
-        String mainVersion = Iterables.getOnlyElement(mDependenciesTable.row(moduleVersion.getModule()).entrySet())
-            .getValue();
-        if (mainVersion == null) {
+        Map<ParsedModuleStringNotation, String> row = mDependenciesTable.row(moduleVersion.getModule());
+        if (row.size() == 0) {
             return false;
         }
+        String mainVersion = Iterables.getOnlyElement(row.entrySet()).getValue();
 
         if (versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
             LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping", moduleVersion.getModule(),
