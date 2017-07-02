@@ -356,7 +356,6 @@ public class AtlasDepTreeParser {
         AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies, apDependencies);
 
         //设置依赖关系
-        AwbBundle mainBundle = atlasDependencyTree.getMainBundle();
         for (ResolvedDependencyInfo dependencyInfo : mResolvedDependencies) {
 
             if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
@@ -372,23 +371,26 @@ public class AtlasDepTreeParser {
                 collect(dependencyInfo, bundle);
             } else {
 
-                collect(dependencyInfo, mainBundle);
+                collect(dependencyInfo, atlasDependencyTree.getMainBundle());
             }
         }
 
-        //Awb依赖修正
         if (apDependencies != null) {
-            adjustAwbLibraryDependencies(atlasDependencyTree, mainBundle);
+            adjustAwbLibraryDependencies(atlasDependencyTree);
         }
 
         return atlasDependencyTree;
     }
 
-    private void adjustAwbLibraryDependencies(AtlasDependencyTree atlasDependencyTree, AwbBundle mainBundle) {
+    //Awb依赖修正
+    private void adjustAwbLibraryDependencies(AtlasDependencyTree atlasDependencyTree) {
+        AwbBundle mainBundle = atlasDependencyTree.getMainBundle();
         for (Library library : mainBundle.getAndroidLibraries()) {
             ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
                 library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
+            //主dex包含Awb间接依赖
             if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                //修正到正确Awb的位置
                 AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
                 awbBundle.getAndroidLibraries().add((AndroidLibrary)library);
             }
