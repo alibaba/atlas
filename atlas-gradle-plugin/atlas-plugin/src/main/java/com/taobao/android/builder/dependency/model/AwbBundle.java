@@ -229,6 +229,7 @@ import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 
 /**
  * Created by shenghua.nish on 2016-05-06 下午5:46.
@@ -492,8 +493,42 @@ public class AwbBundle {
         this.baseAwbDependencies = baseAwbDependencies;
     }
 
-    public Map<ModuleIdentifier, String> getBaseAwbDependencies() {
-        return baseAwbDependencies;
+    public boolean isFullDependencies() {
+        if (baseAwbDependencies.size() == 0) {
+            return true;
+        }
+        int count = 0;
+        for (Library library : getAllLibraryAars()) {
+            //新增依赖
+            if (hasBaseDependencies(library)) {
+                return false;
+            }
+            count++;
+        }
+        for (Library library : getJavaLibraries()) {
+            if (hasBaseDependencies(library)) {
+                return false;
+            }
+            count++;
+        }
+        for (Library library : getSoLibraries()) {
+            if (hasBaseDependencies(library)) {
+                return false;
+            }
+            count++;
+        }
+        //包含所有依赖
+        return count == baseAwbDependencies.size();
+    }
+
+    private boolean hasBaseDependencies(Library library) {
+        MavenCoordinates coordinates = library.getResolvedCoordinates();
+        ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(coordinates.getGroupId(),
+                                                                          coordinates.getArtifactId());
+        if (!baseAwbDependencies.containsKey(moduleIdentifier)) {
+            return true;
+        }
+        return false;
     }
 
     public boolean containsDependency(ModuleVersionIdentifier moduleVersion) {

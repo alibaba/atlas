@@ -673,9 +673,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 ConventionMappingHelper.map(processResources, "baselineFile", new Callable<File>() {
                     @Override
                     public File call() throws Exception {
-                        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()
-                            && awbBundle.getBaseAwbDependencies() != null
-                            && awbBundle.getBaseAwbDependencies().size() > 1) {
+                        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && !awbBundle
+                            .isFullDependencies()) {
                             return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
                                 awbBundle.getAwbSoName());
                         }
