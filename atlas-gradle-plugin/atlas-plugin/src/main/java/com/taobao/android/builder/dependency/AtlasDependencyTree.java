@@ -235,7 +235,6 @@ import org.gradle.api.artifacts.ModuleIdentifier;
  * @author shenghua.nish, wuzhong
  */
 public class AtlasDependencyTree {
-
     private List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
 
     /**
@@ -298,9 +297,7 @@ public class AtlasDependencyTree {
      * @return
      */
     public List<AndroidLibrary> getAllAndroidLibrarys() {
-
         if (null == allAndroidLibrarys) {
-
             allAndroidLibrarys = new ArrayList<>();
 
             allAndroidLibrarys.addAll(this.getMainBundle().getAndroidLibraries());
@@ -345,7 +342,6 @@ public class AtlasDependencyTree {
     }
 
     public Set<String> getFlatDependencies() {
-
         DependencyJson dependencyJson = getDependencyJson();
         Set<String> depenSets = new HashSet<String>();
 

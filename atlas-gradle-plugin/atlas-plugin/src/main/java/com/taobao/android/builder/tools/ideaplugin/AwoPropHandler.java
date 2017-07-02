@@ -264,9 +264,11 @@ public class AwoPropHandler {
             apPath = properties.getProperty(AP_PATH);
             refreshAp = "true".equals(properties.getProperty(REFRESH_AP));
             mtlUrl = properties.getProperty(MTL_URL);
-        } else if (!StringUtils.isEmpty(EnvHelper.getEnv(MTL_URL))) {
-            mtlUrl = EnvHelper.getEnv(MTL_URL);
-            refreshAp = "true".equals(EnvHelper.getEnv(REFRESH_AP));
+        } else if (project.hasProperty(MTL_URL)) {
+            mtlUrl = (String)project.property(MTL_URL);
+            if (project.hasProperty(REFRESH_AP)) {
+                refreshAp = "true".equals(project.property(REFRESH_AP));
+            }
         }
     }
 
