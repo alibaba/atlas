@@ -362,9 +362,8 @@ public class AtlasDepTreeParser {
 
                 AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo, project);
                 if (apDependencies != null) {
-                    // Map<ModuleIdentifier, String> awbDependencies = apDependencies.getAwbDependencies(
-                    //     dependencyInfo.getGroup(), dependencyInfo.getName());
-                    // bundle.setBaseAwbDependencies(awbDependencies);
+                    bundle.setBaseAwbDependencies(
+                        apDependencies.getAwbDependencies(dependencyInfo.getGroup(), dependencyInfo.getName()));
                 }
                 atlasDependencyTree.getAwbBundles().add(bundle);
 

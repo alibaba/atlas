@@ -356,9 +356,13 @@ public class ApDependencies /*extends BaseTask*/ {
         return apDependencyJson;
     }
 
-    private Map<ModuleIdentifier, String> getAwbDependencies(String awb) {
-        ParsedModuleStringNotation parsedNotation = new ParsedModuleStringNotation(awb);
-        return mDependenciesTable.column(parsedNotation);
+    public Map<ModuleIdentifier, String> getAwbDependencies(String group, String name) {
+        ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(group, name);
+        Map<ParsedModuleStringNotation, String> row = mDependenciesTable.row(moduleIdentifier);
+        if (row.size() == 0) {
+            return null;
+        }
+        return mDependenciesTable.column(Iterables.getOnlyElement(row.entrySet()).getKey());
     }
 
     private void addDependency(String dependencyString, ParsedModuleStringNotation awb) {
