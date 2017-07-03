@@ -262,6 +262,8 @@ public class AwbBundle {
 
     private Map<ModuleIdentifier, ParsedModuleStringNotation> baseAwbDependencies;
 
+    private boolean fullDependencies;
+
     public AwbBundle() {
         mainBundle = true;
     }
@@ -492,9 +494,14 @@ public class AwbBundle {
 
     public void setBaseAwbDependencies(Map<ModuleIdentifier, ParsedModuleStringNotation> baseAwbDependencies) {
         this.baseAwbDependencies = baseAwbDependencies;
+        fullDependencies = isFullDependencies(baseAwbDependencies);
     }
 
     public boolean isFullDependencies() {
+        return fullDependencies;
+    }
+
+    private boolean isFullDependencies(Map<ModuleIdentifier, ParsedModuleStringNotation> baseAwbDependencies) {
         if (baseAwbDependencies.size() == 1) {
             return true;
         }
@@ -519,7 +526,7 @@ public class AwbBundle {
             count++;
         }
         //包含所有依赖
-        return count == baseAwbDependencies.size();
+        return count == this.baseAwbDependencies.size();
     }
 
     private boolean hasBaseDependencies(Library library) {

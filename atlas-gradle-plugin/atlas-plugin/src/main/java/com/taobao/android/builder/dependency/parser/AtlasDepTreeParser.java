@@ -227,6 +227,7 @@ import com.android.build.gradle.internal.ide.DependencyConvertUtils.Type;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Library;
+import com.android.builder.model.MavenCoordinates;
 import com.android.utils.ILogger;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -361,10 +362,6 @@ public class AtlasDepTreeParser {
             if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
 
                 AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo, project);
-                if (apDependencies != null) {
-                    bundle.setBaseAwbDependencies(
-                        apDependencies.getAwbDependencies(dependencyInfo.getGroup(), dependencyInfo.getName()));
-                }
                 atlasDependencyTree.getAwbBundles().add(bundle);
 
                 collect(dependencyInfo, bundle);
@@ -376,6 +373,11 @@ public class AtlasDepTreeParser {
 
         if (apDependencies != null) {
             adjustAwbLibraryDependencies(atlasDependencyTree);
+            for (AwbBundle bundle : atlasDependencyTree.getAwbBundles()) {
+                MavenCoordinates coordinates = bundle.getResolvedCoordinates();
+                bundle.setBaseAwbDependencies(
+                    apDependencies.getAwbDependencies(coordinates.getGroupId(), coordinates.getArtifactId()));
+            }
         }
 
         return atlasDependencyTree;
