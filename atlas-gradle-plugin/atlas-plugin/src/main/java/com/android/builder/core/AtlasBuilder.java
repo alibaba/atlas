@@ -272,6 +272,7 @@ import com.android.xml.AndroidManifest;
 import com.google.common.base.Functions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -656,6 +657,9 @@ public class AtlasBuilder extends AndroidBuilder {
                 if (baseSymbolFile.exists()) {
                     FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(baseSymbolFile), true);
                 } else {
+                    FileUtils.writeLines(mergedSymbolFile, Collections2
+                        .filter(FileUtils.readLines(mergedSymbolFile), input -> !input.contains("styleable")));
+
                     sLogger.warn(String.format(
                         "Please check and update your baseline project atlasplugin : processAwbResources expected a base symbol file"
                             + " at:\n %s \nbut the file does not exist or is a directory", baseSymbolFile));
