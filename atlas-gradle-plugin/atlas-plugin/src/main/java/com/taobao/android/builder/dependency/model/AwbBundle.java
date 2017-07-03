@@ -465,7 +465,7 @@ public class AwbBundle {
 
     public List<Library> getAllLibraries() {
         List<Library> list = new ArrayList<>();
-        for (Library androidL : getAllLibraryAars()) {
+        for (Library androidL : getAndroidLibraries()) {
             list.add(androidL);
         }
         for (Library javaLibrary : getJavaLibraries()) {
