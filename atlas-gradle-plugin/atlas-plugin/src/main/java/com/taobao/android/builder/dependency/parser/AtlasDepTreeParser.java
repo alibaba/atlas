@@ -395,7 +395,9 @@ public class AtlasDepTreeParser {
                 librariesToRemove.add(library);
                 //修正到正确Awb的位置
                 AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
-                awbBundle.getAndroidLibraries().add((AndroidLibrary)library);
+                if (awbBundle != null) {
+                    awbBundle.getAndroidLibraries().add((AndroidLibrary)library);
+                }
             }
         }
         mainBundle.getAndroidLibraries().removeAll(librariesToRemove);
@@ -407,7 +409,9 @@ public class AtlasDepTreeParser {
             if (apDependencies.isAwbLibrary(moduleIdentifier)) {
                 librariesToRemove.add(library);
                 AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
-                awbBundle.getJavaLibraries().add((JavaLibrary)library);
+                if (awbBundle != null) {
+                    awbBundle.getJavaLibraries().add((JavaLibrary)library);
+                }
             }
         }
         mainBundle.getJavaLibraries().removeAll(librariesToRemove);
@@ -419,7 +423,9 @@ public class AtlasDepTreeParser {
             if (apDependencies.isAwbLibrary(moduleIdentifier)) {
                 librariesToRemove.add(library);
                 AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
-                awbBundle.getSoLibraries().add((SoLibrary)library);
+                if (awbBundle != null) {
+                    awbBundle.getSoLibraries().add((SoLibrary)library);
+                }
             }
         }
         mainBundle.getSoLibraries().removeAll(librariesToRemove);
