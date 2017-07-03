@@ -494,10 +494,10 @@ public class AwbBundle {
     }
 
     public boolean isFullDependencies() {
-        if (baseAwbDependencies.size() == 0) {
+        if (baseAwbDependencies.size() == 1) {
             return true;
         }
-        int count = 0;
+        int count = 1;
         for (Library library : getAllLibraryAars()) {
             //新增依赖
             if (hasBaseDependencies(library)) {
