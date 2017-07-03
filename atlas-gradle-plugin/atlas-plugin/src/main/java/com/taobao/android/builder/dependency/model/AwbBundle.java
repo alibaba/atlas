@@ -225,6 +225,7 @@ import com.android.manifmerger.ManifestProvider;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
+import com.taobao.android.builder.tasks.incremental.ParsedModuleStringNotation;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.artifacts.ModuleIdentifier;
@@ -259,7 +260,7 @@ public class AwbBundle {
 
     private File mergedManifest;
 
-    private Map<ModuleIdentifier, String> baseAwbDependencies;
+    private Map<ModuleIdentifier, ParsedModuleStringNotation> baseAwbDependencies;
 
     public AwbBundle() {
         mainBundle = true;
@@ -489,7 +490,7 @@ public class AwbBundle {
         return list;
     }
 
-    public void setBaseAwbDependencies(Map<ModuleIdentifier, String> baseAwbDependencies) {
+    public void setBaseAwbDependencies(Map<ModuleIdentifier, ParsedModuleStringNotation> baseAwbDependencies) {
         this.baseAwbDependencies = baseAwbDependencies;
     }
 
@@ -498,7 +499,7 @@ public class AwbBundle {
             return true;
         }
         int count = 1;
-        for (Library library : getAllLibraryAars()) {
+        for (Library library : getAndroidLibraries()) {
             //新增依赖
             if (hasBaseDependencies(library)) {
                 return false;

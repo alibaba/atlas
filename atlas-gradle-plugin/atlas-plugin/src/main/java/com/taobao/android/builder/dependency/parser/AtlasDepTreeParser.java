@@ -384,32 +384,43 @@ public class AtlasDepTreeParser {
     //Awb依赖修正
     private void adjustAwbLibraryDependencies(AtlasDependencyTree atlasDependencyTree) {
         AwbBundle mainBundle = atlasDependencyTree.getMainBundle();
+        ArrayList<Library> librariesToRemove = new ArrayList<Library>();
         for (Library library : mainBundle.getAndroidLibraries()) {
             ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
                 library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
             //主dex包含Awb间接依赖
             if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                librariesToRemove.add(library);
                 //修正到正确Awb的位置
                 AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
                 awbBundle.getAndroidLibraries().add((AndroidLibrary)library);
             }
         }
+        mainBundle.getAndroidLibraries().removeAll(librariesToRemove);
+
+        librariesToRemove.clear();
         for (Library library : mainBundle.getJavaLibraries()) {
             ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
                 library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
             if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                librariesToRemove.add(library);
                 AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
                 awbBundle.getJavaLibraries().add((JavaLibrary)library);
             }
         }
+        mainBundle.getJavaLibraries().removeAll(librariesToRemove);
+
+        librariesToRemove.clear();
         for (Library library : mainBundle.getSoLibraries()) {
             ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
                 library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
             if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                librariesToRemove.add(library);
                 AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
                 awbBundle.getSoLibraries().add((SoLibrary)library);
             }
         }
+        mainBundle.getSoLibraries().removeAll(librariesToRemove);
     }
 
     private AwbBundle getAwbBundle(AtlasDependencyTree atlasDependencyTree, ModuleIdentifier moduleIdentifier) {

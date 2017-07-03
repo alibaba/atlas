@@ -216,6 +216,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -267,8 +268,8 @@ public class ApDependencies /*extends BaseTask*/ {
 
     private final Comparator<String> versionComparator = new DefaultVersionComparator().asStringComparator();
 
-    private final Table<ModuleIdentifier, ParsedModuleStringNotation, String> mDependenciesTable = HashBasedTable
-        .create();
+    private final Table<ModuleIdentifier, ParsedModuleStringNotation, ParsedModuleStringNotation> mDependenciesTable
+        = HashBasedTable.create();
 
     private final DependencyJson apDependencyJson;
 
@@ -356,9 +357,9 @@ public class ApDependencies /*extends BaseTask*/ {
         return apDependencyJson;
     }
 
-    public Map<ModuleIdentifier, String> getAwbDependencies(String group, String name) {
+    public Map<ModuleIdentifier, ParsedModuleStringNotation> getAwbDependencies(String group, String name) {
         ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(group, name);
-        Map<ParsedModuleStringNotation, String> row = mDependenciesTable.row(moduleIdentifier);
+        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(moduleIdentifier);
         if (row.size() == 0) {
             return null;
         }
@@ -369,8 +370,7 @@ public class ApDependencies /*extends BaseTask*/ {
         ParsedModuleStringNotation parsedNotation = new ParsedModuleStringNotation(dependencyString);
         ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(parsedNotation.getGroup(),
                                                                           parsedNotation.getName());
-        String version = parsedNotation.getVersion();
-        mDependenciesTable.put(moduleIdentifier, awb, version);
+        mDependenciesTable.put(moduleIdentifier, awb, parsedNotation);
     }
 
     public boolean isMainLibrary(Library library) {
@@ -396,7 +396,11 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
     public boolean isAwb(ModuleIdentifier moduleIdentifier) {
-        return "awb".equals(getAwb(moduleIdentifier).getArtifactType());
+        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(moduleIdentifier);
+        if (row.size() == 0) {
+            return false;
+        }
+        return AWB.equals(Iterables.getOnlyElement(row.entrySet()).getValue().getArtifactType());
     }
 
     public boolean isAwbLibrary(Library library) {
@@ -408,13 +412,30 @@ public class ApDependencies /*extends BaseTask*/ {
         return isAwbLibrary(DefaultModuleIdentifier.newId(group, name));
     }
 
+    /**
+     * Awb间接依赖
+     *
+     * @param moduleIdentifier
+     * @return
+     */
     public boolean isAwbLibrary(ModuleIdentifier moduleIdentifier) {
-        ParsedModuleStringNotation awb = getAwb(moduleIdentifier);
-        return !(awb == MAIN_DEX) && !(AWB.equals(awb.getArtifactType()));
+        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(moduleIdentifier);
+        if (row.size() == 0) {
+            return false;
+        }
+        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> notationEntry = Iterables.getOnlyElement(
+            row.entrySet());
+        return !(AWB.equals(notationEntry.getValue().getArtifactType())) && !(notationEntry.getKey() == MAIN_DEX);
     }
 
+    /**
+     * 获取所属Awb
+     *
+     * @param moduleIdentifier
+     * @return
+     */
     public ParsedModuleStringNotation getAwb(ModuleIdentifier moduleIdentifier) {
-        Map<ParsedModuleStringNotation, String> row = mDependenciesTable.row(moduleIdentifier);
+        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(moduleIdentifier);
         if (row.size() == 0) {
             return MAIN_DEX;
         }
@@ -423,11 +444,12 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {
-        Map<ParsedModuleStringNotation, String> row = mDependenciesTable.row(moduleVersion.getModule());
+        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(
+            moduleVersion.getModule());
         if (row.size() == 0) {
             return false;
         }
-        String mainVersion = Iterables.getOnlyElement(row.entrySet()).getValue();
+        String mainVersion = Iterables.getOnlyElement(row.entrySet()).getValue().getVersion();
 
         if (versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
             LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping", moduleVersion.getModule(),
