@@ -370,7 +370,12 @@ public class ApContext {
     }
 
     public File getBaseAwbTextSymbol(AwbBundle awbBundle) {
-        return FileUtils.join(baseAwosFolder, awbBundle.getPackageName() + ".R.txt");
+        String packageName = awbBundle.getPackageName();
+        if (packageName == null) {
+            return null;
+        }
+
+        return FileUtils.join(baseAwosFolder, packageName + ".R.txt");
     }
 
     public File getIncrementalBaseAwbFile(String awbSoName) {

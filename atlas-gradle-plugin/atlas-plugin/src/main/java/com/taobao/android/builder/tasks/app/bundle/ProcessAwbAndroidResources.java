@@ -314,6 +314,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
     private File mainSymbolFile;
 
+    private File baseSymbolFile;
+
     private String awbBundleName;
 
     private String customPackageId;
@@ -373,7 +375,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         ProcessOutputHandler processOutputHandler = new LoggedProcessOutputHandler(getILogger());
         try {
             builder.processAwbResources(aaptPackageCommandBuilder, getEnforceUniquePackageName(), processOutputHandler,
-                                        getMainSymbolFile());
+                                        getMainSymbolFile(), getBaseSymbolFile());
             if (resOutBaseNameFile != null) {
                 if (instantRunBuildContext.isInInstantRunMode()) {
 
@@ -520,6 +522,16 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 processResources.splits = allFilters;
             }
 
+            ConventionMappingHelper.map(processResources, "baseSymbolFile", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && !awbBundle
+                        .isFullDependencies()) {
+                        return appVariantOutputContext.getVariantContext().apContext.getBaseAwbTextSymbol(awbBundle);
+                    }
+                    return null;
+                }
+            });
             //设置AWB的resource处理所需要的特殊参数
             ConventionMappingHelper.map(processResources, "mainSymbolFile", new Callable<File>() {
                 @Override
@@ -963,6 +975,16 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
     public void setMainSymbolFile(File mainSymbolFile) {
         this.mainSymbolFile = mainSymbolFile;
+    }
+
+    @InputFile
+    @Optional
+    public File getBaseSymbolFile() {
+        return baseSymbolFile;
+    }
+
+    public void setBaseSymbolFile(File baseSymbolFile) {
+        this.baseSymbolFile = baseSymbolFile;
     }
 
     @Input
