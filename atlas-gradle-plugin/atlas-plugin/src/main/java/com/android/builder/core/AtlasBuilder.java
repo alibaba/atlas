@@ -653,7 +653,10 @@ public class AtlasBuilder extends AndroidBuilder {
 
             FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(awbSymbolFile), true);
             if (baseSymbolFile != null) {
-                FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(baseSymbolFile), true);
+                if (baseSymbolFile.exists()) {
+                    FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(baseSymbolFile), true);
+                } else {sLogger.warn(
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Could not load file ", e);
