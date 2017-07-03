@@ -217,7 +217,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.Library;
+import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.Lists;
+import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.dependency.output.DependencyJson;
@@ -364,24 +367,72 @@ public class AtlasDependencyTree {
     public DependencyJson getDependencyJson() {
         if (dependencyJson == null) {
             dependencyJson = new DependencyJson();
-            for (ResolvedDependencyInfo dep : mResolvedDependencies) {
-                String value = dep.getDependencyString();
-                if ("awb".equalsIgnoreCase(dep.getType())) {
-                    ArrayList<String> awbDeps = dependencyJson.getAwbs().get(value);
-                    if (null == awbDeps) {
-                        awbDeps = new ArrayList<String>();
-                    }
-                    addChildDependency(awbDeps, dep);
+            AwbBundle mainBundle = getMainBundle();
+            for (Library library : mainBundle.getAllLibraries()) {
+                dependencyJson.getMainDex().add(getDependencyString(library));
+            }
+            for (AwbBundle awbBundle : getAwbBundles()) {
+                String value = getDependencyString(awbBundle.getAndroidLibrary());
+                ArrayList<String> awbDeps = dependencyJson.getAwbs().get(value);
+                if (null == awbDeps) {
+                    awbDeps = new ArrayList<String>();
                     dependencyJson.getAwbs().put(value, awbDeps);
-                } else {
-                    dependencyJson.getMainDex().add(value);
-                    addChildDependency(dependencyJson.getMainDex(), dep);
+                }
+                for (Library library : awbBundle.getAllLibraries()) {
+                    awbDeps.add(getDependencyString(library));
                 }
             }
-            // mergeApDependencies();
         }
         return dependencyJson;
     }
+
+    private static String getDependencyString(Library library) {
+        MavenCoordinates coordinates = library.getResolvedCoordinates();
+        StringBuilder sb = new StringBuilder();
+        sb.append(coordinates.getGroupId()).append(":");
+        sb.append(coordinates.getArtifactId()).append(":");
+
+        //FIXME REPLACE IT LATER
+        if (AtlasBuildContext.sBuilderAdapter.prettyDependencyFormat) {
+            sb.append(coordinates.getVersion()).append("@");
+            sb.append(coordinates.getPackaging());
+        } else {
+            sb.append(coordinates.getPackaging());
+            if (org.apache.commons.lang.StringUtils.isNotBlank(coordinates.getClassifier())) {
+                sb.append(":").append(coordinates.getClassifier());
+            }
+            sb.append(":").append(coordinates.getVersion());
+        }
+
+        return sb.toString();
+    }
+
+    // /**
+    //  * 转换为ependencyJSon对象
+    //  *
+    //  * @return
+    //  */
+    // public DependencyJson getDependencyJson() {
+    //     if (dependencyJson == null) {
+    //         dependencyJson = new DependencyJson();
+    //         for (ResolvedDependencyInfo dep : mResolvedDependencies) {
+    //             String value = dep.getDependencyString();
+    //             if ("awb".equalsIgnoreCase(dep.getType())) {
+    //                 ArrayList<String> awbDeps = dependencyJson.getAwbs().get(value);
+    //                 if (null == awbDeps) {
+    //                     awbDeps = new ArrayList<String>();
+    //                 }
+    //                 addChildDependency(awbDeps, dep);
+    //                 dependencyJson.getAwbs().put(value, awbDeps);
+    //             } else {
+    //                 dependencyJson.getMainDex().add(value);
+    //                 addChildDependency(dependencyJson.getMainDex(), dep);
+    //             }
+    //         }
+    //         // mergeApDependencies();
+    //     }
+    //     return dependencyJson;
+    // }
 
     // 合并基线依赖关系
     private void mergeApDependencies() {
