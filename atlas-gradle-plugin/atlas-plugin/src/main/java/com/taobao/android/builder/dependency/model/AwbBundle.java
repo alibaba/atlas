@@ -411,9 +411,9 @@ public class AwbBundle {
 
         if (null != androidLibraries) {
             for (AndroidLibrary aarBundle : androidLibraries) {
-                if (aarBundle.getJarFile().exists()) {
-                    jars.add(aarBundle.getJarFile());
-                }
+                // if (aarBundle.getJarFile().exists()) {
+                jars.add(aarBundle.getJarFile());
+                // }
                 jars.addAll(aarBundle.getLocalJars());
             }
         }
