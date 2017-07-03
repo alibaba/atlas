@@ -655,7 +655,10 @@ public class AtlasBuilder extends AndroidBuilder {
             if (baseSymbolFile != null) {
                 if (baseSymbolFile.exists()) {
                     FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(baseSymbolFile), true);
-                } else {sLogger.warn(
+                } else {
+                    sLogger.warn(String.format(
+                        "Please check and update your baseline project atlasplugin : processAwbResources expected a base symbol file"
+                            + " at:\n %s \nbut the file does not exist or is a directory", baseSymbolFile));
                 }
             }
         } catch (IOException e) {
