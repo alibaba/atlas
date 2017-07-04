@@ -223,6 +223,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
@@ -263,7 +264,6 @@ import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.StopExecutionException;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
-import static com.taobao.android.builder.AtlasBuildContext.appVariantContext;
 
 @ParallelizableTask
 public class ProcessAwbAndroidResources extends IncrementalTask {
@@ -481,6 +481,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
         private final AppVariantOutputContext appVariantOutputContext;
 
+        private final AppVariantContext appVariantContext;
+
         public ConfigAction(VariantOutputScope scope, File symbolLocation, boolean generateResourcePackage,
                             AwbBundle awbBundle, AtlasBuilder tAndroidBuilder,
                             AppVariantOutputContext appVariantOutputContext) {
@@ -490,6 +492,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             this.awbBundle = awbBundle;
             this.tAndroidBuilder = tAndroidBuilder;
             this.appVariantOutputContext = appVariantOutputContext;
+            appVariantContext = appVariantOutputContext.getVariantContext();
         }
 
         @NonNull
@@ -527,7 +530,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 public File call() throws Exception {
                     if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && !awbBundle
                         .isFullDependencies()) {
-                        return appVariantOutputContext.getVariantContext().apContext.getBaseAwbTextSymbol(awbBundle);
+                        return appVariantContext.apContext.getBaseAwbTextSymbol(awbBundle);
                     }
                     return null;
                 }
@@ -539,7 +542,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                     File mainRTxt = new File(variantOutputData.processResourcesTask.getTextSymbolOutputDir(), "R.txt");
 
                     if (!mainRTxt.exists()) {
-                        AtlasExtension atlasExtension = appVariantOutputContext.getVariantContext().getAtlasExtension();
+                        AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
                         File explodedDir = atlasExtension.getProject().file(
                             atlasExtension.getProject().getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES
                                 + "/exploded-ap" + "/");
@@ -657,15 +660,13 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 @Override
                 public File call() throws Exception {
 
-                    DataBindingOptions dataBindingOptions = appVariantOutputContext.getVariantContext()
-                        .getAppExtension().getDataBinding();
+                    DataBindingOptions dataBindingOptions = appVariantContext.getAppExtension().getDataBinding();
 
                     File file = null;
                     if (null != dataBindingOptions && dataBindingOptions.isEnabled()) {
-                        file = appVariantOutputContext.getVariantContext().getAwbLayoutFolderOutputForDataBinding(
-                            awbBundle);
+                        file = appVariantContext.getAwbLayoutFolderOutputForDataBinding(awbBundle);
                     } else {
-                        file = appVariantOutputContext.getVariantContext().getMergeResources(awbBundle);
+                        file = appVariantContext.getMergeResources(awbBundle);
                     }
 
                     if (!file.exists()) {
@@ -678,17 +679,16 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             ConventionMappingHelper.map(processResources, "assetsDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return appVariantOutputContext.getVariantContext().getMergeAssets(awbBundle);
+                    return appVariantContext.getMergeAssets(awbBundle);
                 }
             });
-            if (appVariantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().isIncremental()) {
+            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
                 ConventionMappingHelper.map(processResources, "baselineFile", new Callable<File>() {
                     @Override
                     public File call() throws Exception {
                         if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && !awbBundle
                             .isFullDependencies()) {
-                            return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(
-                                awbBundle.getAwbSoName());
+                            return appVariantContext.apContext.getBaseAwb(awbBundle.getAwbSoName());
                         }
                         return null;
                     }
@@ -697,7 +697,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 ConventionMappingHelper.map(processResources, "shareResourceFile2", new Callable<File>() {
                     @Override
                     public File call() throws Exception {
-                        return appVariantOutputContext.getVariantContext().apContext.getBaseApk();
+                        return appVariantContext.apContext.getBaseApk();
                     }
                 });
             }
