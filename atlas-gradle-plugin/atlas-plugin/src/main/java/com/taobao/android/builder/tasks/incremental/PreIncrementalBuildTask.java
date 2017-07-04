@@ -104,6 +104,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
         } else {
             AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
                 apkVariantOutputData);
+            ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask, "signingConfig", () -> null);
             ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask, "outputFile",
                                         appVariantOutputContext::getPatchApkOutputFile);
         }
