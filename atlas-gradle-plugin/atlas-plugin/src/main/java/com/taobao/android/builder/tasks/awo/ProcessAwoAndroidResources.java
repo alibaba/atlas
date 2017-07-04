@@ -387,7 +387,7 @@ public class ProcessAwoAndroidResources extends IncrementalTask {
 
         try {
             builder.processAwbResources(aaptPackageCommandBuilder, getEnforceUniquePackageName(), processOutputHandler,
-                                        getMainSymbolFile(), getBaseSymbolFile());
+                                        getMainSymbolFile(), getBaseSymbolFile(), false);
         } catch (Throwable e) {
             throw new GradleException(e.getMessage(), e);
         }

@@ -330,6 +330,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
     private File baselineFile;
 
+    private boolean incrementalBuild;
+
     @Override
     protected void doFullTaskAction() throws IOException {
         // we have to clean the source folder output in case the package name changed.
@@ -375,7 +377,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         ProcessOutputHandler processOutputHandler = new LoggedProcessOutputHandler(getILogger());
         try {
             builder.processAwbResources(aaptPackageCommandBuilder, getEnforceUniquePackageName(), processOutputHandler,
-                                        getMainSymbolFile(), getBaseSymbolFile());
+                                        getMainSymbolFile(), getBaseSymbolFile(), isIncrementalBuild());
             if (resOutBaseNameFile != null) {
                 if (instantRunBuildContext.isInInstantRunMode()) {
 
@@ -525,16 +527,6 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 processResources.splits = allFilters;
             }
 
-            ConventionMappingHelper.map(processResources, "baseSymbolFile", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && !awbBundle
-                        .isFullDependencies()) {
-                        return appVariantContext.apContext.getBaseAwbTextSymbol(awbBundle);
-                    }
-                    return null;
-                }
-            });
             //设置AWB的resource处理所需要的特殊参数
             ConventionMappingHelper.map(processResources, "mainSymbolFile", new Callable<File>() {
                 @Override
@@ -682,25 +674,38 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                     return appVariantContext.getMergeAssets(awbBundle);
                 }
             });
-            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                ConventionMappingHelper.map(processResources, "baselineFile", new Callable<File>() {
-                    @Override
-                    public File call() throws Exception {
-                        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && !awbBundle
-                            .isFullDependencies()) {
-                            return appVariantContext.apContext.getBaseAwb(awbBundle.getAwbSoName());
-                        }
-                        return null;
-                    }
-                });
 
-                ConventionMappingHelper.map(processResources, "shareResourceFile2", new Callable<File>() {
-                    @Override
-                    public File call() throws Exception {
+            boolean incremental = appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental();
+            processResources.setIncrementalBuild(incremental);
+            ConventionMappingHelper.map(processResources, "baselineFile", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    if (incremental && !awbBundle.isFullDependencies()) {
+                        return appVariantContext.apContext.getBaseAwb(awbBundle.getAwbSoName());
+                    }
+                    return null;
+                }
+            });
+            ConventionMappingHelper.map(processResources, "baseSymbolFile", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    if (incremental && !awbBundle.isFullDependencies()) {
+                        File baseAwbTextSymbol = appVariantContext.apContext.getBaseAwbTextSymbol(awbBundle);
+                        //旧插件
+                        return baseAwbTextSymbol.exists() ? baseAwbTextSymbol : null;
+                    }
+                    return null;
+                }
+            });
+            ConventionMappingHelper.map(processResources, "shareResourceFile2", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    if (incremental) {
                         return appVariantContext.apContext.getBaseApk();
                     }
-                });
-            }
+                    return null;
+                }
+            });
 
             if (generateResourcePackage) {
                 processResources.setPackageOutputFile(
@@ -977,16 +982,6 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         this.mainSymbolFile = mainSymbolFile;
     }
 
-    @InputFile
-    @Optional
-    public File getBaseSymbolFile() {
-        return baseSymbolFile;
-    }
-
-    public void setBaseSymbolFile(File baseSymbolFile) {
-        this.baseSymbolFile = baseSymbolFile;
-    }
-
     @Input
     public String getAwbBundleName() {
         return awbBundleName;
@@ -1026,6 +1021,21 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
     @InputFile
     @Optional
+    public File getRtxtFile() {
+        return rtxtFile;
+    }
+
+    @Input
+    public boolean isIncrementalBuild() {
+        return incrementalBuild;
+    }
+
+    public void setIncrementalBuild(boolean incrementalBuild) {
+        this.incrementalBuild = incrementalBuild;
+    }
+
+    @InputFile
+    @Optional
     public File getShareResourceFile2() {
         return shareResourceFile2;
     }
@@ -1036,18 +1046,22 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
     @InputFile
     @Optional
-    public File getRtxtFile() {
-        return rtxtFile;
-    }
-
-    @InputFile
-    @Optional
     public File getBaselineFile() {
         return baselineFile;
     }
 
     public void setBaselineFile(File baselineFile) {
         this.baselineFile = baselineFile;
+    }
+
+    @InputFile
+    @Optional
+    public File getBaseSymbolFile() {
+        return baseSymbolFile;
+    }
+
+    public void setBaseSymbolFile(File baseSymbolFile) {
+        this.baseSymbolFile = baseSymbolFile;
     }
 
     public static class MyAaptOptions extends AaptOptions {

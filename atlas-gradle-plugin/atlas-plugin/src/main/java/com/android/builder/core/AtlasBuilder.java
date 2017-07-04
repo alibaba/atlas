@@ -605,9 +605,11 @@ public class AtlasBuilder extends AndroidBuilder {
      * @param processOutputHandler
      * @param mainSymbolFile
      * @param baseSymbolFile
+     * @param incrementalBuild
      */
     public void processAwbResources(AaptPackageProcessBuilder aaptCommand, boolean enforceUniquePackageName,
-                                    ProcessOutputHandler processOutputHandler, File mainSymbolFile, File baseSymbolFile)
+                                    ProcessOutputHandler processOutputHandler, File mainSymbolFile, File baseSymbolFile,
+                                    boolean incrementalBuild)
         throws IOException, InterruptedException, ProcessException {
         if (!atlasExtension.getTBuildConfig().getUseCustomAapt()) {
             throw new StopExecutionException("Must set useCustomAapt value to true for awb build!");
@@ -630,7 +632,7 @@ public class AtlasBuilder extends AndroidBuilder {
         ProcessResult result = getProcessExecutor().execute(processInfo, processOutputHandler);
         result.rethrowFailure().assertNormalExitValue();
 
-        processAwbSymbols(aaptCommand, mainSymbolFile, baseSymbolFile, enforceUniquePackageName);
+        processAwbSymbols(aaptCommand, mainSymbolFile, baseSymbolFile, enforceUniquePackageName, incrementalBuild);
     }
 
     /**
@@ -638,10 +640,11 @@ public class AtlasBuilder extends AndroidBuilder {
      *
      * @param aaptCommand
      * @param baseSymbolFile
+     * @param incrementalBuild
      * @throws IOException
      */
     public void processAwbSymbols(AaptPackageProcessBuilder aaptCommand, File mainSymbolFile, File baseSymbolFile,
-                                  boolean enforceUniquePackageName) throws IOException {
+                                  boolean enforceUniquePackageName, boolean incrementalBuild) throws IOException {
         //1. 首先将主的R.txt和awb生成的R.txt进行merge操作
         File awbSymbolFile = new File(aaptCommand.getSymbolOutputDir(), "R.txt");
         File mergedSymbolFile = new File(aaptCommand.getSymbolOutputDir(), "R-all.txt");
@@ -653,8 +656,8 @@ public class AtlasBuilder extends AndroidBuilder {
             }
 
             FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(awbSymbolFile), true);
-            if (baseSymbolFile != null) {
-                if (baseSymbolFile.exists()) {
+            if (incrementalBuild) {
+                if (baseSymbolFile != null) {
                     FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(baseSymbolFile), true);
                 } else {
                     FileUtils.writeLines(mergedSymbolFile, Collections2

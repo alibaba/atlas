@@ -371,6 +371,7 @@ public class ApContext {
 
     public File getBaseAwbTextSymbol(AwbBundle awbBundle) {
         String packageName = awbBundle.getPackageName();
+        // 没有解压
         if (packageName == null) {
             return null;
         }
