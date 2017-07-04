@@ -204,7 +204,10 @@ public class AwbPackagingScope implements PackagingScope {
     @Nullable
     @Override
     public CoreSigningConfig getSigningConfig() {
-        return variantScope.getVariantConfiguration().getSigningConfig();
+        // if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+        return null;
+        // }
+        // return variantScope.getVariantConfiguration().getSigningConfig();
     }
 
     @NonNull
