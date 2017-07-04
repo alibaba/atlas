@@ -232,6 +232,8 @@ import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Created by shenghua.nish on 2016-05-06 下午5:46.
  * <p>
@@ -502,6 +504,7 @@ public class AwbBundle {
     }
 
     private boolean isFullDependencies(Map<ModuleIdentifier, ParsedModuleStringNotation> baseAwbDependencies) {
+        checkNotNull(baseAwbDependencies, "Missing baseAwbDependencies for awb " + getResolvedCoordinates());
         if (baseAwbDependencies.size() == 1) {
             return true;
         }
