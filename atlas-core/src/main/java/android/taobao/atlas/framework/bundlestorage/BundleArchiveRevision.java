@@ -503,6 +503,7 @@ public class BundleArchiveRevision {
                     if(bundleFile.getUsableSpace()<5*1024*1024){
                         interpretOnly = true;
                     }
+                    Log.e("BundleArchiveRevision","interpretOnly = "+interpretOnly);
                     //兼容7。0 动态部署过后不同classloader下对classcast
                     dexFile = (DexFile) RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex",Context.class,String.class, String.class, int.class, boolean.class).invoke(
                             RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
