@@ -344,21 +344,6 @@ public class AtlasDependencyTree {
         return soLibraries;
     }
 
-    public Set<String> getFlatDependencies() {
-        DependencyJson dependencyJson = getDependencyJson();
-        Set<String> depenSets = new HashSet<String>();
-
-        if (null != dependencyJson.getAwbs()) {
-            for (String key : dependencyJson.getAwbs().keySet()) {
-                depenSets.add(key);
-                depenSets.addAll(dependencyJson.getAwbs().get(key));
-            }
-        }
-
-        depenSets.addAll(dependencyJson.getMainDex());
-        return depenSets;
-    }
-
     /**
      * 转换为ependencyJSon对象
      *

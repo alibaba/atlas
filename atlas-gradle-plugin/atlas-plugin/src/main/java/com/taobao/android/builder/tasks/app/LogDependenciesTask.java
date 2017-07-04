@@ -213,21 +213,6 @@ package com.taobao.android.builder.tasks.app;
  * Created by wuzhong on 16/6/13.
  */
 
-import com.alibaba.fastjson.JSON;
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.output.DependencyJson;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.FileNameUtils;
-import com.taobao.android.builder.tools.guide.AtlasExtensionOutput;
-import org.apache.commons.io.FileUtils;
-import org.gradle.api.GradleException;
-import org.gradle.api.tasks.TaskAction;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -236,6 +221,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import com.alibaba.fastjson.JSON;
+
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.google.common.collect.ImmutableList;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.output.DependencyJson;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.FileNameUtils;
+import com.taobao.android.builder.tools.guide.AtlasExtensionOutput;
+import org.apache.commons.io.FileUtils;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.TaskAction;
 
 /**
  * 记录构建的依赖信息，便于排查分析
@@ -246,24 +250,48 @@ public class LogDependenciesTask extends BaseTask {
 
     private AppVariantContext appVariantContext;
 
+    private DependencyJson dependencyJson;
+
+    private List<URL> urls;
+
+    private List<String> buildInfos;
+
+    @Input
+    public DependencyJson getDependencyJson() {
+        return dependencyJson;
+    }
+
+    public void setDependencyJson(DependencyJson dependencyJson) {
+        this.dependencyJson = dependencyJson;
+    }
+
+    @Input
+    public List<URL> getUrls() {
+        return urls;
+    }
+
+    public void setUrls(URL[] urls) {
+        this.urls = ImmutableList.copyOf(urls);
+    }
+
+    @Input
+    public List<String> getBuildInfos() {
+        return buildInfos;
+    }
+
+    public void setBuildInfos(List<String> buildInfos) {
+        this.buildInfos = buildInfos;
+    }
+
     @TaskAction
     void generate() {
-
         AtlasBuildContext.appVariantContext = appVariantContext;
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-            getVariantName());
-
-        if (null == atlasDependencyTree) {
-            return;
-        }
-
-        File treeFile = new File(getProject().getBuildDir(),
-                                 "outputs/dependencyTree-" + getVariantName() + ".json");
-        File dependenciesFile = new File(getProject().getBuildDir(), "outputs/dependencies.txt");
-        File versionProperties = new File(getProject().getBuildDir(), "outputs/version.properties");
-        File buildInfo = new File(getProject().getBuildDir(), "outputs/build.txt");
-        File pluginDependencies =  new File(getProject().getBuildDir(), "outputs/pluginDependencies.txt");
-        File atlasConfig = new File(getProject().getBuildDir(), "outputs/atlasConfig.json");
+        File treeFile = new File(getProject().getBuildDir(), "outputs/dependencyTree-" + getVariantName() + ".json");
+        File dependenciesFile = getDependenciesFile();
+        File versionProperties = getVersionPropertiesFile();
+        File buildInfo = getBuildInfoFile();
+        File pluginDependencies = getPluginDependencies();
+        File atlasConfig = getAtlasConfigFile();
 
         appBuildInfo.setDependencyTreeFile(treeFile);
         appBuildInfo.setDependenciesFile(dependenciesFile);
@@ -276,17 +304,15 @@ public class LogDependenciesTask extends BaseTask {
         buildInfo.delete();
 
         treeFile.getParentFile().mkdirs();
+
+        DependencyJson dependencyJson = getDependencyJson();
         try {
-
-            DependencyJson dependencyJson = atlasDependencyTree.getDependencyJson();
-
             Collections.sort(dependencyJson.getMainDex());
 
             FileUtils.write(treeFile, JSON.toJSONString(dependencyJson, true));
 
             //add to ap
             appBuildInfo.getOtherFilesMap().put("awo/dependencyTree.json", treeFile);
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -294,7 +320,7 @@ public class LogDependenciesTask extends BaseTask {
         //输出运行时的插件依赖列表
         try {
             //ClassLoader cl = ClassLoader.getSystemClassLoader();
-            URL[] urls = ((URLClassLoader)LogDependenciesTask.class.getClassLoader()).getURLs();
+            urls = getUrls();
             List<String> libraries = new ArrayList<>();
             for (URL url : urls) {
                 libraries.add(url.getFile());
@@ -305,64 +331,77 @@ public class LogDependenciesTask extends BaseTask {
         }
 
         try {
-            FileUtils.writeStringToFile(dependenciesFile,
-                                        JSON.toJSONString(atlasDependencyTree.getDependencyJson()));
+            FileUtils.writeStringToFile(dependenciesFile, JSON.toJSONString(dependencyJson));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         try {
-            FileUtils.writeLines(versionProperties, getSortVersionList(atlasDependencyTree));
+            FileUtils.writeLines(versionProperties, getSortVersionList(dependencyJson));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         try {
-            List<String> lines = new ArrayList<>();
-            lines.add("gradleVersion:" + getProject().getGradle().getGradleVersion());
-            lines.add("androidPluginVersion:" + com.android.builder.Version.ANDROID_GRADLE_PLUGIN_VERSION);
-            lines.add("buildToolsVersion:" + appVariantContext.getAppExtension().getBuildToolsVersion());
-            lines.add("compileSdkVersion:" + appVariantContext.getAppExtension().getCompileSdkVersion());
-            lines.add("atlasPluginVersion:" + FileNameUtils.getJarVersionName(LogDependenciesTask.class));
-            lines.addAll(AtlasBuildContext.sBuilderAdapter.buildInfos);
-            FileUtils.writeLines(buildInfo, lines);
+            buildInfos = new ArrayList<>();
+            FileUtils.writeLines(buildInfo, buildInfos);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         try {
-            FileUtils.write(atlasConfig,
-                            JSON.toJSONString(new AtlasExtensionOutput(appVariantContext.getAtlasExtension(),
-                                                                       appVariantContext.getBuildType().getName()),
-                                              true));
+            FileUtils.write(atlasConfig, JSON.toJSONString(
+                new AtlasExtensionOutput(appVariantContext.getAtlasExtension(),
+                                         appVariantContext.getBuildType().getName()), true));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        if (null != AtlasBuildContext.conflictDependencies &&
-            !AtlasBuildContext.conflictDependencies.isEmpty()) {
+        if (null != AtlasBuildContext.conflictDependencies && !AtlasBuildContext.conflictDependencies.isEmpty()) {
             try {
-                FileUtils.writeLines(new File(getProject().getBuildDir(),
-                                              "outputs/warning-dependencyConflict.properties"),
-                                     AtlasBuildContext.conflictDependencies);
+                FileUtils.writeLines(
+                    new File(getProject().getBuildDir(), "outputs/warning-dependencyConflict.properties"),
+                    AtlasBuildContext.conflictDependencies);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            if (appVariantContext.getAtlasExtension()
-                .getTBuildConfig()
-                .isAbortIfDependencyConflict()) {
+            if (appVariantContext.getAtlasExtension().getTBuildConfig().isAbortIfDependencyConflict()) {
                 throw new GradleException("依赖冲突，具体见warning-dependencyConflict.properties");
             }
         }
-
     }
 
-    private List<String> getSortVersionList(AtlasDependencyTree atlasDependencyTree) {
+    @OutputFile
+    public File getDependenciesFile() {
+        return new File(getProject().getBuildDir(), "outputs/dependencies.txt");
+    }
+
+    @OutputFile
+    public File getVersionPropertiesFile() {
+        return new File(getProject().getBuildDir(), "outputs/version.properties");
+    }
+
+    @OutputFile
+    public File getBuildInfoFile() {
+        return new File(getProject().getBuildDir(), "outputs/build.txt");
+    }
+
+    @OutputFile
+    public File getPluginDependencies() {
+        return new File(getProject().getBuildDir(), "outputs/pluginDependencies.txt");
+    }
+
+    @OutputFile
+    public File getAtlasConfigFile() {
+        return new File(getProject().getBuildDir(), "outputs/atlasConfig.json");
+    }
+
+    private List<String> getSortVersionList(DependencyJson dependencyJson) {
         List<String> versionList = new ArrayList<String>();
 
         try {
-            Set<String> depsSet = atlasDependencyTree.getFlatDependencies();
+            Set<String> depsSet = dependencyJson.getFlatDependencies();
             if (depsSet != null && !depsSet.isEmpty()) {
                 for (String dep : depsSet) {
                     String[] args = dep.split(":");
@@ -383,10 +422,9 @@ public class LogDependenciesTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<LogDependenciesTask> {
 
-        private AppVariantContext appVariantContext;
+        private final AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -406,6 +444,25 @@ public class LogDependenciesTask extends BaseTask {
             super.execute(logDependenciesTask);
             logDependenciesTask.appBuildInfo = getAppVariantOutputContext().appBuildInfo;
             logDependenciesTask.appVariantContext = appVariantContext;
+
+            AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                logDependenciesTask.getVariantName());
+            if (null != atlasDependencyTree) {
+                logDependenciesTask.setDependencyJson(atlasDependencyTree.getDependencyJson());
+            }
+            logDependenciesTask.setUrls(((URLClassLoader)LogDependenciesTask.class.getClassLoader()).getURLs());
+            logDependenciesTask.setBuildInfos(getBuildInfos());
+        }
+
+        private List<String> getBuildInfos() {
+            ImmutableList.Builder<String> builder = ImmutableList.builder();
+            builder.add("gradleVersion:" + appVariantContext.getProject().getGradle().getGradleVersion());
+            builder.add("androidPluginVersion:" + com.android.builder.Version.ANDROID_GRADLE_PLUGIN_VERSION);
+            builder.add("buildToolsVersion:" + appVariantContext.getAppExtension().getBuildToolsVersion());
+            builder.add("compileSdkVersion:" + appVariantContext.getAppExtension().getCompileSdkVersion());
+            builder.add("atlasPluginVersion:" + FileNameUtils.getJarVersionName(LogDependenciesTask.class));
+            builder.addAll(AtlasBuildContext.sBuilderAdapter.buildInfos);
+            return builder.build();
         }
     }
 }

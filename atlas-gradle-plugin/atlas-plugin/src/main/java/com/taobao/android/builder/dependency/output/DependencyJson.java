@@ -212,17 +212,23 @@ package com.taobao.android.builder.dependency.output;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import com.alibaba.fastjson.annotation.JSONField;
 
 /**
  * Dependency的依赖关系
+ *
  * @author shenghua.nish 2014年12月9日 下午3:14:05
  */
-public class DependencyJson implements Serializable{
+public class DependencyJson implements Serializable {
     private List<String> mainDex = new LinkedList<String>();
-    private Map<String, ArrayList<String>> awbs    = new HashMap<String, ArrayList<String>>();
+
+    private Map<String, ArrayList<String>> awbs = new HashMap<String, ArrayList<String>>();
 
     /**
      * @return the mainDex
@@ -252,16 +258,36 @@ public class DependencyJson implements Serializable{
         this.awbs = awbs;
     }
 
+    @JSONField(serialize = false)
+    public Set<String> getFlatDependencies() {
+        Set<String> depenSets = new HashSet<String>();
+
+        if (null != awbs) {
+            for (String key : awbs.keySet()) {
+                depenSets.add(key);
+                depenSets.addAll(awbs.get(key));
+            }
+        }
+
+        depenSets.addAll(getMainDex());
+        return depenSets;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
-        DependencyJson that = (DependencyJson) o;
+        DependencyJson that = (DependencyJson)o;
 
-        if (mainDex != null ? !mainDex.equals(that.mainDex) : that.mainDex != null) return false;
+        if (mainDex != null ? !mainDex.equals(that.mainDex) : that.mainDex != null) {
+            return false;
+        }
         return awbs != null ? awbs.equals(that.awbs) : that.awbs == null;
-
     }
 
     @Override
