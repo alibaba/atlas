@@ -374,7 +374,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         dependencies.addAll(classpath.getFiles());
         //增加awb的依赖
 
-        dependencies.addAll(awbBundle.getLibraryJars());
+        // dependencies.addAll(awbBundle.getLibraryJars());
 
         FileCollection allClassPatch = appVariantOutputContext.getVariantContext().getProject().files(dependencies);
         return allClassPatch;
