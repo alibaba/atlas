@@ -232,6 +232,8 @@ import com.taobao.android.builder.tools.MD5Util;
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author wuzhong
  * @date 16/8/29
@@ -247,6 +249,7 @@ public class ApDownloader {
 
     public File downloadAP(String mtlConfigUrl, File root) throws IOException {
         String downloadUrl = getDownloadUrl(mtlConfigUrl);
+        checkNotNull(downloadUrl, "Missing ap downloadUrl for mtlConfigUrl" + mtlConfigUrl);
 
         File file = new File(root, MD5Util.getMD5(downloadUrl) + ".ap");
         if (file.exists()) {
