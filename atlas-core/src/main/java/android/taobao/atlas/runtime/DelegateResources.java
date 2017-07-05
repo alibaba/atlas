@@ -224,9 +224,6 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
-
-import org.xmlpull.v1.XmlPullParser;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.Constructor;
@@ -247,7 +244,6 @@ public class DelegateResources extends Resources {
 
     private static String sKernalPathPath = null;
     private static String sAssetsPatchDir = null;
-    private Resources origin;
     private HashMap<String,Resources> bundleResourceWalkRound = new HashMap<>();
 
 
@@ -260,7 +256,6 @@ public class DelegateResources extends Resources {
      */
     public DelegateResources(AssetManager assets, Resources res) {
         super(assets, res.getDisplayMetrics(), res.getConfiguration());
-        origin = res;
     }
 
     @Override
@@ -271,63 +266,78 @@ public class DelegateResources extends Resources {
             result = super.getLayout(id);
         }catch(NotFoundException e){
             exception = e;
-            if(origin!=null) {
-                try {
-                    result = origin.getLayout(id);
-                } catch (Throwable e2) {
-                }
-            }
-
         }
         if(result==null && exception!=null){
             TypedValue value = new TypedValue();
             boolean flag = (this==RuntimeVariables.delegateResources);
             Log.e("DelegateResources","compare:"+(this==RuntimeVariables.delegateResources));
-            if(!flag){
-                try{
-                    XmlResourceParser parser = RuntimeVariables.delegateResources.getLayout(id);
-                    if(parser!=null){
-                        Map<String, Object> detail = new HashMap<>();
-                        detail.put("walkroundgetLayout", "");
-                        AtlasMonitor.getInstance().report("walkround_Runtimevariables", detail, exception);
-                        return parser;
-                    }
-                }catch (Throwable e){}
-            }
             getValue(id,value,true);
-            if(value!=null){
-                Log.e("DelegateResources",String.format("ID: %s|cookie: %s|string: %s",id,value.assetCookie,value.string));
-                try {
-                    String assetsPath = (String) AssetManager.class.getMethod("getCookieName", int.class).invoke(getAssets(), value.assetCookie);
-                    Log.e("DelegateResources","target Path: "+assetsPath);
-                    if(!new File(assetsPath).exists()){
-                        Log.e("DelegateResources","target Path is not exist");
-                    }
-                    XmlResourceParser parser = getLayoutWalkRound(assetsPath,id);
+            Log.e("DelegateResources",String.format("ID: %s|cookie: %s|string: %s",id,value.assetCookie,value.string));
+            try {
+                String assetsPath = (String) AssetManager.class.getMethod("getCookieName", int.class).invoke(getAssets(), value.assetCookie);
+                Log.e("DelegateResources","target Path: "+assetsPath);
+                if(!new File(assetsPath).exists()){
+                    Log.e("DelegateResources","target Path is not exist");
+                }
+                Resources res = getBackupResources(assetsPath);
+                if(res!=null) {
+                    XmlResourceParser parser = res.getLayout(id);
                     if(parser!=null){
                         Map<String, Object> detail = new HashMap<>();
                         detail.put("walkroundgetLayout", assetsPath);
                         AtlasMonitor.getInstance().report(AtlasMonitor.WALKROUND_GETLAYOUT, detail, exception);
                         return parser;
                     }
-                }catch(Throwable e){
                 }
+            }catch(Throwable e){
             }
-
             throw exception;
         }
         return result;
     }
 
-    private XmlResourceParser getLayoutWalkRound(final String assetsPath,final int id){
+    public Drawable getDrawable(int id, Theme theme) throws NotFoundException {
+        Drawable result = null;
+        NotFoundException exception = null;
+        try{
+            result = super.getDrawable(id,theme);
+        }catch(NotFoundException e){
+            exception = e;
+        }
+        if(result==null && exception!=null){
+            TypedValue value = new TypedValue();
+            getValue(id,value,true);
+            try {
+                String assetsPath = (String) AssetManager.class.getMethod("getCookieName", int.class).invoke(getAssets(), value.assetCookie);
+                Resources res = getBackupResources(assetsPath);
+                if(res!=null){
+                    Drawable drawable = res.getDrawable(id,theme);
+                    return drawable;
+                }
+            }catch(Throwable e){
+                e.printStackTrace();
+            }
+            throw exception;
+        }
+        return result;
+    }
+
+    private Resources getBackupResources(final String assetsPath){
+        if(TextUtils.isEmpty(assetsPath)) {
+            return null;
+        }
         try {
             Resources res = bundleResourceWalkRound.get(assetsPath);
             if(res==null) {
                 synchronized (assetsPath) {
                     if ((res = bundleResourceWalkRound.get(assetsPath)) == null) {
                         AssetManager newAssetManager = AssetManager.class.newInstance();
-                        File walkroundBackupAsset = new File(RuntimeVariables.androidApplication.getFilesDir(),new File(assetsPath).getName()+".backup.zip");
-                        if(!walkroundBackupAsset.exists() || walkroundBackupAsset.length() == new File(assetsPath).length()) {
+                        File walkroundDir = new File(RuntimeVariables.androidApplication.getFilesDir(),"storage/res_backup");
+                        if(!walkroundDir.exists()){
+                            walkroundDir.mkdirs();
+                        }
+                        File walkroundBackupAsset = new File(walkroundDir,new File(assetsPath).getName()+".backup.zip");
+                        if(!walkroundBackupAsset.exists() || walkroundBackupAsset.length()!=new File(assetsPath).length()) {
                             if(walkroundBackupAsset.exists()){
                                 walkroundBackupAsset.delete();
                             }
@@ -339,34 +349,11 @@ public class DelegateResources extends Resources {
                     }
                 }
             }
-            if(res!=null) {
-                return res.getLayout(id);
-            }
+            return res;
         } catch (Throwable e) {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public Drawable getDrawable(int id, Theme theme) throws NotFoundException {
-        Drawable result = null;
-        NotFoundException exception = null;
-        try{
-            result = super.getDrawable(id,theme);
-        }catch(NotFoundException e){
-            exception = e;
-            if(origin!=null) {
-                try {
-                    result = origin.getDrawable(id,theme);
-                } catch (Throwable e2) {
-                }
-            }
-
-        }
-        if(result==null && exception!=null){
-            throw exception;
-        }
-        return result;
     }
 
     public static void reset(){
@@ -604,7 +591,7 @@ public class DelegateResources extends Resources {
             if(!append){
                 appendAssetPath(newAssetManager,newAssetPath,false);
             }
-                //顺序添加,逆序加入assetmanager
+            //顺序添加,逆序加入assetmanager
             if(preAssetPathCache!=null){
                 if(preAssetPathCache.size()==1){
                     Iterator<Map.Entry<String, Boolean>> iterator = preAssetPathCache.entrySet().iterator();

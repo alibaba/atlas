@@ -401,7 +401,7 @@ public class BundleArchiveRevision {
 
     public File mappingInternalDirectory(){
         if(externalStorage){
-            File internalLibDir = new File(RuntimeVariables.androidApplication.getFilesDir(),String.format("storage/%s/%s",location,revisionDir.getName()));
+            File internalLibDir = new File(RuntimeVariables.androidApplication.getFilesDir(),String.format("storage/%s/%s",location+"_internal",revisionDir.getName()));
             int retryCount = 2;
             do{
                 if(!internalLibDir.exists()){
