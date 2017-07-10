@@ -359,9 +359,9 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         AaptPackageProcessBuilder aaptPackageCommandBuilder = new AaptPackageProcessBuilder(manifestFileToPackage,
                                                                                             getAaptOptions())
             .setAssetsFolder(getAssetsDir()).setResFolder(getResDir()).setLibraries(getLibraries()).setPackageForR(
-                getPackageForR()).setSourceOutputDir(absolutePath(srcOut)).setSymbolOutputDir(
-                absolutePath(getTextSymbolOutputDir())).setResPackageOutput(absolutePath(resOutBaseNameFile))
-            .setProguardOutput(absolutePath(getProguardOutputFile())).setType(getType()).setDebuggable(getDebuggable())
+                getPackageForR()).setSourceOutputDir(absolutePath(srcOut)).setSymbolOutputDir(absolutePath(
+                getTextSymbolOutputDir())).setResPackageOutput(absolutePath(resOutBaseNameFile)).setProguardOutput(
+                absolutePath(getProguardOutputFile())).setType(getType()).setDebuggable(getDebuggable())
             .setPseudoLocalesEnabled(getPseudoLocalesEnabled()).setResourceConfigs(getResourceConfigs()).setSplits(
                 getSplits()).setPreferredDensity(getPreferredDensity());
 
@@ -376,8 +376,12 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
         ProcessOutputHandler processOutputHandler = new LoggedProcessOutputHandler(getILogger());
         try {
-            builder.processAwbResources(aaptPackageCommandBuilder, getEnforceUniquePackageName(), processOutputHandler,
-                                        getMainSymbolFile(), getBaseSymbolFile(), isIncrementalBuild());
+            builder.processAwbResources(aaptPackageCommandBuilder,
+                                        getEnforceUniquePackageName(),
+                                        processOutputHandler,
+                                        getMainSymbolFile(),
+                                        getBaseSymbolFile(),
+                                        isIncrementalBuild());
             if (resOutBaseNameFile != null) {
                 if (instantRunBuildContext.isInInstantRunMode()) {
 
@@ -572,8 +576,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             ConventionMappingHelper.map(processResources, "sktPackageName", new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    String packageName = ManifestFileUtils.getApplicationId(
-                        variantOutputData.manifestProcessorTask.getManifestOutputFile());
+                    String packageName = ManifestFileUtils.getApplicationId(variantOutputData.manifestProcessorTask
+                                                                                .getManifestOutputFile());
                     if (null != packageName) {
                         return packageName;
                     } else {
@@ -676,7 +680,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             });
 
             boolean incremental = appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental();
-            processResources.setIncrementalBuild(incremental);
+            processResources.setIncrementalBuild(incremental && !awbBundle.isFullDependencies());
             ConventionMappingHelper.map(processResources, "baselineFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
@@ -708,8 +712,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             });
 
             if (generateResourcePackage) {
-                processResources.setPackageOutputFile(
-                    appVariantOutputContext.getAwbProcessResourcePackageOutputFile(awbBundle));
+                processResources.setPackageOutputFile(appVariantOutputContext
+                                                          .getAwbProcessResourcePackageOutputFile(awbBundle));
             }
 
             processResources.setType(config.getType());
@@ -746,8 +750,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 @Override
                 @Nullable
                 public String call() throws Exception {
-                    String variantFilter = variantOutputData.getMainOutputFile().getFilter(
-                        com.android.build.OutputFile.DENSITY);
+                    String variantFilter = variantOutputData.getMainOutputFile()
+                        .getFilter(com.android.build.OutputFile.DENSITY);
                     if (variantFilter != null) {
                         return variantFilter;
                     }
