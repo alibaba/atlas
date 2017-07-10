@@ -294,10 +294,16 @@ public class DependencyResolver {
 
                 if (!directDependencies.contains(moduleVersion)) {
                     directDependencies.add(moduleVersion);
-                    resolveDependency(null, dependencyResult,
-                                      ((ResolvedDependencyResult)dependencyResult).getSelected(), artifacts,
-                                      variantDeps, 0, circleDependencyCheck,
-                                      circleDependencyCheck.getRootDependencyNode(), dependenciesMap, resolveSets);
+                    resolveDependency(null,
+                                      dependencyResult,
+                                      ((ResolvedDependencyResult)dependencyResult).getSelected(),
+                                      artifacts,
+                                      variantDeps,
+                                      0,
+                                      circleDependencyCheck,
+                                      circleDependencyCheck.getRootDependencyNode(),
+                                      dependenciesMap,
+                                      resolveSets);
                 }
             }
         }
@@ -386,7 +392,8 @@ public class DependencyResolver {
 
                 MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
 
-                File explodedDir = DependencyLocationManager.getExploreDir(project, mavenCoordinates,
+                File explodedDir = DependencyLocationManager.getExploreDir(project,
+                                                                           mavenCoordinates,
                                                                            resolvedArtifact.getFile(),
                                                                            resolvedArtifact.getType().toLowerCase(),
                                                                            path);
@@ -417,14 +424,23 @@ public class DependencyResolver {
                             }
 
                             CircleDependencyCheck.DependencyNode childNode = circleDependencyCheck.addDependency(
-                                childResolvedComponentResult.getModuleVersion(), node, indent + 1);
+                                childResolvedComponentResult.getModuleVersion(),
+                                node,
+                                indent + 1);
                             CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(LOGGER);
                             if (circleResult.hasCircle) {
                                 LOGGER.warning("[CircleDependency]" + StringUtils.join(circleResult.detail, ";"));
                             } else {
-                                resolveDependency(parent, dep, ((ResolvedDependencyResult)dep).getSelected(), artifacts,
-                                                  configDependencies, indent + 1, circleDependencyCheck, childNode,
-                                                  dependenciesMap, resolvedDependencies);
+                                resolveDependency(parent,
+                                                  dep,
+                                                  ((ResolvedDependencyResult)dep).getSelected(),
+                                                  artifacts,
+                                                  configDependencies,
+                                                  indent + 1,
+                                                  circleDependencyCheck,
+                                                  childNode,
+                                                  dependenciesMap,
+                                                  resolvedDependencies);
                             }
                         }
                     }
@@ -442,6 +458,10 @@ public class DependencyResolver {
             return true;
         }
         if (apDependencies != null) {
+            // 工程依赖不忽略
+            if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
+                return false;
+            }
             // awb依赖不忽略
             if (parent == null && apDependencies.isAwb(moduleVersion.getModule())) {
                 return false;
@@ -451,8 +471,8 @@ public class DependencyResolver {
             //     return true;
             // }
             // awb忽略host的依赖
-            if (parent != null && parent.getType().equals("awb") && apDependencies.isMainLibrary(
-                moduleVersion.getModule())) {
+            if (parent != null && parent.getType().equals("awb") && apDependencies.isMainLibrary(moduleVersion
+                                                                                                     .getModule())) {
                 /*if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                     return;
                 } else {
@@ -460,10 +480,6 @@ public class DependencyResolver {
                     parent = null;
                 }*/
                 return true;
-            }
-            // 工程依赖不忽略
-            if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
-                return false;
             }
             // TODO: 强制不忽略
             // 一级依赖不忽略
