@@ -215,8 +215,10 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -236,6 +238,7 @@ import org.apache.commons.io.IOUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
@@ -273,7 +276,10 @@ public class ApDependencies /*extends BaseTask*/ {
 
     private final DependencyJson apDependencyJson;
 
+    private final Project project;
+
     public ApDependencies(Project project, File baseApFile) {
+        this.project = project;
         this.dependencies = project.getDependencies();
 
         //获取baseAp文件
@@ -315,13 +321,13 @@ public class ApDependencies /*extends BaseTask*/ {
                 Dependency dependency = project.getDependencies().create(apDependency);
                 Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
                 configuration.setTransitive(false);
-                apBaseFile = Iterables.getOnlyElement(
-                    Collections2.filter(configuration.getFiles(), new Predicate<File>() {
-                        @Override
-                        public boolean apply(@Nullable File file) {
-                            return file.getName().endsWith(".ap");
-                        }
-                    }));
+                apBaseFile = Iterables.getOnlyElement(Collections2
+                                                          .filter(configuration.getFiles(), new Predicate<File>() {
+                                                              @Override
+                                                              public boolean apply(@Nullable File file) {
+                                                                  return file.getName().endsWith(".ap");
+                                                              }
+                                                          }));
             } else {
                 // throw new IllegalStateException("AP is missing");
             }
@@ -423,8 +429,8 @@ public class ApDependencies /*extends BaseTask*/ {
         if (row.size() == 0) {
             return false;
         }
-        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> notationEntry = Iterables.getOnlyElement(
-            row.entrySet());
+        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> notationEntry = Iterables
+            .getOnlyElement(row.entrySet());
         return !(AWB.equals(notationEntry.getValue().getArtifactType())) && !(notationEntry.getKey() == MAIN_DEX);
     }
 
@@ -444,16 +450,18 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {
-        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(
-            moduleVersion.getModule());
+        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(moduleVersion
+                                                                                                     .getModule());
         if (row.size() == 0) {
             return false;
         }
         String mainVersion = Iterables.getOnlyElement(row.entrySet()).getValue().getVersion();
 
         if (versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
-            LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping", moduleVersion.getModule(),
-                        mainVersion, moduleVersion.getVersion());
+            LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping",
+                        moduleVersion.getModule(),
+                        mainVersion,
+                        moduleVersion.getVersion());
             // LOGGER.quiet("{} apVersion({}) is larger than yourVersion({}), skipping",
             //              moduleVersion.getModule(),
             //              mainVersion,
@@ -462,6 +470,27 @@ public class ApDependencies /*extends BaseTask*/ {
         } else {
             return false;
         }
+    }
+
+    public void configureAwbDependencies(Configuration configuration) {
+        Set<ParsedModuleStringNotation> dependenciesToAdd = new HashSet<>();
+        DependencySet dependencies = configuration.getAllDependencies();
+        for (Dependency dependency : dependencies) {
+            ParsedModuleStringNotation parsedNotation = getAwb(DefaultModuleIdentifier
+                                                                   .newId(dependency.getGroup(), dependency.getName()));
+            if (parsedNotation != MAIN_DEX && !containsDependency(dependencies, parsedNotation)) {
+                dependenciesToAdd.add(parsedNotation);
+            }
+        }
+        for (ParsedModuleStringNotation dependency : dependenciesToAdd) {
+            configuration.getDependencies().add(project.getDependencies().create(
+                dependency.getGroup() + ":" + dependency.getName() + ":" + dependency.getVersion() + "@awb"));
+        }
+    }
+
+    private static boolean containsDependency(DependencySet dependencies, ParsedModuleStringNotation parsedNotation) {
+        return dependencies.stream().anyMatch(dependency -> dependency.getGroup().equals(parsedNotation.getGroup())
+            && dependency.getName().equals(parsedNotation.getName()));
     }
 
     public DependencyJson getApDependencyJson() {

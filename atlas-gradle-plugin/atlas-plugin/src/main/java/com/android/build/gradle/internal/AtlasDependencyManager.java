@@ -269,6 +269,11 @@ public class AtlasDependencyManager extends DependencyManager {
                                                       @Nullable String testedProjectPath) {
         this.apDependencies = resolveApDependencies(project, variantDeps.getName());
 
+        if (apDependencies != null) {
+            apDependencies.configureAwbDependencies(variantDeps.getCompileConfiguration());
+            apDependencies.configureAwbDependencies(variantDeps.getPackageConfiguration());
+        }
+
         atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo, this.apDependencies).parseDependencyTree(
             variantDeps);
 
