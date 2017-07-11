@@ -303,7 +303,7 @@ public class MainDexLister {
         }
 
         for (String headClass : headClasses) {
-            addRefClazz(classPool, headClass, mainDexList, handleList);
+            addRefClazz(classPool, headClass, mainDexList, handleList,"");
         }
 
         //get manifest
@@ -353,7 +353,7 @@ public class MainDexLister {
         return realClazz;
     }
 
-    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, Set<String> handleList) {
+    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, Set<String> handleList, String root) {
 
         if (handleList.contains(clazz)) {
             return;
@@ -374,7 +374,7 @@ public class MainDexLister {
 
             if (null != ctClass) {
 
-                logger.info("[MainDex] add " + clazz + " to main dex list");
+                logger.info("[MainDex] add " + clazz + " to main dex list , because of " + root);
                 classList.add(clazz);
                 handleList.add(clazz);
 
@@ -385,7 +385,7 @@ public class MainDexLister {
                 }
 
                 for (String clazz2 : references) {
-                    addRefClazz(classPool, clazz2, classList, handleList);
+                    addRefClazz(classPool, clazz2, classList, handleList , root + "->" + clazz);
                 }
             }
         } catch (Throwable e) {

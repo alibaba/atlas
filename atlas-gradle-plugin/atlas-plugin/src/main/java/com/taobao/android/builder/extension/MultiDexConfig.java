@@ -239,8 +239,7 @@ public class MultiDexConfig {
     @Config(title = "dex分隔的规则", message = "a,b;c,d", order = 2, group = "atlas")
     private String dexSplitRules;
 
-    private Set<String> mainDexWhiteList = Sets.newHashSet();
-
+    @Config(title = "不进入第一个dex的黑名单列表", message = "a", order = 2, group = "atlas")
     private Set<String> mainDexBlackList = Sets.newHashSet();
 
     public String getName() {
@@ -257,14 +256,6 @@ public class MultiDexConfig {
 
     public void setFastMultiDex(boolean fastMultiDex) {
         this.fastMultiDex = fastMultiDex;
-    }
-
-    public Set<String> getMainDexWhiteList() {
-        return mainDexWhiteList;
-    }
-
-    public void setMainDexWhiteList(Set<String> mainDexWhiteList) {
-        this.mainDexWhiteList = mainDexWhiteList;
     }
 
     public Set<String> getMainDexBlackList() {

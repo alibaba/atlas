@@ -588,7 +588,7 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
                     FileUtils.copyDirectory(variantData.mergeAssetsTask.getOutputDir(),
                                             new File(rawResDir, "assets"));
 
-                    DiffResExtractor.extractDiff(diffFiles,
+                    DiffResExtractor.extractDiff( appVariantContext, diffFiles,
                                                  currentApk,
                                                  baseApk,
                                                  rawResDir,

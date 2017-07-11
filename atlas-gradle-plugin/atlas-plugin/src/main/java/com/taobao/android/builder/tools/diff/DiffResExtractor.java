@@ -214,7 +214,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
@@ -229,6 +233,8 @@ public class DiffResExtractor {
      * assets : 直接通过比较apk
      * res : 通过diffResFiles ， 再去apk 验证
      *
+     *
+     * @param appVariantContext
      * @param diffResFiles
      * @param currentApk
      * @param baseApk
@@ -236,7 +242,8 @@ public class DiffResExtractor {
      * @param destDir
      * @throws IOException
      */
-    public static void extractDiff(Set<String> diffResFiles, File currentApk, File baseApk, File fullResDir,
+    public static void extractDiff(AppVariantContext appVariantContext,
+                                   Set<String> diffResFiles, File currentApk, File baseApk, File fullResDir,
                                    File destDir) throws IOException {
 
         if (!currentApk.exists() || !baseApk.exists() || !fullResDir.exists()) {
@@ -312,18 +319,22 @@ public class DiffResExtractor {
 
         }
 
-        //final Pattern densityOnlyPattern = Pattern.compile("[a-zA-Z]+-[a-zA-Z]+dpi");
-        //if (resDir.exists()) {
-        //    File[] resDirs = resDir.listFiles();
-        //    if (resDirs != null) {
-        //        for (File file : resDirs) {
-        //            Matcher m = densityOnlyPattern.matcher(file.getName());
-        //            if (m.matches()) {
-        //                FileUtils.moveDirectory(file, new File(file.getAbsolutePath() + "-v4"));
-        //            }
-        //        }
-        //    }
-        //}
+        //设置values.xml
+        File valuesXml = new File(resDir, "values/values.xml");
+        AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.injectTpatchValuesRes( appVariantContext, valuesXml);
+
+        final Pattern densityOnlyPattern = Pattern.compile("[a-zA-Z]+-[a-zA-Z]+dpi");
+        if (resDir.exists()) {
+            File[] resDirs = resDir.listFiles();
+            if (resDirs != null) {
+                for (File file : resDirs) {
+                    Matcher m = densityOnlyPattern.matcher(file.getName());
+                    if (m.matches()) {
+                        FileUtils.moveDirectory(file, new File(file.getAbsolutePath() + "-v4"));
+                    }
+                }
+            }
+        }
 
     }
 

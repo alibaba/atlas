@@ -209,7 +209,19 @@
 
 package com.taobao.android.builder.tools.classinject;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.alibaba.fastjson.JSON;
+
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -220,12 +232,6 @@ import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by wuzhong on 2016/12/1.
@@ -386,4 +392,11 @@ public class ApkInjectInfoCreator {
             .distinct()
             .collect(Collectors.toList());
     }
+
+
+    public void injectTpatchValuesRes(AppVariantContext appVariantContext,
+                                      File valuesXml){
+
+    }
+
 }
