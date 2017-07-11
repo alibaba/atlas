@@ -216,7 +216,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.android.builder.model.AndroidBundle;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Library;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.Lists;
@@ -388,8 +390,20 @@ public class AtlasDependencyTree {
             }
             sb.append(":").append(coordinates.getVersion());
         }
+        sb.append(" -> ").append(getLibraryFile(library));
 
         return sb.toString();
+    }
+
+    private static File getLibraryFile(Library library) {
+        if (library instanceof AndroidBundle) {
+            return ((AndroidBundle)library).getBundle();
+        } else if (library instanceof JavaLibrary) {
+            return ((JavaLibrary)library).getJarFile();
+        } else if (library instanceof SoLibrary) {
+            return ((SoLibrary)library).getSoLibFile();
+        }
+        return null;
     }
 
     // /**
@@ -420,6 +434,7 @@ public class AtlasDependencyTree {
     // }
 
     // 合并基线依赖关系
+
     private void mergeApDependencies() {
         if (apDependencies != null) {
             // 合并mainDex

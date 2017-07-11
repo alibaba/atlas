@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.TaskManager;
@@ -23,6 +25,7 @@ import com.android.builder.testing.ConnectedDevice;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceProvider;
+import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.res2.FileStatus;
@@ -43,6 +46,8 @@ import org.gradle.api.tasks.Optional;
  */
 
 abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
+    private static final long LS_TIMEOUT_SEC = 2;
+
     private static Field sDevice;
 
     private File adbExe;
@@ -73,6 +78,23 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    static boolean hasBinary(IDevice device, String path) {
+        CountDownLatch latch = new CountDownLatch(1);
+        CollectingOutputReceiver receiver = new CollectingOutputReceiver(latch);
+        try {
+            device.executeShellCommand("ls " + path, receiver, LS_TIMEOUT_SEC, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            return false;
+        }
+        try {
+            latch.await(LS_TIMEOUT_SEC, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            return false;
+        }
+        String value = receiver.getOutput().trim();
+        return !value.endsWith("No such file or directory");
     }
 
     @Override
@@ -107,7 +129,8 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
             if (successfulInstallCount == 0) {
                 throw new GradleException("Failed to install on any devices.");
             } else {
-                getLogger().quiet("Installed on {} {}.", successfulInstallCount,
+                getLogger().quiet("Installed on {} {}.",
+                                  successfulInstallCount,
                                   successfulInstallCount == 1 ? "device" : "devices");
             }
         } catch (Exception e) {
@@ -231,10 +254,10 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
             incrementalInstallVariantTask.setGroup(TaskManager.INSTALL_GROUP);
             incrementalInstallVariantTask.setProjectName(scope.getGlobalScope().getProject().getName());
             incrementalInstallVariantTask.setVariantData(scope.getVariantData());
-            incrementalInstallVariantTask.setTimeOutInMs(
-                scope.getGlobalScope().getExtension().getAdbOptions().getTimeOutInMs());
-            incrementalInstallVariantTask.setProcessExecutor(
-                scope.getGlobalScope().getAndroidBuilder().getProcessExecutor());
+            incrementalInstallVariantTask.setTimeOutInMs(scope.getGlobalScope().getExtension().getAdbOptions()
+                                                             .getTimeOutInMs());
+            incrementalInstallVariantTask.setProcessExecutor(scope.getGlobalScope().getAndroidBuilder()
+                                                                 .getProcessExecutor());
             ConventionMappingHelper.map(incrementalInstallVariantTask, "adbExe", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
@@ -243,7 +266,8 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
                 }
             });
 
-            ConventionMappingHelper.map(incrementalInstallVariantTask, "appPackageName",
+            ConventionMappingHelper.map(incrementalInstallVariantTask,
+                                        "appPackageName",
                                         variantConfiguration::getApplicationId);
             //TODO 先根据依赖判断
             ConventionMappingHelper.map(incrementalInstallVariantTask, "apkFiles", new Callable<ImmutableList<File>>() {

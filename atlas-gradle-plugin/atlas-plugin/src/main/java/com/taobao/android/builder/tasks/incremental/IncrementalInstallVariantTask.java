@@ -24,11 +24,11 @@ import org.gradle.api.tasks.ParallelizableTask;
 @ParallelizableTask
 public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariantTask {
 
-    public static final String PATCH_NAME = "/patch.zip";
+    public static final String PATCH_NAME = "patch.zip";
 
     public static final String PATCH_INSTALL_DIRECTORY_PREFIX = "/sdcard/Android/data/";
 
-    public static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "/files/debug_storage/";
+    public static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "files/debug_storage/";
 
     @Override
     protected void install(String projectName, String variantName, String appPackageName, IDevice device,
@@ -38,14 +38,21 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
         String patchInstallDirectory = getPatchInstallDirectory();
         if (apkFiles != null) {
             for (File apkFile : apkFiles) {
-                getLogger().lifecycle("Installing awb '{}' on '{}' for {}:{}", apkFile, device.getName(), projectName,
-                                      variantName);
 
-                installPatch(device, apkFile, getAwbPackageName(apkFile), patchInstallDirectory);
+                installPatch(projectName,
+                             variantName,
+                             appPackageName,
+                             device,
+                             apkFile,
+                             getAwbPackageName(apkFile),
+                             patchInstallDirectory);
             }
         }
 
-        getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", appPackageName, device.getName(), projectName,
+        getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}",
+                              appPackageName,
+                              device.getName(),
+                              projectName,
                               variantName);
         //退到后台
         device.executeShellCommand("input keyevent 3",
@@ -115,9 +122,17 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
                                    });
     }
 
-    private void installPatch(IDevice device, File patch, String name, String patchInstallDirectory)
+    private void installPatch(String projectName, String variantName, String appPackageName, IDevice device, File patch,
+                              String name, String patchInstallDirectory)
         throws TimeoutException, AdbCommandRejectedException, SyncException, IOException {
-        device.pushFile(patch.getAbsolutePath(), FileUtils.join(patchInstallDirectory, name, PATCH_NAME));
+        String remotePatchFile = FileUtils.join(patchInstallDirectory, name, PATCH_NAME);
+        getLogger().lifecycle("Installing awb '{}' on '{}' to '{}' for {}:{}",
+                              patch,
+                              device.getName(),
+                              remotePatchFile,
+                              projectName,
+                              variantName);
+        device.pushFile(patch.getAbsolutePath(), remotePatchFile);
     }
 
     private String getPatchInstallDirectory() {
