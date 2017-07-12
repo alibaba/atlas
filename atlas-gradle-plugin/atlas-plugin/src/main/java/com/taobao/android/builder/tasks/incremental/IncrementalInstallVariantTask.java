@@ -13,7 +13,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
-import com.android.utils.FileUtils;
+import com.google.common.base.Joiner;
 import org.gradle.api.tasks.ParallelizableTask;
 
 /**
@@ -125,7 +125,7 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
     private void installPatch(String projectName, String variantName, String appPackageName, IDevice device, File patch,
                               String name, String patchInstallDirectory)
         throws TimeoutException, AdbCommandRejectedException, SyncException, IOException {
-        String remotePatchFile = FileUtils.join(patchInstallDirectory, name, PATCH_NAME);
+        String remotePatchFile = Joiner.on('/').join(patchInstallDirectory, name, PATCH_NAME);
         getLogger().lifecycle("Installing awb '{}' on '{}' to '{}' for {}:{}",
                               patch,
                               device.getName(),
@@ -136,7 +136,7 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
     }
 
     private String getPatchInstallDirectory() {
-        return FileUtils.join(PATCH_INSTALL_DIRECTORY_PREFIX, getAppPackageName(), PATCH_INSTALL_DIRECTORY_SUFFIX);
+        return Joiner.on('/').join(PATCH_INSTALL_DIRECTORY_PREFIX, getAppPackageName(), PATCH_INSTALL_DIRECTORY_SUFFIX);
     }
 
     private static String getAwbPackageName(@NonNull File inputFile) {
