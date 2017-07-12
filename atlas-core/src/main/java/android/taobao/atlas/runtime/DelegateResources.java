@@ -226,6 +226,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -322,6 +323,8 @@ public class DelegateResources extends Resources {
         return result;
     }
 
+
+
     private Resources getBackupResources(final String assetsPath){
         if(TextUtils.isEmpty(assetsPath)) {
             return null;
@@ -343,7 +346,7 @@ public class DelegateResources extends Resources {
                             }
                             ApkUtils.copyInputStreamToFile(new FileInputStream(assetsPath), walkroundBackupAsset);
                         }
-                        AtlasHacks.AssetManager_addAssetPath.invoke(newAssetManager, walkroundBackupAsset);
+                        AtlasHacks.AssetManager_addAssetPath.invoke(newAssetManager, walkroundBackupAsset.getAbsolutePath());
                         res = new Resources(newAssetManager, getDisplayMetrics(), getConfiguration());
                         bundleResourceWalkRound.put(assetsPath, res);
                     }
@@ -484,7 +487,11 @@ public class DelegateResources extends Resources {
         public AssetManager updateAssetManager(AssetManager manager,String newAssetPath,int assetType)throws Exception{
             AssetManager targetManager = null;
             if(assetType == BUNDLE_RES){
-                targetManager = createNewAssetManager(manager,newAssetPath,true,assetType);
+                if(supportExpandAssetManager()){
+                    targetManager = updateAssetManagerWithAppend(manager, newAssetPath,assetType);
+                }else{
+                    targetManager = createNewAssetManager(manager,newAssetPath,true,assetType);
+                }
                 updateAssetPathList(newAssetPath,true);
             }else{
                 File newAssetsDir = new File(new File(newAssetPath).getParent(),"newAssets");
@@ -539,13 +546,60 @@ public class DelegateResources extends Resources {
         }
 
         private AssetManager updateAssetManagerWithAppend(AssetManager manager,String newAssetPath,int type) throws Exception{
-            appendAssetPath(manager, newAssetPath,false);
-            /**
-             * 追加主apk新的assets内容
-             */
-            if(type == APK_RES && sAssetsPatchDir!=null){
-                appendAssetPath(manager,sAssetsPatchDir,false);
+            synchronized (manager) {
+                if(type == APK_RES) {
+                    appendAssetPath(manager, newAssetPath, false);
+                    /**
+                     * 追加主apk新的assets内容
+                     */
+                    if (sAssetsPatchDir != null) {
+                        appendAssetPath(manager, sAssetsPatchDir, false);
+                    }
+                }else{
+                    int retryCount = 2;
+                    int cookie = 0;
+                    do {
+                        retryCount--;
+                        //1. add native path
+                        if (Build.VERSION.SDK_INT < 24) {
+                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNative.invoke(manager, newAssetPath);
+                        } else {
+                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNative.invoke(manager, newAssetPath, false);
+                        }
+                        if(cookie>0){
+                            break;
+                        }
+                    }while(retryCount>0);
+                    if(cookie>0) {
+                        //2. getSeedNum
+                        Object[] mStringBlocks = (Object[]) AtlasHacks.AssetManager_mStringBlocks.get(manager);
+                        int seedNum = mStringBlocks.length;
+
+                        //3. getStringBlockCount
+                        int num = (int) AtlasHacks.AssetManager_getStringBlockCount.invoke(manager);
+
+                        //4. init newStringBlockList
+                        Object newStringBlockList = Array.newInstance(AtlasHacks.StringBlock.getmClass(), num);
+                        for (int i = 0; i < num; i++) {
+                            if (i < seedNum) {
+                                Array.set(newStringBlockList, i, mStringBlocks[i]);
+                            } else {
+                                Array.set(newStringBlockList, i, AtlasHacks.StringBlock_constructor.getInstance(
+                                        AtlasHacks.AssetManager_getNativeStringBlock.invoke(manager, i), true
+                                ));
+                            }
+                        }
+                        //5. replace AssetManager.mStringBlocks
+                        AtlasHacks.AssetManager_mStringBlocks.set(manager, newStringBlockList);
+                    }else{
+                        sFailedAsssetPath.add(newAssetPath);
+                        Map<String, Object> detail = new HashMap<>();
+                        detail.put("appendAssetPath", newAssetPath);
+                        AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL, detail, new RuntimeException());
+                    }
+                }
             }
+
             return manager;
         }
 
@@ -643,9 +697,7 @@ public class DelegateResources extends Resources {
 
         private boolean hasCreatedAssetsManager = false;
         private synchronized boolean supportExpandAssetManager(){
-            if(Build.VERSION.SDK_INT>=24){
-                return true;
-            }else if(!hasCreatedAssetsManager || Build.VERSION.SDK_INT<=20 ||
+            if(!hasCreatedAssetsManager || Build.VERSION.SDK_INT<=20 ||
                     Build.BRAND.equalsIgnoreCase("sony") || Build.BRAND.equalsIgnoreCase("semc")){
                 hasCreatedAssetsManager = true;
                 return false;

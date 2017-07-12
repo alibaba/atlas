@@ -211,6 +211,7 @@ package android.taobao.atlas.framework;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Set;
 
 import android.app.Activity;
 import android.app.Application;
@@ -249,6 +250,7 @@ public class Atlas {
     public static String sAPKSource ;
     public static boolean Downgrade_H5 = false;
     public static boolean isDebug;
+    public static Set<String> sDisableBundle = null;
 
     private Atlas(){
     }
@@ -602,6 +604,14 @@ public class Atlas {
      */
     public void setBundleSecurityChecker(BundleVerifier checker){
         RuntimeVariables.sBundleVerifier = checker;
+    }
+
+    public static boolean isDisableBundle(String bundleName) {
+        Set<String> disableBundle = sDisableBundle;
+        if (disableBundle != null) {
+            return disableBundle.contains(bundleName);
+        }
+        return false;
     }
 
     public void forceStopSelf(){

@@ -421,10 +421,36 @@ public class BundleArchiveRevision {
         }
     }
 
+    public File mappingInternalDirectoryOld(){
+        if(externalStorage){
+            File internalLibDir = new File(RuntimeVariables.androidApplication.getFilesDir(),String.format("storage/%s/%s",location,revisionDir.getName()));
+            int retryCount = 2;
+            do{
+                if(!internalLibDir.exists()){
+                    internalLibDir.mkdirs();
+                }
+                if(internalLibDir.exists()){
+                    break;
+                }
+                retryCount--;
+            }while(retryCount>0);
+            if(!internalLibDir.exists()){
+                Log.e("BundleArchiveRevision","create internal LibDir Failed : "+location);
+            }
+            return internalLibDir;
+        }else{
+            return revisionDir;
+        }
+    }
+
     public File findSoLibrary(String libraryName){
         File file = new File(String.format("%s%s%s%s",mappingInternalDirectory(),File.separator,"lib",File.separator),libraryName);
         if(file.exists() && file.isFile() && file.length()>0){
             return file;
+        }
+        File file2 = new File(String.format("%s%s%s%s",mappingInternalDirectoryOld(),File.separator,"lib",File.separator),libraryName);
+        if(file2.exists() && file2.isFile() && file2.length()>0){
+            return file2;
         }
         if(bundleFile!=null){
             ZipFile bundleZip = null;
