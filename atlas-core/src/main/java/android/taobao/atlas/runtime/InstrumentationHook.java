@@ -239,7 +239,6 @@ import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.StringUtils;
 import android.text.TextUtils;
@@ -401,7 +400,7 @@ public class InstrumentationHook extends Instrumentation {
 		}
 
 		String bundleName = AtlasBundleInfoManager.instance().getBundleForComponet(componentName);
-		if(!TextUtils.isEmpty(bundleName)){
+		if(!TextUtils.isEmpty(bundleName) && !Atlas.isDisableBundle(bundleName)){
 			BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
 			if(impl!=null&&impl.checkValidate()) {
 				return callback.execStartActivity();
@@ -456,7 +455,6 @@ public class InstrumentationHook extends Instrumentation {
 			@Override
 			public void run() {
 				Log.e("InstrumentationHook","async startActivity");
-//				if (current == ActivityTaskMgr.getInstance().peekTopActivity() || activitySize == ActivityTaskMgr.getInstance().sizeOfActivityStack()+1) {
 					if (context instanceof Activity) {
 						callback.execStartActivity();
 						((Activity)context).overridePendingTransition(0,0);
@@ -468,8 +466,10 @@ public class InstrumentationHook extends Instrumentation {
 
 				if (dialog != null && current != null && !current.isFinishing()) {
 					try {
-						if(dialog.isShowing())
-							dialog.dismiss();
+						if(dialog.isShowing()) {
+							dialog.show();
+							ActivityTaskMgr.getInstance().sReminderDialog = dialog;
+						}
 					}catch (Throwable e){}
 				}
 			}
@@ -479,13 +479,14 @@ public class InstrumentationHook extends Instrumentation {
 			public void run() {
 				if (current == ActivityTaskMgr.getInstance().peekTopActivity()) {
 					fallBackToClassNotFoundCallback(context, intent, component);
-//					Toast.makeText(RuntimeVariables.androidApplication, "install error", Toast.LENGTH_SHORT).show();
 				}
 
 				if (dialog != null && current != null && !current.isFinishing()) {
 					try {
-						if(dialog.isShowing())
+						if(dialog.isShowing()) {
 							dialog.dismiss();
+							ActivityTaskMgr.getInstance().sReminderDialog = null;
+						}
 					}catch(Throwable e){}
 				}
 			}
