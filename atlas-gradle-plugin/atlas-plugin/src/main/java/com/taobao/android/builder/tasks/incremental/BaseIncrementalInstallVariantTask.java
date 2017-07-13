@@ -25,8 +25,11 @@ import com.android.builder.testing.ConnectedDevice;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceProvider;
+import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
+import com.android.ddmlib.TimeoutException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.res2.FileStatus;
 import com.android.utils.ILogger;
@@ -170,6 +173,25 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
     protected abstract void install(String projectName, String variantName, String appPackageName, IDevice device,
                                     Collection<File> apkFiles) throws Exception;
 
+    protected boolean runCommand(@NonNull IDevice device, @NonNull String cmd)
+        throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        String output = getCommandOutput(device, cmd).trim();
+        if (!output.isEmpty()) {
+            getILogger().warning("Unexpected shell output for " + cmd + ": " + output);
+            return false;
+        }
+        return true;
+    }
+
+    @NonNull
+    private static String getCommandOutput(@NonNull IDevice device, @NonNull String cmd)
+        throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        CollectingOutputReceiver receiver;
+        receiver = new CollectingOutputReceiver();
+        device.executeShellCommand(cmd, receiver);
+        return receiver.getOutput();
+    }
+
     @InputFile
     public File getAdbExe() {
         return adbExe;
@@ -249,8 +271,9 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
 
             final GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
 
-            incrementalInstallVariantTask.setDescription(
-                "Installs the " + scope.getVariantData().getDescription() + ".");
+            incrementalInstallVariantTask.setDescription("Installs the "
+                                                             + scope.getVariantData().getDescription()
+                                                             + ".");
             incrementalInstallVariantTask.setVariantName(scope.getVariantConfiguration().getFullName());
             incrementalInstallVariantTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             incrementalInstallVariantTask.setGroup(TaskManager.INSTALL_GROUP);
