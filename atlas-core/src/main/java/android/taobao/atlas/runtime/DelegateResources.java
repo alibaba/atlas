@@ -420,6 +420,7 @@ public class DelegateResources extends Resources {
         if(sResourcesFetcher==null){
             sResourcesFetcher = new ResourceIdFetcher();
         }
+        sResourcesFetcher.addAssetForGetIdentifier(assetPath);
     }
 
     private static ResourcesProcessor getResourceProcessor(){
