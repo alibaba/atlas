@@ -15,6 +15,7 @@ import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
 import com.android.utils.FileUtils;
+import com.google.common.base.Joiner;
 
 /**
  * Created by chenhjohn on 2017/6/21.
@@ -57,7 +58,7 @@ public class AwosInstallTask extends IncrementalInstallVariantTask {
                               String appPackageName)
         throws TimeoutException, AdbCommandRejectedException, SyncException, IOException,
                ShellCommandUnresponsiveException {
-        patchInstallDirectory = FileUtils.join(patchInstallDirectory, name);
+        patchInstallDirectory = Joiner.on('/').join(patchInstallDirectory, name);
         device.pushFile(patch.getAbsolutePath(), patchInstallDirectory);
         device.executeShellCommand(
             "am " + "broadcast " + "-a " + "com.taobao.atlas.intent.PATCH_APP " + "-e " + "pkg " + appPackageName,
@@ -84,7 +85,7 @@ public class AwosInstallTask extends IncrementalInstallVariantTask {
     }
 
     private String getPatchInstallDirectory() {
-        return FileUtils.join(PATCH_INSTALL_DIRECTORY_PREFIX, getAppPackageName(), PATCH_INSTALL_DIRECTORY_SUFFIX);
+        return Joiner.on('/').join(PATCH_INSTALL_DIRECTORY_PREFIX, getAppPackageName(), PATCH_INSTALL_DIRECTORY_SUFFIX);
     }
 
     public static class ConfigAction extends BaseIncrementalInstallVariantTask.ConfigAction<AwosInstallTask> {

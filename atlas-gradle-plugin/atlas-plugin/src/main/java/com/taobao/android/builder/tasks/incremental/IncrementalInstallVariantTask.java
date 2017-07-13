@@ -26,8 +26,6 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
 
     public static final String PATCH_NAME = "patch.zip";
 
-    public static final String PATCH_INSTALL_DIRECTORY_PREFIX = "/sdcard/Android/data/";
-
     public static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "files/debug_storage/";
 
     @Override

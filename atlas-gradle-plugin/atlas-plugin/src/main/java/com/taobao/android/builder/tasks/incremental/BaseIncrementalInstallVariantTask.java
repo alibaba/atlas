@@ -46,6 +46,8 @@ import org.gradle.api.tasks.Optional;
  */
 
 abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
+    public static final String PATCH_INSTALL_DIRECTORY_PREFIX = "/sdcard/Android/data/";
+
     private static final long LS_TIMEOUT_SEC = 2;
 
     private static Field sDevice;
