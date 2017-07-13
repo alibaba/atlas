@@ -271,12 +271,9 @@ public class BridgeApplicationDelegate {
     }
 
     public void attachBaseContext(){
-        try {
-            AtlasHacks.defineAndVerify();
-        } catch (AssertionArrayException e) {
-            throw new RuntimeException(e);
-        }
+        AtlasHacks.defineAndVerify();
         RuntimeVariables.androidApplication = mRawApplication;
+        RuntimeVariables.originalResources = mRawApplication.getResources();
         RuntimeVariables.sCurrentProcessName = mCurrentProcessname;
         RuntimeVariables.sInstalledVersionCode = mInstalledVersionCode;
         RuntimeVariables.sAppLastUpdateTime = mLastUpdateTime;

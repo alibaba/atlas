@@ -326,6 +326,8 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     public static HackedMethod                                  ActivityThread_installContentProviders;
     public static HackedMethod                                  ActivityThread_installProvider;
     public static HackedMethod                                  AssetManager_addAssetPathNative;
+    public static HackedMethod                                  AssetManager_addAssetPathNative24;
+    public static HackedMethod                                  AssetManager_addAssetPathNativeSamSung;
     public static HackedMethod                                  AssetManager_getStringBlockCount;
     public static HackedMethod                                  AssetManager_getNativeStringBlock;
 
@@ -339,7 +341,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     public static ArrayList<HackedMethod>                       GeneratePackageInfoList = new ArrayList<HackedMethod>();
     public static ArrayList<HackedMethod>                       GetPackageInfoList      = new ArrayList<HackedMethod>();
 
-    public static boolean defineAndVerify() throws AssertionArrayException {
+    public static boolean defineAndVerify(){
         if (sIsReflectChecked) return sIsReflectAvailable;
         AtlasHacks atlasHacks = new AtlasHacks();
         try {
@@ -361,7 +363,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
             }
         } catch (HackAssertionException e) {
             sIsReflectAvailable = false;
-            throw atlasHacks.mExceptionArray;
+            e.printStackTrace();
         } finally {
             Hack.setAssertionFailureHandler(null);
             sIsReflectChecked = true;
@@ -505,9 +507,15 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
                     ProviderInfo.class, boolean.class, boolean.class, boolean.class);
         }
         Service_attach = Service.method("attach",Context.class,ActivityThread.getmClass(),String.class,IBinder.class,Application.getmClass(),Object.class);
-        AssetManager_addAssetPathNative = Build.VERSION.SDK_INT < 24
-                ?AssetManager.method("addAssetPathNative",String.class)
-                :AssetManager.method("addAssetPathNative",String.class,boolean.class);
+
+        AssetManager_addAssetPathNative = AssetManager.method("addAssetPathNative", String.class);
+        if(AssetManager_addAssetPathNative==null || AssetManager_addAssetPathNative.getMethod()==null) {
+            AssetManager_addAssetPathNative24 = AssetManager.method("addAssetPathNative", String.class, boolean.class);
+        }
+        if((AssetManager_addAssetPathNative==null || AssetManager_addAssetPathNative.getMethod()==null) &&
+                (AssetManager_addAssetPathNative24==null || AssetManager_addAssetPathNative24.getMethod()==null)){
+            AssetManager_addAssetPathNativeSamSung = AssetManager.method("addAssetPathNative", String.class, int.class);
+        }
         AssetManager_getStringBlockCount=AssetManager.method("getStringBlockCount");
         AssetManager_getNativeStringBlock = AssetManager.method("getNativeStringBlock",int.class);
 

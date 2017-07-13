@@ -467,7 +467,7 @@ public class InstrumentationHook extends Instrumentation {
 				if (dialog != null && current != null && !current.isFinishing()) {
 					try {
 						if(dialog.isShowing()) {
-							dialog.show();
+							dialog.dismiss();
 							ActivityTaskMgr.getInstance().sReminderDialog = dialog;
 						}
 					}catch (Throwable e){}

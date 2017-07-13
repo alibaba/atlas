@@ -323,8 +323,6 @@ public class DelegateResources extends Resources {
         return result;
     }
 
-
-
     private Resources getBackupResources(final String assetsPath){
         if(TextUtils.isEmpty(assetsPath)) {
             return null;
@@ -422,7 +420,6 @@ public class DelegateResources extends Resources {
         if(sResourcesFetcher==null){
             sResourcesFetcher = new ResourceIdFetcher();
         }
-        sResourcesFetcher.addAssetForGetIdentifier(assetPath);
     }
 
     private static ResourcesProcessor getResourceProcessor(){
@@ -488,9 +485,15 @@ public class DelegateResources extends Resources {
             AssetManager targetManager = null;
             if(assetType == BUNDLE_RES){
                 if(supportExpandAssetManager()){
-                    targetManager = updateAssetManagerWithAppend(manager, newAssetPath,assetType);
+                    try {
+                        targetManager = updateAssetManagerWithAppend(manager, newAssetPath, BUNDLE_RES);
+                    }catch(Throwable e){
+                        e.printStackTrace();
+                        Log.e("DelegateResources","walkround to createNewAssetmanager");
+                        targetManager = createNewAssetManager(manager,newAssetPath,true,BUNDLE_RES);
+                    }
                 }else{
-                    targetManager = createNewAssetManager(manager,newAssetPath,true,assetType);
+                    targetManager = createNewAssetManager(manager,newAssetPath,true,BUNDLE_RES);
                 }
                 updateAssetPathList(newAssetPath,true);
             }else{
@@ -561,10 +564,14 @@ public class DelegateResources extends Resources {
                     do {
                         retryCount--;
                         //1. add native path
-                        if (Build.VERSION.SDK_INT < 24) {
+                        if (AtlasHacks.AssetManager_addAssetPathNative!=null && AtlasHacks.AssetManager_addAssetPathNative.getMethod()!=null) {
                             cookie = (int)AtlasHacks.AssetManager_addAssetPathNative.invoke(manager, newAssetPath);
-                        } else {
-                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNative.invoke(manager, newAssetPath, false);
+                        } else if(AtlasHacks.AssetManager_addAssetPathNative24!=null && AtlasHacks.AssetManager_addAssetPathNative24.getMethod()!=null){
+                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNative24.invoke(manager, newAssetPath, false);
+                        } else if(AtlasHacks.AssetManager_addAssetPathNativeSamSung!=null && AtlasHacks.AssetManager_addAssetPathNativeSamSung.getMethod()!=null){
+                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNativeSamSung.invoke(manager, newAssetPath, 0);
+                        } else{
+                            throw new RuntimeException("no valid addassetpathnative method");
                         }
                         if(cookie>0){
                             break;
@@ -703,6 +710,15 @@ public class DelegateResources extends Resources {
                 return false;
             }else{
                 return true;
+            }
+        }
+
+        private boolean supportAddAssetPathNative(){
+            if(AtlasHacks.AssetManager_addAssetPathNative!=null || AtlasHacks.AssetManager_addAssetPathNative24!=null
+                    || AtlasHacks.AssetManager_addAssetPathNativeSamSung!=null){
+                return true;
+            }else{
+                return false;
             }
         }
 

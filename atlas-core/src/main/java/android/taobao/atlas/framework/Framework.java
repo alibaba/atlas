@@ -501,7 +501,8 @@ public final class Framework {
             File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
             if(externalStorages!=null && externalStorages.length>0){
                 for(File tmpDir : externalStorages){
-                    if(tmpDir!=null && new File(tmpDir,location+File.separator+bundleUniqueTag).exists() && getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED)) {
+                    if(tmpDir!=null && new File(tmpDir,location+File.separator+bundleUniqueTag).exists() &&
+                            getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED)) {
                         bundleDir = new File(tmpDir,location);
                         break;
                     }

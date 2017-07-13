@@ -249,15 +249,6 @@ public class ApkUtils {
         }catch(Throwable e){e.printStackTrace();}
     }
 
-    private static boolean assertAtlasHacks() {
-        try {
-            return AtlasHacks.defineAndVerify();
-        } catch (AssertionArrayException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     public static final String[] getApkPublicKey(String apkPath) {
     	JarFile jarFile = null;
         try {
