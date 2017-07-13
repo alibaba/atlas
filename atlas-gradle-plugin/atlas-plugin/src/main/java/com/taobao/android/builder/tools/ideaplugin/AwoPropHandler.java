@@ -211,6 +211,7 @@ package com.taobao.android.builder.tools.ideaplugin;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -227,19 +228,23 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
  */
 public class AwoPropHandler {
 
-    public static final String PROP_AWO = "awoprop";
+    private static final String PROPERTY_PROPERTIES_FILE_AWO = "awoconfig.properties";
 
-    public static final String MTL_URL = "mtl_url";
+    private static final String PROP_AWO = "awoprop";
 
-    public static final String AP_PATH = "ap_path";
+    private static final String MTL_URL = "mtl_url";
 
-    public static final String REFRESH_AP = "refreshAp";
+    private static final String AP_PATH = "ap_path";
 
-    public static final String SUPPORT_DYN = "support_dyn";
+    private static final String REFRESH_AP = "refreshAp";
 
-    public static final String SUPPORT_APK = "support_apk";
+    private static final String SUPPORT_DYN = "support_dyn";
+
+    private static final String SUPPORT_APK = "support_apk";
 
     private final Project project;
+
+    private final File propfile;
 
     private String apPath;
 
@@ -247,16 +252,19 @@ public class AwoPropHandler {
 
     private String mtlUrl;
 
-    private final String awoProp;
-
     public AwoPropHandler(Project project) {
         this.project = project;
 
-        awoProp = EnvHelper.getEnv(PROP_AWO);
+        String awoProp = EnvHelper.getEnv(PROP_AWO);
         if (!StringUtils.isEmpty(awoProp)) {
+            propfile = new File(awoProp);
+        } else {
+            propfile = project.file(PROPERTY_PROPERTIES_FILE_AWO);
+        }
+        if (propfile.exists()) {
             Properties properties = new Properties();
             try {
-                properties.load(new FileInputStream(awoProp));
+                properties.load(new FileInputStream(propfile));
             } catch (IOException ex) {
                 throw new RuntimeException(awoProp + ": trouble reading", ex);
             }
@@ -264,7 +272,8 @@ public class AwoPropHandler {
             apPath = properties.getProperty(AP_PATH);
             refreshAp = "true".equals(properties.getProperty(REFRESH_AP));
             mtlUrl = properties.getProperty(MTL_URL);
-        } else if (project.hasProperty(MTL_URL)) {
+        }
+        if (project.hasProperty(MTL_URL)) {
             mtlUrl = (String)project.property(MTL_URL);
             if (project.hasProperty(REFRESH_AP)) {
                 refreshAp = "true".equals(project.property(REFRESH_AP));
@@ -278,21 +287,23 @@ public class AwoPropHandler {
         }
 
         // TODO 不强制刷新
-        // if (!refreshAp && StringUtils.isNotEmpty(apPath) && new File(apPath).exists()) {
-        //     //not need download
-        //     System.out.println("[awo] ap file exist");
-        // }
+        if (!refreshAp && StringUtils.isNotEmpty(apPath) && new File(apPath).exists()) {
+            //not need download
+            System.out.println("[awo] ap file exist");
+        }
 
         apPath = new ApDownloader(project).downloadAP(mtlUrl, getAwoDir()).getAbsolutePath();
-        // Properties properties = new Properties();
-        // properties.setProperty(AP_PATH, apPath);
-        // properties.store(new FileOutputStream(propfile), "update path");
+        Properties properties = new Properties();
+        properties.setProperty(MTL_URL, mtlUrl);
+        properties.setProperty(AP_PATH, apPath);
+        properties.setProperty(REFRESH_AP, String.valueOf(refreshAp));
+        properties.store(new FileOutputStream(propfile), "update path");
 
         buildType.setBaseApFile(new File(apPath));
 
         bundleConfig.setAwoBuildEnabled(true);
-        // bundleConfig.setAwoDynDeploy("true".equals(properties.getProperty(SUPPORT_DYN, "true")));
-        // bundleConfig.setAwoApkBuild("true".equals(properties.getProperty(SUPPORT_APK, "true")));
+        bundleConfig.setAwoDynDeploy("true".equals(properties.getProperty(SUPPORT_DYN, "true")));
+        bundleConfig.setAwoApkBuild("true".equals(properties.getProperty(SUPPORT_APK, "true")));
     }
 
     private File getAwoDir() {

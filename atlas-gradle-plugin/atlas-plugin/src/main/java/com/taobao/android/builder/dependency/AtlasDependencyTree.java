@@ -346,6 +346,10 @@ public class AtlasDependencyTree {
         return soLibraries;
     }
 
+    public Set<String> getFlatDependencies() {
+        return getDependencyJson().getFlatDependencies();
+    }
+
     /**
      * 转换为ependencyJSon对象
      *
