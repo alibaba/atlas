@@ -53,33 +53,10 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
                               projectName,
                               variantName);
         //退到后台
-        device.executeShellCommand("input keyevent 3",
-                                   //
-                                   //$NON-NLS-1$
-                                   new MultiLineReceiver() {
-                                       @Override
-                                       public void processNewLines(String[] lines) {
-                                       }
-
-                                       @Override
-                                       public boolean isCancelled() {
-                                           return false;
-                                       }
-                                   });
+        runCommand(device, "input keyevent 3");
 
         //杀死进程
-        device.executeShellCommand("am " + "force-stop " + appPackageName,
-                                   //$NON-NLS-1$
-                                   new MultiLineReceiver() {
-                                       @Override
-                                       public void processNewLines(String[] lines) {
-                                       }
-
-                                       @Override
-                                       public boolean isCancelled() {
-                                           return false;
-                                       }
-                                   });
+        runCommand(device, "am force-stop " + appPackageName);
             /*device.executeShellCommand("am " + "kill " + appPackageName,
                                        //$NON-NLS-1$
                                        new MultiLineReceiver() {
