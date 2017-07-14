@@ -330,7 +330,7 @@ public class DiffResExtractor {
                 for (File file : resDirs) {
                     Matcher m = densityOnlyPattern.matcher(file.getName());
                     if (m.matches()) {
-                        FileUtils.moveDirectory(file, new File(file.getAbsolutePath() + "-v4"));
+                        FileUtils.moveDirectory(file, new File(file.getAbsolutePath() + "-v3"));
                     }
                 }
             }
