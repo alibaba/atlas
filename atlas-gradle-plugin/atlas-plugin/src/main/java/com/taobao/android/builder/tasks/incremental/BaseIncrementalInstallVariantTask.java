@@ -44,6 +44,8 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 
+import static com.android.build.gradle.internal.api.AppVariantOutputContext.MAINDEX_FILE_NAME;
+
 /**
  * Created by chenhjohn on 2017/6/21.
  */
@@ -153,7 +155,7 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
             switch (status) {
                 case NEW:
                 case CHANGED:
-                    if ("libcom_taobao_maindex.so".equals(file.getName())) {
+                    if (MAINDEX_FILE_NAME.equals(file.getName())) {
                         maindexFile = file;
                     } else {
                         builder.add(file);

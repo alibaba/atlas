@@ -244,9 +244,11 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
  */
 public class AppVariantOutputContext {
 
+    public static final String MAINDEX_FILE_NAME = "libcom_taobao_maindex.so";
+
     private final String name;
 
-    final AppVariantContext variantContext;
+    private final AppVariantContext variantContext;
 
     private final VariantOutputScope outputScope;
 
@@ -308,7 +310,10 @@ public class AppVariantOutputContext {
 
     public File getAwbProcessResourcePackageOutputFile(AwbBundle awbBundle) {
         return new File(outputScope.getGlobalScope().getIntermediatesDir(),
-                        "res/" + awbBundle.getName() + "/resources-" + outputScope.getVariantOutputData().getBaseName()
+                        "res/"
+                            + awbBundle.getName()
+                            + "/resources-"
+                            + outputScope.getVariantOutputData().getBaseName()
                             + ".ap_");
     }
 
@@ -336,8 +341,8 @@ public class AppVariantOutputContext {
     public synchronized Map<String, AwbTransform> getAwbTransformMap() {
         //TODO
         if (awbTransformMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                variantContext.getVariantName());
+            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantContext
+                                                                                                  .getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 //生成AwbTransform对象
                 AwbTransform awbTransform = new AwbTransform(awbBundle);
@@ -353,12 +358,13 @@ public class AppVariantOutputContext {
 
     public Map<String, VariantScope> getAwbVariantScopeMap() {
         if (awbVariantScopeMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                variantContext.getVariantName());
+            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantContext
+                                                                                                  .getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 VariantScopeImpl scope = new AwbVariantScopeImpl(outputScope.getVariantScope().getGlobalScope(),
                                                                  getAwbTransformManagerMap().get(awbBundle.getName()),
-                                                                 variantData, awbBundle);
+                                                                 variantData,
+                                                                 awbBundle);
 
                 awbVariantScopeMap.put(awbBundle.getName(), scope);
             }
@@ -369,8 +375,8 @@ public class AppVariantOutputContext {
     //生成Awb TransformManager防止冲突
     public Map<String, TransformManager> getAwbTransformManagerMap() {
         if (awbTransformManagerMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                variantContext.getVariantName());
+            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantContext
+                                                                                                  .getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 TransformManager transformManager = new TransformManager(new AndroidTaskRegistry(),
                                                                          outputScope.getVariantScope().getGlobalScope()
@@ -418,7 +424,9 @@ public class AppVariantOutputContext {
         File outFolder = outputScope.getGlobalScope().getOutputsDir();
         String awbOutputName = awbBundle.getAwbSoName();
         File file = new File(outFolder,
-                             "remote-bundles-" + variantData.getVariantConfiguration().getDirName() + File.separator
+                             "remote-bundles-"
+                                 + variantData.getVariantConfiguration().getDirName()
+                                 + File.separator
                                  + awbOutputName);
         file.getParentFile().mkdirs();
         awbBundle.outputBundleFile = file;
@@ -431,13 +439,18 @@ public class AppVariantOutputContext {
     }
 
     public File getPatchApkOutputFile() {
-        return new File(outputScope.getGlobalScope().getApkLocation(), "libcom_taobao_maindex.so");
+        return new File(outputScope.getGlobalScope().getApkLocation(), MAINDEX_FILE_NAME);
     }
 
     public File getApkOutputFile(boolean checkExist) {
-        File file = outputScope.getGlobalScope().getProject().file(
-            outputScope.getGlobalScope().getApkLocation() + "/" + outputScope.getGlobalScope().getProjectBaseName()
-                + "-" + outputScope.getVariantOutputData().getBaseName() + ".apk");
+        File file = outputScope.getGlobalScope().getProject().file(outputScope.getGlobalScope().getApkLocation()
+                                                                       + "/"
+                                                                       + outputScope.getGlobalScope()
+            .getProjectBaseName()
+                                                                       + "-"
+                                                                       + outputScope.getVariantOutputData()
+            .getBaseName()
+                                                                       + ".apk");
 
         if (checkExist && !file.exists()) {
             file = outputScope.getFinalPackage();
@@ -457,9 +470,11 @@ public class AppVariantOutputContext {
     }
 
     public File getMappingTxt() {
-        File proguardOut = new File(
-            String.valueOf(variantData.getScope().getGlobalScope().getBuildDir()) + "/" + FD_OUTPUTS + "/mapping/"
-                + variantData.getScope().getVariantConfiguration().getDirName());
+        File proguardOut = new File(String.valueOf(variantData.getScope().getGlobalScope().getBuildDir())
+                                        + "/"
+                                        + FD_OUTPUTS
+                                        + "/mapping/"
+                                        + variantData.getScope().getVariantConfiguration().getDirName());
         return new File(proguardOut, "mapping.txt");
     }
 
