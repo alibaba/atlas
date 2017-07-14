@@ -5,6 +5,14 @@ def apVersion = getEnvValue("apVersion", "");
 apply plugin: 'com.android.application'
 apply plugin: 'com.taobao.atlas'
 
+//通过增加判断逻辑，打出不同类型的定制包
+def appId = "com.taobao.demo"
+def minVersion = 14
+if (project.hasProperty("beta")) {
+	appId = "com.taobao.atlas.beta"
+	minVersion = 21
+}
+
 repositories {
     mavenLocal()
     jcenter()
@@ -14,12 +22,18 @@ android {
     compileSdkVersion 25
     buildToolsVersion '25.0.0'
     defaultConfig {
-        applicationId "com.taobao.demo"
-        minSdkVersion 14
+        applicationId appId
+        minSdkVersion minVersion
         targetSdkVersion 25
         versionCode 1
         versionName version
         vectorDrawables.useSupportLibrary = true
+        //通过增加判断逻辑，打出不同类型的定制包
+        if (project.hasProperty("beta")) {
+            buildConfigField "boolean", "API_ENV", "false"
+        }else{
+        	buildConfigField "boolean", "API_ENV", "false"
+        }
     }
 
 
@@ -37,6 +51,7 @@ android {
             ndk {
                 abiFilters "x86","armeabi"
             }
+            
         }
     }
 
