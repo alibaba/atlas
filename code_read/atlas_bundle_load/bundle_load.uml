@@ -1,0 +1,32 @@
+@startuml
+autonumber
+
+-> ActivityGroupDelegate : startChildActivity
+ActivityGroupDelegate -> ActivityGroupDelegate : execStartChild\nActivityInternal
+ActivityGroupDelegate -> ActivityGroupDelegate : asyncStartActivity
+
+ActivityGroupDelegate -> BundleUtil : checkBundleArray\nStateAsync
+
+BundleUtil -> BundleInstaller : installTransitively\nAsync
+BundleInstaller -> BundleInstaller : installBundleInternal
+BundleInstaller -> BundleInstaller : deliveryTask
+BundleInstaller --> BundleInstaller : call
+
+BundleInstaller --> Framework : installNewBundle
+
+Framework --> BundleImpl : new
+BundleImpl --> BundleImpl : resolveBundle 
+
+BundleImpl --> BundleClassLoader : new 
+BundleImpl --> BundleLifecycleHandler : loaded
+BundleLifecycleHandler --> DelegateResources : addBundleResources
+
+Framework --> BundleImpl : optDexFile
+
+BundleInstaller -> BundleImpl : startBundle
+BundleImpl -> BundleLifecycleHandler : started
+BundleLifecycleHandler -> Application : attach
+BundleLifecycleHandler -> Application : onCreate
+
+
+@enduml
