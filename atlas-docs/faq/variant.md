@@ -24,34 +24,39 @@ google插件对应的文档地址： https://developer.android.com/studio/build/
 
 因为build.gradle 里可以写很多的逻辑，所以配置也可以变的很灵活。 我们一般的做法就是通过打包参数来控制不同的参数值， 具体的demo可以看下下面的介绍，至于具体的其他实现，大家也可以自行扩展
 
-	//通过增加判断逻辑，打出不同类型的定制包
-	def appId = "com.taobao.demo"
-	def minVersion = 14
-	if (project.hasProperty("beta")) {
-		appId = "com.taobao.atlas.beta"
-		minVersion = 21
-	}
+
+#### 大致步骤
+
+1. 在build.gradle里定义一些基础的变量，比如：
+
+		//通过增加判断逻辑，打出不同类型的定制包
+		def appId = "com.taobao.demo"
+		def minVersion = 14
 	
-	repositories {
-	    mavenLocal()
-	    jcenter()
-	}
 	
-	android {
-	    compileSdkVersion 25
-	    buildToolsVersion '25.0.0'
-	    defaultConfig {
-	        applicationId appId
-	        minSdkVersion minVersion
-	        targetSdkVersion 25
-	        versionCode 1
-	        versionName version
-	        vectorDrawables.useSupportLibrary = true
-	        //通过增加判断逻辑，打出不同类型的定制包
-	        if (project.hasProperty("beta")) {
-	            buildConfigField "boolean", "API_ENV", "false"
-	        }else{
-	        	buildConfigField "boolean", "API_ENV", "false"
-	        }
-	    }
+2. 增加一层逻辑控制根据不同的参数来修改之前定义变量的值 ， 这样如果我们打包加了 -Pbeta, 就会使用新的值了
+
 	
+		if (project.hasProperty("beta")) {
+			appId = "com.taobao.atlas.beta"
+			minVersion = 21
+		}
+	
+3. 或者直接在配置的地方加上判断逻辑，使用特殊的配置
+	
+	
+		android {
+		    defaultConfig {
+		        //通过增加判断逻辑，打出不同类型的定制包
+		        if (project.hasProperty("beta")) {
+		            buildConfigField "boolean", "API_ENV", "false"
+		        }else{
+		        	buildConfigField "boolean", "API_ENV", "false"
+		        }
+		    }
+	
+4. 以上build.gradle 里的配置基本完成。 后续如果要打特殊包就可以通过修改配置的构建参数来控制打具体的包了，如：
+
+		   ./gradlew clean assembleDebug :  构建标准包
+		   ./gradlew clean assembleDebug -Pbeta ： 构建特殊包
+
