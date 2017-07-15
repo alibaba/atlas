@@ -18,9 +18,10 @@
 * FAQ
     * [问答](faq/question.md)
     * [故障排查](faq/help.md)
+    * [构建定制包](faq/variant.md)
 * 源码分析
     * [Atlas之Gradle配置](code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.md)
-    * [Atlas之启动过程(一)](code_read/atlas_start/atlas_start_1.md)
-    * [Atlas之启动过程(二)](code_read/atlas_start/atlas_start_2.md)
+    * [Atlas之启动过程\(一\)](code_read/atlas_start/atlas_start_1.md)
+    * [Atlas之启动过程\(二\)](code_read/atlas_start/atlas_start_2.md)
     * [Atlas之Bundle加载过程](code_read/atlas_bundle_load/atlas_bundle_load.md)
 

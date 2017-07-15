@@ -229,6 +229,8 @@ public class RuntimeVariables implements Serializable{
 
     public static Resources           delegateResources;
 
+    public static Resources           originalResources;
+
     public static String              sRealApplicationName;
 
     public static String              sCurrentProcessName;

@@ -494,13 +494,15 @@ public final class Framework {
         File bundleDir = null;
         File dexPatchDir = null;
 
-        if(new File(STORAGE_LOCATION,location+File.separator+bundleUniqueTag).exists()){
+        File internalTmpDir = new File(STORAGE_LOCATION,location+File.separator+bundleUniqueTag);
+        if(internalTmpDir.exists() && new File(internalTmpDir,"meta").exists()){
             bundleDir = new File(STORAGE_LOCATION,location);
         }else{
             File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
             if(externalStorages!=null && externalStorages.length>0){
                 for(File tmpDir : externalStorages){
-                    if(tmpDir!=null && getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+bundleUniqueTag).exists()) {
+                    if(tmpDir!=null && new File(tmpDir,location+File.separator+bundleUniqueTag).exists() &&
+                            getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED)) {
                         bundleDir = new File(tmpDir,location);
                         break;
                     }
@@ -780,7 +782,8 @@ public final class Framework {
 
     public static File getInstalledBundle(String location,String bundleUniqueId) {
         File bundleDir = null;
-        if(new File(STORAGE_LOCATION,location+File.separator+bundleUniqueId).exists()){
+        File internalBundleStorage = new File(STORAGE_LOCATION,location+File.separator+bundleUniqueId);
+        if(internalBundleStorage.exists() && (isKernalBundle(location) || new File(internalBundleStorage,"meta").exists())){
             bundleDir = new File(STORAGE_LOCATION,location);
             File file = getInstalledBundleInternal(location,bundleUniqueId,bundleDir);
             if(file!=null){

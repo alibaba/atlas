@@ -287,7 +287,7 @@ public class NativeLibReleaser {
 
     private static File mappingInternalDirectory(File revisionDir){
         if(!revisionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())){
-            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(),String.format("storage/com.taobao.maindex/%s",revisionDir.getName()));
+            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(),String.format("storage/com.taobao.maindex_internal/%s",revisionDir.getName()));
             int retryCount = 2;
             do{
                 if(!internalLibDir.exists()){
