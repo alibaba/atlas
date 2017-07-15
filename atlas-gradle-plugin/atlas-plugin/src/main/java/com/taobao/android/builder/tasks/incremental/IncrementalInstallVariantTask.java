@@ -8,9 +8,11 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.testing.api.DeviceException;
 import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.MultiLineReceiver;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
 import com.google.common.base.Joiner;
@@ -24,9 +26,9 @@ import org.gradle.api.tasks.ParallelizableTask;
 @ParallelizableTask
 public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariantTask {
 
-    public static final String PATCH_NAME = "patch.zip";
+    private static final String PATCH_NAME = "patch.zip";
 
-    public static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "files/debug_storage/";
+    private static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "files/debug_storage/";
 
     @Override
     protected void install(String projectName, String variantName, String appPackageName, IDevice device,
@@ -52,6 +54,12 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
                               device.getName(),
                               projectName,
                               variantName);
+        restartApp(device, appPackageName);
+    }
+
+    void restartApp(IDevice device, String appPackageName)
+        throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException,
+               DeviceException {
         //退到后台
         runCommand(device, "input keyevent 3");
 
@@ -82,19 +90,20 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
                         return false;
                     }
                 });*/
-        //启动
-        device.executeShellCommand("monkey " + "-p " + appPackageName + " -c android.intent.category.LAUNCHER 1",
-                                   //$NON-NLS-1$
-                                   new MultiLineReceiver() {
-                                       @Override
-                                       public void processNewLines(String[] lines) {
-                                       }
+        startApp(device, appPackageName);
+    }
 
-                                       @Override
-                                       public boolean isCancelled() {
-                                           return false;
-                                       }
-                                   });
+    void startApp(IDevice device, String appPackageName)
+        throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException,
+               DeviceException {
+        //启动
+        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+        String cmd = "monkey " + "-p " + appPackageName + " -c android.intent.category.LAUNCHER 1";
+        device.executeShellCommand(cmd, receiver);
+        String output = receiver.getOutput();
+        if (output.contains("monkey aborted")) {
+            throw new DeviceException("Unexpected shell output for " + cmd + ": " + output);
+        }
     }
 
     private void installPatch(String projectName, String variantName, String appPackageName, IDevice device, File patch,

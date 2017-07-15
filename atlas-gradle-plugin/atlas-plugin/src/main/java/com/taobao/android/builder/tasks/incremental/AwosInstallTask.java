@@ -10,11 +10,10 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.MultiLineReceiver;
+import com.android.ddmlib.NullOutputReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
-import com.android.utils.FileUtils;
 import com.google.common.base.Joiner;
 
 /**
@@ -22,7 +21,7 @@ import com.google.common.base.Joiner;
  */
 
 public class AwosInstallTask extends IncrementalInstallVariantTask {
-    public static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "/files/atlas-debug/";
+    private static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "/files/atlas-debug/";
 
     @Override
     protected void install(String projectName, String variantName, String appPackageName, IDevice device,
@@ -39,18 +38,7 @@ public class AwosInstallTask extends IncrementalInstallVariantTask {
                 installPatch(device, apkFile, apkFile.getName(), patchInstallDirectory, getAppPackageName());
             }
             //启动
-            device.executeShellCommand("monkey " + "-p " + appPackageName + " -c android.intent.category.LAUNCHER 1",
-                                       //$NON-NLS-1$
-                                       new MultiLineReceiver() {
-                                           @Override
-                                           public void processNewLines(String[] lines) {
-                                           }
-
-                                           @Override
-                                           public boolean isCancelled() {
-                                               return false;
-                                           }
-                                       });
+            startApp(device, appPackageName);
         }
     }
 
@@ -60,19 +48,8 @@ public class AwosInstallTask extends IncrementalInstallVariantTask {
                ShellCommandUnresponsiveException {
         patchInstallDirectory = Joiner.on('/').join(patchInstallDirectory, name);
         device.pushFile(patch.getAbsolutePath(), patchInstallDirectory);
-        device.executeShellCommand(
-            "am " + "broadcast " + "-a " + "com.taobao.atlas.intent.PATCH_APP " + "-e " + "pkg " + appPackageName,
-            //$NON-NLS-1$
-            new MultiLineReceiver() {
-                @Override
-                public void processNewLines(String[] lines) {
-                }
-
-                @Override
-                public boolean isCancelled() {
-                    return false;
-                }
-            });
+        device.executeShellCommand("am broadcast -a com.taobao.atlas.intent.PATCH_APP -e pkg " + appPackageName,
+                                   new NullOutputReceiver());
         //循环监听
         int sleepTime = 1000;
         while (hasBinary(device, patchInstallDirectory)) {
