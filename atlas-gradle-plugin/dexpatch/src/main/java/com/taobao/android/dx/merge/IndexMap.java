@@ -16,38 +16,14 @@
 
 package com.taobao.android.dx.merge;
 
-import com.taobao.android.dex.Annotation;
-import com.taobao.android.dex.util.ByteOutput;
-import com.taobao.android.dex.ClassDef;
-import com.taobao.android.dex.Dex;
-import com.taobao.android.dex.DexException;
-import com.taobao.android.dex.EncodedValue;
+import com.taobao.android.dex.*;
 import com.taobao.android.dex.EncodedValueReader;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_ANNOTATION;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_ARRAY;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_BOOLEAN;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_BYTE;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_CHAR;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_DOUBLE;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_ENUM;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_FIELD;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_FLOAT;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_INT;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_LONG;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_METHOD;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_NULL;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_SHORT;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_STRING;
-import static com.taobao.android.dex.EncodedValueReader.ENCODED_TYPE;
-import com.taobao.android.dex.EncodedValueCodec;
-import com.taobao.android.dex.FieldId;
-import com.taobao.android.dex.Leb128;
-import com.taobao.android.dex.MethodId;
-import com.taobao.android.dex.ProtoId;
-import com.taobao.android.dex.TableOfContents;
-import com.taobao.android.dex.TypeList;
+import com.taobao.android.dex.util.ByteOutput;
 import com.taobao.android.dx.util.ByteArrayAnnotatedOutput;
+
 import java.util.HashMap;
+
+import static com.taobao.android.dex.EncodedValueReader.*;
 
 /**
  * Maps the index offsets from one dex file to those in another. For example, if

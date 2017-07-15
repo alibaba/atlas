@@ -23,7 +23,7 @@ import com.taobao.android.dx.io.Opcodes;
 import com.taobao.android.dx.io.instructions.DecodedInstruction;
 import com.taobao.android.dx.io.instructions.ShortArrayCodeOutput;
 
-final class InstructionTransformer {
+public final class InstructionTransformer {
     private final CodeReader reader;
 
     private DecodedInstruction[] mappedInstructions;
