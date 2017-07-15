@@ -229,6 +229,7 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.output.DependencyJson;
@@ -237,13 +238,16 @@ import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.guide.AtlasExtensionOutput;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
+import org.gradle.api.Project;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 /**
  * 记录构建的依赖信息，便于排查分析
  */
+@ParallelizableTask
 public class LogDependenciesTask extends BaseTask {
 
     private AppVariantOutputContext.AppBuildInfo appBuildInfo;
@@ -255,6 +259,18 @@ public class LogDependenciesTask extends BaseTask {
     private List<URL> urls;
 
     private List<String> buildInfos;
+
+    private File dependencyTreeFile;
+
+    private File dependenciesFile;
+
+    private File versionPropertiesFile;
+
+    private File buildInfoFile;
+
+    private File pluginDependenciesFile;
+
+    private File atlasConfigFile;
 
     @Input
     public DependencyJson getDependencyJson() {
@@ -284,87 +300,31 @@ public class LogDependenciesTask extends BaseTask {
     }
 
     @TaskAction
-    void generate() {
+    public void generate() throws IOException {
         AtlasBuildContext.appVariantContext = appVariantContext;
-        File treeFile = new File(getProject().getBuildDir(), "outputs/dependencyTree-" + getVariantName() + ".json");
-        File dependenciesFile = getDependenciesFile();
-        File versionProperties = getVersionPropertiesFile();
-        File buildInfo = getBuildInfoFile();
-        File pluginDependencies = getPluginDependencies();
+
+        writeDependencyInfo();
+        writePluginDependenciesInfo();
+        writeVersionPropertiesInfo();
+
+        writeConflictDependenciesInfo();
+
+        writeBuildInfo();
+        writeAtlasConfigInfo();
+    }
+
+    private void writeAtlasConfigInfo() throws IOException {
         File atlasConfig = getAtlasConfigFile();
+        Files.createParentDirs(atlasConfig);
+        FileUtils.write(atlasConfig,
+                        JSON.toJSONString(new AtlasExtensionOutput(appVariantContext.getAtlasExtension(),
+                                                                   appVariantContext.getBuildType().getName()), true));
+    }
 
-        appBuildInfo.setDependencyTreeFile(treeFile);
-        appBuildInfo.setDependenciesFile(dependenciesFile);
-        appBuildInfo.setVersionPropertiesFile(versionProperties);
-        appBuildInfo.setBuildInfoFile(buildInfo);
-
-        treeFile.delete();
-        dependenciesFile.delete();
-        versionProperties.delete();
-        buildInfo.delete();
-
-        treeFile.getParentFile().mkdirs();
-
-        DependencyJson dependencyJson = getDependencyJson();
-        try {
-            Collections.sort(dependencyJson.getMainDex());
-
-            FileUtils.write(treeFile, JSON.toJSONString(dependencyJson, true));
-
-            //add to ap
-            appBuildInfo.getOtherFilesMap().put("awo/dependencyTree.json", treeFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        //输出运行时的插件依赖列表
-        try {
-            //ClassLoader cl = ClassLoader.getSystemClassLoader();
-            urls = getUrls();
-            List<String> libraries = new ArrayList<>();
-            for (URL url : urls) {
-                libraries.add(url.getFile());
-            }
-            FileUtils.writeLines(pluginDependencies, libraries);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            FileUtils.writeStringToFile(dependenciesFile, JSON.toJSONString(dependencyJson));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            FileUtils.writeLines(versionProperties, getSortVersionList(dependencyJson));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            buildInfos = new ArrayList<>();
-            FileUtils.writeLines(buildInfo, buildInfos);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            FileUtils.write(atlasConfig, JSON.toJSONString(
-                new AtlasExtensionOutput(appVariantContext.getAtlasExtension(),
-                                         appVariantContext.getBuildType().getName()), true));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+    private void writeConflictDependenciesInfo() throws IOException {
         if (null != AtlasBuildContext.conflictDependencies && !AtlasBuildContext.conflictDependencies.isEmpty()) {
-            try {
-                FileUtils.writeLines(
-                    new File(getProject().getBuildDir(), "outputs/warning-dependencyConflict.properties"),
-                    AtlasBuildContext.conflictDependencies);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            FileUtils.writeLines(new File(getProject().getBuildDir(), "outputs/warning-dependencyConflict.properties"),
+                                 AtlasBuildContext.conflictDependencies);
 
             if (appVariantContext.getAtlasExtension().getTBuildConfig().isAbortIfDependencyConflict()) {
                 throw new GradleException("依赖冲突，具体见warning-dependencyConflict.properties");
@@ -372,50 +332,120 @@ public class LogDependenciesTask extends BaseTask {
         }
     }
 
+    private void writeVersionPropertiesInfo() throws IOException {
+        DependencyJson dependencyJson = getDependencyJson();
+
+        File versionProperties = getVersionPropertiesFile();
+        Files.createParentDirs(versionProperties);
+        FileUtils.writeLines(versionProperties, getSortVersionList(dependencyJson));
+    }
+
+    private void writeBuildInfo() throws IOException {
+        File buildInfo = getBuildInfoFile();
+        Files.createParentDirs(buildInfo);
+        List<String> buildInfos = getBuildInfos();
+        FileUtils.writeLines(buildInfo, buildInfos);
+    }
+
+    private void writePluginDependenciesInfo() throws IOException {
+        //输出运行时的插件依赖列表
+        File pluginDependencies = getPluginDependenciesFile();
+        Files.createParentDirs(pluginDependencies);
+        //ClassLoader cl = ClassLoader.getSystemClassLoader();
+        List<String> libraries = new ArrayList<>();
+        for (URL url : getUrls()) {
+            libraries.add(url.getFile());
+        }
+        FileUtils.writeLines(pluginDependencies, libraries);
+    }
+
+    private void writeDependencyInfo() throws IOException {
+        File dependencyTreeFile = getDependencyTreeFile();
+        Files.createParentDirs(dependencyTreeFile);
+        DependencyJson dependencyJson = getDependencyJson();
+        Collections.sort(dependencyJson.getMainDex());
+        FileUtils.write(dependencyTreeFile, JSON.toJSONString(dependencyJson, true));
+
+        File dependenciesFile = getDependenciesFile();
+        Files.createParentDirs(dependenciesFile);
+        FileUtils.writeStringToFile(dependenciesFile, JSON.toJSONString(dependencyJson));
+    }
+
+    public void setDependencyTreeFile(File dependencyTreeFile) {
+        this.dependencyTreeFile = dependencyTreeFile;
+        appBuildInfo.setDependencyTreeFile(dependencyTreeFile);
+        //add to ap
+        appBuildInfo.getOtherFilesMap().put("awo/dependencyTree.json", dependencyTreeFile);
+    }
+
+    @OutputFile
+    public File getDependencyTreeFile() {
+        return dependencyTreeFile;
+    }
+
+    public void setDependenciesFile(File dependenciesFile) {
+        this.dependenciesFile = dependenciesFile;
+        appBuildInfo.setDependenciesFile(dependenciesFile);
+    }
+
     @OutputFile
     public File getDependenciesFile() {
-        return new File(getProject().getBuildDir(), "outputs/dependencies.txt");
+        return dependenciesFile;
+    }
+
+    public void setVersionPropertiesFile(File versionPropertiesFile) {
+        this.versionPropertiesFile = versionPropertiesFile;
+        appBuildInfo.setVersionPropertiesFile(versionPropertiesFile);
     }
 
     @OutputFile
     public File getVersionPropertiesFile() {
-        return new File(getProject().getBuildDir(), "outputs/version.properties");
+        return versionPropertiesFile;
+    }
+
+    public void setBuildInfoFile(File buildInfoFile) {
+        this.buildInfoFile = buildInfoFile;
+        appBuildInfo.setBuildInfoFile(buildInfoFile);
     }
 
     @OutputFile
     public File getBuildInfoFile() {
-        return new File(getProject().getBuildDir(), "outputs/build.txt");
+        return buildInfoFile;
+    }
+
+    public void setPluginDependenciesFile(File pluginDependenciesFile) {
+        this.pluginDependenciesFile = pluginDependenciesFile;
     }
 
     @OutputFile
-    public File getPluginDependencies() {
-        return new File(getProject().getBuildDir(), "outputs/pluginDependencies.txt");
+    public File getPluginDependenciesFile() {
+        return pluginDependenciesFile;
+    }
+
+    public void setAtlasConfigFile(File atlasConfigFile) {
+        this.atlasConfigFile = atlasConfigFile;
     }
 
     @OutputFile
     public File getAtlasConfigFile() {
-        return new File(getProject().getBuildDir(), "outputs/atlasConfig.json");
+        return atlasConfigFile;
     }
 
     private List<String> getSortVersionList(DependencyJson dependencyJson) {
         List<String> versionList = new ArrayList<String>();
 
-        try {
-            Set<String> depsSet = dependencyJson.getFlatDependencies();
-            if (depsSet != null && !depsSet.isEmpty()) {
-                for (String dep : depsSet) {
-                    String[] args = dep.split(":");
-                    if (args.length == 5 && args[3].equals("system")) {
-                        continue;
-                    }
-                    String version = args[0] + "." + args[1] + ".version=" + args[args.length - 1];
-                    versionList.add(version);
+        Set<String> depsSet = dependencyJson.getFlatDependencies();
+        if (depsSet != null && !depsSet.isEmpty()) {
+            for (String dep : depsSet) {
+                String[] args = dep.split(":");
+                if (args.length == 5 && args[3].equals("system")) {
+                    continue;
                 }
+                String version = args[0] + "." + args[1] + ".version=" + args[args.length - 1];
+                versionList.add(version);
             }
-            Collections.sort(versionList);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+        Collections.sort(versionList);
 
         return versionList;
     }
@@ -442,16 +472,26 @@ public class LogDependenciesTask extends BaseTask {
         @Override
         public void execute(LogDependenciesTask logDependenciesTask) {
             super.execute(logDependenciesTask);
+            Project project = logDependenciesTask.getProject();
+            String variantName = logDependenciesTask.getVariantName();
             logDependenciesTask.appBuildInfo = getAppVariantOutputContext().appBuildInfo;
             logDependenciesTask.appVariantContext = appVariantContext;
 
-            AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                logDependenciesTask.getVariantName());
-            if (null != atlasDependencyTree) {
-                logDependenciesTask.setDependencyJson(atlasDependencyTree.getDependencyJson());
-            }
+            AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantName);
+            // if (null != atlasDependencyTree) {
+            logDependenciesTask.setDependencyJson(atlasDependencyTree.getDependencyJson());
+            // }
             logDependenciesTask.setUrls(((URLClassLoader)LogDependenciesTask.class.getClassLoader()).getURLs());
             logDependenciesTask.setBuildInfos(getBuildInfos());
+
+            File outputsDir = scope.getGlobalScope().getOutputsDir();
+            logDependenciesTask.setDependencyTreeFile(new File(outputsDir, "dependencyTree-" + variantName + ".json"));
+            logDependenciesTask.setDependenciesFile(new File(outputsDir, "dependencies.txt"));
+            logDependenciesTask.setVersionPropertiesFile(new File(outputsDir, "version.properties"));
+            logDependenciesTask.setBuildInfoFile(new File(outputsDir, "build.txt"));
+            logDependenciesTask.setPluginDependenciesFile(new File(project.getBuildDir(),
+                                                                   "outputs/pluginDependencies.txt"));
+            logDependenciesTask.setAtlasConfigFile(new File(outputsDir, "atlasConfig.json"));
         }
 
         private List<String> getBuildInfos() {
