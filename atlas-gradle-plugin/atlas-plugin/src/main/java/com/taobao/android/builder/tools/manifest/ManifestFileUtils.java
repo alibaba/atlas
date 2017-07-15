@@ -247,7 +247,9 @@ import org.dom4j.Comment;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
+import org.dom4j.Namespace;
 import org.dom4j.Node;
+import org.dom4j.QName;
 import org.dom4j.Visitor;
 import org.dom4j.VisitorSupport;
 import org.dom4j.io.OutputFormat;
@@ -257,6 +259,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
+import static com.android.SdkConstants.TOOLS_PREFIX;
+import static com.android.SdkConstants.TOOLS_URI;
+
 /**
  * @author shenghua.nish
  * @date 2015-04-22 上午10:58
@@ -264,6 +269,10 @@ import org.xml.sax.InputSource;
 public class ManifestFileUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(ManifestFileUtils.class);
+
+    private static final String ATTR_REPLACE = "replace";
+
+    private static final String ATTR_NODE = "node";
 
     public static String[] SYSTEM_PERMISSION = new String[] {"android.permission", "com.android"};
 
@@ -416,8 +425,11 @@ public class ManifestFileUtils {
                     if (null != bundleInfo && bundleInfo.getDependency() != null) {
                         bundleDepValue = StringUtils.join(bundleInfo.getDependency(), "|");
                     }
-                    String value = libBundleInfo.applicationName + "," + !remoteBundles.contains(libBundleInfo.libName)
-                                   + "," + bundleDepValue;
+                    String value = libBundleInfo.applicationName
+                        + ","
+                        + !remoteBundles.contains(libBundleInfo.libName)
+                        + ","
+                        + bundleDepValue;
                     logger.info("[bundleInfo] add bundle value : " + value + " to manifest");
                     metaData.addAttribute("android:name", "bundle_" + bundlePackageName);
                     metaData.addAttribute("android:value", value);
@@ -780,16 +792,19 @@ public class ManifestFileUtils {
         fillFullClazzName(root, packageName, "provider");
         fillFullClazzName(root, packageName, "receiver");
         fillFullClazzName(root, packageName, "service");
+
         if (incremental) {
-            root.addNamespace("tools", "http://schemas.android.com/tools");
+            root.addNamespace(TOOLS_PREFIX, TOOLS_URI);
+            Namespace toolsNamespace = root.getNamespaceForPrefix(TOOLS_PREFIX);
+            QName replaceName = QName.get(ATTR_REPLACE, toolsNamespace);
+            QName nodeName = QName.get(ATTR_NODE, toolsNamespace);
             List<? extends Node> nodes = root.selectNodes("//application/*");
             for (Node node : nodes) {
                 Element element = (Element)node;
-                element.addAttribute("tools:replace",
-                                     Joiner.on(',')
-                                           .join(Iterables.transform(element.attributes(),
-                                                                     Attribute::getQualifiedName)));
-                element.addAttribute("tools:node", "replace");
+                element.setAttributeValue(replaceName,
+                                          Joiner.on(',').join(Iterables.transform(element.attributes(),
+                                                                                  Attribute::getQualifiedName)));
+                element.setAttributeValue(nodeName, "replace");
             }
         }
 
@@ -1028,7 +1043,7 @@ public class ManifestFileUtils {
             Element el = (Element)node;
             String key = el.attributeValue("process") + el.attributeValue("name");
             if (!baseNodeMap.containsKey(key) && !el.attributeValue("name")
-                                                    .startsWith(AtlasProxy.ATLAS_PROXY_PACKAGE)) {
+                .startsWith(AtlasProxy.ATLAS_PROXY_PACKAGE)) {
                 applicationElement.add(node);
             }
         }

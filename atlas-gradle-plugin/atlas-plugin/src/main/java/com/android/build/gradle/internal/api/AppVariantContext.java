@@ -247,7 +247,7 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     /**
      * buildCache 目录的manifest不能变更， 所以保存修改后的manifest引用
      */
-    public Map<String, File> manifestMap = new HashMap<>();
+    public final Map<String, File> manifestMap = new HashMap<>();
 
     public String unit_tag = "";
 
@@ -304,15 +304,19 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     }
 
     public File getAwbLibraryDirForDataBinding(AwbBundle awbBundle) {
-        return new File(
-            scope.getGlobalScope().getIntermediatesDir() + "/transforms-awbs/databinding/" + getVariantConfiguration()
-                .getDirName() + "/" + awbBundle.getName());
+        return new File(scope.getGlobalScope().getIntermediatesDir()
+                            + "/transforms-awbs/databinding/"
+                            + getVariantConfiguration().getDirName()
+                            + "/"
+                            + awbBundle.getName());
     }
 
     public File getAwbLayoutInfoOutputForDataBinding(AwbBundle awbBundle) {
-        return new File(
-            scope.getGlobalScope().getIntermediatesDir() + "/data-binding-info-awbs/" + getVariantConfiguration()
-                .getDirName() + "/" + awbBundle.getName());
+        return new File(scope.getGlobalScope().getIntermediatesDir()
+                            + "/data-binding-info-awbs/"
+                            + getVariantConfiguration().getDirName()
+                            + "/"
+                            + awbBundle.getName());
     }
 
     public File getJAwbavaOutputDir(AwbBundle awbBundle) {
@@ -327,16 +331,20 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     }
 
     public File getAwbLayoutFolderOutputForDataBinding(AwbBundle awbBundle) {
-        return new File(
-            scope.getGlobalScope().getIntermediatesDir() + "/data-binding-layout-out-awb/" + getVariantConfiguration()
-                .getDirName() + "/" + awbBundle.getName());
+        return new File(scope.getGlobalScope().getIntermediatesDir()
+                            + "/data-binding-layout-out-awb/"
+                            + getVariantConfiguration().getDirName()
+                            + "/"
+                            + awbBundle.getName());
     }
 
     public File getAwbDataBindingMergeArtifacts(AwbBundle awbBundle) {
 
-        return new File(
-            scope.getGlobalScope().getIntermediatesDir() + "/data-binding-compiler-awbs/" + getVariantConfiguration()
-                .getDirName() + "/" + awbBundle.getName());
+        return new File(scope.getGlobalScope().getIntermediatesDir()
+                            + "/data-binding-compiler-awbs/"
+                            + getVariantConfiguration().getDirName()
+                            + "/"
+                            + awbBundle.getName());
 
         //return new File(scope.getBuildFolderForDataBindingCompiler() +  "-" + awbBundle.getName(),
         //                     DataBindingBuilder.ARTIFACT_FILES_DIR_FROM_LIBS);
@@ -392,11 +400,13 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public AppVariantOutputContext getAppVariantOutputContext(BaseVariantOutputData vod) {
 
-        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)this.getOutputContextMap().get(
-            vod.getFullName());
+        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)this.getOutputContextMap()
+            .get(vod.getFullName());
 
         if (null == appVariantOutputContext) {
-            appVariantOutputContext = new AppVariantOutputContext(vod.getFullName(), this, vod.getScope(),
+            appVariantOutputContext = new AppVariantOutputContext(vod.getFullName(),
+                                                                  this,
+                                                                  vod.getScope(),
                                                                   vod.variantData);
             this.getOutputContextMap().put(vod.getFullName(), appVariantOutputContext);
         }

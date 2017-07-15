@@ -253,26 +253,43 @@ import org.gradle.api.tasks.TaskAction;
  */
 public class StandardizeLibManifestTask extends DefaultTask {
 
+    private AppVariantContext appVariantContext;
+
+    private File mainManifestFile;
+
+    private Set<File> libraryManifests;
+
+    private List<AndroidLibrary> androidLibraries;
+
     @InputFile
-    File mainManifestFile;
+    public File getMainManifestFile() {
+        return mainManifestFile;
+    }
+
+    public void setMainManifestFile(File mainManifestFile) {
+        this.mainManifestFile = mainManifestFile;
+    }
 
     @InputFiles
-    Set<File> libraryManifests;
+    public Set<File> getLibraryManifests() {
+        return libraryManifests;
+    }
+
+    public void setLibraryManifests(Set<File> libraryManifests) {
+        this.libraryManifests = libraryManifests;
+    }
 
     @OutputFiles
     private Collection<File> getOutputFiles() {
         return appVariantContext.manifestMap.values();
     }
 
-    List<AndroidLibrary> androidLibraries;
-
-    AppVariantContext appVariantContext;
-
     @TaskAction
     public void preProcess() throws IOException, DocumentException, InterruptedException {
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("StandardizeLibManifestTask",
-                                                                                   getLogger(), 0);
+                                                                                   getLogger(),
+                                                                                   0);
         List<Runnable> runnables = new ArrayList<>();
 
         ManifestInfo mainManifestFileObject = getManifestFileObject(mainManifestFile);
@@ -300,21 +317,21 @@ public class StandardizeLibManifestTask extends DefaultTask {
                         //getLogger().error(file.getAbsolutePath() + " -> " + modifyManifest
                         //    .getAbsolutePath());
 
-                        ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file, mainManifestFileObject,
-                                                                       true, appVariantContext.getAtlasExtension()
+                        ManifestFileUtils.updatePreProcessManifestFile(modifyManifest,
+                                                                       file,
+                                                                       mainManifestFileObject,
+                                                                       true,
+                                                                       appVariantContext.getAtlasExtension()
                                                                            .getTBuildConfig().isIncremental());
-
                     } catch (Throwable e) {
                         e.printStackTrace();
                         throw new GradleException("preprocess manifest failed " + file.getAbsolutePath(), e);
                     }
                 }
-
             });
         }
 
         executorServicesHelper.execute(runnables);
-
     }
 
     /**
@@ -353,8 +370,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
             if (null != applicationElement) {
                 for (Attribute attribute : applicationElement.attributes()) {
                     if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                        manifestFileObject.addApplicationProperty(
-                            attribute.getNamespacePrefix() + ":" + attribute.getName(), attribute.getValue());
+                        manifestFileObject.addApplicationProperty(attribute.getNamespacePrefix() + ":" + attribute
+                            .getName(), attribute.getValue());
                     } else {
                         manifestFileObject.addApplicationProperty(attribute.getName(), attribute.getValue());
                     }
@@ -401,15 +418,13 @@ public class StandardizeLibManifestTask extends DefaultTask {
                                                   appVariantContext.getModifyManifest(androidLibrary));
             }
 
-            baseVariantOutputData.manifestProcessorTask.doFirst(
-                new PreProcessManifestAction(appVariantContext, baseVariantOutputData));
+            baseVariantOutputData.manifestProcessorTask.doFirst(new PreProcessManifestAction(appVariantContext,
+                                                                                             baseVariantOutputData));
 
             if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                baseVariantOutputData.manifestProcessorTask.doLast(
-                    new PostProcessManifestAction(appVariantContext, baseVariantOutputData));
+                baseVariantOutputData.manifestProcessorTask.doLast(new PostProcessManifestAction(appVariantContext,
+                                                                                                 baseVariantOutputData));
             }
-
         }
-
     }
 }
