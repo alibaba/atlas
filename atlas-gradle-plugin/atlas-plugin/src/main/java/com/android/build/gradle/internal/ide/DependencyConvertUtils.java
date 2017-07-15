@@ -264,14 +264,22 @@ public class DependencyConvertUtils {
                                                   boolean bundle) {
 
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
-
-        AndroidDependency androidDependency = AndroidDependency.createExplodedAarLibrary(artifact.getFile(),
-                                                                                         convert(artifact),
-                                                                                         resolvedDependencyInfo
-                                                                                             .getDependencyName(),
-                                                                                         null,
-                                                                                         resolvedDependencyInfo
-                                                                                             .getExplodedDir());
+        String gradlePath = resolvedDependencyInfo.getGradlePath();
+        AndroidDependency androidDependency;
+        if (gradlePath == null) {
+            androidDependency = AndroidDependency.createExplodedAarLibrary(artifact.getFile(),
+                                                                           convert(artifact),
+                                                                           resolvedDependencyInfo.getDependencyName(),
+                                                                           null,
+                                                                           resolvedDependencyInfo.getExplodedDir());
+        } else {
+            androidDependency = AndroidDependency.createStagedAarLibrary(artifact.getFile(),
+                                                                         convert(artifact),
+                                                                         resolvedDependencyInfo.getDependencyName(),
+                                                                         gradlePath,
+                                                                         resolvedDependencyInfo.getExplodedDir(),
+                                                                         resolvedDependencyInfo.getVariantName());
+        }
 
         List<File> localJars = getLocalJars(project, bundle, androidDependency);
 
@@ -336,8 +344,7 @@ public class DependencyConvertUtils {
         return apkLibrary;
     }
 
-    private static void assertType(Type expectedType,
-                                   ResolvedDependencyInfo resolvedDependencyInfo) {
+    private static void assertType(Type expectedType, ResolvedDependencyInfo resolvedDependencyInfo) {
         assert expectedType.equals(Type.getType(resolvedDependencyInfo.getType()));
     }
 
@@ -350,7 +357,7 @@ public class DependencyConvertUtils {
         APK("apk"),
         OTHER("");
 
-        private String type;
+        private final String type;
 
         Type(String type) {
             this.type = type.toLowerCase();

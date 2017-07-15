@@ -223,6 +223,7 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
 import com.android.builder.model.MavenCoordinates;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
@@ -243,6 +244,9 @@ import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.ResolvedComponentResult;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
 import org.gradle.api.internal.artifacts.result.DefaultResolvedComponentResult;
+
+import static com.android.build.gradle.internal.TaskManager.DIR_BUNDLES;
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
  * Created by wuzhong on 2017/4/17.
@@ -375,6 +379,11 @@ public class DependencyResolver {
                 boolean isAwbBundle = bundleProvidedMap.containsKey(key);
                 Set<String> providedDirectDep = bundleProvidedMap.get(key);
 
+                String path = AtlasDepHelper.computeArtifactPath(moduleVersion, resolvedArtifact);
+                String name = AtlasDepHelper.computeArtifactName(moduleVersion, resolvedArtifact);
+
+                final String variantName = resolvedArtifact.getClassifier();
+
                 ResolvedDependencyInfo resolvedDependencyInfo = new ResolvedDependencyInfo(moduleVersion.getVersion(),
                                                                                            moduleVersion.getGroup(),
                                                                                            moduleVersion.getName(),
@@ -383,24 +392,47 @@ public class DependencyResolver {
                                                                                                    .getType(),
                                                                                            resolvedArtifact
                                                                                                .getClassifier());
-                resolvedDependencyInfo.setIndent(indent);
-                resolvedDependencyInfo.setGradlePath(gradlePath);
-                resolvedDependencyInfo.setResolvedArtifact(resolvedArtifact);
-
-                String path = AtlasDepHelper.computeArtifactPath(moduleVersion, resolvedArtifact);
-                String name = AtlasDepHelper.computeArtifactName(moduleVersion, resolvedArtifact);
-
-                MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
-
-                File explodedDir = DependencyLocationManager.getExploreDir(project,
-                                                                           mavenCoordinates,
-                                                                           resolvedArtifact.getFile(),
-                                                                           resolvedArtifact.getType().toLowerCase(),
-                                                                           path);
-
-                resolvedDependencyInfo.setExplodedDir(explodedDir);
 
                 resolvedDependencyInfo.setDependencyName(name);
+                resolvedDependencyInfo.setIndent(indent);
+                resolvedDependencyInfo.setResolvedArtifact(resolvedArtifact);
+                Project subProject = null;
+
+                boolean isSubProject = false;
+                if (gradlePath != null) {
+                    // this is a sub-module. Get the matching object file
+                    // to query its build output;
+                    subProject = project.findProject(gradlePath);
+
+                    // this could be a simple project wrapping an aar file, so we check the
+                    // presence of the android plugin to make sure it's an android module.
+                    isSubProject = subProject.getPlugins().hasPlugin("com.android.library") || subProject.getPlugins()
+                        .hasPlugin("com.android.model.library");
+                }
+
+                if (isSubProject) {
+                    // if there is a variant name then we use it for the leaf
+                    // (this means the subproject is publishing all its variants and each
+                    // artifact has a classifier that is the variant Name).
+                    // Otherwise the subproject only outputs a single artifact
+                    // and the location was set to default.
+                    String pathLeaf = variantName != null ? variantName : "default";
+
+                    File stagingDir = FileUtils.join(subProject.getBuildDir(), FD_INTERMEDIATES, DIR_BUNDLES, pathLeaf);
+                    resolvedDependencyInfo.setExplodedDir(stagingDir);
+                    resolvedDependencyInfo.setGradlePath(gradlePath);
+                } else {
+
+                    MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
+
+                    File explodedDir = DependencyLocationManager.getExploreDir(project,
+                                                                               mavenCoordinates,
+                                                                               resolvedArtifact.getFile(),
+                                                                               resolvedArtifact.getType().toLowerCase(),
+                                                                               path);
+
+                    resolvedDependencyInfo.setExplodedDir(explodedDir);
+                }
 
                 if (null == parent) {
                     parent = resolvedDependencyInfo;
@@ -417,9 +449,11 @@ public class DependencyResolver {
                             ResolvedComponentResult childResolvedComponentResult = ((ResolvedDependencyResult)dep)
                                 .getSelected();
 
-                            if (isAwbBundle && providedDirectDep.contains(
-                                childResolvedComponentResult.getModuleVersion().getGroup() + ":"
-                                    + childResolvedComponentResult.getModuleVersion().getName())) {
+                            if (isAwbBundle && providedDirectDep.contains(childResolvedComponentResult
+                                                                              .getModuleVersion().getGroup()
+                                                                              + ":"
+                                                                              + childResolvedComponentResult
+                                .getModuleVersion().getName())) {
                                 continue;
                             }
 
@@ -452,6 +486,7 @@ public class DependencyResolver {
     }
 
     // 尽量忽略原则
+
     private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion,
                                       ResolvedComponentResult resolvedComponentResult, ResolvedDependencyInfo parent) {
         if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {

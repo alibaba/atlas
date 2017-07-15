@@ -209,30 +209,25 @@
 
 package com.taobao.android.builder.tasks.app.prepare;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.tasks.PrepareLibraryTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
+import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.internal.WaitableExecutor;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.dependency.parser.DependencyLocationManager;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-import org.apache.commons.io.FileUtils;
 import org.dom4j.DocumentException;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectories;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
 
@@ -242,59 +237,42 @@ import org.gradle.util.GUtil;
  *
  * @author wuzhong
  */
+@ParallelizableTask
 public class PrepareAllDependenciesTask extends BaseTask {
 
-    static final String taskName = "prepareAllDependencies";
+    private AtlasDependencyTree atlasDependencyTree;
 
-    AppVariantOutputContext appVariantOutputContext;
-
-    AtlasDependencyTree atlasDependencyTree;
-
-    @InputFiles
-    public List<File> getInputDependencies() {
-
-        List<File> files = new ArrayList<>();
-
-        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            files.add(soLibrary.getSoLibFile());
-        }
-
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-            files.add(aarBundle.getBundle());
-        }
-
-        return files;
-    }
-
-    @OutputDirectories
-    public List<File> getOutputDirs(){
-        List<File> files = new ArrayList<>();
-        for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            files.add(soLibrary.getFolder());
-        }
-        for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
-            files.add(aarBundle.getFolder());
-        }
-        return files;
-    };
+    // private List<File> dependenciesFile;
+    //
+    // private List<File> outputDirs;
+    //
+    // @InputFiles
+    // public List<File> getDependenciesFile() {
+    //     return dependenciesFile;
+    // }
+    //
+    // public void setDependenciesFile(List<File> dependenciesFile) {
+    //     this.dependenciesFile = dependenciesFile;
+    // }
+    //
+    // public void setOutputDirs(List<File> outputDirs) {
+    //     this.outputDirs = outputDirs;
+    // }
+    //
+    // @OutputDirectories
+    // public List<File> getOutputDirs() {
+    //     return outputDirs;
+    // }
 
     @TaskAction
-    void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
-
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
-                                                                                   getLogger(),
-                                                                                   0);
-
-        List<Runnable> runnables = new ArrayList<>();
+    public void run()
+        throws ExecutionException, InterruptedException, IOException, DocumentException, LoggedErrorException {
+        WaitableExecutor<Void> executor = WaitableExecutor.useGlobalSharedThreadPool();
 
         for (final SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
-            runnables.add(new Runnable() {
-                @Override
-                public void run() {
-
-                    LibraryCache.unzipAar(soLibrary.getSoLibFile(), soLibrary.getFolder(), getProject());
-
-                }
+            executor.execute(() -> {
+                LibraryCache.unzipAar(soLibrary.getSoLibFile(), soLibrary.getFolder(), getProject());
+                return null;
             });
         }
 
@@ -302,37 +280,34 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
             if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getFolder())) {
 
-                runnables.add(new Runnable() {
-
-                    @Override
-                    public void run() {
-
-                        getLogger().info(
-                            "prepare1 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
-
-                        if (aarBundle.getFolder().exists()) {
-                            try {
-                                FileUtils.deleteDirectory(aarBundle.getFolder());
-                                aarBundle.getFolder().mkdirs();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        PrepareLibraryTask.extract(aarBundle.getBundle(), aarBundle.getFolder(), getProject());
-
-                    }
-                });
-
+                //     executor.execute(() -> {
+                //
+                //         getLogger().info("prepare1 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle
+                //             .getFolder());
+                //
+                //         if (aarBundle.getFolder().exists()) {
+                //             try {
+                //                 FileUtils.deleteDirectory(aarBundle.getFolder());
+                //                 aarBundle.getFolder().mkdirs();
+                //             } catch (IOException e) {
+                //                 e.printStackTrace();
+                //             }
+                //         }
+                //
+                //         PrepareLibraryTask.extract(aarBundle.getBundle(), aarBundle.getFolder(), getProject());
+                //         return null;
+                //     });
             } else {
-                getLogger().info(
-                    "prepare2 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle.getFolder());
-                prepareLibrary(aarBundle);
+                executor.execute(() -> {
+                    getLogger().info("prepare2 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle
+                        .getFolder());
+                    prepareLibrary(aarBundle);
+                    return null;
+                });
             }
-
         }
 
-        executorServicesHelper.execute(runnables);
+        executor.waitForTasksWithQuickFail(false);
     }
 
     private void prepareLibrary(AndroidLibrary library) {
@@ -346,35 +321,31 @@ public class PrepareAllDependenciesTask extends BaseTask {
             return;
         }
 
-        PrepareLibraryTask prepareLibraryTask = getProject().getTasks().create(
-            taskName, PrepareLibraryTask.class);
+        PrepareLibraryTask prepareLibraryTask = getProject().getTasks().create(taskName, PrepareLibraryTask.class);
 
         prepareLibraryTask.setDescription("Prepare " + library.getName());
         prepareLibraryTask.setVariantName("");
 
-        prepareLibraryTask.init(
-            library.getBundle(),
-            library.getFolder(),
-            AndroidGradleOptions.getBuildCache(getProject()),
-            library.getResolvedCoordinates());
+        prepareLibraryTask.init(library.getBundle(),
+                                library.getFolder(),
+                                AndroidGradleOptions.getBuildCache(getProject()),
+                                library.getResolvedCoordinates());
 
         AtlasBuildContext.dependencyTraceMap.put(library.getFolder().getAbsolutePath(),
                                                  library.getResolvedCoordinates());
 
         prepareLibraryTask.execute();
-
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAllDependenciesTask> {
 
-        public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
         }
 
         @Override
         public String getName() {
-            return scope.getTaskName(taskName);
+            return scope.getTaskName("prepareAllDependencies");
         }
 
         @Override
@@ -387,10 +358,40 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
             super.execute(prepareAllDependenciesTask);
 
-            prepareAllDependenciesTask.appVariantOutputContext = getAppVariantOutputContext();
-
-            prepareAllDependenciesTask.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+            AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 prepareAllDependenciesTask.getVariantName());
+            prepareAllDependenciesTask.atlasDependencyTree = atlasDependencyTree;
+
+            // AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+            //     prepareAllDependenciesTask.getVariantName());
+            // ConventionMappingHelper.map(prepareAllDependenciesTask, "dependenciesFile", new Callable<List<File>>() {
+            //     @Override
+            //     public List<File> call() throws Exception {
+            //         final ImmutableList.Builder<File> builder = ImmutableList.builder();
+            //
+            //         for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
+            //             builder.add(soLibrary.getSoLibFile());
+            //         }
+            //
+            //         for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
+            //             builder.add(aarBundle.getBundle());
+            //         }
+            //         return builder.build();
+            //     }
+            // });
+            // ConventionMappingHelper.map(prepareAllDependenciesTask, "outputDirs", new Callable<List<File>>() {
+            //     @Override
+            //     public List<File> call() throws Exception {
+            //         final ImmutableList.Builder<File> builder = ImmutableList.builder();
+            //         for (SoLibrary soLibrary : atlasDependencyTree.getAllSoLibraries()) {
+            //             builder.add(soLibrary.getFolder());
+            //         }
+            //         for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
+            //             builder.add(aarBundle.getFolder());
+            //         }
+            //         return builder.build();
+            //     }
+            // });
         }
     }
 }
