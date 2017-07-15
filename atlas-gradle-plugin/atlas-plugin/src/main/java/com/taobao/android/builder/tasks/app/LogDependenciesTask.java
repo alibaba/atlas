@@ -228,6 +228,8 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -300,17 +302,39 @@ public class LogDependenciesTask extends BaseTask {
     }
 
     @TaskAction
-    public void generate() throws IOException {
+    public void generate() throws IOException, LoggedErrorException, InterruptedException {
         AtlasBuildContext.appVariantContext = appVariantContext;
 
-        writeDependencyInfo();
-        writePluginDependenciesInfo();
-        writeVersionPropertiesInfo();
+        WaitableExecutor<Void> executor = WaitableExecutor.useGlobalSharedThreadPool();
 
-        writeConflictDependenciesInfo();
+        executor.execute(() -> {
+            writeDependencyInfo();
+            return null;
+        });
+        executor.execute(() -> {
+            writePluginDependenciesInfo();
+            return null;
+        });
+        executor.execute(() -> {
+            writeVersionPropertiesInfo();
+            return null;
+        });
 
-        writeBuildInfo();
-        writeAtlasConfigInfo();
+        executor.execute(() -> {
+            writeConflictDependenciesInfo();
+            return null;
+        });
+
+        executor.execute(() -> {
+            writeBuildInfo();
+            return null;
+        });
+        executor.execute(() -> {
+            writeAtlasConfigInfo();
+            return null;
+        });
+
+        executor.waitForTasksWithQuickFail(false);
     }
 
     private void writeAtlasConfigInfo() throws IOException {
