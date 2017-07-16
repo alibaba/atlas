@@ -278,7 +278,7 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
         for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
 
-            if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getFolder())) {
+            if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getBundle())) {
 
                 //     executor.execute(() -> {
                 //
