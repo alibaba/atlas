@@ -228,6 +228,7 @@ import com.taobao.android.builder.tasks.incremental.ApDownloadTask;
 import com.taobao.android.builder.tasks.incremental.ApDownloadTask.ConfigAction;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -324,9 +325,13 @@ public class AtlasDependencyManager extends DependencyManager {
         //     throw new GradleException("process awo exception", e);
         // }
         ConfigAction configAction = new ConfigAction(tBuildType);
-        ApDownloadTask apDownloadTask = project.getTasks().create(configAction.getName(), ApDownloadTask.class);
-        configAction.execute(apDownloadTask);
-        apDownloadTask.execute();
+        String name = configAction.getName();
+        Task task = project.getTasks().findByName(name);
+        if (task == null) {
+            ApDownloadTask apDownloadTask = project.getTasks().create(name, ApDownloadTask.class);
+            configAction.execute(apDownloadTask);
+            apDownloadTask.execute();
+        }
     }
 
     @Override
