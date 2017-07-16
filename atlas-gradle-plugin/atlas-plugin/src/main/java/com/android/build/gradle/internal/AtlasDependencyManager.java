@@ -224,9 +224,9 @@ import com.taobao.android.builder.dependency.parser.AtlasDepTreeParser;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.incremental.ApDependencies;
+import com.taobao.android.builder.tasks.incremental.ApDownloadTask;
+import com.taobao.android.builder.tasks.incremental.ApDownloadTask.ConfigAction;
 import com.taobao.android.builder.tools.PluginTypeUtils;
-import com.taobao.android.builder.tools.ideaplugin.AwoPropHandler;
-import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.slf4j.Logger;
@@ -310,15 +310,23 @@ public class AtlasDependencyManager extends DependencyManager {
         if (tBuildType == null) {
             return null;
         }
+        downloadAp(project, atlasExtension, tBuildType);
 
+        return ApDependencies.getApDependencies(project, tBuildType);
+    }
+
+    private static void downloadAp(Project project, AtlasExtension atlasExtension, TBuildType tBuildType) {
         //TODO 最开始下载Ap
         // 下载Ap
-        try {
-            new AwoPropHandler(project).process(tBuildType, atlasExtension.getBundleConfig());
-        } catch (Exception e) {
-            throw new GradleException("process awo exception", e);
-        }
-        return ApDependencies.getApDependencies(project, tBuildType);
+        // try {
+        //     new AwoPropHandler(project).process(tBuildType, atlasExtension.getBundleConfig());
+        // } catch (Exception e) {
+        //     throw new GradleException("process awo exception", e);
+        // }
+        ConfigAction configAction = new ConfigAction(tBuildType);
+        ApDownloadTask apDownloadTask = project.getTasks().create(configAction.getName(), ApDownloadTask.class);
+        configAction.execute(apDownloadTask);
+        apDownloadTask.execute();
     }
 
     @Override
