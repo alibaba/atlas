@@ -316,25 +316,32 @@ public class PrepareAllDependenciesTask extends BaseTask {
         String bundleName = GUtil.toCamelCase(library.getName().replaceAll("\\:", " "));
 
         String taskName = "prepare" + bundleName + "Library";
+        PrepareLibraryTask prepareLibraryTask = getPrepareLibraryTask(taskName);
+        if (prepareLibraryTask != null) {
+            prepareLibraryTask.setDescription("Prepare " + library.getName());
+            prepareLibraryTask.setVariantName("");
 
-        if (null != getProject().getTasks().findByName(taskName)) {
-            return;
+            prepareLibraryTask.init(library.getBundle(),
+                                    library.getFolder(),
+                                    AndroidGradleOptions.getBuildCache(getProject()),
+                                    library.getResolvedCoordinates());
+
+            AtlasBuildContext.dependencyTraceMap.put(library.getFolder().getAbsolutePath(),
+                                                     library.getResolvedCoordinates());
+
+            prepareLibraryTask.execute();
         }
+    }
 
-        PrepareLibraryTask prepareLibraryTask = getProject().getTasks().create(taskName, PrepareLibraryTask.class);
+    private synchronized PrepareLibraryTask getPrepareLibraryTask(String taskName) {
+        PrepareLibraryTask prepareLibraryTask = (PrepareLibraryTask)getProject().getTasks().findByName(taskName);
+        if (prepareLibraryTask == null) {
 
-        prepareLibraryTask.setDescription("Prepare " + library.getName());
-        prepareLibraryTask.setVariantName("");
-
-        prepareLibraryTask.init(library.getBundle(),
-                                library.getFolder(),
-                                AndroidGradleOptions.getBuildCache(getProject()),
-                                library.getResolvedCoordinates());
-
-        AtlasBuildContext.dependencyTraceMap.put(library.getFolder().getAbsolutePath(),
-                                                 library.getResolvedCoordinates());
-
-        prepareLibraryTask.execute();
+            prepareLibraryTask = getProject().getTasks().create(taskName, PrepareLibraryTask.class);
+            return prepareLibraryTask;
+        } else {
+            return null;
+        }
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAllDependenciesTask> {
