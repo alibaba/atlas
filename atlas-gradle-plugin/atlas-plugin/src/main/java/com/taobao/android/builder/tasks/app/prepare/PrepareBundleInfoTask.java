@@ -221,7 +221,9 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.bundleinfo.BundleInfoUtils;
@@ -231,45 +233,52 @@ import org.gradle.api.tasks.TaskAction;
 
 public class PrepareBundleInfoTask extends BaseTask {
 
-    AppVariantOutputContext appVariantOutputContext;
+    private AppVariantOutputContext appVariantOutputContext;
 
     @TaskAction
-    void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
+    public void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
 
-        AtlasBuildContext.awbBundleMap = collectBundleInfo(appVariantOutputContext);
+        AtlasBuildContext.awbBundleMap = collectBundleInfo();
 
         AppVariantContext appVariantContext = appVariantOutputContext.getVariantContext();
         BundleInfoUtils.setupAwbBundleInfos(appVariantContext);
 
         //生成bundle清单文件
-        generateBundleListCfg(appVariantContext);
-
+        generateBundleListCfg();
     }
 
-    private void generateBundleListCfg(AppVariantContext appVariantContext) throws IOException {
-        List<String> bundleLists = AtlasBuildContext.awbBundleMap.keySet().stream().map(key -> {
-            return "lib/armeabi/" + key;
-        }).sorted().collect(Collectors.toList());
-        File outputFile = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(), "bundleList.cfg");
-        FileUtils.deleteQuietly(outputFile);
-        outputFile.getParentFile().mkdirs();
+    private void generateBundleListCfg() throws IOException {
+        List<String> bundleLists = getBundleLists();
+        File outputFile = getBundleListFile();
+        Files.createParentDirs(outputFile);
         FileUtils.writeLines(outputFile, bundleLists);
 
-        appVariantContext.bundleListCfg = outputFile;
+        appVariantOutputContext.getVariantContext().bundleListCfg = outputFile;
     }
 
-    private Map<String, AwbBundle> collectBundleInfo(AppVariantOutputContext appVariantOutputContext) {
+    public List<String> getBundleLists() {
+        return AtlasBuildContext.awbBundleMap.keySet().stream().map(key -> "lib/armeabi/" + key).sorted().collect(
+            Collectors.toList());
+    }
 
-        List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
-                appVariantOutputContext.getVariantData().getName()).getAwbBundles();
+    public File getBundleListFile() {
+        return new File(appVariantOutputContext.getVariantContext().getScope().getGlobalScope().getOutputsDir(),
+                        "bundleList.cfg");
+    }
+
+    private Map<String, AwbBundle> collectBundleInfo() {
+
+        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantOutputContext
+                                                                                                   .getVariantData()
+                                                                                                   .getName());
 
         Map<String, AwbBundle> map = new HashMap<String, AwbBundle>();
 
-        for (AwbBundle awbBundle : awbBundles) {
+        for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
             try {
                 map.put(awbBundle.getAwbSoName(), awbBundle);
-            }catch (Throwable e){
+            } catch (Throwable e) {
                 getProject().getLogger().error(awbBundle.getAndroidLibrary().toString(), e);
             }
         }
@@ -279,8 +288,7 @@ public class PrepareBundleInfoTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareBundleInfoTask> {
 
-        public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
         }
 
