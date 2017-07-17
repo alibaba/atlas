@@ -218,15 +218,15 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.util.ApkUtils;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
-
-import org.xmlpull.v1.XmlPullParser;
-
 import java.io.File;
+import java.io.FileInputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -245,7 +245,6 @@ public class DelegateResources extends Resources {
 
     private static String sKernalPathPath = null;
     private static String sAssetsPatchDir = null;
-    private Resources origin;
     private HashMap<String,Resources> bundleResourceWalkRound = new HashMap<>();
 
 
@@ -258,7 +257,6 @@ public class DelegateResources extends Resources {
      */
     public DelegateResources(AssetManager assets, Resources res) {
         super(assets, res.getDisplayMetrics(), res.getConfiguration());
-        origin = res;
     }
 
     @Override
@@ -269,62 +267,34 @@ public class DelegateResources extends Resources {
             result = super.getLayout(id);
         }catch(NotFoundException e){
             exception = e;
-            if(origin!=null) {
-                try {
-                    result = origin.getLayout(id);
-                } catch (Throwable e2) {
-                }
-            }
-
         }
         if(result==null && exception!=null){
             TypedValue value = new TypedValue();
+            boolean flag = (this==RuntimeVariables.delegateResources);
             Log.e("DelegateResources","compare:"+(this==RuntimeVariables.delegateResources));
             getValue(id,value,true);
-            if(value!=null){
-                Log.e("DelegateResources",String.format("ID: %s|cookie: %s|string: %s",id,value.assetCookie,value.string));
-                try {
-                    String assetsPath = (String) AssetManager.class.getMethod("getCookieName", int.class).invoke(getAssets(), value.assetCookie);
-                    Log.e("DelegateResources","target Path: "+assetsPath);
-                    if(!new File(assetsPath).exists()){
-                        Log.e("DelegateResources","target Path is not exist");
-                    }
-                    XmlResourceParser parser = getLayoutWalkRound(assetsPath,id);
+            Log.e("DelegateResources",String.format("ID: %s|cookie: %s|string: %s",id,value.assetCookie,value.string));
+            try {
+                String assetsPath = (String) AssetManager.class.getMethod("getCookieName", int.class).invoke(getAssets(), value.assetCookie);
+                Log.e("DelegateResources","target Path: "+assetsPath);
+                if(!new File(assetsPath).exists()){
+                    Log.e("DelegateResources","target Path is not exist");
+                }
+                Resources res = getBackupResources(assetsPath);
+                if(res!=null) {
+                    XmlResourceParser parser = res.getLayout(id);
                     if(parser!=null){
                         Map<String, Object> detail = new HashMap<>();
                         detail.put("walkroundgetLayout", assetsPath);
-                        AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_DEXOPT_FAIL, detail, exception);
+                        AtlasMonitor.getInstance().report(AtlasMonitor.WALKROUND_GETLAYOUT, detail, exception);
                         return parser;
                     }
-                }catch(Throwable e){
                 }
+            }catch(Throwable e){
             }
-
             throw exception;
         }
         return result;
-    }
-
-    private XmlResourceParser getLayoutWalkRound(final String assetsPath,final int id){
-        try {
-            Resources res = bundleResourceWalkRound.get(assetsPath);
-            if(res==null) {
-                synchronized (assetsPath) {
-                    if ((res = bundleResourceWalkRound.get(assetsPath)) == null) {
-                        AssetManager newAssetManager = AssetManager.class.newInstance();
-                        AtlasHacks.AssetManager_addAssetPath.invoke(newAssetManager, assetsPath);
-                        res = new Resources(newAssetManager, getDisplayMetrics(), getConfiguration());
-                        bundleResourceWalkRound.put(assetsPath, res);
-                    }
-                }
-            }
-            if(res!=null) {
-                return res.getLayout(id);
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public Drawable getDrawable(int id, Theme theme) throws NotFoundException {
@@ -334,18 +304,57 @@ public class DelegateResources extends Resources {
             result = super.getDrawable(id,theme);
         }catch(NotFoundException e){
             exception = e;
-            if(origin!=null) {
-                try {
-                    result = origin.getDrawable(id,theme);
-                } catch (Throwable e2) {
-                }
-            }
-
         }
         if(result==null && exception!=null){
+            TypedValue value = new TypedValue();
+            getValue(id,value,true);
+            try {
+                String assetsPath = (String) AssetManager.class.getMethod("getCookieName", int.class).invoke(getAssets(), value.assetCookie);
+                Resources res = getBackupResources(assetsPath);
+                if(res!=null){
+                    Drawable drawable = res.getDrawable(id,theme);
+                    return drawable;
+                }
+            }catch(Throwable e){
+                e.printStackTrace();
+            }
             throw exception;
         }
         return result;
+    }
+
+    private Resources getBackupResources(final String assetsPath){
+        if(TextUtils.isEmpty(assetsPath)) {
+            return null;
+        }
+        try {
+            Resources res = bundleResourceWalkRound.get(assetsPath);
+            if(res==null) {
+                synchronized (assetsPath) {
+                    if ((res = bundleResourceWalkRound.get(assetsPath)) == null) {
+                        AssetManager newAssetManager = AssetManager.class.newInstance();
+                        File walkroundDir = new File(RuntimeVariables.androidApplication.getFilesDir(),"storage/res_backup");
+                        if(!walkroundDir.exists()){
+                            walkroundDir.mkdirs();
+                        }
+                        File walkroundBackupAsset = new File(walkroundDir,new File(assetsPath).getName()+".backup.zip");
+                        if(!walkroundBackupAsset.exists() || walkroundBackupAsset.length()!=new File(assetsPath).length()) {
+                            if(walkroundBackupAsset.exists()){
+                                walkroundBackupAsset.delete();
+                            }
+                            ApkUtils.copyInputStreamToFile(new FileInputStream(assetsPath), walkroundBackupAsset);
+                        }
+                        AtlasHacks.AssetManager_addAssetPath.invoke(newAssetManager, walkroundBackupAsset.getAbsolutePath());
+                        res = new Resources(newAssetManager, getDisplayMetrics(), getConfiguration());
+                        bundleResourceWalkRound.put(assetsPath, res);
+                    }
+                }
+            }
+            return res;
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static void reset(){
@@ -476,7 +485,17 @@ public class DelegateResources extends Resources {
         public AssetManager updateAssetManager(AssetManager manager,String newAssetPath,int assetType)throws Exception{
             AssetManager targetManager = null;
             if(assetType == BUNDLE_RES){
-                targetManager = createNewAssetManager(manager,newAssetPath,true,assetType);
+                if(supportExpandAssetManager()){
+                    try {
+                        targetManager = updateAssetManagerWithAppend(manager, newAssetPath, BUNDLE_RES);
+                    }catch(Throwable e){
+                        e.printStackTrace();
+                        Log.e("DelegateResources","walkround to createNewAssetmanager");
+                        targetManager = createNewAssetManager(manager,newAssetPath,true,BUNDLE_RES);
+                    }
+                }else{
+                    targetManager = createNewAssetManager(manager,newAssetPath,true,BUNDLE_RES);
+                }
                 updateAssetPathList(newAssetPath,true);
             }else{
                 File newAssetsDir = new File(new File(newAssetPath).getParent(),"newAssets");
@@ -531,13 +550,64 @@ public class DelegateResources extends Resources {
         }
 
         private AssetManager updateAssetManagerWithAppend(AssetManager manager,String newAssetPath,int type) throws Exception{
-            appendAssetPath(manager, newAssetPath,false);
-            /**
-             * 追加主apk新的assets内容
-             */
-            if(type == APK_RES && sAssetsPatchDir!=null){
-                appendAssetPath(manager,sAssetsPatchDir,false);
+            synchronized (manager) {
+                if(type == APK_RES) {
+                    appendAssetPath(manager, newAssetPath, false);
+                    /**
+                     * 追加主apk新的assets内容
+                     */
+                    if (sAssetsPatchDir != null) {
+                        appendAssetPath(manager, sAssetsPatchDir, false);
+                    }
+                }else{
+                    int retryCount = 2;
+                    int cookie = 0;
+                    do {
+                        retryCount--;
+                        //1. add native path
+                        if (AtlasHacks.AssetManager_addAssetPathNative!=null && AtlasHacks.AssetManager_addAssetPathNative.getMethod()!=null) {
+                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNative.invoke(manager, newAssetPath);
+                        } else if(AtlasHacks.AssetManager_addAssetPathNative24!=null && AtlasHacks.AssetManager_addAssetPathNative24.getMethod()!=null){
+                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNative24.invoke(manager, newAssetPath, false);
+                        } else if(AtlasHacks.AssetManager_addAssetPathNativeSamSung!=null && AtlasHacks.AssetManager_addAssetPathNativeSamSung.getMethod()!=null){
+                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNativeSamSung.invoke(manager, newAssetPath, 0);
+                        } else{
+                            throw new RuntimeException("no valid addassetpathnative method");
+                        }
+                        if(cookie>0){
+                            break;
+                        }
+                    }while(retryCount>0);
+                    if(cookie>0) {
+                        //2. getSeedNum
+                        Object[] mStringBlocks = (Object[]) AtlasHacks.AssetManager_mStringBlocks.get(manager);
+                        int seedNum = mStringBlocks.length;
+
+                        //3. getStringBlockCount
+                        int num = (int) AtlasHacks.AssetManager_getStringBlockCount.invoke(manager);
+
+                        //4. init newStringBlockList
+                        Object newStringBlockList = Array.newInstance(AtlasHacks.StringBlock.getmClass(), num);
+                        for (int i = 0; i < num; i++) {
+                            if (i < seedNum) {
+                                Array.set(newStringBlockList, i, mStringBlocks[i]);
+                            } else {
+                                Array.set(newStringBlockList, i, AtlasHacks.StringBlock_constructor.getInstance(
+                                        AtlasHacks.AssetManager_getNativeStringBlock.invoke(manager, i), true
+                                ));
+                            }
+                        }
+                        //5. replace AssetManager.mStringBlocks
+                        AtlasHacks.AssetManager_mStringBlocks.set(manager, newStringBlockList);
+                    }else{
+                        sFailedAsssetPath.add(newAssetPath);
+                        Map<String, Object> detail = new HashMap<>();
+                        detail.put("appendAssetPath", newAssetPath);
+                        AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL, detail, new RuntimeException());
+                    }
+                }
             }
+
             return manager;
         }
 
@@ -583,7 +653,7 @@ public class DelegateResources extends Resources {
             if(!append){
                 appendAssetPath(newAssetManager,newAssetPath,false);
             }
-                //顺序添加,逆序加入assetmanager
+            //顺序添加,逆序加入assetmanager
             if(preAssetPathCache!=null){
                 if(preAssetPathCache.size()==1){
                     Iterator<Map.Entry<String, Boolean>> iterator = preAssetPathCache.entrySet().iterator();
@@ -635,14 +705,21 @@ public class DelegateResources extends Resources {
 
         private boolean hasCreatedAssetsManager = false;
         private synchronized boolean supportExpandAssetManager(){
-            if(Build.VERSION.SDK_INT>=24){
-                return true;
-            }else if(!hasCreatedAssetsManager || Build.VERSION.SDK_INT<=20 ||
+            if(!hasCreatedAssetsManager || Build.VERSION.SDK_INT<=20 ||
                     Build.BRAND.equalsIgnoreCase("sony") || Build.BRAND.equalsIgnoreCase("semc")){
                 hasCreatedAssetsManager = true;
                 return false;
             }else{
                 return true;
+            }
+        }
+
+        private boolean supportAddAssetPathNative(){
+            if(AtlasHacks.AssetManager_addAssetPathNative!=null || AtlasHacks.AssetManager_addAssetPathNative24!=null
+                    || AtlasHacks.AssetManager_addAssetPathNativeSamSung!=null){
+                return true;
+            }else{
+                return false;
             }
         }
 

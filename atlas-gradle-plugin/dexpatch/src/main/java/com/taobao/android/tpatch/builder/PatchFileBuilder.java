@@ -444,7 +444,10 @@ public class PatchFileBuilder {
         for (Map.Entry<String, FileDef> entry : curBundleFileMap.entrySet()) {
             String curFilePath = entry.getKey();
             FileDef curFileDef = entry.getValue();
-
+            if (curFileDef.file.getName().endsWith("abc_wb_textfield_cdf.jpg")){
+                hisBundleFileMap.remove(curFilePath);
+                continue;
+            }
             File destFile = new File(destBundleFolder, curFilePath);
             //            if (curFilePath.endsWith(".dex")){
             //                createHisBundleDex(curFileDef,hisBundleFileMap.get(curFilePath),destFile,fullLibFile);

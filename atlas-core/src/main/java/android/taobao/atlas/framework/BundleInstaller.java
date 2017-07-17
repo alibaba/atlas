@@ -643,7 +643,11 @@ public class BundleInstaller implements Callable{
             mTmpBundleSourceFile = bundleFile;
             Log.e("BundleInstaller","find valid bundle : "+bundleFile.getAbsolutePath());
         }else{
-            if(ApkUtils.getApk()!=null){
+            try {
+                mTmpBundleSourceInputStream = RuntimeVariables.originalResources.getAssets().open(bundleFileName);
+            }catch(Throwable e){
+            }
+            if(mTmpBundleSourceInputStream==null && ApkUtils.getApk()!=null){
                 ZipEntry entry = ApkUtils.getApk().getEntry("lib/armeabi/" + bundleFileName);
                 if(entry!=null) {
                     mTmpBundleSourceInputStream = ApkUtils.getApk().getInputStream(entry);

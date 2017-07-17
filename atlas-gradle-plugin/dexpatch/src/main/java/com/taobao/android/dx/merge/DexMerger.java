@@ -89,8 +89,8 @@ public final class DexMerger {
         this(dexes, collisionPolicy, new WriterSizes(dexes));
     }
 
-    private DexMerger(Dex[] dexes, CollisionPolicy collisionPolicy,
-            WriterSizes writerSizes) throws IOException {
+    public DexMerger(Dex[] dexes, CollisionPolicy collisionPolicy,
+                     WriterSizes writerSizes) throws IOException {
         this.dexes = dexes;
         this.collisionPolicy = collisionPolicy;
         this.writerSizes = writerSizes;
@@ -152,7 +152,7 @@ public final class DexMerger {
         this.compactWasteThreshold = compactWasteThreshold;
     }
 
-    private Dex mergeDexes() throws IOException {
+    public Dex mergeDexes() throws IOException {
         mergeStringIds();
         mergeTypeIds();
         mergeTypeLists();

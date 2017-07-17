@@ -210,6 +210,7 @@ package android.taobao.atlas.util;
 
 import android.annotation.TargetApi;
 import android.os.Build;
+import android.taobao.atlas.framework.Framework;
 import android.text.TextUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -226,7 +227,7 @@ public class SoLoader {
     private static final File LIB_DIR;
 
     static {
-        LIB_DIR = new File("/data/data/com.taobao.taobao/files/storage","lib");
+        LIB_DIR = new File(Framework.STORAGE_LOCATION,"lib");
         if(!LIB_DIR.exists()){
             LIB_DIR.mkdirs();
         }

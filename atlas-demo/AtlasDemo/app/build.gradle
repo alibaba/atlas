@@ -102,7 +102,7 @@ atlas {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile('com.taobao.android:atlas_core:5.0.7.26@aar') {
+    compile('com.taobao.android:atlas_core:5.0.7.30@aar') {
 
         transitive = true
     }
@@ -126,7 +126,6 @@ dependencies {
 
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
-    compile 'com.taobao.android:atlas_core:5.0.6-rc92@aar'
     compile 'com.android.support:recyclerview-v7:25.3.0'
 }
 

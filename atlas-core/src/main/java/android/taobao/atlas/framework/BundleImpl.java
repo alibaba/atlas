@@ -314,14 +314,16 @@ public final class BundleImpl implements Bundle {
                 this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag,-1);
             }
         } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("BundleImpl", "BundleImpl create failed!");
             if(e instanceof BundleArchive.MisMatchException){
                 this.archive = null;
                 BaselineInfoManager.instance().rollbackHardly();
-                Map<String, Object> detail = new HashMap<>();
-                detail.put("BundleImpl", "BundleImpl create failed!");
                 AtlasMonitor.getInstance().report(AtlasMonitor.DD_BUNDLE_MISMATCH, detail, e);
                 throw e;
             }else {
+                AtlasMonitor.getInstance().report(AtlasMonitor.DD_BUNDLE_RESOLVEFAIL, detail, e);
                 throw new BundleException("Could not load bundle " + location, e.getCause());
             }
         }
