@@ -428,7 +428,6 @@ import java.util.List;
 public class Filter {
     private String path;                               //白名单文件路径
     private List<String> filteredClassNames = null;//存储白名单中的类名
-    private List<String>filteredPkgNames = new ArrayList<String>();
 
     public Filter(String path) {
         this.path = path;
@@ -450,12 +449,8 @@ public class Filter {
             String line = null;
             while ((line = bufferedReader.readLine()) != null) {
                 if (!line.trim().equals("")) {
-                    if (line.trim().endsWith(".*")){
-                        filteredPkgNames.add(line.trim().substring(0,line.trim().lastIndexOf(".")).replace(".","/"));
-                    }else {
                         filteredClassNames.add(line.trim());
                     }
-                }
             }
         } catch (FileNotFoundException e) {
             // TODO Auto-generated catch block
@@ -470,26 +465,12 @@ public class Filter {
     //判断传入的类是否是一个白名单中被过滤的类
     //参数className表示dex中的类
     public boolean isFiltered(String className) {
-        boolean isFiltered = false;
-        for (String pkgName:filteredClassNames){
-            if (className.substring(1).startsWith(pkgName)){
-                return true;
+        boolean isFiltered = true;
+        for (String clazz:filteredClassNames){
+            if (clazz.equals(className)){
+                return false;
             }
         }
-        for (int i = 0; i < filteredPkgNames.size(); i++) {
-            String convString = filteredPkgNames.get(i).replace('.', '/').trim();
-            if (className.contains(convString)) {
-                String classNameSubStringTemp = className.substring(1,className.lastIndexOf("/") + 1);
-                int length = classNameSubStringTemp.length();
-                //去掉类后面的分号
-                String classNameSubString = classNameSubStringTemp.substring(0, length - 1);
-                if ((convString.trim()).equals(classNameSubString.trim())) {
-                    isFiltered = true;
-                    break;
-                }
-            }
-        }
-
         return isFiltered;
     }
 
