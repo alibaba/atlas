@@ -1013,18 +1013,26 @@ public class TPatchTool extends BasePatchTool {
         Map<String, File> awbBundleMap = new HashMap<String, File>();
         for (ArtifactBundleInfo artifactBundleInfo : artifactBundleInfos) {
             String bundleFileSoName = "lib" +
-                artifactBundleInfo.getPkgName().replace('.', '_') +
-                ".so";
+                    artifactBundleInfo.getPkgName().replace('.', '_') +
+                    ".so";
             File bundleFile = new File(newApkUnzipFolder,
-                                       "lib" +
-                                           "/" +
-                                           "armeabi" +
-                                           "/" +
-                                           bundleFileSoName);
+                    "lib" +
+                            "/" +
+                            "armeabi" +
+                            "/" +
+                            bundleFileSoName);
             if (bundleFile.exists()) {
                 awbBundleMap.put(artifactBundleInfo.getArtifactId(), bundleFile);
             }
         }
+        if (splitDiffBundle != null) {
+            for (Pair<BundleBO, BundleBO> bundle : splitDiffBundle) {
+                awbBundleMap.put(bundle.getSecond().getBundleName(), bundle.getSecond().getBundleFile());
+
+            }
+        }
+
+
         PatchFileBuilder patchFileBuilder = new PatchFileBuilder(historyBuildPatchInfos,
                                                                  curTPatchFile,
                                                                  curPatchInfo,

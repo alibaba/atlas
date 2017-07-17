@@ -449,11 +449,6 @@ public class PatchFileBuilder {
                 continue;
             }
             File destFile = new File(destBundleFolder, curFilePath);
-            //            if (curFilePath.endsWith(".dex")){
-            //                createHisBundleDex(curFileDef,hisBundleFileMap.get(curFilePath),destFile,fullLibFile);
-            //                hisBundleFileMap.remove(curFilePath);
-            //                continue;
-            //            }
             if (hisBundleFileMap.containsKey(curFilePath)) {
                 FileDef hisFileDef = hisBundleFileMap.get(curFilePath);
                 if (curFileDef.md5.equals(hisFileDef.md5)) {
