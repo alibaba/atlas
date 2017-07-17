@@ -224,7 +224,6 @@ import com.android.ide.common.internal.WaitableExecutor;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.SoLibrary;
-import com.taobao.android.builder.dependency.parser.DependencyLocationManager;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.dom4j.DocumentException;
 import org.gradle.api.tasks.ParallelizableTask;
@@ -278,7 +277,8 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
         for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
 
-            if (DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getBundle())) {
+            if (/*DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getBundle())*/aarBundle
+                .getProject() != null) {
 
                 //     executor.execute(() -> {
                 //
