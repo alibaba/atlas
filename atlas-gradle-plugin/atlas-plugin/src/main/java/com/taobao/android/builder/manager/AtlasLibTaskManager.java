@@ -283,9 +283,13 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
             @Override
             public void accept(LibraryVariant libraryVariant) {
 
-                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant, project,
-                                                                            atlasExtension, libraryExtension);
+                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant,
+                                                                            project,
+                                                                            atlasExtension,
+                                                                            libraryExtension);
 
+                project.getTasks().getByName(libVariantContext.getScope().getTaskName("extract", "Annotations"))
+                    .setEnabled(false);
                 TBuildType tBuildType = libVariantContext.getBuildType();
                 if (null != tBuildType) {
                     try {
