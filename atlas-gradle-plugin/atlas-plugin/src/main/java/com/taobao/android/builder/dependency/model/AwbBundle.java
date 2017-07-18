@@ -266,6 +266,8 @@ public class AwbBundle {
 
     private boolean fullDependencies;
 
+    private List<String> allDependencies;
+
     public AwbBundle() {
         mainBundle = true;
     }
@@ -480,18 +482,20 @@ public class AwbBundle {
     }
 
     public List<String> getAllDependencies() {
-        List<String> list = new ArrayList<>();
-        for (AndroidLibrary androidL : getAllLibraryAars()) {
-            list.add(androidL.getResolvedCoordinates().toString());
+        if (allDependencies == null) {
+            allDependencies = new ArrayList<>();
+            for (AndroidLibrary androidL : getAllLibraryAars()) {
+                allDependencies.add(androidL.getResolvedCoordinates().toString());
+            }
+            for (JavaLibrary javaLibrary : getJavaLibraries()) {
+                allDependencies.add(javaLibrary.getResolvedCoordinates().toString());
+            }
+            for (SoLibrary soLibrary : getSoLibraries()) {
+                allDependencies.add(soLibrary.getResolvedCoordinates().toString());
+            }
+            Collections.sort(allDependencies);
         }
-        for (JavaLibrary javaLibrary : getJavaLibraries()) {
-            list.add(javaLibrary.getResolvedCoordinates().toString());
-        }
-        for (SoLibrary soLibrary : getSoLibraries()) {
-            list.add(soLibrary.getResolvedCoordinates().toString());
-        }
-        Collections.sort(list);
-        return list;
+        return allDependencies;
     }
 
     public void setBaseAwbDependencies(Map<ModuleIdentifier, ParsedModuleStringNotation> baseAwbDependencies) {
@@ -562,7 +566,7 @@ public class AwbBundle {
     }
 
     private static boolean compareWithoutVersion(ModuleVersionIdentifier moduleVersion, MavenCoordinates coordinates) {
-        return Objects.equal(moduleVersion.getGroup(), coordinates.getGroupId()) && Objects.equal(
-            moduleVersion.getName(), coordinates.getArtifactId());
+        return Objects.equal(moduleVersion.getGroup(), coordinates.getGroupId())
+            && Objects.equal(moduleVersion.getName(), coordinates.getArtifactId());
     }
 }
