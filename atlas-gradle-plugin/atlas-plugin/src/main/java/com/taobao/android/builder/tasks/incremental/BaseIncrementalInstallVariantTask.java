@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -270,6 +271,8 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
         @Override
         public void execute(@NonNull T incrementalInstallVariantTask) {
             BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+            AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
+                baseVariantOutputData);
 
             final GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
 
@@ -281,9 +284,12 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
             incrementalInstallVariantTask.setGroup(TaskManager.INSTALL_GROUP);
             incrementalInstallVariantTask.setProjectName(scope.getGlobalScope().getProject().getName());
             incrementalInstallVariantTask.setVariantData(scope.getVariantData());
-            incrementalInstallVariantTask.setTimeOutInMs(scope.getGlobalScope().getExtension().getAdbOptions()
+            incrementalInstallVariantTask.setTimeOutInMs(scope.getGlobalScope()
+                                                             .getExtension()
+                                                             .getAdbOptions()
                                                              .getTimeOutInMs());
-            incrementalInstallVariantTask.setProcessExecutor(scope.getGlobalScope().getAndroidBuilder()
+            incrementalInstallVariantTask.setProcessExecutor(scope.getGlobalScope()
+                                                                 .getAndroidBuilder()
                                                                  .getProcessExecutor());
             ConventionMappingHelper.map(incrementalInstallVariantTask, "adbExe", new Callable<File>() {
                 @Override
@@ -303,7 +309,7 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
                 public ImmutableList<File> call() {
                     ImmutableList.Builder<File> builder = ImmutableList.builder();
                     //Awb
-                    Collection awbApkFiles = appVariantContext.getAwbApkFiles();
+                    Collection<File> awbApkFiles = appVariantOutputContext.getAwbApkFiles();
                     if (awbApkFiles != null) {
                         builder.addAll(awbApkFiles);
                     }

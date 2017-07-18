@@ -216,7 +216,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.BaseExtension;
@@ -321,8 +320,10 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public File getJAwbavaOutputDir(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-classes/" + variantData.getVariantConfiguration().getDirName() + "/" + awbBundle
-                            .getName());
+                        "/awb-classes/"
+                            + variantData.getVariantConfiguration().getDirName()
+                            + "/"
+                            + awbBundle.getName());
     }
 
     public File getAwbClassOutputForDataBinding(AwbBundle awbBundle) {
@@ -363,18 +364,10 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     public File getModifyManifest(AndroidLibrary androidLibrary) {
         return new File(getModifyManifestDir(),
-                        androidLibrary.getResolvedCoordinates().getGroupId() + "." + androidLibrary
-                            .getResolvedCoordinates().getArtifactId() + ".xml");
-    }
-
-    @NonNull
-    public Collection<File> getAwbApkFiles() {
-        File awbSoOutputDir = getAwbSoOutputDir();
-        if (!awbSoOutputDir.exists()) {
-            return null;
-        }
-
-        return ImmutableList.copyOf(awbSoOutputDir.listFiles());
+                        androidLibrary.getResolvedCoordinates().getGroupId()
+                            + "."
+                            + androidLibrary.getResolvedCoordinates().getArtifactId()
+                            + ".xml");
     }
 
     public File getAwbApkOutputDir() {

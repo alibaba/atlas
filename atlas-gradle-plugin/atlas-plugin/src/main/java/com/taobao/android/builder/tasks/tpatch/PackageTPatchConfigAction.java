@@ -2,6 +2,7 @@ package com.taobao.android.builder.tasks.tpatch;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
@@ -31,6 +32,8 @@ public class PackageTPatchConfigAction extends MtlBaseTaskAction<Sync> {
     @Override
     public void execute(@NonNull Sync packageRenderscript) {
         packageRenderscript.from(getAppVariantOutputContext().getApkOutputFile(true));
-        packageRenderscript.from(((AppVariantContext)variantContext).getAwbApkFiles());
+        AppVariantOutputContext appVariantOutputContext
+            = ((AppVariantContext)variantContext).getAppVariantOutputContext(baseVariantOutputData);
+        packageRenderscript.from(appVariantOutputContext.getAwbApkFiles());
     }
 }

@@ -211,11 +211,13 @@ package com.android.build.gradle.internal.api;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
@@ -228,6 +230,8 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.builder.profile.ThreadRecorder;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -323,14 +327,18 @@ public class AppVariantOutputContext {
 
     public File getJAwbavaOutputDir(AwbBundle awbBundle) {
         return new File(outputScope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-classes/" + variantData.getVariantConfiguration().getDirName() + "/" + awbBundle
-                            .getName());
+                        "/awb-classes/"
+                            + variantData.getVariantConfiguration().getDirName()
+                            + "/"
+                            + awbBundle.getName());
     }
 
     public File getAwbJavaDependencyCache(AwbBundle awbBundle) {
         return new File(outputScope.getGlobalScope().getIntermediatesDir(),
-                        "/awb-dependency-cache/" + variantData.getVariantConfiguration().getDirName() + "/" + awbBundle
-                            .getName());
+                        "/awb-dependency-cache/"
+                            + variantData.getVariantConfiguration().getDirName()
+                            + "/"
+                            + awbBundle.getName());
     }
 
     public File getAwbSolib(AwbBundle awbBundle) {
@@ -341,8 +349,8 @@ public class AppVariantOutputContext {
     public synchronized Map<String, AwbTransform> getAwbTransformMap() {
         //TODO
         if (awbTransformMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantContext
-                                                                                                  .getVariantName());
+            AtlasDependencyTree dependencyTree
+                = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 //生成AwbTransform对象
                 AwbTransform awbTransform = new AwbTransform(awbBundle);
@@ -358,8 +366,8 @@ public class AppVariantOutputContext {
 
     public Map<String, VariantScope> getAwbVariantScopeMap() {
         if (awbVariantScopeMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantContext
-                                                                                                  .getVariantName());
+            AtlasDependencyTree dependencyTree
+                = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 VariantScopeImpl scope = new AwbVariantScopeImpl(outputScope.getVariantScope().getGlobalScope(),
                                                                  getAwbTransformManagerMap().get(awbBundle.getName()),
@@ -375,12 +383,14 @@ public class AppVariantOutputContext {
     //生成Awb TransformManager防止冲突
     public Map<String, TransformManager> getAwbTransformManagerMap() {
         if (awbTransformManagerMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantContext
-                                                                                                  .getVariantName());
+            AtlasDependencyTree dependencyTree
+                = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
                 TransformManager transformManager = new TransformManager(new AndroidTaskRegistry(),
-                                                                         outputScope.getVariantScope().getGlobalScope()
-                                                                             .getAndroidBuilder().getErrorReporter(),
+                                                                         outputScope.getVariantScope()
+                                                                             .getGlobalScope()
+                                                                             .getAndroidBuilder()
+                                                                             .getErrorReporter(),
                                                                          ThreadRecorder.get());
                 awbTransformManagerMap.put(awbBundle.getName(), transformManager);
             }
@@ -431,6 +441,23 @@ public class AppVariantOutputContext {
         file.getParentFile().mkdirs();
         awbBundle.outputBundleFile = file;
         return file;
+    }
+
+    private Collection<File> awbApkFiles;
+
+    @NonNull
+    public Collection<File> getAwbApkFiles() {
+        if (awbApkFiles == null) {
+            Builder<File> builder = ImmutableSet.builder();
+            AtlasDependencyTree dependencyTree
+                = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
+            List<AwbBundle> awbBundles = dependencyTree.getAwbBundles();
+            for (AwbBundle awbBundle : awbBundles) {
+                builder.add(getAwbPackageOutputFile(awbBundle));
+            }
+            awbApkFiles = builder.build();
+        }
+        return awbApkFiles;
     }
 
     public File getAwbJniFolder(AwbBundle awbBundle) {

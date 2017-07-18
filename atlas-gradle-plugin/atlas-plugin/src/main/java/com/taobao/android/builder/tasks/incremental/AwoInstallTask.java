@@ -217,6 +217,7 @@ import java.util.concurrent.Callable;
 
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -350,7 +351,9 @@ public class AwoInstallTask extends BaseTask {
                     return getAppVariantOutputContext().getApkOutputFile(true);
                 }
             });
-            ConventionMappingHelper.map(task, "awbApkFiles", appVariantContext::getAwbApkFiles);
+            AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
+                baseVariantOutputData);
+            ConventionMappingHelper.map(task, "awbApkFiles", appVariantOutputContext::getAwbApkFiles);
         }
     }
 }
