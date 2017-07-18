@@ -210,6 +210,7 @@
 package com.taobao.android.builder.dependency;
 
 import java.io.File;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -394,7 +395,9 @@ public class AtlasDependencyTree {
             }
             sb.append(":").append(coordinates.getVersion());
         }
-        sb.append(" -> ").append(getLibraryFile(library));
+        File libraryFile = getLibraryFile(library);
+        sb.append(" -> ").append(libraryFile).append("[").append(DateFormat.getDateTimeInstance()
+                                                                     .format(libraryFile.lastModified())).append("]");
 
         return sb.toString();
     }
