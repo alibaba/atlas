@@ -277,8 +277,9 @@ public class PrepareAllDependenciesTask extends BaseTask {
 
         for (final AndroidLibrary aarBundle : atlasDependencyTree.getAllAndroidLibrarys()) {
 
-            if (/*DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getBundle())*/aarBundle
-                .getProject() != null) {
+            //工程依赖不解压
+            if (/*DependencyLocationManager.isProjectLibrary(getProject(), aarBundle.getBundle())*/aarBundle.getProject()
+                != null) {
 
                 //     executor.execute(() -> {
                 //
@@ -299,8 +300,10 @@ public class PrepareAllDependenciesTask extends BaseTask {
                 //     });
             } else {
                 executor.execute(() -> {
-                    getLogger().info("prepare2 " + aarBundle.getBundle().getAbsolutePath() + "->" + aarBundle
-                        .getFolder());
+                    getLogger().info("prepare2 "
+                                         + aarBundle.getBundle().getAbsolutePath()
+                                         + "->"
+                                         + aarBundle.getFolder());
                     prepareLibrary(aarBundle);
                     return null;
                 });
