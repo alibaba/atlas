@@ -794,25 +794,29 @@ public class ManifestFileUtils {
         fillFullClazzName(root, packageName, "service");
 
         if (incremental) {
-            root.addNamespace(TOOLS_PREFIX, TOOLS_URI);
-            Namespace toolsNamespace = root.getNamespaceForPrefix(TOOLS_PREFIX);
-            QName replaceName = QName.get(ATTR_REPLACE, toolsNamespace);
-            QName nodeName = QName.get(ATTR_NODE, toolsNamespace);
-            List<? extends Node> nodes = root.selectNodes("//application/*");
-            for (Node node : nodes) {
-                Element element = (Element)node;
-                Attribute attribute = element.attribute(replaceName);
-                if (attribute != null) {
-                    element.remove(attribute);
-                }
-                element.addAttribute(replaceName,
-                                     Joiner.on(',')
-                                         .join(Iterables.transform(element.attributes(), Attribute::getQualifiedName)));
-                element.setAttributeValue(nodeName, "replace");
-            }
+            setToolsReplaceAttribute(root);
         }
 
         XmlHelper.saveDocument(document, modifyManifest);
+    }
+
+    private static void setToolsReplaceAttribute(Element root) {
+        root.addNamespace(TOOLS_PREFIX, TOOLS_URI);
+        Namespace toolsNamespace = root.getNamespaceForPrefix(TOOLS_PREFIX);
+        QName replaceName = QName.get(ATTR_REPLACE, toolsNamespace);
+        QName nodeName = QName.get(ATTR_NODE, toolsNamespace);
+        List<? extends Node> nodes = root.selectNodes("//application/*");
+        for (Node node : nodes) {
+            Element element = (Element)node;
+            Attribute attribute = element.attribute(replaceName);
+            if (attribute != null) {
+                element.remove(attribute);
+            }
+            element.addAttribute(replaceName,
+                                 Joiner.on(',')
+                                     .join(Iterables.transform(element.attributes(), Attribute::getQualifiedName)));
+            element.setAttributeValue(nodeName, "replace");
+        }
     }
 
     private static void fillFullClazzName(Element root, String packageName, String type) {
