@@ -220,12 +220,15 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import com.alibaba.fastjson.JSON;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.ide.common.internal.LoggedErrorException;
@@ -501,10 +504,23 @@ public class LogDependenciesTask extends BaseTask {
             logDependenciesTask.appBuildInfo = getAppVariantOutputContext().appBuildInfo;
             logDependenciesTask.appVariantContext = appVariantContext;
 
-            AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantName);
+            // AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(variantName);
             // if (null != atlasDependencyTree) {
-            logDependenciesTask.setDependencyJson(atlasDependencyTree.getDependencyJson());
+            // logDependenciesTask.setDependencyJson(atlasDependencyTree.getDependencyJson());
             // }
+
+            ConventionMappingHelper.map(logDependenciesTask, "dependencyJson", new Callable<DependencyJson>() {
+                @Override
+                public DependencyJson call() throws Exception {
+                    Map<String, AtlasDependencyTree> androidDependencyTrees = AtlasBuildContext.androidDependencyTrees;
+
+                    if (androidDependencyTrees == null) {
+                        return null;
+                    }
+                    AtlasDependencyTree atlasDependencyTree = androidDependencyTrees.get(variantName);
+                    return atlasDependencyTree.getDependencyJson();
+                }
+            });
             logDependenciesTask.setUrls(((URLClassLoader)LogDependenciesTask.class.getClassLoader()).getURLs());
             logDependenciesTask.setBuildInfos(getBuildInfos());
 
