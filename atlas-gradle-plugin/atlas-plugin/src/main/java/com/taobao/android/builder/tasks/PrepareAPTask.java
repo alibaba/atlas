@@ -224,6 +224,7 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.utils.FileUtils;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -364,8 +365,15 @@ public class PrepareAPTask extends BaseTask {
                 String awbSoName = awbBundle.getAwbSoName();
                 File awbFile = new File(apContext.getBaseRemoteBundlesFolder(), awbSoName);
                 if (!awbFile.exists()) {
-                    BetterZip.extractFile(apContext.getBaseApk(), "lib/armeabi/" + awbSoName,
-                                          apContext.getBaseAwbsFolder());
+                    File baseApk = apContext.getBaseApk();
+                    File baseAwbsFolder = apContext.getBaseAwbsFolder();
+                    String path = "lib/armeabi/" + awbSoName;
+                    File extractFile = BetterZip.extractFile(baseApk, path, baseAwbsFolder);
+                    Preconditions.checkNotNull(extractFile,
+                                               String.format("Unable to unzip '%1$s' from '%2$s' to '%3$s'",
+                                                             path,
+                                                             baseApk,
+                                                             baseAwbsFolder));
                 }
             }
         }
@@ -418,8 +426,9 @@ public class PrepareAPTask extends BaseTask {
             }
             variantContext.apContext.setApFile(tBuildType.getBaseApFile());
 
-            variantContext.apContext.setApExploredFolder(
-                variantContext.getProject().file(scope.getGlobalScope().getIntermediatesDir() + "/exploded-ap/"));
+            variantContext.apContext.setApExploredFolder(variantContext.getProject()
+                                                             .file(scope.getGlobalScope().getIntermediatesDir()
+                                                                       + "/exploded-ap/"));
 
             ConventionMappingHelper.map(prepareAPTask, "apFile", new Callable<File>() {
                 @Override
@@ -446,8 +455,8 @@ public class PrepareAPTask extends BaseTask {
             });
 
             prepareAPTask.incremental = variantContext.getAtlasExtension().getTBuildConfig().isIncremental();
-            prepareAPTask.dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                variantContext.getVariantName());
+            prepareAPTask.dependencyTree
+                = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
         }
     }
 }
