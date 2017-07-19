@@ -416,6 +416,10 @@ public class AppVariantOutputContext {
 
     public File getAwbPackageOutputFile(AwbBundle awbBundle) {
         String awbOutputName = awbBundle.getAwbSoName();
+        if (awbOutputName == null) {
+            return null;
+        }
+
         File file = new File(variantContext.getAwbSoOutputDir(), awbOutputName);
         file.getParentFile().mkdirs();
 
@@ -453,7 +457,12 @@ public class AppVariantOutputContext {
                 = AtlasBuildContext.androidDependencyTrees.get(variantContext.getVariantName());
             List<AwbBundle> awbBundles = dependencyTree.getAwbBundles();
             for (AwbBundle awbBundle : awbBundles) {
-                builder.add(getAwbPackageOutputFile(awbBundle));
+                File awbPackageOutputFile = getAwbPackageOutputFile(awbBundle);
+                if (awbPackageOutputFile == null) {
+                    return null;
+                }
+
+                builder.add(awbPackageOutputFile);
             }
             awbApkFiles = builder.build();
         }
