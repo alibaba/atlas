@@ -227,7 +227,6 @@ import com.alibaba.fastjson.JSON;
 import com.android.annotations.Nullable;
 import com.android.builder.model.Library;
 import com.android.builder.model.MavenCoordinates;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.HashBasedTable;
@@ -371,14 +370,20 @@ public class ApDependencies /*extends BaseTask*/ {
         // if (row.size() == 0) {
         //     return null;
         // }
-        Preconditions.checkState(row.size() == 1, "Unable to find AwbDependencies for '" + moduleIdentifier + "'");
+        if (!(row.size() == 1)) {
+            throw new IllegalStateException(String.valueOf("Unable to find AwbDependencies for '"
+                                                               + moduleIdentifier
+                                                               + "'"));
+        }
         Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> element
             = Iterables.getOnlyElement(row.entrySet());
-        Preconditions.checkState(AWB.equals(element.getValue().getArtifactType()),
-                                 String.format("Expected artifactType '%s' but found '%s' in '%s'",
-                                               AWB,
-                                               element.getValue().getArtifactType(),
-                                               moduleIdentifier));
+        if (!AWB.equals(element.getValue().getArtifactType())) {
+            throw new IllegalStateException(String.valueOf(String.format(
+                "Expected artifactType '%s' but found '%s' in '%s'",
+                AWB,
+                element.getValue().getArtifactType(),
+                moduleIdentifier)));
+        }
         return mDependenciesTable.column(element.getKey());
     }
 
