@@ -801,9 +801,13 @@ public class ManifestFileUtils {
             List<? extends Node> nodes = root.selectNodes("//application/*");
             for (Node node : nodes) {
                 Element element = (Element)node;
-                element.setAttributeValue(replaceName,
-                                          Joiner.on(',').join(Iterables.transform(element.attributes(),
-                                                                                  Attribute::getQualifiedName)));
+                Attribute attribute = element.attribute(replaceName);
+                if (attribute != null) {
+                    element.remove(attribute);
+                }
+                element.addAttribute(replaceName,
+                                     Joiner.on(',')
+                                         .join(Iterables.transform(element.attributes(), Attribute::getQualifiedName)));
                 element.setAttributeValue(nodeName, "replace");
             }
         }
