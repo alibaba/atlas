@@ -374,6 +374,11 @@ public class ApDependencies /*extends BaseTask*/ {
         Preconditions.checkState(row.size() == 1, "Unable to find AwbDependencies for '" + moduleIdentifier + "'");
         Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> element
             = Iterables.getOnlyElement(row.entrySet());
+        Preconditions.checkState(AWB.equals(element.getValue().getArtifactType()),
+                                 String.format("Expected artifactType '%s' but found '%s' in '%s'",
+                                               AWB,
+                                               element.getValue().getArtifactType(),
+                                               moduleIdentifier));
         return mDependenciesTable.column(element.getKey());
     }
 
