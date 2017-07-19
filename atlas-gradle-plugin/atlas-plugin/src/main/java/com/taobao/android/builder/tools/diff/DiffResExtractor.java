@@ -221,8 +221,10 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.zip.ZipUtils;
+import groovy.lang.Closure;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.gradle.api.file.CopySpec;
 
 /**
  * Created by wuzhong on 2016/9/30.
@@ -233,7 +235,6 @@ public class DiffResExtractor {
      * assets : 直接通过比较apk
      * res : 通过diffResFiles ， 再去apk 验证
      *
-     *
      * @param appVariantContext
      * @param diffResFiles
      * @param currentApk
@@ -242,9 +243,8 @@ public class DiffResExtractor {
      * @param destDir
      * @throws IOException
      */
-    public static void extractDiff(AppVariantContext appVariantContext,
-                                   Set<String> diffResFiles, File currentApk, File baseApk, File fullResDir,
-                                   File destDir) throws IOException {
+    public static void extractDiff(AppVariantContext appVariantContext, Set<String> diffResFiles, File currentApk,
+                                   File baseApk, File fullResDir, File destDir, boolean fullValues) throws IOException {
 
         if (!currentApk.exists() || !baseApk.exists() || !fullResDir.exists()) {
             return;
@@ -283,7 +283,6 @@ public class DiffResExtractor {
             if (!baseFile.exists() || !MD5Util.getFileMD5(file).equals(MD5Util.getFileMD5(baseFile))) {
                 FileUtils.copyFile(file, new File(destDir, relativePath));
             }
-
         }
 
         //计算res
@@ -292,8 +291,8 @@ public class DiffResExtractor {
             File baseFile = new File(baseApkDir, diffFile);
             File currentFile = new File(apkDir, diffFile);
 
-            if (baseFile.exists() && currentFile.exists() && MD5Util.getFileMD5(baseFile).equals(
-                MD5Util.getFileMD5(currentFile))) {
+            if (baseFile.exists() && currentFile.exists() && MD5Util.getFileMD5(baseFile).equals(MD5Util.getFileMD5(
+                currentFile))) {
                 continue;
             }
 
@@ -302,26 +301,43 @@ public class DiffResExtractor {
             if (rawFile.exists()) {
                 FileUtils.copyFile(rawFile, new File(destDir, diffFile));
             }
-
         }
 
-        //必须生成resource.arsc
+        // //必须生成resource.arsc
         File resDir = new File(destDir, "res");
-        if (!resDir.exists()) {
-            File valuesDir = new File(resDir, "values");
-            FileUtils.forceMkdir(valuesDir);
-            File stringsFile = new File(valuesDir, "strings.xml");
-            UUID uuid = UUID.randomUUID();
-            FileUtils.writeStringToFile(stringsFile, String.format(
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <string "
-                    + "name=\"%s\">%s</string>\n</resources>\n",
-                uuid, uuid), "UTF-8", false);
+        File valuesDir = new File(resDir, "values");
+        FileUtils.forceMkdir(valuesDir);
+        if (fullValues) {
+            appVariantContext.getProject().copy(new Closure(DiffResExtractor.class) {
+                public Object doCall(CopySpec cs) {
+                    cs.from(fullResDir);
+                    cs.into(destDir);
+                    cs.include("res/values*/**");
 
+                    return cs;
+                }
+            });
+
+            // FileUtils.copyFile(new File(fullResDir, "res/values/values.xml"),
+            //                    new File(destDir, "res/values/values.xml"));
+        } else {
+            if (!resDir.exists()) {
+                File stringsFile = new File(valuesDir, "strings.xml");
+                UUID uuid = UUID.randomUUID();
+                FileUtils.writeStringToFile(stringsFile,
+                                            String.format(
+                                                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <string "
+                                                    + "name=\"%s\">%s</string>\n</resources>\n",
+                                                uuid,
+                                                uuid),
+                                            "UTF-8",
+                                            false);
+            }
         }
 
         //设置values.xml
         File valuesXml = new File(resDir, "values/values.xml");
-        AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.injectTpatchValuesRes( appVariantContext, valuesXml);
+        AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.injectTpatchValuesRes(appVariantContext, valuesXml);
 
         final Pattern densityOnlyPattern = Pattern.compile("[a-zA-Z]+-[a-zA-Z]+dpi");
         if (resDir.exists()) {
@@ -335,7 +351,5 @@ public class DiffResExtractor {
                 }
             }
         }
-
     }
-
 }
