@@ -412,14 +412,23 @@ public class PatchFileBuilder {
                             break;
 
                         }
-                        copyDiffFiles(fullAwbFile, curBundleFolder, hisBundleFolder, bundleDestFolder);
-                        if (!bundleDestFolder.exists() || bundleDestFolder.listFiles().length == 0) {
-                            addToPatch = false;
+                        copyDiffFiles(fullAwbFile, curBundleFolder, hisBundleFolder, bundleDestFolder,patchBundleInfo.getSrcUnitTag().equals(patchBundleInfo.getUnitTag()));
+                        if (!bundleDestFolder.exists() || FileUtils.listFiles(bundleDestFolder,null,true).size() == 0) {
+                            if (patchBundleInfo.getUnitTag().equals(patchBundleInfo.getSrcUnitTag())) {
+                                addToPatch = false;
+                            }else {
+                                throw new PatchException(patchName+"patch中:"+patchBundleInfo.getPkgName()+"的srcunittag和unittag不一致,"+patchBundleInfo.getUnitTag()+","+patchBundleInfo.getSrcUnitTag()+"但是无任何变更,无法动态部署，请重新集成!")
+                            }
                         }
                     }
                     break;
             }
-            if (addToPatch) {
+
+            if (addToPatch&&patchBundleInfo.getUnitTag().equals(patchBundleInfo.getSrcUnitTag())){
+
+                throw new PatchException(patchName+"patch中:"+patchBundleInfo.getPkgName()+"的srcunittag和unittag一致,"+patchBundleInfo.getUnitTag()+",无法动态部署，请重新集成!");
+
+            }else if (addToPatch) {
                 patchInfo.getBundles().add(patchBundleInfo);
             }
         }
@@ -436,7 +445,7 @@ public class PatchFileBuilder {
      * @param bundleName
      */
     private void copyDiffFiles(File fullLibFile, File curBundleFolder, File hisBundleFolder,
-                               File destBundleFolder) throws IOException, PatchException {
+                               File destBundleFolder,boolean equalUnitTag) throws IOException, PatchException {
         Map<String, FileDef> curBundleFileMap = getListFileMap(curBundleFolder);
         Map<String, FileDef> hisBundleFileMap = getListFileMap(hisBundleFolder);
         Set<String> rollbackFiles = new HashSet<String>();
@@ -444,10 +453,11 @@ public class PatchFileBuilder {
         for (Map.Entry<String, FileDef> entry : curBundleFileMap.entrySet()) {
             String curFilePath = entry.getKey();
             FileDef curFileDef = entry.getValue();
-            if (curFileDef.file.getName().endsWith("abc_wb_textfield_cdf.jpg")){
+            if (curFileDef.file.getName().endsWith("abc_wb_textfield_cdf.jpg")&&equalUnitTag){
                 hisBundleFileMap.remove(curFilePath);
                 continue;
             }
+
             File destFile = new File(destBundleFolder, curFilePath);
             if (hisBundleFileMap.containsKey(curFilePath)) {
                 FileDef hisFileDef = hisBundleFileMap.get(curFilePath);
