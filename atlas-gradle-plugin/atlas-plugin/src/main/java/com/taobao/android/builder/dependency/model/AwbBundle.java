@@ -508,7 +508,7 @@ public class AwbBundle {
     }
 
     private boolean isFullDependencies(Map<ModuleIdentifier, ParsedModuleStringNotation> baseAwbDependencies) {
-        checkNotNull(baseAwbDependencies, "Missing baseAwbDependencies for awb " + getResolvedCoordinates());
+        // checkNotNull(baseAwbDependencies, "Missing baseAwbDependencies for awb " + getResolvedCoordinates());
         if (baseAwbDependencies.size() == 1) {
             return true;
         }
