@@ -526,7 +526,7 @@ public class TPatchTool extends BasePatchTool {
             testForBuildPatchInfos.setPatches(patchInfos);
             testForBuildPatchInfos.setDiffBundleDex(buildPatchInfos.isDiffBundleDex());
             for(PatchInfo patchInfo:buildPatchInfos.getPatches()){
-                if (patchInfo.getPatchVersion().equals(buildPatchInfos.getBaseVersion())){
+                if (patchInfo.getTargetVersion().equals(buildPatchInfos.getBaseVersion())){
                     patchInfos.add(patchInfo);
                 }
             }
