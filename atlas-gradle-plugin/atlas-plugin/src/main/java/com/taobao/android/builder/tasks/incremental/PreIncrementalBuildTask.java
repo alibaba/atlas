@@ -40,30 +40,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
 
     @TaskAction
     public void taskAction() {
-        // 覆盖包名
-        DefaultManifestParser manifestParser = new DefaultManifestParser(apContext.getBaseManifest());
-        GradleVariantConfiguration variantConfiguration = appVariantContext.getScope().getVariantConfiguration();
-        DefaultProductFlavor mergedFlavor = (DefaultProductFlavor)variantConfiguration.getMergedFlavor();
-        String idOverride = variantConfiguration.getIdOverride();
-        if (Strings.isNullOrEmpty(idOverride)) {
-            mergedFlavor.setApplicationId(manifestParser.getPackage());
-        }
-
-        // 覆盖版本号
-        String versionNameOverride = apkVariantOutputData.getVersionNameOverride();
-        if (Strings.isNullOrEmpty(versionNameOverride)) {
-            apkVariantOutputData.setVersionNameOverride(manifestParser.getVersionName());
-
-            String versionName = mergedFlavor.getVersionName();
-            if (versionName == null) {
-                mergedFlavor.setVersionName(manifestParser.getVersionName());
-            }
-        }
-
-        int versionCodeOverride = apkVariantOutputData.getVersionCodeOverride();
-        if (versionCodeOverride == -1) {
-            apkVariantOutputData.setVersionCodeOverride(manifestParser.getVersionCode());
-        }
+        setAppInfoOverride();
 
         // 覆盖mainManifest
         ManifestProcessorTask manifestProcessorTask = apkVariantOutputData.manifestProcessorTask;
@@ -124,6 +101,33 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
         }
 
         appVariantContext.getScope().getTransformManager().addStream(builder.build());
+    }
+
+    private void setAppInfoOverride() {
+        // 覆盖包名
+        DefaultManifestParser manifestParser = new DefaultManifestParser(apContext.getBaseManifest());
+        GradleVariantConfiguration variantConfiguration = appVariantContext.getScope().getVariantConfiguration();
+        DefaultProductFlavor mergedFlavor = (DefaultProductFlavor)variantConfiguration.getMergedFlavor();
+        String idOverride = variantConfiguration.getIdOverride();
+        if (Strings.isNullOrEmpty(idOverride)) {
+            mergedFlavor.setApplicationId(manifestParser.getPackage());
+        }
+
+        // 覆盖版本号
+        String versionNameOverride = apkVariantOutputData.getVersionNameOverride();
+        if (Strings.isNullOrEmpty(versionNameOverride)) {
+            apkVariantOutputData.setVersionNameOverride(manifestParser.getVersionName());
+
+            String versionName = mergedFlavor.getVersionName();
+            if (versionName == null) {
+                mergedFlavor.setVersionName(manifestParser.getVersionName());
+            }
+        }
+
+        int versionCodeOverride = apkVariantOutputData.getVersionCodeOverride();
+        if (versionCodeOverride == -1) {
+            apkVariantOutputData.setVersionCodeOverride(manifestParser.getVersionCode());
+        }
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PreIncrementalBuildTask> {
