@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.TaskManager;
@@ -29,6 +31,7 @@ import com.android.builder.testing.api.DeviceProvider;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
+import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.android.ide.common.process.ProcessExecutor;
@@ -54,6 +57,8 @@ import static com.android.build.gradle.internal.api.AppVariantOutputContext.MAIN
 abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
     public static final String PATCH_INSTALL_DIRECTORY_PREFIX = "/sdcard/Android/data/";
 
+    private static final Pattern VERSION_NAME_PATTERN = Pattern.compile("versionName=([^']*)$");
+
     private static final long LS_TIMEOUT_SEC = 2;
 
     private static Field sDevice;
@@ -65,6 +70,8 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
     private String projectName;
 
     private String appPackageName;
+
+    private String versionName;
 
     private int timeOutInMs = 0;
 
@@ -124,9 +131,24 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
             String variantName = variantConfig.getFullName();
             int successfulInstallCount = 0;
             List<? extends DeviceConnector> devices = deviceProvider.getDevices();
+            String appPackageName = getAppPackageName();
             for (final IDevice device : Iterables.transform(devices, BaseIncrementalInstallVariantTask::getDevice)) {
                 try {
-                    install(projectName, variantName, getAppPackageName(), device, apkFiles);
+                    VersionNameReceiver versionNameReceiver = new VersionNameReceiver();
+                    device.executeShellCommand("dumpsys package " + appPackageName,//$NON-NLS-1$
+                                               versionNameReceiver);
+                    String versionName = getVersionName();
+                    String versionName1 = versionNameReceiver.getVersionName();
+                    if (!versionName.equals(versionName1)) {
+                        getLogger().warn(String.format("versionName declared at %1$s value=(%2$s)\n"
+                                                           + "\thas a different value=(%3$s) "
+                                                           + "declared at %4$s\n",
+                                                       projectName,
+                                                       versionName,
+                                                       versionName1,
+                                                       device));
+                    }
+                    install(projectName, variantName, appPackageName, device, apkFiles);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -256,6 +278,15 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
         this.apkFiles = apkFiles;
     }
 
+    @Input
+    public String getVersionName() {
+        return versionName;
+    }
+
+    public void setVersionName(String versionName) {
+        this.versionName = versionName;
+    }
+
     public abstract static class ConfigAction<T extends BaseIncrementalInstallVariantTask>
         extends MtlBaseTaskAction<T> {
         private final AppVariantContext appVariantContext;
@@ -302,6 +333,9 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
             ConventionMappingHelper.map(incrementalInstallVariantTask,
                                         "appPackageName",
                                         variantConfiguration::getApplicationId);
+            ConventionMappingHelper.map(incrementalInstallVariantTask,
+                                        "versionName",
+                                        variantConfiguration::getVersionName);
             //TODO 先根据依赖判断
             ConventionMappingHelper.map(incrementalInstallVariantTask, "apkFiles", new Callable<ImmutableList<File>>() {
 
@@ -323,6 +357,29 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
                     return builder.build();
                 }
             });
+        }
+    }
+
+    private static class VersionNameReceiver extends MultiLineReceiver {
+        private String mVersionName;
+
+        @Override
+        public void processNewLines(String[] lines) {
+            for (String line : lines) {
+                Matcher versionNameMatch = VERSION_NAME_PATTERN.matcher(line);
+                if (versionNameMatch.matches()) {
+                    mVersionName = versionNameMatch.group(1);
+                }
+            }
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return mVersionName != null;
+        }
+
+        public String getVersionName() {
+            return mVersionName;
         }
     }
 }
