@@ -257,6 +257,7 @@ import com.taobao.android.builder.tools.ideaplugin.AwoPropHandler;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.tasks.bundling.Zip;
 
 /**
@@ -288,8 +289,11 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                                                                             atlasExtension,
                                                                             libraryExtension);
 
-                project.getTasks().getByName(libVariantContext.getScope().getTaskName("extract", "Annotations"))
-                    .setEnabled(false);
+                Task task = project.getTasks().findByName(libVariantContext.getScope()
+                                                              .getTaskName("extract", "Annotations"));
+                if (task != null) {
+                    task.setEnabled(false);
+                }
                 TBuildType tBuildType = libVariantContext.getBuildType();
                 if (null != tBuildType) {
                     try {
@@ -350,7 +354,9 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
     private void createIncrementalAllActionsTasks(LibVariantOutputData libVariantOutputData) {
         VariantScope scope = libVariantOutputData.getScope().getVariantScope();
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-        MergeResources mergeResourcesTask = libVariantOutputData.getScope().getVariantScope().getMergeResourcesTask()
+        MergeResources mergeResourcesTask = libVariantOutputData.getScope()
+            .getVariantScope()
+            .getMergeResourcesTask()
             .get(tasks);
         atlasExtension.getTBuildConfig().setUseCustomAapt(true);
         mergeResourcesTask.setAndroidBuilder(tAndroidBuilder);
@@ -362,7 +368,8 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                 if (variantData.getExtraGeneratedResFolders() != null) {
                     generatedResFolders.addAll(variantData.getExtraGeneratedResFolders());
                 }
-                if (scope.getMicroApkTask() != null && variantData.getVariantConfiguration().getBuildType()
+                if (scope.getMicroApkTask() != null && variantData.getVariantConfiguration()
+                    .getBuildType()
                     .isEmbedMicroApp()) {
                     generatedResFolders.add(scope.getMicroApkResDirectory());
                 }
