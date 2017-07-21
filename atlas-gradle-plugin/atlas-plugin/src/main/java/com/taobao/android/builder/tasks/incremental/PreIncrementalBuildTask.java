@@ -83,8 +83,11 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
                 taskName = null;
             } else {
                 taskName = apkVariantOutputData.getScope().getTaskName("generate", "AtlasSources");
-                getLogger().warn("Skipped " + taskName + " : required atlasFrameworkPropertiesFile not found "
-                                     + atlasFrameworkPropertiesFile + '\n'
+                getLogger().warn("Skipped "
+                                     + taskName
+                                     + " : required atlasFrameworkPropertiesFile not found "
+                                     + atlasFrameworkPropertiesFile
+                                     + '\n'
                                      + "Please check and update your baseline project atlasplugin.");
                 getProject().getTasks().getByName(taskName).setEnabled(false);
             }
@@ -99,13 +102,23 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
         });
         // 动态部署增量编译不打包Awb
         if (appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-            .getPatchConfig().isCreateTPatch()) {
+            .getPatchConfig()
+            .isCreateTPatch()) {
             builder.addContentType(ExtendedContentType.NATIVE_LIBS);
         } else {
+            ConventionMappingHelper.map(apkVariantOutputData.processResourcesTask,
+                                        "manifestFile",
+                                        new Callable<File>() {
+                                            @Override
+                                            public File call() throws Exception {
+                                                return apContext.getBaseMainManifest();
+                                            }
+                                        });
             AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
                 apkVariantOutputData);
             ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask, "signingConfig", () -> null);
-            ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask, "outputFile",
+            ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask,
+                                        "outputFile",
                                         appVariantOutputContext::getPatchApkOutputFile);
         }
 
