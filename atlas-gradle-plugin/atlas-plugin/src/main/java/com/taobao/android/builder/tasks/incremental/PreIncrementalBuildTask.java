@@ -106,6 +106,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
             .isCreateTPatch()) {
             builder.addContentType(ExtendedContentType.NATIVE_LIBS);
         } else {
+            // TODO 四大组件变化
             ConventionMappingHelper.map(apkVariantOutputData.processResourcesTask,
                                         "manifestFile",
                                         new Callable<File>() {
