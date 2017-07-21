@@ -140,9 +140,9 @@ abstract class BaseIncrementalInstallVariantTask extends IncrementalTask {
                     String versionName = getVersionName();
                     String versionName1 = versionNameReceiver.getVersionName();
                     if (!versionName.equals(versionName1)) {
-                        getLogger().warn(String.format("versionName declared at %1$s value=(%2$s)\n"
+                        getLogger().warn(String.format("versionName declared at project %1$s value=(%2$s)\n"
                                                            + "\thas a different value=(%3$s) "
-                                                           + "declared at %4$s\n",
+                                                           + "declared at device %4$s\n",
                                                        projectName,
                                                        versionName,
                                                        versionName1,
