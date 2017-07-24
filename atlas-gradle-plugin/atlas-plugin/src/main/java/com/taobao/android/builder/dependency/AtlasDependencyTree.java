@@ -396,8 +396,8 @@ public class AtlasDependencyTree {
             sb.append(":").append(coordinates.getVersion());
         }
         File libraryFile = getLibraryFile(library);
-        sb.append(" -> ").append(libraryFile).append("[").append(DateFormat.getDateTimeInstance()
-                                                                     .format(libraryFile.lastModified())).append("]");
+        sb.append(" -> ").append(libraryFile).append(" [").append(DateFormat.getDateTimeInstance()
+                                                                      .format(libraryFile.lastModified())).append("]");
 
         return sb.toString();
     }
