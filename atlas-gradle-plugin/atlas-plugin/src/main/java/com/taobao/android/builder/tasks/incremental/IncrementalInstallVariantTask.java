@@ -60,8 +60,8 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
     void restartApp(IDevice device, String appPackageName)
         throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException,
                DeviceException {
-        //退到后台
-        runCommand(device, "input keyevent 3");
+        // //退到后台
+        // runCommand(device, "input keyevent 3");
 
         //杀死进程
         runCommand(device, "am force-stop " + appPackageName);
