@@ -270,10 +270,6 @@ public class ManifestFileUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(ManifestFileUtils.class);
 
-    private static final String ATTR_REPLACE = "replace";
-
-    private static final String ATTR_NODE = "node";
-
     public static String[] SYSTEM_PERMISSION = new String[] {"android.permission", "com.android"};
 
     /**
@@ -803,8 +799,8 @@ public class ManifestFileUtils {
     private static void setToolsReplaceAttribute(Element root) {
         root.addNamespace(TOOLS_PREFIX, TOOLS_URI);
         Namespace toolsNamespace = root.getNamespaceForPrefix(TOOLS_PREFIX);
-        QName replaceName = QName.get(ATTR_REPLACE, toolsNamespace);
-        QName nodeName = QName.get(ATTR_NODE, toolsNamespace);
+        QName replaceName = QName.get("replace", toolsNamespace);
+        QName nodeName = QName.get("node", toolsNamespace);
         List<? extends Node> nodes = root.selectNodes("//application/*");
         for (Node node : nodes) {
             Element element = (Element)node;
