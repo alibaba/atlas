@@ -211,7 +211,6 @@ package com.taobao.android.builder.manager;
 
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.LibraryExtension;
-import com.android.build.gradle.internal.AndroidComponent;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
@@ -255,8 +254,8 @@ public class AtlasConfigurationHelper {
 
         Configuration compileConfiguration = project.getConfigurations().getByName(COMPILE_CONFIGURATION_NAME);
 
-        project.getComponents().add(new AndroidComponent(compileConfiguration,
-                                                         compileConfiguration.getAllDependencies()));
+        /*project.getComponents().add(new AndroidComponent(compileConfiguration,
+                                                         compileConfiguration.getAllDependencies()));*/
 
         //add provided compile
         if (null == project.getConfigurations().findByName(AtlasPlugin.PROVIDED_COMPILE)) {

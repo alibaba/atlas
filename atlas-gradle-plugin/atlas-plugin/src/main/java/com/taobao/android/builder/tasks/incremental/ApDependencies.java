@@ -244,6 +244,8 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.DefaultVersionComparator;
+import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.Version;
+import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.VersionParser;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 
@@ -269,7 +271,16 @@ public class ApDependencies /*extends BaseTask*/ {
 
     private final DependencyHandler dependencies;
 
-    private final Comparator<String> versionComparator = new DefaultVersionComparator().asStringComparator();
+    private final Comparator<Version> versionComparator = new DefaultVersionComparator().asVersionComparator();
+
+    private final VersionParser versionParser = new VersionParser();
+
+    private final Comparator<String> versionStringComparator = new Comparator<String>() {
+        @Override
+        public int compare(String string1, String string2) {
+            return versionComparator.compare(versionParser.transform(string1), versionParser.transform(string2));
+        }
+    };
 
     private final Table<ModuleIdentifier, ParsedModuleStringNotation, ParsedModuleStringNotation> mDependenciesTable
         = HashBasedTable.create();
@@ -472,7 +483,7 @@ public class ApDependencies /*extends BaseTask*/ {
         }
         String mainVersion = Iterables.getOnlyElement(row.entrySet()).getValue().getVersion();
 
-        if (versionComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
+        if (versionStringComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
             LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping",
                         moduleVersion.getModule(),
                         mainVersion,
