@@ -224,6 +224,7 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.utils.FileUtils;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -235,9 +236,12 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.xml.XmlHelper;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.lang.StringUtils;
+import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
+import org.dom4j.Namespace;
+import org.dom4j.QName;
 import org.gradle.api.Nullable;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
@@ -246,6 +250,9 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+
+import static com.android.SdkConstants.TOOLS_PREFIX;
+import static com.android.SdkConstants.TOOLS_URI;
 
 /**
  */
@@ -321,7 +328,7 @@ public class PrepareAPTask extends BaseTask {
             BetterZip.unzipDirectory(apBaseFile, explodedDir);
             if (isIncremental()) {
                 extractBaseBundles();
-                generateMainManifest();
+                generateIncrementalMainManifest();
             }
         }
     }
@@ -380,19 +387,28 @@ public class PrepareAPTask extends BaseTask {
     }
 
     // 生成增量空的AndroidManifest.xml
-    private void generateMainManifest() throws DocumentException, IOException {
+    private void generateIncrementalMainManifest() throws DocumentException, IOException {
         Document document = XmlHelper.readXml(apContext.getBaseManifest());// 读取XML文件
 
         Element root = document.getRootElement();// 得到根节点
-        root.addNamespace("tools", "http://schemas.android.com/tools");
+        Element usesSdkElement = root.element("uses-sdk");
         Element applicationElement = root.element("application");
+        root.clearContent();
+        root.addNamespace(TOOLS_PREFIX, TOOLS_URI);
 
+        if (usesSdkElement != null) {
+            root.add(usesSdkElement);
+        }
         //判断是否有application，需要删除掉
-        if (null != applicationElement) {
-            applicationElement.addAttribute("tools:replace",
-                                            "android:name,android:icon,android:allowBackup,android:label,"
-                                                + "android:supportsRtl");
+        if (applicationElement != null) {
+            Namespace toolsNamespace = root.getNamespaceForPrefix(TOOLS_PREFIX);
+            QName replaceName = QName.get("replace", toolsNamespace);
+            applicationElement.addAttribute(replaceName,
+                                            Joiner.on(',')
+                                                .join(Iterables.transform(applicationElement.attributes(),
+                                                                          Attribute::getQualifiedName)));
             applicationElement.clearContent();
+            root.add(applicationElement);
         }
 
         XmlHelper.saveDocument(document, apContext.getBaseMainManifest());
