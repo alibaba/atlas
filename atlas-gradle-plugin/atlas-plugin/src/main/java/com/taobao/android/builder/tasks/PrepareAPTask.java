@@ -311,7 +311,7 @@ public class PrepareAPTask extends BaseTask {
      * 生成so的目录
      */
     @TaskAction
-    void generate() throws IOException, DocumentException {
+    public void generate() throws IOException, DocumentException {
         File explodedDir = getExplodedDir();
         FileUtils.cleanOutputDir(explodedDir);
 
@@ -321,7 +321,7 @@ public class PrepareAPTask extends BaseTask {
             BetterZip.unzipDirectory(apBaseFile, explodedDir);
             if (isIncremental()) {
                 extractBaseBundles();
-                generateMainManifest(explodedDir);
+                generateMainManifest();
             }
         }
     }
@@ -380,7 +380,7 @@ public class PrepareAPTask extends BaseTask {
     }
 
     // 生成增量空的AndroidManifest.xml
-    private void generateMainManifest(File explodedDir) throws DocumentException, IOException {
+    private void generateMainManifest() throws DocumentException, IOException {
         Document document = XmlHelper.readXml(apContext.getBaseManifest());// 读取XML文件
 
         Element root = document.getRootElement();// 得到根节点
