@@ -216,15 +216,16 @@ import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.Build;
 import android.support.multidex.MultiDex;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.hack.AndroidHack;
-import android.taobao.atlas.hack.AssertionArrayException;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.AtlasPreLauncher;
 import android.taobao.atlas.runtime.PackageManagerDelegate;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
+import android.taobao.atlas.startup.patch.KernalBundle;
 import android.taobao.atlas.util.AtlasCrashManager;
 import android.taobao.atlas.util.SoLoader;
 import android.taobao.atlas.util.log.IAlarmer;
@@ -236,9 +237,14 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Enumeration;
 import java.util.List;
+
+import dalvik.system.DexFile;
+
 /**
  * Created by guanjie on 2017/1/26.
  */
@@ -280,6 +286,49 @@ public class BridgeApplicationDelegate {
         RuntimeVariables.sApkPath = mApkPath;
         RuntimeVariables.delegateResources = mRawApplication.getResources();
         RuntimeVariables.sDexLoadBooster = mdexLoadBooster;
+        Log.e("BridgeApplication","length =" + new File(mRawApplication.getApplicationInfo().sourceDir).length());
+
+        if(Build.VERSION.SDK_INT<21 && KernalBundle.kernalBundle!=null) {
+            ClassLoader loader = RuntimeVariables.androidApplication.getClassLoader();
+            for (Class<?> clazz = loader.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
+                try {
+                    Method method = clazz.getDeclaredMethod("findLoadedClass");
+                    method.setAccessible(true);
+                    Class mobClassLoader = (Class)method.invoke("com.ali.mobisecenhance.PathClassLoader");
+                    Class jtClazz = (Class)method.invoke("c8.jt");
+                    Log.e("BridgeApplication","mobClassLoader = "+mobClassLoader);
+                    Log.e("BridgeApplication","jtClazz = "+jtClazz);
+                    break;
+                } catch (Throwable e) {
+                    // ignore and search next
+                }
+            }
+            try {
+                Object ob = KernalBundle.kernalBundle.getArchive();
+                Field dexFileField =  ob.getClass().getDeclaredField("odexFile");
+                dexFileField.setAccessible(true);
+                DexFile[] files = (DexFile[]) dexFileField.get(ob);
+                Log.e("BridgeApplication","classes.dex = "+new File(files[0].getName()).length());
+                Log.e("BridgeApplication","patch.dex = "+new File(files[1].getName()).length());
+                if (files != null && files.length > 0) {
+                    Enumeration<String> enumeration = files[0].entries();
+                    while (enumeration.hasMoreElements()) {
+                        if (enumeration.nextElement().replace("/", ".").equals("c8.jt")) {
+                            Log.e("BridgeApplication","has c8.jt");
+                        }
+                    }                }
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        if(!Build.BRAND.contains("vivo")) {
+            try {
+                RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+
         if(!TextUtils.isEmpty(mInstalledVersionName)){
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;
         }
@@ -377,7 +426,7 @@ public class BridgeApplicationDelegate {
                 @Override
                 public void onConfigurationChanged(Configuration newConfig) {
                     DisplayMetrics newMetrics = new DisplayMetrics();
-                    if(RuntimeVariables.delegateResources!=null){
+                    if(RuntimeVariables.delegateResources!=null && RuntimeVariables.androidApplication!=null){
                         WindowManager manager = (WindowManager) RuntimeVariables.androidApplication.getSystemService(Context.WINDOW_SERVICE);
                         if(manager==null || manager.getDefaultDisplay()==null){
                             Log.e("BridgeApplication","get windowmanager service failed");
