@@ -271,9 +271,10 @@ public class BundleItem {
         }
 
         sets.add(this);
+        Set<String> stringSet = new HashSet<>();
         for (BundleItem bundleItem : children){
 
-            if (canLoopTo( bundleItem, root)){
+            if (canLoopTo( bundleItem, root,stringSet)){
                 if(bundleItem.getCircles(sets,root)){
                     return true;
                 }
@@ -300,8 +301,13 @@ public class BundleItem {
         return false;
     }
 
-    public boolean canLoopTo(BundleItem from, BundleItem end){
-        //System.out.println(from.bundleInfo.getPkgName() + "->" + end.bundleInfo.getPkgName());
+    public boolean canLoopTo(BundleItem from, BundleItem end , Set<String> stringSet){
+        String key = from.bundleInfo.getPkgName() + "->" + end.bundleInfo.getPkgName();
+        if (stringSet.contains(key)){
+            return false;
+        }
+        stringSet.add(key);
+        System.out.println(key);
         for (BundleItem child : from.children){
             if (child == end){
                 return true;
@@ -309,7 +315,7 @@ public class BundleItem {
             if (child == from){
                 continue;
             }
-            if(canLoopTo(child, end)){
+            if(canLoopTo(child, end,stringSet)){
                 return true;
             }
         }
