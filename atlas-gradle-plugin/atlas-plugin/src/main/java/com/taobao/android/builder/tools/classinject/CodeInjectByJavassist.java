@@ -253,16 +253,15 @@ public class CodeInjectByJavassist {
 
     public static Map<String, ClazzInjecter> sInjecterMap = new HashMap<String, ClazzInjecter>();
 
-    private static Logger logger = LoggerFactory.getLogger(CodeInjectByJavassist.class);
+    private static final Logger logger = LoggerFactory.getLogger(CodeInjectByJavassist.class);
 
-    public synchronized static byte[] inject(ClassPool pool,
-                                             String className,
-                                             InjectParam injectParam) throws Exception {
+    public synchronized static byte[] inject(ClassPool pool, String className, InjectParam injectParam)
+        throws Exception {
 
         CtClass cc = pool.get(className);
         cc.defrost();
-        if (className.equalsIgnoreCase("android.taobao.atlas.framework.FrameworkProperties") ||
-            className.equalsIgnoreCase("android.taobao.atlas.version.VersionKernal")) {
+        if (className.equalsIgnoreCase("android.taobao.atlas.framework.FrameworkProperties")
+            || className.equalsIgnoreCase("android.taobao.atlas.version.VersionKernal")) {
 
             if (StringUtils.isNotBlank(injectParam.version)) {
                 CtClass ctClass = pool.get("java.lang.String");
@@ -273,9 +272,8 @@ public class CodeInjectByJavassist {
                 CtField.Initializer initializer = CtField.Initializer.constant(injectParam.version);
                 cc.addField(ctField, initializer);
                 cc.addMethod(ctMethod);
-                logger.info(
-                    "[android.taobao.atlas.framework.FrameworkProperties] inject version " +
-                        injectParam.version);
+                logger.info("[android.taobao.atlas.framework.FrameworkProperties] inject version "
+                                + injectParam.version);
             }
 
             addField(pool, cc, "bundleInfo", injectParam.bundleInfo);
@@ -294,7 +292,6 @@ public class CodeInjectByJavassist {
                 output.put("unit_tag", injectParam.unit_tag);
                 FileUtils.write(injectParam.outputFile, JSON.toJSONString(output, true));
             }
-
         }
 
         ClazzInjecter clazzInjecter = sInjecterMap.get(className);
@@ -344,13 +341,10 @@ public class CodeInjectByJavassist {
             }
         }
         return cc.toBytecode();
-
     }
 
-    private static void addField(ClassPool pool,
-                                 CtClass cc,
-                                 String key,
-                                 String value) throws NotFoundException, CannotCompileException {
+    private static void addField(ClassPool pool, CtClass cc, String key, String value)
+        throws NotFoundException, CannotCompileException {
         if (StringUtils.isNotBlank(value)) {
             try {
                 cc.removeField(cc.getField(key));
@@ -377,10 +371,8 @@ public class CodeInjectByJavassist {
      * @throws NotFoundException
      * @throws Exception
      */
-    public static List<String> injectFolder(ClassPool pool,
-                                            File folder,
-                                            File outFolder,
-                                            InjectParam injectParam) throws Exception {
+    public static List<String> injectFolder(ClassPool pool, File folder, File outFolder, InjectParam injectParam)
+        throws Exception {
         List<String> errorFiles = new ArrayList<String>();
         if (folder.exists() && folder.isDirectory()) {
             Collection<File> classFiles = FileUtils.listFiles(folder, new String[] {"class"}, true);
@@ -394,7 +386,6 @@ public class CodeInjectByJavassist {
 
                 codes = inject(pool, className, injectParam);
                 FileUtils.writeByteArrayToFile(outClassFile, codes);
-
             }
         }
         return errorFiles;
@@ -409,10 +400,8 @@ public class CodeInjectByJavassist {
      * @throws NotFoundException
      * @throws CannotCompileException
      */
-    public static List<String> inject(ClassPool pool,
-                                      File inJar,
-                                      File outJar,
-                                      InjectParam injectParam) throws Exception {
+    public static List<String> inject(ClassPool pool, File inJar, File outJar, InjectParam injectParam)
+        throws Exception {
         List<String> errorFiles = new ArrayList<String>();
         JarFile jarFile = newJarFile(inJar);
 
@@ -437,7 +426,6 @@ public class CodeInjectByJavassist {
                 codes = inject(pool, className, injectParam);
                 InputStream classInstream = new ByteArrayInputStream(codes);
                 copyStreamToJar(classInstream, jos, name, jarEntry.getTime(), jarEntry);
-
             }
         }
         jarFile.close();
@@ -445,10 +433,7 @@ public class CodeInjectByJavassist {
         return errorFiles;
     }
 
-    private static void copyStreamToJar(InputStream zin,
-                                        ZipOutputStream out,
-                                        String currentName,
-                                        long fileTime,
+    private static void copyStreamToJar(InputStream zin, ZipOutputStream out, String currentName, long fileTime,
                                         ZipEntry zipEntry) throws IOException {
         // Create new entry for zip file.
         ZipEntry newEntry = new ZipEntry(currentName);
@@ -467,7 +452,8 @@ public class CodeInjectByJavassist {
         try {
             return new JarFile(jar);
         } catch (ZipException zex) {
-            throw new ZipException("error in opening zip file " + jar);
+            throw new IOException("\"" + jar + "\" can not be read as a zip archive. (" + zex.getMessage() + ")", zex);
+            // throw new ZipException("error in opening zip file " + jar);
         }
     }
 
