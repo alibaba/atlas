@@ -215,6 +215,7 @@ import com.taobao.android.apatch.utils.TypeGenUtil;
 import com.taobao.android.differ.dex.DexDiffer;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.DexDiffInfo;
+import org.apache.commons.io.FileUtils;
 import org.jf.dexlib2.dexbacked.DexBackedAnnotation;
 import org.jf.dexlib2.dexbacked.DexBackedAnnotationElement;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
@@ -283,17 +284,22 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
     }
 
     public File doPatch() throws PatchException {
+
+
         try {
             File aptchFolder = new File(out, name);
-//            File smaliDir = new File(aptchFolder, "smali");
-//            if (!smaliDir.exists()) {
-//                smaliDir.mkdirs();
-//            }
-//            try {
-//                FileUtils.cleanDirectory(smaliDir);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
+            if (!aptchFolder.exists()){
+                aptchFolder.mkdirs();
+            }
+            File smaliDir = new File(aptchFolder, "smali");
+            if (!smaliDir.exists()) {
+                smaliDir.mkdirs();
+            }
+            try {
+                FileUtils.cleanDirectory(smaliDir);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
             File dexFile = new File(aptchFolder, "diff.dex");
             if (dexFile.exists() && !dexFile.delete()) {
@@ -323,10 +329,12 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
                 info.writeToFile(name, diffFile, diffJsonFile);
             }
             //生成dex
-            SmaliDiffUtils.buildCode(dexFile, info);
+            classes = SmaliDiffUtils.buildCode(smaliDir,dexFile, info);
             if (null == classes || classes.size() <= 0) {
                 return null;
             }
+
+            classes.removeAll(addClasses);
 
 //            //是否修改dex
 //            if (APatchTool.debug) {
@@ -509,10 +517,6 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
         main.putValue("To-File", newFiles.get(0).getName());
         main.putValue("Patch-Name", name);
         main.putValue(name + "-Patch-Classes", Formater.dotStringList(classes));
-//        main.putValue(name + "-Prepare-Classes", Formater.dotStringList(prepareClasses));
-//        main.putValue(name + "-Used-Methods", Formater.dotStringList(usedMethods));
-//        main.putValue(name + "-Modified-Classes", Formater.dotStringList(modifiedClasses));
-//        main.putValue(name + "-Used-Classes", Formater.dotStringList(usedClasses));
         main.putValue(name + "-add-classes", Formater.dotStringList(addClasses));
         return manifest;
     }

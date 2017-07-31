@@ -474,8 +474,4 @@ public class Filter {
         return isFiltered;
     }
 
-    public static void main(String []args){
-        Filter filter = new Filter("/Users/lilong/Downloads/log");
-        filter.isFiltered("Landroid/util/aa;");
-    }
 }
