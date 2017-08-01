@@ -226,6 +226,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.gradle.api.file.CopySpec;
 
+import static com.taobao.android.builder.tools.xml.XmlHelper.removeStringValue;
+
 /**
  * Created by wuzhong on 2016/9/30.
  */
@@ -337,6 +339,11 @@ public class DiffResExtractor {
 
         //设置values.xml
         File valuesXml = new File(resDir, "values/values.xml");
+        try {
+            removeStringValue(valuesXml, "ttid");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.injectTpatchValuesRes(appVariantContext, valuesXml);
 
         final Pattern densityOnlyPattern = Pattern.compile("[a-zA-Z]+-[a-zA-Z]+dpi");
