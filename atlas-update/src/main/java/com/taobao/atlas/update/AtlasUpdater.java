@@ -91,7 +91,8 @@ public class AtlasUpdater {
         Iterator<UpdateInfo.Item> itemIterator = updateInfo.updateBundles.iterator();
         while (itemIterator.hasNext()) {
             UpdateInfo.Item item = itemIterator.next();
-            if (item.dexpatchVersion <= BaselineInfoManager.instance().getDexPatchBundleVersion(item.name)) {
+            long bundleVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(item.name);
+            if (item.dexpatchVersion < bundleVersion || (item.dexpatchVersion == bundleVersion && !item.reset)) {
                 itemIterator.remove();
             }
         }
