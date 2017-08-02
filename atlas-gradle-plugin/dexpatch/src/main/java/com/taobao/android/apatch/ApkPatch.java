@@ -234,10 +234,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -252,7 +249,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
 
     private File diffFile;
     private File diffJsonFile;
-    private Set<String> classes;
+    private List<String> classes;
 
     public static String currentClassType;
 
@@ -335,6 +332,25 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
             }
 
             classes.removeAll(addClasses);
+
+            List filterClasses = null;
+            if (dexDiffer.getFilter()!= null){
+                filterClasses = dexDiffer.getFilter().getFilteredClasses();
+            }
+
+            List finalFilterClasses = filterClasses;
+            Collections.sort(classes, new Comparator<String>() {
+                @Override
+                public int compare(String o1, String o2) {
+                    if (dexDiffer.getFilter() == null){
+                        return 0;
+                    }else {
+                        return finalFilterClasses.indexOf(o1) - finalFilterClasses.indexOf(o2);
+                    }
+                }
+            });
+
+
 
 //            //是否修改dex
 //            if (APatchTool.debug) {
@@ -517,7 +533,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
         main.putValue("To-File", newFiles.get(0).getName());
         main.putValue("Patch-Name", name);
         main.putValue(name + "-Patch-Classes", Formater.dotStringList(classes));
-        main.putValue(name + "-add-classes", Formater.dotStringList(addClasses));
+        main.putValue(name + "-add-classes", Formater.dotStringSet(addClasses));
         return manifest;
     }
 

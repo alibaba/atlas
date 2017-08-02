@@ -334,9 +334,9 @@ public class SmaliDiffUtils {
         return false;
     }
 
-    public static Set<String> buildCode(File smaliDir, File dexFile, DexDiffInfo info) throws IOException,
+    public static List<String> buildCode(File smaliDir, File dexFile, DexDiffInfo info) throws IOException,
             RecognitionException {
-        Set<String> classes = new HashSet<String>();
+        List<String> classes = new ArrayList<>();
         Set<DexBackedClassDef> classDefs = new HashSet<DexBackedClassDef>();
         classDefs.addAll(info.getModifiedClasses());
         classDefs.addAll(info.getAddedClasses());
