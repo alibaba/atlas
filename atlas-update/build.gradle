@@ -15,6 +15,7 @@ group = 'com.taobao.android'
 version = '1.1.4.10-rc4'
 
 
+
 apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 apply plugin: 'com.github.dcendents.android-maven'
