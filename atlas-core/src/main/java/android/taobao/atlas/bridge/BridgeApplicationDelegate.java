@@ -288,45 +288,43 @@ public class BridgeApplicationDelegate {
         RuntimeVariables.sDexLoadBooster = mdexLoadBooster;
         Log.e("BridgeApplication","length =" + new File(mRawApplication.getApplicationInfo().sourceDir).length());
 
-        if(Build.VERSION.SDK_INT<21 && KernalBundle.kernalBundle!=null) {
-            ClassLoader loader = RuntimeVariables.androidApplication.getClassLoader();
-            for (Class<?> clazz = loader.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
-                try {
-                    Method method = clazz.getDeclaredMethod("findLoadedClass");
-                    method.setAccessible(true);
-                    Class mobClassLoader = (Class)method.invoke("com.ali.mobisecenhance.PathClassLoader");
-                    Class jtClazz = (Class)method.invoke("c8.jt");
-                    Log.e("BridgeApplication","mobClassLoader = "+mobClassLoader);
-                    Log.e("BridgeApplication","jtClazz = "+jtClazz);
-                    break;
-                } catch (Throwable e) {
-                    // ignore and search next
-                }
-            }
-            try {
-                Object ob = KernalBundle.kernalBundle.getArchive();
-                Field dexFileField =  ob.getClass().getDeclaredField("odexFile");
-                dexFileField.setAccessible(true);
-                DexFile[] files = (DexFile[]) dexFileField.get(ob);
-                Log.e("BridgeApplication","classes.dex = "+new File(files[0].getName()).length());
-                Log.e("BridgeApplication","patch.dex = "+new File(files[1].getName()).length());
-                if (files != null && files.length > 0) {
-                    Enumeration<String> enumeration = files[0].entries();
-                    while (enumeration.hasMoreElements()) {
-                        if (enumeration.nextElement().replace("/", ".").equals("c8.jt")) {
-                            Log.e("BridgeApplication","has c8.jt");
-                        }
-                    }                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-        if(!Build.BRAND.contains("vivo")) {
-            try {
-                RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+//        if(Build.VERSION.SDK_INT<21 && KernalBundle.kernalBundle!=null) {
+//            ClassLoader loader = RuntimeVariables.androidApplication.getClassLoader();
+//            for (Class<?> clazz = loader.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
+//                try {
+//                    Method method = clazz.getDeclaredMethod("findLoadedClass");
+//                    method.setAccessible(true);
+//                    Class mobClassLoader = (Class)method.invoke("com.ali.mobisecenhance.PathClassLoader");
+//                    Class jtClazz = (Class)method.invoke("c8.jt");
+//                    Log.e("BridgeApplication","mobClassLoader = "+mobClassLoader);
+//                    Log.e("BridgeApplication","jtClazz = "+jtClazz);
+//                    break;
+//                } catch (Throwable e) {
+//                    // ignore and search next
+//                }
+//            }
+//            try {
+//                Object ob = KernalBundle.kernalBundle.getArchive();
+//                Field dexFileField =  ob.getClass().getDeclaredField("odexFile");
+//                dexFileField.setAccessible(true);
+//                DexFile[] files = (DexFile[]) dexFileField.get(ob);
+//                Log.e("BridgeApplication","classes.dex = "+new File(files[0].getName()).length());
+//                Log.e("BridgeApplication","patch.dex = "+new File(files[1].getName()).length());
+//                if (files != null && files.length > 0) {
+//                    Enumeration<String> enumeration = files[0].entries();
+//                    while (enumeration.hasMoreElements()) {
+//                        if (enumeration.nextElement().replace("/", ".").equals("c8.jt")) {
+//                            Log.e("BridgeApplication","has c8.jt");
+//                        }
+//                    }                }
+//            } catch (Throwable e) {
+//                e.printStackTrace();
+//            }
+//        }
+        try {
+            RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
 
         if(!TextUtils.isEmpty(mInstalledVersionName)){
