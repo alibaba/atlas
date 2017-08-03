@@ -610,9 +610,16 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         preIncrementalInstallTask.dependsOn(tasks, packageApplicationTask.getName());
 
         //模块独立调试配置任务                                                                                                 vod));
+        //动态部署属性配置
         AndroidTask<PreIncrementalInstallVariantBuildTask> preIncrementalInstallVariantBuildTask = androidTasks.create(
             tasks,
             new PreIncrementalInstallVariantBuildTask.ConfigAction(appVariantContext, vod));
+        variantScope.getPreBuildTask().configure(tasks, task -> {
+            task.mustRunAfter(preIncrementalInstallVariantBuildTask.getName());
+        });
+
+        // 整包也会执行
+        // variantScope.getPreBuildTask().dependsOn(tasks, preIncrementalInstallVariantBuildTask);
         preIncrementalInstallTask.dependsOn(tasks, preIncrementalInstallVariantBuildTask);
 
         // 多模块独立调试安装旧版本

@@ -37,7 +37,7 @@ public class PreIncrementalInstallVariantBuildTask extends DefaultAndroidTask {
 
         @Override
         public String getName() {
-            return scope.getTaskName("PreIncrementalInstallVariantTask", "");
+            return scope.getTaskName("preIncrementalInstallVariantTask", "");
         }
 
         @Override
