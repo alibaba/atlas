@@ -122,11 +122,17 @@ public class MergeExcutorServices {
                     return Observable.just(mergeTask).map(new Function<MergeTask, File>() {
                         @Override
                         public File apply(MergeTask mergeTask) throws Exception {
-                            return mergeTask.call();
+                            File file = null;
+                            try {
+                                 file = mergeTask.call();
+                            }catch (IllegalStateException e){
+                                e.printStackTrace();
+                            }
+                            return file;
                         }
                     }).subscribeOn(Schedulers.computation());
                 }
-            }).subscribeOn(Schedulers.computation()).subscribe(new Observer<File>() {
+            }).subscribe(new Observer<File>() {
 
                 @Override
                 public void onError(Throwable e) {
@@ -169,7 +175,8 @@ public class MergeExcutorServices {
                 }
             });
             countDownLatch.await();
-            if (sZipPatch != null){
+            Schedulers.shutdown();
+        if (sZipPatch != null){
                 try {
                     sZipPatch.close();
                 } catch (IOException e) {
@@ -287,6 +294,49 @@ public class MergeExcutorServices {
 
 
     public static void main(String []args) throws InterruptedException {
+        final MergeObject mergeTask = new MergeObject(null,null,null);
+        final MergeObject mergeTask1 = new MergeObject(null,null,null);
+
+        String[]aa = new String[]{"a","b","c","d","e"};
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        Observable.fromArray(aa).flatMap(new Function<String, ObservableSource<String>>() {
+            @Override
+            public ObservableSource<String> apply(String s) throws Exception {
+                return Observable.just(s).map(new Function<String, String>() {
+                    @Override
+                    public String apply(String s) throws Exception {
+                        return s+s;
+                    }
+                }).subscribeOn(Schedulers.computation());
+            }
+        }).observeOn(Schedulers.newThread()).subscribe(new Observer<String>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(String value) {
+                System.out.println(value);
+                System.out.println("xxxx");
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                System.out.println("onError");
+
+
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("onComplete");
+                countDownLatch.countDown();
+
+            }
+        });
+        countDownLatch.await();
 //       Observable.just(1,2,3,4).doOnSubscribe(new Consumer<Disposable>() {
 //           @Override
 //           public void accept(Disposable disposable) throws Exception {
