@@ -233,6 +233,7 @@ import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * @author wuzhong
@@ -249,7 +250,8 @@ public class ApDownloader {
 
     public File downloadAP(String mtlConfigUrl, File root) throws IOException {
         String downloadUrl = getDownloadUrl(mtlConfigUrl);
-        checkNotNull(downloadUrl, "Missing ap downloadUrl for mtlConfigUrl" + mtlConfigUrl);
+        checkNotNull(downloadUrl, "Missing ap downloadUrl for mtlConfigUrl " + mtlConfigUrl);
+        checkState(!"null".equals(downloadUrl), "Missing ap downloadUrl for mtlConfigUrl " + mtlConfigUrl);
 
         File file = new File(root, MD5Util.getMD5(downloadUrl) + ".ap");
         if (file.exists()) {
@@ -260,7 +262,7 @@ public class ApDownloader {
         System.out.println("start to download ap from " + downloadUrl);
         ProgressIndicator stdOutputProgress = getNewDownloadProgress();
         Downloader downloader = getDownloader();
-        downloader.downloadFully(downloadApi, file, (String)null, stdOutputProgress);
+        downloader.downloadFully(downloadApi, file, null, stdOutputProgress);
         return file;
     }
 
