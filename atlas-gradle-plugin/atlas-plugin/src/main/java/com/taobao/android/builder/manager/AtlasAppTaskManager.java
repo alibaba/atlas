@@ -213,6 +213,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import com.android.build.api.transform.QualifiedContent;
@@ -240,6 +241,7 @@ import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.transforms.DexTransform;
+import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -277,7 +279,6 @@ import com.taobao.android.builder.tasks.app.manifest.StandardizeLibManifestTask;
 import com.taobao.android.builder.tasks.app.merge.MergeAssetAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeManifestAwbsConfigAction;
 import com.taobao.android.builder.tasks.app.merge.MergeResAwbsConfigAction;
-import com.taobao.android.builder.tasks.app.merge.MergeSoLibTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAllDependenciesTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
@@ -347,9 +348,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 mtlTaskContextList.add(new MtlTaskContext(appVariantContext.getVariantData().preBuildTask));
 
                 mtlTaskContextList.add(new MtlTaskContext(LogDependenciesTask.ConfigAction.class, null));
-                mtlTaskContextList.add(new MtlTaskContext(PrepareDependenciesTask.class));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAllDependenciesTask.ConfigAction.class, null));
+                mtlTaskContextList.add(new MtlTaskContext(PrepareDependenciesTask.class));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
                 //增量任务
@@ -371,7 +372,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
 
-                mtlTaskContextList.add(new MtlTaskContext(MergeSoLibTask.ConfigAction.class, null));
+                // mtlTaskContextList.add(new MtlTaskContext(MergeSoLibTask.ConfigAction.class, null));
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareAaptTask.ConfigAction.class, null));
 
@@ -548,6 +549,26 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             VariantScope awbScope = appVariantOutputContext.getAwbVariantScopeMap().get(awbBundle.getName());
             com.android.build.gradle.internal.pipeline.TransformManager transformManager = appVariantOutputContext
                 .getAwbTransformManagerMap().get(awbBundle.getName());
+            transformManager.addStream(OriginalStream.builder()
+                                           .addContentTypes(com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_NATIVE_LIBS)
+                                           .addScope(Scope.EXTERNAL_LIBRARIES)
+                                           .setFolders(() -> {
+                                               return awbBundle.getJniLibFolders();
+                                           })
+                                           .setDependency(variantScope.getPrepareDependenciesTask().getName()/*getTaskName("prepareAllDependencies")*/)
+                                           .build());
+
+            // compute the scopes that need to be merged.
+            Set<Scope> mergeScopes = com.android.build.gradle.internal.pipeline.TransformManager.SCOPE_FULL_PROJECT;
+            // Create the merge transform
+            MergeJavaResourcesTransform mergeTransform = new MergeJavaResourcesTransform(variantScope.getGlobalScope()
+                                                                                             .getExtension()
+                                                                                             .getPackagingOptions(),
+                                                                                         mergeScopes,
+                                                                                         ExtendedContentType.NATIVE_LIBS,
+                                                                                         "mergeJniLibs");
+            transformManager.addTransform(tasks, awbScope /*variantScope*/, mergeTransform);
+
             //dex任务
             //依赖库
             transformManager.addStream(OriginalStream.builder()
@@ -584,6 +605,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 //解压基线包依赖dex任务
                 prepareBaseApkTask.dependsOn(tasks, stream.getDependencies());
                 //最终打包依赖dex任务
+                packageAwb.dependsOn(tasks, stream.getDependencies());
+            }
+
+            for (TransformStream stream : transformManager.getStreams(StreamFilter.NATIVE_LIBS)) {
+                // TODO Optimize to avoid creating too many actions
                 packageAwb.dependsOn(tasks, stream.getDependencies());
             }
 

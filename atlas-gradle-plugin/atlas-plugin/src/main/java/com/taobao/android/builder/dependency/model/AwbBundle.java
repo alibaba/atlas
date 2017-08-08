@@ -215,6 +215,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.android.builder.core.DefaultManifestParser;
 import com.android.builder.model.AndroidLibrary;
@@ -224,6 +225,7 @@ import com.android.builder.model.MavenCoordinates;
 import com.android.manifmerger.ManifestProvider;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.tasks.incremental.ParsedModuleStringNotation;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
@@ -231,8 +233,6 @@ import org.apache.commons.lang.StringUtils;
 import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Created by shenghua.nish on 2016-05-06 下午5:46.
@@ -568,5 +568,44 @@ public class AwbBundle {
     private static boolean compareWithoutVersion(ModuleVersionIdentifier moduleVersion, MavenCoordinates coordinates) {
         return Objects.equal(moduleVersion.getGroup(), coordinates.getGroupId())
             && Objects.equal(moduleVersion.getName(), coordinates.getArtifactId());
+    }
+
+    public Collection<File> getJniLibFolders() {
+        Set<File> jniDirectories = Sets.newLinkedHashSetWithExpectedSize(getAndroidLibraries().size() + 1);
+
+        File awbJniFolder = getAndroidLibrary().getJniFolder();
+        if (awbJniFolder.isDirectory()) {
+            jniDirectories.add(awbJniFolder);
+        }
+        //为了兼容之前老的aar，awb格式
+        File libJniFolder = new File(getAndroidLibrary().getFolder(), "libs");
+        if (libJniFolder.isDirectory()) {
+            jniDirectories.add(libJniFolder);
+        }
+
+        List<? extends AndroidLibrary> deps = getAndroidLibraries();
+        for (AndroidLibrary dep : deps) {
+            File depJniFolder = dep.getJniFolder();
+            if (depJniFolder.isDirectory()) {
+                jniDirectories.add(depJniFolder);
+            }
+            //为了兼容之前老的aar，awb格式
+            File depLibsFolder = new File(dep.getFolder(), "libs");
+            if (depLibsFolder.isDirectory()) {
+                jniDirectories.add(depLibsFolder);
+            }
+        }
+
+        List<SoLibrary> solibs = getSoLibraries();
+        if (null != solibs) {
+            for (SoLibrary solib : solibs) {
+                File explodeFolder = solib.getFolder();
+                if (explodeFolder.isDirectory()) {
+                    jniDirectories.add(explodeFolder);
+                }
+            }
+        }
+
+        return jniDirectories;
     }
 }

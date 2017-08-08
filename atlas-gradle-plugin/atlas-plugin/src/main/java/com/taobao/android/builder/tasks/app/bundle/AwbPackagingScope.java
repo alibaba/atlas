@@ -152,12 +152,15 @@ public class AwbPackagingScope implements PackagingScope {
     @NonNull
     @Override
     public Set<File> getJniFolders() {
-        Set<File> jniFolders = Sets.newHashSet();
-        if (appVariantOutputContext.getAwbJniFolder(awbBundle) != null && appVariantOutputContext.getAwbJniFolder(
-            awbBundle).exists()) {
-            jniFolders.add(appVariantOutputContext.getAwbJniFolder(awbBundle));
-        }
-        return jniFolders;
+        return appVariantOutputContext.getAwbTransformManagerMap().get(awbBundle.getName()).getPipelineOutput(
+            StreamFilter.NATIVE_LIBS).keySet();
+
+        // Set<File> jniFolders = Sets.newHashSet();
+        // if (appVariantOutputContext.getAwbJniFolder(awbBundle) != null && appVariantOutputContext.getAwbJniFolder(
+        //     awbBundle).exists()) {
+        //     jniFolders.add(appVariantOutputContext.getAwbJniFolder(awbBundle));
+        // }
+        // return jniFolders;
     }
 
     @NonNull
