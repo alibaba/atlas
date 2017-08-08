@@ -399,6 +399,24 @@ public class BundleArchiveRevision {
         return bundleFile;
     }
 
+    public File mappingDebugInternalDirectory(){
+        File internalLibDir = new File(RuntimeVariables.androidApplication.getFilesDir(),String.format("storage/%s/%s",location+"_debug_internal",revisionDir.getName()));
+        int retryCount = 2;
+        do{
+            if(!internalLibDir.exists()){
+                internalLibDir.mkdirs();
+            }
+            if(internalLibDir.exists()){
+                break;
+            }
+            retryCount--;
+        }while(retryCount>0);
+        if(!internalLibDir.exists()){
+            Log.e("BundleArchiveRevision","create internal LibDir Failed : "+location);
+        }
+        return internalLibDir;
+    }
+
     public File mappingInternalDirectory(){
         if(externalStorage){
             File internalLibDir = new File(RuntimeVariables.androidApplication.getFilesDir(),String.format("storage/%s/%s",location+"_internal",revisionDir.getName()));
@@ -443,7 +461,55 @@ public class BundleArchiveRevision {
         }
     }
 
+    public File findDebugSoLibrary(String libraryName){
+        File debugBundleDir = new File(RuntimeVariables.androidApplication.getExternalFilesDir("debug_storage"), location);
+        File patchFile = new File(debugBundleDir,"patch.zip");
+        if(patchFile.exists()){
+            File debugInternalDirectory = mappingDebugInternalDirectory();
+            File file = new File(String.format("%s%s%s%s", debugInternalDirectory, File.separator, "lib", File.separator), libraryName);
+            if(file.exists() && file.isFile() && file.length()>0 && file.lastModified()>patchFile.lastModified()){
+                return file;
+            }
+            ZipFile bundleZip = null;
+            try{
+                bundleZip = new ZipFile(patchFile);
+                String extractTag = "lib/armeabi";
+                if(Build.CPU_ABI.contains("x86")){
+                    if(bundleZip.getEntry("lib/x86/")!=null){
+                        extractTag = "lib/x86";
+                    }
+                }
+                extractTag = extractTag+"/"+libraryName;
+                ZipEntry libEntry = null;
+                if((libEntry = bundleZip.getEntry(extractTag))!=null){
+                    extractEntry(bundleZip, libEntry, debugInternalDirectory);
+                }
+                /**
+                 * 二次检查
+                 */
+                if(file.exists() && file.isFile()){
+                    return file;
+                }
+                IOUtil.quietClose(bundleZip);
+            }catch(Throwable e){}
+            finally {
+                IOUtil.quietClose(bundleZip);
+            }
+
+        }
+        return null;
+    }
+
+
     public File findSoLibrary(String libraryName){
+        if(Framework.isDeubgMode()){
+            File soFile = findDebugSoLibrary(libraryName);
+            if(soFile!=null && soFile.exists()){
+                return soFile;
+            }
+
+        }
+
         File file = new File(String.format("%s%s%s%s",mappingInternalDirectory(),File.separator,"lib",File.separator),libraryName);
         if(file.exists() && file.isFile() && file.length()>0){
             return file;
@@ -465,7 +531,7 @@ public class BundleArchiveRevision {
                 extractTag = extractTag+"/"+libraryName;
                 ZipEntry libEntry = null;
                 if((libEntry = bundleZip.getEntry(extractTag))!=null){
-                    extractEntry(bundleZip,libEntry);
+                    extractEntry(bundleZip, libEntry, mappingInternalDirectory());
                 }
                 /**
                  * 二次检查
@@ -616,7 +682,7 @@ public class BundleArchiveRevision {
 	            continue;
                 }
                 if(entryName.indexOf(extractTag)!=-1) {
-                    extractEntry(zip,zipEntry);
+                    extractEntry(zip, zipEntry, mappingInternalDirectory());
                 }
             }
         }catch(IOException e){
@@ -631,10 +697,10 @@ public class BundleArchiveRevision {
         }
     }
 
-    private void extractEntry(ZipFile zip ,ZipEntry zipEntry) throws IOException{
+    private void extractEntry(ZipFile zip, ZipEntry zipEntry, File directory) throws IOException{
         String entryName = zipEntry.getName();
-        String targetPath = String.format("%s%s%s%s%s",mappingInternalDirectory(),File.separator,"lib",File.separator,
-                entryName.substring(entryName.lastIndexOf(File.separator)+1,entryName.length()));
+        String targetPath = String.format("%s%s%s%s%s", directory, File.separator, "lib", File.separator,
+                                          entryName.substring(entryName.lastIndexOf(File.separator)+1,entryName.length()));
         if (zipEntry.isDirectory()) {
             File decompressDirFile = new File(targetPath);
             if (!decompressDirFile.exists()) {
