@@ -334,7 +334,7 @@ public class BundleProguarder {
                 }
             }
 
-            File awbProguardDir = input.proguardOutputDir;
+            File awbProguardDir = input.printConfiguration.getParentFile();
             //FileUtils.copyFileToDirectory(keepJson, awbProguardDir);
             if (proguardCfg.exists()) {
                 FileUtils.copyFileToDirectory(proguardCfg,
@@ -580,7 +580,10 @@ public class BundleProguarder {
                                         : appVariantContext
                                             .getAwbProguardDir(awbBundle),
                                     "proguard.cfg");
-        if (proguardCfg.exists()) {
+        if (!proguardCfg.exists()){
+            proguardCfg = input.printConfiguration;
+        }
+        if ( null != proguardCfg && proguardCfg.exists()) {
             FileUtils.copyFileToDirectory(proguardCfg, tmpDir);
         }
 
@@ -588,7 +591,10 @@ public class BundleProguarder {
                                      : appVariantContext
                                          .getAwbProguardDir(awbBundle),
                                  "usage.cfg");
-        if (usageCfg.exists()) {
+        if (!usageCfg.exists()){
+            usageCfg = input.printUsage;
+        }
+        if ( null != usageCfg && usageCfg.exists()) {
             FileUtils.copyFileToDirectory(usageCfg, tmpDir);
         }
 
