@@ -236,6 +236,7 @@ import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.collect.ImmutableList;
+import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.FileNameUtils;
@@ -376,7 +377,9 @@ public class AtlasProguardTransform extends ProGuardTransform {
         Profiler.release();
 
         Input input = new Input();
-        AwbTransform awbTransform = new AwbTransform(new AwbBundle());
+        AwbBundle awbBundle = new AwbBundle();
+        awbBundle.getAndroidLibraries().addAll(AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getVariantName()).getMainBundle().getAndroidLibraries());
+        AwbTransform awbTransform = new AwbTransform(awbBundle);
         input.getAwbBundles().add(awbTransform);
 
         List<File> unProguardJars = new ArrayList<>();
