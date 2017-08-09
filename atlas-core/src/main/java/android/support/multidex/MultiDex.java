@@ -1,14 +1,29 @@
+/*
+ * Copyright (C) 2013 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package android.support.multidex;
 
-
 import android.app.Application;
+import android.app.Instrumentation;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build;
 import android.util.Log;
+
+import dalvik.system.DexFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,10 +41,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 
-import dalvik.system.DexFile;
-
 /**
- * Monkey patches {@link Context#getClassLoader() the application context class
+ * MultiDex patches {@link Context#getClassLoader() the application context class
  * loader} in order to load classes from more than one dex file. The primary
  * {@code classes.dex} must contain the classes necessary for calling this
  * class methods. Secondary dex files named classes2.dex, classes3.dex... found
@@ -46,8 +59,9 @@ public final class MultiDex {
 
     private static final String OLD_SECONDARY_FOLDER_NAME = "secondary-dexes";
 
-    private static final String SECONDARY_FOLDER_NAME = "code_cache" + File.separator +
-        "secondary-dexes";
+    private static final String CODE_CACHE_NAME = "code_cache";
+
+    private static final String CODE_CACHE_SECONDARY_FOLDER_NAME = "secondary-dexes";
 
     private static final int MAX_SUPPORTED_SDK_VERSION = 20;
 
@@ -57,7 +71,9 @@ public final class MultiDex {
 
     private static final int VM_WITH_MULTIDEX_VERSION_MINOR = 1;
 
-    private static final Set<String> installedApk = new HashSet<String>();
+    private static final String NO_KEY_PREFIX = "";
+
+    private static final Set<File> installedApk = new HashSet<File>();
 
     public static final boolean IS_VM_MULTIDEX_CAPABLE =
             isVMMultidexCapable(System.getProperty("java.vm.version"));
@@ -75,104 +91,177 @@ public final class MultiDex {
      *         extension.
      */
     public static void install(Context context) {
-        Log.i(TAG, "install");
+        Log.i(TAG, "Installing application");
         if (IS_VM_MULTIDEX_CAPABLE) {
             Log.i(TAG, "VM has multidex support, MultiDex support library is disabled.");
             return;
         }
 
         if (Build.VERSION.SDK_INT < MIN_SDK_VERSION) {
-            throw new RuntimeException("Multi dex installation failed. SDK " + Build.VERSION.SDK_INT
+            throw new RuntimeException("MultiDex installation failed. SDK " + Build.VERSION.SDK_INT
                     + " is unsupported. Min SDK version is " + MIN_SDK_VERSION + ".");
         }
 
         try {
             ApplicationInfo applicationInfo = getApplicationInfo(context);
             if (applicationInfo == null) {
-                // Looks like running on a test Context, so just return without patching.
-                return;
+              Log.i(TAG, "No ApplicationInfo available, i.e. running on a test Context:"
+                  + " MultiDex support library is disabled.");
+              return;
             }
 
-            synchronized (installedApk) {
-                String apkPath = applicationInfo.sourceDir;
-                if (installedApk.contains(apkPath)) {
-                    return;
-                }
-                installedApk.add(apkPath);
-
-                if (Build.VERSION.SDK_INT > MAX_SUPPORTED_SDK_VERSION) {
-                    Log.w(TAG, "MultiDex is not guaranteed to work in SDK version "
-                            + Build.VERSION.SDK_INT + ": SDK version higher than "
-                            + MAX_SUPPORTED_SDK_VERSION + " should be backed by "
-                            + "runtime with built-in multidex capabilty but it's not the "
-                            + "case here: java.vm.version=\""
-                            + System.getProperty("java.vm.version") + "\"");
-                }
-
-                /* The patched class loader is expected to be a descendant of
-                 * dalvik.system.BaseDexClassLoader. We modify its
-                 * dalvik.system.DexPathList pathList field to append additional DEX
-                 * file entries.
-                 */
-                ClassLoader loader;
-                try {
-                    loader = context.getClassLoader();
-                } catch (RuntimeException e) {
-                    /* Ignore those exceptions so that we don't break tests relying on Context like
-                     * a android.test.mock.MockContext or a android.content.ContextWrapper with a
-                     * null base Context.
-                     */
-                    Log.w(TAG, "Failure while trying to obtain Context class loader. " +
-                            "Must be running in test mode. Skip patching.", e);
-                    return;
-                }
-                if (loader == null) {
-                    // Note, the context class loader is null when running Robolectric tests.
-                    Log.e(TAG,
-                            "Context class loader is null. Must be running in test mode. "
-                            + "Skip patching.");
-                    return;
-                }
-
-                try {
-                  clearOldDexDir(context);
-                } catch (Throwable t) {
-                  Log.w(TAG, "Something went wrong when trying to clear old MultiDex extraction, "
-                      + "continuing without cleaning.", t);
-                }
-
-                File dexDir = new File(applicationInfo.dataDir, SECONDARY_FOLDER_NAME);
-                List<File> files = MultiDexExtractor.load(context, applicationInfo, dexDir, false);
-                if (checkValidZipFiles(files)) {
-                    installSecondaryDexes(loader, dexDir, files);
-                } else {
-                    Log.w(TAG, "Files were not valid zip files.  Forcing a reload.");
-                    // Try again, but this time force a reload of the zip file.
-                    files = MultiDexExtractor.load(context, applicationInfo, dexDir, true);
-
-                    if (checkValidZipFiles(files)) {
-                        installSecondaryDexes(loader, dexDir, files);
-                    } else {
-                        // Second time didn't work, give up
-                        throw new RuntimeException("Zip files were not valid.");
-                    }
-                }
-            }
+            doInstallation(context,
+                    new File(applicationInfo.sourceDir),
+                    new File(applicationInfo.dataDir),
+                    CODE_CACHE_SECONDARY_FOLDER_NAME,
+                    NO_KEY_PREFIX);
 
         } catch (Exception e) {
-            Log.e(TAG, "Multidex installation failure", e);
-            throw new RuntimeException("Multi dex installation failed (" + e.getMessage() + ").");
+            Log.e(TAG, "MultiDex installation failure", e);
+            throw new RuntimeException("MultiDex installation failed (" + e.getMessage() + ").");
         }
         Log.i(TAG, "install done");
     }
 
-    private static ApplicationInfo getApplicationInfo(Context context)
-            throws NameNotFoundException {
-        PackageManager pm;
-        String packageName;
+    /**
+     * Patches the instrumentation context class loader by appending extra dex files
+     * loaded from the instrumentation apk and the application apk. This method should be called in
+     * the onCreate of your {@link Instrumentation}, see
+     * {@link com.android.test.runner.MultiDexTestRunner} for an example.
+     *
+     * @param instrumentationContext instrumentation context.
+     * @param targetContext target application context.
+     * @throws RuntimeException if an error occurred preventing the classloader
+     *         extension.
+     */
+    public static void installInstrumentation(Context instrumentationContext,
+            Context targetContext) {
+        Log.i(TAG, "Installing instrumentation");
+
+        if (IS_VM_MULTIDEX_CAPABLE) {
+            Log.i(TAG, "VM has multidex support, MultiDex support library is disabled.");
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT < MIN_SDK_VERSION) {
+            throw new RuntimeException("MultiDex installation failed. SDK " + Build.VERSION.SDK_INT
+                    + " is unsupported. Min SDK version is " + MIN_SDK_VERSION + ".");
+        }
         try {
-            pm = context.getPackageManager();
-            packageName = context.getPackageName();
+
+            ApplicationInfo instrumentationInfo = getApplicationInfo(instrumentationContext);
+            if (instrumentationInfo == null) {
+                Log.i(TAG, "No ApplicationInfo available for instrumentation, i.e. running on a"
+                    + " test Context: MultiDex support library is disabled.");
+                return;
+            }
+
+            ApplicationInfo applicationInfo = getApplicationInfo(targetContext);
+            if (applicationInfo == null) {
+                Log.i(TAG, "No ApplicationInfo available, i.e. running on a test Context:"
+                    + " MultiDex support library is disabled.");
+                return;
+            }
+
+            String instrumentationPrefix = instrumentationContext.getPackageName() + ".";
+
+            File dataDir = new File(applicationInfo.dataDir);
+
+            doInstallation(targetContext,
+                    new File(instrumentationInfo.sourceDir),
+                    dataDir,
+                    instrumentationPrefix + CODE_CACHE_SECONDARY_FOLDER_NAME,
+                    instrumentationPrefix);
+
+            doInstallation(targetContext,
+                    new File(applicationInfo.sourceDir),
+                    dataDir,
+                    CODE_CACHE_SECONDARY_FOLDER_NAME,
+                    NO_KEY_PREFIX);
+        } catch (Exception e) {
+            Log.e(TAG, "MultiDex installation failure", e);
+            throw new RuntimeException("MultiDex installation failed (" + e.getMessage() + ").");
+        }
+        Log.i(TAG, "Installation done");
+    }
+
+    /**
+     * @param mainContext context used to get filesDir, to save preference and to get the
+     * classloader to patch.
+     * @param sourceApk Apk file.
+     * @param dataDir data directory to use for code cache simulation.
+     * @param secondaryFolderName name of the folder for storing extractions.
+     * @param prefsKeyPrefix prefix of all stored preference keys.
+     */
+    private static void doInstallation(Context mainContext, File sourceApk, File dataDir,
+            String secondaryFolderName, String prefsKeyPrefix) throws IOException,
+                IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
+                InvocationTargetException, NoSuchMethodException {
+        synchronized (installedApk) {
+            if (installedApk.contains(sourceApk)) {
+                return;
+            }
+            installedApk.add(sourceApk);
+
+            if (Build.VERSION.SDK_INT > MAX_SUPPORTED_SDK_VERSION) {
+                Log.w(TAG, "MultiDex is not guaranteed to work in SDK version "
+                        + Build.VERSION.SDK_INT + ": SDK version higher than "
+                        + MAX_SUPPORTED_SDK_VERSION + " should be backed by "
+                        + "runtime with built-in multidex capabilty but it's not the "
+                        + "case here: java.vm.version=\""
+                        + System.getProperty("java.vm.version") + "\"");
+            }
+
+            /* The patched class loader is expected to be a descendant of
+             * dalvik.system.BaseDexClassLoader. We modify its
+             * dalvik.system.DexPathList pathList field to append additional DEX
+             * file entries.
+             */
+            ClassLoader loader;
+            try {
+                loader = mainContext.getClassLoader();
+            } catch (RuntimeException e) {
+                /* Ignore those exceptions so that we don't break tests relying on Context like
+                 * a android.test.mock.MockContext or a android.content.ContextWrapper with a
+                 * null base Context.
+                 */
+                Log.w(TAG, "Failure while trying to obtain Context class loader. " +
+                        "Must be running in test mode. Skip patching.", e);
+                return;
+            }
+            if (loader == null) {
+                // Note, the context class loader is null when running Robolectric tests.
+                Log.e(TAG,
+                        "Context class loader is null. Must be running in test mode. "
+                        + "Skip patching.");
+                return;
+            }
+
+            try {
+              clearOldDexDir(mainContext);
+            } catch (Throwable t) {
+              Log.w(TAG, "Something went wrong when trying to clear old MultiDex extraction, "
+                  + "continuing without cleaning.", t);
+            }
+
+            File dexDir = getDexDir(mainContext, dataDir, secondaryFolderName);
+            List<? extends File> files =
+                    MultiDexExtractor.load(mainContext, sourceApk, dexDir, prefsKeyPrefix, false);
+            installSecondaryDexes(loader, dexDir, files);
+        }
+    }
+
+    private static ApplicationInfo getApplicationInfo(Context context) {
+        try {
+            /* Due to package install races it is possible for a process to be started from an old
+             * apk even though that apk has been replaced. Querying for ApplicationInfo by package
+             * name may return information for the new apk, leading to a runtime with the old main
+             * dex file and new secondary dex files. This leads to various problems like
+             * ClassNotFoundExceptions. Using context.getApplicationInfo() should result in the
+             * process having a consistent view of the world (even if it is of the old world). The
+             * package install races are eventually resolved and old processes are killed.
+             */
+            return context.getApplicationInfo();
         } catch (RuntimeException e) {
             /* Ignore those exceptions so that we don't break tests relying on Context like
              * a android.test.mock.MockContext or a android.content.ContextWrapper with a null
@@ -182,13 +271,6 @@ public final class MultiDex {
                     "Must be running in test mode. Skip patching.", e);
             return null;
         }
-        if (pm == null || packageName == null) {
-            // This is most likely a mock context, so just return without patching.
-            return null;
-        }
-        ApplicationInfo applicationInfo =
-                pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA);
-        return applicationInfo;
     }
 
     /**
@@ -220,7 +302,8 @@ public final class MultiDex {
         return isMultidexCapable;
     }
 
-    private static void installSecondaryDexes(ClassLoader loader, File dexDir, List<File> files)
+    private static void installSecondaryDexes(ClassLoader loader, File dexDir,
+        List<? extends File> files)
             throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
             InvocationTargetException, NoSuchMethodException, IOException {
         if (!files.isEmpty()) {
@@ -232,19 +315,6 @@ public final class MultiDex {
                 V4.install(loader, files);
             }
         }
-    }
-
-    /**
-     * Returns whether all files in the list are valid zip files.  If {@code files} is empty, then
-     * returns true.
-     */
-    private static boolean checkValidZipFiles(List<File> files) {
-        for (File file : files) {
-            if (!MultiDexExtractor.verifyZipFile(file)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -349,12 +419,49 @@ public final class MultiDex {
         }
     }
 
+    private static File getDexDir(Context context, File dataDir, String secondaryFolderName)
+            throws IOException {
+        File cache = new File(dataDir, CODE_CACHE_NAME);
+        try {
+            mkdirChecked(cache);
+        } catch (IOException e) {
+            /* If we can't emulate code_cache, then store to filesDir. This means abandoning useless
+             * files on disk if the device ever updates to android 5+. But since this seems to
+             * happen only on some devices running android 2, this should cause no pollution.
+             */
+            cache = new File(context.getFilesDir(), CODE_CACHE_NAME);
+            mkdirChecked(cache);
+        }
+        File dexDir = new File(cache, secondaryFolderName);
+        mkdirChecked(dexDir);
+        return dexDir;
+    }
+
+    private static void mkdirChecked(File dir) throws IOException {
+        dir.mkdir();
+        if (!dir.isDirectory()) {
+            File parent = dir.getParentFile();
+            if (parent == null) {
+                Log.e(TAG, "Failed to create dir " + dir.getPath() + ". Parent file is null.");
+            } else {
+                Log.e(TAG, "Failed to create dir " + dir.getPath() +
+                        ". parent file is a dir " + parent.isDirectory() +
+                        ", a file " + parent.isFile() +
+                        ", exists " + parent.exists() +
+                        ", readable " + parent.canRead() +
+                        ", writable " + parent.canWrite());
+            }
+            throw new IOException("Failed to create directory " + dir.getPath());
+        }
+    }
+
     /**
      * Installer for platform versions 19.
      */
     private static final class V19 {
 
-        private static void install(ClassLoader loader, List<File> additionalClassPathEntries,
+        private static void install(ClassLoader loader,
+                List<? extends File> additionalClassPathEntries,
                 File optimizedDirectory)
                         throws IllegalArgumentException, IllegalAccessException,
                         NoSuchFieldException, InvocationTargetException, NoSuchMethodException {
@@ -374,9 +481,9 @@ public final class MultiDex {
                     Log.w(TAG, "Exception in makeDexElement", e);
                 }
                 Field suppressedExceptionsField =
-                        findField(loader, "dexElementsSuppressedExceptions");
+                        findField(dexPathList, "dexElementsSuppressedExceptions");
                 IOException[] dexElementsSuppressedExceptions =
-                        (IOException[]) suppressedExceptionsField.get(loader);
+                        (IOException[]) suppressedExceptionsField.get(dexPathList);
 
                 if (dexElementsSuppressedExceptions == null) {
                     dexElementsSuppressedExceptions =
@@ -392,7 +499,7 @@ public final class MultiDex {
                     dexElementsSuppressedExceptions = combined;
                 }
 
-                suppressedExceptionsField.set(loader, dexElementsSuppressedExceptions);
+                suppressedExceptionsField.set(dexPathList, dexElementsSuppressedExceptions);
             }
         }
 
@@ -419,7 +526,8 @@ public final class MultiDex {
      */
     private static final class V14 {
 
-        private static void install(ClassLoader loader, List<File> additionalClassPathEntries,
+        private static void install(ClassLoader loader,
+                List<? extends File> additionalClassPathEntries,
                 File optimizedDirectory)
                         throws IllegalArgumentException, IllegalAccessException,
                         NoSuchFieldException, InvocationTargetException, NoSuchMethodException {
@@ -453,7 +561,8 @@ public final class MultiDex {
      * Installer for platform versions 4 to 13.
      */
     private static final class V4 {
-        private static void install(ClassLoader loader, List<File> additionalClassPathEntries)
+        private static void install(ClassLoader loader,
+                List<? extends File> additionalClassPathEntries)
                         throws IllegalArgumentException, IllegalAccessException,
                         NoSuchFieldException, IOException {
             /* The patched class loader is expected to be a descendant of
@@ -470,7 +579,7 @@ public final class MultiDex {
             File[] extraFiles = new File[extraSize];
             ZipFile[] extraZips = new ZipFile[extraSize];
             DexFile[] extraDexs = new DexFile[extraSize];
-            for (ListIterator<File> iterator = additionalClassPathEntries.listIterator();
+            for (ListIterator<? extends File> iterator = additionalClassPathEntries.listIterator();
                     iterator.hasNext();) {
                 File additionalEntry = iterator.next();
                 String entryPath = additionalEntry.getAbsolutePath();
