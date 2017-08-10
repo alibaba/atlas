@@ -2,7 +2,9 @@ package com.taobao.android.builder.tasks.incremental;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -12,11 +14,14 @@ import com.android.builder.testing.api.DeviceException;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
+import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
 import com.google.common.base.Joiner;
 import org.gradle.api.tasks.ParallelizableTask;
+
+import static com.google.common.collect.Iterables.isEmpty;
 
 /**
  * @author chenhjohn
@@ -40,31 +45,30 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
             for (File apkFile : apkFiles) {
 
                 installPatch(projectName,
-                             variantName,
-                             appPackageName,
-                             device,
-                             apkFile,
-                             getAwbPackageName(apkFile),
-                             patchInstallDirectory);
+                    variantName,
+                    appPackageName,
+                    device,
+                    apkFile,
+                    getAwbPackageName(apkFile),
+                    patchInstallDirectory);
             }
         }
 
         getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}",
-                              appPackageName,
-                              device.getName(),
-                              projectName,
-                              variantName);
+            appPackageName,
+            device.getName(),
+            projectName,
+            variantName);
         restartApp(device, appPackageName);
     }
 
     void restartApp(IDevice device, String appPackageName)
         throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException,
-               DeviceException {
-        // //退到后台
-        // runCommand(device, "input keyevent 3");
-
-        //杀死进程
-        runCommand(device, "am force-stop " + appPackageName);
+        DeviceException {
+        Iterable<Integer> processPids = getProcessPids(device, appPackageName);
+        if (isEmpty(processPids)) {
+            //杀死进程
+            runCommand(device, "am force-stop " + appPackageName);
             /*device.executeShellCommand("am " + "kill " + appPackageName,
                                        //$NON-NLS-1$
                                        new MultiLineReceiver() {
@@ -77,6 +81,13 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
                                                return false;
                                            }
                                        });*/
+        } else {
+            //退到后台
+            runCommand(device, "input keyevent 3");
+            for (Integer processId : processPids) {
+                /*device.executeShellCommand*/
+                runCommand(device, "run-as " + appPackageName + " kill -9 " + processId);
+            }
             /*device.executeShellCommand(
                 "am " + "broadcast " + "-a " + "com.taobao.atlas.intent.PATCH_APP " + "-e " + "pkg " + appPackageName,
                 //$NON-NLS-1$
@@ -90,12 +101,43 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
                         return false;
                     }
                 });*/
+        }
+
         startApp(device, appPackageName);
+    }
+
+    private Iterable<Integer> getProcessPids(IDevice device, String appPackageName)
+        throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        final List<Integer> pids = new ArrayList<Integer>(2);
+        final MultiLineReceiver receiver = new MultiLineReceiver() {
+            @Override
+            public void processNewLines(String[] lines) {
+                for (String line : lines) {
+                    final String[] fields = line.split("\\s+");
+                    if (fields.length < 2) {
+                        continue;
+                    }
+                    try {
+                        final int processId = Integer.parseInt(fields[1], 10);
+                        pids.add(processId);
+                    } catch (NumberFormatException ex) {
+                        continue;
+                    }
+                }
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+        };
+        device.executeShellCommand("ps | grep " + appPackageName, receiver);
+        return pids;
     }
 
     void startApp(IDevice device, String appPackageName)
         throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException,
-               DeviceException {
+        DeviceException {
         //启动
         CollectingOutputReceiver receiver = new CollectingOutputReceiver();
         String cmd = "monkey " + "-p " + appPackageName + " -c android.intent.category.LAUNCHER 1";
@@ -111,11 +153,11 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
         throws TimeoutException, AdbCommandRejectedException, SyncException, IOException {
         String remotePatchFile = Joiner.on('/').join(patchInstallDirectory, name, PATCH_NAME);
         getLogger().lifecycle("Installing awb '{}' on '{}' to '{}' for {}:{}",
-                              patch,
-                              device.getName(),
-                              remotePatchFile,
-                              projectName,
-                              variantName);
+            patch,
+            device.getName(),
+            remotePatchFile,
+            projectName,
+            variantName);
         device.pushFile(patch.getAbsolutePath(), remotePatchFile);
     }
 
