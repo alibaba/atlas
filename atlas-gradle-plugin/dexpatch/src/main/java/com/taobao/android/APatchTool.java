@@ -240,7 +240,7 @@ public class APatchTool extends BasePatchTool {
     public static boolean isApatch = false;
     private String andfixMainBundleName = "com_taobao_maindex";
 
-    public static String replaceAnnotation = "Lcom/taobao/sophix/core/dex/hot/MethodReplace;";
+    public static String replaceAnnotation = "Lcom/alipay/euler/andfix/annotation/MethodReplace;";
     private String[] notIncludeFiles;
     private final PathMatcher pathMatcher = new PathMatcher();
     private String filterPath;                                 // 类白名单路径

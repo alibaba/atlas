@@ -45,9 +45,8 @@ public abstract class AnnotationEncodedValueAdaptor {
         writer.write(".subannotation ");
         writer.write(annotationEncodedValue.getType());
         writer.write('\n');
-        if (annotationEncodedValue.getElements()!= null && annotationEncodedValue.getElements().size() > 0) {
-            writeElementsTo(writer, annotationEncodedValue.getElements(), containingClass);
-        }
+
+        writeElementsTo(writer, annotationEncodedValue.getElements(), containingClass);
         writer.write(".end subannotation");
     }
 

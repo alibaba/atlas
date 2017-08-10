@@ -791,8 +791,4 @@ public class DexDiffer {
     }
 
 
-    public Filter getFilter(){
-        return filter;
-    }
-
 }

@@ -234,7 +234,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Date;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -249,7 +252,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
 
     private File diffFile;
     private File diffJsonFile;
-    private List<String> classes;
+    private Set<String> classes;
 
     public static String currentClassType;
 
@@ -281,13 +284,8 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
     }
 
     public File doPatch() throws PatchException {
-
-
         try {
             File aptchFolder = new File(out, name);
-            if (!aptchFolder.exists()){
-                aptchFolder.mkdirs();
-            }
             File smaliDir = new File(aptchFolder, "smali");
             if (!smaliDir.exists()) {
                 smaliDir.mkdirs();
@@ -326,47 +324,22 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
                 info.writeToFile(name, diffFile, diffJsonFile);
             }
             //生成dex
-            classes = SmaliDiffUtils.buildCode(smaliDir,dexFile, info);
+            SmaliDiffUtils.buildCode(dexFile, info);
             if (null == classes || classes.size() <= 0) {
                 return null;
             }
 
-            classes.removeAll(addClasses);
 
-            List filterClasses = null;
-            if (dexDiffer.getFilter()!= null){
-                filterClasses = dexDiffer.getFilter().getFilteredClasses();
+            File smaliDir2 = new File(aptchFolder, "smali2");
+            if (!smaliDir2.exists()) {
+                smaliDir2.mkdirs();
             }
-
-            List finalFilterClasses = filterClasses;
-            Collections.sort(classes, new Comparator<String>() {
-                @Override
-                public int compare(String o1, String o2) {
-                    if (dexDiffer.getFilter() == null){
-                        return 0;
-                    }else {
-                        return finalFilterClasses.indexOf(o1) - finalFilterClasses.indexOf(o2);
-                    }
-                }
-            });
-
-
-
-//            //是否修改dex
-//            if (APatchTool.debug) {
-//                PatchMethodTool.modifyMethod(dexFile.getAbsolutePath(), dexFile.getAbsolutePath(), true);
-//            }
-//
-//            File smaliDir2 = new File(aptchFolder, "smali2");
-//            if (!smaliDir2.exists()) {
-//                smaliDir2.mkdirs();
-//            }
-//            try {
-//                FileUtils.cleanDirectory(smaliDir2);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//            prepareClasses = buildPrepareClass(smaliDir2, newFiles, info);
+            try {
+                FileUtils.cleanDirectory(smaliDir2);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            prepareClasses = buildPrepareClass(smaliDir2, newFiles, info);
             DexDiffInfo.release();
             build(outFile, dexFile);
             File file = release(aptchFolder, dexFile, outFile);
@@ -533,7 +506,11 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
         main.putValue("To-File", newFiles.get(0).getName());
         main.putValue("Patch-Name", name);
         main.putValue(name + "-Patch-Classes", Formater.dotStringList(classes));
-        main.putValue(name + "-add-classes", Formater.dotStringSet(addClasses));
+        main.putValue(name + "-Prepare-Classes", Formater.dotStringList(prepareClasses));
+        main.putValue(name + "-Used-Methods", Formater.dotStringList(usedMethods));
+        main.putValue(name + "-Modified-Classes", Formater.dotStringList(modifiedClasses));
+        main.putValue(name + "-Used-Classes", Formater.dotStringList(usedClasses));
+        main.putValue(name + "-add-classes", Formater.dotStringList(addClasses));
         return manifest;
     }
 

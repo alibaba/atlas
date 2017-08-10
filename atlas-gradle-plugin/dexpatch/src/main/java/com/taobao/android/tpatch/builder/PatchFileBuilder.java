@@ -163,7 +163,7 @@ public class PatchFileBuilder {
         // 生成tpatch文件
         for (PatchBundleInfo bundleInfo : newPatchInfo.getBundles()) {
             if (bundleInfo.getMainBundle() || bundleInfo.getNewBundle() || noPatchBundles.contains(
-                    bundleInfo.getPkgName())) {
+                bundleInfo.getPkgName())) {
                 File bundleFolder = new File(destTPathTmpFolder, bundleInfo.getName());
                 File soFile = new File(destTPathTmpFolder, bundleInfo.getName() + ".so");
                 if (soFile.exists() || bundleInfo.getVersion().equals(ROLLBACK_VERSION)) {
@@ -238,7 +238,7 @@ public class PatchFileBuilder {
             bundlePatch.mainBundle = curBundleInfo.getMainBundle();
             //            bundlePatch.baseVersion = curBundleInfo.getBaseVersion();
             if (hisBundles.containsKey(bundleName) && !hisBundles.get(bundleName)
-                    .getNewBundle()) { // 如果之前的patch版本也包含这个bundle的patch
+                .getNewBundle()) { // 如果之前的patch版本也包含这个bundle的patch
                 PatchBundleInfo hisBundleInfo = hisBundles.get(bundleName);
                 bundlePatch.baseVersion = hisBundleInfo.getVersion();
                 bundlePatch.srcUnitTag = hisBundleInfo.getUnitTag();
@@ -287,8 +287,8 @@ public class PatchFileBuilder {
             }
             curTPatchUnzipFolder.mkdirs();
             CommandUtils.exec(tPatchTmpFolder,
-                    "unzip " + currentPatchFile.getAbsolutePath() + " -d " + curTPatchUnzipFolder
-                            .getAbsolutePath());
+                              "unzip " + currentPatchFile.getAbsolutePath() + " -d " + curTPatchUnzipFolder
+                                  .getAbsolutePath());
             //            ZipUtils.unzip(currentPatchFile, curTPatchUnzipFolder.getAbsolutePath());
             File[] libs = curTPatchUnzipFolder.listFiles();
             if (libs != null && libs.length > 0) {
@@ -297,7 +297,7 @@ public class PatchFileBuilder {
                         File destFolder = new File(lib.getParentFile(), FilenameUtils.getBaseName(lib.getName()));
                         System.out.println(lib.getAbsolutePath());
                         CommandUtils.exec(tPatchTmpFolder,
-                                "unzip " + lib.getAbsolutePath() + " -d " + destFolder.getAbsolutePath());
+                                          "unzip " + lib.getAbsolutePath() + " -d " + destFolder.getAbsolutePath());
                         //                        ZipUtils.unzip(lib, destFolder.getAbsolutePath());
                     }
                 }
@@ -315,7 +315,7 @@ public class PatchFileBuilder {
      */
     private PatchInfo processBundlePatch(PatchInfo hisPatchInfo, List<BundlePatch> bundlePatchs,
                                          File curTPatchUnzipFolder) throws IOException,
-            PatchException {
+                                                                           PatchException {
         String patchName = "patch-" + currentBuildPatchInfo.getPatchVersion() + "@" + hisPatchInfo.getPatchVersion();
         PatchInfo patchInfo = new PatchInfo();
         patchInfo.setFileName(patchName + ".tpatch");
@@ -335,7 +335,7 @@ public class PatchFileBuilder {
                 continue;
             } else if (noPatchBundles.contains(bundlePatch.pkgName)) {
                 File currentBundle = new File(curTPatchUnzipFolder,
-                        "lib" + bundlePatch.pkgName.replace(".", "_") + ".so");
+                                              "lib" + bundlePatch.pkgName.replace(".", "_") + ".so");
                 if (!currentBundle.exists()) {
                     continue;
                 }
@@ -385,16 +385,16 @@ public class PatchFileBuilder {
                     File hisBundleFolder = new File(hisTPatchUnzipFolder, bundleName);
                     if (!hisTPatchFile.exists()) {
                         if (StringUtils.isBlank(hisPatchInfo.getDownloadUrl()) && new File(TPatchTool.hisTpatchFolder,
-                                hisPatchInfo.getFileName())
-                                .exists()) {
+                                                                                           hisPatchInfo.getFileName())
+                            .exists()) {
                             File hisPatchFile = new File(TPatchTool.hisTpatchFolder, hisPatchInfo.getFileName());
                             System.out.println("hisPatchFile:" + hisPatchFile.getAbsolutePath());
                             if (hisPatchFile.exists()) {
                                 FileUtils.copyFile(new File(TPatchTool.hisTpatchFolder, hisPatchInfo.getFileName()),
-                                        hisTPatchFile);
+                                                   hisTPatchFile);
                                 CommandUtils.exec(tPatchTmpFolder,
-                                        "unzip " + hisPatchFile + " -d " + hisTPatchUnzipFolder
-                                                .getAbsolutePath());
+                                                  "unzip " + hisPatchFile + " -d " + hisTPatchUnzipFolder
+                                                      .getAbsolutePath());
                                 //                            ZipUtils.unzip(hisTPatchFile, hisTPatchUnzipFolder
                                 // .getAbsolutePath());
                             }
@@ -487,16 +487,16 @@ public class PatchFileBuilder {
         File oldBundleFolder = null;
         if (base) {
             baseBundleFile = new File(baseApkUnzipFolder,
-                    "lib" + File.separator + "armeabi" + File.separator + newBundleFile.getName());
+                                      "lib" + File.separator + "armeabi" + File.separator + newBundleFile.getName());
             oldBundleFolder = new File(baseBundleFile.getParentFile(),
-                    FilenameUtils.getBaseName(baseBundleFile.getName()));
+                                       FilenameUtils.getBaseName(baseBundleFile.getName()));
             System.out.println("getBaseDexFile:" + new File(oldBundleFolder, "classes.dex").getAbsolutePath());
             return new File(oldBundleFolder, "classes.dex");
         } else {
             baseBundleFile = new File(newApkUnzipFolder,
-                    "lib" + File.separator + "armeabi" + File.separator + newBundleFile.getName());
+                                      "lib" + File.separator + "armeabi" + File.separator + newBundleFile.getName());
             oldBundleFolder = new File(baseBundleFile.getParentFile(),
-                    FilenameUtils.getBaseName(baseBundleFile.getName()));
+                                       FilenameUtils.getBaseName(baseBundleFile.getName()));
             System.out.println("getNewDexFile:" + new File(oldBundleFolder, "classes.dex").getAbsolutePath());
             return new File(oldBundleFolder, "classes.dex");
         }
@@ -513,7 +513,7 @@ public class PatchFileBuilder {
         Map<String, FileDef> map = new HashMap<String, FileDef>();
         if (!folder.exists() || !folder.isDirectory()) {
             throw new PatchException("The input folder:" + folder.getAbsolutePath()
-                    + " does not existed or is not a directory!");
+                                         + " does not existed or is not a directory!");
         }
         Collection<File> files = FileUtils.listFiles(folder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
         for (File file : files) {
@@ -558,7 +558,7 @@ public class PatchFileBuilder {
         }
         //        ZipUtils.unzip(saveFile, tmpUnzipFolder.getAbsolutePath());
         CommandUtils.exec(tPatchTmpFolder,
-                "unzip " + saveFile.getAbsolutePath() + " -d " + tmpUnzipFolder.getAbsolutePath());
+                          "unzip " + saveFile.getAbsolutePath() + " -d " + tmpUnzipFolder.getAbsolutePath());
     }
 
     /**

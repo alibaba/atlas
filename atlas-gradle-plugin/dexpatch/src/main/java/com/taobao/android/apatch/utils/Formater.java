@@ -231,18 +231,7 @@ public class Formater {
         return buffer.toString();
     }
 
-    public static String dotStringList(List<String> strings) {
-        StringBuffer buffer = new StringBuffer();
-        for (String string : strings) {
-            if (buffer.length() > 0) {
-                buffer.append(',');
-            }
-            buffer.append(string);
-        }
-        return buffer.toString();
-    }
-
-    public static String dotStringSet(Set<String> strings) {
+    public static String dotStringList(Set<String> strings) {
         StringBuffer buffer = new StringBuffer();
         for (String string : strings) {
             if (buffer.length() > 0) {

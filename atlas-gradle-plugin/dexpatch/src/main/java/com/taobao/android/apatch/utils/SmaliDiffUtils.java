@@ -334,9 +334,9 @@ public class SmaliDiffUtils {
         return false;
     }
 
-    public static List<String> buildCode(File smaliDir, File dexFile, DexDiffInfo info) throws IOException,
+    public static Set<String> buildCode(File smaliDir, File dexFile, DexDiffInfo info) throws IOException,
             RecognitionException {
-        List<String> classes = new ArrayList<>();
+        Set<String> classes = new HashSet<String>();
         Set<DexBackedClassDef> classDefs = new HashSet<DexBackedClassDef>();
         classDefs.addAll(info.getModifiedClasses());
         classDefs.addAll(info.getAddedClasses());
@@ -346,11 +346,11 @@ public class SmaliDiffUtils {
         File smaliFile;
         String className;
         for (DexBackedClassDef classDef : classDefs) {
-//            ApkPatch.currentClassType = classDef.getType();
-//            className = TypeGenUtil.newType(classDef.getType());
-            AfBakSmali.disassembleClass(classDef, outFileNameHandler, getBuildOption(classDefs, 19), false, true);
-            smaliFile = inFileNameHandler.getUniqueFilenameForClass(classDef.getType());
-            classes.add(classDef.getType().substring(1, classDef.getType().length() - 1).replace('/', '.'));
+            ApkPatch.currentClassType = classDef.getType();
+            className = TypeGenUtil.newType(classDef.getType());
+            AfBakSmali.disassembleClass(classDef, outFileNameHandler, getBuildOption(classDefs, 19), false, false);
+            smaliFile = inFileNameHandler.getUniqueFilenameForClass(className);
+            classes.add(className.substring(1, className.length() - 1).replace('/', '.'));
             SmaliMod.assembleSmaliFile(smaliFile, dexBuilder, true, true);
         }
 
@@ -365,10 +365,6 @@ public class SmaliDiffUtils {
         Set<DexBackedClassDef> classDefs = new HashSet<DexBackedClassDef>();
         classDefs.addAll(info.getModifiedClasses());
         classDefs.addAll(info.getAddedClasses());
-        if (classDefs.size() < 1){
-            return classes;
-        }
-
         DexFileFactory.writeDexFile(dexFile.getAbsolutePath(), new DexFile() {
             @Nonnull
             @Override
@@ -388,7 +384,7 @@ public class SmaliDiffUtils {
         });
 
         for (ClassDef classDef:classDefs){
-            classes.add(classDef.getType().replace("/",".").substring(1,classDef.getType().length()-1));
+            classes.add(classDef.getType());
         }
         return classes;
     }

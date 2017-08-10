@@ -211,6 +211,7 @@ import com.taobao.android.dex.Dex;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.dx.merge.CollisionPolicy;
 import com.taobao.android.dx.merge.DexMerger;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -338,6 +339,10 @@ public class MergePatch extends Build {
             name = attributes.getValue("Patch-Name");
             // classes = attributes.getValue(name + "-Patch-Classes");
             main.putValue(name + "-Patch-Classes", attributes.getValue(name + "-Patch-Classes"));
+            main.putValue(name + "-Prepare-Classes", attributes.getValue(name + "-Prepare-Classes"));
+            main.putValue(name + "-Used-Methods", attributes.getValue(name + "-Used-Methods"));
+            main.putValue(name + "-Modified-Classes", attributes.getValue(name + "-Modified-Classes"));
+            main.putValue(name + "-Used-Classes", attributes.getValue(name + "-Used-Classes"));
             main.putValue(name + "-add-classes", attributes.getValue(name + "-add-classes"));
 
         }
@@ -345,4 +350,23 @@ public class MergePatch extends Build {
         main.putValue("To-File", toBuffer.toString());
     }
 
+    public static void main(String[] args) throws IOException, PatchException {
+
+        File tablauncher = new File("/Users/seker/log/temp/tablauncher.apatch");
+        File commonbiz = new File("/Users/seker/log/temp/commonbiz.apatch");
+
+        File[] files = new File[]{tablauncher, commonbiz};
+
+        File out = new File("/Users/seker/log/temp/apatch/");
+        FileUtils.cleanDirectory(out);
+
+        String keystore = "/Users/seker/programs/debugsign/seker.keystore";
+        String password = "12345678";
+        String alias = "seker.keystore";
+        String entry = "12345678";
+        String name = "main";
+
+        MergePatch mergePatch = new MergePatch(files, name, out);
+        mergePatch.doMerge();
+    }
 }

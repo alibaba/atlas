@@ -224,7 +224,6 @@ import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateException;
 import java.sql.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -234,7 +233,7 @@ import java.util.jar.Manifest;
  */
 public class FastBuild extends Build {
 
-    private List<String> classes;
+    private Set<String> classes;
     private Set<? extends ClassDef> dexBackNewClasses = new HashSet<ClassDef>();
     private File diffFile;
     private File diffJsonFile;
@@ -303,11 +302,11 @@ public class FastBuild extends Build {
         main.putValue("Created-Time", new Date(System.currentTimeMillis()).toGMTString());
         main.putValue("Patch-Name", name);
         main.putValue(name + "-Patch-Classes", Formater.dotStringList(classes));
-        main.putValue(name + "-Prepare-Classes", Formater.dotStringSet(prepareClasses));
-        main.putValue(name + "-Used-Methods", Formater.dotStringSet(usedMethods));
-        main.putValue(name + "-Modified-Classes", Formater.dotStringSet(modifiedClasses));
-        main.putValue(name + "-Used-Classes", Formater.dotStringSet(usedClasses));
-        main.putValue(name + "-add-classes", Formater.dotStringSet(addClasses));
+        main.putValue(name + "-Prepare-Classes", Formater.dotStringList(prepareClasses));
+        main.putValue(name + "-Used-Methods", Formater.dotStringList(usedMethods));
+        main.putValue(name + "-Modified-Classes", Formater.dotStringList(modifiedClasses));
+        main.putValue(name + "-Used-Classes", Formater.dotStringList(usedClasses));
+        main.putValue(name + "-add-classes", Formater.dotStringList(addClasses));
         return manifest;
     }
 }

@@ -211,6 +211,8 @@ import org.jf.dexlib2.AnnotationVisibility;
 import org.jf.dexlib2.base.BaseAnnotation;
 import org.jf.dexlib2.base.BaseAnnotationElement;
 import org.jf.dexlib2.iface.AnnotationElement;
+import org.jf.dexlib2.iface.value.EncodedValue;
+import org.jf.dexlib2.immutable.value.ImmutableStringEncodedValue;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -220,7 +222,7 @@ import java.util.Set;
  */
 public class MethodReplaceAnnotation extends BaseAnnotation {
     //	private static String ANNOTATION = "Lc8/vJb;";
-    public static String ANNOTATION = "Lcom/taobao/sophix/core/dex/hot/MethodReplace;";
+    public static String ANNOTATION = "Lcom/alipay/euler/andfix/annotation/MethodReplace;";
     private Set<BaseAnnotationElement> mElements = new HashSet<BaseAnnotationElement>();
 
     @Override
@@ -239,36 +241,36 @@ public class MethodReplaceAnnotation extends BaseAnnotation {
 
 
     public MethodReplaceAnnotation(final String clazz, final String method) {
-//        BaseAnnotationElement clazzElement = new BaseAnnotationElement() {
-//
-//            @Override
-//            public EncodedValue getValue() {
-//                String name = clazz.substring(1, clazz.length() - 1).replace('/', '.');
-//                return new ImmutableStringEncodedValue(name);
-//            }
-//
-//            @Override
-//            public String getName() {
-//                // TODO Auto-generated method stub
-//                return "clazz";
-//            }
-//        };
-//        mElements.add(clazzElement);
-//
-//        BaseAnnotationElement methodElement = new BaseAnnotationElement() {
-//
-//            @Override
-//            public EncodedValue getValue() {
-//                return new ImmutableStringEncodedValue(method);
-//            }
-//
-//            @Override
-//            public String getName() {
-//                // TODO Auto-generated method stub
-//                return "method";
-//            }
-//        };
-//        mElements.add(methodElement);
+        BaseAnnotationElement clazzElement = new BaseAnnotationElement() {
+
+            @Override
+            public EncodedValue getValue() {
+                String name = clazz.substring(1, clazz.length() - 1).replace('/', '.');
+                return new ImmutableStringEncodedValue(name);
+            }
+
+            @Override
+            public String getName() {
+                // TODO Auto-generated method stub
+                return "clazz";
+            }
+        };
+        mElements.add(clazzElement);
+
+        BaseAnnotationElement methodElement = new BaseAnnotationElement() {
+
+            @Override
+            public EncodedValue getValue() {
+                return new ImmutableStringEncodedValue(method);
+            }
+
+            @Override
+            public String getName() {
+                // TODO Auto-generated method stub
+                return "method";
+            }
+        };
+        mElements.add(methodElement);
     }
 
     @Override

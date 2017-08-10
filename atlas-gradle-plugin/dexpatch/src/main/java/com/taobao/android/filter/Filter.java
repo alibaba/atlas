@@ -441,10 +441,7 @@ public class Filter {
     }
 
     //获取白名单的类，存放在filteredClassNames数组中
-    public List getFilteredClasses() throws IOException {
-        if (filteredClassNames.size() > 0){
-            return filteredClassNames;
-        }
+    public void getFilteredClasses() throws IOException {
         BufferedReader bufferedReader = null;
         try {
             FileReader fileReader = new FileReader(this.path);
@@ -463,18 +460,22 @@ public class Filter {
         }
 
         System.out.println("白名单类个数是：" + filteredClassNames.size());
-
-        return filteredClassNames;
     }
 
     //判断传入的类是否是一个白名单中被过滤的类
     //参数className表示dex中的类
     public boolean isFiltered(String className) {
         boolean isFiltered = true;
-        if (filteredClassNames.contains(className)){
-            return false;
+        for (String clazz:filteredClassNames){
+            if (clazz.equals(className)){
+                return false;
+            }
         }
         return isFiltered;
     }
 
+    public static void main(String []args){
+        Filter filter = new Filter("/Users/lilong/Downloads/log");
+        filter.isFiltered("Landroid/util/aa;");
+    }
 }

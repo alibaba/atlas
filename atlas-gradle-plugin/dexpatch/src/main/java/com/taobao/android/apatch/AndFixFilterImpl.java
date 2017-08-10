@@ -207,13 +207,17 @@
  */
 package com.taobao.android.apatch;
 
-import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.filter.AbstractDexFilter;
-import com.taobao.android.object.*;
+import com.taobao.android.differ.dex.PatchException;
+import com.taobao.android.object.ClassDiffInfo;
+import com.taobao.android.object.DexDiffInfo;
+import com.taobao.android.object.DiffType;
+import com.taobao.android.object.FieldDiffInfo;
+import com.taobao.android.object.MethodDiffInfo;
+
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.jf.dexlib2.dexbacked.DexBackedField;
 import org.jf.dexlib2.dexbacked.DexBackedMethod;
-import org.jf.dexlib2.util.MethodUtil;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -245,7 +249,29 @@ public class AndFixFilterImpl extends AbstractDexFilter {
     public boolean filterClass(ClassDiffInfo classDiffInfo) throws PatchException {
         boolean isInnerclass = false;
         DexBackedClassDef dexBackedClassDef = classDiffInfo.getClassDef();
-         if (classDiffInfo.getType().equals(DiffType.MODIFY)) {
+        if (classDiffInfo.getType().equals(DiffType.ADD)) {
+            return false;
+//            if (dexBackedClassDef.getAnnotations().size() > 0) {
+//                Set<? extends Annotation> annotations = dexBackedClassDef.getAnnotations();
+//                for (Annotation dexBackedAnnotation : annotations) {
+//                    if (dexBackedAnnotation.getType().equals("dalvik/annotation/EnclosingClass;"))
+//                        throw new PatchException("can't add member class:" + dexBackedClassDef.getType());
+//                }
+//            }
+//            String className = DexDiffer.getDalvikClassName(dexBackedClassDef.getType());
+//            MappingParser mappingParser = new MappingParser(APatchTool.mappingFile);
+//            String outterClassName = mappingParser.getOuterClass(className);
+//            if (!className.equals(outterClassName)) {
+//                isInnerclass = true;
+//                if (SmaliDiffUtils.diff(diffInfo, outterClassName, className, outFile)) {
+//                    classDiffInfo.setType(DiffType.NONE);
+//                    return true;
+//                } else {
+//                    throw new PatchException("can't add anonymous class;" + dexBackedClassDef.getType());
+//                }
+//            }
+//            throw new PatchException("can't add class:" + dexBackedClassDef.getType());
+        } else if (classDiffInfo.getType().equals(DiffType.MODIFY)) {
             if (classDiffInfo.getName().endsWith(".R")||classDiffInfo.getName().contains(".R$")){
                 return true;
             }
@@ -280,16 +306,22 @@ public class AndFixFilterImpl extends AbstractDexFilter {
     @Override
     public boolean filterMethod(MethodDiffInfo methodDiffInfo) throws PatchException {
         DexBackedMethod dexBackedMethod = methodDiffInfo.getBackedMethod();
-        if (dexBackedMethod.getName().equals("<clinit>")) {
-            System.out.println("can't patch <clinit> in "+methodDiffInfo.getBackedMethod().getDefiningClass());
+        if (dexBackedMethod.getName().equals("<clinit>") || dexBackedMethod.getName().contains("ajc$preClinit")||dexBackedMethod.getName().equals("<init>")||dexBackedMethod.getName().contains("access$")) {
+            return true;
         }
+
         if (methodDiffInfo.getType().equals(DiffType.REMOVE)) {
-            System.out.println("can't remove method:" + dexBackedMethod.getName()+MethodUtil.getShorty(dexBackedMethod.getParameterTypes(),dexBackedMethod.getReturnType()) + " in class:" + dexBackedMethod.getDefiningClass());
-
+            return true;
         } else if (methodDiffInfo.getType().equals(DiffType.ADD)){
-            throw new PatchException("can't add method:" + dexBackedMethod.getName()+MethodUtil.getShorty(dexBackedMethod.getParameterTypes(),dexBackedMethod.getReturnType()) + " in class:" + dexBackedMethod.getDefiningClass());
+            throw new PatchException("can't add method:" + dexBackedMethod.getName() + " in class:" + dexBackedMethod.getDefiningClass());
         }
 
+        if (dexBackedMethod.getParameters().size() > 8) {
+            throw new PatchException("can't patch method:" + dexBackedMethod.getName() + "has Parameters above 8 in class:"+dexBackedMethod.getDefiningClass());
+        }
+        if (dexBackedMethod.getParameterTypes().contains("J") || dexBackedMethod.getParameterTypes().contains("D") || dexBackedMethod.getParameterTypes().contains("F")) {
+           throw new PatchException("can't patch method:" + dexBackedMethod.getName() + "has ParameterType long,double or float in class:"+dexBackedMethod.getDefiningClass());
+        }
         return false;
     }
 
@@ -305,7 +337,7 @@ public class AndFixFilterImpl extends AbstractDexFilter {
                     + dexBackedField.getName() + "(" + dexBackedField.getType() + "), " + "in class :"
                     + dexBackedField.getDefiningClass());
         }
-        return false;
+        return true;
     }
 
 }
