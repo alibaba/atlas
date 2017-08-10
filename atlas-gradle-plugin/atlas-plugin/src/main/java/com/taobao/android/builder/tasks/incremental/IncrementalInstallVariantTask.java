@@ -68,6 +68,7 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
         Iterable<Integer> processPids = getProcessPids(device, appPackageName);
         if (isEmpty(processPids)) {
             //杀死进程
+            getLogger().lifecycle("实验特性界面恢复重启适配性问题，使用强制杀死进程，请联系歩川（步有个点，歩），告知机型");
             runCommand(device, "am force-stop " + appPackageName);
             /*device.executeShellCommand("am " + "kill " + appPackageName,
                                        //$NON-NLS-1$
@@ -83,6 +84,7 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
                                        });*/
         } else {
             //退到后台
+            getLogger().lifecycle("实验特性，界面恢复重启，如有任何问题请随时与歩川（步有个点，歩）联系");
             runCommand(device, "input keyevent 3");
             for (Integer processId : processPids) {
                 /*device.executeShellCommand*/
