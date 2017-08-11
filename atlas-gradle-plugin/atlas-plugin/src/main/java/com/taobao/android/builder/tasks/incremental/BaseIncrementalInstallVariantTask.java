@@ -1,25 +1,5 @@
 package com.taobao.android.builder.tasks.incremental;
 
-import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.core.VariantConfiguration;
-import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.CollectingOutputReceiver;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.MultiLineReceiver;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.TimeoutException;
-import com.android.ide.common.res2.FileStatus;
-import com.google.common.collect.ImmutableList;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.Optional;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -30,6 +10,22 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.VariantConfiguration;
+import com.android.ddmlib.CollectingOutputReceiver;
+import com.android.ddmlib.IDevice;
+import com.android.ddmlib.MultiLineReceiver;
+import com.android.ide.common.res2.FileStatus;
+import com.google.common.collect.ImmutableList;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Optional;
 
 import static com.android.build.gradle.internal.api.AppVariantOutputContext.MAINDEX_FILE_NAME;
 
@@ -67,7 +63,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
     }
 
     @Override
-    protected void doFullTaskAction(IDevice device) {
+    protected void doFullTaskAction(IDevice device) throws Exception {
         install(getApkFiles(), device);
     }
 
@@ -78,17 +74,13 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
             String appPackageName = getAppPackageName();
             VersionNameReceiver versionNameReceiver = new VersionNameReceiver();
             device.executeShellCommand("dumpsys package " + appPackageName,//$NON-NLS-1$
-                    versionNameReceiver);
+                versionNameReceiver);
             String versionName = getVersionName();
             String versionName1 = versionNameReceiver.getVersionName();
             if (!versionName.equals(versionName1)) {
-                getLogger().warn(String.format("versionName declared at project %1$s value=(%2$s)\n"
-                                + "\thas a different value=(%3$s) "
-                                + "declared at device %4$s\n",
-                        projectName,
-                        versionName,
-                        versionName1,
-                        device));
+                getLogger().warn(String.format(
+                    "versionName declared at project %1$s value=(%2$s)\n" + "\thas a different value=(%3$s) "
+                        + "declared at device %4$s\n", projectName, versionName, versionName1, device));
             }
             install(projectName, variantName, appPackageName, device, apkFiles);
         } catch (Exception e) {
@@ -126,25 +118,6 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
     protected abstract void install(String projectName, String variantName, String appPackageName, IDevice device,
                                     Collection<File> apkFiles) throws Exception;
 
-    protected boolean runCommand(@NonNull IDevice device, @NonNull String cmd)
-            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        String output = getCommandOutput(device, cmd).trim();
-        if (!output.isEmpty()) {
-            getILogger().warning("Unexpected shell output for " + cmd + ": " + output);
-            return false;
-        }
-        return true;
-    }
-
-    @NonNull
-    private static String getCommandOutput(@NonNull IDevice device, @NonNull String cmd)
-            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        CollectingOutputReceiver receiver;
-        receiver = new CollectingOutputReceiver();
-        device.executeShellCommand(cmd, receiver);
-        return receiver.getOutput();
-    }
-
     @InputFiles
     @Optional
     public Collection<File> getApkFiles() {
@@ -156,7 +129,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
     }
 
     public abstract static class ConfigAction<T extends BaseIncrementalInstallVariantTask>
-            extends DeviceTask.ConfigAction<T> {
+        extends DeviceTask.ConfigAction<T> {
 
         public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData, appVariantContext);
@@ -166,7 +139,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
         public void execute(@NonNull T deviceTask) {
             super.execute(deviceTask);
             AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
-                    baseVariantOutputData);
+                baseVariantOutputData);
             //TODO 先根据依赖判断
             ConventionMappingHelper.map(deviceTask, "apkFiles", new Callable<ImmutableList<File>>() {
 
@@ -180,7 +153,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
                     }
                     //Main
                     AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                            deviceTask.getVariantName());
+                        deviceTask.getVariantName());
                     List<String> allDependencies = atlasDependencyTree.getMainBundle().getAllDependencies();
                     if (allDependencies.size() > 0) {
                         builder.add(getAppVariantOutputContext().getPatchApkOutputFile());
