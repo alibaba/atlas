@@ -630,7 +630,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
         AndroidTask<UninstallPatchTask> uninstallPatchTaskAndroidTask = androidTasks.create(tasks,
             new UninstallPatchTask.ConfigAction(appVariantContext, vod));
-        tasks.named(variantScope.getTaskName("install"), it -> it.dependsOn(uninstallPatchTaskAndroidTask.getName()));
+        tasks.named(variantScope.getTaskName("install"), it -> {
+            if (it != null) {
+                it.dependsOn(uninstallPatchTaskAndroidTask.getName());
+            }
+        });
     }
 
     private void hookFastMultiDex(AppVariantContext appVariantContext) throws Exception {
