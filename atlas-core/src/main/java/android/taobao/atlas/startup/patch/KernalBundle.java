@@ -394,11 +394,12 @@ public class KernalBundle{
         if ((dexFile != null&&dexFile.length>0) || archive.getLibraryDirectory().exists()) {
             installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive.getArchiveFile(),archive.getOdexFile(),archive.getLibraryDirectory());
             boolean needReplaceClassLoader = needReplaceClassLoader(application);
+            int newFrameworkPropertiesDexIndex = dexFile[dexFile.length-1].getName().indexOf(KernalBundleArchive.DEXPATCH_DIR)>=0 ? dexFile.length-2 : dexFile.length-1;
             if(!needReplaceClassLoader) {
-                FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length - 1].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
+                FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
             }else{
                 replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader());
-                FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length - 1].loadClass("android.taobao.atlas.framework.FrameworkProperties", replaceClassLoader);
+                FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", replaceClassLoader);
             }
             if(FrameworkPropertiesClazz==null && isDeubgMode()){
                 Log.e("KernalBundle","main dex is not match, library awo test?");
@@ -706,7 +707,9 @@ public class KernalBundle{
             try {
                 Class NativeLibraryElement = Class.forName("dalvik.system.DexPathList$NativeLibraryElement");
                 Class[] oconstructorArgs = {File.class};
-                return NativeLibraryElement.getDeclaredConstructor(oconstructorArgs).newInstance(dir);
+                Constructor constructor = NativeLibraryElement.getDeclaredConstructor(oconstructorArgs);
+                constructor.setAccessible(true);
+                return constructor.newInstance(dir);
             }catch (Exception e) {
                 throw new IOException("make nativeElement fail", e);
             }
