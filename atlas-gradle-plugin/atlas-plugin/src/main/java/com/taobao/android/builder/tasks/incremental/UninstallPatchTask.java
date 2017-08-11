@@ -15,7 +15,8 @@ import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.ParallelizableTask;
 
 /**
- * Created by chenhjohn on 2017/6/21.
+ * @author chenhjohn
+ * @date 2017/6/21
  */
 
 @ParallelizableTask

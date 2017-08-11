@@ -44,20 +44,12 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
         if (apkFiles != null) {
             for (File apkFile : apkFiles) {
 
-                installPatch(projectName,
-                    variantName,
-                    appPackageName,
-                    device,
-                    apkFile,
-                    getAwbPackageName(apkFile),
+                installPatch(projectName, variantName, appPackageName, device, apkFile, getAwbPackageName(apkFile),
                     patchInstallDirectory);
             }
         }
 
-        getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}",
-            appPackageName,
-            device.getName(),
-            projectName,
+        getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", appPackageName, device.getName(), projectName,
             variantName);
         restartApp(device, appPackageName);
     }
@@ -86,9 +78,14 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
             //退到后台
             getLogger().lifecycle("实验特性，界面恢复重启，如有任何问题请随时与歩川（步有个点，歩）联系");
             runCommand(device, "input keyevent 3");
+            boolean success = false;
             for (Integer processId : processPids) {
                 /*device.executeShellCommand*/
-                runCommand(device, "run-as " + appPackageName + " kill -9 " + processId);
+                success = runCommand(device, "run-as " + appPackageName + " kill -9 " + processId);
+                if (!success) {
+                    runCommand(device, "am force-stop " + appPackageName);
+                    break;
+                }
             }
             /*device.executeShellCommand(
                 "am " + "broadcast " + "-a " + "com.taobao.atlas.intent.PATCH_APP " + "-e " + "pkg " + appPackageName,
@@ -154,12 +151,8 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
                               String name, String patchInstallDirectory)
         throws TimeoutException, AdbCommandRejectedException, SyncException, IOException {
         String remotePatchFile = Joiner.on('/').join(patchInstallDirectory, name, PATCH_NAME);
-        getLogger().lifecycle("Installing awb '{}' on '{}' to '{}' for {}:{}",
-            patch,
-            device.getName(),
-            remotePatchFile,
-            projectName,
-            variantName);
+        getLogger().lifecycle("Installing awb '{}' on '{}' to '{}' for {}:{}", patch, device.getName(), remotePatchFile,
+            projectName, variantName);
         device.pushFile(patch.getAbsolutePath(), remotePatchFile);
     }
 
