@@ -35,6 +35,7 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
 
 /**
  * Created by chenhjohn on 2017/8/11.
@@ -192,6 +193,7 @@ abstract class DeviceTask extends IncrementalTask {
     }
 
     @Input
+    @Optional
     public String getVersionName() {
         return versionName;
     }
@@ -250,8 +252,6 @@ abstract class DeviceTask extends IncrementalTask {
 
             ConventionMappingHelper.map(deviceTask, "appPackageName", variantConfiguration::getApplicationId);
             ConventionMappingHelper.map(deviceTask, "versionName", variantConfiguration::getVersionName);
-
         }
-
     }
 }

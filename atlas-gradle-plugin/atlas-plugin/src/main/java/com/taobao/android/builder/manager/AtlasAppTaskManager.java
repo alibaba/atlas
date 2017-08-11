@@ -610,7 +610,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         });
 
         // 整包也会执行
-        // variantScope.getPreBuildTask().dependsOn(tasks, uninstallPatchTaskAndroidTask);
+        // variantScope.getPreBuildTask().dependsOn(tasks, uninstallPatchTask);
         preIncrementalInstallTask.dependsOn(tasks, preIncrementalInstallVariantBuildTask);
 
         // 多模块独立调试安装旧版本
@@ -628,11 +628,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             new AwoInstallTask.ConfigAction(appVariantContext, vod));
         awoInstallVariantTask.dependsOn(tasks, preIncrementalInstallTask);
 
-        AndroidTask<UninstallPatchTask> uninstallPatchTaskAndroidTask = androidTasks.create(tasks,
+        AndroidTask<UninstallPatchTask> uninstallPatchTask = androidTasks.create(tasks,
             new UninstallPatchTask.ConfigAction(appVariantContext, vod));
         tasks.named(variantScope.getTaskName("install"), it -> {
             if (it != null) {
-                it.dependsOn(uninstallPatchTaskAndroidTask.getName());
+                it.dependsOn(uninstallPatchTask.getName());
             }
         });
     }
