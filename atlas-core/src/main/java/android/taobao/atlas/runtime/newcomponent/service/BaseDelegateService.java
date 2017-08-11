@@ -183,6 +183,7 @@ public class BaseDelegateService extends Service{
                 }else{
                     gDefault=AtlasHacks.ActivityManagerNative_gDefault.get(AtlasHacks.ActivityManagerNative.getmClass());
                 }
+                gDefault = AtlasHacks.Singleton_mInstance.get(gDefault);
                 AtlasHacks.ContextImpl_setOuterContext.invoke(contextImpl,service);
                 ContextImplHook hook = new ContextImplHook((Context) contextImpl,serviceClazz.getClassLoader());
 
