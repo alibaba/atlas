@@ -332,14 +332,13 @@ public class ApDependencies /*extends BaseTask*/ {
                 Dependency dependency = project.getDependencies().create(apDependency);
                 Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
                 configuration.setTransitive(false);
-                apBaseFile = Iterables.getOnlyElement(Collections2.filter(configuration.getFiles(),
-                                                                          new Predicate<File>() {
-                                                                              @Override
-                                                                              public boolean apply(
-                                                                                  @Nullable File file) {
-                                                                                  return file.getName().endsWith(".ap");
-                                                                              }
-                                                                          }));
+                apBaseFile = Iterables.getOnlyElement(
+                    Collections2.filter(configuration.getFiles(), new Predicate<File>() {
+                        @Override
+                        public boolean apply(@Nullable File file) {
+                            return file.getName().endsWith(".ap");
+                        }
+                    }));
             } else {
                 // throw new IllegalStateException("AP is missing");
             }
@@ -382,18 +381,15 @@ public class ApDependencies /*extends BaseTask*/ {
         //     return null;
         // }
         if (!(row.size() == 1)) {
-            throw new IllegalStateException(String.valueOf("Unable to find AwbDependencies for '"
-                                                               + moduleIdentifier
-                                                               + "'"));
+            throw new IllegalStateException(
+                String.valueOf("Unable to find AwbDependencies for '" + moduleIdentifier + "'"));
         }
-        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> element
-            = Iterables.getOnlyElement(row.entrySet());
+        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> element = Iterables.getOnlyElement(
+            row.entrySet());
         if (!AWB.equals(element.getValue().getArtifactType())) {
-            throw new IllegalStateException(String.valueOf(String.format(
-                "Expected artifactType '%s' but found '%s' in '%s'",
-                AWB,
-                element.getValue().getArtifactType(),
-                moduleIdentifier)));
+            throw new IllegalStateException(String.valueOf(String
+                .format("Expected artifactType '%s' but found '%s' in '%s'", AWB, element.getValue().getArtifactType(),
+                    moduleIdentifier)));
         }
         return mDependenciesTable.column(element.getKey());
     }
@@ -401,31 +397,31 @@ public class ApDependencies /*extends BaseTask*/ {
     private void addDependency(String dependencyString, ParsedModuleStringNotation awb) {
         ParsedModuleStringNotation parsedNotation = new ParsedModuleStringNotation(dependencyString);
         ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(parsedNotation.getGroup(),
-                                                                          parsedNotation.getName());
+            parsedNotation.getName());
         mDependenciesTable.put(moduleIdentifier, awb, parsedNotation);
     }
 
-    public boolean isMainLibrary(Library library) {
-        MavenCoordinates coordinates = library.getResolvedCoordinates();
-        return isMainLibrary(coordinates.getGroupId(), coordinates.getArtifactId());
-    }
+    //public boolean isMainLibrary(Library library) {
+    //    MavenCoordinates coordinates = library.getResolvedCoordinates();
+    //    return isMainLibrary(coordinates.getGroupId(), coordinates.getArtifactId());
+    //}
 
-    public boolean isMainLibrary(String group, String name) {
-        return isMainLibrary(DefaultModuleIdentifier.newId(group, name));
-    }
+    //public boolean isMainLibrary(String group, String name) {
+    //    return isMainLibrary(DefaultModuleIdentifier.newId(group, name));
+    //}
 
     public boolean isMainLibrary(ModuleIdentifier moduleIdentifier) {
         return getAwb(moduleIdentifier) == MAIN_DEX;
     }
 
-    public boolean isAwb(Library library) {
-        MavenCoordinates coordinates = library.getResolvedCoordinates();
-        return isAwb(coordinates.getGroupId(), coordinates.getArtifactId());
-    }
+    //public boolean isAwb(Library library) {
+    //    MavenCoordinates coordinates = library.getResolvedCoordinates();
+    //    return isAwb(coordinates.getGroupId(), coordinates.getArtifactId());
+    //}
 
-    public boolean isAwb(String group, String name) {
-        return isAwb(DefaultModuleIdentifier.newId(group, name));
-    }
+    //public boolean isAwb(String group, String name) {
+    //    return isAwb(DefaultModuleIdentifier.newId(group, name));
+    //}
 
     public boolean isAwb(ModuleIdentifier moduleIdentifier) {
         Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(moduleIdentifier);
@@ -455,8 +451,8 @@ public class ApDependencies /*extends BaseTask*/ {
         if (row.size() == 0) {
             return false;
         }
-        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> notationEntry
-            = Iterables.getOnlyElement(row.entrySet());
+        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> notationEntry = Iterables.getOnlyElement(
+            row.entrySet());
         return !(AWB.equals(notationEntry.getValue().getArtifactType())) && !(notationEntry.getKey() == MAIN_DEX);
     }
 
@@ -469,25 +465,24 @@ public class ApDependencies /*extends BaseTask*/ {
     public ParsedModuleStringNotation getAwb(ModuleIdentifier moduleIdentifier) {
         Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(moduleIdentifier);
         if (row.size() == 0) {
-            return MAIN_DEX;
+            return null;
+            //return MAIN_DEX;
         }
 
         return Iterables.getOnlyElement(row.entrySet()).getKey();
     }
 
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {
-        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row
-            = mDependenciesTable.row(moduleVersion.getModule());
+        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(
+            moduleVersion.getModule());
         if (row.size() == 0) {
             return false;
         }
         String mainVersion = Iterables.getOnlyElement(row.entrySet()).getValue().getVersion();
 
         if (versionStringComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
-            LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping",
-                        moduleVersion.getModule(),
-                        mainVersion,
-                        moduleVersion.getVersion());
+            LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping", moduleVersion.getModule(),
+                mainVersion, moduleVersion.getVersion());
             // LOGGER.quiet("{} apVersion({}) is larger than yourVersion({}), skipping",
             //              moduleVersion.getModule(),
             //              mainVersion,
@@ -498,30 +493,30 @@ public class ApDependencies /*extends BaseTask*/ {
         }
     }
 
+    //Awb间接依赖
     public void configureAwbDependencies(Configuration configuration) {
         Set<ParsedModuleStringNotation> dependenciesToAdd = new HashSet<>();
         DependencySet dependencies = configuration.getAllDependencies();
         for (Dependency dependency : dependencies) {
-            ParsedModuleStringNotation parsedNotation = getAwb(DefaultModuleIdentifier.newId(dependency.getGroup(),
-                                                                                             dependency.getName()));
-            if (parsedNotation != MAIN_DEX && !containsDependency(dependencies, parsedNotation)) {
-                dependenciesToAdd.add(parsedNotation);
+            //所属的Awb
+            ParsedModuleStringNotation awbParsedNotation = getAwb(
+                DefaultModuleIdentifier.newId(dependency.getGroup(), dependency.getName()));
+            //所属的Awb依赖不存在
+            if (awbParsedNotation != null && awbParsedNotation != MAIN_DEX && !containsDependency(dependencies,
+                awbParsedNotation)) {
+                dependenciesToAdd.add(awbParsedNotation);
             }
         }
         for (ParsedModuleStringNotation dependency : dependenciesToAdd) {
             configuration.getDependencies().add(project.getDependencies()
-                                                    .create(dependency.getGroup()
-                                                                + ":"
-                                                                + dependency.getName()
-                                                                + ":"
-                                                                + dependency.getVersion()
-                                                                + "@awb"));
+                .create(dependency.getGroup() + ":" + dependency.getName() + ":" + dependency.getVersion() + "@awb"));
         }
     }
 
     private static boolean containsDependency(DependencySet dependencies, ParsedModuleStringNotation parsedNotation) {
-        return dependencies.stream().anyMatch(dependency -> dependency.getGroup().equals(parsedNotation.getGroup())
-            && dependency.getName().equals(parsedNotation.getName()));
+        return dependencies.stream().anyMatch(
+            dependency -> dependency.getGroup().equals(parsedNotation.getGroup()) && dependency.getName()
+                .equals(parsedNotation.getName()));
     }
 
     public DependencyJson getApDependencyJson() {

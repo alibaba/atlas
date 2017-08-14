@@ -302,8 +302,7 @@ public class AtlasDepTreeParser {
         DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath);
 
         DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts,
-                                                                       dependencyGroup.bundleProvidedMap,
-                                                                       apDependencies);
+            dependencyGroup.bundleProvidedMap, apDependencies);
 
         mResolvedDependencies.addAll(dependencyResolver.resolve(dependencyGroup.compileDependencies, true));
 
@@ -387,6 +386,7 @@ public class AtlasDepTreeParser {
     private void adjustAwbLibraryDependencies(AtlasDependencyTree atlasDependencyTree) {
         AwbBundle mainBundle = atlasDependencyTree.getMainBundle();
         ArrayList<Library> librariesToRemove = new ArrayList<Library>();
+        //扫描主dex依赖
         for (Library library : mainBundle.getAndroidLibraries()) {
             ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
                 library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
@@ -400,6 +400,7 @@ public class AtlasDepTreeParser {
                 }
             }
         }
+        //移除主dex包含Awb间接依赖
         mainBundle.getAndroidLibraries().removeAll(librariesToRemove);
 
         librariesToRemove.clear();
@@ -432,9 +433,12 @@ public class AtlasDepTreeParser {
     }
 
     private AwbBundle getAwbBundle(AtlasDependencyTree atlasDependencyTree, ModuleIdentifier moduleIdentifier) {
-        ParsedModuleStringNotation parsedNotation = apDependencies.getAwb(moduleIdentifier);
+        ParsedModuleStringNotation awbParsedNotation = apDependencies.getAwb(moduleIdentifier);
+        if (awbParsedNotation == null) {
+            return null;
+        }
         return atlasDependencyTree.getAwbBundle(
-            DefaultModuleIdentifier.newId(parsedNotation.getGroup(), parsedNotation.getName()));
+            DefaultModuleIdentifier.newId(awbParsedNotation.getGroup(), awbParsedNotation.getName()));
     }
 
     private void collect(ResolvedDependencyInfo dependencyInfo, AwbBundle awbBundle) {
