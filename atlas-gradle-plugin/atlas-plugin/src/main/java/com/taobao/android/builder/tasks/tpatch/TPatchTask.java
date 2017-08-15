@@ -376,7 +376,6 @@ public class TPatchTask extends BaseTask {
                                patchContext.appSignName);
             getLogger().info("finish  do patch");
 
-            //resignBaseApk(baseApkVersion, apkFileList);
 
             FileUtils.forceDelete(patchContext.newApk);
 

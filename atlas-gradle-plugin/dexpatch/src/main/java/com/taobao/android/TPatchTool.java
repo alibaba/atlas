@@ -210,16 +210,7 @@ package com.taobao.android;
 
 import java.io.*;
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.Attributes;
@@ -242,6 +233,10 @@ import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.DiffType;
 import com.taobao.android.object.PatchBundleInfo;
 import com.taobao.android.object.PatchInfo;
+import com.taobao.android.reader.AtlasFrameworkPropertiesReader;
+import com.taobao.android.reader.ClassReader;
+import com.taobao.android.reader.DexReader;
+import com.taobao.android.reader.FieldReader;
 import com.taobao.android.task.ExecutorServicesHelper;
 import com.taobao.android.tpatch.builder.PatchFileBuilder;
 import com.taobao.android.tpatch.manifest.AndroidManifestDiffFactory;
@@ -254,6 +249,7 @@ import com.taobao.android.tpatch.utils.PathUtils;
 import com.taobao.android.utils.CommandUtils;
 import com.taobao.android.utils.PathMatcher;
 import com.taobao.android.utils.Profiler;
+import com.taobao.checker.PatchChecker;
 import com.taobao.update.UpdateInfo;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;
@@ -326,6 +322,8 @@ public class TPatchTool extends BasePatchTool {
     }
 
     private List<String> versionList = new ArrayList<>();
+
+    public static Map<String,LinkedHashMap>bundleInfos = new HashMap<>();
 
     private Map<String, Map<String, ClassDef>> bundleClassMap = new ConcurrentHashMap<String, Map<String, ClassDef>>();
 
@@ -532,12 +530,16 @@ public class TPatchTool extends BasePatchTool {
             }
             FileUtils.writeStringToFile(hisPatchJsonFile, JSON.toJSONString(testForBuildPatchInfos));
         }
-
+        Map<String,List<PatchChecker.ReasonMsg>>map = new HashMap<>();
         for (PatchInfo patchInfo : buildPatchInfos.getPatches()) {
             UpdateInfo updateInfo = new UpdateInfo(patchInfo, buildPatchInfos.getBaseVersion());
+             List<PatchChecker.ReasonMsg> msgs = new PatchChecker(updateInfo,bundleInfos.get(patchInfo.getTargetVersion()),new File(outPatchDir,patchInfo.getFileName())).check();
+             map.put(patchInfo.getFileName(),msgs);
             File updateJson = new File(outPatchDir, "update-" + patchInfo.getTargetVersion() + ".json");
             FileUtils.writeStringToFile(updateJson, JSON.toJSONString(updateInfo, true));
         }
+        File checkFile = new File(outPatchDir,"check.json");
+        FileUtils.writeStringToFile(checkFile, JSON.toJSONString(map, true));
         Profiler.release();
 
         Profiler.enter("cleanworkspace");
@@ -664,7 +666,7 @@ public class TPatchTool extends BasePatchTool {
      */
     private void processBundleFiles(File newBundleFile,
                                     File baseBundleFile,
-                                    File patchTmpDir) throws IOException, RecognitionException, PatchException {
+                                    File patchTmpDir) throws Exception {
         String bundleName = FilenameUtils.getBaseName(newBundleFile.getName());
         File destPatchBundleDir = new File(patchTmpDir, bundleName);
         final File newBundleUnzipFolder = new File(newBundleFile.getParentFile(), bundleName);
@@ -702,7 +704,7 @@ public class TPatchTool extends BasePatchTool {
 
     private void doBundlePatch(File newBundleFile, File baseBundleFile, File patchTmpDir, String bundleName,
                                File destPatchBundleDir, File newBundleUnzipFolder, File baseBundleUnzipFolder)
-        throws IOException, RecognitionException, PatchException {
+        throws Exception {
         // 解压文件
         // 判断dex的差异性
         CommandUtils.exec(patchTmpDir,
@@ -837,7 +839,7 @@ public class TPatchTool extends BasePatchTool {
                                       File baseApkUnzipFolder,
                                       File destDex,
                                       File tmpDexFile,
-                                      boolean mainDex) throws IOException, RecognitionException, PatchException {
+                                      boolean mainDex) throws Exception {
         List<File> dexs = Lists.newArrayList();
         // 比较主bundle的dex
         if (!tmpDexFile.exists()) {
@@ -873,6 +875,12 @@ public class TPatchTool extends BasePatchTool {
         }
 
         FileUtils.deleteDirectory(tmpDexFile);
+        if (mainDex){
+            bundleInfos.put(newApkBO.getVersionName(),new AtlasFrameworkPropertiesReader(
+                                                        new FieldReader(
+                                                        new ClassReader(
+                                                         new DexReader(destDex))),null).read("Landroid/taobao/atlas/framework/FrameworkProperties;","bundleInfo"));
+        }
         return destDex;
     }
 
