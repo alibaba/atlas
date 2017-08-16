@@ -553,6 +553,62 @@ public class ManifestFileUtils {
 
         Element root = document.getRootElement();// 得到根节点
 
+<<<<<<< HEAD
+=======
+        if (null != manifestOptions.getPermissionJsonFile() && manifestOptions.getPermissionJsonFile().exists()) {
+            String json = FileUtils.readFileToString(manifestOptions.getPermissionJsonFile());
+            Permission permission = JSON.parseObject(json, Permission.class);
+
+            List<Node> nodes = root.selectNodes("//permission");
+            List<Node> nodes1 = root.selectNodes("//uses-permission");
+            List<Node> nodes2 = root.selectNodes("//uses-feature");
+
+            for (Node node : nodes) {
+                Element element = (Element)node;
+                String name = element.attributeValue("name");
+                Item item = Permission.query(permission.getPermissions(), name);
+                if (null == item) {
+                    logger.warn("[permission] remove " + name);
+                    element.getParent().remove(element);
+                }
+            }
+
+            for (Node node : nodes1) {
+                Element element = (Element)node;
+                String name = element.attributeValue("name");
+                Item item = Permission.query(permission.getUses_permissions(), name);
+                if (null == item) {
+                    logger.warn("[uses-permission] remove " + name);
+                    element.getParent().remove(element);
+                }
+            }
+
+            for (Node node : nodes2) {
+                Element element = (Element)node;
+                String name = element.attributeValue("name");
+                if (StringUtils.isEmpty(name)){
+                    continue;
+                }
+                Item item = Permission.query(permission.getUses_features(), name);
+                if (null == item) {
+                    logger.warn("[uses-feature] remove " + name);
+                    element.getParent().remove(element);
+                } else {
+                    //修改值
+                    if (StringUtils.isNotEmpty(item.getValue())) {
+                        Attribute required = element.attribute("required");
+                        if (null != required){
+                            required.setValue(item.getValue());
+                        }
+                        //element.addAttribute(new QName("required", new Namespace("android", null)), item.getValue());
+                    }
+                }
+            }
+
+            return;
+        }
+
+>>>>>>> [atlas-gradle-plugin] bugfix npe release rc9
         if (null != manifestOptions.getPermissionListFile() && manifestOptions.getPermissionListFile().exists()) {
             List<String> whiteList = FileUtils.readLines(manifestOptions.getPermissionListFile());
             List<Node> nodes = new ArrayList<>();

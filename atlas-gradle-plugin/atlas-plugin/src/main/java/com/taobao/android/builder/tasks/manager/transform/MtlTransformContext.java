@@ -214,6 +214,8 @@ import com.android.build.api.transform.Transform;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * Created by wuzhong on 16/6/24.
  */
@@ -223,11 +225,21 @@ public class MtlTransformContext {
 
     private List<Class<? extends Transform>> beforeClazzList = new ArrayList<Class<? extends Transform>>();
 
+<<<<<<< HEAD:atlas-gradle-plugin/atlas-plugin/src/main/java/com/taobao/android/builder/tasks/manager/transform/MtlTransformContext.java
     public MtlTransformContext(Class<? extends MtlInjectTransform> transformTask, Class<? extends Transform>... clazz) {
         this.transformTask = transformTask;
         if (null != clazz) {
             for (Class<? extends Transform> cl : clazz) {
                 beforeClazzList.add(cl);
+=======
+    public static Item query(List<Item> list, String name) {
+        if (StringUtils.isEmpty(name)){
+            return null;
+        }
+        for (Item item : list) {
+            if (name.equals(item.getName())) {
+                return item;
+>>>>>>> [atlas-gradle-plugin] bugfix npe release rc9:atlas-gradle-plugin/atlas-plugin/src/main/java/com/taobao/android/builder/tools/manifest/Permission.java
             }
         }
     }
