@@ -33,4 +33,4 @@ dependencies {
 
 group 'com.taobao.android'
 
-version "1.4.3-rc5-SNAPSHOT"
+version "1.4.3-rc5-test9"

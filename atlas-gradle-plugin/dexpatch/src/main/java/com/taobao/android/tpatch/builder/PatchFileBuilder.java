@@ -30,10 +30,7 @@ import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.object.PatchBundleInfo;
 import com.taobao.android.object.PatchInfo;
-import com.taobao.android.reader.AtlasFrameworkPropertiesReader;
-import com.taobao.android.reader.ClassReader;
-import com.taobao.android.reader.DexReader;
-import com.taobao.android.reader.FieldReader;
+import com.taobao.android.reader.*;
 import com.taobao.android.tpatch.utils.JarSplitUtils;
 import com.taobao.android.tpatch.utils.MD5Util;
 import com.taobao.android.tpatch.utils.PathUtils;
@@ -407,10 +404,11 @@ public class PatchFileBuilder {
                             File mainDexFile = new File(hisTPatchUnzipFolder,"libcom_taobao_maindex.so");
                             if (mainDexFile.exists()){
                                 try {
+                                    System.out.println("start put bundleInfos for version:"+hisPatchInfo.getPatchVersion()+"......");
                                     TPatchTool.bundleInfos.put(hisPatchInfo.getPatchVersion(),new AtlasFrameworkPropertiesReader(
-                                                                                                new FieldReader(
+                                                                                                new MethodReader(
                                                                                                 new ClassReader(
-                                                                                                new DexReader(mainDexFile))),TPatchTool.bundleInfos.get(currentBuildPatchInfo.getPatchVersion())).read("Landroid/taobao/atlas/framework/FrameworkProperties;","bundleInfo"));
+                                                                                                new DexReader(mainDexFile))),TPatchTool.bundleInfos.get(currentBuildPatchInfo.getPatchVersion())).read("Landroid/taobao/atlas/framework/FrameworkProperties;","<clinit>"));
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }

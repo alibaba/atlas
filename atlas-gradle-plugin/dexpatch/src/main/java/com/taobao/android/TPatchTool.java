@@ -233,10 +233,7 @@ import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.DiffType;
 import com.taobao.android.object.PatchBundleInfo;
 import com.taobao.android.object.PatchInfo;
-import com.taobao.android.reader.AtlasFrameworkPropertiesReader;
-import com.taobao.android.reader.ClassReader;
-import com.taobao.android.reader.DexReader;
-import com.taobao.android.reader.FieldReader;
+import com.taobao.android.reader.*;
 import com.taobao.android.task.ExecutorServicesHelper;
 import com.taobao.android.tpatch.builder.PatchFileBuilder;
 import com.taobao.android.tpatch.manifest.AndroidManifestDiffFactory;
@@ -249,6 +246,7 @@ import com.taobao.android.tpatch.utils.PathUtils;
 import com.taobao.android.utils.CommandUtils;
 import com.taobao.android.utils.PathMatcher;
 import com.taobao.android.utils.Profiler;
+import com.taobao.checker.Checker;
 import com.taobao.checker.PatchChecker;
 import com.taobao.update.UpdateInfo;
 import org.antlr.runtime.RecognitionException;
@@ -530,15 +528,16 @@ public class TPatchTool extends BasePatchTool {
             }
             FileUtils.writeStringToFile(hisPatchJsonFile, JSON.toJSONString(testForBuildPatchInfos));
         }
-        Map<String,List<PatchChecker.ReasonMsg>>map = new HashMap<>();
+        Map<String,List<String>>map = new HashMap<>();
         for (PatchInfo patchInfo : buildPatchInfos.getPatches()) {
             UpdateInfo updateInfo = new UpdateInfo(patchInfo, buildPatchInfos.getBaseVersion());
-             List<PatchChecker.ReasonMsg> msgs = new PatchChecker(updateInfo,bundleInfos.get(patchInfo.getTargetVersion()),new File(outPatchDir,patchInfo.getFileName())).check();
-             map.put(patchInfo.getFileName(),msgs);
+             System.out.println("start to check:"+patchInfo.getTargetVersion()+"......");
+            List<PatchChecker.ReasonMsg> msgs = new PatchChecker(updateInfo,bundleInfos.get(patchInfo.getTargetVersion()),new File(outPatchDir,patchInfo.getFileName())).check();
+             map.put(patchInfo.getFileName(),msgToString(msgs));
             File updateJson = new File(outPatchDir, "update-" + patchInfo.getTargetVersion() + ".json");
             FileUtils.writeStringToFile(updateJson, JSON.toJSONString(updateInfo, true));
         }
-        File checkFile = new File(outPatchDir,"check.json");
+        File checkFile = new File(outPatchDir,"patch-check.json");
         FileUtils.writeStringToFile(checkFile, JSON.toJSONString(map, true));
         Profiler.release();
 
@@ -569,6 +568,14 @@ public class TPatchTool extends BasePatchTool {
         logger.warning(Profiler.dump());
         //        FileUtils.deleteDirectory(unzipFolder);
         return patchFile;
+    }
+
+    private List<String> msgToString(List<Checker.ReasonMsg> msgs) {
+        List<String>ss = new ArrayList<>();
+        for (Checker.ReasonMsg reasonMsg:msgs){
+            ss.add(reasonMsg.toString());
+        }
+        return ss;
     }
 
     private boolean isBundleFile(File file) {
@@ -877,9 +884,14 @@ public class TPatchTool extends BasePatchTool {
         FileUtils.deleteDirectory(tmpDexFile);
         if (mainDex){
             bundleInfos.put(newApkBO.getVersionName(),new AtlasFrameworkPropertiesReader(
-                                                        new FieldReader(
-                                                        new ClassReader(
-                                                         new DexReader(destDex))),null).read("Landroid/taobao/atlas/framework/FrameworkProperties;","bundleInfo"));
+                    new MethodReader(
+                            new ClassReader(
+                                    new DexReader(destDex))),null).read("Landroid/taobao/atlas/framework/FrameworkProperties;","<clinit>"));
+            bundleInfos.put(baseApkBO.getVersionName(),new AtlasFrameworkPropertiesReader(
+                    new MethodReader(
+                            new ClassReader(
+                                    new DexReader(baseDexFiles))),bundleInfos.get(newApkBO.getVersionName())).read("Landroid/taobao/atlas/framework/FrameworkProperties;","<clinit>"));
+
         }
         return destDex;
     }
@@ -1303,26 +1315,32 @@ public class TPatchTool extends BasePatchTool {
     }
 
     public static void main(String[] args) {
-        ApkBO baseApkBo = new ApkBO(new File("/Users/lilong/Downloads/taobao-android-debug.apk"), "aa", "1.0.0");
-        ApkBO newApkB0 = new ApkBO(new File("/Users/lilong/Downloads/tpatch-diff.apk"), "aa", "2.0.0");
-        TPatchTool tPatchTool = new TPatchTool(baseApkBo, newApkB0, true);
         try {
-            tPatchTool.doPatch(new File("/Users/lilong/Downloads/ccc"), true, null, true, null, null);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        File dexFile = new File("/Users/lilong/Downloads/libcom_aligame_gamecenter_api_base/classes.dex");
-        File newDexFile = new File("/Users/lilong/Downloads/libcom_aligame_gamecenter_api_diff/classes.dex");
-        TPatchDexTool tPatchDexTool = new TPatchDexTool(dexFile, newDexFile, 19, false);
-        try {
-            tPatchDexTool.createTPatchDex(new File("/Users/lilong/Downloads/libcom_aligame_gamecenter_api_diff/a.dex"));
+            ZipFile zipFile = new ZipFile(new File("/Users/lilong/Downloads/patch-6.10.8@6.10.5.tpatch"));
+            Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
+            while (enumeration.hasMoreElements()){
+                ZipEntry zipEntry = enumeration.nextElement();
+                if (zipEntry.getName().startsWith("lib"+"com.etao.feimagesearch".replace(".","_"))){
+                    System.out.println("xxx");
+                };
+            }
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (PatchException e) {
-            e.printStackTrace();
-        } catch (RecognitionException e) {
-            e.printStackTrace();
         }
+
+
+//        File file = new File("/Users/lilong/Downloads/patch-6.9.5.51215@6.9.5.3/libcom_taobao_maindex.zip");
+//        try {
+//            LinkedHashMap<String, BundleListing.BundleInfo> atlasFrameworkPropertiesReader = new AtlasFrameworkPropertiesReader(
+//                    new MethodReader(
+//                            new ClassReader(
+//                                    new DexReader(file))),null).read("Landroid/taobao/atlas/framework/FrameworkProperties;","<clinit>");
+//            System.out.println(atlasFrameworkPropertiesReader.values());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
+
+
 
 }

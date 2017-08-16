@@ -1,11 +1,13 @@
 package com.taobao.android.reader;
 
 import org.jf.dexlib2.DexFileFactory;
-import org.jf.dexlib2.iface.ClassDef;
+import org.jf.dexlib2.iface.DexFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * @author lilong
@@ -13,7 +15,7 @@ import java.util.Set;
  */
 
 public class DexReader implements Reader {
-    protected Set<? extends ClassDef>classDefs;
+    protected Collection classDefs = new HashSet();
 
     public DexReader(File file) throws IOException {
         if (file.exists()){
@@ -21,9 +23,15 @@ public class DexReader implements Reader {
             this.classDefs = dexFile.getClasses();
         }
     }
+    public DexReader(List<File>files) throws IOException {
+        for (File file:files){
+            DexFile dexFile =DexFileFactory.loadDexFile(file,19,true);
+            classDefs.addAll(dexFile.getClasses());
+        }
+    }
 
     @Override
-    public Set<? extends ClassDef> read(String name,String memberName) {
+    public Collection read(String name,String memberName) {
         return classDefs;
     }
 }

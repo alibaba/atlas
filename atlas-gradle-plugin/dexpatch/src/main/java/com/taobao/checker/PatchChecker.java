@@ -26,20 +26,25 @@ public class PatchChecker implements Checker{
     }
 
     public List<ReasonMsg> check() throws IOException {
+        List<ReasonMsg>reasonMsgs = new ArrayList<>();
         List<String>changedBundles = new ArrayList<>();
+        if (bundleInfos == null){
+            System.out.println("skip check "+file.getName()+" bundleInfos is null!");
+            reasonMsgs.add(new ReasonMsg(ReasonType.SUCCESS, file.getName()));
+            return reasonMsgs;
+        }
         for (Map.Entry entry:bundleInfos.entrySet()){
             BundleListing.BundleInfo bundleInfo = (BundleListing.BundleInfo) entry.getValue();
             if (!bundleInfo.getCurrent_unique_tag().equals(bundleInfo.getUnique_tag())){
                 changedBundles.add(bundleInfo.getPkgName());
             }
         }
-        List<ReasonMsg>reasonMsgs = new ArrayList<>();
         if (!file.exists()){
             reasonMsgs.add(new ReasonMsg(ReasonType.ERROR3,file.getName()));
         }
         ZipFile zipFile = new ZipFile(file);
-        Enumeration<? extends ZipEntry>enumeration =  zipFile.entries();
         for (UpdateInfo.Item item:updateInfo.updateBundles){
+            Enumeration<? extends ZipEntry>enumeration =  zipFile.entries();
             if (!item.name.equals("com.taobao.maindex")&&!changedBundles.contains(item.name)){
                 reasonMsgs.add(new ReasonMsg(ReasonType.ERROR7,item.name));
             }
@@ -54,15 +59,16 @@ public class PatchChecker implements Checker{
             }
             boolean contains = false;
             while (enumeration.hasMoreElements()){
-                ZipEntry zipEntry = enumeration.nextElement();
-                    if (zipEntry.getName().contains(item.name)){
+                    ZipEntry zipEntry = enumeration.nextElement();
+                    String name = zipEntry.getName();
+                    if (name.startsWith("lib"+item.name.replace(".","_"))){
                         contains = true;
                         break;
                     }
                 }
                 if (!contains){
                     reasonMsgs.add(new ReasonMsg(ReasonType.ERROR1,item.name));
-            }
+                }
             changedBundles.remove(item.name);
         }
 

@@ -1,7 +1,10 @@
 package com.taobao.android.reader;
 
-import org.jf.dexlib2.iface.Field;
-import org.jf.dexlib2.iface.value.StringEncodedValue;
+import org.jf.dexlib2.iface.Method;
+import org.jf.dexlib2.iface.instruction.Instruction;
+import org.jf.dexlib2.iface.instruction.ReferenceInstruction;
+import org.jf.dexlib2.iface.reference.StringReference;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -15,17 +18,24 @@ public class AtlasFrameworkPropertiesReader implements Reader {
     private Map map;
 
     public AtlasFrameworkPropertiesReader(Reader reader,LinkedHashMap map) {
-        if (reader instanceof FieldReader){
             this.reader = reader;
             this.map = map;
-        }
     }
     public LinkedHashMap<String,BundleListing.BundleInfo>read(String className,String memberName) throws Exception {
+
         if (reader!= null) {
-            Field field = (Field) reader.read(className, memberName);
-            StringEncodedValue stringEncodedValue = (StringEncodedValue) field.getInitialValue();
-            String bundleInfos = stringEncodedValue.getValue();
-            return BundleListingUtil.parseArray(bundleInfos, (LinkedHashMap<String, BundleListing.BundleInfo>) map);
+            Method method = (Method) reader.read(className, memberName);
+            if (method!= null){
+                Iterable<? extends Instruction> instructions = method.getImplementation().getInstructions();
+                for (Instruction instruction:instructions){
+                    if (instruction instanceof ReferenceInstruction){
+                        if (((ReferenceInstruction) instruction).getReferenceType()== 0){
+                            StringReference s = (StringReference) ((ReferenceInstruction) instruction).getReference();
+                            return BundleListingUtil.parseArray(s.getString(), (LinkedHashMap<String, BundleListing.BundleInfo>) map);
+                        }
+                    }
+                }
+            }
         }
         return null;
     }
