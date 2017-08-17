@@ -766,7 +766,12 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             processResources.instantRunBuildContext = instantRunBuildContext;
             //processResources.buildInfoFile = InstantRunWrapperTask.ConfigAction.getTmpBuildInfoFile(
             //        scope.getVariantScope());
-            processResources.setMinSdk(variantData.getVariantConfiguration().getResourcesMinSdkVersion().getApiLevel());
+
+            // XXX
+            int apiLevel = 20;
+            //
+            //int apiLevel = variantData.getVariantConfiguration().getResourcesMinSdkVersion().getApiLevel();
+            processResources.setMinSdk(apiLevel);
         }
 
         public File getInstantRunSupportDir(GradleVariantConfiguration config) {
