@@ -394,8 +394,14 @@ public class KernalBundle{
         if ((dexFile != null&&dexFile.length>0) || archive.getLibraryDirectory().exists()) {
             installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive.getArchiveFile(),archive.getOdexFile(),archive.getLibraryDirectory());
             boolean needReplaceClassLoader = needReplaceClassLoader(application);
-            int newFrameworkPropertiesDexIndex = dexFile[dexFile.length-1].getName().indexOf(KernalBundleArchive.DEXPATCH_DIR)>=0 ? dexFile.length-2 : dexFile.length-1;
-            if(!needReplaceClassLoader) {
+            boolean dexPatch = dexFile[dexFile.length - 1].getName().contains(KernalBundleArchive.DEXPATCH_DIR);
+            int newFrameworkPropertiesDexIndex;
+            if (dexPatch) {
+                newFrameworkPropertiesDexIndex = dexFile.length > 1 ? dexFile.length - 2 : dexFile.length - 1;
+            } else {
+                newFrameworkPropertiesDexIndex = dexFile.length - 1;
+            }
+            if (!needReplaceClassLoader) {
                 FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
             }else{
                 replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader());

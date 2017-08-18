@@ -213,6 +213,7 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Process;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.taobao.atlas.startup.patch.KernalFileLock;
 import android.text.TextUtils;
@@ -576,7 +577,9 @@ public class KernalVersionManager {
         out.writeUTF(LAST_VERSIONNAME);
         out.writeUTF(LAST_UPDATE_BUNDLES != null ? LAST_UPDATE_BUNDLES : "");
         out.writeUTF(LAST_STORAGE_LOCATION!=null ? LAST_STORAGE_LOCATION:"");
-        out.writeUTF(CURRENT_VERSIONAME);
+        //如果是和基线dexPatch，由于没有做过动态部署，updateinfo文件可能不存在。
+        //下次启动时，kernealbundle.patchKernalDex方法在比对版本时versionName为""，启动异常。
+        out.writeUTF(TextUtils.isEmpty(CURRENT_VERSIONAME)? RuntimeVariables.sInstalledVersionName:CURRENT_VERSIONAME);
         out.writeUTF(CURRENT_UPDATE_BUNDLES);
         out.writeUTF(CURRENT_STORAGE_LOCATION);
         //dexpatch 部分
