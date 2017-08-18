@@ -671,8 +671,12 @@ public class BundleArchiveRevision {
             zip = new ZipFile(bundle);
             String extractTag = "lib/armeabi";
             if(Build.CPU_ABI.contains("x86")){
-                if(zip.getEntry("lib/x86/")!=null){
+                if(Framework.isDeubgMode()){
                     extractTag = "lib/x86";
+                }else {
+                    if (zip.getEntry("lib/x86/") != null) {
+                        extractTag = "lib/x86";
+                    }
                 }
             }
             for (Enumeration entries = zip.entries(); entries.hasMoreElements(); ) {

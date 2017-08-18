@@ -315,7 +315,7 @@ public class KernalBundle{
                     bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(), patchFile, new DexFile[]{patchDexFile,dexFile}, null,
                                                true /*(app_info.flags & ApplicationInfo.FLAG_VM_SAFE_MODE) != 0*/);
                     if(bundle.needReplaceClassLoader(application)){
-                        NClassLoader loader = new NClassLoader(".",KernalBundle.class.getClassLoader());
+                        NClassLoader loader = new NClassLoader(".",KernalBundle.class.getClassLoader().getParent());
                         try {
                             NClassLoader.replacePathClassLoader(KernalConstants.baseContext,KernalBundle.class.getClassLoader(),loader);
                         } catch (Exception e) {
