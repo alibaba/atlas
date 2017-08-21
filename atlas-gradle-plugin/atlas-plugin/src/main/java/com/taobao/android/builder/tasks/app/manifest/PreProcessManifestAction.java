@@ -274,13 +274,13 @@ public class PreProcessManifestAction implements Action<Task> {
                 AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
 
                 List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(appVariantContext,
-                                                                                          dependencyTree,
-                                                                                          atlasExtension);
+                    dependencyTree, atlasExtension);
 
                 allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
                 allManifest.addAll(bundleProviders);
             }
 
+            //activity-alias顺序问题
             // 增量编译基线AndroidManifest
             if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
                 allManifest.add(new BundleManifestProvider(appVariantContext.apContext.getBaseManifest()));

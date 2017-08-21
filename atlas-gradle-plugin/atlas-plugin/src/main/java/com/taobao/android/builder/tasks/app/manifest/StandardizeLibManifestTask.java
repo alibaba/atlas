@@ -213,6 +213,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -233,8 +235,11 @@ import org.dom4j.Attribute;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
+import org.dom4j.Node;
+import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
+import org.gradle.api.Task;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFiles;
@@ -288,8 +293,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
     public void preProcess() throws IOException, DocumentException, InterruptedException {
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("StandardizeLibManifestTask",
-                                                                                   getLogger(),
-                                                                                   0);
+            getLogger(), 0);
         List<Runnable> runnables = new ArrayList<>();
 
         ManifestInfo mainManifestFileObject = getManifestFileObject(mainManifestFile);
@@ -317,12 +321,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
                         //getLogger().error(file.getAbsolutePath() + " -> " + modifyManifest
                         //    .getAbsolutePath());
 
-                        ManifestFileUtils.updatePreProcessManifestFile(modifyManifest,
-                                                                       file,
-                                                                       mainManifestFileObject,
-                                                                       true,
-                                                                       appVariantContext.getAtlasExtension()
-                                                                           .getTBuildConfig().isIncremental());
+                        ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file, mainManifestFileObject,
+                            true, appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental());
                     } catch (Throwable e) {
                         e.printStackTrace();
                         throw new GradleException("preprocess manifest failed " + file.getAbsolutePath(), e);
@@ -350,7 +350,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
             for (Attribute attribute : root.attributes()) {
                 if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
                     manifestFileObject.addManifestProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
-                                                           attribute.getValue());
+                        attribute.getValue());
                 } else {
                     manifestFileObject.addManifestProperty(attribute.getName(), attribute.getValue());
                 }
@@ -361,7 +361,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
                 for (Attribute attribute : useSdkElement.attributes()) {
                     if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
                         manifestFileObject.addUseSdkProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
-                                                             attribute.getValue());
+                            attribute.getValue());
                     } else {
                         manifestFileObject.addUseSdkProperty(attribute.getName(), attribute.getValue());
                     }
@@ -370,8 +370,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
             if (null != applicationElement) {
                 for (Attribute attribute : applicationElement.attributes()) {
                     if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                        manifestFileObject.addApplicationProperty(attribute.getNamespacePrefix() + ":" + attribute
-                            .getName(), attribute.getValue());
+                        manifestFileObject.addApplicationProperty(
+                            attribute.getNamespacePrefix() + ":" + attribute.getName(), attribute.getValue());
                     } else {
                         manifestFileObject.addApplicationProperty(attribute.getName(), attribute.getValue());
                     }
@@ -415,15 +415,35 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
             for (AndroidLibrary androidLibrary : task.androidLibraries) {
                 appVariantContext.manifestMap.put(androidLibrary.getManifest().getAbsolutePath(),
-                                                  appVariantContext.getModifyManifest(androidLibrary));
+                    appVariantContext.getModifyManifest(androidLibrary));
             }
 
-            baseVariantOutputData.manifestProcessorTask.doFirst(new PreProcessManifestAction(appVariantContext,
-                                                                                             baseVariantOutputData));
+            baseVariantOutputData.manifestProcessorTask.doFirst(
+                new PreProcessManifestAction(appVariantContext, baseVariantOutputData));
 
             if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                baseVariantOutputData.manifestProcessorTask.doLast(new PostProcessManifestAction(appVariantContext,
-                                                                                                 baseVariantOutputData));
+                baseVariantOutputData.manifestProcessorTask.doLast(
+                    new PostProcessManifestAction(appVariantContext, baseVariantOutputData));
+            } else {
+                baseVariantOutputData.manifestProcessorTask.doLast(new Action<Task>() {
+                    @Override
+                    public void execute(Task task) {
+                        try {
+                            File manifestOutputFile = baseVariantOutputData.manifestProcessorTask
+                                .getManifestOutputFile();
+                            Document document = XmlHelper.readXml(manifestOutputFile);// 读取XML文件
+
+                            Element root = document.getRootElement();// 得到根节点
+                            Element applicationElement = root.element("application");
+                            Collections.sort(applicationElement.content(),
+                                Comparator.comparing(Node::getName, Comparator.nullsFirst(Comparator.naturalOrder())));
+
+                            XmlHelper.saveDocument(document, manifestOutputFile);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
             }
         }
     }
