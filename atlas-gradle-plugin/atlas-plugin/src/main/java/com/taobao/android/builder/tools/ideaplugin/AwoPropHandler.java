@@ -290,6 +290,8 @@ public class AwoPropHandler {
         if (!refreshAp && StringUtils.isNotEmpty(apPath) && new File(apPath).exists()) {
             //not need download
             System.out.println("[awo] ap file exist");
+            buildType.setBaseApFile(new File(apPath));
+            return;
         }
 
         apPath = new ApDownloader(project).downloadAP(mtlUrl, getAwoDir()).getAbsolutePath();
