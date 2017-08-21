@@ -424,9 +424,9 @@ public class AwbBundle {
 
         if (null != javaLibraries) {
             for (JavaLibrary javaLibrary : javaLibraries) {
-                if (javaLibrary.getJarFile().exists()) {
-                    jars.add(javaLibrary.getJarFile());
-                }
+                //if (javaLibrary.getJarFile().exists()) {
+                jars.add(javaLibrary.getJarFile());
+                //}
             }
         }
         return jars;
@@ -539,7 +539,7 @@ public class AwbBundle {
     private boolean hasBaseDependencies(Library library) {
         MavenCoordinates coordinates = library.getResolvedCoordinates();
         ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(coordinates.getGroupId(),
-                                                                          coordinates.getArtifactId());
+            coordinates.getArtifactId());
         if (!baseAwbDependencies.containsKey(moduleIdentifier)) {
             return true;
         }
@@ -566,8 +566,8 @@ public class AwbBundle {
     }
 
     private static boolean compareWithoutVersion(ModuleVersionIdentifier moduleVersion, MavenCoordinates coordinates) {
-        return Objects.equal(moduleVersion.getGroup(), coordinates.getGroupId())
-            && Objects.equal(moduleVersion.getName(), coordinates.getArtifactId());
+        return Objects.equal(moduleVersion.getGroup(), coordinates.getGroupId()) && Objects.equal(
+            moduleVersion.getName(), coordinates.getArtifactId());
     }
 
     public Collection<File> getJniLibFolders() {
