@@ -505,7 +505,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 () -> appVariantContext.apContext.getBaseIncrementalApk(),
                 () -> appVariantContext.getBuildType() != null
                     && appVariantContext.getBuildType().getPatchConfig() != null && appVariantContext.getBuildType()
-                    .getPatchConfig().isCreateTPatch()));
+                    .getPatchConfig().isCreateTPatch(),
+                () -> appVariantContext.getAppVariantOutputContext(vod).getApkOutputFile(true)/*outputPackage*/));
 
         //解压基线包依赖dex任务
         for (TransformStream stream : variantScope.getTransformManager().getStreams(StreamFilter.DEX)) {
@@ -563,10 +564,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             AndroidTask<PackageAwb> packageAwb = androidTasks.create(tasks,
                 new PackageAwb.StandardConfigAction(packagingScope, patchingPolicy));
             //解压基线包
+
             AndroidTask<PrepareBaseApkTask> prepareBaseApkTask = androidTasks.create(tasks,
                 new ConfigAction(awbScope, () -> appVariantContext.apContext.getBaseAwb(awbBundle.getAwbSoName()),
-                    () -> appVariantContext.apContext.getIncrementalBaseAwbFile(awbBundle.getAwbSoName()),
-                    () -> false));
+                    () -> appVariantContext.apContext.getIncrementalBaseAwbFile(awbBundle.getAwbSoName()), () -> false,
+                    () -> appVariantOutputContext.getFinalAwbPackageOutputFile(awbBundle)/*outputPackage*/));
 
             for (TransformStream stream : transformManager.getStreams(StreamFilter.DEX)) {
                 // TODO Optimize to avoid creating too many actions

@@ -27,7 +27,6 @@ import com.android.builder.model.ApiVersion;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import org.gradle.api.Project;
 
@@ -240,21 +239,7 @@ public class AwbPackagingScope implements PackagingScope {
     @NonNull
     @Override
     public File getOutputPackage() {
-        return getOutputFile(awbBundle);
-    }
-
-    private File getOutputFile(AwbBundle awbBundle) {
-        if (null != awbBundle.outputBundleFile) {
-            return awbBundle.outputBundleFile;
-        }
-
-        if (AtlasBuildContext.sBuilderAdapter.packageRemoteAwbInJni && awbBundle.isRemote) {
-            File file = appVariantOutputContext.getAwbPackageOutAppOutputFile(awbBundle);
-            appVariantOutputContext.appBuildInfo.getOtherFilesMap().put("remotebundles/" + file.getName(), file);
-            return file;
-        }
-
-        return appVariantOutputContext.getAwbPackageOutputFile(awbBundle);
+        return appVariantOutputContext.getFinalAwbPackageOutputFile(awbBundle);
     }
 
     @NonNull

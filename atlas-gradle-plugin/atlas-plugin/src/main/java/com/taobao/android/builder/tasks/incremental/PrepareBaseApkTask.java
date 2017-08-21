@@ -49,6 +49,8 @@ public class PrepareBaseApkTask extends IncrementalTask {
     private File outputFile;
 
     private boolean createTPatch;
+
+    private File outputPackage;
     // ----- PRIVATE TASK API -----
 
     @Override
@@ -93,6 +95,8 @@ public class PrepareBaseApkTask extends IncrementalTask {
             }
         }
         baseApkZip.close();
+        File outputPackage = getOutputPackage();
+        FileUtils.deletePath(outputPackage);
     }
 
     private static void renameEntry(ZFile zFile, String name, String to) {
@@ -206,6 +210,14 @@ public class PrepareBaseApkTask extends IncrementalTask {
         return createTPatch;
     }
 
+    public File getOutputPackage() {
+        return outputPackage;
+    }
+
+    public void setOutputPackage(File outputPackage) {
+        this.outputPackage = outputPackage;
+    }
+
     @Override
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
 
@@ -232,12 +244,15 @@ public class PrepareBaseApkTask extends IncrementalTask {
 
         private final Supplier<Boolean> createTPatch;
 
+        private final Supplier<File> outputPackage;
+
         public ConfigAction(VariantScope scope, Supplier<File> baseApk, Supplier<File> outputFile,
-                            Supplier<Boolean> createTPatch) {
+                            Supplier<Boolean> createTPatch, Supplier<File> outputPackage) {
             this.scope = scope;
             this.baseApk = baseApk;
             this.outputFile = outputFile;
             this.createTPatch = createTPatch;
+            this.outputPackage = outputPackage;
         }
 
         @Override
@@ -280,7 +295,6 @@ public class PrepareBaseApkTask extends IncrementalTask {
                     return dexFilesCount;
                 }
             });
-
             ConventionMappingHelper.map(prepareBaseApkTask, "outputFile", new Callable<File>() {
                 @Override
                 public File call() {
@@ -292,6 +306,13 @@ public class PrepareBaseApkTask extends IncrementalTask {
                 @Override
                 public Boolean call() throws Exception {
                     return createTPatch.get();
+                }
+            });
+
+            ConventionMappingHelper.map(prepareBaseApkTask, "outputPackage", new Callable<File>() {
+                @Override
+                public File call() {
+                    return outputPackage.get();
                 }
             });
 
