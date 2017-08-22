@@ -60,10 +60,8 @@ public class ApDownloadTask extends Download {
             configId = matcher.group(1);
         }
 
-        String apiUrl = "http://"
-            + AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl
-            + "/rpc/androidPlugin/getAp.json?buildConfigId="
-            + configId;
+        String apiUrl = "http://" + AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl
+            + "/rpc/androidPlugin/getAp.json?buildConfigId=" + configId;
 
         URL api = new URL(apiUrl);
         BufferedReader in = new BufferedReader(new InputStreamReader(api.openStream()));
@@ -129,7 +127,10 @@ public class ApDownloadTask extends Download {
                     throw new RuntimeException(awoProp + ": trouble reading", ex);
                 }
 
-                apPath = new File(properties.getProperty(AP_PATH));
+                String apProperty = properties.getProperty(AP_PATH);
+                if (apProperty != null) {
+                    apPath = new File(apProperty);
+                }
                 refreshAp = "true".equals(properties.getProperty(REFRESH_AP));
                 mtlUrl = properties.getProperty(MTL_URL);
             }
