@@ -610,6 +610,10 @@ public class InstrumentationHook extends Instrumentation {
 		if(AtlasHacks.ContextThemeWrapper_mBase!=null && AtlasHacks.ContextThemeWrapper_mBase.getField()!=null){
 			AtlasHacks.ContextThemeWrapper_mBase.set(activity,hook);
 		}
+		if (AtlasHacks.ContextThemeWrapper_mResources != null) {
+			//AtlasHacks.ContextThemeWrapper_mResources.on(activity).set(RuntimeVariables.delegateResources);
+			AtlasHacks.ContextThemeWrapper_mResources.set(activity,RuntimeVariables.delegateResources);
+		}
 		AtlasHacks.ContextWrapper_mBase.set(activity,hook);
 		String Location = null;
         if (activity.getClass().getClassLoader() instanceof BundleClassLoader) {

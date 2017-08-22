@@ -398,7 +398,7 @@ public class KernalBundle{
             if(!needReplaceClassLoader) {
                 FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
             }else{
-                replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader());
+                replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader().getParent());
                 FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", replaceClassLoader);
             }
             if(FrameworkPropertiesClazz==null && isDeubgMode()){
