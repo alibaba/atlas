@@ -369,6 +369,8 @@ public class ApDependencies /*extends BaseTask*/ {
                 apDependencyJson = JSON.parseObject(IOUtils.toString(in, StandardCharsets.UTF_8), DependencyJson.class);
             }
         } catch (IOException e) {
+            apBaseFile.delete();
+
             throw new RuntimeException("Unable to read dependencies.txt from " + apBaseFile.getAbsolutePath(), e);
         }
         return apDependencyJson;
