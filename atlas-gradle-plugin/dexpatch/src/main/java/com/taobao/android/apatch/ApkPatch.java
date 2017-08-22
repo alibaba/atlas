@@ -357,16 +357,16 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
 //                PatchMethodTool.modifyMethod(dexFile.getAbsolutePath(), dexFile.getAbsolutePath(), true);
 //            }
 //
-//            File smaliDir2 = new File(aptchFolder, "smali2");
-//            if (!smaliDir2.exists()) {
-//                smaliDir2.mkdirs();
-//            }
-//            try {
-//                FileUtils.cleanDirectory(smaliDir2);
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//            prepareClasses = buildPrepareClass(smaliDir2, newFiles, info);
+            File smaliDir2 = new File(aptchFolder, "smali2");
+            if (!smaliDir2.exists()) {
+                smaliDir2.mkdirs();
+            }
+            try {
+                FileUtils.cleanDirectory(smaliDir2);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+           prepareClasses = buildPrepareClass(smaliDir2, newFiles, info);
             DexDiffInfo.release();
             build(outFile, dexFile);
             File file = release(aptchFolder, dexFile, outFile);
@@ -534,6 +534,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
         main.putValue("Patch-Name", name);
         main.putValue(name + "-Patch-Classes", Formater.dotStringList(classes));
         main.putValue(name + "-add-classes", Formater.dotStringSet(addClasses));
+        main.putValue(name + "-Prepare-Classes",Formater.dotStringSet(prepareClasses));
         return manifest;
     }
 
