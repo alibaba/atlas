@@ -339,12 +339,13 @@ public class DiffResExtractor {
 
         //设置values.xml
         File valuesXml = new File(resDir, "values/values.xml");
+        AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.injectTpatchValuesRes(appVariantContext, valuesXml);
         try {
+            removeStringValue(valuesXml, "config_channel");
             removeStringValue(valuesXml, "ttid");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.injectTpatchValuesRes(appVariantContext, valuesXml);
 
         final Pattern densityOnlyPattern = Pattern.compile("[a-zA-Z]+-[a-zA-Z]+dpi");
         if (resDir.exists()) {
