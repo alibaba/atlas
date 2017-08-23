@@ -585,6 +585,9 @@ public class ManifestFileUtils {
             for (Node node : nodes2) {
                 Element element = (Element)node;
                 String name = element.attributeValue("name");
+                if (StringUtils.isEmpty(name)){
+                    continue;
+                }
                 Item item = Permission.query(permission.getUses_features(), name);
                 if (null == item) {
                     logger.warn("[uses-feature] remove " + name);

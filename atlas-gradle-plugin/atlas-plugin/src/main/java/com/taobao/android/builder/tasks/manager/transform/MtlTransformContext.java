@@ -209,10 +209,10 @@
 
 package com.taobao.android.builder.tasks.manager.transform;
 
-import com.android.build.api.transform.Transform;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import com.android.build.api.transform.Transform;
 
 /**
  * Created by wuzhong on 16/6/24.
@@ -243,8 +243,8 @@ public class MtlTransformContext {
     @Override
     public String toString() {
         return "MtlTransformContext{" +
-                "transformTask=" + transformTask +
-                ", beforeClazzList=" + beforeClazzList +
-                '}';
+            "transformTask=" + transformTask +
+            ", beforeClazzList=" + beforeClazzList +
+            '}';
     }
 }
