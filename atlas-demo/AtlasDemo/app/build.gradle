@@ -4,6 +4,7 @@ def apVersion = getEnvValue("apVersion", "");
 
 apply plugin: 'com.android.application'
 apply plugin: 'com.taobao.atlas'
+apply plugin: 'com.taobao.atlas.dexpatch'
 
 //通过增加判断逻辑，打出不同类型的定制包
 def appId = "com.taobao.demo"
