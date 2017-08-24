@@ -464,13 +464,16 @@ public class InstrumentationHook extends Instrumentation {
 					}
 //				}
 
+
 				if (dialog != null && current != null && !current.isFinishing()) {
 					try {
 						if(dialog.isShowing()) {
 							dialog.dismiss();
-							ActivityTaskMgr.getInstance().sReminderDialog = dialog;
+							ActivityTaskMgr.getInstance().sReminderDialog = null;
 						}
-					}catch (Throwable e){}
+					}catch (Throwable e){
+						ActivityTaskMgr.getInstance().sReminderDialog = null;
+					}
 				}
 			}
 		});
@@ -487,7 +490,9 @@ public class InstrumentationHook extends Instrumentation {
 							dialog.dismiss();
 							ActivityTaskMgr.getInstance().sReminderDialog = null;
 						}
-					}catch(Throwable e){}
+					}catch(Throwable e){
+						ActivityTaskMgr.getInstance().sReminderDialog = null;
+					}
 				}
 			}
 		});
@@ -505,6 +510,7 @@ public class InstrumentationHook extends Instrumentation {
 				if (dialog != null && current != null && !current.isFinishing() && !dialog.isShowing()) {
 					try {
 						dialog.show();
+						ActivityTaskMgr.getInstance().sReminderDialog = dialog;
 					} catch (Throwable e) {
 					}
 				}

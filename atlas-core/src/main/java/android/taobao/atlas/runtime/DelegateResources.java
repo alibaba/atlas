@@ -438,7 +438,11 @@ public class DelegateResources extends Resources {
         if(id!=0){
             return id;
         }else {
-            return sResourcesFetcher.getIdentifier(name, defType, defPackage);
+            if(sResourcesFetcher!=null) {
+                return sResourcesFetcher.getIdentifier(name, defType, defPackage);
+            }else{
+                return id;
+            }
         }
     }
 

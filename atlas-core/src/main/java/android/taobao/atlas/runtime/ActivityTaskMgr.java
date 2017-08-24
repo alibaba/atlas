@@ -267,8 +267,9 @@ public class ActivityTaskMgr {
         if(sReminderDialog!=null && sReminderDialog.getContext()==activity){
             try{
                 sReminderDialog.dismiss();
+            }catch (Throwable e){}finally {
                 sReminderDialog = null;
-            }catch (Throwable e){}
+            }
         }
         for(int x=0; x<activityList.size(); x++){
             WeakReference<Activity> ref = activityList.get(x);
