@@ -231,6 +231,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Created by guanjie on 16/2/22.
@@ -639,7 +640,7 @@ public class BundleInstaller implements Callable{
         if(!bundleFile.exists()){
             bundleFile = new File(RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir,bundleFileName);
         }
-        if(isBundleFileMatched(location,bundleFile)){
+        if(isBundleFileMatched(location,bundleFile,bundleFileName)){
             mTmpBundleSourceFile = bundleFile;
             Log.e("BundleInstaller","find valid bundle : "+bundleFile.getAbsolutePath());
         }else{
@@ -656,7 +657,7 @@ public class BundleInstaller implements Callable{
         }
     }
 
-    private boolean isBundleFileMatched(String location,File file){
+    private boolean isBundleFileMatched(String location,File file,String bundleFileName){
         if(!file.exists() || !AtlasBundleInfoManager.instance().isInternalBundle(location)){
             return false;
         }
@@ -664,6 +665,18 @@ public class BundleInstaller implements Callable{
         if(info!=null && info.getSize()>0 && info.getSize()!=file.length()){
             Log.e("BundleInstaller","wanted size: "+info.getSize()+"| realSize: "+file.length());
             return false;
+        }
+        if(info==null && info.getSize()<=0){
+            try {
+                ZipFile apkZip = ApkUtils.getApk();
+                ZipEntry entry = apkZip.getEntry("lib/armeabi/" + bundleFileName);
+                if (entry == null) {
+                    entry = apkZip.getEntry("assets/" + bundleFileName);
+                }
+                if (entry != null && entry.getSize() != file.length()) {
+                    return false;
+                }
+            }catch(Throwable e){}
         }
         return true;
     }
