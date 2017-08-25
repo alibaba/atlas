@@ -344,7 +344,6 @@ public class MergePatch extends Build {
             main.putValue(name + "-Modified-Classes", attributes.getValue(name + "-Modified-Classes"));
             main.putValue(name + "-Used-Classes", attributes.getValue(name + "-Used-Classes"));
             main.putValue(name + "-add-classes", attributes.getValue(name + "-add-classes"));
-            main.putValue(name + "-Prepare-Classes", attributes.getValue(name + "-Prepare-Classes"));
 
 
         }
