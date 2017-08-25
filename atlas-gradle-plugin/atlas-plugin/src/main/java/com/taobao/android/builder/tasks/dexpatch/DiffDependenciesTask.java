@@ -90,6 +90,8 @@ public class DiffDependenciesTask extends BaseTask {
                     FileUtils.readFileToString(atlasJson),
                     FrameworkProperties.class);
             bundleInfos = atlasFrameworkProperties.bundleInfo;
+            DexPatchContext.srcMainMd5 = atlasFrameworkProperties.unit_tag;
+
         }
         if (null != DexPatchContext.diffResults) {
             try {
@@ -141,7 +143,6 @@ public class DiffDependenciesTask extends BaseTask {
             AtlasDependencyTree atlasDependencyTree = (AtlasDependencyTree) AtlasBuildContext.androidDependencyTrees.get(this.appVariantOutputContext.getVariantContext().getVariantConfiguration().getFullName());
             try {
                 DexPatchContext.mainMd5 = MD5Util.getMD5(org.apache.commons.lang3.StringUtils.join(atlasDependencyTree.getMainBundle().getAllDependencies()));
-                DexPatchContext.srcMainMd5 = MD5Util.getMD5(org.apache.commons.lang3.StringUtils.join(apDependencyJson.getMainDex()));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -340,17 +341,17 @@ public class DiffDependenciesTask extends BaseTask {
 
     private static Map<String, AwbDependency> toAwbDependencies(Map<String, ArrayList<String>> awbs) {
         Map<String, AwbDependency> maps = new HashMap<String, AwbDependency>();
-        if (AtlasBuildContext.sBuilderAdapter.prettyDependencyFormat){
+        if (AtlasBuildContext.sBuilderAdapter.prettyDependencyFormat) {
             for (Map.Entry<String, ArrayList<String>> entry : awbs.entrySet()) {
                 String key = entry.getKey();
                 String name = null;
-                String []names = key.split(":");
-                name = names[0]+":"+names[1];
+                String[] names = key.split(":");
+                name = names[0] + ":" + names[1];
                 String version = names[2].split("@")[0];
                 AwbDependency awbDependency = new AwbDependency(version, name, entry.getValue());
                 maps.put(name, awbDependency);
             }
-        }else {
+        } else {
             for (Map.Entry<String, ArrayList<String>> entry : awbs.entrySet()) {
                 String key = entry.getKey();
                 String name = key.substring(0, key.lastIndexOf(":"));
@@ -371,19 +372,19 @@ public class DiffDependenciesTask extends BaseTask {
         if (AtlasBuildContext.sBuilderAdapter.prettyDependencyFormat) {
             for (String dep : baseDependecies) {
                 String[] names = dep.split(":");
-                String name = names[0]+":"+names[1];
+                String name = names[0] + ":" + names[1];
                 String version = names[2].split("@")[0];
                 baseMap.put(name, version);
             }
             for (String dep : newDependecies) {
                 String[] names = dep.split(":");
-                String name = names[0]+":"+names[1];
+                String name = names[0] + ":" + names[1];
                 String version = names[2].split("@")[0];
                 newMap.put(name, version);
             }
 
 
-        }else {
+        } else {
             for (String dep : baseDependecies) {
                 String name = dep.substring(0, dep.lastIndexOf(":"));
                 String version = dep.substring(dep.lastIndexOf(":") + 1);
@@ -395,8 +396,6 @@ public class DiffDependenciesTask extends BaseTask {
                 newMap.put(name, version);
             }
         }
-
-
 
 
         for (String key : newMap.keySet()) {
