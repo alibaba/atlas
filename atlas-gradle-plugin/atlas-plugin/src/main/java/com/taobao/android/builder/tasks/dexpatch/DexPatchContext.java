@@ -3,6 +3,7 @@ package com.taobao.android.builder.tasks.dexpatch;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.dexpatch.builder.DexBuilder;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -40,6 +41,12 @@ public class DexPatchContext {
     private DexPatchContext() {
 
         baseVersion = System.getProperty("apVersion", "");
+        if (StringUtils.isBlank(baseVersion)){
+            baseVersion = System.getProperty("MUPP_DEXPATCH_BASE_VERSION", "");
+        }
+        if (StringUtils.isBlank(baseVersion)){
+            baseVersion = System.getProperty("MUPP_VERSION_NAME","");
+        }
     }
 
     public static DexPatchContext getInstance() {

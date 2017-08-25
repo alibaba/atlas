@@ -36,7 +36,7 @@ public class DexPatchDexTask extends BaseTask {
     } catch (IOException e) {
         e.printStackTrace();
     }finally {
-        DexPatchContext.dexBuilder.clear();
+//        DexPatchContext.dexBuilder.clear();
     }
 
 }

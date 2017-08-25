@@ -6,7 +6,6 @@
 /.idea/libraries
 !.idea/codeStyleSettings.xml
 .DS_Store
-/build
 /captures
 .vscode/
 
@@ -29,7 +28,6 @@ out/
 
 # Gradle files
 .gradle/
-build/
 !**/atlas-aapt/**/build/
 !**/src/**/build/
 
