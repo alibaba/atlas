@@ -11,6 +11,8 @@ import java.util.List;
 public class FrameworkProperties {
     public List<BasicBundleInfo> bundleInfo;
 
+    public String unit_tag;
+
     public boolean outApp = false;
 
     public String autoStartBundles;

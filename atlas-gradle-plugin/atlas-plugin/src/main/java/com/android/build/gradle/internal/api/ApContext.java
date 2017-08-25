@@ -209,10 +209,10 @@
 
 package com.android.build.gradle.internal.api;
 
-import java.io.File;
-
 import com.android.utils.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+
+import java.io.File;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 
@@ -233,6 +233,8 @@ public class ApContext {
     public static final String APK_FILE_LIST = "apk-files.txt";
 
     public static final String APK_FILE_MD5 = "apk-files.txt";
+
+    private static final String SO_LOCATION_PREFIX="unzip/lib/armeabi";
 
     public static final String PACKAGE_ID_PROPERTIES_FILENAME = "packageIdFile.properties";
 
@@ -264,6 +266,8 @@ public class ApContext {
 
     private File baseDependenciesFile;
 
+    private File baseUnzipBundleDirectory;
+
     // 解压前
     public String getApDependency() {
         return apDependency;
@@ -293,6 +297,7 @@ public class ApContext {
         this.baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
         this.baseApkDirectory = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
         this.baseAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXTRACT_DIRECTORY);
+        this.baseUnzipBundleDirectory = new File(apExploredFolder,SO_LOCATION_PREFIX);
         this.baseExplodedAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
         this.basePackageIdFile = new File(apExploredFolder, PACKAGE_ID_PROPERTIES_FILENAME);
         this.baseAtlasFrameworkPropertiesFile = new File(apExploredFolder, ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
@@ -345,5 +350,14 @@ public class ApContext {
             return null;
         }
         return file;
+    }
+
+    public File getBaseSo(String soFileName){
+        File file = FileUtils.join(baseUnzipBundleDirectory,soFileName);
+        if (file.exists()){
+            return file;
+        }
+
+        return null;
     }
 }

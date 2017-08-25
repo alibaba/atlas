@@ -209,11 +209,11 @@
 
 package com.taobao.android.builder.adapter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
 import com.taobao.android.builder.tools.sign.AndroidSigner;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by wuzhong on 2017/3/29.

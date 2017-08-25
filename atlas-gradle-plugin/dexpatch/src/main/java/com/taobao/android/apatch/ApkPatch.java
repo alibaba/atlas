@@ -340,6 +340,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
                 throw new RuntimeException(e);
             }
             prepareClasses = buildPrepareClass(smaliDir2, newFiles, info);
+
             DexDiffInfo.release();
             build(outFile, dexFile);
             File file = release(aptchFolder, dexFile, outFile);
@@ -511,6 +512,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
         main.putValue(name + "-Modified-Classes", Formater.dotStringList(modifiedClasses));
         main.putValue(name + "-Used-Classes", Formater.dotStringList(usedClasses));
         main.putValue(name + "-add-classes", Formater.dotStringList(addClasses));
+
         return manifest;
     }
 

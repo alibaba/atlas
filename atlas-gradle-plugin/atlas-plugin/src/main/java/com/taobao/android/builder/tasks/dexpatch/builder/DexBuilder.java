@@ -1,0 +1,31 @@
+package com.taobao.android.builder.tasks.dexpatch.builder;
+
+import com.taobao.android.builder.extension.DexConfig;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author lilong
+ * @create 2017-05-04 上午11:34
+ */
+
+public interface DexBuilder {
+
+    public void setInput(File file, String bundleName);
+
+
+    public List<File> getOutput(String bundleName);
+
+
+    public void excute() throws IOException;
+
+
+    void init(DexConfig dexConfig);
+
+    void clear();
+
+    Map<String, List<File>> getOutputs();
+}
