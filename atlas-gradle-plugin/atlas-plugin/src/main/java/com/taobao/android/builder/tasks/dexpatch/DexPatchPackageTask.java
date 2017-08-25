@@ -74,7 +74,7 @@ public class DexPatchPackageTask extends BaseTask {
         List<PatchBundleInfo> list = new ArrayList<>();
         boolean add = false;
         for (ArtifactBundleInfo artifactBundleInfo : appVariantOutputContext.artifactBundleInfos) {
-            for (String key : DexBuilder.getInstance().getOutputs().keySet()) {
+            for (String key : DexPatchContext.dexBuilder.getOutputs().keySet()) {
                 if (artifactBundleInfo.getPkgName().equals(key)) {
                     PatchBundleInfo dexPatchBundelInfo = new PatchBundleInfo();
                     dexPatchBundelInfo.setPkgName(artifactBundleInfo.getPkgName());

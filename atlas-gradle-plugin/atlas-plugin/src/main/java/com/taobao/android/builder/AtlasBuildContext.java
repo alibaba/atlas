@@ -215,6 +215,8 @@ import com.google.common.collect.Maps;
 import com.taobao.android.builder.adapter.BuilderAdapter;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.dexpatch.builder.DefaultDexBuilder;
+import com.taobao.android.builder.tasks.dexpatch.builder.DexBuilder;
 import org.gradle.api.Project;
 
 import java.util.HashMap;
@@ -242,6 +244,8 @@ public class AtlasBuildContext {
     public static Map<String, AwbBundle> awbBundleMap = new HashMap<String, AwbBundle>();
 
     public static Set<String> conflictDependencies;
+
+    public static DexBuilder dexBuilder = DefaultDexBuilder.getInstance();
 
     /**
      * 依赖对应原始的坐标地址， classInject 需要查找到atlas。

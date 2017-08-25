@@ -38,7 +38,7 @@ public class DexPatchDiffTask extends BaseTask {
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper();
 
-        for (Map.Entry entry : DexBuilder.getInstance().getOutputs().entrySet()) {
+        for (Map.Entry entry : DexPatchContext.dexBuilder.getOutputs().entrySet()) {
             executorServicesHelper.submitTask("dexDiff", new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {

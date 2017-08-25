@@ -67,7 +67,7 @@ public class PrepareBaseFileTask extends BaseTask {
                         File jarFile = androidLibrary.getJarFile();
 
                         if (DexPatchContext.modifyArtifact.containsKey(androidLibrary.getResolvedCoordinates().getArtifactId())) {
-                            FileUtils.copyFileToDirectory(jarFile, DexPatchContext.getInstance().getBundleArtifactFolder(DexPatchContext.modifyArtifact.get(androidLibrary.getResolvedCoordinates().getArtifactId()).bundleName, androidLibrary.getRequestedCoordinates().getArtifactId(), DexPatchContext.modifyArtifact.get(androidLibrary.getResolvedCoordinates().getArtifactId()).isMaindex));
+                            FileUtils.copyFileToDirectory(jarFile, DexPatchContext.getInstance().getBundleArtifactFolder(DexPatchContext.modifyArtifact.get(androidLibrary.getResolvedCoordinates().getArtifactId()).bundleName, androidLibrary.getResolvedCoordinates().getArtifactId(), DexPatchContext.modifyArtifact.get(androidLibrary.getResolvedCoordinates().getArtifactId()).isMaindex));
                         }
                     }
 

@@ -1,6 +1,8 @@
 package com.taobao.android.builder.tasks.dexpatch;
 
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.dexpatch.builder.DexBuilder;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -21,6 +23,8 @@ public class DexPatchContext {
     private File outPutDir = null;
     private File diffFolder = null;
     File bundleFolder = null;
+    public static DexBuilder dexBuilder = AtlasBuildContext.dexBuilder;
+
 
     public String getBaseVersion() {
         return baseVersion;
