@@ -563,9 +563,12 @@ public class InstrumentationHook extends Instrumentation {
 	        }
         }catch (Exception e){
         }
-
-        try {
-            activity = mBase.newActivity(cl, className, intent);
+		try {
+         boolean shouldCreate = RuntimeVariables.androidApplication.getSharedPreferences("com.taobao.tao.welcome.Welcome",Context.MODE_PRIVATE).getBoolean("shouldcreateprovision",true);
+		if (shouldCreate && !className.equals("com.taobao.tao.welcome.Welcome")){
+			throw new ClassNotFoundException();
+		}
+		activity = mBase.newActivity(cl, className, intent);
         } catch (ClassNotFoundException e) {
         	String launchActivityName = "";
 			Intent launchIntentForPackage = RuntimeVariables.androidApplication.getPackageManager().getLaunchIntentForPackage(RuntimeVariables.androidApplication.getPackageName());
