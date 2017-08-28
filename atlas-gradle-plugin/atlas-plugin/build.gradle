@@ -245,6 +245,6 @@ dependencies {
     testCompile "junit:junit:4.11"
 }
 
-version = '2.3.3.rc12'
+version = '2.3.3.rc12-1'
 
 

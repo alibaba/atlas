@@ -8,6 +8,7 @@ import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.TaskAction;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -18,6 +19,8 @@ import java.io.IOException;
 public class DexPatchDexTask extends BaseTask {
 
     private TBuildType buildType;
+
+    private AppVariantContext variantContext;
 
     @TaskAction
     public void run(){
@@ -39,12 +42,32 @@ public class DexPatchDexTask extends BaseTask {
 //        DexPatchContext.dexBuilder.clear();
     }
 
-}
+        File mappingFile = null;
+        File baseApkFile = null;
+        if (variantContext.apContext.getApExploredFolder().exists()){
+            if (new File(variantContext.apContext.getApExploredFolder(),"mapping.data").exists()){
+                mappingFile =new File(variantContext.apContext.getApExploredFolder(),"mapping.data");
+            }else if (new File(variantContext.apContext.getApExploredFolder(),"full-mapping.txt").exists()){
+                mappingFile = new File(variantContext.apContext.getApExploredFolder(),"mapping.txt");
+            }
+            baseApkFile = new File(variantContext.apContext.getApExploredFolder(),"android.apk");
+        }
+
+        if (mappingFile!= null) {
+            try {
+                DexPatchContext.dexBuilder.obfDex(mappingFile, variantContext.bundleListCfg, baseApkFile,buildType,false);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
 
 
 
     public static class ConfigAction extends MtlBaseTaskAction <DexPatchDexTask>{
     private TBuildType buildType;
+    private AppVariantContext variantContext;
         public ConfigAction(AppVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
             super(variantContext, baseVariantOutputData);
             this.variantContext = variantContext;
@@ -65,6 +88,7 @@ public class DexPatchDexTask extends BaseTask {
         public void execute(DexPatchDexTask dexPatchDexTask) {
             dexPatchDexTask.setVariantName("DexPatchDex");
             dexPatchDexTask.buildType = buildType;
+            dexPatchDexTask.variantContext= this.variantContext;
 
         }
     }

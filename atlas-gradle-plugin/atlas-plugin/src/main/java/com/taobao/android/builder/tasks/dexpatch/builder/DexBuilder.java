@@ -1,6 +1,7 @@
 package com.taobao.android.builder.tasks.dexpatch.builder;
 
 import com.taobao.android.builder.extension.DexConfig;
+import com.taobao.android.builder.extension.TBuildType;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,4 +29,6 @@ public interface DexBuilder {
     void clear();
 
     Map<String, List<File>> getOutputs();
+
+    void obfDex(File mappingFile, File bundleListCfg, File baseApkFile, TBuildType buildType, boolean b);
 }

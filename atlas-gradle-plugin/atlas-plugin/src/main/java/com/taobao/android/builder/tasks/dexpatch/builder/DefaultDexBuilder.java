@@ -3,6 +3,7 @@ package com.taobao.android.builder.tasks.dexpatch.builder;
 import com.android.dx.command.dexer.Main;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.extension.DexConfig;
+import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.dexpatch.DexPatchContext;
 import com.taobao.android.dex.Dex;
 import com.taobao.android.dx.merge.CollisionPolicy;
@@ -83,6 +84,12 @@ public class DefaultDexBuilder implements DexBuilder{
 
     public Map<String, List<File>> getOutputs() {
         return outputs;
+    }
+
+    @Override
+    public void obfDex(File mappingFile, File bundleListCfg, File baseApkFile, TBuildType buildType, boolean b) {
+
+        return;
     }
 
 
