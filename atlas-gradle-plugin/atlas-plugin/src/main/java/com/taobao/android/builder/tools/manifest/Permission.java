@@ -223,7 +223,7 @@ public class Permission {
 
     public static Item query(List<Item> list, String name) {
         for (Item item : list) {
-            if (name.equals(item.getName())) {
+            if (item!=null &&name.equals(item.getName())) {
                 return item;
             }
         }
