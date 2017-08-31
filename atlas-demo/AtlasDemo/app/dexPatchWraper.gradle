@@ -1,0 +1,81 @@
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+import static Constants.*
+
+
+/**
+ * Created by 种藏 on 2017/8/30.
+ *
+ * 1. 这个类只是对产物patches.json文件做个包装，用来模拟服务器控制dexPatch版本的逻辑,生成的产物是dexpatch-versionName.json
+ *
+ * 2. 正常开发情况，做dexPatch时，服务器会分配一个对应的dexPatchVersion。
+ *    客户端比较dexPatchVersion来判断要不要做patch。
+ *
+ * 3. 这里只是每次做dexPatch时，简单的将dexPatchVersion 加 1.
+ *
+ * 4. 具体字段含义，参考https://alibaba.github.io/atlas/update/dexpatch_use_guide.html
+ *
+ */
+
+tasks.whenTaskAdded { task ->
+    if (task.name == "DexPatchPackageDebug") {
+        task.doLast { wrapDexPatchFile() }
+    }
+//    if (task.name == "clean") {
+//        task.doLast { cleanPatchVersion() }
+//    }
+}
+
+class Constants {
+    static final ENCODE_UTF_8 = "UTF-8"
+    static final PATH_BUILD_OUTPUT = "app${File.separator}build${File.separator}outputs"
+    static final PATH_PATCH_JSON = "${PATH_BUILD_OUTPUT}${File.separator}patchs.json"
+    static final PATH_VERSION_FILE = "dexPatch.version"
+}
+
+//task tesetm << {
+//    wrapDexPatchFile()
+//}
+
+def wrapDexPatchFile() {
+    println new File(PATH_PATCH_JSON).absolutePath
+    String fileContents = new File(PATH_PATCH_JSON).getText(ENCODE_UTF_8)
+    def patchConfig = new JsonSlurper().parseText(fileContents)
+    def updateInfo = patchConfig.patches[0]
+    updateInfo.dexPatch = true
+    def bundles = updateInfo.bundles
+    assert bundles instanceof List
+    def patchVersion = getPatchVersion()
+    bundles.each {
+        assert it instanceof Map
+        it.dexpatchVersion = patchVersion
+        it.isMainDex = it.mainBundle
+        it.remove("mainBundle")
+    }
+    //写回到最终的dexPatch产物文件中
+    File wrapFile = new File(PATH_BUILD_OUTPUT, "dexpatch-${patchConfig.baseVersion}.json")
+    if (wrapFile.exists()) wrapFile.delete()
+    wrapFile.createNewFile()
+    def dexPatchJson = JsonOutput.toJson(patchConfig)
+    wrapFile.setText(dexPatchJson, ENCODE_UTF_8)
+}
+
+//粗暴+1
+def getPatchVersion() {
+    File versionFile = new File(PATH_VERSION_FILE)
+    if (!versionFile.exists()) versionFile.createNewFile()
+    String versionStr = versionFile.getText(ENCODE_UTF_8)
+    if (null == versionStr || versionStr.isEmpty()) {
+        versionStr = "1"
+    }
+    String nextVersion = String.valueOf(Integer.valueOf(versionStr) + 1)
+    versionFile.setText(nextVersion, ENCODE_UTF_8)
+    return versionStr
+}
+
+def cleanPatchVersion() {
+    File versionFile = new File(PATH_VERSION_FILE)
+    if (versionFile.exists()) {
+        versionFile.delete()
+    }
+}
