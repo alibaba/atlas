@@ -60,7 +60,7 @@ PS:
 生成的patch文件在 `app/build/outputs`下，检查是否存在两个文件
 
 - 1.0.0@1.0.0.tpatch
-- patch.json
+- dexpatch-1.0.0.json
 
 
 清空 `/sdcard/Android/data/com.taobao.demo/cache/`，并将上述两个文件push到上述路径中
