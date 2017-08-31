@@ -223,6 +223,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Looper;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
+import android.taobao.atlas.runtime.DelegateResources;
 import android.taobao.atlas.runtime.SecurityHandler;
 import android.taobao.atlas.util.ApkUtils;
 import android.taobao.atlas.util.WrapperUtil;
@@ -282,6 +283,7 @@ public class Atlas {
         boolean DEBUG = (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         RuntimeVariables.androidApplication = application;
         RuntimeVariables.delegateResources  = application.getResources();
+        DelegateResources.walkroundActionMenuTextColor(RuntimeVariables.delegateResources);
         Framework.containerVersion = RuntimeVariables.sInstalledVersionName;
         ClassLoader cl = Atlas.class.getClassLoader();
         Framework.systemClassLoader = cl;

@@ -211,9 +211,11 @@ package android.taobao.atlas.runtime;
 
 import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.taobao.atlas.hack.AndroidHack;
@@ -223,11 +225,14 @@ import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.LongSparseArray;
 import android.util.TypedValue;
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -246,6 +251,7 @@ public class DelegateResources extends Resources {
     private static String sKernalPathPath = null;
     private static String sAssetsPatchDir = null;
     private HashMap<String,Resources> bundleResourceWalkRound = new HashMap<>();
+    private static ColorStateList walkroundStateList;
 
 
     /**
@@ -814,6 +820,7 @@ public class DelegateResources extends Resources {
                     RuntimeVariables.delegateResources== null ||
                     !(RuntimeVariables.delegateResources instanceof DelegateResources)){
                 RuntimeVariables.delegateResources = createNewResources(assetManager);
+                walkroundActionMenuTextColor(RuntimeVariables.delegateResources);
                 AndroidHack.injectResources(RuntimeVariables.androidApplication, RuntimeVariables.delegateResources);
 
             }
@@ -836,6 +843,23 @@ public class DelegateResources extends Resources {
             }else{
                 return super.createNewResources(manager);
             }
+        }
+    }
+
+    public static void walkroundActionMenuTextColor(Resources res){
+        try {
+            if (Build.VERSION.SDK_INT>=16 && Build.VERSION.SDK_INT <= 19) {
+                final long key = (((long) -1) << 32) | 0x7f010082;
+                if(walkroundStateList==null) {
+                    walkroundStateList = ColorStateList.valueOf(Color.rgb(0, 0, 0));
+                }
+                Field mColorStateListCacheField = AndroidHack.findField(res, "mColorStateListCache");
+                mColorStateListCacheField.setAccessible(true);
+                LongSparseArray mColorStateListCache = (LongSparseArray) mColorStateListCacheField.get(res);
+                mColorStateListCache.put(key,new WeakReference<>(walkroundStateList));
+            }
+        }catch(Throwable e){
+            e.printStackTrace();
         }
     }
 

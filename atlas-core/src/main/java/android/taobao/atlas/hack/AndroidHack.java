@@ -533,7 +533,7 @@ public class AndroidHack {
         }catch(Throwable e){}
     }
 
-    private static Field findField(Object instance, String name) throws NoSuchFieldException {
+    public static Field findField(Object instance, String name) throws NoSuchFieldException {
         for (Class<?> clazz = instance.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
             try {
                 Field field = clazz.getDeclaredField(name);
