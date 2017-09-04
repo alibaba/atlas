@@ -8,16 +8,13 @@ buildscript {
 //            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
             url "http://maven.aliyun.com/nexus/content/groups/public"
         }
-        maven{
-            url "http://mvnrepo.alibaba-inc.com/nexus/content/repositories/snapshots"
-        }
     }
     configurations.all {
         resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:2.3.3.rc12-1-SNAPSHOT"
+        classpath "com.taobao.android:atlasplugin:2.3.3.rc12"
     }
 }
 
