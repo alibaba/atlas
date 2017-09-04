@@ -319,6 +319,9 @@ public class MtlTaskInjector {
         Task[] androidTasks = project.getTasks().withType(clazz).toArray(new Task[0]);
         List<Task> taskList = new ArrayList();
         for (Task task : androidTasks) {
+            if (task.getName().endsWith("TestJavaWithJavac")){
+                continue;
+            }
             if (task instanceof DefaultAndroidTask) {
                 if (variantName.equals(((DefaultAndroidTask)task).getVariantName())) {
                     taskList.add(task);

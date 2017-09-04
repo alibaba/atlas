@@ -1,8 +1,11 @@
 package com.taobao.android.builder.tasks.dexpatch;
 
+import com.android.build.gradle.ProguardFiles;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
@@ -18,7 +21,9 @@ import proguard.ParseException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author lilong
@@ -39,14 +44,22 @@ public class DexPatchProguardTask extends BaseTask{
         ProguardTask proguardTask = new ProguardTask();
         List<File>files = new ArrayList<>();
         File mappingFile = new File(variantContext.apContext.getApExploredFolder(),"mapping.txt");
-        File proguardCfg = new File(variantContext.apContext.getApExploredFolder(),"proguard.cfg");
-        if (proguardCfg.exists()){
-            proguardTask.applyConfigurationFile(proguardCfg);
-        }else {
-            proguardTask.applyConfigurationFile(new File(getProject().getBuildDir().getParentFile(),"proguard.cfg"));
-        }
+
         if (mappingFile.exists()){
             proguardTask.applyMapping(mappingFile);
+        }
+
+        final GradleVariantConfiguration variantConfig = variantContext.getVariantConfiguration();
+        Set<File> proguardFiles =
+                variantConfig.getProguardFiles(
+                        true,
+                        Collections.singletonList(
+                                ProguardFiles.getDefaultProguardFile(
+                                        TaskManager.DEFAULT_PROGUARD_CONFIG_FILE,
+                                        getProject())));
+
+        for (File file:proguardFiles){
+            proguardTask.applyConfigurationFile(file);
         }
 
         for (File file:getLibrarys()){
@@ -233,7 +246,7 @@ public class DexPatchProguardTask extends BaseTask{
         }
         File inJar = new File(folder, MD5Util.getFileMD5(file)+"-opt.jar");
         if (!inJar.exists()){
-            System.out.println("injar not exist:"+file.getAbsolutePath());
+            return file;
         }
         return inJar;
 
