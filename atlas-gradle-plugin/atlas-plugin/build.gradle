@@ -211,7 +211,7 @@ apply plugin: 'groovy'
 apply plugin: 'java'
 
 repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
+    //local repository(${user.home}/.m2/repository)
     mavenLocal()
     jcenter()
 }
