@@ -1,0 +1,23 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.taobao.atlas'
+
+atlas.bundleConfig.awbBundle = true
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    providedCompile rootProject.ext.appcompat
+}
+
+//for maven publish
+group = 'com.atlas.base.bundle'
+version = '1.0.0'
