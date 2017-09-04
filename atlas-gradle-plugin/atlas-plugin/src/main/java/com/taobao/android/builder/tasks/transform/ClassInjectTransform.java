@@ -245,7 +245,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * 做代码注入的类
- * Created by shenghua.nish on 2016-06-15 下午2:38.
+ * Created by shenghua.nish on 2016-06-15 2:38.
  */
 public class ClassInjectTransform extends MtlInjectTransform {
 

@@ -219,7 +219,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 
 /**
  * Awb的依赖文件的传递
- * Created by shenghua.nish on 2016-06-12 上午9:48.
+ * Created by shenghua.nish on 2016-06-12 9:48.
  */
 public class AwbTransform {
 

@@ -228,7 +228,7 @@ import java.util.Set;
  * <p>
  *     通过简单的标记法来检测依赖
  * </p>
- * @author shenghua.nish on 2015-12-18 上午10:25.
+ * @author shenghua.nish on 2015-12-18 10:25.
  */
 public class CircleDependencyCheck {
 

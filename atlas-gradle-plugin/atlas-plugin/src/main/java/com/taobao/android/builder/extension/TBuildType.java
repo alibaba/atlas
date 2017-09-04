@@ -215,7 +215,7 @@ import com.taobao.android.builder.extension.annotation.Config;
 import java.io.File;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午10:21.
+ * Created by shenghua.nish on 2016-05-17 10:21.
  */
 public class TBuildType {
 

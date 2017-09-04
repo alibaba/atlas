@@ -214,7 +214,7 @@ import com.android.build.gradle.LibraryPlugin;
 import org.gradle.api.Project;
 
 /**
- * Created by shenghua.nish on 2016-05-17 下午9:27.
+ * Created by shenghua.nish on 2016-05-17 9:27.
  */
 public class PluginTypeUtils {
 

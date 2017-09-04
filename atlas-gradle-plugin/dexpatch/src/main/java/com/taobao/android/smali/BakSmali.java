@@ -441,7 +441,7 @@ import java.util.concurrent.*;
 
 /**
  * 将Dex或者ClassDef文件转换为smali文件
- * Created by shenghua.nish on 2016-03-16 下午4:34.
+ * Created by shenghua.nish on 2016-03-16 4:34.
  */
 public class BakSmali {
     public static boolean disassembleDexFile(DexFile dexFile, final baksmaliOptions options) {

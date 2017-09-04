@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 ;
 
 /**
- * Created by shenghua.nish on 2016-03-18 下午9:32.
+ * Created by shenghua.nish on 2016-03-18 9:32.
  */
 public class ReferenceUtil {
     public static String getMethodDescriptor(MethodReference methodReference) {

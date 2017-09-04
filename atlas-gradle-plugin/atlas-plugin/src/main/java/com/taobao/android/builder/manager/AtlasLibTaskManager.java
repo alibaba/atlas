@@ -251,7 +251,7 @@ import org.gradle.api.tasks.bundling.Zip;
 
 /**
  * MTL插件编译lib库的任务管理
- * Created by shenghua.nish on 2016-05-09 下午3:55.
+ * Created by shenghua.nish on 2016-05-09 3:55.
  *
  * @author shenghua.nish, wuzhong
  */

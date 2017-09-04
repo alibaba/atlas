@@ -421,7 +421,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Created by shenghua.nish on 2016-03-15 下午9:11.
+ * Created by shenghua.nish on 2016-03-15 9:11.
  */
 public class DexBuilderUtils {
     /**

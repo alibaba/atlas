@@ -422,7 +422,7 @@ import org.jf.dexlib2.iface.instruction.Instruction;
 import java.util.List;
 
 /**
- * Created by shenghua.nish on 2016-03-15 下午11:17.
+ * Created by shenghua.nish on 2016-03-15 11:17.
  */
 public class DexCompareUtils {
 

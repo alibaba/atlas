@@ -431,7 +431,7 @@ import java.util.List;
 
 /**
  * 将field,类等转换为smali代码
- * Created by shenghua.nish on 2016-04-29 上午10:21.
+ * Created by shenghua.nish on 2016-04-29 10:21.
  */
 public class SmaliCodeUtils {
 

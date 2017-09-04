@@ -221,7 +221,7 @@ import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier;
 
 /**
  * 解析后的依赖结果
- * Created by shenghua.nish on 2015-08-13 下午3:10.
+ * Created by shenghua.nish on 2015-08-13 3:10.
  */
 public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo> {
 

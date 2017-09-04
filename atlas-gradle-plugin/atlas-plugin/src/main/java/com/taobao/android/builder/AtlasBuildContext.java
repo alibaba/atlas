@@ -224,7 +224,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by shenghua.nish on 2016-05-09 下午3:50.
+ * Created by shenghua.nish on 2016-05-09 3:50.
  */
 public class AtlasBuildContext {
 

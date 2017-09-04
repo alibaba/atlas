@@ -11,7 +11,7 @@ import java.util.zip.ZipFile;
 
 /**
  * @author lilong
- * @create 2017-08-15 上午11:41
+ * @create 2017-08-15 11:41
  */
 
 public class PatchChecker implements Checker{

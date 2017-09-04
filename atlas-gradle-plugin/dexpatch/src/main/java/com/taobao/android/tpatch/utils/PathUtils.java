@@ -418,7 +418,7 @@ import java.io.File;
 import java.util.StringTokenizer;
 
 /**
- * Created by shenghua.nish on 2016-03-19 下午9:17.
+ * Created by shenghua.nish on 2016-03-19 9:17.
  */
 public class PathUtils {
     private PathUtils() {

@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * @author lilong
- * @create 2017-03-22 下午7:39
+ * @create 2017-03-22 7:39
  */
 
 public class ApkDiff implements Serializable {

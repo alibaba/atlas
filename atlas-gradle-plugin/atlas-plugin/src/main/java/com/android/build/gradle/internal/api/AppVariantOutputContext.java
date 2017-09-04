@@ -234,7 +234,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 /**
- * Created by shenghua.nish on 2016-05-04 下午3:46.
+ * Created by shenghua.nish on 2016-05-04 3:46.
  */
 public class AppVariantOutputContext {
 

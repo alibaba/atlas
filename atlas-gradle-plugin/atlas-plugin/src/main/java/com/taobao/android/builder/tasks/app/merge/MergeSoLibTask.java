@@ -245,7 +245,7 @@ import java.util.concurrent.Callable;
 
 /**
  * 处理各种so依赖的任务
- * Created by shenghua.nish on 2015-08-25 下午2:24.
+ * Created by shenghua.nish on 2015-08-25 2:24.
  */
 public class MergeSoLibTask extends BaseTask {
 

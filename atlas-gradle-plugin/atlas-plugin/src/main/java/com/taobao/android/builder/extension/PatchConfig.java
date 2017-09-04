@@ -222,7 +222,7 @@ import com.taobao.android.builder.tools.EnvHelper;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午9:57.
+ * Created by shenghua.nish on 2016-05-17 9:57.
  */
 public class PatchConfig {
 

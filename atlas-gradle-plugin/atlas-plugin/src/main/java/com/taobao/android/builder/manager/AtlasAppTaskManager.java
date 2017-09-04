@@ -302,7 +302,7 @@ import org.gradle.api.Task;
 
 /**
  * MTL插件编译apk的任务管理
- * Created by shenghua.nish on 2016-05-09 下午3:55.
+ * Created by shenghua.nish on 2016-05-09 3:55.
  */
 @SuppressWarnings("ALL")
 public class AtlasAppTaskManager extends AtlasBaseTaskManager {

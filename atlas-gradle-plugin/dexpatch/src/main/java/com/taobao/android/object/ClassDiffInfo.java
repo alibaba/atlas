@@ -421,7 +421,7 @@ import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import java.util.Set;
 
 /**
- * Created by shenghua.nish on 2016-03-13 上午10:07.
+ * Created by shenghua.nish on 2016-03-13 10:07.
  */
 public class ClassDiffInfo {
 

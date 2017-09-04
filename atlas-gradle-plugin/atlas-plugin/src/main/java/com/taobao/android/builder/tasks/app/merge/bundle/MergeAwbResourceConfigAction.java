@@ -238,7 +238,7 @@ import java.util.concurrent.Callable;
 
 /**
  * Merge Awb的resource的配置类
- * Created by shenghua.nish on 2016-05-20 下午4:25.
+ * Created by shenghua.nish on 2016-05-20 4:25.
  */
 public class MergeAwbResourceConfigAction extends MtlBaseTaskAction<CachedMergeResources> {
 

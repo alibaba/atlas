@@ -421,7 +421,7 @@ import java.util.Map;
 
 /**
  * APK文件中的一个文件列表
- * Created by shenghua.nish on 2015-11-03 下午9:09.
+ * Created by shenghua.nish on 2015-11-03 9:09.
  */
 public class ApkFileList {
 

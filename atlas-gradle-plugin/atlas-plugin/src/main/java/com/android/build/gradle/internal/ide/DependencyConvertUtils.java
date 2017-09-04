@@ -233,7 +233,7 @@ import org.gradle.api.artifacts.result.ResolvedDependencyResult;
 
 /**
  * 依赖对象转换的工具类
- * Created by shenghua.nish on 2016-05-06 上午10:44.
+ * Created by shenghua.nish on 2016-05-06 10:44.
  */
 public class DependencyConvertUtils {
 

@@ -242,7 +242,7 @@ import org.gradle.api.file.ConfigurableFileTree;
 
 /**
  * Applicaiton的编译的context
- * Created by shenghua.nish on 2016-05-04 下午3:46.
+ * Created by shenghua.nish on 2016-05-04 3:46.
  */
 public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtension, E extends AtlasExtension>
     extends VariantContext<ApplicationVariantImpl, AppExtension, AtlasExtension> {

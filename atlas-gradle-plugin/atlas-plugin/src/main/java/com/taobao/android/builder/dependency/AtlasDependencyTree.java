@@ -224,7 +224,7 @@ import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 
 /**
  * Android的编译的依赖库
- * Created by shenghua.nish on 2016-05-05 下午5:59.
+ * Created by shenghua.nish on 2016-05-05 5:59.
  * <p>
  * 1. 没有依赖的依赖了
  * 2. 只区分主bundle的依赖和 awb 依赖

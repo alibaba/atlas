@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * @author lilong
- * @create 2017-03-22 下午7:02
+ * @create 2017-03-22 7:02
  */
 
 public class BundleDiffResult implements Serializable {

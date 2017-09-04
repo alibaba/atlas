@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 
 /**
  * @author lilong
- * @create 2017-08-23 上午9:33
+ * @create 2017-08-23 9:33
  */
 
 public abstract class AtlasBasePlugin implements Plugin<Project> {

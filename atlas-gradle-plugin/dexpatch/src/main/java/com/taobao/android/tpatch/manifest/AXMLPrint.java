@@ -13,7 +13,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Created by shenghua.nish on 2016-07-13 上午9:55.
+ * Created by shenghua.nish on 2016-07-13 9:55.
  */
 public class AXMLPrint {
     public static String decodeManifest(File manifestFile){

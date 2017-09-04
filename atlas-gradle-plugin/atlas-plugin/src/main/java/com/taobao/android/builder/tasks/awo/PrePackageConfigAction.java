@@ -219,7 +219,7 @@
 //import java.util.concurrent.Callable;
 //
 ///**
-// * Created by shenghua.nish on 2016-06-16 上午10:42.
+// * Created by shenghua.nish on 2016-06-16 10:42.
 // */
 //public class PrePackageConfigAction extends MtlBaseTaskAction<PrePackageApplication> {
 //

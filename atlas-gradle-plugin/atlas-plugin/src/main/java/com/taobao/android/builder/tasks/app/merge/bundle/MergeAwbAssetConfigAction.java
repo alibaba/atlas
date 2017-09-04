@@ -231,7 +231,7 @@ import java.util.concurrent.Callable;
 
 /**
  * 配置Merge awb asset的任务
- * Created by shenghua.nish on 2016-05-20 下午4:04.
+ * Created by shenghua.nish on 2016-05-20 4:04.
  */
 public class MergeAwbAssetConfigAction extends MtlBaseTaskAction<MergeSourceSetFolders> {
 

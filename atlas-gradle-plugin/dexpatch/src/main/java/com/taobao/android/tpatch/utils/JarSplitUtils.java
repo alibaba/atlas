@@ -430,7 +430,7 @@ import java.util.zip.ZipOutputStream;
 
 /**
  * jar包分割的工具类
- * Created by shenghua.nish on 2015-11-05 下午4:15.
+ * Created by shenghua.nish on 2015-11-05 4:15.
  */
 public class JarSplitUtils {
 

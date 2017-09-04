@@ -10,7 +10,7 @@ import java.util.Map;
 
 /**
  * @author lilong
- * @create 2017-08-15 下午1:26
+ * @create 2017-08-15 1:26
  */
 
 public class AtlasFrameworkPropertiesReader implements Reader {

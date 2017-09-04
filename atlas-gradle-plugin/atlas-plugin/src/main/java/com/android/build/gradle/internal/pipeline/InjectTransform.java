@@ -212,7 +212,7 @@ package com.android.build.gradle.internal.pipeline;
 import com.android.build.api.transform.Transform;
 
 /**
- * Created by shenghua.nish on 2016-06-15 下午10:17.
+ * Created by shenghua.nish on 2016-06-15 10:17.
  */
 public abstract  class InjectTransform extends Transform{
     /**

@@ -427,7 +427,7 @@ import java.io.IOException;
 
 /**
  * 简易的Http工具类
- * Created by shenghua.nish on 2015-12-22 下午11:27.
+ * Created by shenghua.nish on 2015-12-22 11:27.
  */
 public class HttpClientUtils {
 

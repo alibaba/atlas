@@ -262,7 +262,7 @@ import org.jf.dexlib2.iface.ClassDef;
  * 生成为atlas做动态部署的diff工具类
  * <p/>
  * TODO: 需要支持指定文件的过滤，包括dex文件，资源文件。不对指定文件做diff操作
- * Created by shenghua.nish on 2016-03-19 下午9:42.
+ * Created by shenghua.nish on 2016-03-19 9:42.
  */
 public class TPatchTool extends BasePatchTool {
     public static boolean isTpatch = false;

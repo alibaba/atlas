@@ -260,7 +260,7 @@ import java.util.zip.ZipInputStream;
 
 /**
  * 本地签名工具类
- * Created by shenghua.nish on 2015-10-16 上午10:55.
+ * Created by shenghua.nish on 2015-10-16 10:55.
  */
 public class LocalSignedJarBuilder {
     private static final String DIGEST_ALGORITHM = "SHA1";

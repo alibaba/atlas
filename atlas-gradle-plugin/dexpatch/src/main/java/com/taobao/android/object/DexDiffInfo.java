@@ -437,7 +437,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- * Created by shenghua.nish on 2016-03-13 上午10:02.
+ * Created by shenghua.nish on 2016-03-13 10:02.
  */
 public class DexDiffInfo {
 

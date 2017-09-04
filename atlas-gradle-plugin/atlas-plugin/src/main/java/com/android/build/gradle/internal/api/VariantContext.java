@@ -229,7 +229,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 /**
- * Created by shenghua.nish on 2016-05-19 下午5:23.
+ * Created by shenghua.nish on 2016-05-19 5:23.
  */
 public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, E extends AtlasExtension> {
 

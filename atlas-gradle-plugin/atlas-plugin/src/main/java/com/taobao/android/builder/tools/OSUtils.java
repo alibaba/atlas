@@ -210,7 +210,7 @@ package com.taobao.android.builder.tools;
 
 /**
  * 判断操作系统的工具类
- * @author shenghua.nish 2014-6-22 上午9:19:07
+ * @author shenghua.nish 2014-6-22 9:19:07
  */
 public class OSUtils {
     private static String OS = System.getProperty("os.name").toLowerCase();  

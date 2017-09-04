@@ -34,7 +34,7 @@ import java.util.concurrent.Callable;
 
 /**
  * @author lilong
- * @create 2017-05-03 下午2:22
+ * @create 2017-05-03 2:22
  */
 
 public class DiffDependenciesTask extends BaseTask {

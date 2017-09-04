@@ -13,7 +13,7 @@ import java.io.IOException;
 
 /**
  * @author lilong
- * @create 2017-05-03 下午1:02
+ * @create 2017-05-03 1:02
  */
 
 public class DexPatchDexTask extends BaseTask {

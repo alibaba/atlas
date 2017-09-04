@@ -218,7 +218,7 @@ import java.util.Map;
 
 /**
  * Dependency的依赖关系
- * @author shenghua.nish 2014年12月9日 下午3:14:05
+ * @author shenghua.nish 2014年12月9日 3:14:05
  */
 public class DependencyJson implements Serializable{
     private List<String> mainDex = new LinkedList<String>();

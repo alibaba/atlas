@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * @author lilong
- * @create 2017-05-05 上午10:07
+ * @create 2017-05-05 10:07
  */
 
 public class DexPatchDiffTask extends BaseTask {

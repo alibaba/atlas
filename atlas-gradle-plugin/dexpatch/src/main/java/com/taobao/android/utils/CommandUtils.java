@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 
 /**
  * @author lilong
- * @create 2017-05-12 下午2:16
+ * @create 2017-05-12 2:16
  */
 
 public class CommandUtils {

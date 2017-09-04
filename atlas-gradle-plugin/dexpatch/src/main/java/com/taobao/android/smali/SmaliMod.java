@@ -438,7 +438,7 @@ import java.io.OutputStream;
 
 /**
  * 将smali文件重新编译为dex文件
- * Created by shenghua.nish on 2016-03-16 下午4:36.
+ * Created by shenghua.nish on 2016-03-16 4:36.
  */
 public class SmaliMod {
     public static boolean assembleSmaliFile(String smali, DexBuilder dexBuilder, boolean verboseErrors,

@@ -417,7 +417,7 @@ package com.taobao.android.object;
 import org.jf.dexlib2.dexbacked.DexBackedMethod;
 
 /**
- * Created by shenghua.nish on 2016-03-13 上午10:06.
+ * Created by shenghua.nish on 2016-03-13 10:06.
  */
 public class MethodDiffInfo {
 

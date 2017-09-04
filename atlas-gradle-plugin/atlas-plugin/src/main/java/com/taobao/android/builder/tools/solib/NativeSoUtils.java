@@ -231,7 +231,7 @@ import org.slf4j.LoggerFactory;
 /**
  * 原始so文件的工具类
  *
- * @author shenghua.nish 2015年7月16日 下午3:19:41
+ * @author shenghua.nish 2015年7月16日 3:19:41
  */
 public class NativeSoUtils {
 

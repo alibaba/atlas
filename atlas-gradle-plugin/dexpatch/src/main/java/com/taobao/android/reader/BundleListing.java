@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * @author lilong
- * @create 2017-08-15 下午1:40
+ * @create 2017-08-15 1:40
  */
 
 public class BundleListing implements Serializable {

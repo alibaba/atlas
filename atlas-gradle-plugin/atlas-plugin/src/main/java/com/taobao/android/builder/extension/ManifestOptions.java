@@ -216,7 +216,7 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.extension.annotation.Config;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午9:39.
+ * Created by shenghua.nish on 2016-05-17 9:39.
  */
 public class ManifestOptions {
 

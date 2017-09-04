@@ -228,7 +228,7 @@ import java.util.zip.ZipOutputStream;
 
 /**
  * 通过Javassist进行代码注入操作
- * Created by shenghua.nish on 2015-10-22 下午6:35.
+ * Created by shenghua.nish on 2015-10-22 6:35.
  */
 public class CodeInjectByJavassist {
 

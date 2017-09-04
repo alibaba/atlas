@@ -18,7 +18,7 @@ import java.util.List;
 
 /**
  * @author lilong
- * @create 2017-08-23 下午4:03
+ * @create 2017-08-23 4:03
  */
 
 public class PrepareBaseFileTask extends BaseTask {

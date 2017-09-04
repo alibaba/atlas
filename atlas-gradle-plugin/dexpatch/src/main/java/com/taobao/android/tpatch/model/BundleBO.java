@@ -4,7 +4,7 @@ import java.io.File;
 
 /**
  * @author lilong
- * @create 2017-03-27 下午1:23
+ * @create 2017-03-27 1:23
  */
 
 public class BundleBO {

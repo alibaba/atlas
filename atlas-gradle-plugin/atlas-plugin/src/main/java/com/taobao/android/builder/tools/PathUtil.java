@@ -212,7 +212,7 @@ import java.io.File;
 
 /**
  * 路径的工具类 
- * @author shenghua.nish 2012-6-20 下午1:16:01
+ * @author shenghua.nish 2012-6-20 1:16:01
  */
 public class PathUtil {
 

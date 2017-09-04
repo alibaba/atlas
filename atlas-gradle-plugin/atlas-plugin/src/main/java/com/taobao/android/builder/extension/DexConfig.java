@@ -2,7 +2,7 @@ package com.taobao.android.builder.extension;
 
 /**
  * @author lilong
- * @create 2017-05-26 下午9:48
+ * @create 2017-05-26 9:48
  */
 
 public class DexConfig {

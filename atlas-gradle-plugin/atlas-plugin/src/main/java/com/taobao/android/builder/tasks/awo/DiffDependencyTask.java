@@ -238,7 +238,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 比较AWB的依赖和ap中的依赖的差别
- * Created by shenghua.nish on 2016-07-15 上午11:01.
+ * Created by shenghua.nish on 2016-07-15 11:01.
  */
 public class DiffDependencyTask extends DefaultAndroidTask {
 

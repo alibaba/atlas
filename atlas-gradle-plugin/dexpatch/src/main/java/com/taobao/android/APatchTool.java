@@ -233,7 +233,7 @@ import java.util.Map;
 
 /**
  * 生成Andfix的patch包的工具类
- * Created by shenghua.nish on 2016-03-19 下午6:25.
+ * Created by shenghua.nish on 2016-03-19 6:25.
  */
 public class APatchTool extends BasePatchTool {
 

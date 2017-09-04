@@ -419,7 +419,7 @@ import java.util.List;
 
 /**
  * 编译生成的patch的信息
- * Created by shenghua.nish on 2015-12-21 下午3:35.
+ * Created by shenghua.nish on 2015-12-21 3:35.
  */
 public class BuildPatchInfos {
 

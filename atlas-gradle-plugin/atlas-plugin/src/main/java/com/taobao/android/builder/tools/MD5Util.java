@@ -220,7 +220,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Created by shenghua.nish on 2015-04-13 下午3:33.
+ * Created by shenghua.nish on 2015-04-13 3:33.
  */
 public class MD5Util {
     /**

@@ -223,7 +223,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午11:26.
+ * Created by shenghua.nish on 2016-05-17 11:26.
  *
  * @author shenghua.nish, wuzhong
  */

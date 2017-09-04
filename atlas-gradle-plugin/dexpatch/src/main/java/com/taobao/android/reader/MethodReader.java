@@ -3,7 +3,7 @@ import org.jf.dexlib2.iface.Method;
 
 /**
  * @author lilong
- * @create 2017-08-15 下午4:35
+ * @create 2017-08-15 4:35
  */
 
 public class MethodReader implements Reader {

@@ -6,7 +6,7 @@ import org.jf.dexlib2.iface.Field;
 
 /**
  * @author lilong
- * @create 2017-08-15 下午1:18
+ * @create 2017-08-15 1:18
  */
 
 public class FieldReader implements Reader{

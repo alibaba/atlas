@@ -222,7 +222,7 @@ import org.gradle.api.logging.Logging;
 
 /**
  * 任务管理的基类
- * Created by shenghua.nish on 2016-05-10 下午9:51.
+ * Created by shenghua.nish on 2016-05-10 9:51.
  */
 public abstract class AtlasBaseTaskManager<T extends BaseExtension> {
 

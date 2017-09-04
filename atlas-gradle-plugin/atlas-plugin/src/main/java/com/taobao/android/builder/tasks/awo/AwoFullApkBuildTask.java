@@ -234,7 +234,7 @@ import java.util.concurrent.Callable;
 
 /**
  * 生成awo的完整apk的任务
- * Created by shenghua.nish on 2016-07-18 下午4:11.
+ * Created by shenghua.nish on 2016-07-18 4:11.
  */
 public class AwoFullApkBuildTask extends DefaultAndroidTask {
 

@@ -247,7 +247,7 @@ import org.gradle.api.tasks.TaskAction;
  * 2. 去除 use-sdk
  * 4. 补全 className
  * <p>
- * Created by shenghua.nish on 2016-05-09 下午11:31.
+ * Created by shenghua.nish on 2016-05-09 11:31.
  *
  * @author shenghua.nish, wuzhong
  */

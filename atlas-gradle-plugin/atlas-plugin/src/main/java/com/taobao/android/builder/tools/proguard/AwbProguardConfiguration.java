@@ -223,7 +223,7 @@ import org.apache.commons.io.FileUtils;
 
 /**
  * 增加Awb的配置到混淆的配置中去
- * Created by shenghua.nish on 2016-06-12 上午9:23.
+ * Created by shenghua.nish on 2016-06-12 9:23.
  */
 @Deprecated
 public class AwbProguardConfiguration {

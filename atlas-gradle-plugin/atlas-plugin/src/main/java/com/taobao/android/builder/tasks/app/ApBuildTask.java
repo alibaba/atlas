@@ -230,7 +230,7 @@ import org.gradle.api.tasks.TaskAction;
 
 /**
  * AP文件打包的task
- * Created by shenghua.nish on 2015-10-20 下午7:01.
+ * Created by shenghua.nish on 2015-10-20 7:01.
  */
 public class ApBuildTask extends DefaultAndroidTask {
 

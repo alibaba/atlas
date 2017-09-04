@@ -223,7 +223,7 @@ import java.util.*;
 
 /**
  * 依赖比较的工具类
- * Created by shenghua.nish on 2016-04-05 下午3:25.
+ * Created by shenghua.nish on 2016-04-05 3:25.
  */
 public class DependencyCompareUtils {
 

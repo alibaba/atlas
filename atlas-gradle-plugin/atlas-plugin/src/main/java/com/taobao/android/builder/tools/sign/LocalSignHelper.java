@@ -222,7 +222,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Created by shenghua.nish on 2015-11-06 上午10:54.
+ * Created by shenghua.nish on 2015-11-06 10:54.
  */
 public class LocalSignHelper {
     /**

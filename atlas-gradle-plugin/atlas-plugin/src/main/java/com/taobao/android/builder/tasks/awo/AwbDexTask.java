@@ -246,7 +246,7 @@ import org.gradle.api.tasks.TaskAction;
 
 /**
  * Android的awb的dex编译任务,为了简单起见,不走DexTransform任务,目前不支持predex等功能
- * Created by shenghua.nish on 2016-06-07 上午10:59.<br/>
+ * Created by shenghua.nish on 2016-06-07 10:59.<br/>
  * TODO: 增加Awb dex的preDex的支持
  */
 @ParallelizableTask

@@ -425,7 +425,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**<p>MD5的工具类</p>
- * Created by shenghua.nish on 2015-09-30 下午5:54.
+ * Created by shenghua.nish on 2015-09-30 5:54.
  */
 public class MD5Util {
     /**

@@ -232,7 +232,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Created by shenghua.nish on 2016-03-19 下午9:51.
+ * Created by shenghua.nish on 2016-03-19 9:51.
  */
 public class BasePatchTool {
 

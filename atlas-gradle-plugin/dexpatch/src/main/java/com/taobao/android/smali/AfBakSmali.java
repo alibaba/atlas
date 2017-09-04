@@ -429,7 +429,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 /**
- * Created by shenghua.nish on 2016-03-17 下午10:01.
+ * Created by shenghua.nish on 2016-03-17 10:01.
  */
 public class AfBakSmali {
     /**

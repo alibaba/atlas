@@ -229,7 +229,7 @@ import org.gradle.api.artifacts.ModuleIdentifier;
 import org.jetbrains.annotations.TestOnly;
 
 /**
- * Created by shenghua.nish on 2016-05-06 下午5:46.
+ * Created by shenghua.nish on 2016-05-06 5:46.
  * <p>
  * <p>
  * for atlas bundle

@@ -415,7 +415,7 @@ package com.taobao.android.differ.dex;
  */
 
 /**
- * Created by shenghua.nish on 2016-03-17 下午2:00.
+ * Created by shenghua.nish on 2016-03-17 2:00.
  */
 public class PatchException extends Exception {
     public PatchException() {

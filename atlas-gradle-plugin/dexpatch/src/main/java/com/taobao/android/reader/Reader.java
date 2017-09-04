@@ -2,7 +2,7 @@ package com.taobao.android.reader;
 
 /**
  * @author lilong
- * @create 2017-08-15 下午1:24
+ * @create 2017-08-15 1:24
  */
 
 public interface Reader<T> {

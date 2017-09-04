@@ -415,7 +415,7 @@ package com.taobao.android.object;
  */
 
 /**
- * Created by shenghua.nish on 2015-09-30 下午4:40.
+ * Created by shenghua.nish on 2015-09-30 4:40.
  */
 public enum DiffType {
     ADD, MODIFY ,REMOVE, NONE,OVERRIDE;

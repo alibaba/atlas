@@ -6,7 +6,7 @@ import java.util.Set;
 
 /**
  * @author lilong
- * @create 2017-08-15 下午1:52
+ * @create 2017-08-15 1:52
  */
 
 public class ClassReader implements Reader {

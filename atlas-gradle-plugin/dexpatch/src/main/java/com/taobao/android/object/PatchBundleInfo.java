@@ -417,7 +417,7 @@ package com.taobao.android.object;
 import java.util.List;
 
 /**
- * Created by shenghua.nish on 2016-03-18 下午10:59.
+ * Created by shenghua.nish on 2016-03-18 10:59.
  */
 public class PatchBundleInfo {
 

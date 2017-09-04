@@ -432,7 +432,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 /**
- * Created by shenghua.nish on 2016-03-20 下午5:26.
+ * Created by shenghua.nish on 2016-03-20 5:26.
  */
 public class PatchUtils {
 

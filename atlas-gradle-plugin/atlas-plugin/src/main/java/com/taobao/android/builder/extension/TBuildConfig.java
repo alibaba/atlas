@@ -219,7 +219,7 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.extension.annotation.Config;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午10:15.
+ * Created by shenghua.nish on 2016-05-17 10:15.
  */
 public class TBuildConfig {
 

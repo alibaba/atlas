@@ -241,7 +241,7 @@ import static com.android.utils.StringHelper.capitalize;
 
 /**
  * 注入TransformManger的注入管理类, 主要注入到class->dex的中间过程
- * Created by shenghua.nish on 2016-06-13 下午2:02.
+ * Created by shenghua.nish on 2016-06-13 2:02.
  */
 public class InjectTransformManager {
 

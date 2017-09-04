@@ -418,7 +418,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Created by shenghua.nish on 2016-03-20 下午10:05.
+ * Created by shenghua.nish on 2016-03-20 10:05.
  */
 public class ArtifactBundleInfo implements Serializable{
 

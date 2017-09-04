@@ -258,7 +258,7 @@ import org.xml.sax.InputSource;
 
 /**
  * @author shenghua.nish
- * @date 2015-04-22 上午10:58
+ * @date 2015-04-22 10:58
  */
 public class ManifestFileUtils {
 

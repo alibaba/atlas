@@ -1,20 +1,5 @@
 package com.taobao.android.builder.hook.dex;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
-import com.android.builder.core.DefaultDexOptions;
-import com.android.builder.core.DexByteCodeConverter;
-import com.android.builder.core.DexOptions;
-import com.android.builder.core.DexProcessBuilder;
-import com.android.builder.sdk.TargetInfo;
-import com.android.ide.common.process.*;
-import com.android.utils.ILogger;
-import com.android.utils.SdkUtils;
-import com.google.common.base.Joiner;
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableList;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -30,13 +15,34 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.builder.core.DefaultDexOptions;
+import com.android.builder.core.DexByteCodeConverter;
+import com.android.builder.core.DexOptions;
+import com.android.builder.core.DexProcessBuilder;
+import com.android.builder.sdk.TargetInfo;
+import com.android.ide.common.process.JavaProcessExecutor;
+import com.android.ide.common.process.JavaProcessInfo;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.ide.common.process.ProcessResult;
+import com.android.utils.ILogger;
+import com.android.utils.SdkUtils;
+import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableList;
+
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_DEX;
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * @author lilong
- * @create 2017-05-12 下午7:43
+ * @create 2017-05-12 7:43
  */
 
 public class DexByteCodeConverterHook extends DexByteCodeConverter {

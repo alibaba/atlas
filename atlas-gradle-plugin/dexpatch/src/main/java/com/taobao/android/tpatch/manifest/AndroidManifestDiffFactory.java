@@ -7,7 +7,7 @@ import java.util.Set;
 
 /**
  * @author lilong
- * @create 2017-03-13 上午9:55
+ * @create 2017-03-13 9:55
  */
 
 public class AndroidManifestDiffFactory {

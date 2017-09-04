@@ -234,7 +234,7 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
 
 /**
- * Created by shenghua.nish on 2016-07-15 上午11:22.
+ * Created by shenghua.nish on 2016-07-15 11:22.
  */
 public class PrepareAwoBundleTask extends BaseTask {
 
