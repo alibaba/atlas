@@ -36,3 +36,15 @@ When Compiling the final Apk，Atlas support packaging part of bundles to apk wi
 
 ##Update bundle without the entire Apk upgrade
 
+##Compatible with all versions higher than 4.0
+<div style="height:260px">
+    <div style="height:0px;float:left; margin-right:400px;margin-top:20px" />
+        Atlas supports the latest Android devices from Android 4.0 (API level 14) through Android O, compatible with all device that available on the market.
+    </div>
+   <div style="float:right;">
+        <div><img src="img/support.png" width='380' ></div>
+   </div>
+</div>
+
+##Start to Modularize your application
+Atlas functionality is an upgrade to your existing Android app, not a new, separate app
