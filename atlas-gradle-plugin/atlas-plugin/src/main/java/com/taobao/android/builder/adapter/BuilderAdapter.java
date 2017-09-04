@@ -233,17 +233,17 @@ public class BuilderAdapter {
     public boolean packageRemoteAwbInJni = true;
 
     /**
-     * 添加atlas和atlasupdate的依赖到主dex
+     * Add the atlas and atlasupdate dependencies to the main dex
      */
     public boolean addAtlasDependency = true;
 
     /**
-     * bundle中允许使用本地jar，默认打开， 淘宝不打开
-     * 主bundle的本地jar一直开启
+     * bundleAllows local jars to be used by default, Taobao does not open
+     * The local jar of the main bundle is always open
      */
     public boolean localJarEnabled = true;
     /**
-     * 标准格式的依赖
+     * Reliance on standard formats
      */
     public boolean prettyDependencyFormat = true;
 

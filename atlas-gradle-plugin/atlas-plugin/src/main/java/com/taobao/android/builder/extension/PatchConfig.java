@@ -228,22 +228,22 @@ public class PatchConfig {
 
     private String name;
 
-    @Config(message = "app注册的签名的应用名称", order = 0, advance = false, group = "atlas_patch")
+    @Config(message = "appThe application name of the registered signature", order = 0, advance = false, group = "atlas_patch")
     private String appSignName;
 
-    @Config(message = " 打andfix patch 包 ", order = 1, advance = true, group = "atlas_patch")
+    @Config(message = " Play andfix patch bag ", order = 1, advance = true, group = "atlas_patch")
     private boolean createAPatch = false;
 
-    @Config(message = " 打动态部署 patch 包 ", order = 2, group = "atlas_patch")
+    @Config(message = " Dynamic deployment patch bag ", order = 2, group = "atlas_patch")
     private boolean createTPatch = false;
 
-    @Config(message = "动态部署不包含的文件列表", order = 3, advance = true, group = "atlas_patch")
+    @Config(message = "Dynamic deployment does not contain a list of files", order = 3, advance = true, group = "atlas_patch")
     private Set<String> tPatchNotIncludeFiles = Sets.newHashSet();
 
-    @Config(message = " andfix 打包过滤 class 列表文件 ", order = 4, advance = true, group = "atlas_patch")
+    @Config(message = " andfix Package filtering class A list of files ", order = 4, advance = true, group = "atlas_patch")
     private File filterFile;
 
-    @Config(message = " andfix 打包过滤 class 列表 ", order = 5, advance = true, group = "atlas_patch")
+    @Config(message = " andfix Package filtering class tabulation ", order = 5, advance = true, group = "atlas_patch")
     private Set<String> filterClasses = new HashSet<String>();
 
     private boolean apForBaseFile = true;
@@ -435,7 +435,7 @@ public class PatchConfig {
     }
 
     /**
-     * 是否要打历史patch， 可以通过 -DdexPatchEnabled=true 来开启
+     * Whether to play the historical patch, Can be achieved by -DdexPatchEnabled=true To turn on
      *
      * @return
      */

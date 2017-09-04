@@ -226,7 +226,7 @@ public class ApLibrary {
     @NonNull
     private final File mApFile;
     /**
-     * 解压的文件夹
+     * Unzip folders
      */
     private File mApFolder;
 

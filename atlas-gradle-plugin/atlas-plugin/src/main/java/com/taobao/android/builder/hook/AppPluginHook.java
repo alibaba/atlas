@@ -224,8 +224,8 @@ import org.gradle.api.Project;
 /**
  * Created by wuzhong on 2017/3/10.
  *
- * 1. 替换dependencyManager
- * 2. 替换androidBuilder
+ * 1. Replace dependencyManager
+ * 2. Replace androidBuilder
  *
  * @author wuzhong
  * @date 2017/03/10

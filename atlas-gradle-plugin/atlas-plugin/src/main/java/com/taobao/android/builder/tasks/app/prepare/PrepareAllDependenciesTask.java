@@ -234,8 +234,8 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GUtil;
 
 /**
- * 1. 自己控制并发，可以提高性能
- * 2. solib 的解压准备
+ * 1. You can improve performance by controlling concurrency yourself
+ * 2. solib Decompression preparation
  *
  * @author wuzhong
  */

@@ -339,7 +339,7 @@ public class AppVariantOutputContext {
             AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                     variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
-                //生成AwbTransform对象
+                //Generate the AwbTransform object
                 AwbTransform awbTransform = new AwbTransform(awbBundle);
                 //                awbTransform.setInputDir(awbJavaCompile.getDestinationDir());
                 awbTransform.getInputLibraries().addAll(awbBundle.getLibraryJars());  //ADD R.class
@@ -374,7 +374,7 @@ public class AppVariantOutputContext {
     }
 
     /**
-     * 取动态下载的so的下载地址
+     * Download the download address for dynamic download
      *
      * @param awbBundle
      * @return
@@ -461,7 +461,7 @@ public class AppVariantOutputContext {
 
         List<File> otherFiles = new ArrayList<File>();
 
-        //路径和文件名
+        //Path and file name
         Map<String, File> otherFilesMap = new HashMap<>();
 
         File dependencyTreeFile;

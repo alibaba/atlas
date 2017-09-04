@@ -59,7 +59,7 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
     protected abstract AtlasConfigurationHelper getConfigurationHelper(Project project);
 
     /**
-     * 判断插件的依赖配置是否正确
+     * Determine if the plug-in's dependency configuration is correct
      */
     private void checkPluginSetup() {
 
@@ -68,7 +68,7 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
         }
 
         String androidVersion = com.android.builder.Version.ANDROID_GRADLE_PLUGIN_VERSION;
-        //判断Android plugin的version
+        //Determine the Android pluginThe version of
         if (!PLUGIN_ACCEPTABLE_VERSIONS.matcher(androidVersion).matches()) {
             String errorMessage = String.format("Android Gradle plugin version %s is required. Current version is %s. ",
                     PLUGIN_MIN_VERSIONS, androidVersion);

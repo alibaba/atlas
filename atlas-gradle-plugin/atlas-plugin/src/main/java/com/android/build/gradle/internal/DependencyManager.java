@@ -290,7 +290,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
  *
  *  1. not warning awb & solib
  *  2. public apis
- *  3. jar 依赖aar 的检查
+ *  3. jar Rely on aar The check
  *
  */
 public class DependencyManager {
@@ -916,7 +916,7 @@ public class DependencyManager {
 
                         // if we don't have one, need to create it.
                         if (EXT_LIB_ARCHIVE.equals(artifact.getExtension()) ||
-                            //不是app工程，并且是awb依赖
+                            //Not app engineering, and awb dependency
                             ("awb".equals(artifact.getExtension())  && !project.getPlugins().hasPlugin(AppPlugin.class))) {
 
                             if (DEBUG_DEPENDENCY) {

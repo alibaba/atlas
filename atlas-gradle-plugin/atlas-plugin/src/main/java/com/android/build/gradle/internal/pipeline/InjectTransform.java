@@ -216,7 +216,7 @@ import com.android.build.api.transform.Transform;
  */
 public abstract  class InjectTransform extends Transform{
     /**
-     * 是否修改下一个Transform的输入
+     * Whether to modify the next Transform input
      * @return
      */
     public abstract  boolean updateNextTransformInput();

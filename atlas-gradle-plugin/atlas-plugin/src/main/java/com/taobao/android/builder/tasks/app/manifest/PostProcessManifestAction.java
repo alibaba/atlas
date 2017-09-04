@@ -293,7 +293,7 @@ public class PostProcessManifestAction implements Action<Task> {
                         .getOutOfApkBundles());
             }
 
-            // manifest 清单 校验
+            // manifest list check
             ManifestHelper.checkManifest( appVariantContext,
                 baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(), dependencyTree,
                 atlasExtension);

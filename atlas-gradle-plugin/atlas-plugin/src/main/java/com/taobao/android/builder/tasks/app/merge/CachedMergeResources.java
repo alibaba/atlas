@@ -228,7 +228,7 @@ public class CachedMergeResources extends MergeResources {
 
     private AwbBundle awbBundle;
 
-    //根据依赖的坐标是否来cache
+    //Depending on whether the coordinates depend on the cache
     //@Override
     //protected void doFullTaskAction() throws IOException {
     //

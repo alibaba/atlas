@@ -414,7 +414,7 @@ public class DexMerger {
         int index = 0;
         DexGroup dexDto = getDexDto(dexDtos, index);
         for (Dex dex : new ArrayList<>(dexList)) {
-            //如果不能加入进去，需要重新扩展一个dex
+            //If you can't join in, you need to re-extend a dex
             while (!dexDto.addDex(dex)) {
 
                 if (limited && index >= dexCount) {

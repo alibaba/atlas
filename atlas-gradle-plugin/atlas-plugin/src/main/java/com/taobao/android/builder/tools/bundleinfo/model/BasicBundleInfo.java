@@ -221,7 +221,7 @@ public class BasicBundleInfo {
     private String pkgName;
 
     /**
-     * 主dex依赖+当前依赖的md5
+     * The main dex depends on + the md5 that is currently dependent
      */
     private String unique_tag;
 

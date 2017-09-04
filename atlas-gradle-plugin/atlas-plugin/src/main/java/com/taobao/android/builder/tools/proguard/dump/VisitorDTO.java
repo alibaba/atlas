@@ -226,12 +226,12 @@ import proguard.classfile.LibraryClass;
 public class VisitorDTO {
 
     /**
-     * System class list， aa/bb
+     * System class list, aa/bb
      */
     public Set<String> defaultClasses;
 
     /**
-     * 当前的 classpool
+     * current classpool
      */
     public ClassPool currentClassPool;
 
@@ -240,14 +240,14 @@ public class VisitorDTO {
     public Set<String> abstractClasses = new HashSet<>();
 
     /**
-     * 当前 classpool 下所有类的结构，其中 super 指向的是 library 的类
+     * current classpool The structure of the next class, among them super Points to the library The class of
      */
     public Map<String, ClassStruct> classStructMap = new HashMap<>();
 
     public Map<String, LibraryClazzInfo> libraryClazzInfoMap = new HashMap<>();
 
     /**
-     * 最终的输出结果
+     * Final output
      */
     public Map<String, ClazzRefInfo> clazzRefInfoMap = new HashMap<>();
 
@@ -258,7 +258,7 @@ public class VisitorDTO {
     }
 
     /**
-     * 查找离他最近的 library class
+     * Find out what's closest to him library class
      *
      * @param programClass
      * @return

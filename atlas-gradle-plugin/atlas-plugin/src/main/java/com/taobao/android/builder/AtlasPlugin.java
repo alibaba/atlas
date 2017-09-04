@@ -269,14 +269,14 @@ public class AtlasPlugin extends AtlasBasePlugin {
                 //3. update extension
                 atlasConfigurationHelper.updateExtensionAfterEvaluate();
 
-                //4. 设置android builder
+                //4. Set up the android builder
                 try {
                     atlasConfigurationHelper.createBuilderAfterEvaluate();
                 } catch (Exception e) {
                     throw new GradleException("update builder failed", e);
                 }
 
-                //5. 配置任务
+                //5. Configuration tasks
                 atlasConfigurationHelper.configTasksAfterEvaluate();
 
                 project.getTasks().create("atlasList", AtlasListTask.class);

@@ -264,7 +264,7 @@ public class ApkInjectInfoCreator {
         injectParam.unit_tag = mainMd5;
         appVariantContext.unit_tag = mainMd5;
 
-        //依赖是否发送变更
+        //Depends on whether the change is sent
         DependencyDiff dependencyDiff = appVariantContext.getDependencyDiff();
         Map<String, String> baseTagMap = appVariantContext.getBaseUnitTagMap();
 

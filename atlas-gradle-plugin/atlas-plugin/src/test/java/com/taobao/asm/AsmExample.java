@@ -239,7 +239,7 @@ public class AsmExample extends ClassLoader implements Opcodes {
         ClassVisitor cv = new MethodChangeClassAdapter(cw);
         cr.accept(cv, Opcodes.ASM4);
 
-        //新增加一个方法  
+        //Add a new method  
         MethodVisitor mw = cw.visitMethod(ACC_PUBLIC + ACC_STATIC,
                                           "add",
                                           "([Ljava/lang/String;)V",
@@ -273,11 +273,11 @@ public class AsmExample extends ClassLoader implements Opcodes {
         System.out.println("*************");
 
         // uses the dynamically generated class to print 'Helloworld'  
-        exampleClass.getMethods()[0].invoke(null);  //調用changeMethodContent，修改方法內容
+        exampleClass.getMethods()[0].invoke(null);  //Change the method content by calling the changeMethodContent
 
         System.out.println("*************");
 
-        exampleClass.getMethods()[1].invoke(null); //調用execute,修改方法名
+        exampleClass.getMethods()[1].invoke(null); //Call execute to modify the method name
 
         // gets the bytecode of the Example class, and loads it dynamically  
 
@@ -301,19 +301,19 @@ public class AsmExample extends ClassLoader implements Opcodes {
 
         @Override
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-            if (cv != null && "execute".equals(name)) { //当方法名为execute时，修改方法名为execute1  
+            if (cv != null && "execute".equals(name)) { //When the method is called execute, the modified method is called execute1  
                 return cv.visitMethod(access, name + "1", desc, signature, exceptions);
             }
 
-            if ("changeMethodContent".equals(name))  //此处的changeMethodContent即为需要修改的方法  ，修改方法內容
+            if ("changeMethodContent".equals(name))  //The changeMethodContent here is the method that needs to be modified  , modify the method content
             {
                 MethodVisitor mv = cv.visitMethod(access,
                                                   name,
                                                   desc,
                                                   signature,
-                                                  exceptions);//先得到原始的方法
+                                                  exceptions);//So let's get the original method
                 MethodVisitor newMethod = null;
-                newMethod = new AsmMethodVisit(mv); //访问需要修改的方法    
+                newMethod = new AsmMethodVisit(mv); //Access needs to be modified    
                 return newMethod;
             }
             if (cv != null) {
@@ -337,15 +337,15 @@ public class AsmExample extends ClassLoader implements Opcodes {
 
         @Override
         public void visitCode() {
-            //此方法在访问方法的头部时被访问到，仅被访问一次  
-            //此处可插入新的指令  
+            //This method is accessed at the head of the access method only once  
+            //New instructions can be inserted here  
             super.visitCode();
         }
 
         @Override
         public void visitInsn(int opcode) {
-            //此方法可以获取方法中每一条指令的操作类型，被访问多次  
-            //如应在方法结尾处添加新指令，则应判断：  
+            //This method can get the operation type of each instruction in the method, which is accessed many times  
+            //If a new instruction should be added at the end of the method, it should be judged:  
             if (opcode == Opcodes.RETURN) {
                 // pushes the 'out' field (of type PrintStream) of the System class  
                 mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");

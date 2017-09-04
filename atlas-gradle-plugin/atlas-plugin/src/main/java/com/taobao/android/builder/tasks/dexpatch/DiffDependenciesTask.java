@@ -400,7 +400,7 @@ public class DiffDependenciesTask extends BaseTask {
 
         for (String key : newMap.keySet()) {
             String baseValue = baseMap.get(key);
-            //对于新增直接忽略
+            //For added direct neglect
             if (baseValue == null) {
                 continue;
             }

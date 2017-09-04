@@ -239,7 +239,7 @@ import org.gradle.api.publish.maven.tasks.GenerateMavenPom;
 /**
  * Created by wuzhong on 2017/2/9.
  *
- * 更新pom里依赖的 type 和 scope
+ * Update the pom dependencies type and scope
  *
  * @author wuzhong
  */
@@ -290,14 +290,14 @@ public class UpdatePomTask {
 
         FileUtils.moveFile(xml, backupFile);
 
-        XMLWriter writer = null;// 声明写XML的对象
+        XMLWriter writer = null;// Declares the object that writes XML
         SAXReader reader = new SAXReader();
         OutputFormat format = OutputFormat.createPrettyPrint();
-        format.setEncoding("UTF-8");// 设置XML文件的编码格式
+        format.setEncoding("UTF-8");// Sets the encoding format for the XML file
         FileOutputStream fos = new FileOutputStream(xml);
 
         try {
-            Document document = reader.read(backupFile);// 读取XML文件
+            Document document = reader.read(backupFile);// Read the XML file
 
             Element dependencies = document.getRootElement().element("dependencies");
 

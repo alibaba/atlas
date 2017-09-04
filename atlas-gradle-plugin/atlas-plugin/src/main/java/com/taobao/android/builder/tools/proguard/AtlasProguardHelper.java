@@ -279,14 +279,14 @@ public class AtlasProguardHelper {
         List<File> libs = new ArrayList<>(
             appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true));
 
-        //所有依赖的classes
+        //All dependent classes
         Profiler.enter("getDefaultClasses");
         Set<String> defaultLibClasses = getClassList(libs);
         Profiler.release();
 
         libs.addAll(mainDexJars);
 
-        //获取基础的proguard配置
+        //Get the basic proguard configuration
         List<File> defaultProguardFiles = new ArrayList<>(
             appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>()));
         Collections.sort(defaultProguardFiles);
@@ -498,7 +498,7 @@ public class AtlasProguardHelper {
         Set<File> proguardFiles = new HashSet<File>();
 
         GlobalScope globalScope = appVariantContext.getScope().getGlobalScope();
-        //增加awb的配置
+        //Add awb configuration
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
             appVariantContext.getVariantConfiguration().getFullName());
 
@@ -532,7 +532,7 @@ public class AtlasProguardHelper {
 
         File awbInOutConfig = new File(proguardOut, "awb_inout_config.cfg");
 
-        //增加awb的配置
+        //Add awb configuration
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
             variantScope.getVariantConfiguration().getFullName());
 

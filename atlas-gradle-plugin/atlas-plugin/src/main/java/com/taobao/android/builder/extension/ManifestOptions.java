@@ -220,45 +220,45 @@ import com.taobao.android.builder.extension.annotation.Config;
  */
 public class ManifestOptions {
 
-    @Config(order = 1, message = "保留的启动launch的列表", advance = false, group = "atlas")
+    @Config(order = 1, message = "Keep a list of launch launches", advance = false, group = "atlas")
     private Set<String> retainLaunches = Sets.newHashSet();
 
-    @Config(order = 2, message = "保留的权限列表", advance = false, group = "atlas")
+    @Config(order = 2, message = "Reserved permissions list", advance = false, group = "atlas")
     private Set<String> retainPermissions = Sets.newHashSet();
 
-    @Config(order = 3, message = "移除的系统权限的名称", advance = true, group = "atlas")
+    @Config(order = 3, message = "The name of the system permissions removed", advance = true, group = "atlas")
     private Set<String> removeSystemPermissions = Sets.newHashSet();
 
-    @Config(order = 4, message = "移除的自定义权限的名称", advance = true, group = "atlas")
+    @Config(order = 4, message = "The name of the removed custom permission", advance = true, group = "atlas")
     private boolean removeCustomPermission = false;
 
-    @Config(order = 2, message = "权限白名单", advance = true, group = "atlas")
+    @Config(order = 2, message = "Access list", advance = true, group = "atlas")
     private File  permissionListFile;
 
-    @Config(order = 2, message = "权限白名单", advance = true, group = "atlas")
+    @Config(order = 2, message = "Access list", advance = true, group = "atlas")
     private File  permissionJsonFile;
 
-    @Config(order = 5, message = "组件增加bundle的坐标", advance = true, group = "atlas")
+    @Config(order = 5, message = "Components add the coordinates of the bundle", advance = true, group = "atlas")
     private boolean addBundleLocation = true;
 
-    @Config(order = 6, message = "开启新增组件的功能", advance = true, group = "atlas")
+    @Config(order = 6, message = "The ability to open new components", advance = true, group = "atlas")
     private boolean addAtlasProxyComponents /*= true*/;
 
-    @Config(order = 6, message = "不进行atlas新增组件功能的channel列表", advance = true, group = "atlas")
+    @Config(order = 6, message = "A channel list that does not perform atlas added components", advance = true, group = "atlas")
     private Set<String> atlasProxySkipChannels = Sets.newHashSet(":dexmerge", ":dex2oat");
 
-    @Config(order = 7, title = "替换application",message = "使用atlas的application，包含 atlas基础初始化及multidex逻辑, 接atlas必须开启", advance = true,
+    @Config(order = 7, title = "Replace the application",message = "Use the atlas application, including atlasBasic initialization and multidex logic, Atlas must be opened", advance = true,
         group = "atlas")
     private boolean replaceApplication = true;
 
-    @Config(order = 8, title = "启用atlas multidex", message = "使用atlas的multiDex功能, 接atlas必须开启", advance = true, group = "atlas")
-    @Deprecated //根据是否是多dex自动控制，不要使用
+    @Config(order = 8, title = "To enable the atlas multidex", message = "Using atlas's multiDex function, Atlas must be opened", advance = true, group = "atlas")
+    @Deprecated //Don't use the multi-dex automatic control
     private boolean addMultiDexMetaData = true;
 
-    @Config(order = 9, message = "移除所有的provider", advance = true, group = "atlas")
+    @Config(order = 9, message = "Remove all providers", advance = true, group = "atlas")
     private boolean removeProvider = false;
 
-    @Config(order = 10, title = "不做manifest合并的bundle" ,message = "不参与manifest合并的依赖坐标，group:name,group2:name2", advance = true, group = "atlas")
+    @Config(order = 10, title = "Do not do bundle for manifest merge" ,message = "Non-participating in the manifest merge dependent coordinates, group: name, group2: name2", advance = true, group = "atlas")
     private Set<String> notMergedBundles = Sets.newHashSet();
 
     public Set<String> getNotMergedBundles() {
@@ -270,7 +270,7 @@ public class ManifestOptions {
     }
 
     /**
-     * 返回要保留的启动launch的列表
+     * Returns a list of launch launches to be retained
      *
      * @return
      */
@@ -280,7 +280,7 @@ public class ManifestOptions {
     }
 
     /**
-     * 是否移除自定义权限
+     * Whether to remove custom permissions
      *
      * @return
      */
@@ -293,7 +293,7 @@ public class ManifestOptions {
     }
 
     /**
-     * 返回需要保留的自定义权限的名称
+     * Returns the name of the custom permission to keep
      *
      * @return
      */
@@ -303,7 +303,7 @@ public class ManifestOptions {
     }
 
     /**
-     * 返回要移除的系统权限的名称
+     * Returns the name of the system authority to be removed
      *
      * @return
      */

@@ -226,7 +226,7 @@ import java.security.NoSuchAlgorithmException;
  */
 public class LocalSignHelper {
     /**
-     * 本地签名工具类
+     * Local signature tool classes
      *
      * @param inputFile
      * @param outputFile

@@ -270,7 +270,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
     }
 
     /**
-     * Awb的编译,暂不支持instantRun
+     * AwbInstantRun is not supported for the moment
      *
      * @param javacTask
      */
@@ -373,7 +373,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         javacTask.getOptions().getCompilerArgs().add(
             variantScope.getAnnotationProcessorOutputDir().getAbsolutePath());
 
-        //修改
+        //modification
 
     }
 
@@ -381,7 +381,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         FileCollection classpath = scope.getVariantScope().getJavaClasspath();
         Set<File> dependencies = new HashSet<File>();
         dependencies.addAll(classpath.getFiles());
-        //增加awb的依赖
+        //Increase the awb dependency
 
         dependencies.addAll(awbBundle.getLibraryJars());
 

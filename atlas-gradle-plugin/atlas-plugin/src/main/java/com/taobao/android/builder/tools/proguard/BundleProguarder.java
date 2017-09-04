@@ -570,7 +570,7 @@ public class BundleProguarder {
             }
         }
 
-        //缓存keep.json
+        //Keep cache. Json
         File keepFile = awbBundle.getKeepProguardFile();
         if (null != keepFile && keepFile.exists()) {
             FileUtils.copyFileToDirectory(keepFile, tmpDir);

@@ -209,7 +209,7 @@
 package com.taobao.android.builder.tools;
 
 /**
- * 判断操作系统的工具类
+ * Determine the utility class for the operating system
  * @author shenghua.nish 2014-6-22 9:19:07
  */
 public class OSUtils {

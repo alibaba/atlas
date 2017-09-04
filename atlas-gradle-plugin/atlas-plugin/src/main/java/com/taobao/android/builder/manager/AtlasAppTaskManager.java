@@ -301,7 +301,7 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 
 /**
- * MTL插件编译apk的任务管理
+ * MTLThe plug-in compiles apk's task management
  * Created by shenghua.nish on 2016-05-09 3:55.
  */
 @SuppressWarnings("ALL")
@@ -329,7 +329,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 //if (appVariantContext.getVariantData().getScope().getInstantRunBuildContext().isInInstantRunMode()) {
                 //    throw new GradleException(
-                //        "atlas plgin is not compatible with instant run， plese turn it off in your ide！");
+                //        "atlas plgin is not compatible with instant run, plese turn it off in your ide!");
                 //}
 //                new AwbProguradHook().hookProguardTask(appVariantContext);
 
@@ -596,7 +596,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         }
     }
 
-    //关闭掉系统的proguardtransform
+    //Close off the system's proguardtransform
     private void hookFastDex(AppVariantContext appVariantContext) throws Exception {
 
         if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()) {

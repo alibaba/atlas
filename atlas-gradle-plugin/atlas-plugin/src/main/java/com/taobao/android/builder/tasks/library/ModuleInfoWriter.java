@@ -236,7 +236,7 @@ public class ModuleInfoWriter {
     }
 
     public void write() {
-        //生成项目的基本信息
+        //Generate the basic information for the project
         try {
             ModuleInfo moduleInfo = new ModuleInfo();
             moduleInfo.group = project.getGroup().toString();
@@ -248,7 +248,7 @@ public class ModuleInfoWriter {
                 .replace(project.getRootDir().getAbsolutePath(), "")
                 .substring(1);
 
-            //获取android manifst
+            //Access to the android manifst
             moduleInfo.packageName = libraryVariant.getApplicationId();
 
             List<SourceProvider> sourceProviders = libraryVariant.getSourceSets();

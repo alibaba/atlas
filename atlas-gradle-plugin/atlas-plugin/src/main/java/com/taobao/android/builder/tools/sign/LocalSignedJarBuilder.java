@@ -259,7 +259,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * 本地签名工具类
+ * Local signature tool classes
  * Created by shenghua.nish on 2015-10-16 10:55.
  */
 public class LocalSignedJarBuilder {

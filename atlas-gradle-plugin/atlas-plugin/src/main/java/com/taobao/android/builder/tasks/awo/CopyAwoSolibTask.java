@@ -251,7 +251,7 @@ public class CopyAwoSolibTask extends BaseTask {
         Set<String> removeSoFiles = new HashSet<String>();
         Set<String> supportAbis = new HashSet<String>();
 
-        //为了兼容之前老的aar，awb格式
+        //In order to be compatible with older aar, awb format
         File libJniFolder = new File(awbBundle.getAndroidLibrary().getFolder(), "libs");
         if (libJniFolder.exists() && libJniFolder.isDirectory()) {
             NativeSoUtils.copyLocalNativeLibraries(libJniFolder,
@@ -282,7 +282,7 @@ public class CopyAwoSolibTask extends BaseTask {
                                                        supportAbis,
                                                        removeSoFiles);
             }
-            //为了兼容之前老的aar，awb格式
+            //In order to be compatible with older aar, awb format
             File depLibsFolder = new File(dep.getFolder(), "libs");
             if (depLibsFolder.exists() && depLibsFolder.isDirectory()) {
                 NativeSoUtils.copyLocalNativeLibraries(depLibsFolder,

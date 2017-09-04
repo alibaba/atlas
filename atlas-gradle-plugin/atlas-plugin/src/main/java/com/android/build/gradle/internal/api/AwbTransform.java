@@ -218,7 +218,7 @@ import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 
 /**
- * Awb的依赖文件的传递
+ * AwbThe transmission of dependent files
  * Created by shenghua.nish on 2016-06-12 9:48.
  */
 public class AwbTransform {

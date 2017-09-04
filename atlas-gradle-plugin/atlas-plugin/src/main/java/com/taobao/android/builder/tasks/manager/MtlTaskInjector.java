@@ -242,12 +242,12 @@ public class MtlTaskInjector {
 
         for (final BaseVariantOutputData vod : baseVariantOutputDataList) {
 
-            //TODO 如果中间步骤没有生成task怎么办
+            //TODO What if the intermediate step does not generate task
             List<Task> beforeTasks = new ArrayList<Task>();
 
             for (MtlTaskContext mtlTaskContext : mtlTaskContexts) {
 
-                //获取task实例
+                //Get the task instance
                 List<Task> tasks = new ArrayList<Task>();
                 if (mtlTaskContext.isSystemTask()) {
                     if (null != mtlTaskContext.getSysTask()) {

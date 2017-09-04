@@ -223,7 +223,7 @@ public class TBuildType {
 
     private File baseApFile;
 
-    @Config(title = "基线的依赖坐标",message = "如： com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
+    @Config(title = "The baseline depends on the coordinates",message = "Such as: com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
     private String baseApDependency;
 
     private PatchConfig patchConfig;

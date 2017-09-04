@@ -221,7 +221,7 @@ import org.gradle.api.Project;
 import org.gradle.api.logging.Logging;
 
 /**
- * 任务管理的基类
+ * Base classes for task management
  * Created by shenghua.nish on 2016-05-10 9:51.
  */
 public abstract class AtlasBaseTaskManager<T extends BaseExtension> {
@@ -261,7 +261,7 @@ public abstract class AtlasBaseTaskManager<T extends BaseExtension> {
 
         resolveDependencies();
 
-        //初始化配置
+        //Initialization configuration
         parseConfig();
 
         runTask();
@@ -272,12 +272,12 @@ public abstract class AtlasBaseTaskManager<T extends BaseExtension> {
     }
 
     /**
-     * 运行inject的任务haob
+     * Run the inject task haob
      */
     public abstract void runTask();
 
     /**
-     * 解析配置文件
+     * Parse configuration file
      */
     public void parseConfig() {
     }
