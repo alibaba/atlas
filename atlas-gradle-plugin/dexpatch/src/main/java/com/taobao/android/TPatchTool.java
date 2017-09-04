@@ -323,6 +323,8 @@ public class TPatchTool extends BasePatchTool {
 
     public static Map<String,LinkedHashMap>bundleInfos = new HashMap<>();
 
+    private boolean dexPatch;
+
     private Map<String, Map<String, ClassDef>> bundleClassMap = new ConcurrentHashMap<String, Map<String, ClassDef>>();
 
     public void setNoPatchBundles(List<String> noPatchBundles) {
@@ -397,6 +399,9 @@ public class TPatchTool extends BasePatchTool {
         Profiler.enter("prepare");
         isTpatch = true;
         pName = productName;
+        if (baseApkBO.getVersionName().equals(newApkBO.getVersionName())){
+            dexPatch = true;
+        }
         File hisPatchJsonFile = new File(outPatchJson.getParentFile(),"patchs-"+newApkBO.getVersionName()+".json");
         hisTpatchFolder = new File(outPatchDir.getParentFile().getParentFile().getParentFile().getParentFile(),
                                    "hisTpatch");
@@ -725,6 +730,9 @@ public class TPatchTool extends BasePatchTool {
                              destDex,
                              tmpDexFolder,
                              false);
+        if (dexPatch){
+            return;
+        }
 
         // 比较其他资源文件的差异性
         Collection<File> newBundleResFiles = FileUtils.listFiles(newBundleUnzipFolder,
@@ -998,6 +1006,9 @@ public class TPatchTool extends BasePatchTool {
                                                       File newApkUnzipFolder,
                                                       PatchInfo curPatchInfo,
                                                       String patchHistoryUrl) throws IOException, PatchException {
+        if (dexPatch){
+            return new BuildPatchInfos();
+        }
         BuildPatchInfos historyBuildPatchInfos = null;
         String response = null;
         if (!StringUtils.isEmpty(patchHistoryUrl)) {
