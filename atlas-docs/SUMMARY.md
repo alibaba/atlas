@@ -1,4 +1,5 @@
 # Summary
+
 * [Atlas](README.md)
 * [Overview](README.md)
 * [Frequently asked questions(FAQs)](README.md)
@@ -10,6 +11,3 @@
 	* [App upgrade](README.md)
 * [Guides](README.md)
 * [Best practices for user experience](README.md)
-
-
-
