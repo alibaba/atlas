@@ -1,0 +1,127 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.taobao.atlas'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        applicationId "com.taobao.atlas.complex"
+        versionCode 1
+        versionName version
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+
+        ndk {
+            abiFilters "armeabi", "x86"
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile rootProject.ext.appcompat
+    compile rootProject.ext.atlas_core
+    compile rootProject.ext.atlas_update
+}
+
+/*********************************** Atlas Config *****************************************/
+
+def apVersion = getEnvValue("apVersion", "");
+
+atlas {
+    atlasEnabled true
+    tBuildConfig {
+        //autoStartBundles = [''] //自启动bundle配置
+        //outOfApkBundles = ['remotebundle']
+        //preLaunch = 'com.taobao.atlas.base.PreLaunch'
+        classInject false
+    }
+
+    manifestOptions {
+        addAtlasProxyComponents false
+    }
+
+    patchConfigs {
+        debug {
+            createTPatch true
+        }
+    }
+
+    buildTypes {
+        debug {
+            if (apVersion) {
+                baseApDependency "com.taobao.android.atlasdemo:AP-debug:${apVersion}@ap"
+                patchConfig patchConfigs.debug
+            }
+        }
+    }
+}
+
+
+String getEnvValue(key, defValue) {
+    def val = System.getProperty(key);
+    if (null != val) {
+        return val;
+    }
+    val = System.getenv(key);
+    if (null != val) {
+        return val;
+    }
+    return defValue;
+}
+
+/********************************* Publish Config *********************************/
+
+group = 'com.taobao.atlas.base'
+version = getEnvValue("versionName", "1.0.0");
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+publishing {
+    repositories {
+        mavenLocal()
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifact "${project.buildDir}/outputs/apk/${project.name}-debug.ap"
+            artifactId "AP-debug"
+        }
+    }
+}
+
+/********************************* Do Sth For Demo *********************************/
+
+tasks.whenTaskAdded { task ->
+    if (task.name.contains("DebugAndroidTest")) {
+        task.setEnabled(false);
+    }
+    if (task.name.contains("assemble")) {
+        def files = null;
+        def file = new File(task.project.getBuildDir(), "outputs");
+        if (file.exists() && new File(file, "tpatch-debug").exists()) {
+            files = new File(file, "tpatch-debug").listFiles();
+        }
+        if (files != null) {
+            for (File file1 : files) {
+                if (file1.getName().endsWith(".json") || file1.getName().endsWith(".tpatch")) {
+
+                    if (!new File(task.project.getRootDir(), "hisTpatch").exists()) {
+                        new File(task.project.getRootDir(), "hisTpatch").mkdirs();
+                    }
+                    org.apache.commons.io.FileUtils.copyFileToDirectory(file1, new File(task.project.getRootDir(), "hisTpatch"));
+                }
+            }
+        }
+    }
+}
