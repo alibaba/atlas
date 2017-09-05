@@ -23,6 +23,7 @@ import org.gradle.api.Project;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Created by chenhjohn on 2017/7/16.
@@ -48,6 +49,7 @@ public class ApDownloadTask extends Download {
         }
         String downloadUrl = getDownloadUrl(mtlUrl);
         checkNotNull(downloadUrl, "Missing ap downloadUrl for mtlConfigUrl" + mtlUrl);
+        checkState(!"null".equals(downloadUrl), "Missing ap downloadUrl for mtlConfigUrl " + mtlUrl);
         src(downloadUrl);
         dest(apPath);
         super.download();
