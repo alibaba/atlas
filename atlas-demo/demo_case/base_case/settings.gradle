@@ -1,3 +1,2 @@
 include ':app'
 include ':components:bundle'
-include ':components:maindex'

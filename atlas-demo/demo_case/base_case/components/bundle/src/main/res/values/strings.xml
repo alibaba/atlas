@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Bundle</string>
+    <string name="bundle_start_main">back to DemoActivity </string>
+    <string name="bundle_des">BundleActivity</string>
 </resources>

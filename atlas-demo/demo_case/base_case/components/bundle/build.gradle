@@ -18,6 +18,6 @@ dependencies {
     providedCompile rootProject.ext.appcompat
 }
 
-//for maven publish
-group = 'com.atlas.base.bundle'
+//bundle manager
+group = 'com.taobao.atlas.tbundle'
 version = '1.0.0'

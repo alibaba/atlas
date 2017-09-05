@@ -1,4 +1,4 @@
-package com.taobao.atlas.base.maindex;
+package com.taobao.atlas.bundle;
 
 import org.junit.Test;
 

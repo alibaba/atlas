@@ -1,4 +1,4 @@
-package com.taobao.atlas.base.maindex;
+package com.taobao.atlas.bundle;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.taobao.atlas.base.maindex.test", appContext.getPackageName());
+        assertEquals("com.taobao.atlas.bundle.test", appContext.getPackageName());
     }
 }
