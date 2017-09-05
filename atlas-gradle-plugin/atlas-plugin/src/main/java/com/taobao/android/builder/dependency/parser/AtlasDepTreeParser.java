@@ -292,6 +292,10 @@ public class AtlasDepTreeParser {
         ensureConfigured(compileClasspath);
         ensureConfigured(packageClasspath);
         ensureConfigured(bundleClasspath);
+        if (apDependencies != null) {
+            apDependencies.configureAwbDependencies(variantDeps.getCompileConfiguration());
+            apDependencies.configureAwbDependencies(variantDeps.getPackageConfiguration());
+        }
 
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
         collectArtifacts(compileClasspath, artifacts);
