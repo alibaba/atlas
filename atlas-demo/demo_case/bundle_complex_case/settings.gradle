@@ -1,5 +1,5 @@
 include ':app'
-include ':componets:maindex'
+include ':componets:base'
 include ':componets:firstbundle'
 include ':componets:secondbundle'
 include ':componets:publicbundle'

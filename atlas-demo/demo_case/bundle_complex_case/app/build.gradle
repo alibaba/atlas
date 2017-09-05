@@ -15,6 +15,8 @@ android {
         ndk {
             abiFilters "armeabi", "x86"
         }
+
+        resConfigs "en", "zh-rCN", "zh-rTW"
     }
     buildTypes {
         release {
@@ -26,7 +28,8 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile project(':componets:maindex')
+    compile rootProject.ext.appcompat
+    compile project(':componets:base')
     bundleCompile project(':componets:firstbundle')
     bundleCompile project(':componets:secondbundle')
     bundleCompile project(':componets:publicbundle')
