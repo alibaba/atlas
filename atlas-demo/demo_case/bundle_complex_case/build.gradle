@@ -34,5 +34,4 @@ ext {
     //dependencies
     appcompat = 'com.android.support:appcompat-v7:25.3.1'
     atlas_core = 'com.taobao.android:atlas_core:5.0.7.41@aar'
-    atlas_update = 'com.taobao.android:atlasupdate:1.1.4.11@aar'
 }

@@ -1,7 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.taobao.atlas'
-
-atlas.bundleConfig.awbBundle = true
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -15,8 +12,9 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    providedCompile rootProject.ext.appcompat
+    compile rootProject.ext.appcompat
     compile rootProject.ext.atlas_core
+    compile project(':componets:utils')
 }
 
 //bundle manager

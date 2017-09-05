@@ -1,4 +1,4 @@
-package com.taobao.atlas.complex.maindex;
+package com.taobao.atlas.complex.base;
 
 import android.app.Application;
 import android.content.Context;

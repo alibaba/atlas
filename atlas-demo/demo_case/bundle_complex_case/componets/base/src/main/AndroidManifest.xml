@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 
-    package="com.taobao.atlas.complex.maindex">
+    package="com.taobao.atlas.complex.base">
 
     <application>
         <activity android:name=".MainActivity">

@@ -18,6 +18,7 @@ android {
 
         resConfigs "en", "zh-rCN", "zh-rTW"
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -28,7 +29,6 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile rootProject.ext.appcompat
     compile project(':componets:base')
     bundleCompile project(':componets:firstbundle')
     bundleCompile project(':componets:secondbundle')
@@ -42,9 +42,9 @@ def apVersion = getEnvValue("apVersion", "");
 atlas {
     atlasEnabled true
     tBuildConfig {
-        //autoStartBundles = [''] //自启动bundle配置
+        autoStartBundles = ['com.taobao.atlas.complex.firstbundle']
         //outOfApkBundles = ['remotebundle']
-        //preLaunch = 'com.taobao.atlas.base.PreLaunch'
+        preLaunch = 'com.taobao.atlas.complex.base.PreLaunch'
         classInject false
     }
 
