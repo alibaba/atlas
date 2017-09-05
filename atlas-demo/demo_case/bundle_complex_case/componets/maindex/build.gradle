@@ -15,9 +15,9 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    providedCompile rootProject.ext.appcompat
+    compile rootProject.ext.appcompat
 }
 
 //bundle manager
-group = 'com.taobao.atlas.bundle'
+group = 'com.taobao.atlas.complex.maindex'
 version = '1.0.0'
