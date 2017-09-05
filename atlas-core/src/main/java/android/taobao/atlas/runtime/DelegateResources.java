@@ -518,7 +518,8 @@ public class DelegateResources extends Resources {
             if(Build.VERSION.SDK_INT>=24){
                 return true;
             }else if(!hasCreatedAssetsManager || Build.VERSION.SDK_INT<=20 ||
-                    Build.BRAND.equalsIgnoreCase("sony") || Build.BRAND.equalsIgnoreCase("semc")){
+                    Build.BRAND.equalsIgnoreCase("sony") || Build.BRAND.equalsIgnoreCase("semc") ||
+                    (Build.BRAND.equalsIgnoreCase("xiaomi")&& (Build.PRODUCT.equalsIgnoreCase("JurassicPark") || Build.PRODUCT.equalsIgnoreCase("queenchristina")))){
                 hasCreatedAssetsManager = true;
                 return false;
             }else{

@@ -378,7 +378,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         sIsIgnoreFailure = true;
         ClassLoader = Hack.into(java.lang.ClassLoader.class);
         DexClassLoader = Hack.into(dalvik.system.DexClassLoader.class);
-        LexFile = Hack.into("dalvik.system.LexFile");
+//        LexFile = Hack.into("dalvik.system.LexFile");
         PackageParser$Component = Hack.into("android.content.pm.PackageParser$Component");
         PackageParser$Activity = Hack.into("android.content.pm.PackageParser$Activity");
         PackageParser$Service = Hack.into("android.content.pm.PackageParser$Service");
