@@ -82,6 +82,9 @@ public class PatchMerger {
             //find original bundle and store in pair struct
             for (int x = 0; x < updateInfo.updateBundles.size(); x++) {
                 UpdateInfo.Item item = updateInfo.updateBundles.get(x);
+                if(item.inherit){
+                    continue;
+                }
                 String bundleName = item.name;
                 String entryNamePrefix = String.format("%s%s", "lib", bundleName.replace(".", "_"));
                 String entryName = entryNamePrefix + ".so";

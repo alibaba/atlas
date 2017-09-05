@@ -716,7 +716,8 @@ public class DelegateResources extends Resources {
         private boolean hasCreatedAssetsManager = false;
         private synchronized boolean supportExpandAssetManager(){
             if(!hasCreatedAssetsManager || Build.VERSION.SDK_INT<=20 ||
-                    Build.BRAND.equalsIgnoreCase("sony") || Build.BRAND.equalsIgnoreCase("semc")){
+                    Build.BRAND.equalsIgnoreCase("sony") || Build.BRAND.equalsIgnoreCase("semc") ||
+                    (Build.BRAND.equalsIgnoreCase("xiaomi")&& (Build.MODEL.toLowerCase().startsWith("mibox")))){
                 hasCreatedAssetsManager = true;
                 return false;
             }else{

@@ -374,6 +374,20 @@ public class BundleInstaller implements Callable{
         }
     }
 
+    public void installSync(String[] location){
+        if(location!=null){
+            release();
+            mTransitive = false;
+            mLocation = location;
+            try {
+                installBundleInternal(true);
+            }catch(Throwable e){
+                e.printStackTrace();
+                BundleInstallerFetcher.recycle(this);
+            }
+        }
+    }
+
     /////////////////////////////////////安装内部bundle////////////////////////////////////
     /************************************************************************************/
 
@@ -485,7 +499,7 @@ public class BundleInstaller implements Callable{
                     synchronized (this) {
                         deliveryTask(sync);
                         Log.d("BundleInstaller", "call wait:" + this);
-                        this.wait(20000);
+                        this.wait(30000);
                         BundleInstallerFetcher.recycle(this);
                     }
                 }

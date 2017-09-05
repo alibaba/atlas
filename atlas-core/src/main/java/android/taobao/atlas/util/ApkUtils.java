@@ -210,6 +210,8 @@ package android.taobao.atlas.util;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -344,6 +346,21 @@ public class ApkUtils {
             }
         }
         return false;
+    }
+
+    public static void copyDirectory(File sourceDir,File targetDir) throws Exception{
+        File[] files = sourceDir.listFiles();
+        for(File childFile : files){
+            if(childFile.isFile()){
+                File dir = new File(targetDir.getAbsolutePath());
+                if(!dir.exists()){
+                    dir.mkdirs();
+                }
+                copyInputStreamToFile(new FileInputStream(childFile),new File(dir,childFile.getName()));
+            }else{
+                copyDirectory(childFile,new File(targetDir,childFile.getName()));
+            }
+        }
     }
     
     public static void copyInputStreamToFile(InputStream input, File file) throws IOException {

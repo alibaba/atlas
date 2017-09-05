@@ -38,42 +38,58 @@ public class PatchInstaller {
         }
 
         Iterator entries = mergeOutputs.entrySet().iterator();
-        String[] bundleNameList = new String[mergeOutputs.size()];
-        File[] bundleFilePathList = new File[mergeOutputs.size()];
-        String[] upgradeVersions = new String[mergeOutputs.size()];
-        long[] dexPatchVersions = new long[mergeOutputs.size()];
-        int index = 0;
+        List<String> bundleNameList = new ArrayList<>();
+        List<File> bundleFilePathList = new ArrayList<>();
+        List<String> upgradeVersions = new ArrayList<>();
+        List<Long> dexPatchVersions = new ArrayList<>();
         while (entries.hasNext()) {
             Map.Entry entry = (Map.Entry) entries.next();
-            bundleNameList[index] = (String) entry.getKey();
+            bundleNameList.add((String) entry.getKey());
             Pair<String, UpdateInfo.Item> bundlePair = (Pair<String, UpdateInfo.Item>) entry.getValue();
             if(bundlePair.second.reset){
                 if (!updateInfo.dexPatch) {
-                    upgradeVersions[index] = "-1";
+                    upgradeVersions.add("-1");
                 } else {
-                    dexPatchVersions[index] = -1;
+                    dexPatchVersions.add(Long.valueOf(-1));
                 }
             }else {
-                bundleFilePathList[index] = new File(bundlePair.first);
-                if (!bundleFilePathList[index].exists()) {
+                File bundleFile = new File(bundlePair.first);
+                bundleFilePathList.add(bundleFile);
+                if (!bundleFile.exists()) {
                     throw new BundleException("bundle input is wrong : " + bundleFilePathList);
                 }
                 if (!updateInfo.dexPatch) {
-                    upgradeVersions[index] = bundlePair.second.unitTag;
+                    upgradeVersions.add(bundlePair.second.unitTag);
                 } else {
-                    dexPatchVersions[index] = bundlePair.second.dexpatchVersion;
+                    dexPatchVersions.add(bundlePair.second.dexpatchVersion);
                 }
             }
-            index++;
         }
 
-        List<String> realInstalledBundle = Arrays.asList(bundleNameList);
         for (UpdateInfo.Item bundle : updateInfo.updateBundles) {
-            if (!realInstalledBundle.contains(bundle.name) && AtlasBundleInfoManager.instance().isInternalBundle(bundle.name)) {
-                throw new BundleException("bundle  " + bundle.name + " is error");
+            if (!bundleNameList.contains(bundle.name) && AtlasBundleInfoManager.instance().isInternalBundle(bundle.name)) {
+                if(bundle.inherit) {
+                    bundleNameList.add(bundle.name);
+                    bundleFilePathList.add(new File("inherit"));
+                    if(!updateInfo.dexPatch){
+                        upgradeVersions.add(bundle.unitTag);
+                    }else{
+                        dexPatchVersions.add(bundle.dexpatchVersion);
+                    }
+                }else{
+                    throw new BundleException("bundle  " + bundle.name + " is error");
+                }
             }
         }
-        Framework.update(!updateInfo.dexPatch,bundleNameList,bundleFilePathList,upgradeVersions,dexPatchVersions,updateInfo.updateVersion,updateInfo.lowDisk);
+
+        String[] bundleNameArray = bundleNameList.toArray(new String[bundleNameList.size()]);
+        File[] bundleFilePathArray = bundleFilePathList.toArray(new File[bundleFilePathList.size()]);
+        String[] updateVersionArray = upgradeVersions.toArray(new String[upgradeVersions.size()]);
+        long[] dexPatchVersionArray = new long[dexPatchVersions.size()];
+        for(int x=0;x<dexPatchVersions.size();x++){
+            dexPatchVersionArray[x] = dexPatchVersions.get(x);
+        }
+        Framework.update(!updateInfo.dexPatch,bundleNameArray,bundleFilePathArray,updateVersionArray,dexPatchVersionArray,updateInfo.updateVersion,updateInfo.lowDisk);
 
     }
 }
