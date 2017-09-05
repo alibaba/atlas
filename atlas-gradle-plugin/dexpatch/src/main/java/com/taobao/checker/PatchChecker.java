@@ -35,8 +35,10 @@ public class PatchChecker implements Checker{
         }
         for (Map.Entry entry:bundleInfos.entrySet()){
             BundleListing.BundleInfo bundleInfo = (BundleListing.BundleInfo) entry.getValue();
-            if (!bundleInfo.getCurrent_unique_tag().equals(bundleInfo.getUnique_tag())){
-                changedBundles.add(bundleInfo.getPkgName());
+            if (bundleInfo.getCurrent_unique_tag()!= null) {
+                if (!bundleInfo.getCurrent_unique_tag().equals(bundleInfo.getUnique_tag())) {
+                    changedBundles.add(bundleInfo.getPkgName());
+                }
             }
         }
         if (!file.exists()){

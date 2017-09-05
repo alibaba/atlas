@@ -36,7 +36,9 @@ public class BundleListingUtil {
             if (currentBundleInfo==null) {
                 info.setCurrent_unique_tag(info.getUnique_tag());
             }else {
-                info.setCurrent_unique_tag(currentBundleInfo.get(info.getPkgName()).getUnique_tag());
+                if (currentBundleInfo.get(info.getPkgName())!= null){
+                    info.setCurrent_unique_tag(currentBundleInfo.get(info.getPkgName()).getUnique_tag());
+                }
             }
 
             infos.put(info.getPkgName(),info);
