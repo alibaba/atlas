@@ -1,0 +1,38 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
+        jcenter()
+    }
+    dependencies {
+        //classpath 'com.android.tools.build:gradle:2.3.1'
+        classpath "com.taobao.android:atlasplugin:2.3.3.rc12"
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+ext {
+    //build
+    compileSdkVersion = 25
+    buildToolsVersion = '25.0.2'
+    minSdkVersion = 15
+    targetSdkVersion = 25
+
+    //dependencies
+    appcompat = 'com.android.support:appcompat-v7:25.3.1'
+    atlas_core = 'com.taobao.android:atlas_core:5.0.7.41@aar'
+    support_design = 'com.android.support:design:25.1.0'
+}

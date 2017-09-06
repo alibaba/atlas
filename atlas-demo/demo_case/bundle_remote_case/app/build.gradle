@@ -1,0 +1,97 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.taobao.atlas'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        applicationId "com.taobao.atlas.remote"
+        versionCode 1
+        versionName version
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+
+        ndk {
+            abiFilters "armeabi", "x86"
+        }
+
+        resConfigs "en", "zh-rCN", "zh-rTW"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(':componets:base')
+    bundleCompile project(':componets:localbundle')
+    bundleCompile project(':componets:remotebundle')
+}
+
+/*********************************** Atlas Config *****************************************/
+
+def apVersion = getEnvValue("apVersion", "");
+
+atlas {
+    atlasEnabled true
+    tBuildConfig {
+        outOfApkBundles = ['remotebundle']
+        classInject false
+    }
+
+    patchConfigs {
+        debug {
+            createTPatch true
+        }
+    }
+
+    buildTypes {
+        debug {
+            if (apVersion) {
+                baseApDependency "com.taobao.android.atlasdemo:AP-debug:${apVersion}@ap"
+                patchConfig patchConfigs.debug
+            }
+        }
+    }
+}
+
+String getEnvValue(key, defValue) {
+    def val = System.getProperty(key);
+    if (null != val) {
+        return val;
+    }
+    val = System.getenv(key);
+    if (null != val) {
+        return val;
+    }
+    return defValue;
+}
+
+/********************************* Publish Config *********************************/
+
+group = 'com.taobao.atlas.remote'
+version = getEnvValue("versionName", "1.0.0");
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+publishing {
+    repositories {
+        mavenLocal()
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifact "${project.buildDir}/outputs/apk/${project.name}-debug.ap"
+            artifactId "AP-debug"
+        }
+    }
+}

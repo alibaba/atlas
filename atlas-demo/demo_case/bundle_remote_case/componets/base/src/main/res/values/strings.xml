@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">bundle_remote_case</string>
+    <string name="btn_start_local_bundle">local bundle</string>
+    <string name="btn_start_remote_bundle">remote bundle</string>
+    <string name="hint_before_load_remote_bundle">before click \'remote bundle\',\n
+        make sure RemoteBundle has been pushed in your devices \n
+        just run push_helper.sh
+    </string>
+</resources>

@@ -1,0 +1,4 @@
+include ':app'
+include ':componets:localbundle'
+include ':componets:remotebundle'
+include ':componets:base'
