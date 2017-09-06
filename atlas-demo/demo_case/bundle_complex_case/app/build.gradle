@@ -103,29 +103,3 @@ publishing {
         }
     }
 }
-
-/********************************* Do Sth For Demo *********************************/
-
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("DebugAndroidTest")) {
-        task.setEnabled(false);
-    }
-    if (task.name.contains("assemble")) {
-        def files = null;
-        def file = new File(task.project.getBuildDir(), "outputs");
-        if (file.exists() && new File(file, "tpatch-debug").exists()) {
-            files = new File(file, "tpatch-debug").listFiles();
-        }
-        if (files != null) {
-            for (File file1 : files) {
-                if (file1.getName().endsWith(".json") || file1.getName().endsWith(".tpatch")) {
-
-                    if (!new File(task.project.getRootDir(), "hisTpatch").exists()) {
-                        new File(task.project.getRootDir(), "hisTpatch").mkdirs();
-                    }
-                    org.apache.commons.io.FileUtils.copyFileToDirectory(file1, new File(task.project.getRootDir(), "hisTpatch"));
-                }
-            }
-        }
-    }
-}

@@ -1,5 +1,7 @@
-package com.taobao.atlas.complex.utils;
+package com.taobao.atlas.complex.base.middleware;
 
+
+import com.taobao.atlas.complex.base.BuildConfig;
 
 /**
  * Created by zhongcang on 2017/9/5.

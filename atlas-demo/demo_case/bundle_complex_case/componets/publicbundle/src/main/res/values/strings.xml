@@ -1,3 +1,3 @@
 <resources>
-    <string name="app_name">publicbundle</string>
+    <string name="usage_bundle_dependencies">usage for bundle dependencies\n sourceCode in FirstBundle and PublicBundle</string>
 </resources>

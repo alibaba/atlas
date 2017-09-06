@@ -16,7 +16,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     providedCompile rootProject.ext.appcompat
-    providedCompile project(':componets:utils')
+    providedCompile project(':componets:base')
 }
 
 //bundle manager

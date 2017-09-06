@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">"BundleComplex "</string>
+    <string name="app_name">"BaseComplex "</string>
+    <string name="title_base">Base</string>
+    <string name="title_first">First</string>
+    <string name="title_second">Second</string>
+    <string name="activity_base_des">In Base Activity</string>
 </resources>

@@ -1,0 +1,4 @@
+{
+  "name": "firstbundle",
+  "dependency": ["com.taobao.atlas.complex.publicbundle"]
+}

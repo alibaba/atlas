@@ -5,9 +5,9 @@
     android:gravity="center">
 
     <TextView
-        android:id="@+id/text"
+        android:id="@+id/who_am_i"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center" />
-
+        android:gravity="center"
+        android:text="@string/usage_fragment_content" />
 </LinearLayout>

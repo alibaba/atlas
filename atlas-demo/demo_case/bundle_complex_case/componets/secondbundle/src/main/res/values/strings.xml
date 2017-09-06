@@ -1,3 +1,3 @@
 <resources>
-    <string name="app_name">SecondBundle</string>
+    <string name="usage_fragment_content">usage for BundleFragment in MainDex \n sourceCode in Base and FirstBundle</string>
 </resources>
