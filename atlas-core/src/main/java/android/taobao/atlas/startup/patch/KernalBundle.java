@@ -635,14 +635,15 @@ public class KernalBundle{
                 }
 
                 //增加kernal bundle
-                if (Build.VERSION.SDK_INT > 20 && !vmSafeMode) {
-                     success = replaceElement(dexPathList, "dexElements", element[0]);
-                    if(!success){
-                        throw new IOException("replaceElement failed");
-                    }
-                } else {
-                    expandFieldArray(dexPathList, "dexElements", element);
-                }
+                expandFieldArray(dexPathList, "dexElements", element);
+//                if (Build.VERSION.SDK_INT > 20 && !vmSafeMode) {
+//                     success = replaceElement(dexPathList, "dexElements", element[0]);
+//                    if(!success){
+//                        throw new IOException("replaceElement failed");
+//                    }
+//                } else {
+//                    expandFieldArray(dexPathList, "dexElements", element);
+//                }
             }
             //增加kernal bundle library
             if (libraryDirectory!=null && !TextUtils.isEmpty(libraryDirectory.getAbsolutePath()) && libraryDirectory.exists()) {

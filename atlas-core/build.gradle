@@ -23,7 +23,7 @@ repositories {
 
 group = 'com.taobao.android'
 description = """atlas_core"""
-version '5.0.7.42-fix-safeproguard2-SNAPSHOT'
+version '5.0.7.44'
 
 
 sourceCompatibility = 1.7
@@ -57,7 +57,31 @@ tasks.whenTaskAdded {task ->
             new File(task.getDestinationDir(),"android/taobao/atlas/framework/FrameworkProperties.class").delete();
         }
     }
+
+//    if(task.name == "bintrayUpload"){
+//        task.doFirst{
+//            println "tag has been created!"
+//        }
+//
+//        task.doLast {
+//            String newTag = "v${version}"
+//            println "new Tag is ${newTag}"
+//            "git tag v${version}".execute()
+//            "git push origin v${version}".execute()
+//            println "tag v${version} has been created!"
+//        }
+//    }
+
 }
+
+
+project.gradle.buildFinished{
+    "git tag v${version}".execute()
+    "git push origin v${version}".execute()
+    "git push origin v${version}".execute()
+    println "tag v${version} has been created!"
+}
+
 
 
 
