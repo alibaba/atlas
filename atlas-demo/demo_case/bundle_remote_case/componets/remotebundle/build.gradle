@@ -1,0 +1,24 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.taobao.atlas'
+
+atlas.bundleConfig.awbBundle = true
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    providedCompile rootProject.ext.appcompat
+    providedCompile project(':componets:base')
+}
+
+//bundle manager
+group = 'com.taobao.atlas.remote.remotebundle'
+version = '1.0.0'
