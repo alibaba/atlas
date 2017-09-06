@@ -2,7 +2,7 @@
 
 * [Atlas](README.md)
 * [Overview](README.md)
-* [Frequently asked questions(FAQs)](README.md)
+* [Frequently asked questions(FAQs)](FAQ.md)
 * [Code samples](README.md)
 * Getting started
 	* [create your first Atlas app](README.md)
