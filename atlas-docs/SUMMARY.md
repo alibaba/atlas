@@ -6,9 +6,9 @@
 * [Code samples](code_sample.md)
 * Getting started
     * [create your first Atlas app](create_first_app.md)
-    * [Project structure](README.md)
-    * [Instant build](README.md)
-    * [App upgrade](README.md)
+	* [Project structure](structure.md)
+	* [Instant build](README.md)
+	* [App upgrade](README.md)
 * [Guides](README.md)
 * [Best practices for user experience](README.md)
 
