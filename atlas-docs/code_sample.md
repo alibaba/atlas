@@ -60,7 +60,6 @@ __Demo path__: `atlas/atlas-demo/demo_case/bundle_remote_case`
 ### Step 1. Create bundle
 
 ```
-.
 ├── app
 │   ├── build.gradle
 │   ├── libs
@@ -83,32 +82,35 @@ __Demo path__: `atlas/atlas-demo/demo_case/bundle_remote_case`
 
 ```
 
-
 ### Step 2. Config RemoteBundle
 
-1. open build.gradle
 
-	```
-	└── app
-    	└── build.gradle
-	```
-	
-2. add config
+```
+└── app
+    └── build.gradle
+```
 
-	```
-	dependencies {
-    	bundleCompile project(':componets:remotebundle')
+
+```
+//compile remotebundle
+dependencies {
+    bundleCompile project(':componets:remotebundle')
+}
+
+atlas {
+	tBuildConfig {
+		//set bundle is out Of Apk
+		outOfApkBundles = ['remotebundle']
 	}
-
-	atlas {
-		tBuildConfig {
-        outOfApkBundles = ['remotebundle']
-		}
-	}
+}
 ```
 
 
 ### Step 3. Trigger of load remoteBundle
+
+
+- when to load remote bundle (Activity not found)
+- where to load remote bundle (`/sdcard/Android/data/pkg/cache/`)
 
 ```
 public class DemoApplication extends Application {
@@ -119,6 +121,7 @@ public class DemoApplication extends Application {
         Atlas.getInstance().setClassNotFoundInterceptorCallback(new ClassNotFoundInterceptorCallback() {
             @Override
             public Intent returnIntent(Intent intent) {
+            	//...
                 File remoteBundleFile = new File(activity.getExternalCacheDir(), "lib" + bundleName.replace(".", "_") + ".so");
                 String path = remoteBundleFile.getAbsolutePath();
                 PackageInfo info = activity.getPackageManager().getPackageArchiveInfo(path, 0);
@@ -167,3 +170,72 @@ startActivity(new Intent().setClassName(
 
 
 ## Usage for bundle communication
+
+Two ways for bundle communicatio
+
+1. aidl (recommend)
+2. bundle dependencies
+
+### Aidl (recommend)
+
+We recommend use aidl for bundle communication. 
+
+- Implement the aidl within each bundle
+- Provide the interface to the caller
+
+### Bundle dependencies
+
+- Bundle dependencies can be dangerous if used improperly
+- Bundle dependencies is against the encapsulation of the Bundle itself
+
+
+`demo path: atlas/atlas-demo/demo_case/base_case`
+
+#### Tree of Componets
+
+```
+└── componets
+	   ├── firstbundle
+	   │   ├── build.gradle
+	   │   ├── bundleBaseInfoFile.json
+	   │   ├── libs
+	   │   └── src
+	   └── publicbundle
+	       ├── build.gradle
+	       ├── libs
+	       └── src
+```
+
+#### Config
+
+
+1. Edit build.gradle (firstbundle)
+
+	```
+	dependencies {
+		providedCompile project(':componets:publicbundle')
+	}
+	```
+
+2. Edit bundleBaseInfoFile.json(firstbundle)
+
+	```
+	{
+  		"name": "firstbundle",
+  		"dependency": ["com.taobao.atlas.complex.publicbundle"]
+	}
+	```
+	means `Firstbundle` depend on `PublicBundle`
+	
+3. Call method in Firstbundle
+	
+	```
+	//com.taobao.atlas.complex.firstbundle
+	
+	 private void intiView() {
+        TextView content = (TextView) findViewById(R.id.text);
+        //LibUtils is publicbundle class
+        content.setText(LibUtils.getShowText());
+    }
+	```
+
