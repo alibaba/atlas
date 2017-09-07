@@ -2,7 +2,7 @@
 
 ##Native Android apps, without the installation
 
-An evolution in app development, Atlas split your app code to many bundles modules which is decouple with each other, And the Apk File built by Atlas plugin is also different from the default apk. It may has some small apk in libs or assets which we called them bundles. Every bundle has it's own dex and res just like default apk. Usually a bundle means an independent individual. 
+An evolution in app development, Atlas split your app code to many bundle-modules which is decouple with each other, And the Apk File built by Atlas plugin is also different from the default apk. It may has some small apk in libs or assets which we called them bundles. Every bundle has it's own dex and res just like default apk. Usually a bundle means an independent individual. 
 
 Atlas allows Android users to run your bundles instantly, without installation. Android users experience what they love about apps—fast and beautiful user interfaces, high performance, and great capabilities—with just a tap.
 

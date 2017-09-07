@@ -1,10 +1,10 @@
 # Overview of Atlas Framework
-Atlas provides a unique way to for code decoupling.It uses a new concept called bundle(just like bundle in osgi). A bundle module is similar to Android app module.It can almost include everything needed to build app. It become an small apk after compiling,at last compiling step we changed the Modify the extension name(.apk) of bundle to '.so' and stored it to the final shell apk. We usually called the shell apk **Base bundle** that contains other bundles 
+Atlas provides a unique way  for code decoupling. It uses a new concept called bundle(just like bundle in osgi). A bundle module is similar to an Android app module.It can almost include everything needed to build app. It become an small apk after bundle compiled,at last compiling step we change the extension name(.apk) of bundle to '.so' and stored it to the final shell apk. We usually call the shell apk **Base bundle** that contains other bundles 
 
 
-**why we need bundle?**  A bundle means an independent individual and it has a clear boundary with other bundles. usually they dont have class reference with each other(except **public bundle**).for example:we can change the android library to bundle module which like search,detail,login and others that are no many reference. It is very useful for developing. And it will be helpful for upgrading later if one part of them wants to updating their code to a new version.
+**why do we need bundle?**  A bundle means an independent individual and it has a clear boundary with other bundles. usually they dont have class reference with each other(except **public bundle**).for example:we can change the android library to bundle module which like search,detail,login and others that do not have many reference. It is very useful for developing. And it will be helpful for upgrading later if one part of them wants to updating their code to a new version.
 
-**How do they work?** When Atlas receives a request for a intent that matches certain component in a bundle,it will check if the bundle has been loaded and will load it if need. After that,Atlas delivery this request to system(Usually AMS), and the component will be started by system because ClassLoader and Resources has been hooked before.
+**How do they work?** When Atlas receives a request for an intent that matches certain component in a bundle,it will check whether the bundle has been loaded and will load it if necessary. After that,Atlas delivery this request to system(Usually AMS), and the component will be started by system because ClassLoader and Resources have been hooked before.
 
 >Android Instant Apps only work on Android devices running on Android 4.0 (API level 14) or higher.
 
@@ -12,11 +12,11 @@ Atlas provides a unique way to for code decoupling.It uses a new concept called 
 
 A bundle can almost include everything needed to build app. But also There are some defference between them.
 
-1. **Classes:** while Default App module compile all dependencies together to classes.dex(or classes.dex->classesn.dex if multidex is used),In Atlas framework,every bundles has its own dependencies,And it's impossible that they have same compile dependencies between them. It means each class is unique in the entire Atlas Apk.
+1. **Classes:** Default App module compiles all dependencies together to classes.dex(or classes.dex->classesn.dex if multidex is used).In Atlas framework,every bundle has its own dependencies. And it's impossible that they have same compile dependencies between them. It means each class is unique in the entire Atlas Apk.
 
-2. **Resources:** As you know,When compiling android resources, aapt will set packageID "0x7f" for default app while in bundle aapt will set a new distinct packageID for each bundle.These mechanism makes every resource item will be given an unique ID.
+2. **Resources:** As you know,When compiling android resources, aapt will set packageID "0x7f" for default app. In bundle aapt will set a new distinct packageID for each bundle.These mechanism makes every resource item will be given an unique ID.
 
-> There are more Difference between theme. such as a bundle module(not base) can not has resource items that are used in AndroidManifest.xml.for more detail you can see
+> There are more differences between them, such as a bundle module(not base) can not has resource items that are used in AndroidManifest.xml.for more detail you can see
 
 The diagram below illustrates  the relationship between bundle and base bundle(**public bundle is not included in it**) 
 ![](img/bundle&base.jpeg)
