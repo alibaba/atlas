@@ -431,6 +431,7 @@ public class AndroidHack {
         AtlasHacks.ContextImpl_mResources.set(application.getBaseContext(), resources);
         //AtlasHacks.ContextImpl_mTheme.on(application.getBaseContext()).set(null);
         AtlasHacks.ContextImpl_mTheme.set(application.getBaseContext(), null);
+        application.getBaseContext().getTheme();
 
         try {
             Collection<WeakReference<Resources>> references = null;
