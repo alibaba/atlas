@@ -460,7 +460,7 @@ public class TPatchTool extends BasePatchTool {
                                      true);
 
                 // 是否保留主bundle的资源文件
-                if (isRetainMainBundleRes()) {
+                if (isRetainMainBundleRes()&&!dexPatch) {
                     copyMainBundleResources(newApkUnzipFolder,
                                             baseApkUnzipFolder,
                                             new File(patchTmpDir, mainBundleName));
@@ -486,7 +486,7 @@ public class TPatchTool extends BasePatchTool {
                     if (isBundleFile(soFile)) {
                         processBundleFiles(soFile, baseSoFile, patchTmpDir);
 
-                    } else { // 如果是bundle文件
+                    } else if (!dexPatch){ // 如果是bundle文件
                         if (isFileModify(soFile, baseSoFile)) { FileUtils.copyFile(soFile, destFile); }
                     }
                     return true;
@@ -624,8 +624,14 @@ public class TPatchTool extends BasePatchTool {
         FileUtils.deleteDirectory(mainBundleFoder);
 
         // 再压缩各自的bundle
-        File patchFile = new File(outPatchDir,
-                                  "patch-" + newApkBO.getVersionName() + "@" + baseApkBO.getVersionName() + ".tpatch");
+        File patchFile = null;
+        if (dexPatch){
+            patchFile = new File(outPatchDir,
+                    newApkBO.getVersionName() + "@" + baseApkBO.getVersionName() + ".tpatch");
+        }else {
+            patchFile = new File(outPatchDir,
+                    "patch-" + newApkBO.getVersionName() + "@" + baseApkBO.getVersionName() + ".tpatch");
+        }
         if (patchFile.exists()) {
             FileUtils.deleteQuietly(patchFile);
         }
@@ -890,7 +896,7 @@ public class TPatchTool extends BasePatchTool {
         }
 
         FileUtils.deleteDirectory(tmpDexFile);
-        if (mainDex){
+        if (mainDex&&!dexPatch){
             bundleInfos.put(newApkBO.getVersionName(),new AtlasFrameworkPropertiesReader(
                     new MethodReader(
                             new ClassReader(
