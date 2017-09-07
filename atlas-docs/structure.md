@@ -12,7 +12,9 @@ This page describes the various modules contained within an atlas app project. Y
     2.such as libcom_....so,this is a bundle like a single apk ,contains dex,resources,and androidmanifest.
 
 
-**figure 2 ** shows main project how to build a atlas apk File like figure 1:
+##Structure of Atlas project
+
+**figure 1 ** shows main project how to build a atlas apk File like figure 1:
 
 1.apply plugins:
 
@@ -50,8 +52,10 @@ download dependencies from server
 
 applicationName is not essential,android.taobao.atlas.startup.AtlasBridgeApplication will be generated dynamic for the startup application when build for atlas apk.
 
-**figure 3 ** bundle project build.gradle defination like this:
-1.
+**figure 2 ** bundle project
+
+1.build.gradle defination like this:
+
     apply plugin: 'com.android.library'
     apply plugin: 'com.taobao.atlas'
 
@@ -68,7 +72,7 @@ applicationName is not essential,android.taobao.atlas.startup.AtlasBridgeApplica
 
 2.bundle project you can define your own application and your own pacakgeName, application oncreate method will be excuted when this bundle is using by Customers
 
-atlas framework can dynamic install this bundle at the same time。
+atlas framework can dynamic install this bundle at the same time
 
     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
         package="com.taobao.firstbundle">
