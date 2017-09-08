@@ -1,0 +1,15 @@
+//include ':middlewarelibrary'
+//include ':secondbundlelibrary'
+//include ':lottie'
+//include ':activitygroupcompat'
+//include ':firstbundle'
+//include ':secondbundle'
+//include ':publicbundle'
+//include ':remotebundle'
+//include ':databindbundle'
+//include ':splashscreen'
+//include ':app'
+include ':increment_app'
+
+include ":activitygroupcompat"
+project(":activitygroupcompat").projectDir = file("../AtlasDemo/activitygroupcompat")

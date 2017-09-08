@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.taobao.demo">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:name=".DemoApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Atlas"
+        android:supportsRtl="true">
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".MainActivity2"
+            android:label="@string/app_name"
+            android:process=":remote"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".UpdateDemoActivity"
+            android:label="@string/title_activity_scrolling"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".RemoteDemoActivity"
+            android:label="@string/title_activity_update"
+            android:process=":remote"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+
+        <provider
+            android:name=".MyContentProvider"
+            android:authorities="com.test.abc"
+            android:enabled="true"
+            android:exported="true"></provider>
+    </application>
+
+</manifest>
