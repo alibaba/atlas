@@ -120,6 +120,9 @@ atlas {
         }
     }
 }
+configurations.all {
+    transitive = false
+}
 
 dependencies {
 
@@ -127,15 +130,12 @@ dependencies {
 
     //
 
-    //    compile('com.taobao.android:atlas_core:5.0.7.41@aar') {
+    compile('com.taobao.android:atlas_core:5.0.7.41@aar') {
 
-    //
 
-    //        transitive = true
+        transitive = true
 
-    //    }
-
-    //
+    }
 
     //
 
