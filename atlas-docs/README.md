@@ -1,7 +1,9 @@
-## 欢迎扫码进入atlas交流钉钉群
+
+#Atlas   [Browse this in English ](http://www.baidu.com)
 
 [<img src='https://render.alipay.com/p/s/taobaonpm_click/atlas_aliyun_logo' align='right' style=' width:360px;height:120 px'/>](https://render.alipay.com/p/s/taobaonpm_click/atlas_aliyun_logo_click) 
-<img src='dingtalk.png' align='left' style=' width:130px;height:130 px'/>  
+<img src='dingtalk.png' align='left'style=' width:130px;height:130 px'/>
+<br>扫码加入atlas钉钉交流群</br>  
 <br />
 <br />
 <br />
