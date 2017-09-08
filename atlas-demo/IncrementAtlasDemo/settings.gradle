@@ -13,3 +13,12 @@ include ':increment_app'
 
 include ":activitygroupcompat"
 project(":activitygroupcompat").projectDir = file("../AtlasDemo/activitygroupcompat")
+
+include ":publicbundle"
+project(":publicbundle").projectDir = file("../AtlasDemo/publicbundle")
+
+include ":middlewarelibrary"
+project(":middlewarelibrary").projectDir = file("../AtlasDemo/middlewarelibrary")
+
+include ":firstbundle"
+project(":firstbundle").projectDir = file("../AtlasDemo/firstbundle")

@@ -122,33 +122,59 @@ atlas {
 }
 
 dependencies {
-//    compile fileTree(dir: 'libs', include: ['*.jar'])
-//
-//    compile('com.taobao.android:atlas_core:5.0.7.41@aar') {
-//
-//        transitive = true
-//    }
-//
-//
-//    compile project(':middlewarelibrary')
-//    compile project(':splashscreen')
-    compile project(':activitygroupcompat')
 
-//    bundleCompile project(':firstbundle')
-//    bundleCompile project(':secondbundle')
-//    bundleCompile project(':remotebundle')
-//    bundleCompile project(':publicbundle')
-//    bundleCompile project(':databindbundle')
-//
-//    compile 'com.android.support:appcompat-v7:25.1.0'
-//    compile 'com.android.support:design:25.1.0'
-//    compile 'com.android.support:support-vector-drawable:25.1.0'
-//    compile 'com.android.support:support-v4:25.1.0'
-//    compile 'com.taobao.android:atlasupdate:1.1.4.11@aar'
-//
-//    compile 'com.alibaba:fastjson:1.1.45.android@jar'
-//    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
-//    compile 'com.android.support:recyclerview-v7:25.3.0'
+    //    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    //
+
+    //    compile('com.taobao.android:atlas_core:5.0.7.41@aar') {
+
+    //
+
+    //        transitive = true
+
+    //    }
+
+    //
+
+    //
+
+    //    compile project(':middlewarelibrary')
+
+    //    compile project(':splashscreen')
+    compile project(':activitygroupcompat')
+    //    bundleCompile project(':firstbundle')
+
+    //    bundleCompile project(':secondbundle')
+
+    //    bundleCompile project(':remotebundle')
+
+    //    bundleCompile project(':publicbundle')
+
+    //    bundleCompile project(':databindbundle')
+
+    //
+
+    //    compile 'com.android.support:appcompat-v7:25.1.0'
+
+    //    compile 'com.android.support:design:25.1.0'
+
+    //    compile 'com.android.support:support-vector-drawable:25.1.0'
+
+    //    compile 'com.android.support:support-v4:25.1.0'
+
+    //    compile 'com.taobao.android:atlasupdate:1.1.4.11@aar'
+
+    //
+
+    //    compile 'com.alibaba:fastjson:1.1.45.android@jar'
+
+    //    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
+
+    //    compile 'com.android.support:recyclerview-v7:25.3.0'
+    compile project(':publicbundle')
+    compile project(':middlewarelibrary')
+//    compile project(':firstbundle')
 }
 
 String getEnvValue(key, defValue) {
