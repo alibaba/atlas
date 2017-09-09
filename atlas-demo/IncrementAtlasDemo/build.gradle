@@ -15,7 +15,7 @@ buildscript {
     }
     dependencies {
 //        classpath "com.taobao.android:atlasplugin:2.3.3.rc12"
-        classpath "com.taobao.android:atlasplugin:2.3.1.beta36-incremental"
+        classpath "com.taobao.android:atlasplugin:2.3.1.beta37-incremental"
         classpath 'com.android.tools.build:gradle:2.3.3'
     }
 }

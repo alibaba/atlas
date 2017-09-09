@@ -174,7 +174,7 @@ dependencies {
     //    compile 'com.android.support:recyclerview-v7:25.3.0'
     compile project(':publicbundle')
     compile project(':middlewarelibrary')
-//    compile project(':firstbundle')
+    compile project(':firstbundle')
 }
 
 String getEnvValue(key, defValue) {
