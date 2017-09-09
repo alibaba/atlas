@@ -116,6 +116,7 @@ public class MergeExcutorServices {
         }
         System.setProperty("rx2.computation-threads",String.valueOf(Runtime.getRuntime().availableProcessors()/2));
         final CountDownLatch countDownLatch = new CountDownLatch(1);
+        try {
             Observable.fromArray(tasks).flatMap(new Function<MergeTask, ObservableSource<File>>() {
                 @Override
                 public ObservableSource<File> apply(MergeTask mergeTask) throws Exception {
@@ -124,7 +125,7 @@ public class MergeExcutorServices {
                         public File apply(MergeTask mergeTask) throws Exception {
                             File file = null;
                             try {
-                                 file = mergeTask.call();
+                                file = mergeTask.call();
                             }catch (IllegalStateException e){
                                 e.printStackTrace();
                             }
@@ -175,14 +176,23 @@ public class MergeExcutorServices {
                 }
             });
             countDownLatch.await();
+        }catch (Throwable e){
+            try {
+                mCallback.onMergeAllFinish(false,e.getMessage());
+            } catch (RemoteException e1) {
+                e1.printStackTrace();
+            }
+        }finally {
             Schedulers.shutdown();
-        if (sZipPatch != null){
+            if (sZipPatch != null){
                 try {
                     sZipPatch.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+        }
+
         }
 
 
