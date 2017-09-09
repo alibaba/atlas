@@ -254,7 +254,6 @@ public class AtlasPlugin implements Plugin<Project> {
     public AtlasPlugin(Instantiator instantiator) {
 
         this.instantiator = instantiator;
-
     }
 
     @Override
@@ -282,13 +281,12 @@ public class AtlasPlugin implements Plugin<Project> {
                 }
             });
 
-            if (AtlasBuildContext.sBuilderAdapter.addAtlasDependency){
-                project.getDependencies().add("compile", "com.taobao.android:atlasupdate:1.1.4.5");
-                project.getDependencies().add("compile", "com.taobao.android:atlas_core:5.0.6-rc21@aar");
+            if (AtlasBuildContext.sBuilderAdapter.addAtlasDependency) {
+                //project.getDependencies().add("compile", "com.taobao.android:atlasupdate:1.1.4.5");
+                //project.getDependencies().add("compile", "com.taobao.android:atlas_core:5.0.6-rc21@aar");
             }
 
             atlasConfigurationHelper.hookAtlasDependencyManager();
-
         }
 
         project.afterEvaluate(new Action<Project>()
@@ -316,9 +314,7 @@ public class AtlasPlugin implements Plugin<Project> {
     }
 
     protected AtlasConfigurationHelper getConfigurationHelper(Project project) {
-        return new AtlasConfigurationHelper(project,
-                                            instantiator,
-                                            creator);
+        return new AtlasConfigurationHelper(project, instantiator, creator);
     }
 
     /**
@@ -334,15 +330,15 @@ public class AtlasPlugin implements Plugin<Project> {
         //判断Android plugin的version
         if (!PLUGIN_ACCEPTABLE_VERSIONS.matcher(androidVersion).matches()) {
             String errorMessage = String.format("Android Gradle plugin version %s is required. Current version is %s. ",
-                                                PLUGIN_MIN_VERSIONS, androidVersion);
+                PLUGIN_MIN_VERSIONS, androidVersion);
             throw new StopExecutionException(errorMessage);
         }
 
         //check jdk version
         String jdkVersion = System.getProperty("java.version");
         if (!JDK_VERSIONS.matcher(jdkVersion).matches()) {
-            String errorMessage = String.format("JDK version %s is required. Current version is %s. ",
-                                                JDK_MIN_VERSIONS, jdkVersion);
+            String errorMessage = String.format("JDK version %s is required. Current version is %s. ", JDK_MIN_VERSIONS,
+                jdkVersion);
             throw new StopExecutionException(errorMessage);
         }
 
@@ -352,7 +348,5 @@ public class AtlasPlugin implements Plugin<Project> {
                 + "\r\n please `add android.enableBuildCache false` to gradle.properties";
             //throw new StopExecutionException(errorMessage);
         }
-
     }
-
 }
