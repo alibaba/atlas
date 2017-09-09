@@ -345,6 +345,16 @@ public class ApDependencies /*extends BaseTask*/ {
         } else {
             tBuildType.setBaseApFile(apBaseFile);
         }
+        if (apBaseFile == null) {
+            File[] files = project.getProjectDir().listFiles((file, name) -> {
+                return name.endsWith(".ap");
+            });
+            if (files.length > 0 && files[files.length - 1].exists()) {
+                apBaseFile = files[files.length - 1];
+                tBuildType.setBaseApFile(apBaseFile);
+            }
+        }
+
         return apBaseFile;
     }
 
