@@ -8,6 +8,5 @@
     * [create your first Atlas app](create_first_app.md)
 	* [Instant build](usage_of_atlas_androidStudio_plugin)
 	* [App upgrade](README.md)
-* [Guides(waitingfor update)]()
 * [Troubleshoot Android Atlas Apps development issues](trouble.md)
 
