@@ -1,0 +1,418 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Overview · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="FAQ.html" />
+    
+    
+    <link rel="prev" href="./" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    Atlas
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.2" data-path="Overview.html">
+            
+                <a href="Overview.html">
+            
+                    
+                    Overview
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="FAQ.html">
+            
+                <a href="FAQ.html">
+            
+                    
+                    Frequently asked questions(FAQs)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="code_sample.html">
+            
+                <a href="code_sample.html">
+            
+                    
+                    Code samples
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" >
+            
+                <span>
+            
+                    
+                    Getting started
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.5.1" data-path="create_first_app.html">
+            
+                <a href="create_first_app.html">
+            
+                    
+                    create your first Atlas app
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.2" data-path="structure.html">
+            
+                <a href="structure.html">
+            
+                    
+                    Project structure
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.3" data-path="usage_of_atlas_androidStudio_plugin">
+            
+                <span>
+            
+                    
+                    Instant build
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.4" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    App upgrade
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" >
+            
+                <span>
+            
+                    
+                    Guides(waitingfor update)
+            
+                </span>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" >
+            
+                <span>
+            
+                    
+                    Best practices for user experience(waiting for update)
+            
+                </span>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="." >Overview</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <h1 id="overview-of-atlas-framework">Overview of Atlas Framework</h1>
+<p>Atlas provides a unique way  for code decoupling. It uses a new concept called bundle(just like bundle in osgi). A bundle module is similar to an Android app module.It can almost include everything needed to build app. It become an small apk after bundle compiled,at last compiling step we change the extension name(.apk) of bundle to &apos;.so&apos; and stored it to the final shell apk. We usually call the shell apk <strong>Base bundle</strong> that contains other bundles </p>
+<p><strong>why do we need bundle?</strong>  A bundle means an independent individual and it has a clear boundary with other bundles. usually they dont have class reference with each other(except <strong>public bundle</strong>).for example:we can change the android library to bundle module which like search,detail,login and others that do not have many reference. It is very useful for developing. And it will be helpful for upgrading later if one part of them wants to updating their code to a new version.</p>
+<p><strong>How do they work?</strong> When Atlas receives a request for an intent that matches certain component in a bundle,it will check whether the bundle has been loaded and will load it if necessary. After that,Atlas delivery this request to system(Usually AMS), and the component will be started by system because ClassLoader and Resources have been hooked before.</p>
+<blockquote>
+<p>Android Instant Apps only work on Android devices running on Android 4.0 (API level 14) or higher.</p>
+</blockquote>
+<h2 id="whats-difference-between-bundle-module-and-normal-apk-module">what&apos;s difference between bundle module and normal apk module</h2>
+<p>A bundle can almost include everything needed to build app. But also There are some defference between them.</p>
+<ol>
+<li><p><strong>Classes:</strong> Default App module compiles all dependencies together to classes.dex(or classes.dex-&gt;classesn.dex if multidex is used).In Atlas framework,every bundle has its own dependencies. And it&apos;s impossible that they have same compile dependencies between them. It means each class is unique in the entire Atlas Apk.</p>
+</li>
+<li><p><strong>Resources:</strong> As you know,When compiling android resources, aapt will set packageID &quot;0x7f&quot; for default app. In bundle aapt will set a new distinct packageID for each bundle.These mechanism makes every resource item will be given an unique ID.</p>
+</li>
+</ol>
+<blockquote>
+<p>There are more differences between them, such as a bundle module(not base) can not has resource items that are used in AndroidManifest.xml.for more detail you can see</p>
+</blockquote>
+<p>The diagram below illustrates  the relationship between bundle and base bundle(<strong>public bundle is not included in it</strong>) 
+<img src="img/bundle&amp;base.jpeg" alt=""></p>
+<h2 id="feature-as-bundles">feature as bundles</h2>
+<p>The concept of bundle provide a new and unique way for developers to develop own feature module and for future updating. Before introducing thre core concepts of bundle of Atlas,We need to understand som foundational terminology.</p>
+<p>At a very basic level,apps have at least one feature or things that they do:find a location on a map,send an email,or purchase for something you bought as examples.Many app provide multiple features.</p>
+<p>For example.a electricity business app might allow users to seach a kind of commodity,see the detail info  to check if it is satisfactory or not, and at last purchasing for some of them. Each of those actions-searching,selecting,purchase - is a feature with in the app,</p>
+<p>With Atlas apps,developers should only care about their own feature modules. For example,detail developers just need to know the input(maybe a commodity id) from the search feature,they use common sdks from base bundle(such as network,cache,base res and  so on) to develop their features. And delivery the output(for buy) to the purchase module. It&apos;s restricted for direct <strong>Class reference</strong> between each of them. In principle each bundle has no reference with each other. 
+This concept of feature is very similar to the concept of <strong>bundle</strong> in <strong>OSGI</strong>,So we call these bundles for them. and later you will know how Atlas managing bundles in runtime, we follow the osgi specification on some strategy in classloading.</p>
+<h3 id="what-benefits-does-you-can-get-from-this-strategy">what benefits does you can get from this strategy</h3>
+<p><strong>Reduced Complexity -</strong> Developing with Atlas(OSGI) technology means developing bundles. Bundles are modules. They hide their internals from other bundles and communicate through well defined Intent. Hiding internals means more freedom to change later. This not only reduces the number of bugs,it also makes bundles simpler to develop.</p>
+<p><strong>Reuse -</strong> it&apos;s very easy to use many third party sdks from base bundle,and it makes easily for managing the versions of them. (Also Atlas uses a Unified specification for using public bundle)</p>
+<p><strong>Dynamic update -</strong>It&apos;s makes update 
+With a smaller particle size. every bundle can be updated by itself and developer only need to assurance the output or the interface for external use is compatible with the old verison.</p>
+<h3 id="what-benefits-does-app-users-can-get">what benefits does app users can get</h3>
+<p>As mentioned before, there are local bundles and remote bundles. for local bundels, there are a little performance loss on first loading because of bundle loading. And In fact,because of on-demand loading stratgy, Atlas enhance the experience on the device which ApiLevel &lt; 19 if the app used multidex before. 
+ According our test result,the impact is very small because we only load the bundle current needed. for remote bundle: users can use a single feature of an app without having to install the entire app with all its other features. When users request a feature from an Atlas app,they receive only the bundle necessary to run that specific feature. It&apos;s also reduce the storage cost on the device if you don&apos;t need these features.</p>
+<blockquote>
+<p>Each remote bundle within the atlas app should have at least one Activity that acts as the entry-point for that feature,And the feature&apos;s first use is starting activity,not service,receiver or provider.</p>
+</blockquote>
+<h2 id="bundle-module-and-bundle-so">Bundle module and Bundle so</h2>
+<p>To provide this on-demand loading features,you need to break up your app into smaller modules and refactor them into bundle modules.</p>
+<p>When you build an Atlas project, the build output is Atlas apk that contain one or more bundle sos. Each bundle so is built from a bundle module.</p>
+<h2 id="how-bundles-used-at-runtimefor-learning-the-internal-of-atlas">How bundles used at runtime(for learning the internal of atlas)</h2>
+<p>To understanding this,you should know three key point in Atlas.</p>
+<p><strong>DelegateClassLoader -</strong> In normal android apk,system use PathClassLoader in loadedApk to load classes in dex. In atlas,every bundle has a BundleClassLoader for load it&apos;s own dex. At startup,atlas replace PathClassLoader with DelegateClassLoader. So when ActivityThread want&apos;t to load Class of certain bundle,DelegateClassLoader will delivery this request to target BundleClassLoader which return the right class.</p>
+<p>The diagram below illustrates the relationship between classloaders
+<img src="img/classloader.jpeg" alt=""></p>
+<p><strong>BundleInfo -</strong> How DelegateClassLoader can know which BundleClassLoader is the right? The bundleInfo is necessory. When compiling bundles, the build plugin parse bundle&apos;s AndroidManifest.xml, and store all its components name and other info to the FrameworkProperties.class that Atlas will generate bundle info from<br>it at runtime. each bundleinfo item includes the bundle&apos;s size,md5,application-name,dependencies,all activity-name, service-name,receiver-name,provider-name and other necessory info.</p>
+<p><strong>DelegateResources -</strong> At runtime, every bundle share a public resources called DelegateResources. which will be updated or recreated(if apilevel&lt;21) if a new bundle is loaded. So each resources can be get from DelegateResources,and the distinct package id between bundle and base bundle makes it&apos;s impossible there are duplicate resources id.</p>
+<p>The diagram below illustrates the status of DelegateResources
+<img src="img/resources.jpeg" alt=""></p>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="./" class="navigation navigation-prev " aria-label="Previous page: Atlas">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="FAQ.html" class="navigation navigation-next " aria-label="Next page: Frequently asked questions(FAQs)">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Overview","level":"1.2","depth":1,"next":{"title":"Frequently asked questions(FAQs)","level":"1.3","depth":1,"path":"FAQ.md","ref":"FAQ.md","articles":[]},"previous":{"title":"Atlas","level":"1.1","depth":1,"path":"README.md","ref":"README.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"Overview.md","mtime":"2017-09-11T02:11:39.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-09-11T02:34:55.686Z"},"basePath":".","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="gitbook/gitbook.js"></script>
+    <script src="gitbook/theme.js"></script>
+    
+        
+        <script src="gitbook/gitbook-plugin-livereload/plugin.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

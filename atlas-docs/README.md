@@ -35,6 +35,8 @@ When Compiling the final Apk，Atlas support packaging part of bundles to apk wi
 </div>
 
 ##Update bundle without the entire Apk upgrade
+Developers can update classes or resources  
+dynamiclly without updating the entire apk. Users will get new function as soon as new update patch has been uploaded.
 
 ##Compatible with all versions higher than 4.0
 <div style="height:260px">
@@ -45,6 +47,3 @@ When Compiling the final Apk，Atlas support packaging part of bundles to apk wi
         <div><img src="img/support.png" width='380' ></div>
    </div>
 </div>
-
-##Start to Modularize your application
-Atlas functionality is an upgrade to your existing Android app, not a new, separate app

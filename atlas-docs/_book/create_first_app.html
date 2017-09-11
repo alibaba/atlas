@@ -1,0 +1,606 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>create your first Atlas app · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="structure.html" />
+    
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    Atlas
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="Overview.html">
+            
+                <a href="Overview.html">
+            
+                    
+                    Overview
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="FAQ.html">
+            
+                <a href="FAQ.html">
+            
+                    
+                    Frequently asked questions(FAQs)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="code_sample.html">
+            
+                <a href="code_sample.html">
+            
+                    
+                    Code samples
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" >
+            
+                <span>
+            
+                    
+                    Getting started
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter active" data-level="1.5.1" data-path="create_first_app.html">
+            
+                <a href="create_first_app.html">
+            
+                    
+                    create your first Atlas app
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.2" data-path="structure.html">
+            
+                <a href="structure.html">
+            
+                    
+                    Project structure
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.3" data-path="usage_of_atlas_androidStudio_plugin">
+            
+                <span>
+            
+                    
+                    Instant build
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.4" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    App upgrade
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" >
+            
+                <span>
+            
+                    
+                    Guides(waitingfor update)
+            
+                </span>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" >
+            
+                <span>
+            
+                    
+                    Best practices for user experience(waiting for update)
+            
+                </span>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="." >create your first Atlas app</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <h1 id="create-your-first-atlas-app">create your first Atlas app</h1>
+<p>This page teaches you how to build and run a very simple atlas app using Android Studio. The app that you create has a simple structure similar to the structure described in Structure of a basic atlas app.</p>
+<pre><code>Note: You should use Android Studio version 2.3 to complete the procedures on this page. Also make sure that you have completed the setup instructions in Set up your development environment. 
+</code></pre><p>To create a new atlas app project in Android Studio version 2.3, do the following:</p>
+<h3 id="1-launch-android-studio-and-create-a-new-standard-android-application-project">1. Launch Android Studio and create a new standard android application project</h3>
+<p><img src="img/as_step1.png" alt=""></p>
+<p>just as you see, it&apos;s a standard android application.</p>
+<h3 id="2-add-atlasplugin-to-the-app">2. Add AtlasPlugin to the App</h3>
+<ol>
+<li><p>add atlasplugin to replace google&apos;s default android builder. edit the build.gradle file at the root of the project:</p>
+<pre><code> buildscript {
+     repositories {
+         jcenter()
+     }
+     dependencies {
+          //classpath &apos;com.android.tools.build:gradle:2.3.0&apos;
+         classpath &quot;com.taobao.android:atlasplugin:2.3.3.rc20&quot;
+
+         // NOTE: Do not place your application dependencies here; they belong
+         // in the individual module build.gradle files
+     }
+ }
+</code></pre></li>
+</ol>
+<ol>
+<li><p>apply atlasplugin for your app. edit the build.gradle at the app dir:</p>
+<pre><code> apply plugin: &apos;com.android.application&apos;
+ apply plugin: &apos;com.taobao.atlas&apos;
+</code></pre></li>
+<li><p>config atlasplugin , here is the simplest one.</p>
+<pre><code> atlas {
+     atlasEnabled true
+ }        
+</code></pre></li>
+<li><p>add atlas runtime sdk to your dependencies</p>
+<pre><code> dependencies {
+        //your other dependencies here
+     compile &apos;com.taobao.android:atlas_core:5.0.7.41@aar&apos;
+ }
+</code></pre></li>
+</ol>
+<p>and that&apos;s all, your app is based on atlas now. now we continue to add some awb </p>
+<h3 id="3-create-awb">3. Create Awb</h3>
+<p>if you don&apos;t know awb,you can find the answer in the introduce document</p>
+<ol>
+<li>Use Android studio to add a new Module to your Project</li>
+<li>Select Android Library and click Next</li>
+<li>Enter the module&apos;s name, for example &apos;firstawb&apos;</li>
+<li>After a while your standard android library is ready</li>
+<li><p>refacotr it to be an Awb module from Aar. add the below two lines after the <code>apply plugin: &apos;com.android.library&apos;</code> , that&apos;s All</p>
+<pre><code> apply plugin: &apos;com.taobao.atlas&apos;
+ atlas.bundleConfig.awbBundle = true
+</code></pre></li>
+<li><p>write your biz code here,  eg:</p>
+</li>
+</ol>
+<p><img src="img/as_step2.png" alt=""></p>
+<h3 id="4-add-the-awb-to-your-app">4. Add the Awb to your App</h3>
+<p>as awb is very like aar , so the usage is very similar to the standrard project module or gav .</p>
+<pre><code>dependencies {
+
+    compile &apos;com.taobao.android:atlas_core:5.0.7.41@aar&apos;
+
+    bundleCompile project(&apos;:firstawb&apos;)
+}
+</code></pre><p>please attention here we use <code>bundleCompile</code> to replace the compile , so we can see very clearly which is awb.</p>
+<h3 id="5-link-your-app-and-awb">5. Link your App and Awb</h3>
+<p>just use the Intent and startActivity api is enough, for more details you can found in the examples, eg:</p>
+<pre><code>findViewById(R.id.btn_start_bundle).setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Log.d(Env.TAG, &quot;onClick: &quot;);
+            startActivity(
+                    new Intent().setClassName(getBaseContext(), &quot;com.taobao.atlas.bundle.BundleActivity&quot;)
+            );
+        }
+    });
+</code></pre><h3 id="6-package-your-atlas-application">6. Package your Atlas Application</h3>
+<p>you can either use the ide&apos;s run button, or type <code>./gradlew clean assembleDebug</code> </p>
+<p><img src="img/as_step3.png" alt=""></p>
+<p>the below is some of the important logs you must know:</p>
+<ol>
+<li>dependencyTree-debug/release.json : it&apos;s the total dependency graph of your app , it has 2 level structer</li>
+<li>atlasConfig.json : the atlasplugin&apos;s runtime parameters, you can config the different value in your build.gradle</li>
+<li>atlasFrameworkProperties : atlas&apos;s core bundle info, it is very important at runtime</li>
+</ol>
+<h2 id="atlas-plugin-config">Atlas plugin config</h2>
+<table>
+<thead>
+<tr>
+<th>function</th>
+<th>The name of the configuration</th>
+<th>type</th>
+<th>value </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enable atlas , true/false</td>
+<td>atlas.atlasEnabled</td>
+<td>boolean</td>
+<td>true</td>
+</tr>
+<tr>
+<td>bundlePackageId defines files that are not defined automatically</td>
+<td>atlas.tBuildConfig.packageIdFile</td>
+<td>File</td>
+<td></td>
+</tr>
+<tr>
+<td>Remote bundle list, artifactId</td>
+<td>atlas.tBuildConfig.outOfApkBundles</td>
+<td>Set</td>
+<td>[]</td>
+</tr>
+<tr>
+<td>The value is packageName which auto start</td>
+<td>atlas.tBuildConfig.autoStartBundles</td>
+<td>List</td>
+<td></td>
+</tr>
+<tr>
+<td>Automatically generate the bundle&apos;s packageId</td>
+<td>atlas.tBuildConfig.autoPackageId</td>
+<td>boolean</td>
+<td>true</td>
+</tr>
+<tr>
+<td>Automatic allocation of packageId The minimum value</td>
+<td>atlas.tBuildConfig.minPackageId</td>
+<td>int</td>
+<td>35</td>
+</tr>
+<tr>
+<td>If atlas is turned on, it must be true</td>
+<td>atlas.tBuildConfig.useCustomAapt</td>
+<td>Boolean</td>
+<td>true</td>
+</tr>
+<tr>
+<td>You need to do a databinding bundle, A value of packageName</td>
+<td>atlas.tBuildConfig.dataBindingBundles</td>
+<td>Set</td>
+<td>[]</td>
+</tr>
+<tr>
+<td>Build the baseline package, and the suggestion is open, otherwise the patch package will not be able to proceed</td>
+<td>atlas.tBuildConfig.createAP</td>
+<td>Boolean</td>
+<td>true</td>
+</tr>
+<tr>
+<td>Whether to rely on conflict to terminate packaging</td>
+<td>atlas.tBuildConfig.abortIfDependencyConflict</td>
+<td>boolean</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Whether class conflicts terminate packaging</td>
+<td>atlas.tBuildConfig.abortIfClassConflict</td>
+<td>boolean</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Such as: com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap</td>
+<td>atlas.buildTypes.debug.baseApDependency</td>
+<td>String</td>
+<td></td>
+</tr>
+<tr>
+<td>Such as: com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap</td>
+<td>atlas.buildTypes.release.baseApDependency</td>
+<td>String</td>
+<td></td>
+</tr>
+<tr>
+<td>Keep a list of launch launches</td>
+<td>atlas.manifestOptions.retainLaunches</td>
+<td>Set</td>
+<td>[]</td>
+</tr>
+<tr>
+<td>Reserved permissions list</td>
+<td>atlas.manifestOptions.retainPermissions</td>
+<td>Set</td>
+<td>[]</td>
+</tr>
+<tr>
+<td>The name of the system permissions removed</td>
+<td>atlas.manifestOptions.removeSystemPermissions</td>
+<td>Set</td>
+<td>[]</td>
+</tr>
+<tr>
+<td>The name of the removed custom permission</td>
+<td>atlas.manifestOptions.removeCustomPermission</td>
+<td>boolean</td>
+<td>false</td>
+</tr>
+<tr>
+<td>The ability to open new components</td>
+<td>atlas.manifestOptions.addAtlasProxyComponents</td>
+<td>boolean</td>
+<td>false</td>
+</tr>
+<tr>
+<td>A channel list that does not perform atlas added components</td>
+<td>atlas.manifestOptions.atlasProxySkipChannels</td>
+<td>Set</td>
+<td>[:dex2oat, :dexmerge]</td>
+</tr>
+<tr>
+<td>Use the atlas application, including atlasBasic initialization and multidex logic, Atlas must be opened</td>
+<td>atlas.manifestOptions.replaceApplication</td>
+<td>boolean</td>
+<td>true</td>
+</tr>
+<tr>
+<td> Dynamic deployment patch package</td>
+<td>atlas.patchConfigs.debug.createTPatch</td>
+<td>boolean</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Dynamic deployment does not contain a list of files</td>
+<td>atlas.patchConfigs.debug.tPatchNotIncludeFiles</td>
+<td>Set</td>
+<td>[]</td>
+</tr>
+<tr>
+<td> Dynamic deployment patch package</td>
+<td>atlas.patchConfigs.release.createTPatch</td>
+<td>boolean</td>
+<td>false</td>
+</tr>
+<tr>
+<td>Dynamic deployment does not contain a list of files</td>
+<td>atlas.patchConfigs.release.tPatchNotIncludeFiles</td>
+<td>Set</td>
+<td>[]</td>
+</tr>
+</tbody>
+</table>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                
+                <a href="structure.html" class="navigation navigation-next navigation-unique" aria-label="Next page: Project structure">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"create your first Atlas app","level":"1.5.1","depth":2,"next":{"title":"Project structure","level":"1.5.2","depth":2,"path":"structure.md","ref":"structure.md","articles":[]},"previous":{"title":"Getting started","level":"1.5","depth":1,"ref":"","articles":[{"title":"create your first Atlas app","level":"1.5.1","depth":2,"path":"create_first_app.md","ref":"create_first_app.md","articles":[]},{"title":"Project structure","level":"1.5.2","depth":2,"path":"structure.md","ref":"structure.md","articles":[]},{"title":"Instant build","level":"1.5.3","depth":2,"path":"usage_of_atlas_androidStudio_plugin","ref":"usage_of_atlas_androidStudio_plugin","articles":[]},{"title":"App upgrade","level":"1.5.4","depth":2,"path":"README.md","ref":"README.md","articles":[]}]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"create_first_app.md","mtime":"2017-09-11T02:11:39.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-09-11T02:34:55.686Z"},"basePath":".","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="gitbook/gitbook.js"></script>
+    <script src="gitbook/theme.js"></script>
+    
+        
+        <script src="gitbook/gitbook-plugin-livereload/plugin.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+
