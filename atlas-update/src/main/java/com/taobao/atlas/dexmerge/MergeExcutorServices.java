@@ -8,7 +8,9 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 
 import java.io.*;
@@ -115,7 +117,14 @@ public class MergeExcutorServices {
             tasks[i] = mergeTask;
         }
         System.setProperty("rx2.computation-threads",String.valueOf(Runtime.getRuntime().availableProcessors()/2));
+        RxJavaPlugins.setErrorHandler(new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+                mCallback.onMergeAllFinish(false,throwable.getMessage());
+            }
+        });
         final CountDownLatch countDownLatch = new CountDownLatch(1);
+        try {
             Observable.fromArray(tasks).flatMap(new Function<MergeTask, ObservableSource<File>>() {
                 @Override
                 public ObservableSource<File> apply(MergeTask mergeTask) throws Exception {
@@ -124,7 +133,7 @@ public class MergeExcutorServices {
                         public File apply(MergeTask mergeTask) throws Exception {
                             File file = null;
                             try {
-                                 file = mergeTask.call();
+                                file = mergeTask.call();
                             }catch (IllegalStateException e){
                                 e.printStackTrace();
                             }
@@ -175,14 +184,24 @@ public class MergeExcutorServices {
                 }
             });
             countDownLatch.await();
+        }catch (Throwable e){
+            try {
+                mCallback.onMergeAllFinish(false,e.getMessage());
+            } catch (RemoteException e1) {
+                e1.printStackTrace();
+            }
+        }finally {
             Schedulers.shutdown();
-        if (sZipPatch != null){
+
+            if (sZipPatch != null){
                 try {
                     sZipPatch.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+        }
+
         }
 
 

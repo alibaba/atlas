@@ -1,0 +1,24 @@
+//include ':middlewarelibrary'
+//include ':secondbundlelibrary'
+//include ':lottie'
+//include ':activitygroupcompat'
+//include ':firstbundle'
+//include ':secondbundle'
+//include ':publicbundle'
+//include ':remotebundle'
+//include ':databindbundle'
+//include ':splashscreen'
+//include ':app'
+include ':increment_app'
+
+include ":activitygroupcompat"
+project(":activitygroupcompat").projectDir = file("../AtlasDemo/activitygroupcompat")
+
+include ":publicbundle"
+project(":publicbundle").projectDir = file("../AtlasDemo/publicbundle")
+
+include ":middlewarelibrary"
+project(":middlewarelibrary").projectDir = file("../AtlasDemo/middlewarelibrary")
+
+include ":firstbundle"
+project(":firstbundle").projectDir = file("../AtlasDemo/firstbundle")
