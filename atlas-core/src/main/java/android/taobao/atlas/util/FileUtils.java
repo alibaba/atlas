@@ -222,7 +222,7 @@ import android.os.StatFs;
 public class FileUtils {
 	
 	public static boolean CheckFileValidation(String path) {
-		boolean flag = false;
+		boolean flag = true;
 		FileInputStream in = null;
 		try{
 			in = new FileInputStream(path);
@@ -230,7 +230,7 @@ public class FileUtils {
 			flag = false;
 		}
 		
-		if ((flag == true) && (in != null)){
+		if (flag && (in != null)){
 			try{
 				if (in.available() <= 0)
 					flag = false;
