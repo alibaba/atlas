@@ -33,7 +33,7 @@ You can see there were three main library in this project ([atlas-core](./atlas-
 ## Use Atlas
 
 * [Demo](./atlas-demo)
-* Doc: [English](), [中文](./atlas-docs)
+* Doc: [English](https://alibaba.github.io/atlas/en/index.html), [中文](https://alibaba.github.io/atlas/index.html)
 * DingTalk im group: Scan the follow QR code or Search group 11727755 using DingTalk(钉钉) app.
 ![dingtalk.png](assets/dingtalk.png) 
 
