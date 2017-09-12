@@ -449,6 +449,7 @@ public class TPatchTool extends BasePatchTool {
         }
 
         Profiler.enter("awbspatch");
+
         executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -909,6 +910,11 @@ public class TPatchTool extends BasePatchTool {
                                     new DexReader(baseDexFiles))),bundleInfos.get(newApkBO.getVersionName())).read("Landroid/taobao/atlas/framework/FrameworkProperties;","<clinit>"));
 
         }
+
+        if (mainDex&&dexPatch&&getMainBundleDiffType().equals(DiffType.NONE)){
+            FileUtils.cleanDirectory(destDex.getParentFile());
+            return null;
+        }
         return destDex;
     }
 
@@ -1365,5 +1371,13 @@ public class TPatchTool extends BasePatchTool {
     }
 
 
+    public DiffType getMainBundleDiffType() {
 
+        for (ArtifactBundleInfo artifactBundleInfo:artifactBundleInfos){
+            if(artifactBundleInfo.getMainBundle()){
+                return artifactBundleInfo.getDiffType();
+            }
+        }
+        return DiffType.NONE;
+    }
 }

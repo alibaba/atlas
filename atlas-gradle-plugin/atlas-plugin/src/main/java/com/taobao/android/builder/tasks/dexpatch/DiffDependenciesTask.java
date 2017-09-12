@@ -167,6 +167,7 @@ public class DiffDependenciesTask extends BaseTask {
                 awbBundleInfo.setApplicationName(bundleInfo.getApplicationName());
                 awbBundleInfo.setArtifactId(awbBundle.getResolvedCoordinates().getArtifactId());
                 awbBundleInfo.setName(bundleInfo.getName());
+
                 for (BasicBundleInfo key : bundleInfos) {
                     if (key.getPkgName().equals(awbBundle.getPackageName())) {
                         awbBundleInfo.setSrcUnitTag(key.getUnique_tag());
