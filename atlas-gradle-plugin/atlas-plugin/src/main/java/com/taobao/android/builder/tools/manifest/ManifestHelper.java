@@ -300,9 +300,11 @@ public class ManifestHelper {
                 }
             }
 
-            for (String provider : awbBundle.bundleInfo.getContentProviders()) {
-                if (StringUtils.isNotEmpty(provider) && !mainBundleInfo.getContentProviders().contains(provider)) {
-                    errors.add("miss provider:" + provider);
+            if (!atlasExtension.getManifestOptions().isRemoveProvider()) {
+                for (String provider : awbBundle.bundleInfo.getContentProviders()) {
+                    if (StringUtils.isNotEmpty(provider) && !mainBundleInfo.getContentProviders().contains(provider)) {
+                        errors.add("miss provider:" + provider);
+                    }
                 }
             }
 

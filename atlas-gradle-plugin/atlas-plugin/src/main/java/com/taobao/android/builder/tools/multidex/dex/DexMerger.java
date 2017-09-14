@@ -311,7 +311,7 @@ public class DexMerger {
             throw new GradleException(e.getMessage(), e);
         }
 
-        if (!dexList.isEmpty()) {
+        if (!dexList.isEmpty() && mergedList.length > multiDexConfig.getDexCount() ) {
             mergeSmallDexs(outDexFolder, mergedList);
         }
 
