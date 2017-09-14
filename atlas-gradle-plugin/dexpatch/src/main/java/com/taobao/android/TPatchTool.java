@@ -974,6 +974,10 @@ public class TPatchTool extends BasePatchTool {
                 patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
                 patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
                 patchBundleInfo.setName(artifactBundleInfo.getName());
+                if (dexPatch){
+                    patchBundleInfo.setName(artifactBundleInfo.getPkgName());
+
+                }
                 patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());
                 patchBundleInfo.setArtifactId(artifactBundleInfo.getArtifactId());
                 patchBundleInfo.setPkgName(artifactBundleInfo.getPkgName());
