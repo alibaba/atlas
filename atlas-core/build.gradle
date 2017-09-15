@@ -23,7 +23,7 @@ repositories {
 
 group = 'com.taobao.android'
 description = """atlas_core"""
-version '5.0.7.44'
+version '5.0.7.46-SNAPSHOT'
 
 
 sourceCompatibility = 1.7
@@ -81,6 +81,7 @@ project.gradle.buildFinished{
     "git push origin v${version}".execute()
     println "tag v${version} has been created!"
 }
+
 
 
 

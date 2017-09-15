@@ -211,6 +211,7 @@ package com.taobao.android.builder.tools.classinject;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -260,9 +261,10 @@ public class ApkInjectInfoCreator {
                 return o1.compareTo(o2);
             }
         });
-        String mainMd5 = MD5Util.getMD5(StringUtils.join(mainDexDependencies));
-        injectParam.unit_tag = mainMd5;
-        appVariantContext.unit_tag = mainMd5;
+        String mainMd532 = MD5Util.getMD5(StringUtils.join(mainDexDependencies));
+        String md5base36 = new BigInteger(mainMd532.substring(8,24),16).toString(36);
+        injectParam.unit_tag = md5base36;
+        appVariantContext.unit_tag = md5base36;
 
         //依赖是否发送变更
         DependencyDiff dependencyDiff = appVariantContext.getDependencyDiff();
@@ -279,14 +281,15 @@ public class ApkInjectInfoCreator {
             basicBundleInfo.setPkgName(bundleInfo.getPkgName());
 
             //set unique_tag
-            String bundleMd5 = MD5Util.getMD5(StringUtils.join(awbBundle.getAllDependencies()));
+            String bundleDependencyMd532 = MD5Util.getMD5(StringUtils.join(awbBundle.getAllDependencies()));
             String bundleUnitTag = "";
 
             if ( null != dependencyDiff && !dependencyDiff.isDiffBundle(awbBundle)){
                 bundleUnitTag = baseTagMap.get(awbBundle.getPackageName());
             }
             if (StringUtils.isEmpty(bundleUnitTag)){
-                bundleUnitTag = MD5Util.getMD5(mainMd5 + bundleMd5);
+                String bundleMd532 = MD5Util.getMD5(mainMd532 + bundleDependencyMd532);
+                bundleUnitTag = new BigInteger(bundleMd532.substring(8,24),16).toString(36);
             }
 
             basicBundleInfo.setUnique_tag(bundleUnitTag);

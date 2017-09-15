@@ -229,7 +229,7 @@ public class PatchMerger {
                 String entryName = String.format("lib/armeabi/%s", oldBundleFileName);
                 if (apkZip.getEntry(entryName) != null) {
                     oldBundleStream = apkZip.getInputStream(apkZip.getEntry(entryName));
-                    return oldBundle;
+//                    return oldBundle;
                 }
             }
             if(oldBundleStream!= null){
