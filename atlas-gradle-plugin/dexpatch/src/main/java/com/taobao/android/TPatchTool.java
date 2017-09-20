@@ -280,9 +280,9 @@ public class TPatchTool extends BasePatchTool {
 
     private ApkDiff apkPatchInfos = new ApkDiff();
 
-    private List<BundleDiffResult> bundleDiffResults = Collections.synchronizedList(new ArrayList<>());
+    private List<BundleDiffResult> bundleDiffResults = Collections.synchronizedList(new ArrayList<BundleDiffResult>());
 
-    private List<BundleDiffResult> patchInfos = Collections.synchronizedList(new ArrayList<>());
+    private List<BundleDiffResult> patchInfos = Collections.synchronizedList(new ArrayList<BundleDiffResult>());
 
     private final PathMatcher pathMatcher = new PathMatcher();
 
@@ -315,15 +315,15 @@ public class TPatchTool extends BasePatchTool {
 
     private List<String> noPatchBundles = Lists.newArrayList();
 
-    private List<String> whiteList = new ArrayList<>();
+    private List<String> whiteList = new ArrayList<String>();
 
     public void setVersionList(List<String> versionList) {
         this.versionList = versionList;
     }
 
-    private List<String> versionList = new ArrayList<>();
+    private List<String> versionList = new ArrayList<String>();
 
-    public static Map<String,LinkedHashMap>bundleInfos = new HashMap<>();
+    public static Map<String,LinkedHashMap>bundleInfos = new HashMap<String, LinkedHashMap>();
 
     private boolean dexPatch;
 
@@ -410,7 +410,7 @@ public class TPatchTool extends BasePatchTool {
         final File diffTxtFile = new File(outPatchDir, "diff.json");
         final File patchInfoFile = new File(outPatchDir, "patchInfo.json");
         final File patchTmpDir = new File(outPatchDir, "tpatch-tmp");
-        File mainDiffFolder = new File(patchTmpDir, mainBundleName);
+        final File mainDiffFolder = new File(patchTmpDir, mainBundleName);
         //        FileUtils.cleanDirectory(outPatchDir);
         patchTmpDir.mkdirs();
         FileUtils.cleanDirectory(patchTmpDir);
@@ -437,7 +437,7 @@ public class TPatchTool extends BasePatchTool {
 
         //处理远程bundle
         if (splitDiffBundle != null) {
-            for (Pair<BundleBO, BundleBO> bundle : splitDiffBundle) {
+            for (final Pair<BundleBO, BundleBO> bundle : splitDiffBundle) {
                 executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
                     @Override
                     public Boolean call() throws Exception {
@@ -724,7 +724,7 @@ public class TPatchTool extends BasePatchTool {
     }
 
     private void doBundlePatch(File newBundleFile, File baseBundleFile, File patchTmpDir, String bundleName,
-                               File destPatchBundleDir, File newBundleUnzipFolder, File baseBundleUnzipFolder)
+                               File destPatchBundleDir, final File newBundleUnzipFolder, File baseBundleUnzipFolder)
         throws Exception {
         // 解压文件
         // 判断dex的差异性
@@ -998,6 +998,9 @@ public class TPatchTool extends BasePatchTool {
                 patchBundleInfo.setDependency(artifactBundleInfo.getDependency());
                 patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                 patchInfo.getBundles().add(patchBundleInfo);
+                if (artifactBundleInfo.getUnitTag().equals(artifactBundleInfo.getSrcUnitTag())){
+                    throw new RuntimeException(artifactBundleInfo.getPkgName()+"内容发生了变化,但是unitTag一致"+artifactBundleInfo.getUnitTag()+",请修改版本做集成");
+                }
             }
         }
 
