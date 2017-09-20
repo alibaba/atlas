@@ -307,11 +307,11 @@ public final class BundleImpl implements Bundle {
                     this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, dexPatchVersion);
                 }catch(Throwable e){
                     bundleDir = bcontext.bundleDir;
-                    this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, -1);
+                    this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, -1l);
                 }
             }else {
                 bundleDir = bcontext.bundleDir;
-                this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag,-1);
+                this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag,-1l);
             }
         } catch (Exception e) {
             e.printStackTrace();

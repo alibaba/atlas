@@ -409,7 +409,7 @@ public final class Framework {
 
             BundleImpl bundle = null;
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            bundle = new BundleImpl(bundleDir, location, in, null, info.getUnique_tag(),true,-1);
+            bundle = new BundleImpl(bundleDir, location, in, null, info.getUnique_tag(),true,-1l);
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
@@ -463,7 +463,7 @@ public final class Framework {
             BundleImpl bundle = null;
 
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            bundle = new BundleImpl(bundleDir, location, null, file,info.getUnique_tag(),true,-1);
+            bundle = new BundleImpl(bundleDir, location, null, file,info.getUnique_tag(),true,-1l);
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
@@ -631,7 +631,7 @@ public final class Framework {
                     Constructor cons = KernalBundleClass.getDeclaredConstructor(File.class,File.class,String.class,long.class);
                     cons.setAccessible(true);
                     if(upgrade) {
-                        cons.newInstance(bundleDir, files[i], makeMainDexUniqueTag(newBaselineVersion,newBundleTag[i]), -1);
+                        cons.newInstance(bundleDir, files[i], makeMainDexUniqueTag(newBaselineVersion,newBundleTag[i]), -1l);
                     }else{
                         cons.newInstance(bundleDir, files[i],null,dexPatchVersions[i]);                    }
                 } else {
@@ -669,7 +669,7 @@ public final class Framework {
                         }else {
                             BundleLock.WriteLock(locations[i]);
                             AtlasFileLock.getInstance().LockExclusive(bundleDir);
-                            new BundleImpl(bundleDir, locations[i], null, files[i], newBundleTag[i], false, -1);
+                            new BundleImpl(bundleDir, locations[i], null, files[i], newBundleTag[i], false, -1l);
                         }
 
                     }else{
