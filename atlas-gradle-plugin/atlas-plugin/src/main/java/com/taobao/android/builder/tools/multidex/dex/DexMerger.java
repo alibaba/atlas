@@ -209,15 +209,6 @@
 
 package com.taobao.android.builder.tools.multidex.dex;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
@@ -229,6 +220,11 @@ import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by wuzhong on 2017/5/31.
@@ -311,7 +307,7 @@ public class DexMerger {
             throw new GradleException(e.getMessage(), e);
         }
 
-        if (!dexList.isEmpty() && mergedList.length > multiDexConfig.getDexCount() ) {
+        if (!dexList.isEmpty() ) {
             mergeSmallDexs(outDexFolder, mergedList);
         }
 
