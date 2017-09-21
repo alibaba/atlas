@@ -211,7 +211,6 @@ package android.taobao.atlas.startup;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
-import android.annotation.Nullable;
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
@@ -279,7 +278,7 @@ public class DexLoadBooster {
             || version != null && version.trim().length() > 0;
     }
 
-    public static boolean isClassAvailable(@Nullable String className) {
+    public static boolean isClassAvailable(String className) {
         if (TextUtils.isEmpty(className)) {
             return false;
         }
