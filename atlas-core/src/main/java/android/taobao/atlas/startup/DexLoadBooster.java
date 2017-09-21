@@ -249,6 +249,7 @@ public class DexLoadBooster {
         if (!AndroidRuntime.getInstance().isEnabled()) {
             return;
         }
+        Log.e("AndroidRuntime",Dex2OatService.class.toString());
         DalvikPatch.patchIfPossible();
     }
 
