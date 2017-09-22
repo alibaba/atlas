@@ -209,21 +209,26 @@
 
 package com.taobao.android.builder.tasks.app;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 import com.alibaba.fastjson.JSON;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.classinject.InjectParam;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
@@ -270,7 +275,16 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
         lines.add("private String version = \"" + injectParam.version + "\";");
         lines.add("public String getVersion() {return version;}");
-        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
+        String escapeExprBundleInfo = escapeExprSpecialWord(injectParam.bundleInfo);
+        if(escapeExprBundleInfo.length()<Integer.MAX_VALUE){
+            lines.add("public static String bundleInfo = \"" + escapeExprBundleInfo + "\";");
+            lines.add("public static final boolean compressInfo = false;");
+        }else{
+            String compressBundleInfo = compressBundleInfo(injectParam.bundleInfo);
+            lines.add("public static String bundleInfo = \"" + compressBundleInfo + "\";");
+            lines.add("public static final boolean compressInfo = true;");
+        }
+//        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
         //lines.add("public static String bunleInfo = \"\";");
         if (StringUtils.isNotEmpty(injectParam.autoStartBundles)) {
             lines.add("public static String autoStartBundles = \"" + injectParam.autoStartBundles + "\";");
@@ -305,6 +319,22 @@ public class GenerateAtlasSourceTask extends BaseTask {
             throw new GradleException(e.getMessage(), e);
         }
 
+    }
+
+    private String compressBundleInfo(String bundleInfo){
+        ByteArrayOutputStream cc = new ByteArrayOutputStream();
+        GZIPOutputStream gzip = null;
+        try {
+
+            gzip = new GZIPOutputStream(cc);
+            gzip.write(bundleInfo.getBytes("UTF-8"));
+            gzip.flush();
+            IOUtils.closeQuietly(gzip);
+            byte[] result = cc.toByteArray();
+            return Base64.encode(result);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String escapeExprSpecialWord(String keyword) {
