@@ -268,15 +268,22 @@ public class AtlasBundleInfoManager {
                 Throwable e = null;
                 do {
                     try {
-                        LinkedHashMap<String, BundleListing.BundleInfo> infos = BundleListingUtil.parseArray(bundleInfoStr);
-                        if (infos == null) {
-                            Map<String, Object> detail = new HashMap<>();
-                            detail.put("InitBundleInfoByVersionIfNeed", bundleInfoStr);
-                            AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL, detail, new RuntimeException("the infos is null!"));
+                        try {
+                            Class clazz = Class.forName("android.taobao.atlas.bundleInfo.AtlasBundleInfoGenerator");
+                            BundleListing listing = (BundleListing) clazz.getDeclaredMethod("generateBundleInfo").invoke(null);
+                            mCurrentBundleListing  = listing;
+                        }catch (Throwable exception) {
+                            e.printStackTrace();
+                            LinkedHashMap<String, BundleListing.BundleInfo> infos = BundleListingUtil.parseArray(bundleInfoStr);
+                            if (infos == null) {
+                                Map<String, Object> detail = new HashMap<>();
+                                detail.put("InitBundleInfoByVersionIfNeed", bundleInfoStr);
+                                AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL, detail, new RuntimeException("the infos is null!"));
+                            }
+                            BundleListing listing = new BundleListing();
+                            listing.setBundles(infos);
+                            mCurrentBundleListing = listing;
                         }
-                        BundleListing listing = new BundleListing();
-                        listing.setBundles(infos);
-                        mCurrentBundleListing = listing;
                         updateBundleListingWithExtraInfo();
                         break;
                     } catch (Throwable error) {

@@ -211,6 +211,7 @@ package com.taobao.android.builder.tasks.app;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -225,7 +226,9 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.app.prepare.BundleInfoSourceCreator;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
 import com.taobao.android.builder.tools.classinject.InjectParam;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -265,11 +268,19 @@ public class GenerateAtlasSourceTask extends BaseTask {
     void generate() {
 
         InjectParam injectParam = getInput();
+        List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
+        File outputSourceGeneratorFile = new File(outputDir,"android/taobao/atlas/framework/AtlasBundleInfoGenerator.java");
+        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info);
+        outputSourceGeneratorFile.getParentFile().mkdirs();
+        try {
+            FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
+        } catch (IOException e) {
+            throw new GradleException(e.getMessage(), e);
+        }
 
-        File outputFile = new File(outputDir, "android/taobao/atlas/framework/FrameworkProperties.java");
-
+        File outputPropertiesFile = new File(outputDir, "android/taobao/atlas/framework/FrameworkProperties.java");
         List<String> lines = new ArrayList<>();
-
+        outputPropertiesFile.getParentFile().mkdirs();
         lines.add("package android.taobao.atlas.framework;");
         lines.add("public class FrameworkProperties {");
 
@@ -299,11 +310,9 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
         lines.add("}");
 
-        outputFile.getParentFile().mkdirs();
         try {
 
-            FileUtils.writeLines(outputFile, lines);
-
+            FileUtils.writeLines(outputPropertiesFile, lines);
             Map output = new HashMap();
             output.put("bundleInfo", JSON.parseArray(injectParam.bundleInfo));
             output.put("autoStartBundles", injectParam.autoStartBundles);
