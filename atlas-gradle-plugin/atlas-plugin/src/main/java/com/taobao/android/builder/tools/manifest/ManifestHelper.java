@@ -238,7 +238,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ManifestHelper {
 
-    private static Logger sLogger = LoggerFactory.getLogger(ManifestHelper.class);
+    private static final Logger sLogger = LoggerFactory.getLogger(ManifestHelper.class);
 
     public static List<ManifestProvider> getBundleManifest(AppVariantContext appVariantContext,
                                                            AtlasDependencyTree dependencyTree,
@@ -249,9 +249,8 @@ public class ManifestHelper {
         List<ManifestProvider> bundleProviders = new ArrayList<>();
 
         for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
-            String cord = String.format("%s:%s",
-                                        awbBundle.getResolvedCoordinates().getGroupId(),
-                                        awbBundle.getResolvedCoordinates().getArtifactId());
+            String cord = String.format("%s:%s", awbBundle.getResolvedCoordinates().getGroupId(),
+                awbBundle.getResolvedCoordinates().getArtifactId());
 
             if (null != notMergedArtifacts && notMergedArtifacts.contains(cord)) {
                 continue;
@@ -262,16 +261,14 @@ public class ManifestHelper {
             for (AndroidLibrary androidLibrary : awbBundle.getAndroidLibraries()) {
                 bundleProviders.add(createManifestProvider(androidLibrary, appVariantContext));
             }
-
         }
 
         return bundleProviders;
-
     }
 
     public static boolean checkManifest(AppVariantContext appVariantContext, File fullManifest,
-                                        AtlasDependencyTree dependencyTree,
-                                        AtlasExtension atlasExtension) throws DocumentException {
+                                        AtlasDependencyTree dependencyTree, AtlasExtension atlasExtension)
+        throws DocumentException {
 
         Set<String> notMergedArtifacts = getNotMergedBundles(atlasExtension);
 
@@ -280,9 +277,8 @@ public class ManifestHelper {
 
         List<String> errors = new ArrayList<>();
         for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
-            String cord = String.format("%s:%s",
-                                        awbBundle.getResolvedCoordinates().getGroupId(),
-                                        awbBundle.getResolvedCoordinates().getArtifactId());
+            String cord = String.format("%s:%s", awbBundle.getResolvedCoordinates().getGroupId(),
+                awbBundle.getResolvedCoordinates().getArtifactId());
 
             if (null != notMergedArtifacts && notMergedArtifacts.contains(cord)) {
                 continue;
@@ -311,7 +307,6 @@ public class ManifestHelper {
                     errors.add("miss receiver:" + receiver);
                 }
             }
-
         }
 
         if (errors.isEmpty()) {
@@ -327,8 +322,8 @@ public class ManifestHelper {
 
     private static Set<String> getNotMergedBundles(AtlasExtension atlasExtension) {
         Set<String> notMergedArtifacts = Sets.newHashSet();
-        if (null != atlasExtension.getManifestOptions() &&
-            null != atlasExtension.getManifestOptions().getNotMergedBundles()) {
+        if (null != atlasExtension.getManifestOptions() && null != atlasExtension.getManifestOptions()
+            .getNotMergedBundles()) {
             notMergedArtifacts = atlasExtension.getManifestOptions().getNotMergedBundles();
         }
         return notMergedArtifacts;
@@ -350,15 +345,14 @@ public class ManifestHelper {
 
         //sLogger.error("get file : " + manifest.getAbsolutePath() + "->" + modifyManifest);
 
-        if (null == modifyManifest || !modifyManifest.exists()) {
-            return manifest;
-        }
+        //if (null == modifyManifest || !modifyManifest.exists()) {
+        //    return manifest;
+        //}
         return modifyManifest;
     }
 
     public static void collectBundleInfo(AppVariantContext appVariantContext, BundleInfo bundleInfo, File manifest,
-                                         List<AndroidLibrary> androidLibraries)
-        throws DocumentException {
+                                         List<AndroidLibrary> androidLibraries) throws DocumentException {
         SAXReader reader = new SAXReader();
         Document document = reader.read(getModifyManifestFile(manifest, appVariantContext));// 读取XML文件
         Element root = document.getRootElement();// 得到根节点
@@ -387,7 +381,6 @@ public class ManifestHelper {
                 addComponents(bundleInfo, root2);
             }
         }
-
     }
 
     private static void addComponents(BundleInfo bundleInfo, Element root) {
@@ -428,7 +421,6 @@ public class ManifestHelper {
             File manifest = getModifyManifestFile(manifestProvider.getManifest(), appVariantContext);
 
             modifyManifest.add(new MainManifestProvider(manifest, manifestProvider.getName()));
-
         }
 
         return modifyManifest;
@@ -436,7 +428,7 @@ public class ManifestHelper {
 
     public static class BundleManifestProvider implements ManifestProvider {
 
-        private File manifest;
+        private final File manifest;
 
         public BundleManifestProvider(File manifest) {
             this.manifest = manifest;
@@ -455,8 +447,8 @@ public class ManifestHelper {
 
     public static class MainManifestProvider implements ManifestProvider {
 
-        private File manifest;
-        private String name;
+        private final File manifest;
+        private final String name;
 
         public MainManifestProvider(File manifest, String name) {
             this.manifest = manifest;
@@ -483,14 +475,12 @@ public class ManifestHelper {
         for (AwbBundle lib : awbBundles) {
             // get the dependencies
             // [vliux] respect manifestOption.notMergedBundle
-            String cord = String.format("%s:%s",
-                                        lib.getResolvedCoordinates().getGroupId(),
-                                        lib.getResolvedCoordinates().getArtifactId());
+            String cord = String.format("%s:%s", lib.getResolvedCoordinates().getGroupId(),
+                lib.getResolvedCoordinates().getArtifactId());
             if (null == notMergedArtifacts || !notMergedArtifacts.contains(cord)) {
 
                 list.add(lib.getAndroidLibrary());
                 list.addAll(lib.getAndroidLibraries());
-
             } else {
                 logger.info("[NotMergedManifest] " + cord);
             }

@@ -246,11 +246,11 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
 
     private static final ILogger LOG = LoggerWrapper.getLogger(AwbJavaCompileConfigAction.class);
 
-    private AwbBundle awbBundle;
+    private final AwbBundle awbBundle;
 
-    private AppVariantOutputContext appVariantOutputContext;
+    private final AppVariantOutputContext appVariantOutputContext;
 
-    private VariantOutputScope scope;
+    private final VariantOutputScope scope;
 
     public AwbJavaCompileConfigAction(AwbBundle awbBundle, AppVariantOutputContext appVariantOutputContext) {
         this.awbBundle = awbBundle;
@@ -297,12 +297,11 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         //javacTask.setDependencyCacheDir(appVariantOutputContext.getAwbJavaDependencyCache(awbBundle));
         CompileOptions compileOptions = scope.getGlobalScope().getExtension().getCompileOptions();
         AbstractCompilesUtil.configureLanguageLevel(javacTask, compileOptions,
-                                                    scope.getGlobalScope().getExtension().getCompileSdkVersion(),
-                                                    false);
+            scope.getGlobalScope().getExtension().getCompileSdkVersion(), false);
         javacTask.getOptions().setEncoding(compileOptions.getEncoding());
 
-        javacTask.getOptions().setBootClasspath(Joiner.on(File.pathSeparator).join(
-            scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings(false)));
+        javacTask.getOptions().setBootClasspath(Joiner.on(File.pathSeparator)
+            .join(scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings(false)));
         GlobalScope globalScope = scope.getGlobalScope();
         Project project = globalScope.getProject();
 
@@ -315,11 +314,8 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
 
         checkNotNull(annotationProcessorOptions.getIncludeCompileClasspath());
         Collection<File> processorPath = Lists.newArrayList(variantScope.getVariantData().getVariantDependency()
-                                                                .resolveAndGetAnnotationProcessorClassPath(
-                                                                    annotationProcessorOptions
-                                                                        .getIncludeCompileClasspath(),
-                                                                    scope.getGlobalScope().getAndroidBuilder()
-                                                                        .getErrorReporter()));
+            .resolveAndGetAnnotationProcessorClassPath(annotationProcessorOptions.getIncludeCompileClasspath(),
+                scope.getGlobalScope().getAndroidBuilder().getErrorReporter()));
 
         if (!processorPath.isEmpty()) {
             if (Boolean.TRUE.equals(annotationProcessorOptions.getIncludeCompileClasspath())) {
@@ -374,7 +370,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<JavaCompile>
         dependencies.addAll(classpath.getFiles());
         //增加awb的依赖
 
-        // dependencies.addAll(awbBundle.getLibraryJars());
+        dependencies.addAll(awbBundle.getLibraryJars());
 
         FileCollection allClassPatch = appVariantOutputContext.getVariantContext().getProject().files(dependencies);
         return allClassPatch;

@@ -60,12 +60,9 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
                 taskName = null;
             } else {
                 taskName = apkVariantOutputData.getScope().getTaskName("generate", "AtlasSources");
-                getLogger().warn("Skipped "
-                                     + taskName
-                                     + " : required atlasFrameworkPropertiesFile not found "
-                                     + atlasFrameworkPropertiesFile
-                                     + '\n'
-                                     + "Please check and update your baseline project atlasplugin.");
+                getLogger().warn("Skipped " + taskName + " : required atlasFrameworkPropertiesFile not found "
+                    + atlasFrameworkPropertiesFile + '\n'
+                    + "Please check and update your baseline project atlasplugin.");
                 getProject().getTasks().getByName(taskName).setEnabled(false);
             }
         }
@@ -79,25 +76,22 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
         });
         // 动态部署增量编译不打包Awb
         if (appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-            .getPatchConfig()
-            .isCreateTPatch()) {
+            .getPatchConfig().isCreateTPatch()) {
             builder.addContentType(ExtendedContentType.NATIVE_LIBS);
         } else {
             // TODO 四大组件变化
-            ConventionMappingHelper.map(apkVariantOutputData.processResourcesTask,
-                                        "manifestFile",
-                                        new Callable<File>() {
-                                            @Override
-                                            public File call() throws Exception {
-                                                return apContext.getBaseMainManifest();
-                                            }
-                                        });
+            ConventionMappingHelper.map(apkVariantOutputData.processResourcesTask, "manifestFile",
+                new Callable<File>() {
+                    @Override
+                    public File call() throws Exception {
+                        return apContext.getBaseMainManifest();
+                    }
+                });
             AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
                 apkVariantOutputData);
             ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask, "signingConfig", () -> null);
-            ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask,
-                                        "outputFile",
-                                        appVariantOutputContext::getPatchApkOutputFile);
+            ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask, "outputFile",
+                appVariantOutputContext::getPatchApkOutputFile);
         }
 
         appVariantContext.getScope().getTransformManager().addStream(builder.build());
@@ -114,20 +108,24 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
         }
 
         // 覆盖版本号
-        String versionNameOverride = apkVariantOutputData.getVersionNameOverride();
-        if (Strings.isNullOrEmpty(versionNameOverride)) {
-            apkVariantOutputData.setVersionNameOverride(manifestParser.getVersionName());
+        //String versionNameOverride = apkVariantOutputData.getVersionNameOverride();
+        //if (Strings.isNullOrEmpty(versionNameOverride)) {
+        //    apkVariantOutputData.setVersionNameOverride(manifestParser.getVersionName());
 
-            String versionName = mergedFlavor.getVersionName();
-            if (versionName == null) {
-                mergedFlavor.setVersionName(manifestParser.getVersionName());
-            }
+        String versionName = mergedFlavor.getVersionName();
+        if (versionName == null) {
+            mergedFlavor.setVersionName(manifestParser.getVersionName());
         }
+        //}
 
-        int versionCodeOverride = apkVariantOutputData.getVersionCodeOverride();
-        if (versionCodeOverride == -1) {
-            apkVariantOutputData.setVersionCodeOverride(manifestParser.getVersionCode());
+        Integer versionCode = mergedFlavor.getVersionCode();
+        if (versionCode == null) {
+            mergedFlavor.setVersionCode(manifestParser.getVersionCode());
         }
+        //int versionCodeOverride = apkVariantOutputData.getVersionCodeOverride();
+        //if (versionCodeOverride == -1) {
+        //    apkVariantOutputData.setVersionCodeOverride(manifestParser.getVersionCode());
+        //}
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PreIncrementalBuildTask> {
