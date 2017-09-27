@@ -208,12 +208,10 @@
 
 package android.taobao.atlas.startup;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import android.content.Context;
 import android.os.Build;
-import android.taobao.atlas.framework.Framework;
 import android.text.TextUtils;
 import android.util.Log;
 import com.taobao.android.runtime.AndroidRuntime;
