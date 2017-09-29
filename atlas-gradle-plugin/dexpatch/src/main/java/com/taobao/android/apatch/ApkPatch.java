@@ -325,8 +325,9 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
             if (null != diffFile && null != diffJsonFile) {
                 info.writeToFile(name, diffFile, diffJsonFile);
             }
+
             //生成dex
-            classes = SmaliDiffUtils.buildCode(dexFile, info);
+            classes = SmaliDiffUtils.buildCode(smaliDir,dexFile, info);
             if (null == classes || classes.size() <= 0) {
                 return null;
             }
