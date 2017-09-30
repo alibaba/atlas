@@ -428,7 +428,7 @@ import java.util.List;
 public class Filter {
     private String path;                               //白名单文件路径
     private List<String> filteredClassNames = null;//存储白名单中的类名
-    private List<String>filteredPkgNames = new ArrayList<String>();
+    private List<String> filteredPkgNames = new ArrayList<>();
 
     public Filter(String path) {
         this.path = path;

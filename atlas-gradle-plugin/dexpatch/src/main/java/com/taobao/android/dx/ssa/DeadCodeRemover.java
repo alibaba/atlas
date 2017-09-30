@@ -73,7 +73,7 @@ public class DeadCodeRemover {
     private void run() {
         pruneDeadInstructions();
 
-        HashSet<SsaInsn> deletedInsns = new HashSet<SsaInsn>();
+        HashSet<SsaInsn> deletedInsns = new HashSet<>();
 
         ssaMeth.forEachInsn(new NoSideEffectVisitor(worklist));
 
@@ -123,7 +123,7 @@ public class DeadCodeRemover {
      * Removes all instructions from every unreachable block.
      */
     private void pruneDeadInstructions() {
-        HashSet<SsaInsn> deletedInsns = new HashSet<SsaInsn>();
+        HashSet<SsaInsn> deletedInsns = new HashSet<>();
 
         ssaMeth.computeReachability();
 

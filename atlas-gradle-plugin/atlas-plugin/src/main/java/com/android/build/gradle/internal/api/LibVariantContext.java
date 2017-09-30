@@ -276,7 +276,7 @@ public class LibVariantContext extends VariantContext<LibraryVariantImpl, Librar
 
     public List<Zip> getZipTasks() {
         List<Zip> zipTasks = TaskQueryHelper.findTask(project, Zip.class, getBaseVariantData());
-        List<Zip> result = new ArrayList<Zip>();
+        List<Zip> result = new ArrayList<>();
         if (null != zipTasks) {
             for (Zip zipTask : zipTasks) {
                 if (zipTask.getName().contains("bundle")) {

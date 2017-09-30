@@ -190,7 +190,7 @@ public final class DexClassesComparator {
             }
         }
 
-        Set<String> deletedClassDescs = new HashSet<String>(oldDescriptorOfClassesToCheck);
+        Set<String> deletedClassDescs = new HashSet<>(oldDescriptorOfClassesToCheck);
         deletedClassDescs.removeAll(newDescriptorOfClassesToCheck);
 
         for (String desc : deletedClassDescs) {
@@ -205,7 +205,7 @@ public final class DexClassesComparator {
             deletedClassInfoList.add(oldClassDescriptorToClassInfoMap.get(desc));
         }
 
-        Set<String> addedClassDescs = new HashSet<String>(newDescriptorOfClassesToCheck);
+        Set<String> addedClassDescs = new HashSet<>(newDescriptorOfClassesToCheck);
         addedClassDescs.removeAll(oldDescriptorOfClassesToCheck);
 
         for (String desc : addedClassDescs) {
@@ -213,7 +213,7 @@ public final class DexClassesComparator {
             addedClassInfoList.add(newClassDescriptorToClassInfoMap.get(desc));
         }
 
-        Set<String> mayBeChangedClassDescs = new HashSet<String>(oldDescriptorOfClassesToCheck);
+        Set<String> mayBeChangedClassDescs = new HashSet<>(oldDescriptorOfClassesToCheck);
         mayBeChangedClassDescs.retainAll(newDescriptorOfClassesToCheck);
 
         for (String desc : mayBeChangedClassDescs) {
@@ -1484,7 +1484,7 @@ public final class DexClassesComparator {
         }
 
         public Set<DexClassInfo> getClassInfosInDexesWithDuplicateCheck() {
-            Map<String, DexClassInfo> classDescToInfoMap = new HashMap<String, DexClassInfo>();
+            Map<String, DexClassInfo> classDescToInfoMap = new HashMap<>();
             for (Dex dex : dexes) {
                 int classDefIndex = 0;
                 for (ClassDef classDef : dex.classDefs()) {

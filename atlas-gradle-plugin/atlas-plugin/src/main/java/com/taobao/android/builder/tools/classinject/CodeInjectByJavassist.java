@@ -373,7 +373,7 @@ public class CodeInjectByJavassist {
                                             File folder,
                                             File outFolder,
                                             InjectParam injectParam) throws Exception {
-        List<String> errorFiles = new ArrayList<String>();
+        List<String> errorFiles = new ArrayList<>();
         if (folder.exists() && folder.isDirectory()) {
             Collection<File> classFiles = FileUtils.listFiles(folder, new String[] {"class"}, true);
             for (File classFile : classFiles) {
@@ -405,7 +405,7 @@ public class CodeInjectByJavassist {
                                       File inJar,
                                       File outJar,
                                       InjectParam injectParam) throws Exception {
-        List<String> errorFiles = new ArrayList<String>();
+        List<String> errorFiles = new ArrayList<>();
         JarFile jarFile = newJarFile(inJar);
 
         outJar.getParentFile().mkdirs();

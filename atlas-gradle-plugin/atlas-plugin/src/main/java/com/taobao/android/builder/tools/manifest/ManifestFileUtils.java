@@ -454,7 +454,7 @@ public class ManifestFileUtils {
                                                         Multimap<String, File> libDependenciesMaps,
                                                         ManifestOptions manifestOptions) throws DocumentException {
         Table<String, String, String> bundleInfoTable = HashBasedTable.create();
-        Map<String, String> packageNameMap = new HashMap<String, String>();
+        Map<String, String> packageNameMap = new HashMap<>();
         for (Map.Entry<String, File> entry : libManifestMap.entrySet()) {
             File libManifest = entry.getValue();
             if (libManifest.exists()) {
@@ -755,7 +755,7 @@ public class ManifestFileUtils {
 
         if (null != applicationElement) {
             // 去除lib项目里的tools属性
-            List<Attribute> toRomoved = new ArrayList<Attribute>();
+            List<Attribute> toRomoved = new ArrayList<>();
             for (Attribute attribute : applicationElement.attributes()) {
                 if (attribute.getName().equals("replace") || attribute.getName().equals("remove")) {
                     // applicationElement.remove(attribute);
@@ -874,7 +874,7 @@ public class ManifestFileUtils {
         }
     }
 
-    static Map<String, String> manifestMap = new HashMap<String, String>();
+    static Map<String, String> manifestMap = new HashMap<>();
 
     public static String getPackage(File manifestFile) {
 

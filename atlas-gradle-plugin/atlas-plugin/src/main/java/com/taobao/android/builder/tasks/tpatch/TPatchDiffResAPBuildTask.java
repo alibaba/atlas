@@ -405,7 +405,7 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
 
             if (variantData.getSplitHandlingPolicy() ==
                 SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
-                Set<String> allFilters = new HashSet<String>();
+                Set<String> allFilters = new HashSet<>();
                 allFilters.addAll(variantData.getFilters(com.android.build.OutputFile.FilterType.DENSITY));
                 allFilters.addAll(variantData.getFilters(com.android.build.OutputFile.FilterType.LANGUAGE));
                 processDiffResources.splits = allFilters;
@@ -566,7 +566,7 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
                         baseApkFileList), ApkFileList.class);
                     ApkFileList currentApkFiles = appVariantContext.getApkFiles().finalApkFileList;
 
-                    Set<String> diffFiles = new HashSet<String>();
+                    Set<String> diffFiles = new HashSet<>();
                     HashMap<String, String> baseFiles = baseApkFiles.getMainBundle();
                     HashMap<String, String> newFiles = currentApkFiles.getMainBundle();
 

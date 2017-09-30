@@ -46,7 +46,7 @@ class Path {
         }
     }
 
-    List<ClassPathElement> elements = new ArrayList<ClassPathElement>();
+    List<ClassPathElement> elements = new ArrayList<>();
     private final String definition;
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream(40 * 1024);
     private final byte[] readBuffer = new byte[20 * 1024];

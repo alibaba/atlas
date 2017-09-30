@@ -573,7 +573,7 @@ public class DelegateResources extends Resources {
         private static String sWebviewPath = null;
         private AssetManager createNewAssetManager(AssetManager srcManager,String newAssetPath,boolean append,int type) throws Exception{
             AssetManager newAssetManager = AssetManager.class.newInstance();
-            List<String> runtimeAdditionalAssets = new ArrayList<String>();
+            List<String> runtimeAdditionalAssets = new ArrayList<>();
             List<String> currentPaths = getAssetPath(srcManager);
             for(String currentPath : currentPaths){
                 if(!sDefaultAssetPathList.containsKey(currentPath) && !assetPathCache.containsKey(currentPath)
@@ -724,7 +724,7 @@ public class DelegateResources extends Resources {
         }
 
         public static ArrayList<String> getAssetPath(AssetManager manager){
-            ArrayList<String> assetPaths = new ArrayList<String>();
+            ArrayList<String> assetPaths = new ArrayList<>();
             try {
                 Method method = manager.getClass().getDeclaredMethod("getStringBlockCount");
                 method.setAccessible(true);

@@ -358,7 +358,7 @@ public class LogDependenciesTask extends BaseTask {
     }
 
     private List<String> getSortVersionList(AtlasDependencyTree atlasDependencyTree) {
-        List<String> versionList = new ArrayList<String>();
+        List<String> versionList = new ArrayList<>();
 
         try {
             Set<String> depsSet = atlasDependencyTree.getFlatDependencies();

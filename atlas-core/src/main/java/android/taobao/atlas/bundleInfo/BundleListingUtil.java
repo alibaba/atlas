@@ -246,7 +246,7 @@ public class BundleListingUtil {
 
             JSONArray dependency = object.optJSONArray("dependency");
             if(dependency!=null && dependency.length()>0){
-                List<String> dependencyList = new ArrayList<String>();
+                List<String> dependencyList = new ArrayList<>();
                 for(int i=0; i<dependency.length(); i++){
                     dependencyList.add(dependency.getString(i));
                 }
@@ -255,7 +255,7 @@ public class BundleListingUtil {
 
             JSONArray activities = object.optJSONArray("activities");
             if(activities!=null && activities.length()>0){
-                HashMap<String,Boolean> activitiesList = new HashMap<String,Boolean>();
+                HashMap<String,Boolean> activitiesList = new HashMap<>();
                 for(int i=0; i<activities.length(); i++){
                     activitiesList.put(activities.getString(i),Boolean.FALSE);
                 }
@@ -264,7 +264,7 @@ public class BundleListingUtil {
 
             JSONArray services = object.optJSONArray("services");
             if(services!=null && services.length()>0){
-                HashMap<String,Boolean> servicesList = new HashMap<String,Boolean>();
+                HashMap<String,Boolean> servicesList = new HashMap<>();
                 for(int i=0; i<services.length(); i++){
                     servicesList.put(services.getString(i),Boolean.FALSE);
                 }
@@ -273,7 +273,7 @@ public class BundleListingUtil {
 
             JSONArray receivers = object.optJSONArray("receivers");
             if(receivers!=null && receivers.length()>0){
-                HashMap<String,Boolean> receiversList = new HashMap<String,Boolean>();
+                HashMap<String,Boolean> receiversList = new HashMap<>();
                 for(int i=0; i<receivers.length(); i++){
                     receiversList.put(receivers.getString(i),Boolean.FALSE);
                 }
@@ -282,7 +282,7 @@ public class BundleListingUtil {
 
             JSONArray contentProviders = object.optJSONArray("contentProviders");
             if(contentProviders!=null && contentProviders.length()>0){
-                HashMap<String,Boolean> contentProvidersList = new HashMap<String,Boolean>();
+                HashMap<String,Boolean> contentProvidersList = new HashMap<>();
                 for(int i=0; i<contentProviders.length(); i++){
                     contentProvidersList.put(contentProviders.getString(i),Boolean.FALSE);
                 }

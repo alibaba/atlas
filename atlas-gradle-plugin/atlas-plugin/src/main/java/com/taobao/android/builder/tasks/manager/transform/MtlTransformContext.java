@@ -221,7 +221,7 @@ public class MtlTransformContext {
 
     private Class<? extends MtlInjectTransform> transformTask;
 
-    private List<Class<? extends Transform>> beforeClazzList = new ArrayList<Class<? extends Transform>>();
+    private List<Class<? extends Transform>> beforeClazzList = new ArrayList<>();
 
     public MtlTransformContext(Class<? extends MtlInjectTransform> transformTask, Class<? extends Transform>... clazz) {
         this.transformTask = transformTask;

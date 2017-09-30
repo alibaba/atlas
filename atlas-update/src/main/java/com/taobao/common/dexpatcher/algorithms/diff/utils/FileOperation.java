@@ -308,7 +308,7 @@ public class FileOperation {
 
     public static void zipInputDir(File inputDir, File outputFile) throws IOException {
         File[] unzipFiles = inputDir.listFiles();
-        List<File> collectFiles = new ArrayList<File>();
+        List<File> collectFiles = new ArrayList<>();
         for (File f : unzipFiles) {
             collectFiles.add(f);
         }

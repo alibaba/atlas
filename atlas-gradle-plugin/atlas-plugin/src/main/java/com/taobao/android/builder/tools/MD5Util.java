@@ -349,7 +349,7 @@ public class MD5Util {
             if (file.isFile()) {
                 stringBuilder.append(MD5Util.getFileMD5(file));
             } else {
-                List<File> files = new ArrayList<File>();
+                List<File> files = new ArrayList<>();
                 listFilesForFolder(file, files);
                 for (File file1 : files) {
                     stringBuilder.append(MD5Util.getFileMD5(file1));

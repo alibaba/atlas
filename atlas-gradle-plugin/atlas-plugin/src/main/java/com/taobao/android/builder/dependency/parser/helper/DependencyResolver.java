@@ -274,7 +274,7 @@ public class DependencyResolver {
     public List<ResolvedDependencyInfo> resolve(List<DependencyResult> dependencyResults, boolean mainBundle) {
         Multimap<String, ResolvedDependencyInfo> dependenciesMap = LinkedHashMultimap.create();
         // 不使用官方的扁平化的依赖处理，改用自己处理树状的依赖关系;对于application的依赖，我们只取compile的依赖
-        Set<ModuleVersionIdentifier> directDependencies = new HashSet<ModuleVersionIdentifier>();
+        Set<ModuleVersionIdentifier> directDependencies = new HashSet<>();
         Set<String> resolveSets = new HashSet<>();
         for (DependencyResult dependencyResult : dependencyResults) {
             if (dependencyResult instanceof ResolvedDependencyResult) {
@@ -471,7 +471,7 @@ public class DependencyResolver {
         // 仲裁后的依赖关系.结构为父类-子类
         Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap = LinkedHashMultimap.create();
         Map<ModuleVersionIdentifier, ResolvedDependencyInfo> directDependencies
-            = new HashMap<ModuleVersionIdentifier, ResolvedDependencyInfo>();
+            = new HashMap<>();
 
         for (String key : dependenciesMap.keySet()) {
             Collection<ResolvedDependencyInfo> dependencyLevels = dependenciesMap.get(key);

@@ -455,11 +455,11 @@ import java.util.*;
  */
 public class FastPatchTool {
 
-    private List<FastPatchObject> patchObjects = new ArrayList<FastPatchObject>();
+    private List<FastPatchObject> patchObjects = new ArrayList<>();
     private File outDir;
     private File mappingFile;
     private String bundleName = "com_taobao_maindex";
-    private List<File> patchJarFiles = new ArrayList<File>();
+    private List<File> patchJarFiles = new ArrayList<>();
 
     public Map<String, String> getSuperClassMap() {
         return superClassMap;
@@ -469,7 +469,7 @@ public class FastPatchTool {
         this.superClassMap = superClassMap;
     }
 
-    private Map<String,String>superClassMap = new HashMap<String, String>();
+    private Map<String,String> superClassMap = new HashMap<>();
     File outPatchFile;
 
     public void setOutDir(File outDir) {
@@ -503,18 +503,18 @@ public class FastPatchTool {
         }
 
         for (FastPatchObject fastPatchObject : patchObjects) {
-            Set<ClassDef> classes = new HashSet<ClassDef>();
-            Map<ClassDef, List<Method>> patchClassDefs = new HashMap<ClassDef, List<Method>>();
-            Set<ClassDef>addedClasses = new HashSet<ClassDef>();
-            Map<ClassDef, List<Method>> newClassDef = new HashMap<ClassDef, List<Method>>();
+            Set<ClassDef> classes = new HashSet<>();
+            Map<ClassDef, List<Method>> patchClassDefs = new HashMap<>();
+            Set<ClassDef> addedClasses = new HashSet<>();
+            Map<ClassDef, List<Method>> newClassDef = new HashMap<>();
 
-            ArrayList<Method> methods = new ArrayList<Method>();
+            ArrayList<Method> methods = new ArrayList<>();
 
             for (File dexFile : fastPatchObject.DexFiles) {
                 DexFile dFile = DexFileFactory.loadDexFile(dexFile.getAbsolutePath(), 19, true);
                 classes.addAll(dFile.getClasses());
             }
-            final Set<ClassDef> newClasses = new HashSet<ClassDef>();
+            final Set<ClassDef> newClasses = new HashSet<>();
             for (ClassDef classDef : classes) {
                 String type = classDef.getType();
                 if (fastPatchObject.addedClass.contains(SmaliUtils.getDalvikClassName(type))){
@@ -524,7 +524,7 @@ public class FastPatchTool {
                 }
                 for (Map.Entry<String,List<String>> entry : fastPatchObject.modifyClasses.entrySet()) {
                     if (entry.getKey().equals(SmaliUtils.getDalvikClassName(type))) {
-                        ArrayList<Method> newMethods = new ArrayList<Method>();
+                        ArrayList<Method> newMethods = new ArrayList<>();
                         for (Method method : classDef.getMethods()) {
                             System.err.println(getMethodFullName(method));
                             if (entry.getValue().contains(getMethodFullName(method))) {

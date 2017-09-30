@@ -74,7 +74,7 @@ public final class MapItem extends OffsettedItem {
                     "mapSection.items().size() != 0");
         }
 
-        ArrayList<MapItem> items = new ArrayList<MapItem>(50);
+        ArrayList<MapItem> items = new ArrayList<>(50);
 
         for (Section section : sections) {
             ItemType currentType = null;

@@ -116,7 +116,7 @@ public class AwbPackagingScope implements PackagingScope {
     @Override
     public Set<File> getDexFolders() {
         File dexOutputFile = appVariantContext.getAwbDexOutput(awbBundle.getName());
-        Set<File> dexFolders = new HashSet<File>();
+        Set<File> dexFolders = new HashSet<>();
         dexFolders.add(dexOutputFile);
         return dexFolders;
     }

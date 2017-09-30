@@ -333,7 +333,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                 //}
 //                new AwbProguradHook().hookProguardTask(appVariantContext);
 
-                List<MtlTaskContext> mtlTaskContextList = new ArrayList<MtlTaskContext>();
+                List<MtlTaskContext> mtlTaskContextList = new ArrayList<>();
 
                 mtlTaskContextList.add(new MtlTaskContext(appVariantContext.getVariantData().preBuildTask));
 
@@ -471,7 +471,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 new MtlTaskInjector(appVariantContext).injectTasks(mtlTaskContextList, tAndroidBuilder);
 
-                List<MtlTransformContext> mtlTransformContextList = new ArrayList<MtlTransformContext>();
+                List<MtlTransformContext> mtlTransformContextList = new ArrayList<>();
 
                 if (atlasExtension.getTBuildConfig().getClassInject()) {
                     mtlTransformContextList.add(

@@ -275,22 +275,22 @@ public final class Framework {
     /**
      * location -> bundle.
      */
-    static Map<String, Bundle> bundles = new ConcurrentHashMap<String, Bundle>();
+    static Map<String, Bundle> bundles = new ConcurrentHashMap<>();
 
     /**
      * bundle listeners.
      */
-    static List<BundleListener> bundleListeners = new ArrayList<BundleListener>();
+    static List<BundleListener> bundleListeners = new ArrayList<>();
 
     /**
      * synchronous bundle listeners.
      */
-    static List<BundleListener> syncBundleListeners = new ArrayList<BundleListener>();
+    static List<BundleListener> syncBundleListeners = new ArrayList<>();
 
     /**
      * framework listeners.
      */
-    static List<FrameworkListener> frameworkListeners = new ArrayList<FrameworkListener>();
+    static List<FrameworkListener> frameworkListeners = new ArrayList<>();
 
     static HashMap<String,Integer> installingBundles = new HashMap<>();
 
@@ -346,7 +346,7 @@ public final class Framework {
     }
 
     public static List<Bundle> getBundles() {
-        final List<Bundle> res = new ArrayList<Bundle>(bundles.size());
+        final List<Bundle> res = new ArrayList<>(bundles.size());
         synchronized (bundles) {
             res.addAll(bundles.values());
         }

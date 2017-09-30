@@ -235,7 +235,7 @@ public class UpdateInfo implements Serializable {
         updateInfo.baseVersion = patchInfo.getTargetVersion();
         updateInfo.updateVersion = patchInfo.getPatchVersion();
 
-        List<Item> items = new ArrayList<Item>();
+        List<Item> items = new ArrayList<>();
         for (PatchBundleInfo patchBundleInfo : patchInfo.getBundles()) {
             UpdateInfo.Item item = new UpdateInfo.Item();
             items.add(item);

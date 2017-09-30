@@ -235,7 +235,7 @@ public class ClassNameRenamer {
         ClassReader in1 = new ClassReader(fileInputStream);
         ClassWriter cw = new ClassWriter(0);
 
-        Set<String> renames = new HashSet<String>();
+        Set<String> renames = new HashSet<>();
         renames.add(fromName);
         in1.accept(new ClassRenamer(cw, renames, toName), 8);
 

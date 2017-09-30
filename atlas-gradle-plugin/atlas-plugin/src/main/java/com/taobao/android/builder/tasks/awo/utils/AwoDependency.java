@@ -264,7 +264,7 @@ public class AwoDependency {
 
     public List<File> getDependencyJar(AtlasDependencyTree libDependencyTree) {
 
-        List<File> jarList = new ArrayList<File>();
+        List<File> jarList = new ArrayList<>();
 
         //for (AarBundle aarBundle : libDependencyTree.getAarBundles()) {
         //    if (isCompileDependency(aarBundle.getResolvedCoordinates())) {
@@ -309,7 +309,7 @@ public class AwoDependency {
             }
         }
 
-        Set<ResolvedDependencyResult> compileOnlyDependencySet = new HashSet<ResolvedDependencyResult>();
+        Set<ResolvedDependencyResult> compileOnlyDependencySet = new HashSet<>();
         for (DependencyResult resolvedDependencyResult : compileDependencySet) {
 
             if (resolvedDependencyResult instanceof ResolvedDependencyResult) {
@@ -363,7 +363,7 @@ public class AwoDependency {
                                                     .getModuleVersion()
                                                     .getName());
 
-            Set<ResolvedDependencyResult> resolvedDependencyResults = new HashSet<ResolvedDependencyResult>();
+            Set<ResolvedDependencyResult> resolvedDependencyResults = new HashSet<>();
             if (null != resolvedDependencyResult.getSelected().getDependencies()) {
                 for (DependencyResult sub : resolvedDependencyResult.getSelected()
                         .getDependencies()) {
@@ -390,7 +390,7 @@ public class AwoDependency {
         this.compileDependencies = compileDependencies;
     }
 
-    private Set<String> compileDependencies = new HashSet<String>();
+    private Set<String> compileDependencies = new HashSet<>();
 
     private LibVariantContext libVariantContext;
 }

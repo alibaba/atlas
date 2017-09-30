@@ -261,7 +261,7 @@ public class MergeResAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask>
             return;
         }
 
-        List<DefaultTask> tasks = new ArrayList<DefaultTask>();
+        List<DefaultTask> tasks = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 

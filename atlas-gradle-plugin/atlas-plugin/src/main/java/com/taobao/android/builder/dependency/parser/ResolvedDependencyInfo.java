@@ -239,7 +239,7 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
 
     private boolean ignore;
 
-    private List<ResolvedDependencyInfo> children = new ArrayList<ResolvedDependencyInfo>();
+    private List<ResolvedDependencyInfo> children = new ArrayList<>();
 
     private ResolvedDependencyInfo parent;
 

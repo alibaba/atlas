@@ -234,7 +234,7 @@ import java.util.jar.Manifest;
 public class FastBuild extends Build {
 
     private Set<String> classes;
-    private Set<? extends ClassDef> dexBackNewClasses = new HashSet<ClassDef>();
+    private Set<? extends ClassDef> dexBackNewClasses = new HashSet<>();
     private File diffFile;
     private File diffJsonFile;
     public static String currentClassType;

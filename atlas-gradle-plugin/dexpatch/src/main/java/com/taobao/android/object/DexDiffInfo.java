@@ -450,7 +450,7 @@ public class DexDiffInfo {
     private Set<DexBackedField> modifiedFields = Collections.synchronizedSet(new HashSet<DexBackedField>());
     public static Set<DexBackedMethod> addedMethods = Collections.synchronizedSet(new HashSet<DexBackedMethod>());
     public static Set<DexBackedMethod> modifiedMethods = Collections.synchronizedSet(new HashSet<DexBackedMethod>());
-    private Map<String, ClassDiffInfo> classDiffInfoMap = new HashMap<String, ClassDiffInfo>();
+    private Map<String, ClassDiffInfo> classDiffInfoMap = new HashMap<>();
     private Set<String> usedMethods = Collections.synchronizedSet(new HashSet<String>());
 
     public DexDiffInfo() {
@@ -645,8 +645,8 @@ public class DexDiffInfo {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("bundleName", bundleName);
         if (addedMethods.size() > 0) {
-            List<String> addMethods = new ArrayList<String>();
-            List<MethodDiffInfoObject> diffInfoObjects = new ArrayList<MethodDiffInfoObject>();
+            List<String> addMethods = new ArrayList<>();
+            List<MethodDiffInfoObject> diffInfoObjects = new ArrayList<>();
             for (DexBackedMethod method : addedMethods) {
                 addMethods.add("[add new Method:]" + method.getReturnType()
                         + "  " + method.getName() + "("
@@ -665,8 +665,8 @@ public class DexDiffInfo {
             jsonObject.put("addedMethods", diffInfoObjects);
         }
         if (modifiedMethods.size() > 0) {
-            List<String> modifyMethods = new ArrayList<String>();
-            List<MethodDiffInfoObject> diffInfoObjects = new ArrayList<MethodDiffInfoObject>();
+            List<String> modifyMethods = new ArrayList<>();
+            List<MethodDiffInfoObject> diffInfoObjects = new ArrayList<>();
 
             for (DexBackedMethod method : modifiedMethods) {
                 modifyMethods.add("[modify Method:]" + method.getReturnType()

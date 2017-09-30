@@ -975,7 +975,7 @@ public final class BytecodeArray {
         int nInit = 0;
         int curOffset = offset+2;
         int lastOffset = curOffset;
-        ArrayList<Constant> initVals = new ArrayList<Constant>();
+        ArrayList<Constant> initVals = new ArrayList<>();
 
         if (arrayLength != 0) {
             while (true) {

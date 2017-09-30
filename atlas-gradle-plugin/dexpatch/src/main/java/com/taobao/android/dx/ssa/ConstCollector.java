@@ -99,7 +99,7 @@ public class ConstCollector {
 
         // Constant to new register containing the constant
         HashMap<TypedConstant, RegisterSpec> newRegs
-                = new HashMap<TypedConstant, RegisterSpec> (toCollect);
+                = new HashMap<>(toCollect);
 
         for (int i = 0; i < toCollect; i++) {
             TypedConstant cst = constantList.get(i);
@@ -158,14 +158,14 @@ public class ConstCollector {
         int regSz = ssaMeth.getRegCount();
 
         final HashMap<TypedConstant, Integer> countUses
-                = new HashMap<TypedConstant, Integer>();
+                = new HashMap<>();
 
         /*
          * Each collected constant can be used by just one local
          * (used only if COLLECT_ONE_LOCAL is true).
          */
         final HashSet<TypedConstant> usedByLocal
-                = new HashSet<TypedConstant>();
+                = new HashSet<>();
 
         // Count how many times each const value is used.
         for (int i = 0; i < regSz; i++) {
@@ -231,7 +231,7 @@ public class ConstCollector {
         }
 
         // Collect constants that have been reused.
-        ArrayList<TypedConstant> constantList = new ArrayList<TypedConstant>();
+        ArrayList<TypedConstant> constantList = new ArrayList<>();
         for (Map.Entry<TypedConstant, Integer> entry : countUses.entrySet()) {
             if (entry.getValue() > 1) {
                 constantList.add(entry.getKey());
@@ -328,7 +328,7 @@ public class ConstCollector {
          * only if COLLECT_ONE_LOCAL is true.
          */
         final HashSet<TypedConstant> usedByLocal
-                = new HashSet<TypedConstant>();
+                = new HashSet<>();
 
         final ArrayList<SsaInsn>[] useList = ssaMeth.getUseListCopy();
 

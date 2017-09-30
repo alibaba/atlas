@@ -266,7 +266,7 @@ public class DependencyCompareUtils {
         Map<String, AwbDependency> baseAwbs = toAwbDependencies(baseDependencyJson.getAwbs());
         Map<String, AwbDependency> newAwbs = toAwbDependencies(newDependencyJson.getAwbs());
 
-        Set<String> baseAwbBundles = new HashSet<String>();
+        Set<String> baseAwbBundles = new HashSet<>();
 
         for (String bundleName : newAwbs.keySet()) {
             AwbDependency newAwbDeps = newAwbs.get(bundleName);
@@ -320,14 +320,14 @@ public class DependencyCompareUtils {
      * @return
      */
     private static Set<String> getDiffDependencies(List<String> baseDependecies, List<String> newDependecies) {
-        Set<String> diffs = new HashSet<String>();
-        Map<String, String> baseMap = new HashMap<String, String>();
+        Set<String> diffs = new HashSet<>();
+        Map<String, String> baseMap = new HashMap<>();
         for (String dep : baseDependecies) {
             String name = dep.substring(0, dep.lastIndexOf(":"));
             String version = dep.substring(dep.lastIndexOf(":") + 1);
             baseMap.put(name, version);
         }
-        Map<String, String> newMap = new HashMap<String, String>();
+        Map<String, String> newMap = new HashMap<>();
         for (String dep : newDependecies) {
             String name = dep.substring(0, dep.lastIndexOf(":"));
             String version = dep.substring(dep.lastIndexOf(":") + 1);
@@ -344,7 +344,7 @@ public class DependencyCompareUtils {
     }
 
     private static Map<String, AwbDependency> toAwbDependencies(Map<String, ArrayList<String>> awbs) {
-        Map<String, AwbDependency> maps = new HashMap<String, AwbDependency>();
+        Map<String, AwbDependency> maps = new HashMap<>();
         for (Map.Entry<String, ArrayList<String>> entry : awbs.entrySet()) {
             String key = entry.getKey();
 

@@ -248,8 +248,8 @@ public class CopyAwoSolibTask extends BaseTask {
             outputDir.mkdirs();
         }
 
-        Set<String> removeSoFiles = new HashSet<String>();
-        Set<String> supportAbis = new HashSet<String>();
+        Set<String> removeSoFiles = new HashSet<>();
+        Set<String> supportAbis = new HashSet<>();
 
         //为了兼容之前老的aar，awb格式
         File libJniFolder = new File(awbBundle.getAndroidLibrary().getFolder(), "libs");

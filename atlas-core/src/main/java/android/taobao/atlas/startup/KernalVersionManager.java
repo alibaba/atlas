@@ -245,7 +245,7 @@ public class KernalVersionManager {
     public String CURRENT_STORAGE_LOCATION;
     private String DEXPATCH_BUNDLES;
     public String DEXPATCH_STORAGE_LOCATION;
-    private HashMap<String,String> currentUpdateBundles = new HashMap<String,String>();
+    private HashMap<String,String> currentUpdateBundles = new HashMap<>();
     public ConcurrentHashMap<String,Long> dexPatchBundles = new ConcurrentHashMap<>();
 
     public boolean cachePreVersion = false;

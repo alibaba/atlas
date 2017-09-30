@@ -78,7 +78,7 @@ public class PatchMerger {
             }
             ZipFile patchZip = new ZipFile(patchFile);
             Pair<File, String>[] updateBundles = new Pair[updateInfo.updateBundles.size()];
-            List<MergeObject> toMergeList = new ArrayList<MergeObject>();
+            List<MergeObject> toMergeList = new ArrayList<>();
             //find original bundle and store in pair struct
             for (int x = 0; x < updateInfo.updateBundles.size(); x++) {
                 UpdateInfo.Item item = updateInfo.updateBundles.get(x);

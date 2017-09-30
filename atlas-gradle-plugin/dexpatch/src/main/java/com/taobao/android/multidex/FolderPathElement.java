@@ -45,7 +45,7 @@ class FolderPathElement implements ClassPathElement {
 
     @Override
     public Iterable<String> list() {
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result = new ArrayList<>();
         collect(baseFolder, "", result);
         return result;
     }

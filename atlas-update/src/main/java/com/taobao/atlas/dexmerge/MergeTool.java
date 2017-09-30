@@ -60,7 +60,7 @@ public class MergeTool {
         ZipFile zipFile = new ZipFile(mainDexFile);
         Dex patchDex = new Dex(zipFile.getInputStream(zipFile.getEntry("classes.dex")));
         Iterator<ClassDef> iterators = patchDex.classDefs().iterator();
-        List<String>patchClassNames = new ArrayList<String>();
+        List<String> patchClassNames = new ArrayList<>();
         while (iterators.hasNext()){
             ClassDef classDef = iterators.next();
             int typeIndex = classDef.getTypeIndex();

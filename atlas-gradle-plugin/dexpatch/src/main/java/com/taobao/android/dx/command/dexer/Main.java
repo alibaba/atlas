@@ -166,8 +166,7 @@ public class Main {
     private  ExecutorService classDefItemConsumer;
 
     /** Futures for {@code classDefItemConsumer} tasks. */
-    private  List<Future<Boolean>> addToDexFutures =
-            new ArrayList<Future<Boolean>>();
+    private List<Future<Boolean>> addToDexFutures = new ArrayList<>();
 
     /** Thread pool object used for multi-thread dex conversion (to byte array).
      * Used in combination with multi-dex support, to allow outputing
@@ -175,8 +174,7 @@ public class Main {
     private  ExecutorService dexOutPool;
 
     /** Futures for {@code dexOutPool} task. */
-    private  List<Future<byte[]>> dexOutputFutures =
-            new ArrayList<Future<byte[]>>();
+    private List<Future<byte[]>> dexOutputFutures = new ArrayList<>();
 
     /** Lock object used to to coordinate dex file rotation, and
      * multi-threaded translation. */
@@ -200,7 +198,7 @@ public class Main {
 
     private  Set<String> classesInMainDex = null;
 
-    private  List<byte[]> dexOutputArrays = new ArrayList<byte[]>();
+    private List<byte[]> dexOutputArrays = new ArrayList<>();
 
     private  OutputStreamWriter humanOutWriter = null;
 
@@ -468,7 +466,7 @@ public class Main {
      * same type, this fails with an exception.
      */
     private  byte[] mergeLibraryDexBuffers(byte[] outArray) throws IOException {
-        ArrayList<Dex> dexes = new ArrayList<Dex>();
+        ArrayList<Dex> dexes = new ArrayList<>();
         if (outArray != null) {
             dexes.add(new Dex(outArray));
         }
@@ -1084,8 +1082,7 @@ public class Main {
         }
 
         ArrayList<EncodedMethod> allMeths = clazz.getMethods();
-        TreeMap<CstNat, EncodedMethod> meths =
-            new TreeMap<CstNat, EncodedMethod>();
+        TreeMap<CstNat, EncodedMethod> meths = new TreeMap<>();
 
         /*
          * Figure out which methods to include in the output, and get them
@@ -1182,7 +1179,7 @@ public class Main {
      */
     private  class BestEffortMainDexListFilter implements FileNameFilter {
 
-       Map<String, List<String>> map = new HashMap<String, List<String>>();
+       Map<String, List<String>> map = new HashMap<>();
 
        public BestEffortMainDexListFilter() {
            for (String pathOfClass : classesInMainDex) {

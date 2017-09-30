@@ -462,7 +462,7 @@ public class AwbDexTask extends BaseTask {
                 @Override
                 public Collection<File> call() throws Exception {
 
-                    List<File> fileList = new ArrayList<File>();
+                    List<File> fileList = new ArrayList<>();
                     fileList.addAll(variantContext.getAwbBundle().getLibraryJars());
                     File dir = variantContext.getJavaCDir();
                     if (null != dir) {

@@ -65,8 +65,7 @@ public final class ParameterAnnotationStruct
          */
 
         int size = annotationsList.size();
-        ArrayList<AnnotationSetRefItem> arrayList = new
-            ArrayList<AnnotationSetRefItem>(size);
+        ArrayList<AnnotationSetRefItem> arrayList = new ArrayList<>(size);
 
         for (int i = 0; i < size; i++) {
             Annotations annotations = annotationsList.get(i);

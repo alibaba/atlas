@@ -367,7 +367,7 @@ public final class SsaMethod {
             block.setReachable(0);
         }
 
-        ArrayList<SsaBasicBlock> blockList = new ArrayList<SsaBasicBlock>();
+        ArrayList<SsaBasicBlock> blockList = new ArrayList<>();
         blockList.add(this.getEntryBlock());
 
         while (!blockList.isEmpty()) {
@@ -755,7 +755,7 @@ public final class SsaMethod {
         BitSet visited = new BitSet(blocks.size());
 
         // We push the parent first, then the child on the stack.
-        Stack<SsaBasicBlock> stack = new Stack<SsaBasicBlock>();
+        Stack<SsaBasicBlock> stack = new Stack<>();
 
         SsaBasicBlock rootBlock = reverse ? getExitBlock() : getEntryBlock();
 
@@ -794,7 +794,7 @@ public final class SsaMethod {
      */
     public void forEachBlockDepthFirstDom(SsaBasicBlock.Visitor v) {
         BitSet visited = new BitSet(getBlocks().size());
-        Stack<SsaBasicBlock> stack = new Stack<SsaBasicBlock>();
+        Stack<SsaBasicBlock> stack = new Stack<>();
 
         stack.add(getEntryBlock());
 

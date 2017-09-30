@@ -178,7 +178,7 @@ public final class ClassDataItem extends OffsettedItem {
      */
     public ArrayList<EncodedMethod> getMethods() {
         int sz = directMethods.size() + virtualMethods.size();
-        ArrayList<EncodedMethod> result = new ArrayList<EncodedMethod>(sz);
+        ArrayList<EncodedMethod> result = new ArrayList<>(sz);
 
         result.addAll(directMethods);
         result.addAll(virtualMethods);

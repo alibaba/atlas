@@ -421,7 +421,7 @@ public class PatchInfo {
 
     private String                patchVersion;                              // patch后的版本号
     private String                targetVersion;                             // 目标的生效版本
-    private List<PatchBundleInfo> bundles = new ArrayList<PatchBundleInfo>();
+    private List<PatchBundleInfo> bundles = new ArrayList<>();
     private String                fileName;
     private String                md5;
     private Long                  size;

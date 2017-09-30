@@ -477,12 +477,12 @@ public abstract class ClassReIClassDef extends AbIClassDef {
         }
         String newType = DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(type)).className, isArray);
         Set<? extends AnnotationElement> sets = annotation.getElements();
-        Set<ImmutableAnnotationElement> newAnnotationElement = new HashSet<ImmutableAnnotationElement>();
+        Set<ImmutableAnnotationElement> newAnnotationElement = new HashSet<>();
         for (AnnotationElement annotationElement : sets) {
             String name = annotationElement.getName();
             EncodedValue encodedValue = annotationElement.getValue();
             if (encodedValue instanceof ArrayEncodedValue) {
-                List<EncodedValue> lists = new ArrayList<EncodedValue>();
+                List<EncodedValue> lists = new ArrayList<>();
                 for (EncodedValue encodedValueSub : ((ArrayEncodedValue) encodedValue).getValue()) {
                     if (encodedValueSub instanceof StringEncodedValue) {
                         String newValue = null;
@@ -580,9 +580,9 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                 }
                 boolean isBasic = basicType.containsKey(returnType);
                 List<? extends CharSequence> paramTypes = methodReference.getParameterTypes();
-                List<CharSequence> dalvikParamTypes = new ArrayList<CharSequence>();
+                List<CharSequence> dalvikParamTypes = new ArrayList<>();
 
-                List<CharSequence> newParamTypes = new ArrayList<CharSequence>();
+                List<CharSequence> newParamTypes = new ArrayList<>();
 
                 for (CharSequence charSequence : paramTypes) {
                     boolean isArray1 = false;
@@ -655,7 +655,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
 
 
     public Set<? extends Annotation> getAnnotation(Set<? extends Annotation> annotations) {
-        Set<ImmutableAnnotation> newAnnotations = new HashSet<ImmutableAnnotation>();
+        Set<ImmutableAnnotation> newAnnotations = new HashSet<>();
         for (Annotation annotation : annotations) {
             String type = annotation.getType();
             boolean isArray = false;
@@ -664,12 +664,12 @@ public abstract class ClassReIClassDef extends AbIClassDef {
             }
             String newType = DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(type)).className, isArray);
             Set<? extends AnnotationElement> sets = annotation.getElements();
-            Set<ImmutableAnnotationElement> newAnnotationElement = new HashSet<ImmutableAnnotationElement>();
+            Set<ImmutableAnnotationElement> newAnnotationElement = new HashSet<>();
             for (AnnotationElement annotationElement : sets) {
                 String name = annotationElement.getName();
                 EncodedValue encodedValue = annotationElement.getValue();
                 if (encodedValue instanceof ArrayEncodedValue) {
-                    List<EncodedValue> lists = new ArrayList<EncodedValue>();
+                    List<EncodedValue> lists = new ArrayList<>();
                     for (EncodedValue encodedValueSub : ((ArrayEncodedValue) encodedValue).getValue()) {
                         if (encodedValueSub instanceof StringEncodedValue) {
                             String newValue = null;
@@ -736,9 +736,9 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                     String returnType = methodReference.getReturnType();
                     boolean isBasic = false;
                     List<? extends CharSequence> paramTypes = methodReference.getParameterTypes();
-                    List<CharSequence> dalvikParamTypes = new ArrayList<CharSequence>();
+                    List<CharSequence> dalvikParamTypes = new ArrayList<>();
 
-                    List<CharSequence> newParamTypes = new ArrayList<CharSequence>();
+                    List<CharSequence> newParamTypes = new ArrayList<>();
 
                     for (CharSequence charSequence : paramTypes) {
                         if (basicType.containsKey(charSequence.toString())) {

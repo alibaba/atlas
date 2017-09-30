@@ -173,7 +173,7 @@ public final class AnnotationUtils {
 
         String raw = signature.getString();
         int rawLength = raw.length();
-        ArrayList<String> pieces = new ArrayList<String>(20);
+        ArrayList<String> pieces = new ArrayList<>(20);
 
         for (int at = 0; at < rawLength; /*at*/) {
             char c = raw.charAt(at);

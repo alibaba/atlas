@@ -579,8 +579,7 @@ public class FirstFitLocalCombiningAllocator extends RegisterAllocator {
             // Map any unmapped registers to anything available
             if (!moveMapped || !checkMapped) {
                 int ropReg = findNextUnreservedRopReg(paramRangeEnd, category);
-                ArrayList<RegisterSpec> ssaRegs =
-                    new ArrayList<RegisterSpec>(2);
+                ArrayList<RegisterSpec> ssaRegs = new ArrayList<>(2);
                 ssaRegs.add(moveRegSpec);
                 ssaRegs.add(checkRegSpec);
 
@@ -1135,7 +1134,7 @@ public class FirstFitLocalCombiningAllocator extends RegisterAllocator {
         int sourcesSize = sources.size();
 
         // List of phi sources / result that need mapping
-        ArrayList<RegisterSpec> ssaRegs = new ArrayList<RegisterSpec>();
+        ArrayList<RegisterSpec> ssaRegs = new ArrayList<>();
 
         // Track how many times a particular mapping is found
         Multiset mapSet = new Multiset(sourcesSize + 1);

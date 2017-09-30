@@ -424,12 +424,12 @@ import java.util.Map;
  */
 public class MappingProcessorImpl implements MappingProcessor {
 
-    private Map<String, ClassObject> classMap = new HashMap<String, ClassObject>();
-    private Map<String, MethodObject> methodMap = new HashMap<String, MethodObject>();
-    private Map<String, FieldObject> fieldMap = new HashMap<String, FieldObject>();
+    private Map<String, ClassObject> classMap = new HashMap<>();
+    private Map<String, MethodObject> methodMap = new HashMap<>();
+    private Map<String, FieldObject> fieldMap = new HashMap<>();
 
 
-    private Map<String,String>superClassMap = new HashMap<String, String>();
+    private Map<String,String> superClassMap = new HashMap<>();
 
     public MappingProcessorImpl(Map<String, String> superClassMap) {
         this.superClassMap = superClassMap;

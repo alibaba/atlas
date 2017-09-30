@@ -306,7 +306,7 @@ public class MtlProcessExecutor extends DefaultProcessExecutor {
     private static ListenableFuture<Integer> grabProcessOutput(@NonNull final Process process,
                                                                @NonNull final ProcessOutput output) {
         final SettableFuture<Integer> result = SettableFuture.create();
-        final AtomicReference<Exception> exceptionHolder = new AtomicReference<Exception>();
+        final AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
 
         /*
          * It looks like on windows process#waitFor() can return before the thread have filled the

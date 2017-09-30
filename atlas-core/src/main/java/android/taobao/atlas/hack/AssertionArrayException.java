@@ -223,7 +223,7 @@ import android.taobao.atlas.hack.Hack.HackDeclaration.HackAssertionException;
 public class AssertionArrayException extends Exception {
 
     private static final long            serialVersionUID = 1L;
-    private List<HackAssertionException> mAssertionErr    = new ArrayList<HackAssertionException>();
+    private List<HackAssertionException> mAssertionErr    = new ArrayList<>();
 
     public AssertionArrayException(String detailMsg){
         super(detailMsg);

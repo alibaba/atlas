@@ -93,7 +93,7 @@ public final class StdCatchBuilder implements CatchBuilder {
 
     /** {@inheritDoc} */
     public HashSet<Type> getCatchTypes() {
-        HashSet<Type> result = new HashSet<Type>(20);
+        HashSet<Type> result = new HashSet<>(20);
         BasicBlockList blocks = method.getBlocks();
         int size = blocks.size();
 
@@ -122,8 +122,7 @@ public final class StdCatchBuilder implements CatchBuilder {
             BlockAddresses addresses) {
         int len = order.length;
         BasicBlockList blocks = method.getBlocks();
-        ArrayList<CatchTable.Entry> resultList =
-            new ArrayList<CatchTable.Entry>(len);
+        ArrayList<CatchTable.Entry> resultList = new ArrayList<>(len);
         CatchHandlerList currentHandlers = CatchHandlerList.EMPTY;
         BasicBlock currentStartBlock = null;
         BasicBlock currentEndBlock = null;

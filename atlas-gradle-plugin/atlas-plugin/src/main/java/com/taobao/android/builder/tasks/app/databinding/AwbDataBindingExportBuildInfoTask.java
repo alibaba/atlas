@@ -256,7 +256,7 @@ public class AwbDataBindingExportBuildInfoTask extends BaseTask {
         dataBindingBuilder.setPrintMachineReadableOutput(false);
         dataBindingBuilder.setDebugLogEnabled(appVariantContext.getProject().getLogger().isDebugEnabled());
 
-        List<Runnable> tasks = new ArrayList<Runnable>();
+        List<Runnable> tasks = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 

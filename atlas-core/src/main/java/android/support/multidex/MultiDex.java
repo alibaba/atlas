@@ -365,7 +365,7 @@ public final class MultiDex {
              */
             Field pathListField = findField(loader, "pathList");
             Object dexPathList = pathListField.get(loader);
-            ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
+            ArrayList<IOException> suppressedExceptions = new ArrayList<>();
             expandFieldArray(dexPathList, "dexElements", makeDexElements(dexPathList,
                     new ArrayList<File>(additionalClassPathEntries), optimizedDirectory,
                     suppressedExceptions));

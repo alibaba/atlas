@@ -1364,7 +1364,7 @@ public final class Ropper {
          */
         int largestAllocedLabel = getAvailableLabel();
         ArrayList<IntList> labelToSubroutines
-                = new ArrayList<IntList>(largestAllocedLabel);
+                = new ArrayList<>(largestAllocedLabel);
         for (int i = 0; i < largestAllocedLabel; i++) {
             labelToSubroutines.add(null);
         }

@@ -461,7 +461,7 @@ public abstract class MethodImplReIClassDef extends MethodReIClassDef {
 
     @Override
     protected Iterable<? extends MethodParameter> reParameters(final List<? extends MethodParameter> paramters) {
-        final List<ImmutableMethodParameter> list = new ArrayList<ImmutableMethodParameter>();
+        final List<ImmutableMethodParameter> list = new ArrayList<>();
         for (MethodParameter methodParameter : paramters) {
             boolean isBasic = false;
             if (basicType.containsKey(methodParameter.getType())) {

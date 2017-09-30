@@ -117,7 +117,7 @@ public final class Grep {
     }
 
     private Set<Integer> getStringIds(Dex dex, Pattern pattern) {
-        Set<Integer> stringIds = new HashSet<Integer>();
+        Set<Integer> stringIds = new HashSet<>();
         int stringIndex = 0;
         for (String s : dex.strings()) {
             if (pattern.matcher(s).find()) {

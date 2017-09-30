@@ -297,7 +297,7 @@ public class AtlasBundleInfoManager {
         }
         BundleListing.BundleInfo bundleInfo = mCurrentBundleListing.getBundles().get(bundleName);
         if(bundleInfo != null && bundleInfo.getDependency() != null){
-            List<String> dependencies = new ArrayList<String>();
+            List<String> dependencies = new ArrayList<>();
             for(int x=0; x<bundleInfo.getDependency().size();x++){
                 if(!TextUtils.isEmpty(bundleInfo.getDependency().get(x))){
                     dependencies.add(bundleInfo.getDependency().get(x));

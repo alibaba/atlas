@@ -318,7 +318,7 @@ public class DiffBundleInfoTask extends BaseTask {
                                                           File mainfestFile,
                                                           File apDir) throws IOException, DocumentException {
 
-        Set<ArtifactBundleInfo> artifactBundleInfos = new HashSet<ArtifactBundleInfo>();
+        Set<ArtifactBundleInfo> artifactBundleInfos = new HashSet<>();
         if (null == apDir) {
             throw new GradleException("No Ap dependency found!");
         }

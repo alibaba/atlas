@@ -57,7 +57,7 @@ public abstract class MemberIdsSection extends UniformItemSection {
     }
 
     private String getTooManyMembersMessage() {
-        Map<String, AtomicInteger> membersByPackage = new TreeMap<String, AtomicInteger>();
+        Map<String, AtomicInteger> membersByPackage = new TreeMap<>();
         for (Object member : items()) {
             String packageName = ((MemberIdItem) member).getDefiningClass().getPackageName();
             AtomicInteger count = membersByPackage.get(packageName);

@@ -40,7 +40,7 @@ public class TPatchDexTool {
     private DexDiffer dexDiffer;
     private DexDiffFilter dexDiffFilter;
     private boolean mainBundle;
-    private Map<String, ClassDef>lastBundleClassMap = new HashMap<String, ClassDef>();
+    private Map<String, ClassDef> lastBundleClassMap = new HashMap<>();
     private boolean removeDupStrings;
 
     public TPatchDexTool(List<File> baseDexFiles, List<File> newDexFiles, int apiLevel, Map<String,ClassDef> map,boolean mainBundle) {
@@ -88,7 +88,7 @@ public class TPatchDexTool {
              dexDiffInfo = dexDiffer.doDiff();
 
             // 将有变动的类写入到diff.dex
-            final Set<ClassDef> modifyClasses = new HashSet<ClassDef>();
+            final Set<ClassDef> modifyClasses = new HashSet<>();
 
             for (ClassDiffInfo classDiffInfo : dexDiffInfo.getClassDiffInfoMap().values()) {
                 if (DiffType.MODIFY.equals(classDiffInfo.getType()) || DiffType.ADD.equals(classDiffInfo.getType()) || DiffType.OVERRIDE.equals(classDiffInfo.getType())) {

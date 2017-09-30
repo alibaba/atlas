@@ -262,7 +262,7 @@ public class PreparePackageIdsTask extends BaseTask {
         boolean isAutoPackageId = tBuildConfig.isAutoPackageId();
         int minPackageId = tBuildConfig.getMinPackageId();
 
-        Map<String, String> autoConfigMap = new HashMap<String, String>();
+        Map<String, String> autoConfigMap = new HashMap<>();
         if (null != apPackageIdFile && apPackageIdFile.exists()) {
             autoConfigMap.putAll(loadPackageIdProperties(apPackageIdFile));
         } else if (null != packageIdFile && packageIdFile.exists()) {
@@ -289,7 +289,7 @@ public class PreparePackageIdsTask extends BaseTask {
         if (isAutoPackageId && autoConfigMap.containsValue("")) {
 
             //自动分配autoConfig
-            List<String> keys = new ArrayList<String>(autoConfigMap.keySet());
+            List<String> keys = new ArrayList<>(autoConfigMap.keySet());
             Collections.sort(keys);
 
             for (String key : keys) {
@@ -323,7 +323,7 @@ public class PreparePackageIdsTask extends BaseTask {
         if (autoConfigMap.size() != new HashSet(autoConfigMap.values()).size()) {
 //            getLogger().error(JSON.toJSONString(autoConfigMap, true));
 
-            Map<String, PackageIdItem> idItemMap = new HashMap<String, PackageIdItem>();
+            Map<String, PackageIdItem> idItemMap = new HashMap<>();
 
             for (String key : autoConfigMap.keySet()) {
                 String customPackageId = autoConfigMap.get(key);
@@ -341,7 +341,7 @@ public class PreparePackageIdsTask extends BaseTask {
             }
 
             Collection<PackageIdItem> collection = idItemMap.values();
-            List<PackageIdItem> packageList = new ArrayList<PackageIdItem>(collection);
+            List<PackageIdItem> packageList = new ArrayList<>(collection);
             Collections.sort(packageList, new Comparator<PackageIdItem>() {
                 @Override
                 public int compare(PackageIdItem o1, PackageIdItem o2) {
@@ -371,7 +371,7 @@ public class PreparePackageIdsTask extends BaseTask {
         file.delete();
         file.getParentFile().mkdirs();
         try {
-            List<String> lines = new ArrayList<String>();
+            List<String> lines = new ArrayList<>();
             for (String key : map.keySet()) {
                 lines.add(key + "=" + map.get(key));
             }
@@ -389,7 +389,7 @@ public class PreparePackageIdsTask extends BaseTask {
      * @return
      */
     private Map<String, String> loadPackageIdProperties(File packageIdFile) throws IOException {
-        Map<String, String> values = new HashMap<String, String>();
+        Map<String, String> values = new HashMap<>();
         if (null != packageIdFile && packageIdFile.exists() && packageIdFile.isFile()) {
             List<String> lines = FileUtils.readLines(packageIdFile);
             for (String line : lines) {
@@ -446,7 +446,7 @@ public class PreparePackageIdsTask extends BaseTask {
     public static class PackageIdItem {
         public int packageId;
         public int typeIdOffset;
-        public List<String> bundles = new ArrayList<String>();
+        public List<String> bundles = new ArrayList<>();
     }
 
 

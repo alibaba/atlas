@@ -243,7 +243,7 @@ public final class DexMerger {
             // values contains one value from each dex, sorted for fast retrieval of
             // the smallest value. The list associated with a value has the indexes
             // of the dexes that had that value.
-            TreeMap<T, List<Integer>> values = new TreeMap<T, List<Integer>>();
+            TreeMap<T, List<Integer>> values = new TreeMap<>();
 
             for (int i = 0; i < dexes.length; i++) {
                 sections[i] = getSection(dexes[i].getTableOfContents());
@@ -292,7 +292,7 @@ public final class DexMerger {
         public final void mergeUnsorted() {
             getSection(contentsOut).off = out.getPosition();
 
-            List<UnsortedValue> all = new ArrayList<UnsortedValue>();
+            List<UnsortedValue> all = new ArrayList<>();
             for (int i = 0; i < dexes.length; i++) {
                 all.addAll(readUnsortedValues(dexes[i], indexMaps[i]));
             }
@@ -321,7 +321,7 @@ public final class DexMerger {
                 return Collections.emptyList();
             }
 
-            List<UnsortedValue> result = new ArrayList<UnsortedValue>();
+            List<UnsortedValue> result = new ArrayList<>();
             Dex.Section in = source.open(section.off);
             for (int i = 0; i < section.size; i++) {
                 int offset = in.getPosition();

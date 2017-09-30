@@ -649,7 +649,7 @@ public class LocalSignedJarBuilder {
                                      X509Certificate publicKey,
                                      PrivateKey privateKey) throws IOException, CertificateEncodingException, OperatorCreationException, CMSException {
 
-        ArrayList<X509Certificate> certList = new ArrayList<X509Certificate>();
+        ArrayList<X509Certificate> certList = new ArrayList<>();
         certList.add(publicKey);
         JcaCertStore certs = new JcaCertStore(certList);
 

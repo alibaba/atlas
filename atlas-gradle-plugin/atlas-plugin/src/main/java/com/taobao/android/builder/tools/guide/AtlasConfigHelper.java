@@ -283,7 +283,7 @@ public class AtlasConfigHelper {
     public static List<AtlasConfigField> readConfig(AtlasExtension atlasExtension, String prefix)
         throws IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 
-        List<AtlasConfigField> configFieldList = new ArrayList<AtlasConfigField>();
+        List<AtlasConfigField> configFieldList = new ArrayList<>();
 
         readConfig(atlasExtension, prefix, configFieldList, 0, "");
 
@@ -382,7 +382,7 @@ public class AtlasConfigHelper {
     }
 
     public static List<Field> getAllFields(Class clazz) {
-        List<Field> fieldList = new ArrayList<Field>();
+        List<Field> fieldList = new ArrayList<>();
         getAllFields(fieldList, clazz);
         return fieldList;
     }

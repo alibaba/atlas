@@ -441,7 +441,7 @@ public class DexObfuscatedTool {
         this.map = map;
     }
 
-    public Map<String,String>map = new HashMap<String, String>();
+    public Map<String,String> map = new HashMap<>();
 
     public static boolean aliProguard = false;
 
@@ -471,9 +471,9 @@ public class DexObfuscatedTool {
         mappingProcessor.updateFieldType();
         InsTructionsReIClassDef insTructionsReDef = new InsTructionsReIClassDef(new MappingClassProcessor(mappingProcessor));
         DexFile dFile = DexFileFactory.loadDexFile(inputFile.getAbsolutePath(), 19, true);
-        Set<ClassDef> classes = new HashSet<ClassDef>();
+        Set<ClassDef> classes = new HashSet<>();
         classes.addAll(dFile.getClasses());
-        final Set<ClassDef> obfuscateClasses = new HashSet<ClassDef>();
+        final Set<ClassDef> obfuscateClasses = new HashSet<>();
         for (ClassDef classDef : classes) {
             obfuscateClasses.add(insTructionsReDef.reClassDef(classDef));
         }

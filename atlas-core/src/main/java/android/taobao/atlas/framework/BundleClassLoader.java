@@ -311,7 +311,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         if (req.length == 0) {
             return;
         }
-        final Set<String> havingEEs = new HashSet<String>(Arrays.asList(having));
+        final Set<String> havingEEs = new HashSet<>(Arrays.asList(having));
         for (int i = 0; i < req.length; i++) {
             if (havingEEs.contains(req[i])) {
                 return;

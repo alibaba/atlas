@@ -46,10 +46,10 @@ class AnnotationLister {
     private final Main.Arguments args;
 
     /** Set of classes whose inner classes should be considered matched */
-    HashSet<String> matchInnerClassesOf = new HashSet<String>();
+    HashSet<String> matchInnerClassesOf = new HashSet<>();
 
     /** set of packages whose classes should be considered matched */
-    HashSet<String> matchPackages = new HashSet<String>();
+    HashSet<String> matchPackages = new HashSet<>();
 
     AnnotationLister (Main.Arguments args) {
         this.args = args;

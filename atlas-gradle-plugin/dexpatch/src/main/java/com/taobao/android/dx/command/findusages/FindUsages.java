@@ -45,8 +45,8 @@ public final class FindUsages {
         this.dex = dex;
         this.out = out;
 
-        Set<Integer> typeStringIndexes = new HashSet<Integer>();
-        Set<Integer> memberNameIndexes = new HashSet<Integer>();
+        Set<Integer> typeStringIndexes = new HashSet<>();
+        Set<Integer> memberNameIndexes = new HashSet<>();
         Pattern declaredByPattern = Pattern.compile(declaredBy);
         Pattern memberNamePattern = Pattern.compile(memberName);
         List<String> strings = dex.strings();
@@ -152,7 +152,7 @@ public final class FindUsages {
      * declaringType}.
      */
     private Set<Integer> getFieldIds(Dex dex, Set<Integer> memberNameIndexes, int declaringType) {
-        Set<Integer> fields = new HashSet<Integer>();
+        Set<Integer> fields = new HashSet<>();
         int fieldIndex = 0;
         for (FieldId fieldId : dex.fieldIds()) {
             if (memberNameIndexes.contains(fieldId.getNameIndex())
@@ -171,7 +171,7 @@ public final class FindUsages {
     private Set<Integer> getMethodIds(Dex dex, Set<Integer> memberNameIndexes, int declaringType) {
         Set<Integer> subtypes = findAssignableTypes(dex, declaringType);
 
-        Set<Integer> methods = new HashSet<Integer>();
+        Set<Integer> methods = new HashSet<>();
         int methodIndex = 0;
         for (MethodId method : dex.methodIds()) {
             if (memberNameIndexes.contains(method.getNameIndex())
@@ -187,7 +187,7 @@ public final class FindUsages {
      * Returns the set of types that can be assigned to {@code typeIndex}.
      */
     private Set<Integer> findAssignableTypes(Dex dex, int typeIndex) {
-        Set<Integer> assignableTypes = new HashSet<Integer>();
+        Set<Integer> assignableTypes = new HashSet<>();
         assignableTypes.add(typeIndex);
 
         for (ClassDef classDef : dex.classDefs()) {

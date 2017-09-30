@@ -451,7 +451,7 @@ public abstract class AbstractDexFilter implements DexDiffFilter {
             return;
         }
         if (diffInfo.getClassDiffInfoMap().size() > 0) {
-            Set<String>filterClass = new HashSet<String>();
+            Set<String> filterClass = new HashSet<>();
             for (ClassDiffInfo classDiffInfo : diffInfo.getClassDiffInfoMap().values()) {
                 if (filterClass(classDiffInfo)){
                     filterClass.add(classDiffInfo.getName());

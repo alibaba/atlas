@@ -207,7 +207,7 @@ public abstract class DexSectionDiffAlgorithm<T extends Comparable<T>> {
         }
         Dex.Section dexSec = dex.openSection(tocSec);
         int itemCount = tocSec.size;
-        List<AbstractMap.SimpleEntry<Integer, T>> result = new ArrayList<AbstractMap.SimpleEntry<Integer, T>>(itemCount);
+        List<AbstractMap.SimpleEntry<Integer, T>> result = new ArrayList<>(itemCount);
         if (isOldDex) {
             for (int i = 0; i < itemCount; ++i) {
                 T nextItem = nextItem(dexSec);

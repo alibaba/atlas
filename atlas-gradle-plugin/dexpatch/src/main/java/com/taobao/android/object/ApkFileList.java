@@ -425,8 +425,8 @@ import java.util.Map;
  */
 public class ApkFileList {
 
-    private HashMap<String, String> mainBundle = new HashMap<String, String>();
-    private Map<String, HashMap<String, String>> awbs       = new HashMap<String, HashMap<String, String>>();
+    private HashMap<String, String> mainBundle = new HashMap<>();
+    private Map<String, HashMap<String, String>> awbs       = new HashMap<>();
 
     public HashMap<String, String> getMainBundle() {
         return mainBundle;

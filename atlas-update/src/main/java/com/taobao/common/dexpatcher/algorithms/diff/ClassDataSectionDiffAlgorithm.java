@@ -31,7 +31,7 @@ import java.util.Set;
  * Created by tangyinsheng on 2016/6/30.
  */
 public class ClassDataSectionDiffAlgorithm extends DexSectionDiffAlgorithm<ClassData> {
-    private Set<Integer> offsetOfClassDataToRemoveSet = new HashSet<Integer>();
+    private Set<Integer> offsetOfClassDataToRemoveSet = new HashSet<>();
 
     public ClassDataSectionDiffAlgorithm(Dex oldDex, Dex newDex, IndexMap oldToNewIndexMap, IndexMap oldToPatchedIndexMap, IndexMap newToPatchedIndexMap, IndexMap selfIndexMapForSkip) {
         super(oldDex, newDex, oldToNewIndexMap, oldToPatchedIndexMap, newToPatchedIndexMap, selfIndexMapForSkip);

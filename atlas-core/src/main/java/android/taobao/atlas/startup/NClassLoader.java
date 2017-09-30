@@ -243,7 +243,7 @@ public class NClassLoader extends PathClassLoader{
         loadPathList.set(loader, originPathListObject);
 
         //we must recreate dexFile due to dexCache
-        List<File> additionalClassPathEntries = new ArrayList<File>();
+        List<File> additionalClassPathEntries = new ArrayList<>();
         Field dexElement = findField(originPathListObject, "dexElements");
         Object[] originDexElements = (Object[]) dexElement.get(originPathListObject);
         for (Object element : originDexElements) {
@@ -254,7 +254,7 @@ public class NClassLoader extends PathClassLoader{
         }
         Method makePathElements = findMethod(originPathListObject, "makePathElements", List.class, File.class,
                 List.class);
-        ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
+        ArrayList<IOException> suppressedExceptions = new ArrayList<>();
         Object[] newDexElements = (Object[]) makePathElements.invoke(originPathListObject, additionalClassPathEntries, null, suppressedExceptions);
         dexElement.set(originPathListObject, newDexElements);
 

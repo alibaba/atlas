@@ -286,7 +286,7 @@ public class MergeSoLibTask extends BaseTask {
      */
     @TaskAction
     void generate() {
-        List<File> scanDirs = new ArrayList<File>();
+        List<File> scanDirs = new ArrayList<>();
         //先生成主bundle的jnifolder目录
         if (!getMainBundleOutputFolder().exists()) {
             getMainBundleOutputFolder().mkdirs();
@@ -448,7 +448,7 @@ public class MergeSoLibTask extends BaseTask {
             ConventionMappingHelper.map(copySoLibTask, "jniFolders", new Callable<Set<File>>() {
                 @Override
                 public Set call() throws Exception {
-                    Set<File> set = new HashSet<File>();
+                    Set<File> set = new HashSet<>();
                     for (AndroidLibrary aarBundle : dependencyTree.getMainBundle().getAndroidLibraries()) {
                         if (!aarBundle.isOptional()) {
                             File jniFolder = new File(aarBundle.getFolder(), "libs");

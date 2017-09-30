@@ -251,7 +251,7 @@ public class KernalFileLock {
 	 * To resolve the 1st issue, we used BundleLock.
 	 * To resolve the 2nd issue, we need add ref count ourselves.
 	 */
-	private Map<String, FileLockCount> mRefCountMap = new ConcurrentHashMap<String, FileLockCount>();
+	private Map<String, FileLockCount> mRefCountMap = new ConcurrentHashMap<>();
 
 	/*
 	 * Refcnt increment

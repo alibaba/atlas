@@ -74,13 +74,13 @@ public final class DexMerger {
     /** minimum number of wasted bytes before it's worthwhile to compact the result */
     private int                          compactWasteThreshold = 1024 * 1024; // 1MiB
 
-    private List<Integer>removeClasses = new ArrayList<Integer>();
+    private List<Integer> removeClasses = new ArrayList<>();
 
     public void setRemoveTypeClasses(List<String> removeTypeClasses) {
         this.removeTypeClasses = removeTypeClasses;
     }
 
-    private List<String>removeTypeClasses = new ArrayList<String>();
+    private List<String> removeTypeClasses = new ArrayList<>();
 
     public DexMerger(Dex[] dexes, CollisionPolicy collisionPolicy) throws IOException{
         this(dexes, collisionPolicy, new WriterSizes(dexes, false));
@@ -232,7 +232,7 @@ public final class DexMerger {
             // values contains one value from each dex, sorted for fast retrieval of
             // the smallest value. The list associated with a value has the indexes
             // of the dexes that had that value.
-            TreeMap<T, List<Integer>> values = new TreeMap<T, List<Integer>>();
+            TreeMap<T, List<Integer>> values = new TreeMap<>();
             boolean hasValue = false;
             for (int i = 0; i < dexes.length; i++) {
                 sections[i] = getSection(dexes[i].getTableOfContents());
@@ -287,7 +287,7 @@ public final class DexMerger {
         public final void mergeUnsorted() {
             getSection(contentsOut).off = out.getPosition();
 
-            List<UnsortedValue> all = new ArrayList<UnsortedValue>();
+            List<UnsortedValue> all = new ArrayList<>();
             for (int i = 0; i < dexes.length; i++) {
                 all.addAll(readUnsortedValues(dexes[i], indexMaps[i]));
             }
@@ -316,7 +316,7 @@ public final class DexMerger {
                 return Collections.emptyList();
             }
 
-            List<UnsortedValue> result = new ArrayList<UnsortedValue>();
+            List<UnsortedValue> result = new ArrayList<>();
             Dex.Section in = source.open(section.off);
             for (int i = 0; i < section.size; i++) {
                 int offset = in.getPosition();
@@ -381,7 +381,7 @@ public final class DexMerger {
         // values contains one value from each dex, sorted for fast retrieval of
         // the smallest value. The list associated with a value has the indexes
         // of the dexes that had that value.
-        TreeMap<String, List<Integer>> values = new TreeMap<String, List<Integer>>();
+        TreeMap<String, List<Integer>> values = new TreeMap<>();
         boolean hasValue = false;
         for (int i = 0; i < dexes.length; i++) {
             sections[i] = dexes[i].getTableOfContents().stringIds;
@@ -630,10 +630,10 @@ public final class DexMerger {
 
         for (SortableType type : types) {
             Dex in = type.getDex();
-            List<DexSectionItem<ClassDef>> dupClassDefs = new ArrayList<DexSectionItem<ClassDef>>();
+            List<DexSectionItem<ClassDef>> dupClassDefs = new ArrayList<>();
             if (null != type.getDupTypes()) {
                 for (SortableType dupType : type.getDupTypes()) {
-                    DexSectionItem<ClassDef> classDefDexItem = new DexSectionItem<ClassDef>();
+                    DexSectionItem<ClassDef> classDefDexItem = new DexSectionItem<>();
                     classDefDexItem.indexMap = dupType.getIndexMap();
                     classDefDexItem.item = dupType.getClassDef();
                     classDefDexItem.target = dupType.getDex();
@@ -801,10 +801,10 @@ public final class DexMerger {
         } else {
             idsDefsOut.writeInt(classDataOut.getPosition());
             ClassData classData = in.readClassData(classDef);
-            List<DexSectionItem<ClassData>> dupClassDatas = new ArrayList<DexSectionItem<ClassData>>();
+            List<DexSectionItem<ClassData>> dupClassDatas = new ArrayList<>();
             for (DexSectionItem<ClassDef> dupClassDef : dupClassDefs) {
                 ClassData dupClassData = dupClassDef.target.readClassData(dupClassDef.item);
-                DexSectionItem<ClassData> dupClassDataItem = new DexSectionItem<ClassData>();
+                DexSectionItem<ClassData> dupClassDataItem = new DexSectionItem<>();
                 dupClassDataItem.target = dupClassDef.target;
                 dupClassDataItem.item = dupClassData;
                 dupClassDataItem.indexMap = dupClassDef.indexMap;
@@ -914,13 +914,13 @@ public final class DexMerger {
 
         transformFields(indexMap, staticFields);
         transformFields(indexMap, instanceFields);
-        Map<String, ArrayList<DexSectionItem<ClassData.Method>>> dupMethods = new HashMap<String, ArrayList<DexSectionItem<ClassData.Method>>>();
+        Map<String, ArrayList<DexSectionItem<ClassData.Method>>> dupMethods = new HashMap<>();
         for (DexSectionItem<ClassData> dupClassData : dupClassDatas) {
             ClassData.Method[] methods = dupClassData.item.getDirectMethods();
 
             if (null != methods && methods.length > 0) {
                 for (ClassData.Method method : methods) {
-                    DexSectionItem<ClassData.Method> methodItem = new DexSectionItem<ClassData.Method>();
+                    DexSectionItem<ClassData.Method> methodItem = new DexSectionItem<>();
                     methodItem.target = dupClassData.target;
                     methodItem.indexMap = dupClassData.indexMap;
                     methodItem.item = method;
@@ -940,7 +940,7 @@ public final class DexMerger {
             ClassData.Method[] methods = dupClassData.item.getVirtualMethods();
             if (null != methods && methods.length > 0) {
                 for (ClassData.Method method : methods) {
-                    DexSectionItem<ClassData.Method> methodItem = new DexSectionItem<ClassData.Method>();
+                    DexSectionItem<ClassData.Method> methodItem = new DexSectionItem<>();
                     methodItem.target = dupClassData.target;
                     methodItem.indexMap = dupClassData.indexMap;
                     methodItem.item = method;

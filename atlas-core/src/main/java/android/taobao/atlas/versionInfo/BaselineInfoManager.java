@@ -391,7 +391,7 @@ public class BaselineInfoManager{
 
     public void rollback(){
         if (!TextUtils.isEmpty(lastVersionName())) {
-            List<String> bundles = new ArrayList<String>(getUpdateBundles());
+            List<String> bundles = new ArrayList<>(getUpdateBundles());
             PackageInfo info = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication);
             if (RuntimeVariables.sCachePreVersionBundles && bundles != null && !info.versionName.equals(lastVersionName()) && bundles.size() > 0) {
                 rollbackInternal();

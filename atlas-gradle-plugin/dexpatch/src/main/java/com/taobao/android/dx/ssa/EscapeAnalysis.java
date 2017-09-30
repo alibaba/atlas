@@ -321,7 +321,7 @@ public class EscapeAnalysis {
      * @param escSet {@code non-null;} EscapeSet for the new object
      */
     private void processRegister(RegisterSpec result, EscapeSet escSet) {
-        ArrayList<RegisterSpec> regWorklist = new ArrayList<RegisterSpec>();
+        ArrayList<RegisterSpec> regWorklist = new ArrayList<>();
         regWorklist.add(result);
 
         // Go through the worklist
@@ -488,9 +488,8 @@ public class EscapeAnalysis {
             // Create a map for the new registers that will be created
             TypeBearer lengthReg = prev.getSources().get(0).getTypeBearer();
             int length = ((CstLiteralBits) lengthReg).getIntBits();
-            ArrayList<RegisterSpec> newRegs =
-                new ArrayList<RegisterSpec>(length);
-            HashSet<SsaInsn> deletedInsns = new HashSet<SsaInsn>();
+            ArrayList<RegisterSpec> newRegs = new ArrayList<>(length);
+            HashSet<SsaInsn> deletedInsns = new HashSet<>();
 
             // Replace the definition of the array with registers
             replaceDef(def, prev, length, newRegs);

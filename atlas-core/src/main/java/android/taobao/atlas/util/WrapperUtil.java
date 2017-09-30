@@ -229,7 +229,7 @@ public class WrapperUtil {
 
     final static String   TAG                = "Utils";
 
-    static HashMap<String,Object> keyPointLog = new HashMap<String,Object>();
+    static HashMap<String,Object> keyPointLog = new HashMap<>();
 
     public static boolean isDebugMode(Application application){
         final ApplicationInfo app_info = application.getApplicationInfo();

@@ -223,7 +223,7 @@ import java.util.Set;
 public class MethodReplaceAnnotation extends BaseAnnotation {
     //	private static String ANNOTATION = "Lc8/vJb;";
     public static String ANNOTATION = "Lcom/alipay/euler/andfix/annotation/MethodReplace;";
-    private Set<BaseAnnotationElement> mElements = new HashSet<BaseAnnotationElement>();
+    private Set<BaseAnnotationElement> mElements = new HashSet<>();
 
     @Override
     public int getVisibility() {

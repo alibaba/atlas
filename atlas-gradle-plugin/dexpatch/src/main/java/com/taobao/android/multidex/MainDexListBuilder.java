@@ -66,7 +66,7 @@ public class MainDexListBuilder {
     private static final String DISABLE_ANNOTATION_RESOLUTION_WORKAROUND =
             "--disable-annotation-resolution-workaround";
 
-    private Set<String> filesToKeep = new HashSet<String>();
+    private Set<String> filesToKeep = new HashSet<>();
 
     public static void main(String[] args) {
 

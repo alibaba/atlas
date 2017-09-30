@@ -240,7 +240,7 @@ public class ApkFileListUtils {
 
         ApkFiles apkFiles = new ApkFiles();
 
-        List<File> mainBundleResFolders = new ArrayList<File>();
+        List<File> mainBundleResFolders = new ArrayList<>();
         mainBundleResFolders.add(appVariantContext.getScope().getVariantData().mergeResourcesTask.getOutputDir());
         prepareApkFileList(appVariantContext.getScope().getVariantData().mergeAssetsTask.getOutputDir(),
                            "assets", apkFiles);

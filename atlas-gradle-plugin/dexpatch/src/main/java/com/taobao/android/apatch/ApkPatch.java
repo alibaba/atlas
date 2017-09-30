@@ -361,7 +361,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
                                                  DexDiffInfo info) throws PatchException {
         Set<DexBackedClassDef> classes = Sets.newHashSet();
         classes = SmaliDiffUtils.scanClasses(smaliDir, newFiles);
-        ArrayList<String> methods = new ArrayList<String>();
+        ArrayList<String> methods = new ArrayList<>();
         {
             Set<DexBackedMethod> tempSet = info.getModifiedMethods();
             for (DexBackedMethod methodRef : tempSet) {
@@ -379,7 +379,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
             }
         }
 
-        Set<String> prepareClasses = new HashSet<String>();
+        Set<String> prepareClasses = new HashSet<>();
         try {
             final ClassFileNameHandler inFileNameHandler = new ClassFileNameHandler(smaliDir, ".smali");
             for (DexBackedClassDef classDef : classes) {

@@ -27,7 +27,7 @@ public class MergeExcutorServices {
     private IDexMergeCallback mCallback = null;
     public static ZipFile sZipPatch;
     private static final String TAG = "mergeTask";
-    HashMap<String, List<ZipEntry>> bundleEntryGroup = new HashMap<String, List<ZipEntry>>();
+    HashMap<String, List<ZipEntry>> bundleEntryGroup = new HashMap<>();
 
     public static OS os = OS.mac;
 
@@ -254,7 +254,7 @@ public class MergeExcutorServices {
             //方式二
             Dex dex1 = new Dex(inputStreams[1]);
             Dex dex2 = new Dex(inputStreams[0]);
-            List<Dex> dexs = new ArrayList<Dex>();
+            List<Dex> dexs = new ArrayList<>();
             dexs.add(dex1);
             dexs.add(dex2);
             DexMerger mDexMerge = new DexMerger(new Dex[]{dex1, dex2}, CollisionPolicy.KEEP_FIRST);

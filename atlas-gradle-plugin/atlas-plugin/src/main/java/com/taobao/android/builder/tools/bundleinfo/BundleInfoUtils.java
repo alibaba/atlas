@@ -379,7 +379,7 @@ public class BundleInfoUtils {
             appVariantContext.getScope().
                 getVariantConfiguration().getFullName());
 
-        List<BundleInfo> bundleInfoList = new ArrayList<BundleInfo>();
+        List<BundleInfo> bundleInfoList = new ArrayList<>();
 
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
             bundleInfoList.add(awbBundle.bundleInfo);
