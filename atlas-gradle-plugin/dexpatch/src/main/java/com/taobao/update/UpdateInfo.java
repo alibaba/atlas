@@ -237,7 +237,7 @@ public class UpdateInfo implements Serializable {
 
         List<Item> items = new ArrayList<Item>();
         for (PatchBundleInfo patchBundleInfo : patchInfo.getBundles()) {
-            UpdateInfo.Item item = new UpdateInfo.Item();
+            Item item = new Item();
             items.add(item);
             item.dependency = patchBundleInfo.getDependency();
             item.isMainDex = patchBundleInfo.getMainBundle();

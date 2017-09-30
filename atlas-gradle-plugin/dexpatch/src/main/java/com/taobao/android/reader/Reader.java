@@ -7,6 +7,6 @@ package com.taobao.android.reader;
 
 public interface Reader<T> {
 
-    public T read(String className,String member) throws Exception;
+    public T read(String className, String member) throws Exception;
 
 }

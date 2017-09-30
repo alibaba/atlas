@@ -50,10 +50,10 @@ public class PatchChecker implements Checker{
             if (!item.name.equals("com.taobao.maindex")&&!changedBundles.contains(item.name)){
                 reasonMsgs.add(new ReasonMsg(ReasonType.ERROR7,item.name));
             }
-            if (item.unitTag!= null &&!item.name.equals("com.taobao.maindex")&&!item.unitTag.equals(bundleInfos.get(item.name).getCurrent_unique_tag())){
+            if (bundleInfos.get(item.name)!=null && item.unitTag!= null &&!item.name.equals("com.taobao.maindex")&&!item.unitTag.equals(bundleInfos.get(item.name).getCurrent_unique_tag())){
                 reasonMsgs.add(new ReasonMsg(ReasonType.ERROR5,item.name));
             }
-            if (item.unitTag!= null &&!item.name.equals("com.taobao.maindex")&&!item.srcUnitTag.equals(bundleInfos.get(item.name).getUnique_tag())){
+            if (bundleInfos.get(item.name)!=null&& item.unitTag!= null &&!item.name.equals("com.taobao.maindex")&&!item.srcUnitTag.equals(bundleInfos.get(item.name).getUnique_tag())){
                 reasonMsgs.add(new ReasonMsg(ReasonType.ERROR8,item.name));
             }
             if (item.srcUnitTag!=null && item.srcUnitTag.equals(item.unitTag)){

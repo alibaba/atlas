@@ -238,11 +238,11 @@ public final class Profiler {
     }
 
     public static void start(String message) {
-        entryStack.set(new Profiler.Entry(message, (Profiler.Entry)null, (Profiler.Entry)null));
+        entryStack.set(new Entry(message, (Entry)null, (Entry)null));
     }
 
-    public static void start(Profiler.Message message) {
-        entryStack.set(new Profiler.Entry(message, (Profiler.Entry)null, (Profiler.Entry)null));
+    public static void start(Message message) {
+        entryStack.set(new Entry(message, (Entry)null, (Entry)null));
     }
 
     public static void reset() {
@@ -250,15 +250,15 @@ public final class Profiler {
     }
 
     public static void enter(String message) {
-        Profiler.Entry currentEntry = getCurrentEntry();
+        Entry currentEntry = getCurrentEntry();
         if (currentEntry != null) {
             currentEntry.enterSubEntry(message);
         }
 
     }
 
-    public static void enter(Profiler.Message message) {
-        Profiler.Entry currentEntry = getCurrentEntry();
+    public static void enter(Message message) {
+        Entry currentEntry = getCurrentEntry();
         if (currentEntry != null) {
             currentEntry.enterSubEntry(message);
         }
@@ -266,7 +266,7 @@ public final class Profiler {
     }
 
     public static void release() {
-        Profiler.Entry currentEntry = getCurrentEntry();
+        Entry currentEntry = getCurrentEntry();
         if (currentEntry != null) {
             currentEntry.release();
         }
@@ -274,7 +274,7 @@ public final class Profiler {
     }
 
     public static long getDuration() {
-        Profiler.Entry entry = (Profiler.Entry)entryStack.get();
+        Entry entry = (Entry)entryStack.get();
         return entry != null ? entry.getDuration() : -1L;
     }
 
@@ -287,17 +287,17 @@ public final class Profiler {
     }
 
     public static String dump(String prefix1, String prefix2) {
-        Profiler.Entry entry = (Profiler.Entry)entryStack.get();
+        Entry entry = (Entry)entryStack.get();
         return entry != null ? entry.toString(prefix1, prefix2) : "";
     }
 
-    public static Profiler.Entry getEntry() {
-        return (Profiler.Entry)entryStack.get();
+    public static Entry getEntry() {
+        return (Entry)entryStack.get();
     }
 
-    private static Profiler.Entry getCurrentEntry() {
-        Profiler.Entry subEntry = (Profiler.Entry)entryStack.get();
-        Profiler.Entry entry = null;
+    private static Entry getCurrentEntry() {
+        Entry subEntry = (Entry)entryStack.get();
+        Entry entry = null;
         if (subEntry != null) {
             do {
                 entry = subEntry;
@@ -318,18 +318,18 @@ public final class Profiler {
     public static final class Entry {
         private final List subEntries;
         private final Object message;
-        private final Profiler.Entry parentEntry;
-        private final Profiler.Entry firstEntry;
+        private final Entry parentEntry;
+        private final Entry firstEntry;
         private final long baseTime;
         private final long startTime;
         private long endTime;
 
-        private Entry(Object message, Profiler.Entry parentEntry, Profiler.Entry firstEntry) {
+        private Entry(Object message, Entry parentEntry, Entry firstEntry) {
             this.subEntries = new ArrayList(4);
             this.message = message;
             this.startTime = System.currentTimeMillis();
             this.parentEntry = parentEntry;
-            this.firstEntry = (Profiler.Entry)ObjectUtils.defaultIfNull(firstEntry, this);
+            this.firstEntry = (Entry)ObjectUtils.defaultIfNull(firstEntry, this);
             this.baseTime = firstEntry == null ? 0L : firstEntry.startTime;
         }
 
@@ -337,8 +337,8 @@ public final class Profiler {
             String messageString = null;
             if (this.message instanceof String) {
                 messageString = (String)this.message;
-            } else if (this.message instanceof Profiler.Message) {
-                Profiler.Message messageObject = (Profiler.Message)this.message;
+            } else if (this.message instanceof Message) {
+                Message messageObject = (Message)this.message;
 
                 messageString = messageObject.getDetailedMessage();
 
@@ -367,7 +367,7 @@ public final class Profiler {
                 return duration;
             } else {
                 for (int i = 0; i < this.subEntries.size(); ++i) {
-                    Profiler.Entry subEntry = (Profiler.Entry)this.subEntries.get(i);
+                    Entry subEntry = (Entry)this.subEntries.get(i);
                     duration -= subEntry.getDuration();
                 }
 
@@ -408,14 +408,14 @@ public final class Profiler {
         }
 
         private void enterSubEntry(Object message) {
-            Profiler.Entry subEntry = new Profiler.Entry(message, this, this.firstEntry);
+            Entry subEntry = new Entry(message, this, this.firstEntry);
             this.subEntries.add(subEntry);
         }
 
-        private Profiler.Entry getUnreleasedEntry() {
-            Profiler.Entry subEntry = null;
+        private Entry getUnreleasedEntry() {
+            Entry subEntry = null;
             if (!this.subEntries.isEmpty()) {
-                subEntry = (Profiler.Entry)this.subEntries.get(this.subEntries.size() - 1);
+                subEntry = (Entry)this.subEntries.get(this.subEntries.size() - 1);
                 if (subEntry.isReleased()) {
                     subEntry = null;
                 }
@@ -472,7 +472,7 @@ public final class Profiler {
             buffer.append(MessageFormat.format(pattern.toString(), params));
 
             for (int i = 0; i < this.subEntries.size(); ++i) {
-                Profiler.Entry subEntry = (Profiler.Entry)this.subEntries.get(i);
+                Entry subEntry = (Entry)this.subEntries.get(i);
                 buffer.append('\n');
                 if (i == this.subEntries.size() - 1) {
                     subEntry.toString(buffer, prefix2 + "`---", prefix2 + "    ");

@@ -297,6 +297,8 @@ public class TPatchTool extends BasePatchTool {
 
     private String mainBundleName = "libcom_taobao_maindex";
 
+    private String mainBundleDexPatchName = "com.taobao.maindex";
+
     protected File baseApkFileList;
 
     public void setCreateAll(boolean createAll) {
@@ -942,7 +944,11 @@ public class TPatchTool extends BasePatchTool {
                     patchBundleInfo.setNewBundle(DiffType.ADD.equals(artifactBundleInfo.getDiffType()));
                     patchBundleInfo.setMainBundle(true);
                     patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
-                    patchBundleInfo.setName(mainBundleName);
+                    if (dexPatch){
+                        patchBundleInfo.setName(mainBundleDexPatchName);
+                    }else {
+                        patchBundleInfo.setName(mainBundleName);
+                    }
                     patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
                     patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
                     patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());

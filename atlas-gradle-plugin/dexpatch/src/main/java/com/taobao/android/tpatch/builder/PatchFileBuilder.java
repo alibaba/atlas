@@ -431,7 +431,14 @@ public class PatchFileBuilder {
                                 addToPatch = false;
                             }else {
 //                                throw new PatchException(patchName+"patch中:"+patchBundleInfo.getPkgName()+"的srcunittag和unittag不一致,"+patchBundleInfo.getUnitTag()+","+patchBundleInfo.getSrcUnitTag()+"但是无任何变更,无法动态部署，请重新集成!");
+
                                 patchBundleInfo.setInherit(true);
+                                File mockFile = new File(bundleDestFolder,"mockFile");
+                                if (!bundleDestFolder.exists()) {
+                                    bundleDestFolder.mkdirs();
+                                }
+                                mockFile.createNewFile();
+
                             }
                         }
                     }

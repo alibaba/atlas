@@ -245,7 +245,7 @@ import java.util.jar.Manifest;
 /**
  * @author sanping.li@alipay.com
  */
-public class ApkPatch extends com.taobao.android.apatch.Build {
+public class ApkPatch extends Build {
 
     private List<File> baseFiles = Lists.newArrayList();
     private List<File> newFiles = Lists.newArrayList();

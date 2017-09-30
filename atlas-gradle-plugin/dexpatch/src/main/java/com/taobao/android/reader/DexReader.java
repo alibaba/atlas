@@ -19,7 +19,7 @@ public class DexReader implements Reader {
 
     public DexReader(File file) throws IOException {
         if (file.exists()){
-            org.jf.dexlib2.iface.DexFile dexFile = DexFileFactory.loadDexFile(file,19,true);
+            DexFile dexFile = DexFileFactory.loadDexFile(file,19,true);
             this.classDefs = dexFile.getClasses();
         }
     }

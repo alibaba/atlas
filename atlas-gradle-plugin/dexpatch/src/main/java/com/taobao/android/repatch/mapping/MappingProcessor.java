@@ -441,9 +441,9 @@ public interface MappingProcessor {
 
     public MappingProcessorImpl.ClassObject.NewClassObject getNewClassName(String oldClassName);
 
-    public MappingProcessorImpl.MethodObject.NewMethodObject getNewClassNameAndMethodName(String oldClassName, String methodName, String methodReturnType,String args);
+    public MappingProcessorImpl.MethodObject.NewMethodObject getNewClassNameAndMethodName(String oldClassName, String methodName, String methodReturnType, String args);
 
-    public MappingProcessorImpl.FieldObject.NewFieldObject getNewFieldName(String oldClassName, String fieldType,String oldFieldName);
+    public MappingProcessorImpl.FieldObject.NewFieldObject getNewFieldName(String oldClassName, String fieldType, String oldFieldName);
 
     public void updateMethod();
 

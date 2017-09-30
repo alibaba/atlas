@@ -240,7 +240,7 @@ public class DexTransform {
             public final void mergeUnsorted() {
                 getSection(contentsOut).off = out.getPosition();
 
-                List<IdMerger.UnsortedValue> all = new ArrayList<IdMerger.UnsortedValue>();
+                List<UnsortedValue> all = new ArrayList<UnsortedValue>();
                 for (int i = 0; i < dexes.length; i++) {
                     all.addAll(readUnsortedValues(dexes[i], indexMaps[i]));
                 }
@@ -248,11 +248,11 @@ public class DexTransform {
 
                 int outCount = 0;
                 for (int i = 0; i < all.size(); ) {
-                    IdMerger.UnsortedValue e1 = all.get(i++);
+                    UnsortedValue e1 = all.get(i++);
                     updateIndex(e1.offset, e1.indexMap, e1.index, outCount - 1);
 
                     while (i < all.size() && e1.compareTo(all.get(i)) == 0) {
-                        IdMerger.UnsortedValue e2 = all.get(i++);
+                        UnsortedValue e2 = all.get(i++);
                         updateIndex(e2.offset, e2.indexMap, e2.index, outCount - 1);
                     }
 
@@ -263,18 +263,18 @@ public class DexTransform {
                 getSection(contentsOut).size = outCount;
             }
 
-            private List<IdMerger.UnsortedValue> readUnsortedValues(Dex source, IndexMap indexMap) {
+            private List<UnsortedValue> readUnsortedValues(Dex source, IndexMap indexMap) {
                 TableOfContents.Section section = getSection(source.getTableOfContents());
                 if (!section.exists()) {
                     return Collections.emptyList();
                 }
 
-                List<IdMerger.UnsortedValue> result = new ArrayList<IdMerger.UnsortedValue>();
+                List<UnsortedValue> result = new ArrayList<UnsortedValue>();
                 Dex.Section in = source.open(section.off);
                 for (int i = 0; i < section.size; i++) {
                     int offset = in.getPosition();
                     T value = read(in, indexMap, 0);
-                    result.add(new IdMerger.UnsortedValue(source, indexMap, value, i, offset));
+                    result.add(new UnsortedValue(source, indexMap, value, i, offset));
                 }
                 return result;
             }
@@ -284,7 +284,7 @@ public class DexTransform {
             abstract void updateIndex(int offset, IndexMap indexMap, int oldIndex, int newIndex);
             abstract void write(T value);
 
-            class UnsortedValue implements Comparable<IdMerger.UnsortedValue> {
+            class UnsortedValue implements Comparable<UnsortedValue> {
                 final Dex source;
                 final IndexMap indexMap;
                 final T value;
@@ -299,7 +299,7 @@ public class DexTransform {
                     this.offset = offset;
                 }
 
-                public int compareTo(IdMerger.UnsortedValue unsortedValue) {
+                public int compareTo(UnsortedValue unsortedValue) {
                     return value.compareTo((T) unsortedValue.value);
                 }
             }
@@ -1089,7 +1089,7 @@ public class DexTransform {
             for (int i = 1; i < args.length; i++) {
                 dexes[i - 1] = new Dex(new File(args[i]));
             }
-            Dex merged = new com.taobao.android.dx.merge.DexMerger(dexes, CollisionPolicy.KEEP_FIRST).merge();
+            Dex merged = new DexMerger(dexes, CollisionPolicy.KEEP_FIRST).merge();
             merged.writeTo(new File(args[0]));
         }
 
