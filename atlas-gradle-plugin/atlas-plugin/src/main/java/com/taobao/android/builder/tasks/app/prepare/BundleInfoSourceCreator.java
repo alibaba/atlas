@@ -59,7 +59,7 @@ public class BundleInfoSourceCreator {
         infoBuffer.append(String.format("info.setUnique_tag(\"%s\");\n",info.getUnique_tag()));
         infoBuffer.append(String.format("info.setPkgName(\"%s\");\n",info.getPkgName()));
         infoBuffer.append(String.format("info.setIsInternal(%s);\n",info.getIsInternal()));
-        infoBuffer.append(String.format("info.setApplicationName(%s);\n",info.getApplicationName()));
+        infoBuffer.append(String.format("info.setApplicationName(\"%s\");\n",info.getApplicationName()));
 
         List<String> components = info.getActivities();
         if(components!=null && components.size()>0){
