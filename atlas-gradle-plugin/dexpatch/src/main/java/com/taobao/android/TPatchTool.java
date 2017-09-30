@@ -899,7 +899,7 @@ public class TPatchTool extends BasePatchTool {
         }
 
         FileUtils.deleteDirectory(tmpDexFile);
-        if (mainDex&&!dexPatch){
+        if (mainDex&&!dexPatch&&Boolean.FALSE.booleanValue()){
             bundleInfos.put(newApkBO.getVersionName(),new AtlasFrameworkPropertiesReader(
                     new MethodReader(
                             new ClassReader(

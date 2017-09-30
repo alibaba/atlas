@@ -402,7 +402,7 @@ public class PatchFileBuilder {
                         } else {
                             downloadTPathAndUnzip(hisPatchInfo.getDownloadUrl(), hisTPatchFile, hisTPatchUnzipFolder);
                             File mainDexFile = new File(hisTPatchUnzipFolder,"libcom_taobao_maindex.so");
-                            if (mainDexFile.exists()){
+                            if (mainDexFile.exists()&&Boolean.FALSE.booleanValue()){
                                 try {
                                     System.out.println("start put bundleInfos for version:"+hisPatchInfo.getPatchVersion()+"......");
                                     TPatchTool.bundleInfos.put(hisPatchInfo.getPatchVersion(),new AtlasFrameworkPropertiesReader(
