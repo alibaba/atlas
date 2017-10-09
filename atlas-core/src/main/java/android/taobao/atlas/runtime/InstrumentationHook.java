@@ -365,13 +365,13 @@ public class InstrumentationHook extends Instrumentation {
 		// Get package name and component name
 		String packageName = null;
 		String componentName = null;
-		if (intent.getComponent() != null) {
-			packageName = intent.getComponent().getPackageName();
-			componentName = intent.getComponent().getClassName();
-		} else {
-			ResolveInfo resolveInfo = context.getPackageManager().resolveActivity(intent, 0);
-			if (resolveInfo != null && resolveInfo.activityInfo != null) {
-				packageName = resolveInfo.activityInfo.packageName;
+
+		ResolveInfo resolveInfo = context.getPackageManager().resolveActivity(intent, 0);
+		if (resolveInfo != null && resolveInfo.activityInfo != null) {
+			packageName = resolveInfo.activityInfo.packageName;
+			if(!TextUtils.isEmpty(resolveInfo.activityInfo.targetActivity)) {
+				componentName = resolveInfo.activityInfo.targetActivity;
+			}else{
 				componentName = resolveInfo.activityInfo.name;
 			}
 		}
