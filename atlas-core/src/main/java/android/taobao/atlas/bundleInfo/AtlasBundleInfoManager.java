@@ -269,11 +269,10 @@ public class AtlasBundleInfoManager {
                 do {
                     try {
                         try {
-                            Class clazz = Class.forName("android.taobao.atlas.bundleInfo.AtlasBundleInfoGenerator");
-                            BundleListing listing = (BundleListing) clazz.getDeclaredMethod("generateBundleInfo").invoke(null);
-                            mCurrentBundleListing  = listing;
+                            mCurrentBundleListing = AtlasBundleInfoGenerator.generateBundleInfo();
+                            Log.e("AtlasBundleInfoManager","generate info from generator");
                         }catch (Throwable exception) {
-                            e.printStackTrace();
+                            exception.printStackTrace();
                             LinkedHashMap<String, BundleListing.BundleInfo> infos = BundleListingUtil.parseArray(bundleInfoStr);
                             if (infos == null) {
                                 Map<String, Object> detail = new HashMap<>();
@@ -395,9 +394,9 @@ public class AtlasBundleInfoManager {
                     for(int x=0; x<array.length(); x++){
                         JSONObject jb = array.getJSONObject(x);
                         BundleListing.BundleInfo info = getBundleInfo(jb.optString("name"));
-                        info.setSize(jb.optInt("size"));
-                        info.setMd5(jb.optString("md5"));
-                        info.setUrl(jb.optString("url"));
+                        info.size = jb.optInt("size");
+                        info.md5 = jb.optString("md5");
+                        info.url = jb.optString("url");
                     }
                 }
             }catch (Throwable e){

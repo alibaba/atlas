@@ -28,7 +28,7 @@ public class BundleInfoSourceCreator {
                 "        BundleListing.BundleInfo info;\n" +
                 "\n" +
                 "        BundleListing listing = new BundleListing();\n" +
-                "        listing.setBundles(bundleInfos);\n");
+                "        listing.bundles = bundleInfos;\n");
 
         if(basicBundleInfos!=null && basicBundleInfos.size()>0){
             for(BasicBundleInfo info : basicBundleInfos){
@@ -50,16 +50,18 @@ public class BundleInfoSourceCreator {
                 "        receivers = new HashMap<>();\n" +
                 "        providers = new HashMap<>();\n" +
                 "        dependencies = new ArrayList<>();\n" +
-                "        info.setActivities(activities);\n" +
-                "        info.setServices(services);\n" +
-                "        info.setReceivers(receivers);\n" +
-                "        info.setContentProviders(providers);\n" +
-                "        info.setDependency(dependencies);\n");
+                "        info.activities = activities;\n" +
+                "        info.services = services;\n" +
+                "        info.receivers = receivers;\n" +
+                "        info.contentProviders = providers;\n" +
+                "        info.dependency = dependencies;\n");
 
-        infoBuffer.append(String.format("info.setUnique_tag(\"%s\");\n",info.getUnique_tag()));
-        infoBuffer.append(String.format("info.setPkgName(\"%s\");\n",info.getPkgName()));
-        infoBuffer.append(String.format("info.setIsInternal(%s);\n",info.getIsInternal()));
-        infoBuffer.append(String.format("info.setApplicationName(\"%s\");\n",info.getApplicationName()));
+        infoBuffer.append(String.format("info.unique_tag = \"%s\";\n",info.getUnique_tag()));
+        infoBuffer.append(String.format("info.pkgName = \"%s\";\n",info.getPkgName()));
+        infoBuffer.append(String.format("info.isInternal = %s;\n",info.getIsInternal()));
+        if(info.getApplicationName()!=null) {
+            infoBuffer.append(String.format("info.applicationName = \"%s\";\n", info.getApplicationName()));
+        }
 
         List<String> components = info.getActivities();
         if(components!=null && components.size()>0){
@@ -89,10 +91,12 @@ public class BundleInfoSourceCreator {
         List<String> dependencies = info.getDependency();
         if(dependencies!=null && dependencies.size()>0){
             for(String dependency : dependencies){
-                infoBuffer.append(String.format("dependencies.add(\"%s\");\n",dependency));
+                if(dependency!=null) {
+                    infoBuffer.append(String.format("dependencies.add(\"%s\");\n", dependency));
+                }
             }
         }
-        infoBuffer.append("bundleInfos.put(info.getPkgName(),info);\n");
+        infoBuffer.append("bundleInfos.put(info.pkgName,info);\n");
         return infoBuffer;
 
     }

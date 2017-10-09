@@ -228,20 +228,20 @@ public class BundleListingUtil {
         for(int x=0; x<array.length(); x++){
             JSONObject object = array.getJSONObject(x);
             BundleListing.BundleInfo info = new BundleListing.BundleInfo();
-            info.setName(object.optString("name"));
-            info.setPkgName(object.optString("pkgName"));
-            info.setApplicationName(object.optString("applicationName"));
-            info.setVersion(object.optString("version"));
-            info.setDesc(object.optString("desc"));
-            info.setUrl(object.optString("url"));
-            info.setMd5(object.optString("md5"));
+            info.name = object.optString("name");
+            info.pkgName = object.optString("pkgName");
+            info.applicationName = object.optString("applicationName");
+            info.version = object.optString("version");
+            info.desc = object.optString("desc");
+            info.url = object.optString("url");
+            info.md5 = object.optString("md5");
             String uniqueTag = object.optString("unique_tag");
             if(TextUtils.isEmpty(uniqueTag)){
                 throw new IOException("uniqueTag is empty");
             }
-            info.setUnique_tag(object.optString("unique_tag"));
+            info.unique_tag = object.optString("unique_tag");
             if (object.has("isInternal")) {
-                info.setIsInternal(object.optBoolean("isInternal"));
+                info.isInternal = object.optBoolean("isInternal");
             }
 
             JSONArray dependency = object.optJSONArray("dependency");
@@ -259,7 +259,7 @@ public class BundleListingUtil {
                 for(int i=0; i<activities.length(); i++){
                     activitiesList.put(activities.getString(i),Boolean.FALSE);
                 }
-                info.setActivities(activitiesList);
+                info.activities = activitiesList;
             }
 
             JSONArray services = object.optJSONArray("services");
@@ -268,7 +268,7 @@ public class BundleListingUtil {
                 for(int i=0; i<services.length(); i++){
                     servicesList.put(services.getString(i),Boolean.FALSE);
                 }
-                info.setServices(servicesList);
+                info.services = servicesList;
             }
 
             JSONArray receivers = object.optJSONArray("receivers");
@@ -277,7 +277,7 @@ public class BundleListingUtil {
                 for(int i=0; i<receivers.length(); i++){
                     receiversList.put(receivers.getString(i),Boolean.FALSE);
                 }
-                info.setReceivers(receiversList);
+                info.receivers = receiversList;
             }
 
             JSONArray contentProviders = object.optJSONArray("contentProviders");
@@ -286,7 +286,7 @@ public class BundleListingUtil {
                 for(int i=0; i<contentProviders.length(); i++){
                     contentProvidersList.put(contentProviders.getString(i),Boolean.FALSE);
                 }
-                info.setContentProviders(contentProvidersList);
+                info.contentProviders = contentProvidersList;
             }
 
             infos.put(info.getPkgName(),info);

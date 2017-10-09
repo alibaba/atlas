@@ -233,6 +233,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleClassLoader;
 import android.taobao.atlas.framework.BundleImpl;
@@ -565,6 +566,14 @@ public class InstrumentationHook extends Instrumentation {
         }
 
         try {
+			BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(className);
+			if(info!=null){
+				BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(info.getPkgName());
+				if(impl==null || !impl.checkValidate()){
+					Log.e("Instrumentation","bundleInvalid: "+info.getPkgName());
+					throw new ClassNotFoundException("bundleInvalid");
+				}
+			}
             activity = mBase.newActivity(cl, className, intent);
         } catch (ClassNotFoundException e) {
         	String launchActivityName = "";

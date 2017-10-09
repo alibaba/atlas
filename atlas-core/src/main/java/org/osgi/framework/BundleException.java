@@ -47,17 +47,7 @@ public class BundleException extends Exception
         super(msg);
         this.throwable = null;
     }
-
-    /**
-     * Returns any nested exceptions included in this exception.
-     *
-     * @return The nested exception; <tt>null</tt> if there is
-     * no nested exception.
-     */
-    public Throwable getNestedException()
-    {
-        return(throwable);
-    }
+    
 }
 
 

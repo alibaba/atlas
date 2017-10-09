@@ -225,19 +225,6 @@ public class StringUtils {
     public static boolean isNotEmpty(String str) {
         return (str != null && str.length() > 0);
     }
-
-    public static boolean isBlank(String str) {
-        int strLen;
-        if (str == null || (strLen = str.length()) == 0) {
-            return true;
-        }
-        for (int i = 0; i < strLen; i++) {
-            if ((Character.isWhitespace(str.charAt(i)) == false)) {
-                return false;
-            }
-        }
-        return true;
-    }
     
     public static boolean startWith(String str, String prefix) {
         if (str == null || prefix == null) {
@@ -246,48 +233,11 @@ public class StringUtils {
         return str.startsWith(prefix);
     }
 
-    public static String trim(String str) {
-        return (str == null ? null : str.trim());
-    }
-
     public static boolean equals(String str1, String str2) {
         if (str1 == null) {
             return false;
         }
         return str1.equals(str2);
-    }
-    
-    public static boolean contains(String str, String searchStr) {
-        if (str == null || searchStr == null) {
-            return false;
-        }
-        return str.indexOf(searchStr) >= 0;
-    }
-
-    public static boolean contains(String[] arr, String str) {
-        if (arr == null || str == null) {
-            return false;
-        }
-        for (String s : arr) {
-            if (str.equals(s)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static String substringBefore(String str, String separator) {
-        if (isEmpty(str) || separator == null) {
-            return str;
-        }
-        if (separator.length() == 0) {
-            return "";
-        }
-        int pos = str.indexOf(separator);
-        if (pos == -1) {
-            return str;
-        }
-        return str.substring(0, pos);
     }
 
     public static String substringAfter(String str, String separator) {
@@ -299,31 +249,6 @@ public class StringUtils {
         }
         int pos = str.indexOf(separator);
         if (pos == -1) {
-            return "";
-        }
-        return str.substring(pos + separator.length());
-    }
-
-    public static String substringBeforeLast(String str, String separator) {
-        if (isEmpty(str) || isEmpty(separator)) {
-            return str;
-        }
-        int pos = str.lastIndexOf(separator);
-        if (pos == -1) {
-            return str;
-        }
-        return str.substring(0, pos);
-    }
-
-    public static String substringAfterLast(String str, String separator) {
-        if (isEmpty(str)) {
-            return str;
-        }
-        if (isEmpty(separator)) {
-            return "";
-        }
-        int pos = str.lastIndexOf(separator);
-        if (pos == -1 || pos == (str.length() - separator.length())) {
             return "";
         }
         return str.substring(pos + separator.length());
@@ -343,57 +268,50 @@ public class StringUtils {
         return null;
     }
 
-    public static String replace(String text, String searchString, String replacement) {
-        return replace(text, searchString, replacement, -1);
-    }
+//    public static String replace(String text, String searchString, String replacement) {
+//        return replace(text, searchString, replacement, -1);
+//    }
+//
+//    public static String replace(String text, String searchString, String replacement, int max) {
+//        if (isEmpty(text) || isEmpty(searchString) || replacement == null || max == 0) {
+//            return text;
+//        }
+//        int start = 0;
+//        int end = text.indexOf(searchString, start);
+//        if (end == -1) {
+//            return text;
+//        }
+//        int replLength = searchString.length();
+//        int increase = replacement.length() - replLength;
+//        increase = (increase < 0 ? 0 : increase);
+//        increase *= (max < 0 ? 16 : (max > 64 ? 64 : max));
+//        StringBuilder buf = new StringBuilder(text.length() + increase);
+//        while (end != -1) {
+//            buf.append(text.substring(start, end)).append(replacement);
+//            start = end + replLength;
+//            if (--max == 0) {
+//                break;
+//            }
+//            end = text.indexOf(searchString, start);
+//        }
+//        buf.append(text.substring(start));
+//        return buf.toString();
+//    }
 
-    public static String replace(String text, String searchString, String replacement, int max) {
-        if (isEmpty(text) || isEmpty(searchString) || replacement == null || max == 0) {
-            return text;
-        }
-        int start = 0;
-        int end = text.indexOf(searchString, start);
-        if (end == -1) {
-            return text;
-        }
-        int replLength = searchString.length();
-        int increase = replacement.length() - replLength;
-        increase = (increase < 0 ? 0 : increase);
-        increase *= (max < 0 ? 16 : (max > 64 ? 64 : max));
-        StringBuilder buf = new StringBuilder(text.length() + increase);
-        while (end != -1) {
-            buf.append(text.substring(start, end)).append(replacement);
-            start = end + replLength;
-            if (--max == 0) {
-                break;
-            }
-            end = text.indexOf(searchString, start);
-        }
-        buf.append(text.substring(start));
-        return buf.toString();
-    }
-    
-    public static String getPackageNameFromEntryName(String entryName) {
-        String packageName = entryName.substring(entryName.indexOf("libcom_") + "lib".length(),
-                entryName.indexOf(".so"));
-        packageName = packageName.replace("_", ".");
-        return packageName;
-    }   
-
-    public static boolean endsWith(String str, String suffix) {
-        return endsWith(str, suffix, false);
-    }
-
-    private static boolean endsWith(String str, String suffix, boolean ignoreCase) {
-        if (str == null || suffix == null) {
-            return (str == null && suffix == null);
-        }
-        if (suffix.length() > str.length()) {
-            return false;
-        }
-        int strOffset = str.length() - suffix.length();
-        return str.regionMatches(ignoreCase, strOffset, suffix, 0, suffix.length());
-    }
+//    public static boolean endsWith(String str, String suffix) {
+//        return endsWith(str, suffix, false);
+//    }
+//
+//    private static boolean endsWith(String str, String suffix, boolean ignoreCase) {
+//        if (str == null || suffix == null) {
+//            return (str == null && suffix == null);
+//        }
+//        if (suffix.length() > str.length()) {
+//            return false;
+//        }
+//        int strOffset = str.length() - suffix.length();
+//        return str.regionMatches(ignoreCase, strOffset, suffix, 0, suffix.length());
+//    }
 
     /**
      * <p>Splits the provided text into an array, separators specified.
@@ -523,41 +441,41 @@ public class StringUtils {
         return (String[]) list.toArray(new String[list.size()]);
     }
 
-    public static String join(Object[] array, String separator) {
-        if (array == null) {
-            return null;
-        }
-        return join(array, separator, 0, array.length);
-    }
-
-    public static String join(Object[] array, String separator, int startIndex, int endIndex) {
-        if (array == null) {
-            return null;
-        }
-        if (separator == null) {
-            separator = EMPTY;
-        }
-
-        // endIndex - startIndex > 0:   Len = NofStrings *(len(firstString) + len(separator))
-        //           (Assuming that all Strings are roughly equally long)
-        int bufSize = (endIndex - startIndex);
-        if (bufSize <= 0) {
-            return EMPTY;
-        }
-
-        bufSize *= ((array[startIndex] == null ? 16 : array[startIndex].toString().length())
-                + separator.length());
-
-        StringBuilder buf = new StringBuilder(bufSize);
-
-        for (int i = startIndex; i < endIndex; i++) {
-            if (i > startIndex) {
-                buf.append(separator);
-            }
-            if (array[i] != null) {
-                buf.append(array[i]);
-            }
-        }
-        return buf.toString();
-    }
+//    public static String join(Object[] array, String separator) {
+//        if (array == null) {
+//            return null;
+//        }
+//        return join(array, separator, 0, array.length);
+//    }
+//
+//    public static String join(Object[] array, String separator, int startIndex, int endIndex) {
+//        if (array == null) {
+//            return null;
+//        }
+//        if (separator == null) {
+//            separator = EMPTY;
+//        }
+//
+//        // endIndex - startIndex > 0:   Len = NofStrings *(len(firstString) + len(separator))
+//        //           (Assuming that all Strings are roughly equally long)
+//        int bufSize = (endIndex - startIndex);
+//        if (bufSize <= 0) {
+//            return EMPTY;
+//        }
+//
+//        bufSize *= ((array[startIndex] == null ? 16 : array[startIndex].toString().length())
+//                + separator.length());
+//
+//        StringBuilder buf = new StringBuilder(bufSize);
+//
+//        for (int i = startIndex; i < endIndex; i++) {
+//            if (i > startIndex) {
+//                buf.append(separator);
+//            }
+//            if (array[i] != null) {
+//                buf.append(array[i]);
+//            }
+//        }
+//        return buf.toString();
+//    }
 }
