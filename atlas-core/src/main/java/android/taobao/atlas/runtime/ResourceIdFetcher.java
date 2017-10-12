@@ -228,7 +228,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ResourceIdFetcher {
 
-    private static ArrayList<AssetManager> assetList = new ArrayList<AssetManager>();
     private Map<String,ResInfo> resIdentifierMap = new ConcurrentHashMap<String,ResInfo>();
 
     public int getIdentifier(String name, String defType, String defPackage) {
@@ -245,39 +244,8 @@ public class ResourceIdFetcher {
         if (AtlasHacks.AssetManager_getResourceIdentifier == null){
             return getIdentifierWithRefection(name, defType, defPackage);
         }
-
-        for (int i = 0; i < assetList.size(); i++){
-            AssetManager asset = assetList.get(i);
-
-            try {
-                resID = (Integer) AtlasHacks.AssetManager_getResourceIdentifier.invoke(asset, name, defType, defPackage);
-            } catch (Exception e){
-            }
-
-            if (resID != 0){
-                return resID;
-            }
-        }
-
-        // Fallback to old R.java reflection way
         resID = getIdentifierWithRefection(name, defType, defPackage);
         return resID;
-    }
-
-    public void addAssetForGetIdentifier(String newPath)
-            throws InstantiationException, IllegalAccessException,
-            InvocationTargetException {
-        try {
-            // Make asset for getIdentifier on android 5.0
-            if ((AtlasHacks.AssetManager_addAssetPath != null) &&
-                    (AtlasHacks.AssetManager_ensureStringBlocks != null) && Build.VERSION.SDK_INT > 20) {
-                AssetManager asset = AssetManager.class.newInstance();
-                AtlasHacks.AssetManager_addAssetPath.invoke(asset, newPath);
-                AtlasHacks.AssetManager_ensureStringBlocks.invoke(asset);
-                assetList.add(asset);
-            }
-        }catch(Throwable e){
-        }
     }
 
     private int getIdentifierWithRefection(String name, String defType,

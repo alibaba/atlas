@@ -209,9 +209,16 @@
 package android.taobao.atlas.startup.patch.releaser;
 
 import android.os.Build;
+import android.taobao.atlas.startup.patch.KernalBundle;
 import android.taobao.atlas.startup.patch.KernalConstants;
+import android.taobao.atlas.util.StringUtils;
+import android.util.Log;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -300,19 +307,30 @@ public class DexReleaser {
         if (sourceZip.getEntry(CLASS_SUFFIX+DEX_SUFFIX) != null) {
             ZipOutputStream target = null;
             ZipFile rawZip = null;
+            boolean dexPatch = sourceFile.getAbsolutePath().contains("dexpatch");
+
             try {
-                rawZip = new ZipFile(KernalConstants.APK_PATH);
+                if (dexPatch) {
+                    //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
+                    rawZip = null == KernalBundle.kernalBundle
+                            ? new ZipFile(KernalConstants.APK_PATH)
+                            : new ZipFile(KernalBundle.kernalBundle.getRevisionZip());
+                } else {
+                    rawZip = new ZipFile(KernalConstants.APK_PATH);
+                }
                 File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", sourceFile.getParentFile());
                 target = new ZipOutputStream(new FileOutputStream(targetFile));
-                int bytesRead;
-                ZipEntry entry = null;
                 int dexIndex = 1;
 
                 // first, copy source content
-                Enumeration<? extends ZipEntry> entries = sourceZip.entries();
+                Enumeration<? extends ZipEntry> sourceEntries = sourceZip.entries();
                 target = new ZipOutputStream(new FileOutputStream(targetFile));
-                while (entries.hasMoreElements()) {
-                    ZipEntry e = entries.nextElement();
+                while (sourceEntries.hasMoreElements()) {
+                    ZipEntry e = sourceEntries.nextElement();
+                    //META-INF重复
+                    if (dexPatch && e.getName().startsWith("META-INF")) {
+                        continue;
+                    }
                     ZipEntry out = new ZipEntry(e.getName());
                     target.putNextEntry(out);
                     if (!e.isDirectory()) {
@@ -320,19 +338,34 @@ public class DexReleaser {
                     }
                 }
 
-                // second copy main dex from base.apk
-                do {
-                    entry = rawZip.getEntry(String.format("%s%s%s", CLASS_SUFFIX,dexIndex > 1 ? dexIndex : "",DEX_SUFFIX));
-                    if (entry != null && !entry.isDirectory()) {
-                        ZipEntry targetEntry = new ZipEntry(String.format("%s%s%s", CLASS_SUFFIX,dexIndex > 1 ? dexIndex + 1 : 2,DEX_SUFFIX));
-                        target.putNextEntry(targetEntry);
-                        copy(rawZip.getInputStream(entry), target);
-                    } else {
-                        return targetFile;
+                if (!dexPatch || (dexPatch && KernalBundle.kernalBundle==null)) {
+                    // second copy main dex from base.apk
+                    do {
+                        ZipEntry entry = rawZip.getEntry(String.format("%s%s%s", CLASS_SUFFIX, dexIndex > 1 ? dexIndex : "", DEX_SUFFIX));
+                        if (entry != null && !entry.isDirectory()) {
+                            ZipEntry targetEntry = new ZipEntry(getUpdatedDexEntryName(entry.getName()));
+                            target.putNextEntry(targetEntry);
+                            copy(rawZip.getInputStream(entry), target);
+                            dexIndex++;
+                        } else {
+                            return targetFile;
+                        }
+                    } while (true);
+                } else {
+                    // second copy all from com.taobao.maindex.zip
+                    Enumeration<? extends ZipEntry> rawEntries = rawZip.entries();
+                    while (rawEntries.hasMoreElements()) {
+                        ZipEntry e = rawEntries.nextElement();
+                        ZipEntry out = e.getName().startsWith(CLASS_SUFFIX) && e.getName().endsWith(DEX_SUFFIX)
+                                ? new ZipEntry(getUpdatedDexEntryName(e.getName()))
+                                : new ZipEntry(e.getName());
+                        target.putNextEntry(out);
+                        if (!e.isDirectory()) {
+                            copy(rawZip.getInputStream(e), target);
+                        }
                     }
-                    dexIndex++;
-                } while (true);
-
+                    return targetFile;
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -343,11 +376,21 @@ public class DexReleaser {
                     }
                     if (rawZip != null)
                         rawZip.close();
-                } catch (Throwable e) {
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
         return null;
+    }
+
+    private static String getUpdatedDexEntryName(String originalEntryName){
+        if(originalEntryName.equals("classes.dex")){
+            return "classes2.dex";
+        }else{
+            int dexIndex = Integer.parseInt(StringUtils.substringBetween(originalEntryName,"classes",".dex"));
+            return String.format("classes%s.dex",++dexIndex);
+        }
     }
 
 

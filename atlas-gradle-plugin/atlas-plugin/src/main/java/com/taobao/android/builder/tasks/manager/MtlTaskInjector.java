@@ -209,9 +209,6 @@
 
 package com.taobao.android.builder.tasks.manager;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
@@ -220,6 +217,9 @@ import com.android.builder.core.AndroidBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by wuzhong on 16/6/24.
@@ -317,9 +317,11 @@ public class MtlTaskInjector {
 
     protected List<Task> findTask(Class<Task> clazz, String variantName) {
         Task[] androidTasks = project.getTasks().withType(clazz).toArray(new Task[0]);
-
         List<Task> taskList = new ArrayList();
         for (Task task : androidTasks) {
+            if (task.getName().endsWith("TestJavaWithJavac")){
+                continue;
+            }
             if (task instanceof DefaultAndroidTask) {
                 if (variantName.equals(((DefaultAndroidTask)task).getVariantName())) {
                     taskList.add(task);

@@ -218,7 +218,9 @@ import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.taobao.android.builder.extension.MultiDexConfig;
 import org.apache.commons.lang.StringUtils;
+import org.gradle.api.GradleException;
 
 /**
  * Created by wuzhong on 2017/4/13.
@@ -279,6 +281,20 @@ public class AtlasMultiDexTransform extends MultiDexTransform {
             }
 
             super.keep("class android.taobao.atlas.** {*;}");
+            super.keep("public class * extends java.lang.annotation.Annotation { *;}");
+
+            try {
+                MultiDexConfig multiDexConfig = (MultiDexConfig)appVariantContext.getAtlasExtension()
+                    .getMultiDexConfigs().
+                        findByName(appVariantContext.getVariantName());
+                if (null != multiDexConfig && null != multiDexConfig.getFirstDexClasses()) {
+                    for (String clazz : multiDexConfig.getFirstDexClasses()) {
+                        super.keep("class " + clazz + " {*;}");
+                    }
+                }
+            }catch (Throwable e){
+                throw new GradleException(e.getMessage(),e);
+            }
 
             return;
         }

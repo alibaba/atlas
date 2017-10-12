@@ -82,6 +82,9 @@ public class PatchMerger {
             //find original bundle and store in pair struct
             for (int x = 0; x < updateInfo.updateBundles.size(); x++) {
                 UpdateInfo.Item item = updateInfo.updateBundles.get(x);
+                if(item.inherit){
+                    continue;
+                }
                 String bundleName = item.name;
                 String entryNamePrefix = String.format("%s%s", "lib", bundleName.replace(".", "_"));
                 String entryName = entryNamePrefix + ".so";
@@ -215,15 +218,23 @@ public class PatchMerger {
         if (oldBundle.exists()) {
             return oldBundle;
         } else {
-            if (apkZip == null) {
-                apkZip = new ZipFile(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
+            InputStream oldBundleStream = null;
+            try {
+                oldBundleStream = RuntimeVariables.originalResources.getAssets().open(oldBundleFileName);
+            }catch (Throwable e){}
+            if(oldBundleStream==null) {
+                if (apkZip == null) {
+                    apkZip = new ZipFile(RuntimeVariables.androidApplication.getApplicationInfo().sourceDir);
+                }
+                String entryName = String.format("lib/armeabi/%s", oldBundleFileName);
+                if (apkZip.getEntry(entryName) != null) {
+                    oldBundleStream = apkZip.getInputStream(apkZip.getEntry(entryName));
+//                    return oldBundle;
+                }
             }
-            String entryName = String.format("lib/armeabi/%s", oldBundleFileName);
-            if (apkZip.getEntry(entryName) != null) {
-                InputStream inputStream = apkZip.getInputStream(apkZip.getEntry(entryName));
+            if(oldBundleStream!= null){
                 oldBundle = new File(bundleDirIfNeedCreate, oldBundleFileName);
-                ApkUtils.copyInputStreamToFile(inputStream, oldBundle);
-                return oldBundle;
+                ApkUtils.copyInputStreamToFile(oldBundleStream, oldBundle);
             }
         }
         return oldBundle;

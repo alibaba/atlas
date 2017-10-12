@@ -380,6 +380,10 @@ public class VisitorDTO {
 
         public Set<String> libInterfaces = new HashSet<>();
 
+        public synchronized void addInterface(String str){
+            libInterfaces.add(str);
+        }
+
     }
 
     public static class LibraryClazzInfo {
@@ -390,6 +394,13 @@ public class VisitorDTO {
 
         public Set<String> appFields = new HashSet<>();
 
+        public synchronized void addMethod(String str) {
+            appMethods.add(str);
+        }
+
+        public synchronized void addField(String str) {
+            appFields.add(str);
+        }
     }
 
 }

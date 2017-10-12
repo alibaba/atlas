@@ -209,21 +209,29 @@
 
 package com.taobao.android.builder.tasks.app;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 import com.alibaba.fastjson.JSON;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.app.prepare.BundleInfoSourceCreator;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
 import com.taobao.android.builder.tools.classinject.InjectParam;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
@@ -260,17 +268,34 @@ public class GenerateAtlasSourceTask extends BaseTask {
     void generate() {
 
         InjectParam injectParam = getInput();
+        List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
+        File outputSourceGeneratorFile = new File(outputDir,"android/taobao/atlas/framework/AtlasBundleInfoGenerator.java");
+        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info);
+        outputSourceGeneratorFile.getParentFile().mkdirs();
+        try {
+            FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
+        } catch (IOException e) {
+            throw new GradleException(e.getMessage(), e);
+        }
 
-        File outputFile = new File(outputDir, "android/taobao/atlas/framework/FrameworkProperties.java");
-
+        File outputPropertiesFile = new File(outputDir, "android/taobao/atlas/framework/FrameworkProperties.java");
         List<String> lines = new ArrayList<>();
-
+        outputPropertiesFile.getParentFile().mkdirs();
         lines.add("package android.taobao.atlas.framework;");
         lines.add("public class FrameworkProperties {");
 
         lines.add("private String version = \"" + injectParam.version + "\";");
         lines.add("public String getVersion() {return version;}");
-        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
+        String escapeExprBundleInfo = escapeExprSpecialWord(injectParam.bundleInfo);
+        if(escapeExprBundleInfo.length()<Integer.MAX_VALUE){
+            lines.add("public static String bundleInfo = \"" + escapeExprBundleInfo + "\";");
+            lines.add("public static final boolean compressInfo = false;");
+        }else{
+            String compressBundleInfo = compressBundleInfo(injectParam.bundleInfo);
+            lines.add("public static String bundleInfo = \"" + compressBundleInfo + "\";");
+            lines.add("public static final boolean compressInfo = true;");
+        }
+//        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
         //lines.add("public static String bunleInfo = \"\";");
         if (StringUtils.isNotEmpty(injectParam.autoStartBundles)) {
             lines.add("public static String autoStartBundles = \"" + injectParam.autoStartBundles + "\";");
@@ -285,11 +310,9 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
         lines.add("}");
 
-        outputFile.getParentFile().mkdirs();
         try {
 
-            FileUtils.writeLines(outputFile, lines);
-
+            FileUtils.writeLines(outputPropertiesFile, lines);
             Map output = new HashMap();
             output.put("bundleInfo", JSON.parseArray(injectParam.bundleInfo));
             output.put("autoStartBundles", injectParam.autoStartBundles);
@@ -305,6 +328,22 @@ public class GenerateAtlasSourceTask extends BaseTask {
             throw new GradleException(e.getMessage(), e);
         }
 
+    }
+
+    private String compressBundleInfo(String bundleInfo){
+        ByteArrayOutputStream cc = new ByteArrayOutputStream();
+        GZIPOutputStream gzip = null;
+        try {
+
+            gzip = new GZIPOutputStream(cc);
+            gzip.write(bundleInfo.getBytes("UTF-8"));
+            gzip.flush();
+            IOUtils.closeQuietly(gzip);
+            byte[] result = cc.toByteArray();
+            return Base64.encode(result);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String escapeExprSpecialWord(String keyword) {

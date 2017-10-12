@@ -253,7 +253,7 @@ public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVi
         //简化处理
         if (visitorDTO.isLibClazz(interfaceClazz)) {
             ClassStruct classStruct = getOrCreateClassStruct(programClass);
-            classStruct.libInterfaces.add(interfaceClazz);
+            classStruct.addInterface(interfaceClazz);
 
             //add super interface to keep
             addSuperInterfaces(interfaceClazz, classStruct);
@@ -263,13 +263,13 @@ public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVi
 
     private void addSuperInterfaces(String interfaceClazz, ClassStruct classStruct) {
         LibraryClass libraryClass = (LibraryClass)visitorDTO.libraryClassPool.getClass(interfaceClazz);
-        if (null == libraryClass){
+        if (null == libraryClass) {
             return;
         }
         for (int index = 0; index < libraryClass.getInterfaceCount(); index++) {
             Clazz superInter = libraryClass.getInterface(index);
             if (null != superInter && visitorDTO.isLibClazz(superInter.getName())) {
-                classStruct.libInterfaces.add(superInter.getName());
+                classStruct.addInterface(superInter.getName());
 
                 //再迭代
                 addSuperInterfaces(superInter.getName(), classStruct);
@@ -300,7 +300,7 @@ public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVi
     public void visitProgramField(ProgramClass programClass, ProgramField programField) {
         LibraryClazzInfo libraryClazzInfo = getOrCreateLibraryClazzInfo(programClass);
         if (null != libraryClazzInfo) {
-            libraryClazzInfo.appFields.add(programField.getName(programClass));
+            libraryClazzInfo.addField(programField.getName(programClass));
         }
     }
 
@@ -308,7 +308,7 @@ public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVi
     public void visitProgramMethod(ProgramClass programClass, ProgramMethod programMethod) {
         LibraryClazzInfo libraryClazzInfo = getOrCreateLibraryClazzInfo(programClass);
         if (null != libraryClazzInfo) {
-            libraryClazzInfo.appMethods.add(programMethod.getName(programClass));
+            libraryClazzInfo.addMethod(programMethod.getName(programClass));
         }
     }
 

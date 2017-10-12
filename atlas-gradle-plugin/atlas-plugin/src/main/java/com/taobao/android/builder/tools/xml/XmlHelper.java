@@ -212,10 +212,13 @@ package com.taobao.android.builder.tools.xml;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.Node;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
@@ -244,9 +247,7 @@ public class XmlHelper {
         saveFile(document, format, file);
     }
 
-    public static void saveFile(Document document,
-                                OutputFormat format,
-                                File file) throws IOException {
+    public static void saveFile(Document document, OutputFormat format, File file) throws IOException {
 
         XMLWriter writer = null;// 声明写XML的对象
         FileOutputStream fos = null;
@@ -262,4 +263,24 @@ public class XmlHelper {
         }
     }
 
+    public static void removeStringValue(File file, String key) throws IOException, DocumentException {
+
+        if (!file.exists()) {
+            return;
+        }
+
+        Document document = XmlHelper.readXml(file);// 读取XML文件
+        Element root = document.getRootElement();// 得到根节点
+        List<? extends Node> nodes = root.selectNodes("//string");
+        for (Node node : nodes) {
+            Element element = (Element)node;
+            String name = element.attributeValue("name");
+            if (key.equals(name)) {
+                element.getParent().remove(element);
+                break;
+            }
+        }
+        // sLogger.warn("[resxmlediter] add " + key + " to " + file.getAbsolutePath());
+        XmlHelper.saveDocument(document, file);
+    }
 }

@@ -345,6 +345,7 @@ public class MergePatch extends Build {
             main.putValue(name + "-Used-Classes", attributes.getValue(name + "-Used-Classes"));
             main.putValue(name + "-add-classes", attributes.getValue(name + "-add-classes"));
 
+
         }
         main.putValue("From-File", fromBuffer.toString());
         main.putValue("To-File", toBuffer.toString());

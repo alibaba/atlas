@@ -265,6 +265,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     public static HackedClass<Object>                                                       Singleton;
     public static HackedClass<Object>                           ActivityThread$AppBindData;
     public static HackedClass<Object>                           ActivityManager;
+    public static HackedClass<Object>                           StringBlock;
 
     // Fields
     public static HackedField<Object, Instrumentation>          ActivityThread_mInstrumentation;
@@ -302,10 +303,13 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     public static HackedField<Object,Object>  ContextImpl_mPackageInfo;
     public static HackedField<Object,Object>                                  ActivityManager_IActivityManagerSingleton;
 
+
+
     // Methods
     public static HackedMethod                                  ActivityThread_currentActivityThread;
     public static HackedMethod                                  AssetManager_addAssetPath;
     public static HackedMethod                                  AssetManager_addAssetPathAsSharedLibrary;
+    public static HackedField<android.content.res.AssetManager,Object>                    AssetManager_mStringBlocks;
     public static HackedMethod                                  Application_attach;
     public static HackedMethod                                  ClassLoader_findLibrary;
     public static HackedMethod                                  DexClassLoader_findClass;
@@ -321,15 +325,23 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
     public static HackedMethod                                  Service_attach;
     public static HackedMethod                                  ActivityThread_installContentProviders;
     public static HackedMethod                                  ActivityThread_installProvider;
+    public static HackedMethod                                  AssetManager_addAssetPathNative;
+    public static HackedMethod                                  AssetManager_addAssetPathNative24;
+    public static HackedMethod                                  AssetManager_addAssetPathNativeSamSung;
+    public static HackedMethod                                  AssetManager_getStringBlockCount;
+    public static HackedMethod                                  AssetManager_getNativeStringBlock;
+
 
 
     // Constructor
     public static Hack.HackedConstructor                        PackageParser_constructor;
+    public static Hack.HackedConstructor                        StringBlock_constructor;
+
     // Match method
     public static ArrayList<HackedMethod>                       GeneratePackageInfoList = new ArrayList<HackedMethod>();
     public static ArrayList<HackedMethod>                       GetPackageInfoList      = new ArrayList<HackedMethod>();
 
-    public static boolean defineAndVerify() throws AssertionArrayException {
+    public static boolean defineAndVerify(){
         if (sIsReflectChecked) return sIsReflectAvailable;
         AtlasHacks atlasHacks = new AtlasHacks();
         try {
@@ -351,7 +363,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
             }
         } catch (HackAssertionException e) {
             sIsReflectAvailable = false;
-            throw atlasHacks.mExceptionArray;
+            e.printStackTrace();
         } finally {
             Hack.setAssertionFailureHandler(null);
             sIsReflectChecked = true;
@@ -394,6 +406,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         Singleton = Hack.into("android.util.Singleton");
         ActivityThread$AppBindData = Hack.into("android.app.ActivityThread$AppBindData");
         ActivityManager = Hack.into("android.app.ActivityManager");
+        StringBlock=Hack.into("android.content.res.StringBlock");
         sIsIgnoreFailure = false;
     }
 
@@ -449,6 +462,7 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
         ActivityThread$AppBindData_providers = ActivityThread$AppBindData.field("providers").ofGenericType(List.class);
         ActivityThread_mBoundApplication = ActivityThread.field("mBoundApplication");
         ContextImpl_mPackageInfo = ContextImpl.field("mPackageInfo");
+        AssetManager_mStringBlocks = AssetManager.field("mStringBlocks");
     }
 
     public static void allMethods() throws HackAssertionException {
@@ -493,6 +507,18 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
                     ProviderInfo.class, boolean.class, boolean.class, boolean.class);
         }
         Service_attach = Service.method("attach",Context.class,ActivityThread.getmClass(),String.class,IBinder.class,Application.getmClass(),Object.class);
+
+        AssetManager_addAssetPathNative = AssetManager.method("addAssetPathNative", String.class);
+        if(AssetManager_addAssetPathNative==null || AssetManager_addAssetPathNative.getMethod()==null) {
+            AssetManager_addAssetPathNative24 = AssetManager.method("addAssetPathNative", String.class, boolean.class);
+        }
+        if((AssetManager_addAssetPathNative==null || AssetManager_addAssetPathNative.getMethod()==null) &&
+                (AssetManager_addAssetPathNative24==null || AssetManager_addAssetPathNative24.getMethod()==null)){
+            AssetManager_addAssetPathNativeSamSung = AssetManager.method("addAssetPathNative", String.class, int.class);
+        }
+        AssetManager_getStringBlockCount=AssetManager.method("getStringBlockCount");
+        AssetManager_getNativeStringBlock = AssetManager.method("getNativeStringBlock",int.class);
+
     }
 
     public static void allConstructors() throws HackAssertionException {
@@ -500,6 +526,11 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
             PackageParser_constructor = PackageParser.constructor(String.class);
         }else{
             PackageParser_constructor = PackageParser.constructor();
+        }
+        if(Build.VERSION.SDK_INT>=21) {
+            StringBlock_constructor = StringBlock.constructor(long.class, boolean.class);
+        }else {
+            StringBlock_constructor = StringBlock.constructor(int.class, boolean.class);
         }
     }
 

@@ -4,6 +4,16 @@ def apVersion = getEnvValue("apVersion", "");
 
 apply plugin: 'com.android.application'
 apply plugin: 'com.taobao.atlas'
+apply plugin: 'com.taobao.atlas.dexpatch'
+apply from: 'dexPatchWraper.gradle'
+
+//通过增加判断逻辑，打出不同类型的定制包
+def appId = "com.taobao.demo"
+def minVersion = 14
+if (project.hasProperty("beta")) {
+	appId = "com.taobao.atlas.beta"
+	minVersion = 21
+}
 
 repositories {
     mavenLocal()
@@ -14,12 +24,18 @@ android {
     compileSdkVersion 25
     buildToolsVersion '25.0.0'
     defaultConfig {
-        applicationId "com.taobao.demo"
-        minSdkVersion 14
+        applicationId appId
+        minSdkVersion minVersion
         targetSdkVersion 25
         versionCode 1
         versionName version
         vectorDrawables.useSupportLibrary = true
+        //通过增加判断逻辑，打出不同类型的定制包
+        if (project.hasProperty("beta")) {
+            buildConfigField "boolean", "API_ENV", "false"
+        }else{
+        	buildConfigField "boolean", "API_ENV", "false"
+        }
     }
 
 
@@ -37,6 +53,7 @@ android {
             ndk {
                 abiFilters "x86","armeabi"
             }
+
         }
     }
 
@@ -44,7 +61,7 @@ android {
     //        dev {
     //            minSdkVersion 14
     //        }
-    
+
     //        beta {
     //            minSdkVersion 21
     //        }
@@ -87,7 +104,7 @@ atlas {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile('com.taobao.android:atlas_core:5.0.7.30@aar') {
+    compile('com.taobao.android:atlas_core:5.0.7.41@aar') {
 
         transitive = true
     }
@@ -107,7 +124,7 @@ dependencies {
     compile 'com.android.support:design:25.1.0'
     compile 'com.android.support:support-vector-drawable:25.1.0'
     compile 'com.android.support:support-v4:25.1.0'
-    compile 'com.taobao.android:atlasupdate:1.1.4.10@aar'
+    compile 'com.taobao.android:atlasupdate:1.1.4.11@aar'
 
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'

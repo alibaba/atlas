@@ -209,16 +209,7 @@
 
 package com.taobao.android.builder.tasks.tpatch;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
 import com.alibaba.fastjson.JSON;
-
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -248,6 +239,14 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 import static com.android.build.gradle.internal.api.ApContext.APK_FILE_MD5;
 
@@ -321,7 +320,7 @@ public class TPatchTask extends BaseTask {
 
                 getProject().getLogger().error("add bundle compare " + bundleFile.getAbsolutePath());
 
-                BundleBO newBundleBO = new BundleBO(bundleFile.getName(), bundleFile, "");
+                BundleBO newBundleBO = new BundleBO(awbBundle.getResolvedCoordinates().getArtifactId(), bundleFile, "");
 
                 File baseBundleFile = new File(patchContext.apExplodeFolder, "remotebundles/" + bundleFile.getName());
 
@@ -333,7 +332,7 @@ public class TPatchTask extends BaseTask {
                     getProject().getLogger().error(
                         "add bundle compare " + baseBundleFile.getAbsolutePath() + "->" + bundleFile.getAbsolutePath());
 
-                    baseBundleBO = new BundleBO(baseBundleFile.getName(), baseBundleFile, "");
+                    baseBundleBO = new BundleBO(awbBundle.getResolvedCoordinates().getArtifactId(), baseBundleFile, "");
                 }
                 remoteBundles.add(Pair.of(baseBundleBO, newBundleBO));
             }
@@ -377,7 +376,6 @@ public class TPatchTask extends BaseTask {
                                patchContext.appSignName);
             getLogger().info("finish  do patch");
 
-            //resignBaseApk(baseApkVersion, apkFileList);
 
             FileUtils.forceDelete(patchContext.newApk);
 

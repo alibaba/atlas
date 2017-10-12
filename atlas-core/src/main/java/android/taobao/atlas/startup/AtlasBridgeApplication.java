@@ -387,8 +387,9 @@ public class AtlasBridgeApplication extends Application{
         }
 
         if (nativeLibDir == null || !new File(nativeLibDir).exists()) {
-            checkShowErrorNotification("InvalidLibPath");
-            return false;
+            Log.e("AtlasBridgeApplication","can not find nativeLibDir : "+nativeLibDir);
+ //           checkShowErrorNotification("InvalidLibPath");
+//            return false;
         }
 
         int pid = android.os.Process.myPid();

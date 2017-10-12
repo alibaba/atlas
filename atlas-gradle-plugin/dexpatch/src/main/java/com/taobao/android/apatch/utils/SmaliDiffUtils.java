@@ -214,7 +214,6 @@ import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.smali.AfBakSmali;
 import com.taobao.android.smali.SmaliMod;
-
 import org.antlr.runtime.RecognitionException;
 import org.jf.baksmali.baksmaliOptions;
 import org.jf.dexlib2.DexFileFactory;
@@ -224,6 +223,7 @@ import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
 import org.jf.dexlib2.dexbacked.DexBackedMethod;
 import org.jf.dexlib2.iface.ClassDef;
+import org.jf.dexlib2.iface.DexFile;
 import org.jf.dexlib2.iface.instruction.Instruction;
 import org.jf.dexlib2.iface.instruction.ReferenceInstruction;
 import org.jf.dexlib2.iface.reference.MethodReference;
@@ -232,12 +232,10 @@ import org.jf.dexlib2.writer.builder.DexBuilder;
 import org.jf.dexlib2.writer.io.FileDataStore;
 import org.jf.util.ClassFileNameHandler;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -358,6 +356,36 @@ public class SmaliDiffUtils {
 
         dexBuilder.writeTo(new FileDataStore(dexFile));
 
+        return classes;
+    }
+
+    public static Set<String> buildCode(File dexFile, DexDiffInfo info) throws IOException,
+            RecognitionException {
+        Set<String>classes = new HashSet<>();
+        Set<DexBackedClassDef> classDefs = new HashSet<DexBackedClassDef>();
+        classDefs.addAll(info.getModifiedClasses());
+        classDefs.addAll(info.getAddedClasses());
+        DexFileFactory.writeDexFile(dexFile.getAbsolutePath(), new DexFile() {
+            @Nonnull
+            @Override
+            public Set<? extends ClassDef> getClasses() {
+                return new AbstractSet<DexBackedClassDef>() {
+                    @Override
+                    public Iterator<DexBackedClassDef> iterator() {
+                        return classDefs.iterator();
+                    }
+
+                    @Override
+                    public int size() {
+                        return classDefs.size();
+                    }
+                };
+            }
+        });
+
+        for (ClassDef classDef:classDefs){
+            classes.add(classDef.getType());
+        }
         return classes;
     }
 

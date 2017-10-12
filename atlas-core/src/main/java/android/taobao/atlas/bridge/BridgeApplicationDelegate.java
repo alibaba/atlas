@@ -216,10 +216,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.Build;
 import android.support.multidex.MultiDex;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.hack.AndroidHack;
-import android.taobao.atlas.hack.AssertionArrayException;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.AtlasPreLauncher;
 import android.taobao.atlas.runtime.PackageManagerDelegate;
@@ -236,9 +236,14 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Enumeration;
 import java.util.List;
+
+import dalvik.system.DexFile;
+
 /**
  * Created by guanjie on 2017/1/26.
  */
@@ -259,6 +264,42 @@ public class BridgeApplicationDelegate {
 
     public BridgeApplicationDelegate(Application rawApplication,String processname,String installedVersion,
                                      long versioncode,long lastupdatetime,String apkPath,boolean isUpdated,Object dexLoadBooster){
+        if(Build.VERSION.SDK_INT<=19 && getClass().getClassLoader().getClass().getName().startsWith("com.ali.mobisecenhance")){
+            try {
+                Field pathListField = AndroidHack.findField(rawApplication.getClassLoader(), "pathList");
+                Object dexPathList = pathListField.get(rawApplication.getClassLoader());
+                Field elementsField = AndroidHack.findField(dexPathList,"dexElements");
+                Object[] elements = (Object[])elementsField.get(dexPathList);
+                Log.e("BridgeApplication","get Elements :"+ elements);
+
+                if(elements.length>0) {
+                    Field dexFileField = elements[0].getClass().getDeclaredField("dexFile");
+                    dexFileField.setAccessible(true);
+                    for(int x=elements.length-1; x>=0; x--){
+                        DexFile dexFile = (DexFile) dexFileField.get(elements[x]);
+                        if(dexFile.getName().contains("com.taobao.maindex")) {
+                            //针对动态部署处理过的dex做判断
+                            boolean findDexToDelete = false;
+                            Enumeration<String> enumeration = dexFile.entries();
+                            while (enumeration.hasMoreElements()) {
+                                if (enumeration.nextElement().replace("/", ".").startsWith("com.ali.mobisecenhance.ld.util")) {
+                                    findDexToDelete = true;
+                                    break;
+                                }
+                            }
+                            if(findDexToDelete){
+                                Log.e("BridgeApplication","delete dexfile :"+dexFile.getName());
+                                dexFileField.set(elements[x],null);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }catch(Throwable e){
+                e.printStackTrace();
+            }
+        }
+
         mRawApplication = rawApplication;
         mCurrentProcessname = processname;
         mInstalledVersionName = installedVersion;
@@ -271,18 +312,23 @@ public class BridgeApplicationDelegate {
     }
 
     public void attachBaseContext(){
-        try {
-            AtlasHacks.defineAndVerify();
-        } catch (AssertionArrayException e) {
-            throw new RuntimeException(e);
-        }
+        AtlasHacks.defineAndVerify();
         RuntimeVariables.androidApplication = mRawApplication;
+        RuntimeVariables.originalResources = mRawApplication.getResources();
         RuntimeVariables.sCurrentProcessName = mCurrentProcessname;
         RuntimeVariables.sInstalledVersionCode = mInstalledVersionCode;
         RuntimeVariables.sAppLastUpdateTime = mLastUpdateTime;
         RuntimeVariables.sApkPath = mApkPath;
         RuntimeVariables.delegateResources = mRawApplication.getResources();
         RuntimeVariables.sDexLoadBooster = mdexLoadBooster;
+        Log.e("BridgeApplication","length =" + new File(mRawApplication.getApplicationInfo().sourceDir).length());
+
+        try {
+            RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
         if(!TextUtils.isEmpty(mInstalledVersionName)){
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;
         }
@@ -292,13 +338,14 @@ public class BridgeApplicationDelegate {
             String preLaunchStr = (String) RuntimeVariables.getFrameworkProperty("preLaunch");
             if (!TextUtils.isEmpty(preLaunchStr)) {
                 AtlasPreLauncher launcher = (AtlasPreLauncher) Class.forName(preLaunchStr).newInstance();
-                if(launcher!=null){
+                if (launcher != null) {
                     launcher.initBeforeAtlas(mRawApplication.getBaseContext());
                 }
             }
-        }catch(Throwable e){
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
+
 
         // *2 init atlas use reflect
         boolean multidexEnable = false;
@@ -380,7 +427,7 @@ public class BridgeApplicationDelegate {
                 @Override
                 public void onConfigurationChanged(Configuration newConfig) {
                     DisplayMetrics newMetrics = new DisplayMetrics();
-                    if(RuntimeVariables.delegateResources!=null){
+                    if(RuntimeVariables.delegateResources!=null && RuntimeVariables.androidApplication!=null){
                         WindowManager manager = (WindowManager) RuntimeVariables.androidApplication.getSystemService(Context.WINDOW_SERVICE);
                         if(manager==null || manager.getDefaultDisplay()==null){
                             Log.e("BridgeApplication","get windowmanager service failed");

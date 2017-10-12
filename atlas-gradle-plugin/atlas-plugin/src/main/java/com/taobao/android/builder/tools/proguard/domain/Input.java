@@ -216,6 +216,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.android.build.gradle.internal.api.AwbTransform;
@@ -241,6 +242,11 @@ public class Input {
     private Set<String> defaultLibraryClasses = new HashSet<>();
 
     private Map<File, String> fileMd5s = new HashMap<>();
+
+    /**
+     * proguard_out -> proguard_in_md5
+     */
+    public Map<File,String> proguardJarMap = new HashMap<>();
 
     public File dump;
     public File printMapping;
@@ -284,6 +290,14 @@ public class Input {
 
     public Map<File, String> getFileMd5s() {
         return fileMd5s;
+    }
+
+    public Map<String,File> getMd5Files() {
+         Map<String,File> map = new HashMap<>();
+         for (Entry<File,String> entry : getFileMd5s().entrySet()){
+             map.put(entry.getValue(),entry.getKey());
+         }
+         return map;
     }
 
     public Set<File> getLibraryProguardFiles() {

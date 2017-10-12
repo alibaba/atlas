@@ -402,4 +402,17 @@ public class AtlasConfigurationHelper {
     public static final String COMPILE_CONFIGURATION_NAME = "compile";
 
     protected AtlasExtension atlasExtension;
+
+    public void configDexPatchTasksAfterEvaluate() {
+        if (PluginTypeUtils.isAppProject(project)) {
+            AppExtension appExtension = DefaultGroovyMethods.asType(DefaultGroovyMethods.getAt(
+                    project.getExtensions(),
+                    "android"), AppExtension.class);
+            new DexPatchTaskManager(AtlasBuildContext.androidBuilderMap.get(project),
+                    appExtension,
+                    project,
+                    atlasExtension).run();
+        }
+
+    }
 }

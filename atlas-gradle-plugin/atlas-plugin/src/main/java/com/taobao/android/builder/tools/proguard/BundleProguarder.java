@@ -234,6 +234,7 @@ import com.taobao.android.builder.tools.proguard.dump.BundleProguardDumper;
 import com.taobao.android.builder.tools.proguard.dump.ClazzRefInfo;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -252,7 +253,7 @@ import static proguard.AtlasProguardConstants.INOUT_CFG;
  */
 public class BundleProguarder {
 
-    public static final String CACHE_TYPE = "proguard-bundles-0.10";
+    public static final String CACHE_TYPE = "proguard-bundles-0.12";
 
     private static Logger logger = LoggerFactory.getLogger(BundleProguarder.class);
     private static FileLogger fileLogger = FileLogger.getInstance("proguard");
@@ -302,10 +303,11 @@ public class BundleProguarder {
 
         logger.info("bundle proguard for " + result.key + " with md5 key " + md5);
 
-        File cacheDir = FileCacheCenter.queryFile(CACHE_TYPE, result.key, true, isRemoteCacheEnabled(appVariantContext));
+        File cacheDir = FileCacheCenter.queryFile(CACHE_TYPE, result.key, true,
+                                                  isRemoteCacheEnabled(appVariantContext));
         result.cacheDir = cacheDir;
         if (null == cacheDir || !cacheDir.exists()) {
-            logger.warn("bundle proguard for " + result.key  + " miss  cache " + cacheDir.getAbsolutePath());
+            logger.warn("bundle proguard for " + result.key + " miss  cache " + cacheDir.getAbsolutePath());
             return result;
         }
         logger.warn("bundle proguard for " + result.key + " hit  cache ");
@@ -314,14 +316,25 @@ public class BundleProguarder {
         File proguardCfg = new File(cacheDir, "proguard.cfg");
         File usageCfg = new File(cacheDir, "usage.cfg");
 
+        Map<String,File> md5Map = input.getMd5Files();
+
         if (input.getAwbBundles().get(0).getAwbBundle().isMainBundle()) {
+
             for (File file : cacheDir.listFiles()) {
                 if (file.getName().endsWith("jar") && ZipUtils.isZipFile(file)) {
-                    FileUtils.copyFileToDirectory(file, input.proguardOutputDir);
+
+                    String jarMd5 = file.getName().replace(".jar","");
+                    File srcFile = md5Map.get(jarMd5);
+
+                    if ( null != srcFile && srcFile.exists()){
+                        FileUtils.copyFile(file,new File(input.proguardOutputDir, FileNameUtils.getUniqueJarName(srcFile) + ".jar"));
+                    }else {
+                        FileUtils.copyFileToDirectory(file, input.proguardOutputDir);
+                    }
                 }
             }
 
-            File awbProguardDir = input.proguardOutputDir;
+            File awbProguardDir = input.printConfiguration.getParentFile();
             //FileUtils.copyFileToDirectory(keepJson, awbProguardDir);
             if (proguardCfg.exists()) {
                 FileUtils.copyFileToDirectory(proguardCfg,
@@ -496,13 +509,10 @@ public class BundleProguarder {
 
                 configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
 
-                String name = input.getFileMd5s().get(inputLibrary);
-                if (null == name){
-                    name = FileNameUtils.getUniqueFileName(inputLibrary.getName(), "proguard");
-                }
+                String name = FileNameUtils.getUniqueJarName(inputLibrary);
+                File obsJar = new File(proguardDir, name + ".jar");
 
-                File obsJar = new File(proguardDir,
-                                       name + ".jar");
+                input.proguardJarMap.put(obsJar, input.getFileMd5s().get(inputLibrary));
 
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
@@ -513,7 +523,7 @@ public class BundleProguarder {
                 configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
 
                 String name = input.getFileMd5s().get(awbTransform.getInputDir());
-                if (null == name){
+                if (null == name) {
                     name = FileNameUtils.getUniqueFileName(awbTransform.getInputDir().getName(), "proguard");
                 }
 
@@ -548,7 +558,12 @@ public class BundleProguarder {
         for (AwbTransform awbTransform : input.getAwbBundles()) {
             for (File file : awbTransform.getInputFiles()) {
                 if (file.exists()) {
-                    FileUtils.copyFileToDirectory(file, tmpDir);
+                    String md5 = input.proguardJarMap.get(file);
+                    if (StringUtils.isNoneEmpty(md5)) {
+                        FileUtils.copyFile(file, new File(tmpDir, md5 + ".jar"));
+                    } else {
+                        FileUtils.copyFileToDirectory(file, tmpDir);
+                    }
                 } else {
                     new File(tmpDir, file.getName()).createNewFile();
                 }
@@ -565,7 +580,10 @@ public class BundleProguarder {
                                         : appVariantContext
                                             .getAwbProguardDir(awbBundle),
                                     "proguard.cfg");
-        if (proguardCfg.exists()) {
+        if (!proguardCfg.exists()){
+            proguardCfg = input.printConfiguration;
+        }
+        if ( null != proguardCfg && proguardCfg.exists()) {
             FileUtils.copyFileToDirectory(proguardCfg, tmpDir);
         }
 
@@ -573,11 +591,16 @@ public class BundleProguarder {
                                      : appVariantContext
                                          .getAwbProguardDir(awbBundle),
                                  "usage.cfg");
-        if (usageCfg.exists()) {
+        if (!usageCfg.exists()){
+            usageCfg = input.printUsage;
+        }
+        if ( null != usageCfg && usageCfg.exists()) {
             FileUtils.copyFileToDirectory(usageCfg, tmpDir);
         }
 
-        FileCacheCenter.cacheFile(CACHE_TYPE, result.key, tmpDir, AtlasBuildContext.sBuilderAdapter.pushCacheToNetwork && isRemoteCacheEnabled(appVariantContext));
+        FileCacheCenter.cacheFile(CACHE_TYPE, result.key, tmpDir,
+                                  AtlasBuildContext.sBuilderAdapter.pushCacheToNetwork && isRemoteCacheEnabled(
+                                      appVariantContext));
 
     }
 }

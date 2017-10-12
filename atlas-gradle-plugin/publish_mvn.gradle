@@ -174,7 +174,7 @@ publishing {
         if (publishToRemote) {
             if (version.endsWith("-SNAPSHOT")) {
                 maven {
-                    url SNAPSHOT_REPOSITORY_URL
+                    url 'SNAPSHOT_REPOSITORY_URL'
                     credentials {
                         username = NEXUS_USERNAME
                         password = NEXUS_PASSWORD
@@ -183,11 +183,11 @@ publishing {
             } else {
                 def accountMap = getAccount();
                 maven {
-                    url RELEASE_REPOSITORY_URL
-                    credentials {
-                        username = accountMap.get("username")
-                        password = accountMap.get("password")
-                    }
+                   url RELEASE_REPOSITORY_URL
+                   credentials {
+                       username = accountMap.get("username")
+                       password = accountMap.get("password")
+                   }
                 }
             }
         }

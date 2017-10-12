@@ -223,6 +223,7 @@ import android.util.Log;
 import dalvik.system.DexFile;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
@@ -417,22 +418,24 @@ public class BundleReleaser {
 
     private void dexOptimization() {
         Log.e(TAG, "dexOptimization start");
-        final File[] validDexes = reversionDir.listFiles(new FileFilter() {
+        final File[] validDexes = reversionDir.listFiles(new FilenameFilter() {
             @Override
-            public boolean accept(File pathname) {
+            public boolean accept(File dir,String pathname) {
                 if (!DexReleaser.isArt() || externalStorage) {
-                    return pathname.getName().endsWith(DEX_SUFFIX);
+                    return pathname.endsWith(DEX_SUFFIX);
                 } else {
-                    return pathname.getName().endsWith(".zip");
+                    return pathname.endsWith(".zip");
                 }
             }
         });
-         dexFiles = new DexFile[validDexes.length];
-
+        Log.e(TAG,"start new DexFile");
+        dexFiles = new DexFile[validDexes.length];
+        Log.e(TAG,"start enable verify");
         if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
             KernalConstants.dexBooster.setVerificationEnabled(true);
             Log.e(TAG,"enable verify");
         }
+        Log.e(TAG,"start dexopt");
         final CountDownLatch countDownLatch = new CountDownLatch(validDexes.length);
         for (int i = 0;i < validDexes.length;i++) {
             final int j = i;

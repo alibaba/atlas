@@ -431,6 +431,7 @@ public class AndroidHack {
         AtlasHacks.ContextImpl_mResources.set(application.getBaseContext(), resources);
         //AtlasHacks.ContextImpl_mTheme.on(application.getBaseContext()).set(null);
         AtlasHacks.ContextImpl_mTheme.set(application.getBaseContext(), null);
+        application.getBaseContext().getTheme();
 
         try {
             Collection<WeakReference<Resources>> references = null;
@@ -533,7 +534,7 @@ public class AndroidHack {
         }catch(Throwable e){}
     }
 
-    private static Field findField(Object instance, String name) throws NoSuchFieldException {
+    public static Field findField(Object instance, String name) throws NoSuchFieldException {
         for (Class<?> clazz = instance.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
             try {
                 Field field = clazz.getDeclaredField(name);

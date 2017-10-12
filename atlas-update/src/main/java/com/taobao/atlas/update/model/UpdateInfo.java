@@ -56,6 +56,11 @@ public class UpdateInfo implements Serializable{
         public String unitTag;
         public String srcUnitTag;
         /**
+         * this version is compatible with new app version
+         * no need to update
+         */
+        public boolean inherit = false;
+        /**
          * 依赖的 bundle 列表
          */
         public List<String> dependency;

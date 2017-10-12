@@ -209,6 +209,7 @@
 package android.taobao.atlas.runtime;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -218,13 +219,16 @@ import android.taobao.atlas.util.StringUtils;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class ActivityTaskMgr {
 
     private List<WeakReference<Activity>> activityList = new ArrayList<WeakReference<Activity>>();
+    public  static Dialog sReminderDialog;
 
     private static ActivityTaskMgr       sInstance = null;
+
 
     private ActivityTaskMgr(){
     }
@@ -260,6 +264,15 @@ public class ActivityTaskMgr {
     }
 
     public void popFromActivityStack(Activity activity) {
+        if(sReminderDialog!=null &&
+                (sReminderDialog.getContext()==activity ||
+                        (sReminderDialog.getContext() instanceof ContextWrapper && ((ContextWrapper)sReminderDialog.getContext()).getBaseContext()==activity))){
+            try{
+                sReminderDialog.dismiss();
+            }catch (Throwable e){}finally {
+                sReminderDialog = null;
+            }
+        }
         for(int x=0; x<activityList.size(); x++){
             WeakReference<Activity> ref = activityList.get(x);
             if(ref!=null && ref.get()!=null && ref.get()==activity){

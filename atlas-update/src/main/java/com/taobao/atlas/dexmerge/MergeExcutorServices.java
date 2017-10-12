@@ -8,7 +8,9 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 
 import java.io.*;
@@ -115,18 +117,31 @@ public class MergeExcutorServices {
             tasks[i] = mergeTask;
         }
         System.setProperty("rx2.computation-threads",String.valueOf(Runtime.getRuntime().availableProcessors()/2));
+        RxJavaPlugins.setErrorHandler(new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+                mCallback.onMergeAllFinish(false,throwable.getMessage());
+            }
+        });
         final CountDownLatch countDownLatch = new CountDownLatch(1);
+        try {
             Observable.fromArray(tasks).flatMap(new Function<MergeTask, ObservableSource<File>>() {
                 @Override
                 public ObservableSource<File> apply(MergeTask mergeTask) throws Exception {
                     return Observable.just(mergeTask).map(new Function<MergeTask, File>() {
                         @Override
                         public File apply(MergeTask mergeTask) throws Exception {
-                            return mergeTask.call();
+                            File file = null;
+                            try {
+                                file = mergeTask.call();
+                            }catch (IllegalStateException e){
+                                e.printStackTrace();
+                            }
+                            return file;
                         }
                     }).subscribeOn(Schedulers.computation());
                 }
-            }).subscribeOn(Schedulers.computation()).subscribe(new Observer<File>() {
+            }).subscribe(new Observer<File>() {
 
                 @Override
                 public void onError(Throwable e) {
@@ -169,6 +184,15 @@ public class MergeExcutorServices {
                 }
             });
             countDownLatch.await();
+        }catch (Throwable e){
+            try {
+                mCallback.onMergeAllFinish(false,e.getMessage());
+            } catch (RemoteException e1) {
+                e1.printStackTrace();
+            }
+        }finally {
+            Schedulers.shutdown();
+
             if (sZipPatch != null){
                 try {
                     sZipPatch.close();
@@ -176,6 +200,8 @@ public class MergeExcutorServices {
                     e.printStackTrace();
                 }
             }
+        }
+
         }
 
 
@@ -287,6 +313,49 @@ public class MergeExcutorServices {
 
 
     public static void main(String []args) throws InterruptedException {
+        final MergeObject mergeTask = new MergeObject(null,null,null);
+        final MergeObject mergeTask1 = new MergeObject(null,null,null);
+
+        String[]aa = new String[]{"a","b","c","d","e"};
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        Observable.fromArray(aa).flatMap(new Function<String, ObservableSource<String>>() {
+            @Override
+            public ObservableSource<String> apply(String s) throws Exception {
+                return Observable.just(s).map(new Function<String, String>() {
+                    @Override
+                    public String apply(String s) throws Exception {
+                        return s+s;
+                    }
+                }).subscribeOn(Schedulers.computation());
+            }
+        }).observeOn(Schedulers.newThread()).subscribe(new Observer<String>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(String value) {
+                System.out.println(value);
+                System.out.println("xxxx");
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                System.out.println("onError");
+
+
+            }
+
+            @Override
+            public void onComplete() {
+                System.out.println("onComplete");
+                countDownLatch.countDown();
+
+            }
+        });
+        countDownLatch.await();
 //       Observable.just(1,2,3,4).doOnSubscribe(new Consumer<Disposable>() {
 //           @Override
 //           public void accept(Disposable disposable) throws Exception {

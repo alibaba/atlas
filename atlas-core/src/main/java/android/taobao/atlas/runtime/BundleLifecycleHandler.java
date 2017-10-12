@@ -222,6 +222,7 @@ import android.annotation.SuppressLint;
 import android.app.Application;
 import android.os.Looper;
 import android.taobao.atlas.framework.BundleImpl;
+import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.StringUtils;
@@ -285,6 +286,10 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
     private void started(Bundle bundle){
         BundleImpl b = (BundleImpl) bundle;
         if(b.getClassLoader()==null || !((BundleClassLoader)b.getClassLoader()).validateClasses()){
+            Log.e("BundleLifeCycle","validateClass fail,bundle can't be started :"+b);
+            if(Framework.isDeubgMode()){
+                throw new RuntimeException("validateClass fail,bundle can't be started :"+b);
+            }
             return;
         }
         long time = System.currentTimeMillis();

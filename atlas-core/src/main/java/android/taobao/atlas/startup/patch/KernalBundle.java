@@ -253,7 +253,7 @@ public class KernalBundle{
     public static String KERNAL_BUNDLE_NAME = "com.taobao.maindex";
 
     public static KernalBundle kernalBundle = null;
-
+    public static boolean patchWithApk = false;
     public static boolean checkloadKernalBundle(Application application,String currentProcessName) {
         File updateDir = null;
         File dexPatchDir = null;
@@ -308,12 +308,14 @@ public class KernalBundle{
                     DexFile dexFile = (DexFile)KernalConstants.dexBooster.loadDex(KernalConstants.baseContext,KernalConstants.baseContext.getApplicationInfo().sourceDir,
                                                                                   new File(patchFile.getParent(),"base.dex").getAbsolutePath(),0,true) ;
 
+                    File internalDebugBundleDir = new File(new File(application.getFilesDir(), "debug_storage"), KERNAL_BUNDLE_NAME);
+                    internalDebugBundleDir.mkdirs();
                     DexFile patchDexFile = (DexFile)KernalConstants.dexBooster.loadDex(KernalConstants.baseContext,patchFile.getAbsolutePath(),
-                            new File(patchFile.getParent(),"patch.dex").getAbsolutePath(),0,true) ;
+                            new File(internalDebugBundleDir,"patch.dex").getAbsolutePath(),0,true) ;
                     bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(), patchFile, new DexFile[]{patchDexFile,dexFile}, null,
                                                true /*(app_info.flags & ApplicationInfo.FLAG_VM_SAFE_MODE) != 0*/);
                     if(bundle.needReplaceClassLoader(application)){
-                        NClassLoader loader = new NClassLoader(".",KernalBundle.class.getClassLoader());
+                        NClassLoader loader = new NClassLoader(".",KernalBundle.class.getClassLoader().getParent());
                         try {
                             NClassLoader.replacePathClassLoader(KernalConstants.baseContext,KernalBundle.class.getClassLoader(),loader);
                         } catch (Exception e) {
@@ -392,11 +394,24 @@ public class KernalBundle{
         if ((dexFile != null&&dexFile.length>0) || archive.getLibraryDirectory().exists()) {
             installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive.getArchiveFile(),archive.getOdexFile(),archive.getLibraryDirectory());
             boolean needReplaceClassLoader = needReplaceClassLoader(application);
-            if(!needReplaceClassLoader) {
-                FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length - 1].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
+            boolean dexPatch = dexFile[dexFile.length - 1].getName().contains(KernalBundleArchive.DEXPATCH_DIR);
+            int newFrameworkPropertiesDexIndex;
+            if (dexPatch) {
+                newFrameworkPropertiesDexIndex = dexFile.length > 1 ? dexFile.length - 2 : dexFile.length - 1;
+            } else {
+                newFrameworkPropertiesDexIndex = dexFile.length - 1;
+            }
+            //临时处理方案，需要替换为dexopt时传入classsLoader以兼容8.0
+            patchWithApk = dexPatch &&
+                    (TextUtils.isEmpty(KernalVersionManager.instance().currentVersionName()) || KernalVersionManager.instance().currentVersionName().equals(KernalConstants.INSTALLED_VERSIONNAME));
+            if (!needReplaceClassLoader) {
+                FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
+            }else if(patchWithApk){
+                FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
+                replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader().getParent());
             }else{
-                replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader());
-                FrameworkPropertiesClazz = archive.getOdexFile()[dexFile.length - 1].loadClass("android.taobao.atlas.framework.FrameworkProperties", replaceClassLoader);
+                replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader().getParent());
+                FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", replaceClassLoader);
             }
             if(FrameworkPropertiesClazz==null && isDeubgMode()){
                 Log.e("KernalBundle","main dex is not match, library awo test?");
@@ -457,9 +472,11 @@ public class KernalBundle{
     }
 
     public void patchKernalResource(Application application) throws Exception{
-        Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
-        DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
-                .invoke(DelegateResourcesClazz, archive.getArchiveFile().getAbsolutePath());
+        if(!patchWithApk) {
+            Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
+            DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
+                    .invoke(DelegateResourcesClazz, archive.getArchiveFile().getAbsolutePath());
+        }
     }
 
     public int getState() {
@@ -618,14 +635,15 @@ public class KernalBundle{
                 }
 
                 //增加kernal bundle
-                if (Build.VERSION.SDK_INT > 20 && !vmSafeMode) {
-                     success = replaceElement(dexPathList, "dexElements", element[0]);
-                    if(!success){
-                        throw new IOException("replaceElement failed");
-                    }
-                } else {
-                    expandFieldArray(dexPathList, "dexElements", element);
-                }
+                expandFieldArray(dexPathList, "dexElements", element);
+//                if (Build.VERSION.SDK_INT > 20 && !vmSafeMode) {
+//                     success = replaceElement(dexPathList, "dexElements", element[0]);
+//                    if(!success){
+//                        throw new IOException("replaceElement failed");
+//                    }
+//                } else {
+//                    expandFieldArray(dexPathList, "dexElements", element);
+//                }
             }
             //增加kernal bundle library
             if (libraryDirectory!=null && !TextUtils.isEmpty(libraryDirectory.getAbsolutePath()) && libraryDirectory.exists()) {
@@ -704,7 +722,9 @@ public class KernalBundle{
             try {
                 Class NativeLibraryElement = Class.forName("dalvik.system.DexPathList$NativeLibraryElement");
                 Class[] oconstructorArgs = {File.class};
-                return NativeLibraryElement.getDeclaredConstructor(oconstructorArgs).newInstance(dir);
+                Constructor constructor = NativeLibraryElement.getDeclaredConstructor(oconstructorArgs);
+                constructor.setAccessible(true);
+                return constructor.newInstance(dir);
             }catch (Exception e) {
                 throw new IOException("make nativeElement fail", e);
             }

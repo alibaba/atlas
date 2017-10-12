@@ -235,6 +235,9 @@ public class ManifestOptions {
     @Config(order = 2, message = "权限白名单", advance = true, group = "atlas")
     private File  permissionListFile;
 
+    @Config(order = 2, message = "权限白名单", advance = true, group = "atlas")
+    private File  permissionJsonFile;
+
     @Config(order = 5, message = "组件增加bundle的坐标", advance = true, group = "atlas")
     private boolean addBundleLocation = true;
 
@@ -415,6 +418,14 @@ public class ManifestOptions {
 
     public void setPermissionListFile(File permissionListFile) {
         this.permissionListFile = permissionListFile;
+    }
+
+    public File getPermissionJsonFile() {
+        return permissionJsonFile;
+    }
+
+    public void setPermissionJsonFile(File permissionJsonFile) {
+        this.permissionJsonFile = permissionJsonFile;
     }
 
     @Override

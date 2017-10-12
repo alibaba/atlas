@@ -214,9 +214,11 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ParceledListSlice;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
+import android.os.Build;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
@@ -289,7 +291,11 @@ public class PackageManagerDelegate {
                 Intent intent = (Intent)args[0];
                 List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentActivities(intent);
                 if (info != null) {
-                    return info;
+                    if(Build.VERSION.SDK_INT>=24){
+                        return new ParceledListSlice(info);
+                    }else {
+                        return info;
+                    }
                 }
                 return object;
             }else if(method.getName().equals("getActivityInfo")){
@@ -309,7 +315,11 @@ public class PackageManagerDelegate {
                 Intent intent = (Intent) args[0];
                 List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentService(intent);
                 if (info != null) {
-                    return info.get(0);
+                    if(Build.VERSION.SDK_INT>=24){
+                        return new ParceledListSlice(info);
+                    }else {
+                        return info;
+                    }
                 }
                 return object;
             }else if(method.getName().equals("getServiceInfo")){
@@ -334,7 +344,11 @@ public class PackageManagerDelegate {
                 Intent intent = (Intent) args[0];
                 List<ResolveInfo> info = AdditionalPackageManager.getInstance().queryIntentReceivers(intent);
                 if(info!=null){
-                    return info.addAll((List<ResolveInfo>)object);
+                    if(Build.VERSION.SDK_INT>=24){
+                        return ((ParceledListSlice)object).getList().addAll(info);
+                    }else{
+                        return info.addAll((List<ResolveInfo>)object);
+                    }
                 }
                 return object;
             }else if(method.getName().equals("queryContentProviders")){
@@ -342,8 +356,13 @@ public class PackageManagerDelegate {
                 if(infos==null) {
                     return object;
                 }else{
-                    infos.addAll((List<ProviderInfo>)object);
-                    return infos;
+                    if(Build.VERSION.SDK_INT<23){
+                        infos.addAll((List<ProviderInfo>)object);
+                        return infos;
+                    }else{
+                        ((ParceledListSlice)object).getList().addAll(infos);
+                        return object;
+                    }
                 }
             }else if(method.getName().equals("getProviderInfo")){
                 ProviderInfo info = AdditionalPackageManager.getInstance().getNewComponentInfo((ComponentName)args[0],ProviderInfo.class);

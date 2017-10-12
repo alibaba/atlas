@@ -208,16 +208,15 @@
 
 package android.taobao.atlas.startup;
 
+import java.io.IOException;
+import java.lang.reflect.Method;
 import android.content.Context;
+import android.os.Build;
+import android.text.TextUtils;
 import android.util.Log;
-
 import com.taobao.android.runtime.AndroidRuntime;
 import com.taobao.android.runtime.Dex2OatService;
 import com.uc.browser.aerie.DalvikPatch;
-
-import java.io.IOException;
-import java.lang.reflect.Method;
-
 import dalvik.system.DexFile;
 
 /**
@@ -226,38 +225,46 @@ import dalvik.system.DexFile;
 
 public class DexLoadBooster {
 
-    public DexLoadBooster(){
+    private static final String TAG = "DexLoadBooster";
+
+    public DexLoadBooster() {
     }
 
-    public void init(Context context){
+    public void init(Context context) {
         boolean isTaobao = "com.taobao.taobao".equals(context.getPackageName());
-        if(isYunOS()) {
+        if (isYunOS()) {
             Log.d("RuntimeUtils", "- RuntimeUtils init: isYunOS. Invalid disable");
-            return ;
+            return;
         } else {
-            if(isTaobao) {
-                boolean isAppDebuggable = (context.getApplicationInfo().flags & 2) != 0;
-                AndroidRuntime.getInstance().init(context, !isAppDebuggable);
+            if (isTaobao) {
+                //boolean isAppDebuggable = (context.getApplicationInfo().flags & 2) != 0;
+                //AndroidRuntime.getInstance().init(context, !isAppDebuggable);
                 Dex2OatService.setBootCompleted(false);
             } else {
-                AndroidRuntime.getInstance().init(context);
+                //AndroidRuntime.getInstance().init(context);
             }
         }
+        AndroidRuntime.getInstance().init(context, isClassAvailable("com.ali.mobisecenhance.ld.startup.ConfigInfo"));
         if (!AndroidRuntime.getInstance().isEnabled()) {
+            return;
+        }
+        Log.e("AndroidRuntime",Dex2OatService.class.toString());
+        if (Build.VERSION.SDK_INT > 20) {
             return;
         }
         DalvikPatch.patchIfPossible();
     }
 
-    public void setVerificationEnabled(boolean enabled){
+    public void setVerificationEnabled(boolean enabled) {
         AndroidRuntime.getInstance().setVerificationEnabled(enabled);
     }
 
-    public DexFile loadDex(Context context,String sourcePathName, String outputPathName, int flags, boolean interpretOnly) throws IOException {
+    public DexFile loadDex(Context context, String sourcePathName, String outputPathName, int flags,
+                           boolean interpretOnly) throws IOException {
         return AndroidRuntime.getInstance().loadDex(context, sourcePathName, outputPathName, flags, interpretOnly);
     }
 
-    public boolean isOdexValid(String outputPathName){
+    public boolean isOdexValid(String outputPathName) {
         return AndroidRuntime.getInstance().isOdexValid(outputPathName);
     }
 
@@ -265,13 +272,27 @@ public class DexLoadBooster {
         String version = null;
         String vmName = null;
         try {
-            Method m = Class.forName("android.os.SystemProperties").getMethod("get", new Class[]{String.class});
-            version = (String)m.invoke((Object)null, new Object[]{"ro.yunos.version"});
-            vmName = (String)m.invoke((Object)null, new Object[]{"java.vm.name"});
+            Method m = Class.forName("android.os.SystemProperties").getMethod("get", new Class[] {String.class});
+            version = (String)m.invoke((Object)null, new Object[] {"ro.yunos.version"});
+            vmName = (String)m.invoke((Object)null, new Object[] {"java.vm.name"});
         } catch (Exception var3) {
-            ;
         }
-        return vmName != null && vmName.toLowerCase().contains("lemur") || version != null && version.trim().length() > 0;
+        return vmName != null && vmName.toLowerCase().contains("lemur")
+            || version != null && version.trim().length() > 0;
     }
 
+    public static boolean isClassAvailable(String className) {
+        if (TextUtils.isEmpty(className)) {
+            return false;
+        }
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        } catch (Throwable t) {
+            Log.e(TAG, "Unexpected exception when checking if class:" + className + " exists at " + "runtime", t);
+            return false;
+        }
+    }
 }

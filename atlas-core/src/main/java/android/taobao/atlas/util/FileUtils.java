@@ -241,11 +241,11 @@ public class FileUtils {
 		return flag;
 	}
 
-	public static String getDataAvailableSpace(){
-		long avliableSpace = 0;
-		avliableSpace = FileUtils.getUsableSpace(Environment.getDataDirectory());
-		return String.valueOf(avliableSpace);
-	}
+//	public static String getDataAvailableSpace(){
+//		long avliableSpace = 0;
+//		avliableSpace = FileUtils.getUsableSpace(Environment.getDataDirectory());
+//		return String.valueOf(avliableSpace);
+//	}
 	
     public static long getUsableSpace(File path) {
         if (path == null) {
@@ -263,43 +263,43 @@ public class FileUtils {
         }
     }
     
-    public static long folderSize(File directory) {
-        long length = 0;
-        for (File file : directory.listFiles()) {
-            if (file.isFile())
-                length += file.length();
-            else
-                length += folderSize(file);
-        }
-        return length;
-    }
+//    public static long folderSize(File directory) {
+//        long length = 0;
+//        for (File file : directory.listFiles()) {
+//            if (file.isFile())
+//                length += file.length();
+//            else
+//                length += folderSize(file);
+//        }
+//        return length;
+//    }
  
-	private static String getFreeInodes(){
-		try {
-			long f_ffree = -1;
-			long f_favail = -1;
-			Class clsStatFs = Class.forName("android.os.StatFs");
-			Method doStat = clsStatFs.getDeclaredMethod("doStat", String.class);
-			doStat.setAccessible(true);
-			final Object stat = doStat.invoke(null, Environment.getDataDirectory().getAbsolutePath());
-			Class clsStructStatFs = stat.getClass();
-			Field filed_f_free = clsStructStatFs.getDeclaredField("f_ffree");
-			Field filed_f_favail = null;
-			try{
-				filed_f_favail = clsStructStatFs.getDeclaredField("f_favail");
-			} catch(Exception e){
-			}
-			f_ffree = filed_f_free.getLong(stat);
-			if (filed_f_favail != null){
-				f_favail = filed_f_favail.getLong(stat);
-			}
-			return "avaiable free nodes: " +  f_ffree + (f_favail == -1 ? ("avaiable free nodes for non-root:  " + f_favail) : "");
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return "";
-	}
+//	private static String getFreeInodes(){
+//		try {
+//			long f_ffree = -1;
+//			long f_favail = -1;
+//			Class clsStatFs = Class.forName("android.os.StatFs");
+//			Method doStat = clsStatFs.getDeclaredMethod("doStat", String.class);
+//			doStat.setAccessible(true);
+//			final Object stat = doStat.invoke(null, Environment.getDataDirectory().getAbsolutePath());
+//			Class clsStructStatFs = stat.getClass();
+//			Field filed_f_free = clsStructStatFs.getDeclaredField("f_ffree");
+//			Field filed_f_favail = null;
+//			try{
+//				filed_f_favail = clsStructStatFs.getDeclaredField("f_favail");
+//			} catch(Exception e){
+//			}
+//			f_ffree = filed_f_free.getLong(stat);
+//			if (filed_f_favail != null){
+//				f_favail = filed_f_favail.getLong(stat);
+//			}
+//			return "avaiable free nodes: " +  f_ffree + (f_favail == -1 ? ("avaiable free nodes for non-root:  " + f_favail) : "");
+//		} catch (Exception e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return "";
+//	}
 	
 	public static String getAvailableDisk(){
 	    String avliableSpace = "";

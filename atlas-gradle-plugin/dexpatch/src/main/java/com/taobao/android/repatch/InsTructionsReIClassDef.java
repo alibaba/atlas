@@ -521,7 +521,7 @@ public class InsTructionsReIClassDef extends MethodImplReIClassDef {
                                     DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(charSequence.toString())).className,isArray1));
                         }
                         final ImmutableMethodReference immutableReference = new ImmutableMethodReference(
-                                DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(methodReference.getDefiningClass())).className,false),
+                                DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(methodReference.getDefiningClass())).className,methodReference.getDefiningClass().startsWith("[")),
 
                                 classProcessor.methodProcess(DefineUtils.getDalvikClassName(methodReference.getDefiningClass()),
                                         methodReference.getName(),
@@ -591,7 +591,7 @@ public class InsTructionsReIClassDef extends MethodImplReIClassDef {
 
                     final ImmutableFieldReference immutableFieldReference = new ImmutableFieldReference(
 
-                            DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(fieldReference.getDefiningClass())).className,false),
+                            DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(fieldReference.getDefiningClass())).className,fieldReference.getDefiningClass().startsWith("[")),
                             classProcessor.filedProcess(DefineUtils.getDalvikClassName(fieldReference.getDefiningClass()), isBasic?basicType.get(fieldReference.getType()):DefineUtils.getDalvikClassName(fieldReference.getType()), fieldReference.getName()).fieldName,
                             isBasic? fieldReference.getType():DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(fieldReference.getType())).className,fieldReference.getType().startsWith("["))
                     );

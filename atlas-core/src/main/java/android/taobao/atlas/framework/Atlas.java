@@ -211,6 +211,7 @@ package android.taobao.atlas.framework;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Set;
 
 import android.app.Activity;
 import android.app.Application;
@@ -222,6 +223,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Looper;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
+import android.taobao.atlas.runtime.DelegateResources;
 import android.taobao.atlas.runtime.SecurityHandler;
 import android.taobao.atlas.util.ApkUtils;
 import android.taobao.atlas.util.WrapperUtil;
@@ -249,6 +251,7 @@ public class Atlas {
     public static String sAPKSource ;
     public static boolean Downgrade_H5 = false;
     public static boolean isDebug;
+    public static Set<String> sDisableBundle = null;
 
     private Atlas(){
     }
@@ -280,6 +283,7 @@ public class Atlas {
         boolean DEBUG = (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         RuntimeVariables.androidApplication = application;
         RuntimeVariables.delegateResources  = application.getResources();
+        DelegateResources.walkroundActionMenuTextColor(RuntimeVariables.delegateResources);
         Framework.containerVersion = RuntimeVariables.sInstalledVersionName;
         ClassLoader cl = Atlas.class.getClassLoader();
         Framework.systemClassLoader = cl;
@@ -314,11 +318,6 @@ public class Atlas {
 
     public void startup(Application application,boolean isUpdated) {
         if(!RuntimeVariables.safeMode) {
-            try {
-                RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled",boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
             if (!WrapperUtil.isDebugMode(application) && ApkUtils.isRootSystem()) {
                 Atlas.getInstance().addBundleListener(new SecurityHandler());
             }
@@ -602,6 +601,14 @@ public class Atlas {
      */
     public void setBundleSecurityChecker(BundleVerifier checker){
         RuntimeVariables.sBundleVerifier = checker;
+    }
+
+    public static boolean isDisableBundle(String bundleName) {
+        Set<String> disableBundle = sDisableBundle;
+        if (disableBundle != null) {
+            return disableBundle.contains(bundleName);
+        }
+        return false;
     }
 
     public void forceStopSelf(){

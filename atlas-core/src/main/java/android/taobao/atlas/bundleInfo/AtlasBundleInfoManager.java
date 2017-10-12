@@ -220,15 +220,20 @@ import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.WrapperUtil;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
+import android.util.Base64;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Created by guanjie on 15/7/6.
@@ -251,19 +256,33 @@ public class AtlasBundleInfoManager {
         if(mCurrentBundleListing==null){
             String bundleInfoStr = (String)RuntimeVariables.getFrameworkProperty("bundleInfo");
             if(!TextUtils.isEmpty(bundleInfoStr)) {
+                Object compressInfo = RuntimeVariables.getFrameworkProperty("compressInfo");
+                if(compressInfo!=null && (boolean)compressInfo){
+                    bundleInfoStr = uncompress(bundleInfoStr);
+                    Log.e("AtlasBundleInfoManager","the result of decoded info "+bundleInfoStr);
+                }
+                if(bundleInfoStr==null){
+                    throw new RuntimeException("bundleinfo is invalid");
+                }
                 int retryCount = 2;
                 Throwable e = null;
                 do {
                     try {
-                        LinkedHashMap<String, BundleListing.BundleInfo> infos = BundleListingUtil.parseArray(bundleInfoStr);
-                        if (infos == null) {
-                            Map<String, Object> detail = new HashMap<>();
-                            detail.put("InitBundleInfoByVersionIfNeed", bundleInfoStr);
-                            AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL, detail, new RuntimeException("the infos is null!"));
+                        try {
+                            mCurrentBundleListing = AtlasBundleInfoGenerator.generateBundleInfo();
+                            Log.e("AtlasBundleInfoManager","generate info from generator");
+                        }catch (Throwable exception) {
+                            exception.printStackTrace();
+                            LinkedHashMap<String, BundleListing.BundleInfo> infos = BundleListingUtil.parseArray(bundleInfoStr);
+                            if (infos == null) {
+                                Map<String, Object> detail = new HashMap<>();
+                                detail.put("InitBundleInfoByVersionIfNeed", bundleInfoStr);
+                                AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL, detail, new RuntimeException("the infos is null!"));
+                            }
+                            BundleListing listing = new BundleListing();
+                            listing.setBundles(infos);
+                            mCurrentBundleListing = listing;
                         }
-                        BundleListing listing = new BundleListing();
-                        listing.setBundles(infos);
-                        mCurrentBundleListing = listing;
                         updateBundleListingWithExtraInfo();
                         break;
                     } catch (Throwable error) {
@@ -375,9 +394,9 @@ public class AtlasBundleInfoManager {
                     for(int x=0; x<array.length(); x++){
                         JSONObject jb = array.getJSONObject(x);
                         BundleListing.BundleInfo info = getBundleInfo(jb.optString("name"));
-                        info.setSize(jb.optInt("size"));
-                        info.setMd5(jb.optString("md5"));
-                        info.setUrl(jb.optString("url"));
+                        info.size = jb.optInt("size");
+                        info.md5 = jb.optString("md5");
+                        info.url = jb.optString("url");
                     }
                 }
             }catch (Throwable e){
@@ -385,6 +404,28 @@ public class AtlasBundleInfoManager {
             }
 
         }
+    }
+
+    public static String uncompress(String base64EncodeStr) {
+        byte[] gzipArray = Base64.decode(base64EncodeStr,Base64.DEFAULT);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayInputStream in = new ByteArrayInputStream(gzipArray);
+        try {
+            GZIPInputStream ungzip = new GZIPInputStream(in);
+            byte[] buffer = new byte[1024];
+            int n;
+            while ((n = ungzip.read(buffer)) >= 0) {
+                out.write(buffer, 0, n);
+            }
+            return new String(out.toByteArray(),"UTF-8");
+        } catch (IOException e) {
+        }finally {
+            try{
+                in.close();
+                out.close();
+            }catch (Throwable e){}
+        }
+        return null;
     }
 
     private String getFromAssets(String fileName,Context context){
