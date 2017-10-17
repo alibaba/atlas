@@ -238,6 +238,7 @@ import android.view.WindowManager;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.List;
@@ -323,11 +324,30 @@ public class BridgeApplicationDelegate {
         RuntimeVariables.sDexLoadBooster = mdexLoadBooster;
         Log.e("BridgeApplication","length =" + new File(mRawApplication.getApplicationInfo().sourceDir).length());
 
-        try {
-            RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
-        } catch (Throwable e) {
-            e.printStackTrace();
+        if(Build.MANUFACTURER.equalsIgnoreCase("vivo") && Build.VERSION.SDK_INT== 23) {
+            try {
+                File appSGLib = mRawApplication.getDir("SGLib", Context.MODE_PRIVATE);
+                File mark = new File(mRawApplication.getFilesDir(), "vivo_appSGLib_mark");
+                if (appSGLib.exists() && !mark.exists()) {
+                    mark.createNewFile();
+                    File[] files = appSGLib.listFiles();
+                    for(File file : files){
+                        if(file.exists() && file.isDirectory() && file.getName().startsWith("app_")){
+                            deleteDirectory(file);
+                        }
+                    }
+                }
+            }catch(Throwable e){
+                e.printStackTrace();
+            }
+        }else{
+            try {
+                RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
+            } catch (Throwable e){
+                e.printStackTrace();
+            }
         }
+
 
         if(!TextUtils.isEmpty(mInstalledVersionName)){
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;
@@ -475,5 +495,21 @@ public class BridgeApplicationDelegate {
         Atlas.getInstance().startup(mRealApplication,mIsUpdated);
 
         mRealApplication.onCreate();
+    }
+
+    public void deleteDirectory(final File path) {
+        final File[] files = path.listFiles();
+        if (files == null){
+            return;
+        }
+        Log.e("Bridgedelete",path.getAbsolutePath());
+        for (int i = 0; i < files.length; i++) {
+            if (files[i].isDirectory()) {
+                deleteDirectory(files[i]);
+            } else {
+                files[i].delete();
+            }
+        }
+        path.delete();
     }
 }
