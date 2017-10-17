@@ -350,24 +350,6 @@ public class MergePatch extends Build {
         main.putValue("From-File", fromBuffer.toString());
         main.putValue("To-File", toBuffer.toString());
     }
-
-    public static void main(String[] args) throws IOException, PatchException {
-
-        File tablauncher = new File("/Users/seker/log/temp/tablauncher.apatch");
-        File commonbiz = new File("/Users/seker/log/temp/commonbiz.apatch");
-
-        File[] files = new File[]{tablauncher, commonbiz};
-
-        File out = new File("/Users/seker/log/temp/apatch/");
-        FileUtils.cleanDirectory(out);
-
-        String keystore = "/Users/seker/programs/debugsign/seker.keystore";
-        String password = "12345678";
-        String alias = "seker.keystore";
-        String entry = "12345678";
-        String name = "main";
-
-        MergePatch mergePatch = new MergePatch(files, name, out);
-        mergePatch.doMerge();
+    
     }
 }
