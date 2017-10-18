@@ -229,8 +229,8 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * AP文件打包的task
- * Created by shenghua.nish on 2015-10-20 下午7:01.
+ * APTask to package files
+ * Created by shenghua.nish on 2015-10-20 7:01 PM.
  */
 public class ApBuildTask extends DefaultAndroidTask {
 
@@ -255,7 +255,7 @@ public class ApBuildTask extends DefaultAndroidTask {
 
     @TaskAction
     public void taskAction() {
-        // 生成build.ap
+        // Generate build. Ap
         try {
             createAP(getApkFile(), baseVariantOutputData, appVariantContext);
         }catch (Throwable e){
@@ -281,7 +281,7 @@ public class ApBuildTask extends DefaultAndroidTask {
                                             .getVariantConfiguration()
                                             .getDirName());
 
-        // 生成build.ap
+        // Generate build. Ap
         String path = apkFile.getAbsolutePath();
         apUnzipDir = new File(apkFile.getParentFile(), "ap-unzip");
         apUnzipDir.mkdirs();
@@ -319,7 +319,7 @@ public class ApBuildTask extends DefaultAndroidTask {
 
         }
 
-        // 如果存在着proguard文件，加入结果信息
+        // If there is a proguard file, add the result information
         if (null != proguardOut &&
             proguardOut.exists() &&
             (new File(proguardOut, "mapping.txt").exists() ||
@@ -364,7 +364,7 @@ public class ApBuildTask extends DefaultAndroidTask {
     }
 
     /**
-     * jar文件里增加文件
+     * jarFiles are added to the file
      *
      * @param file
      */
@@ -380,7 +380,7 @@ public class ApBuildTask extends DefaultAndroidTask {
     }
 
     /**
-     * 配置Ap文件
+     * Configure Ap files
      */
     public static class ConfigAction extends MtlBaseTaskAction<ApBuildTask> {
 

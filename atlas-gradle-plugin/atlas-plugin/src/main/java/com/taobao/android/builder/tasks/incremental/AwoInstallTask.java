@@ -234,7 +234,7 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * 把 patch 安装到手机上的任务
+ * the patch Install the phone on your phone
  */
 public class AwoInstallTask extends BaseTask {
 

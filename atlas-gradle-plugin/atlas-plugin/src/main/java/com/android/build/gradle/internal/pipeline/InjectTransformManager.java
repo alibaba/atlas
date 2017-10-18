@@ -240,8 +240,8 @@ import java.util.SortedMap;
 import static com.android.utils.StringHelper.capitalize;
 
 /**
- * 注入TransformManger的注入管理类, 主要注入到class->dex的中间过程
- * Created by shenghua.nish on 2016-06-13 下午2:02.
+ * Inject the injection management class with TransformManger, Mainly injected into the intermediate process of class->dex
+ * Created by shenghua.nish on 2016-06-13 2:02 PM.
  */
 public class InjectTransformManager {
 
@@ -266,7 +266,7 @@ public class InjectTransformManager {
     }
 
     /**
-     * 在某种Transform之前增加一个Transform操作
+     * Add a Transform operation before some Transform
      *
      * @param transformClazz
      * @param injectTransform
@@ -280,7 +280,7 @@ public class InjectTransformManager {
         TaskCollection<DefaultAndroidTask> androidTasks = project.getTasks()
                 .withType(DefaultAndroidTask.class);
         SortedMap<String, DefaultAndroidTask> androidTaskSortedMap = androidTasks.getAsMap();
-        TransformTask oprTransformTask = null; // 要插入的任务
+        TransformTask oprTransformTask = null; // The task to be inserted
         for (String taskName : androidTaskSortedMap.keySet()) {
             DefaultAndroidTask androidTask = androidTaskSortedMap.get(taskName);
             if (variantName.equals(androidTask.getVariantName())) {
@@ -299,7 +299,7 @@ public class InjectTransformManager {
                                                      " can not found!");
         }
         transforms.add(injectTransform);
-        //判断2个Transform的依赖是否正确,即输出的type和下一个输入的type一致
+        //Determines whether the two Transform dependencies are correct, that is, the output type is consistent with the next input type
         checkTransformConfig(oprTransformTask.getTransform(), injectTransform);
 
         String taskName = scope.getTaskName(getTaskNamePrefix(injectTransform));
@@ -307,7 +307,7 @@ public class InjectTransformManager {
         try {
             IntermediateStream outputStream = getOutputStream(injectTransform, scope, taskName);
 
-            // 配置TransformTask
+            // Configuration TransformTask
             TransformTaskParam transformTaskParam = getTransformParam(oprTransformTask);
             TransformTask.ConfigAction<T> configAction = new TransformTask.ConfigAction<T>(
                     variantName,
@@ -339,7 +339,7 @@ public class InjectTransformManager {
             transformTaskList.add(taskName);
             configAction.execute(injectTransformTask);
 
-            //修改oprTransformTask的输入
+            //Modify the input of the oprTransformTask
             if (injectTransform.updateNextTransformInput()) {
                 Collection<TransformStream> newInputStream = Lists.newArrayList();
                 newInputStream.add(outputStream);
@@ -356,7 +356,7 @@ public class InjectTransformManager {
     }
 
     /**
-     * 获取任务的outputStream
+     * Get the task outputStream
      *
      * @param injectTransform
      * @param scope
@@ -386,7 +386,7 @@ public class InjectTransformManager {
     }
 
     /**
-     * 获取所有的TransformTask的列表
+     * Gets the list of all transformtasks
      *
      * @return
      */
@@ -397,7 +397,7 @@ public class InjectTransformManager {
     }
 
     /**
-     * 更新transformTask的参数
+     * Update the parameters for the transformTask
      *
      * @param transformTask
      * @param consumedInputStreams
@@ -430,7 +430,7 @@ public class InjectTransformManager {
     }
 
     /**
-     * 获取一个transformTask的参数
+     * Gets the parameters of a transformTask
      *
      * @param transformTask
      * @return
@@ -463,7 +463,7 @@ public class InjectTransformManager {
     }
 
     /**
-     * 判断注入的输出类型和下一个任务的输入类型一致
+     * The input type of the injection is consistent with the input type of the next task
      *
      * @param oprTransform
      * @param injectTransform
@@ -473,7 +473,7 @@ public class InjectTransformManager {
     }
 
     /**
-     * TransformTask的参数组合
+     * TransformTaskParameter combination
      */
     static class TransformTaskParam {
 

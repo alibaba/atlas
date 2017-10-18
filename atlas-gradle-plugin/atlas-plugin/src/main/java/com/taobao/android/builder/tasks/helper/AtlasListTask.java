@@ -248,7 +248,7 @@ public class AtlasListTask extends DefaultTask {
         }
 
         List<String> lines = new ArrayList<>();
-        lines.add(" 功能  | 配置名称 |  类型 | 值 ");
+        lines.add(" function  | The name of the configuration |  type | value ");
         lines.add(" ------------- | ------------- | ------------- | ------------- ");
 
         for (AtlasConfigField configField : list) {

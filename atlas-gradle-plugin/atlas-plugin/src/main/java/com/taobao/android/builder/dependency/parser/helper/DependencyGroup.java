@@ -239,7 +239,7 @@ public class DependencyGroup {
     public List<DependencyResult> bundleDependencies = new ArrayList<>();
 
     /**
-     * bundle (group:name) 和它对应的 私有依赖
+     * bundle (group:name) It corresponds to that Private rely on
      */
     public Map<String, Set<String>> bundleProvidedMap = new HashMap<>();
 
@@ -260,7 +260,7 @@ public class DependencyGroup {
 
 
         Set<String> bundleSets = getBundleDependencies(compileClasspath, bundleCompileDependencies);
-        //分析出 compileDependencies 中的bundle依赖
+        //Analysis of the compileDependencies Bundle dependency
         for (DependencyResult dependencyResult : compileDependencies) {
             if (DependencyConvertUtils.isAwbDependency(dependencyResult, artifacts)) {
                 String name = dependencyResult.toString();
@@ -315,7 +315,7 @@ public class DependencyGroup {
     }
 
     /**
-     * 获取bundle的私有依赖
+     * Gets the private dependencies of the bundle
      *
      * @param bundleClasspath
      * @return

@@ -34,7 +34,7 @@ import java.util.concurrent.Callable;
 
 /**
  * @author lilong
- * @create 2017-05-03 下午2:22
+ * @create 2017-05-03 On the afternoon of 2:22
  */
 
 public class DiffDependenciesTask extends BaseTask {
@@ -401,7 +401,7 @@ public class DiffDependenciesTask extends BaseTask {
 
         for (String key : newMap.keySet()) {
             String baseValue = baseMap.get(key);
-            //对于新增直接忽略
+            //For added direct neglect
             if (baseValue == null) {
                 continue;
             }

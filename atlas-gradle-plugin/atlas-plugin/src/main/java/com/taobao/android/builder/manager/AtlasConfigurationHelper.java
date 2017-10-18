@@ -282,7 +282,7 @@ public class AtlasConfigurationHelper {
     }
 
     /**
-     * 设置插件的extension值 , 设置特殊依赖入口
+     * Set the extension value for the plug-in , Set special dependency entry
      **/
     public AtlasExtension createExtendsion() {
 
@@ -303,7 +303,7 @@ public class AtlasConfigurationHelper {
     }
 
     /**
-     * 设置atlas的必要默认参数
+     * Set the necessary default parameters for atlas
      */
     public void updateExtensionAfterEvaluate() {
 

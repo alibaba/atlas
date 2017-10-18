@@ -290,7 +290,7 @@ public class JarRefactor {
         JarOutputStream mainJarOuputStream = new JarOutputStream(
             new BufferedOutputStream(new FileOutputStream(maindexJar)));
 
-        //先排序
+        //First order
         Collections.sort(jarList, new NameComparator());
 
         for (File jar : jarList) {

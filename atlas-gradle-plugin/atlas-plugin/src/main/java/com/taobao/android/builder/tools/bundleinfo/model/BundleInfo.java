@@ -210,7 +210,7 @@
 package com.taobao.android.builder.tools.bundleinfo.model;
 
 /**
- * atlas的业务Bundle的信息类 Created by shenghua.nish on 2015-08-26 下午1:09.
+ * atlasThe information class for the business Bundle Created by shenghua.nish on 2015-08-26 1:09 p.m.
  */
 public class BundleInfo extends BasicBundleInfo {
 

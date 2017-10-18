@@ -220,11 +220,11 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Created by shenghua.nish on 2015-04-13 下午3:33.
+ * Created by shenghua.nish on 2015-04-13 "In the afternoon.
  */
 public class MD5Util {
     /**
-     * 默认的密码字符串组合，apache校验下载的文件的正确性用的就是默认的这个组合
+     * The default password string combination, which is used by apache to verify the file's correctness, is the default combination
      */
     private final static String[] hexDigits = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d",
             "e", "f"};
@@ -239,10 +239,10 @@ public class MD5Util {
     }
 
     /**
-     * 向getMD5方法传入一个你需要转换的原始字符串，将返回字符串的MD5码
+     * The getMD5 method is passed to the original string that you need to convert, and will return the MD5 code of the string
      *
-     * @param code 原始字符串
-     * @return 返回字符串的MD5码
+     * @param code Original string
+     * @return Returns the MD5 code of the string
      */
     public static String getMD5(String origincode) throws Exception {
         MessageDigest messageDigest = MessageDigest.getInstance("MD5");
@@ -251,7 +251,7 @@ public class MD5Util {
         StringBuilder stringBuilder = new StringBuilder();
 
         for (byte result : results) {
-            // 将byte数组转化为16进制字符存入stringbuilder中
+            // Convert the byte array into a hexadecimal character into the stringbuilder
             stringBuilder.append(String.format("%02x", result));
         }
 
@@ -291,7 +291,7 @@ public class MD5Util {
 
 
     /***
-     * Get MD5 of one file！test ok!
+     * Get MD5 of one file! The test ok!
      *
      * @param filepath
      * @return
@@ -307,10 +307,10 @@ public class MD5Util {
     }
 
     /**
-     * 轮换字节数组为十六进制字符串
+     * Rotations byte array is hexadecimal string
      *
-     * @param b 字节数组
-     * @return 十六进制字符串
+     * @param b An array of bytes
+     * @return Hexadecimal string
      */
     private static String byteArrayToHexString(byte[] b) {
         StringBuffer resultSb = new StringBuffer();
@@ -320,7 +320,7 @@ public class MD5Util {
         return resultSb.toString();
     }
 
-    // 将一个字节转化成十六进制形式的字符串
+    // Converts a byte into a hexadecimal form string
     private static String byteToHexString(byte b) {
         int n = b;
         if (n < 0)

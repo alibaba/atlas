@@ -218,8 +218,8 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 
 /**
- * 依赖的差异性信息
- * Created by shenghua.nish on 2016-04-05 下午3:26.
+ * Dependency differential information
+ * Created by shenghua.nish on 2016-04-05 Moreover in the afternoon.
  */
 public class DependencyDiff {
 

@@ -212,11 +212,11 @@ package com.android.build.gradle.internal.pipeline;
 import com.android.build.api.transform.Transform;
 
 /**
- * Created by shenghua.nish on 2016-06-15 下午10:17.
+ * Created by shenghua.nish on 2016-06-15 When in the afternoon.
  */
 public abstract  class InjectTransform extends Transform{
     /**
-     * 是否修改下一个Transform的输入
+     * Whether to modify the next Transform input
      * @return
      */
     public abstract  boolean updateNextTransformInput();

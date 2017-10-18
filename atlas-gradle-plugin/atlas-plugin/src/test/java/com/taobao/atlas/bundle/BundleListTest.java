@@ -281,7 +281,7 @@ public class BundleListTest {
         //        bundleItemMap.put(bundleInfo.getPkgName(), bundleItem);
         //    }
         //
-        //    //计算依赖
+        //    //Computing rely on
         //    for (String dependency : bundleInfo.getDependency()) {
         //        if (StringUtils.isNotEmpty(dependency)) {
         //            BundleItem child = bundleItemMap.get(dependency);

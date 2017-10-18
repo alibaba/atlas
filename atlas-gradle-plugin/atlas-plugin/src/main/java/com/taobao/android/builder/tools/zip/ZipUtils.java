@@ -243,7 +243,7 @@ import org.gradle.api.GradleException;
 import static java.util.zip.ZipEntry.STORED;
 
 /**
- * 压工具类
+ * Press tools
  */
 public class ZipUtils {
 
@@ -394,7 +394,7 @@ public class ZipUtils {
     }
 
     /**
-     * 压zip文件中的某个文件到指定地方
+     * A file in a zip file to a specified location
      *
      * @param zipFile
      * @param path
@@ -431,12 +431,12 @@ public class ZipUtils {
     }
 
     /**
-     * 加文件到zip文件
+     * Add file to zip file
      *
      * @param zipFile
      * @param file
      * @param destPath
-     * @param overwrite 否覆盖
+     * @param overwrite No cover
      * @throws java.io.IOException
      */
     public static void addFileToZipFile(File zipFile, File outZipFile, File file, String destPath, boolean overwrite)
@@ -492,7 +492,7 @@ public class ZipUtils {
     }
 
     /**
-     * 件压缩成一个zip包，主要给solib发布使用
+     * The piece is compressed into a zip package, which is mainly used by solib
      *
      * @param output
      * @param srcDir
@@ -558,7 +558,7 @@ public class ZipUtils {
     }
 
     /**
-     * 判断在指定的zip目录下，指定的文件夹是否存在
+     * Determines whether the specified folder exists in the specified zip directory
      *
      * @param zipFile
      * @param pathName

@@ -30,7 +30,7 @@ import java.util.zip.ZipEntry;
 
 /**
  * @author lilong
- * @create 2017-05-03 下午1:03
+ * @create 2017-05-03 On the afternoon of 1:03
  */
 
 public class DexPatchPackageTask extends BaseTask {

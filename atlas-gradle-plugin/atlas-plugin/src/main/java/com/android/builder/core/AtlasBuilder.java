@@ -301,8 +301,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * 1. 自定义的Android Builder工具类,支持自定义的aapt操作
- * 2. 对dex做了cache优化 ， 调整dexOptions参数
+ * 1. Custom Android BuilderTool classes that support custom aapt operations
+ * 2. Cache optimization for dex , Adjust the dexOptions parameter
  */
 public class AtlasBuilder extends AndroidBuilder {
 
@@ -526,7 +526,7 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
     /**
-     * 对主bundle的资源进行处理
+     * Handle the resource of the main bundle
      *
      * @param aaptCommand
      * @param enforceUniquePackageName
@@ -551,7 +551,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
         processInfo = new TProcessInfo(processInfo);
 
-        // 打印日志
+        // Print log
         //        if (null != getLogger()) {
         //            getLogger().info("[Aapt]" + processInfo.getExecutable() + " "
         //                    + StringUtils.join(processInfo.getArgs(), " "));
@@ -639,7 +639,7 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
     /**
-     * 处理awb的资源
+     * Deal with awb resources
      *
      * @param aaptCommand
      * @param enforceUniquePackageName
@@ -664,7 +664,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
         processInfo = new TProcessInfo(processInfo, aaptCommand.getSymbolOutputDir());
 
-        // 打印日志
+        // Print log
         //        if (null != getLogger()) {
         //            getLogger().info("[Aapt]" + processInfo.getExecutable() + " "
         //                    + StringUtils.join(processInfo.getArgs(), " "));
@@ -677,7 +677,7 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
     /**
-     * 处理Awb的资源文件
+     * Handling Awb resource files
      *
      * @param aaptCommand
      * @throws IOException
@@ -685,10 +685,10 @@ public class AtlasBuilder extends AndroidBuilder {
     public void processAwbSymbols(AaptPackageProcessBuilder aaptCommand,
                                   File mainSymbolFile,
                                   boolean enforceUniquePackageName) throws IOException {
-        //1. 首先将主的R.txt和awb生成的R.txt进行merge操作
+        //1. First, the R.txt and awb of the main body are used for the merge operation
         File awbSymbolFile = new File(aaptCommand.getSymbolOutputDir(), "R.txt");
         File mergedSymbolFile = new File(aaptCommand.getSymbolOutputDir(), "R-all.txt");
-        //合并2个R.txt文件
+        //Merge 2 R.txt files
         try {
             sLogger.info("mainSymbolFile:" + mainSymbolFile);
             if (null != mainSymbolFile && mainSymbolFile.exists()) {
@@ -700,7 +700,7 @@ public class AtlasBuilder extends AndroidBuilder {
             throw new RuntimeException("Could not load file ", e);
         }
 
-        //生成awb的java文件
+        //Generate awb Java files
         SymbolLoader awbSymbols = null;
 
         // First pass processing the libraries, collecting them by packageName,
@@ -723,7 +723,7 @@ public class AtlasBuilder extends AndroidBuilder {
                          aaptCommand.getSourceOutputDir());
         writer.write();
 
-        //再写入各自awb依赖的aar的资源
+        //Write the resources for the aar that the awb depends on
         if (!aaptCommand.getLibraries().isEmpty()) {
 
             // list of all the symbol loaders per package names.
@@ -795,7 +795,7 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
     /**
-     * 获取自定义的buildToolInfo
+     * Get the custom buildToolInfo
      *
      * @param targetInfo
      * @return
@@ -858,7 +858,7 @@ public class AtlasBuilder extends AndroidBuilder {
             args.addAll(origin.getArgs());
             //args.remove("--no-version-vectors");
 
-            //加入R.txt文件的生成
+            //Join the generation of the R.txt file
             if (!args.contains("--output-text-symbols") && null != sybolOutputDir) {
                 args.add("--output-text-symbols");
                 args.add(sybolOutputDir);
@@ -911,7 +911,7 @@ public class AtlasBuilder extends AndroidBuilder {
         return aaptFile;
     }
 
-    //dex主入口
+    //dexMain entrance
     public void convertByteCode(Collection<File> inputs,
                                 File outDexFolder,
                                 boolean multidex,
@@ -937,7 +937,7 @@ public class AtlasBuilder extends AndroidBuilder {
             List<Dex> dexs = new ArrayList<>();
             Map<File, Dex> fileDexMap = new HashMap<>();
 
-            //做dexMerge
+            //Do dexMerge
             File tmpDir = new File(outDexFolder, "tmp");
             tmpDir.mkdirs();
 
@@ -1160,13 +1160,13 @@ public class AtlasBuilder extends AndroidBuilder {
                 }
             }
         } else {
-            //R 太多了，需要开启多dex
+            //R Too much, you need to start multi-dex
             multiDex = true;
         }
 
         dexFile.delete();
 
-        //todo  设置dexOptions
+        //todo  Set the dexOptions
         DefaultDexOptions defaultDexOptions = DefaultDexOptions.copyOf(dexOptions);
         if (defaultDexOptions.getAdditionalParameters().contains("--useMyDex")) {
             defaultDexOptions.getAdditionalParameters().remove("--useMyDex");
@@ -1207,7 +1207,7 @@ public class AtlasBuilder extends AndroidBuilder {
         }
     }
 
-    //TODO 可以增量构建，加快速度
+    //TODO You can incrementally build and speed up
     @Deprecated
     public void oldPackageApk(
         @NonNull String androidResPkgLocation,

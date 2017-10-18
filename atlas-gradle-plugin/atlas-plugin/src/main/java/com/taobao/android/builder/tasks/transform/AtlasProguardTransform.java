@@ -349,7 +349,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
         //apply bundle Inout
         AtlasProguardHelper.applyBundleInOutConfigration(appVariantContext, this);
 
-        //apply bundle's configuration, 做开关控制
+        //apply bundle's configuration, Switch control
         if (buildConfig.isBundleProguardConfigEnabled()) {
             AtlasProguardHelper.applyBundleProguardConfigration(appVariantContext, this);
         }
@@ -378,7 +378,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
             }
 
             Profiler.enter("bundleproguard");
-            //先做bundle的并发proguard，cache优先
+            //Do the concurrent proguard for the bundle, and the cache first
             AtlasProguardHelper.doBundleProguard(appVariantContext, mainJars);
             Profiler.release();
 
@@ -413,7 +413,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
         input.getAwbBundles().add(awbTransform);
 
         List<File> unProguardJars = new ArrayList<>();
-        //输入input
+        //Enter the input
         for (TransformInput transformInput : invocation.getInputs()) {
             for (JarInput jarInput : transformInput.getJarInputs()) {
                 File file = jarInput.getFile();
@@ -428,12 +428,12 @@ public class AtlasProguardTransform extends ProGuardTransform {
             }
         }
 
-        //输入 librarys
+        //inputting librarys
         input.getLibraries().addAll(
             appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true));
         input.getLibraries().addAll(unProguardJars);
 
-        //默认proguard 配置
+        //The default proguard configuration
         input.getDefaultProguardFiles().addAll(defaultProguardFiles);
 
         //bundle keeps

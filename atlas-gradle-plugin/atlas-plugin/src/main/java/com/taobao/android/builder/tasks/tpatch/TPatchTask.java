@@ -251,7 +251,7 @@ import java.util.concurrent.Callable;
 import static com.android.build.gradle.internal.api.ApContext.APK_FILE_MD5;
 
 /**
- * 动态部署tpatch构建任务
+ * Dynamic deployment of the tpatch build task
  * Created by wuzhong
  */
 public class TPatchTask extends BaseTask {
@@ -271,12 +271,12 @@ public class TPatchTask extends BaseTask {
         signingConfig = getSigningConfig();
         outPatchFolder = getOutPatchFolder();
 
-        //把 bundle List 复制到 outpatchFoulder
+        //the bundle List Copied to the outpatchFoulder
         new File(outPatchFolder,appVariantContext.bundleListCfg.getName()).delete();
         outPatchFolder.mkdirs();
         FileUtils.copyFileToDirectory(appVariantContext.bundleListCfg, outPatchFolder);
 
-        // 获取容器版本
+        // Get the container version
         String baseApkVersion = patchContext.getBaseVersionName();
         String newApkVersion = patchContext.versionName;
 
@@ -312,7 +312,7 @@ public class TPatchTask extends BaseTask {
 
         List<Pair<BundleBO, BundleBO>> remoteBundles = new ArrayList<>();
 
-        //获取远程的bundle
+        //Get the remote bundle
         for (AwbBundle awbBundle : AtlasBuildContext.awbBundleMap.values()) {
             if (awbBundle.isRemote) {
 
@@ -560,7 +560,7 @@ public class TPatchTask extends BaseTask {
         public boolean writeBuildInfo;
 
         /**
-         * 判断是否对bundle的dex文件进行diff操作
+         * Decide whether to diff the bundle's dex file
          */
         public boolean diffBundleDex;
 
@@ -574,7 +574,7 @@ public class TPatchTask extends BaseTask {
         public Set<ArtifactBundleInfo> artifactBundleInfos;
 
         /**
-         * patch需要排除的目录
+         * patchDirectories that need to be excluded
          */
         public String excludeFiles;
 

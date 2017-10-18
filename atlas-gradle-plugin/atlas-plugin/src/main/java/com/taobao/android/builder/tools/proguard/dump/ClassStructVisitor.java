@@ -222,7 +222,7 @@ import proguard.classfile.visitor.ClassVisitor;
 /**
  * Created by wuzhong on 2017/5/12.
  *
- * 查找所有类的父子关系， 是 当前类 -> root library class
+ * Find the parent-child relationship of all classes, yes The current class -> root library class
  */
 public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVisitor {
 
@@ -232,7 +232,7 @@ public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVi
         this.visitorDTO = visitorDTO;
     }
 
-    //class 的顺序不确定有很大的问题
+    //class There are big problems with the order of uncertainty
     @Override
     public void visitProgramClass(ProgramClass programClass) {
 
@@ -250,7 +250,7 @@ public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVi
 
     private void addInterface(ProgramClass programClass, int i) {
         String interfaceClazz = programClass.getInterfaceName(i);
-        //简化处理
+        //Simplify the process
         if (visitorDTO.isLibClazz(interfaceClazz)) {
             ClassStruct classStruct = getOrCreateClassStruct(programClass);
             classStruct.addInterface(interfaceClazz);
@@ -271,7 +271,7 @@ public class ClassStructVisitor extends AbstractClasslVisitor implements ClassVi
             if (null != superInter && visitorDTO.isLibClazz(superInter.getName())) {
                 classStruct.addInterface(superInter.getName());
 
-                //再迭代
+                //Then an iterative
                 addSuperInterfaces(superInter.getName(), classStruct);
 
             }

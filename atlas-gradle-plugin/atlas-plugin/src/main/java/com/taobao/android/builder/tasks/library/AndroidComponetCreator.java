@@ -233,7 +233,7 @@ public class AndroidComponetCreator {
     }
 
     public void createAndroidComponent(Zip bundleTask) {
-        //增加一个components.android
+        //Add a components. Android
         if (atlasExtension.getBundleConfig().isAwbBundle()) {
             Configuration compileConfiguration = project.getConfigurations()
                 .getByName(COMPILE_CONFIGURATION_NAME);

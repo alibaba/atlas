@@ -223,7 +223,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午11:26.
+ * Created by shenghua.nish on 2016-05-17 Often in the morning.
  *
  * @author shenghua.nish, wuzhong
  */
@@ -269,14 +269,14 @@ public class AtlasPlugin extends AtlasBasePlugin {
                 //3. update extension
                 atlasConfigurationHelper.updateExtensionAfterEvaluate();
 
-                //4. 设置android builder
+                //4. Set up the android builder
                 try {
                     atlasConfigurationHelper.createBuilderAfterEvaluate();
                 } catch (Exception e) {
                     throw new GradleException("update builder failed", e);
                 }
 
-                //5. 配置任务
+                //5. Configuration tasks
                 atlasConfigurationHelper.configTasksAfterEvaluate();
 
                 project.getTasks().create("atlasList", AtlasListTask.class);

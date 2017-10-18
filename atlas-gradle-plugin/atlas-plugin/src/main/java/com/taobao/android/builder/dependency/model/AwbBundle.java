@@ -229,7 +229,7 @@ import org.gradle.api.artifacts.ModuleIdentifier;
 import org.jetbrains.annotations.TestOnly;
 
 /**
- * Created by shenghua.nish on 2016-05-06 下午5:46.
+ * Created by shenghua.nish on 2016-05-06 "In the afternoon.
  * <p>
  * <p>
  * for atlas bundle
@@ -244,21 +244,21 @@ public class AwbBundle {
 
     private boolean dataBindEnabled;
 
-    //当前模块本身, 主bundle为空， 否则为awb本身
+    //The current module itself, The main bundle is empty, Otherwise it's awb itself
     private AndroidLibrary androidLibrary;
 
     private final List<AndroidLibrary> androidLibraries = new ArrayList<>();
 
     private final List<JavaLibrary> javaLibraries = new ArrayList<>();
 
-    //兼容老的模式，逐步废弃到 androidLibrary
+    //Compatible with old patterns, gradually discarded androidLibrary
     private final List<SoLibrary> soLibraries = new ArrayList<>();
 
     private File mergedManifest;
 
     private Map<ModuleIdentifier, String> baseAwbDependencies;
     /**
-     * 该bundle对应的依赖bundle，对应bundleInfo里配置的数据
+     * The bundle corresponds to a bundle that corresponds to the data configured in bundleInfo
      */
     private List<AwbBundle> bundleDependencies = new ArrayList<>();
 
@@ -385,7 +385,7 @@ public class AwbBundle {
     public File getManifest() {return androidLibrary.getManifest();}
 
     /**
-     * 获取所有的相关jar
+     * Get all the associated jars
      *
      * @return
      */
@@ -417,7 +417,7 @@ public class AwbBundle {
     }
 
     /**
-     * 获取所有的相关aars
+     * Get all relevant aars
      *
      * @return
      */

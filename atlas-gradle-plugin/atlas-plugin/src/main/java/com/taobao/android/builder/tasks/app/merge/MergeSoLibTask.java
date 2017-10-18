@@ -244,23 +244,23 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
- * 处理各种so依赖的任务
- * Created by shenghua.nish on 2015-08-25 下午2:24.
+ * Handle various so dependent tasks
+ * Created by shenghua.nish on 2015-08-25 So in the afternoon.
  */
 public class MergeSoLibTask extends BaseTask {
 
     /**
-     * 主bundle有的jnifolders,包含主和依赖的aar的jni目录
+     * The main bundle has jnifolders, which contain the jni directory of the main and dependent aar
      */
     Set<File> jniFolders;
 
     /**
-     * 主bundle依赖的solib
+     * Solib that the main bundle depends on
      */
     List<SoLibrary> mainDexSoLibraries;
 
     /**
-     * 依赖的awbs
+     * Relying on the awbs
      */
     List<AwbBundle> awbLibs;
 
@@ -274,7 +274,7 @@ public class MergeSoLibTask extends BaseTask {
     File mainBundleOutputFolder;
 
     /**
-     * 当主dex和awb的so重复的时候是否报错
+     * Whether or not the main dex and awb's so are repeated
      */
     @Input
     Boolean failOnDuplicateSo;
@@ -282,12 +282,12 @@ public class MergeSoLibTask extends BaseTask {
     AppVariantOutputContext appVariantOutputContext;
 
     /**
-     * 生成so的目录
+     * Directory of so
      */
     @TaskAction
     void generate() {
         List<File> scanDirs = new ArrayList<File>();
-        //先生成主bundle的jnifolder目录
+        //The master bundle's jnifolder directory
         if (!getMainBundleOutputFolder().exists()) {
             getMainBundleOutputFolder().mkdirs();
         }
@@ -303,7 +303,7 @@ public class MergeSoLibTask extends BaseTask {
 
         scanDirs.add(getMainBundleOutputFolder());
 
-        //增加主bundle依赖的solib的so
+        //Solib so that increases the dependency of the main bundle
         for (SoLibrary mainSoLib : getMainDexSoLibraries()) {
             File explodeFolder = mainSoLib.getFolder();
             if (explodeFolder.exists() && explodeFolder.isDirectory()) {
@@ -314,7 +314,7 @@ public class MergeSoLibTask extends BaseTask {
             }
         }
 
-        //处理awb bundle的so
+        //To deal with the awb bundleThe so
         for (AwbBundle awbLib : getAwbLibs()) {
             File awbOutputFolder = new File(appVariantOutputContext.getAwbJniFolder(awbLib), "lib");
             awbOutputFolder.mkdirs();
@@ -326,7 +326,7 @@ public class MergeSoLibTask extends BaseTask {
                                                        getSupportAbis(),
                                                        getRemoveSoFiles());
             }
-            //为了兼容之前老的aar，awb格式
+            //In order to be compatible with older aar, awb format
             File libJniFolder = new File(awbLib.getAndroidLibrary().getFolder(), "libs");
             if (libJniFolder.exists() && libJniFolder.isDirectory()) {
                 NativeSoUtils.copyLocalNativeLibraries(libJniFolder,
@@ -343,7 +343,7 @@ public class MergeSoLibTask extends BaseTask {
                                                            getSupportAbis(),
                                                            getRemoveSoFiles());
                 }
-                //为了兼容之前老的aar，awb格式
+                //In order to be compatible with older aar, awb format
                 File depLibsFolder = new File(dep.getFolder(), "libs");
                 if (depLibsFolder.exists() && depLibsFolder.isDirectory()) {
                     NativeSoUtils.copyLocalNativeLibraries(depLibsFolder,
@@ -366,8 +366,8 @@ public class MergeSoLibTask extends BaseTask {
                 }
             }
         }
-        //判断是否有重复的so文件
-        // 进行重复文件的查询
+        //Determine whether there are duplicate so files
+        // Perform a query of duplicate files
         Map<String, Multimap<String, File>> soMaps = NativeSoUtils.getAbiSoFiles(getSupportAbis(),
                                                                                  getRemoveSoFiles(),
                                                                                  scanDirs);

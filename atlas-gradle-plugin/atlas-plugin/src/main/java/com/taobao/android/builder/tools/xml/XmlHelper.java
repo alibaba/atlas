@@ -232,7 +232,7 @@ public class XmlHelper {
 
         SAXReader reader = new SAXReader();
 
-        Document document = reader.read(inputFile);// 读取XML文件
+        Document document = reader.read(inputFile);// Read the XML file
 
         return document;
     }
@@ -249,7 +249,7 @@ public class XmlHelper {
 
     public static void saveFile(Document document, OutputFormat format, File file) throws IOException {
 
-        XMLWriter writer = null;// 声明写XML的对象
+        XMLWriter writer = null;// Declares the object that writes XML
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(file);
@@ -269,8 +269,8 @@ public class XmlHelper {
             return;
         }
 
-        Document document = XmlHelper.readXml(file);// 读取XML文件
-        Element root = document.getRootElement();// 得到根节点
+        Document document = XmlHelper.readXml(file);// Read the XML file
+        Element root = document.getRootElement();// Get the root node
         List<? extends Node> nodes = root.selectNodes("//string");
         for (Node node : nodes) {
             Element element = (Element)node;

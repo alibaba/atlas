@@ -229,7 +229,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 /**
- * Created by shenghua.nish on 2016-05-19 下午5:23.
+ * Created by shenghua.nish on 2016-05-19 Whether in the afternoon.
  */
 public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, E extends AtlasExtension> {
 
@@ -248,7 +248,7 @@ public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, 
     public VariantContext(T baseVariant, Project project, E atlasExtension, Z appExtension) {
         this.baseVariant = baseVariant;
 
-        //classloader 可能是父子关系,protected 的方法直接调用会抛异常
+        //classloader It could be father-son relationship, protected The direct invocation of the method throws an exception
         try {
             Class clazz = baseVariant.getClass();
             Method method = clazz.getDeclaredMethod("getVariantData");

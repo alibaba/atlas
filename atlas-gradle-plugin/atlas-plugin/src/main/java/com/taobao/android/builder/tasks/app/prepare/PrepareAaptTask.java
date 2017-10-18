@@ -253,7 +253,7 @@ public class PrepareAaptTask extends BaseTask {
         ApContext apContext = appVariantContext.apContext;
         if (null != apContext && apContext.getBaseApk() != null && apContext.getBaseApk().exists()) {
             File baseApk = appVariantContext.apContext.getBaseApk();
-            //需要增加-b参数
+            //You need to increase the -b parameter
             if (!aaptOptions.getAdditionalParameters().contains("-B")) {
                 aaptOptions.getAdditionalParameters().add("-B");
                 aaptOptions.getAdditionalParameters().add(baseApk.getAbsolutePath());
@@ -264,7 +264,7 @@ public class PrepareAaptTask extends BaseTask {
                 aaptOptions.getAdditionalParameters().add("--vm-safemode");
                 aaptOptions.getAdditionalParameters().add("--merge");
             }
-            //AndroidManifest文件不能有修改OR在patch的时候忽略,目前选择在patch的时候忽略
+            //AndroidManifestThe file cannot be modified OR ignored when patch, so the current selection is ignored when patch
         }
 
         //TODO update merge resource

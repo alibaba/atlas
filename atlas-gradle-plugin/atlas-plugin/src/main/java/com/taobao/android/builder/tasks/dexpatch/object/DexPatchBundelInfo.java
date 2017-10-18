@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * @author lilong
- * @create 2017-05-09 下午1:17
+ * @create 2017-05-09 On the afternoon of 1:17
  */
 
 public class DexPatchBundelInfo implements Serializable {

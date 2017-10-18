@@ -213,7 +213,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 引用的类信息
+ * Class information referenced
  */
 public class ClazzRefInfo {
 
@@ -222,7 +222,7 @@ public class ClazzRefInfo {
     private boolean keepAll;
 
     /**
-     * 需要继承类都keep的
+     * You need to keep the class
      */
     private boolean needExtend;
 

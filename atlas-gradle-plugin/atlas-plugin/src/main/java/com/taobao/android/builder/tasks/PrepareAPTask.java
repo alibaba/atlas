@@ -310,7 +310,7 @@ public class PrepareAPTask extends BaseTask {
     }
 
     /**
-     * 生成so的目录
+     * Directory of so
      */
     @TaskAction
     void generate() throws IOException, DocumentException {
@@ -346,7 +346,7 @@ public class PrepareAPTask extends BaseTask {
                 apContext.setApExploredFolder(explodedDir);
                 Set<String> awbBundles = getAwbBundles();
                 if (awbBundles != null) {
-                    // 解压基线Bundle
+                    // Unzip the baseline Bundle
                     for (String awbBundle : awbBundles) {
                         File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
                                                              "lib/armeabi/" + awbBundle,
@@ -357,7 +357,7 @@ public class PrepareAPTask extends BaseTask {
                         FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
                                            new File(awbExplodedDir, "classes2.dex"));
                     }
-                    // 预处理增量AndroidManifest.xml
+                    // Preprocessing increment androidmanifest.xml
                     ManifestFileUtils.updatePreProcessBaseManifestFile(
                         FileUtils.join(explodedDir, "manifest-modify", ANDROID_MANIFEST_XML),
                         new File(explodedDir, ANDROID_MANIFEST_XML));

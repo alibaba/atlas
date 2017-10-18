@@ -229,16 +229,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 原始so文件的工具类
+ * A tool class for the original so file
  *
- * @author shenghua.nish 2015年7月16日 下午3:19:41
+ * @author shenghua.nish 2015July 16, 2007 On the afternoon of 3:19:41
  */
 public class NativeSoUtils {
 
     private static Logger sLogger = LoggerFactory.getLogger(NativeSoUtils.class);
 
     /**
-     * 校验指定abi下的so文件的目录
+     * Verify the directory of the so file under the abi
      *
      * @param supportAbis
      * @param removeSoFiles
@@ -268,7 +268,7 @@ public class NativeSoUtils {
     }
 
     /**
-     * 获取相对路径
+     * Acquisition relative path
      *
      * @param baseDir
      * @param file
@@ -279,7 +279,7 @@ public class NativeSoUtils {
     }
 
     /**
-     * 获取一个so文件的去除版本号后的简短名字
+     * Gets a short name after the removal version number of a so file
      *
      * @param soFile
      * @return
@@ -293,7 +293,7 @@ public class NativeSoUtils {
     /**
      * @param localNativeLibrariesDirectory
      * @param destinationDirectory
-     * @param supportAbis                   支持的架构种类
+     * @param supportAbis                   Type of architecture supported
      * @param removeSoFiles
      */
     public static void copyLocalNativeLibraries(final File localNativeLibrariesDirectory,
@@ -303,7 +303,7 @@ public class NativeSoUtils {
                          + destinationDirectory);
         try {
             IOFileFilter filter = new NativeSoFilter(supportAbis, removeSoFiles);
-            // 首先判断是否存在着同名的文件存在，如果存在是否大小不一致
+            // First, determine whether there is a file of the same name, if there is a discrepancy
             Collection<File> files = FileUtils.listFiles(localNativeLibrariesDirectory, filter, TrueFileFilter.TRUE);
             List<String> dumpFiles = new ArrayList<String>();
             for (File file : files) {

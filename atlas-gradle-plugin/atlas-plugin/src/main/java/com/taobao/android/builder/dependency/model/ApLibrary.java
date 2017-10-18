@@ -216,7 +216,7 @@ import com.android.builder.model.MavenCoordinates;
 import java.io.File;
 
 /**
- * Created by shenghua.nish on 2016-05-04 下午3:41.
+ * Created by shenghua.nish on 2016-05-04 (in the afternoon.
  */
 public class ApLibrary {
 
@@ -226,7 +226,7 @@ public class ApLibrary {
     @NonNull
     private final File mApFile;
     /**
-     * 解压的文件夹
+     * Unzip folders
      */
     private File mApFolder;
 

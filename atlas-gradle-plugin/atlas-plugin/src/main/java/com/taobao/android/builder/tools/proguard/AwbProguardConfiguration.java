@@ -222,8 +222,8 @@ import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 
 /**
- * 增加Awb的配置到混淆的配置中去
- * Created by shenghua.nish on 2016-06-12 上午9:23.
+ * Add Awb configuration to confusing configuration
+ * Created by shenghua.nish on 2016-06-12 This morning.
  */
 @Deprecated
 public class AwbProguardConfiguration {
@@ -249,13 +249,13 @@ public class AwbProguardConfiguration {
     }
 
     /**
-     * 打印proguard的config文件到指定文件
+     * Print the proguard config file to the specified file
      *
      * @param outConfigFile
      */
     public void printConfigFile(File outConfigFile) throws IOException {
         List<String> configs = Lists.newArrayList();
-        //awb对没个lib单独做proguard，方便predex
+        //awbProguard for no lib, convenient for predex
         for (AwbTransform awbTransform : awbTransforms) {
 
             List<File> inputLibraries = Lists.newArrayList();

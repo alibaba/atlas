@@ -224,11 +224,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 环形依赖检测类
+ * Loop dependent detection class
  * <p>
- *     通过简单的标记法来检测依赖
+ *     The dependence is detected by simple notation
  * </p>
- * @author shenghua.nish on 2015-12-18 上午10:25.
+ * @author shenghua.nish on 2015-12-18 On the morning of the assembling.
  */
 public class CircleDependencyCheck {
 
@@ -241,7 +241,7 @@ public class CircleDependencyCheck {
     }
 
     /**
-     * 获得根的依赖
+     * Gain roots
      * @return
      */
     public DependencyNode getRootDependencyNode() {
@@ -249,11 +249,11 @@ public class CircleDependencyCheck {
     }
 
     /**
-     * 加入依赖
+     * Join the rely on
      * @param identifier
      * @param parent
      * @param ident
-     * @return 判断是否有环状依赖，有的话返回true
+     * @return Determine if there is a circular dependency, and if any, return true
      */
     public DependencyNode addDependency(ModuleVersionIdentifier identifier, DependencyNode parent, int ident) {
         String name = getIdentifier(identifier);
@@ -266,7 +266,7 @@ public class CircleDependencyCheck {
     }
 
     /**
-     * 获取依赖的
+     * dependent
      * @param identifier
      * @return
      */
@@ -281,7 +281,7 @@ public class CircleDependencyCheck {
     static final String ARROW = "=>";
 
     /**
-     * 判断是否有环形依赖
+     * Determine whether there are circular dependencies
      * @return
      */
     public CircleResult checkCircle(ILogger logger) {
@@ -289,12 +289,12 @@ public class CircleDependencyCheck {
         circleResult.hasCircle = false;
         Multimap<String, String> dependenciesMap = HashMultimap.create();
         Map<String, String> identifierMap = new HashMap<String, String>();
-        // 先对所有的node标记
+        // First, all the node tags
         createIdentifier(rootDependencyNode);
         fillDepenciesMap(logger, rootDependencyNode, dependenciesMap, identifierMap, 0);
         // dumpDependencyMap(logger, dependenciesMap);
 
-        // 进行查询依赖
+        // Query dependency
         for (String key : dependenciesMap.keySet()) {
             // if(null != logger) logger.verbose("****** CHECK CIRCLE: " + key);
             Collection<String> dependencyLevels = dependenciesMap.get(key);
@@ -307,7 +307,7 @@ public class CircleDependencyCheck {
                 }
             }*/
 
-            if (circleSet.size() > 0) { // 存在着循环的依赖
+            if (circleSet.size() > 0) { // There is a cycle of dependency
                 circleResult.hasCircle = true;
                 // if(null != logger) logger.verbose("[WARN] HAS CIRCLE");
                 for (CircleDep circleDep : circleSet) {
@@ -347,8 +347,8 @@ public class CircleDependencyCheck {
 
     class CircleDep {
 
-        String level1; // 依赖层级深的
-        String level2; // 依赖层级浅的
+        String level1; // Depending on the hierarchy
+        String level2; // Depending on the hierarchy
 
         public CircleDep(String level1, String level2){
             this.level1 = level1;
@@ -382,7 +382,7 @@ public class CircleDependencyCheck {
     }
 
     /**
-     * 填满依赖树
+     * Fill a dependent tree
      * @param logger
      * @param node
      * @param dependenciesMap
@@ -408,7 +408,7 @@ public class CircleDependencyCheck {
     }
 
     /**
-     * 生成所有依赖的标示
+     * Generate all dependent flags
      */
     private void createIdentifier(DependencyNode node) {
         if (null == node.parent) {
@@ -429,7 +429,7 @@ public class CircleDependencyCheck {
     }
 
     /**
-     * 环形检测的结果
+     * The results of circular detection
      */
     public static class CircleResult {
 
@@ -438,7 +438,7 @@ public class CircleDependencyCheck {
     }
 
     /**
-     * 依赖节点
+     * Depend on the node
      */
     public static class DependencyNode {
 

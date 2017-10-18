@@ -230,7 +230,7 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 /**
- * 编译 awb 的 R 文件
+ * compiling awb the R file
  */
 public class JavacAwbsTask extends BaseTask {
 

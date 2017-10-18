@@ -215,8 +215,8 @@ import java.io.File;
 import java.util.Set;
 
 /**
- * 类NativeSoFilter.java的实现描述：TODO 类实现描述
- * @author shenghua.nish 2015年7月16日 下午3:52:39
+ * Class nativesofilter.java implementation description: TODO Class implementation description
+ * @author shenghua.nish 2015July 16, 2007 On the afternoon of 3:52:39
  */
 public class NativeSoFilter implements IOFileFilter {
 

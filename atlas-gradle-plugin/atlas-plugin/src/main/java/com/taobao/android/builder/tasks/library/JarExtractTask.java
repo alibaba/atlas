@@ -225,7 +225,7 @@ import org.gradle.api.tasks.bundling.Zip;
 public class JarExtractTask {
 
     /**
-     * 创建基本的AWB任务
+     * Create a basic AWB task
      */
     public void generateJarArtifict(final Zip bundleTask) {
 
