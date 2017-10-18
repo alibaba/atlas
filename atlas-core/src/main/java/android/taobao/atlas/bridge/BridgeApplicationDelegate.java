@@ -325,21 +325,22 @@ public class BridgeApplicationDelegate {
         Log.e("BridgeApplication","length =" + new File(mRawApplication.getApplicationInfo().sourceDir).length());
 
         if(Build.MANUFACTURER.equalsIgnoreCase("vivo") && Build.VERSION.SDK_INT== 23) {
-            try {
-                File appSGLib = mRawApplication.getDir("SGLib", Context.MODE_PRIVATE);
-                File mark = new File(mRawApplication.getFilesDir(), "vivo_appSGLib_mark");
-                if (appSGLib.exists() && !mark.exists()) {
-                    mark.createNewFile();
-                    File[] files = appSGLib.listFiles();
-                    for(File file : files){
-                        if(file.exists() && file.isDirectory() && file.getName().startsWith("app_")){
-                            deleteDirectory(file);
-                        }
-                    }
-                }
-            }catch(Throwable e){
-                e.printStackTrace();
-            }
+            ;
+//            try {
+//                File appSGLib = mRawApplication.getDir("SGLib", Context.MODE_PRIVATE);
+//                File mark = new File(mRawApplication.getFilesDir(), "vivo_appSGLib_mark");
+//                if (appSGLib.exists() && !mark.exists()) {
+//                    mark.createNewFile();
+//                    File[] files = appSGLib.listFiles();
+//                    for(File file : files){
+//                        if(file.exists() && file.isDirectory() && file.getName().startsWith("app_")){
+//                            deleteDirectory(file);
+//                        }
+//                    }
+//                }
+//            }catch(Throwable e){
+//                e.printStackTrace();
+//            }
         }else{
             try {
                 RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
@@ -497,19 +498,19 @@ public class BridgeApplicationDelegate {
         mRealApplication.onCreate();
     }
 
-    public void deleteDirectory(final File path) {
-        final File[] files = path.listFiles();
-        if (files == null){
-            return;
-        }
-        Log.e("Bridgedelete",path.getAbsolutePath());
-        for (int i = 0; i < files.length; i++) {
-            if (files[i].isDirectory()) {
-                deleteDirectory(files[i]);
-            } else {
-                files[i].delete();
-            }
-        }
-        path.delete();
-    }
+//    public void deleteDirectory(final File path) {
+//        final File[] files = path.listFiles();
+//        if (files == null){
+//            return;
+//        }
+//        Log.e("Bridgedelete",path.getAbsolutePath());
+//        for (int i = 0; i < files.length; i++) {
+//            if (files[i].isDirectory()) {
+//                deleteDirectory(files[i]);
+//            } else {
+//                files[i].delete();
+//            }
+//        }
+//        path.delete();
+//    }
 }
