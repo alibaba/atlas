@@ -365,9 +365,17 @@ public class AppVariantOutputContext {
 
     public File getAwbPackageOutputFile(AwbBundle awbBundle) {
         String awbOutputName = awbBundle.getAwbSoName();
-        File file = new File(variantContext.getAwbApkOutputDir(),
-                             "lib/armeabi" + File.separator + awbOutputName);
-        file.getParentFile().mkdirs();
+
+        Set<String> libSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInLibSoNames();
+
+        File file = null;
+        if (libSoNames.isEmpty() || libSoNames.contains(awbOutputName)) {
+            file = new File(variantContext.getAwbApkOutputDir(),
+                                 "lib/armeabi" + File.separator + awbOutputName);
+            file.getParentFile().mkdirs();
+        }else {
+            file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
+        }
 
         awbBundle.outputBundleFile = file;
         return file;

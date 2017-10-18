@@ -319,6 +319,9 @@ public class TBuildConfig {
 
     private int proguardParallelCount = 8;
 
+    @Config(message = "put awb so in lib/armeabi , not assets dir", order = 19, advance = true, group = "atlas")
+    private Set<String> keepInLibSoNames = new HashSet<>();
+
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;
     }
@@ -569,5 +572,13 @@ public class TBuildConfig {
 
     public void setDexNetworkCacheEnabled(boolean dexNetworkCacheEnabled) {
         this.dexNetworkCacheEnabled = dexNetworkCacheEnabled;
+    }
+
+    public Set<String> getKeepInLibSoNames() {
+        return keepInLibSoNames;
+    }
+
+    public void setKeepInLibSoNames(Set<String> keepInLibSoNames) {
+        this.keepInLibSoNames = keepInLibSoNames;
     }
 }
