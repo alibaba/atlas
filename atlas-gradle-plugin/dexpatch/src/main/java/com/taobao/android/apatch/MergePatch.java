@@ -222,7 +222,6 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 /**
- * @author sanping.li@alipay.com
  */
 public class MergePatch extends Build {
 
@@ -350,6 +349,6 @@ public class MergePatch extends Build {
         main.putValue("From-File", fromBuffer.toString());
         main.putValue("To-File", toBuffer.toString());
     }
-    
+
     }
 }

@@ -226,7 +226,6 @@ import java.util.Set;
 import java.util.jar.Manifest;
 
 /**
- * @author sanping.li@alipay.com
  */
 public abstract class Build {
 

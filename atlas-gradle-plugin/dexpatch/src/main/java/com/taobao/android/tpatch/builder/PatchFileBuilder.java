@@ -79,7 +79,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 创建历史版本的tpatch
+     * create history tpatch
      */
     public BuildPatchInfos createHistoryTPatches(boolean diffBundleDex, final ILogger logger) throws PatchException {
         final BuildPatchInfos buildPatchInfos = new BuildPatchInfos();
@@ -128,7 +128,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 创建指定版本的patch文件
+     * create patch for target version
      *
      * @param targetVersion
      */
@@ -185,7 +185,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 生成主dex的so
+     * generate main dex so
      *
      * @param bundleFolder
      * @param soOutputFile
@@ -213,7 +213,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 比较2个patch版本之间的差异
+     * compare two patch
      *
      * @param hisPatchInfo
      * @param currentPatchInfo
@@ -309,7 +309,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 处理各自bundle的patch文件
+     * process so file
      *
      * @param hisPatchInfo
      * @param bundlePatchs
@@ -559,7 +559,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 如果下载的文件不存在，则下载文件
+     * download file
      *
      * @param httpUrl
      * @param saveFile
@@ -598,7 +598,6 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 转换为map
      *
      * @param bundles
      * @return
@@ -612,7 +611,6 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 创建Andfix的manifest信息
      *
      * @return
      */
@@ -626,7 +624,6 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 往jar文件里增加文件
      *
      * @param jos
      * @param file

@@ -12,9 +12,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 
 /***
- * 然后再去解析values的id 再根据id获取字符串和图片
- * 
- * @author keyongyu
+ *
  *
  */
 @XmlRootElement(name= "manifest")

@@ -28,8 +28,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * 为动态部署的dex diff的工具类
- * Created by shenghua.nish on 2016-02-19 上午11:15.
+ * tpatch diff tool
  */
 public class TPatchDexTool {
 

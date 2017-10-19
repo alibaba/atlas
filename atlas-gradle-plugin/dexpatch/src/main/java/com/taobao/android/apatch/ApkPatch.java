@@ -245,7 +245,6 @@ import java.util.jar.Manifest;
 
 
 /**
- * @author sanping.li@alipay.com
  */
 public class ApkPatch extends com.taobao.android.apatch.Build {
 

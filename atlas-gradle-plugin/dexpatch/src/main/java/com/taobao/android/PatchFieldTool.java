@@ -561,7 +561,7 @@ public class PatchFieldTool {
     }
 
     /**
-     * 替换指定dex文件中的field的值为新值,目前只支持String值
+     * relace const string in dexFile
      *
      * @param dexFile
      * @param outDexFile
