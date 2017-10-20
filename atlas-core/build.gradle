@@ -28,7 +28,7 @@ repositories {
 group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
-version "5.0.7.52${postFix}-SNAPSHOT"
+version "5.0.7.533${postFix}-SNAPSHOT"
 
 String getEnvValue(key, defValue) {
     def val = System.getProperty(key);
@@ -49,6 +49,11 @@ targetCompatibility = 1.7
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    provided ('com.android.support:support-v4:25.3.1'){
+        transitive = true
+    }
+    provided 'com.android.support:support-annotations:24.1.1'
+
 }
 
 tasks.whenTaskAdded {task ->

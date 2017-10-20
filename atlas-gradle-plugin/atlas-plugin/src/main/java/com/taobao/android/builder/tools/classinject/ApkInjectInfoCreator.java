@@ -313,6 +313,9 @@ public class ApkInjectInfoCreator {
             if (!bundleInfo.getServices().isEmpty()) {
                 basicBundleInfo.setServices(bundleInfo.getServices());
             }
+            if (!bundleInfo.getRemoteFragments().isEmpty()) {
+                basicBundleInfo.setRemoteFragments(bundleInfo.getRemoteFragments());
+            }
 
             basicBundleInfos.add(basicBundleInfo);
             basicBundleInfoMap.put(bundleInfo.getPkgName(), basicBundleInfo);
@@ -382,6 +385,10 @@ public class ApkInjectInfoCreator {
                 if (!baseBundleInfo.getServices().isEmpty()) {
                     basicBundleInfo.setServices(concatList(baseBundleInfo.getServices(),
                                                            basicBundleInfo.getServices()));
+                }
+
+                if(!baseBundleInfo.getRemoteFragments().isEmpty()){
+                    basicBundleInfo.getRemoteFragments().putAll(baseBundleInfo.getRemoteFragments());
                 }
             }
             injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);

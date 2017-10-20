@@ -211,6 +211,7 @@ package com.taobao.android.builder.tools.bundleinfo.model;
 
 import com.google.common.collect.Lists;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -239,7 +240,17 @@ public class BasicBundleInfo {
 
     private List<String> contentProviders = Lists.newArrayList();
 
+    private HashMap<String,String> remoteFragments= new HashMap<String,String>();
+
     private Boolean isInternal = true;
+
+    public HashMap<String, String> getRemoteFragments() {
+        return remoteFragments;
+    }
+
+    public void setRemoteFragments(HashMap<String, String> remoteFragments) {
+        this.remoteFragments = remoteFragments;
+    }
 
     public String getPkgName() {
         return pkgName;
