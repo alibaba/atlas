@@ -16,14 +16,17 @@ import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.hack.Hack;
+import android.taobao.atlas.runtime.RuntimeVariables;
+
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 
 /**
  * Created by guanjie on 2017/10/13.
  */
 
-public class RemoteContextManager {
+public class RemoteActivityManager {
 
     private static Hack.HackedMethod ActivityThread_startActivityNow;
     private static Hack.HackedClass  NonConfigurationInstances;
@@ -38,34 +41,37 @@ public class RemoteContextManager {
         }
     }
 
-    public static RemoteContextManager obtain(Activity parent){
-        return new RemoteContextManager(parent);
+    public static RemoteActivityManager obtain(Activity parent){
+        return new RemoteActivityManager(parent);
     }
 
-    private RemoteContextManager(Activity parent){
+    private RemoteActivityManager(Activity parent){
         mParent = parent;
     }
 
     private HashMap<String,EmbeddedActivityRecord> mActivityRecords = new HashMap<>();
     private Activity mParent;
 
-    public synchronized void prepareRemoteFragment(RemoteFragment fragment,String bundleName) throws Exception{
+    public synchronized Activity getRemoteFragmentHost(String bundleName) throws Exception{
         if(!mActivityRecords.containsKey(bundleName)){
-            EmbeddedActivityRecord record = startEmbeddedActivity();
+            EmbeddedActivityRecord record = startEmbeddedActivity(bundleName);
             mActivityRecords.put(bundleName,record);
         }
         EmbeddedActivityRecord ad = mActivityRecords.get(bundleName);
-        fragment.remoteContext = new RemoteContext(ad.activity,Atlas.getInstance().getBundleClassLoader(bundleName));
-        fragment.remoteActivity = ad.activity;
+        return ad.activity;
 
     }
 
 
-    public EmbeddedActivityRecord startEmbeddedActivity() throws Exception{
+    public EmbeddedActivityRecord startEmbeddedActivity(String bundleName) throws Exception{
         EmbeddedActivityRecord activityRecord = new EmbeddedActivityRecord();
         activityRecord.id = "embedded_"+mParent.getClass().getSimpleName();
+        Field mThemeResourceF = AndroidHack.findField(mParent,"mThemeResource");
+        int mThemeResource = (Integer)mThemeResourceF.get(mParent);
         Intent intent = new Intent();
         intent.setClassName(mParent,EmbeddedActivity.class.getName());
+        intent.putExtra("themeId",mThemeResource);
+        intent.putExtra("bundleName",bundleName);
         ActivityInfo info = intent.resolveActivityInfo(mParent.getPackageManager(), PackageManager.GET_ACTIVITIES);
         activityRecord.activity = (Activity) ActivityThread_startActivityNow.invoke(AndroidHack.getActivityThread(),
                 mParent, activityRecord.id, intent, info, activityRecord.activity, null, null);
@@ -87,7 +93,21 @@ public class RemoteContextManager {
 
         @Override
         protected void onCreate(@Nullable Bundle savedInstanceState) {
+            int themeResource = getIntent().getIntExtra("themeId",0);
+            String bundleName = getIntent().getStringExtra("bundleName");
+            if(themeResource>0){
+                setTheme(themeResource);
+            }
             super.onCreate(savedInstanceState);
+            RemoteContext context = new RemoteContext(getBaseContext(),Atlas.getInstance().getBundleClassLoader(bundleName));
+            if(AtlasHacks.ContextThemeWrapper_mBase!=null && AtlasHacks.ContextThemeWrapper_mBase.getField()!=null){
+                AtlasHacks.ContextThemeWrapper_mBase.set(this,context);
+            }
+            if (AtlasHacks.ContextThemeWrapper_mResources != null) {
+                //AtlasHacks.ContextThemeWrapper_mResources.on(activity).set(RuntimeVariables.delegateResources);
+                AtlasHacks.ContextThemeWrapper_mResources.set(this, RuntimeVariables.delegateResources);
+            }
+            AtlasHacks.ContextWrapper_mBase.set(this,context);
         }
 
         @Override

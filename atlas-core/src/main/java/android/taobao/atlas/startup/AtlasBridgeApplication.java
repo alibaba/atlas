@@ -258,6 +258,7 @@ public class AtlasBridgeApplication extends Application{
         if (!isApplicationNormalCreate(base)) {
             android.os.Process.killProcess(android.os.Process.myPid());
         }
+        System.setProperty("BOOT_TIME",System.currentTimeMillis()+"");
         // *0 checkload kernalpatch
         boolean isUpdated = isUpdated(getBaseContext());
         KernalConstants.baseContext = getBaseContext();

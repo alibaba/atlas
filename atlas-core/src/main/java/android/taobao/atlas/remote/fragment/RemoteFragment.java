@@ -59,7 +59,7 @@ public class RemoteFragment extends Fragment {
     public static class RemoteFragmentFactory{
 
         public static void createRemoteFragment(final Activity rFragmentHost, Intent intent, final OnRemoteFragmentStateListener listener){
-            final String fragmentKey = intent.getComponent().getClassName()!=null ? intent.getComponent().getClassName() :
+            final String fragmentKey = intent.getComponent()!=null ? intent.getComponent().getClassName() :
                     intent.getAction();
             final String bundleName = AtlasBundleInfoManager.instance().getBundleForRemoteFragment(fragmentKey);
             if(TextUtils.isEmpty(bundleName)){
@@ -71,10 +71,10 @@ public class RemoteFragment extends Fragment {
                     //success
                     try {
                         RemoteFragment remoteFragment = new RemoteFragment();
-                        RemoteContextManager.obtain(rFragmentHost).prepareRemoteFragment(remoteFragment,bundleName);
+                        remoteFragment.remoteActivity = RemoteActivityManager.obtain(rFragmentHost).getRemoteFragmentHost(bundleName);
                         final BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(bundleName);
                         String fragmentClazzName = bi.remoteFragments.get(fragmentKey);
-                        remoteFragment.targetFragment = (Fragment)remoteFragment.remoteContext.getClassLoader().loadClass(fragmentClazzName).newInstance();
+                        remoteFragment.targetFragment = (Fragment)remoteFragment.remoteActivity.getClassLoader().loadClass(fragmentClazzName).newInstance();
                         remoteFragment.targetBundleName = bundleName;
                         listener.onFragmentCreated(remoteFragment);
                     } catch (Exception e) {
@@ -95,7 +95,6 @@ public class RemoteFragment extends Fragment {
     public Fragment targetFragment;
     public String targetBundleName;
     public Activity remoteActivity;
-    public RemoteContextManager.RemoteContext remoteContext;
     public Field mCalled ;
 
 
@@ -112,7 +111,7 @@ public class RemoteFragment extends Fragment {
                 if(field.getName().equals("mActivity")){
                     field.set(hostCallbacks,remoteActivity);
                 }else if(field.getName().equals("mContext")){
-                    field.set(hostCallbacks,remoteContext);
+                    field.set(hostCallbacks,remoteActivity.getBaseContext());
                 }else{
                     field.set(hostCallbacks,field.get(callback));
                 }
@@ -147,7 +146,7 @@ public class RemoteFragment extends Fragment {
 
     @Override
     public Context getContext() {
-        return remoteContext;
+        return remoteActivity.getBaseContext();
     }
 
     @Override
@@ -197,7 +196,7 @@ public class RemoteFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         try {
-            inflater = LayoutInflater.from(remoteContext);
+            inflater = LayoutInflater.from(remoteActivity);
             View view =  targetFragment.onCreateView(inflater,container,savedInstanceState);
             if(view!=null){
                 Field mInnerView = AndroidHack.findField(targetFragment,"mInnerView");
@@ -258,6 +257,7 @@ public class RemoteFragment extends Fragment {
 
     @Override
     public void onPause() {
+        super.onPause();
         Field mState = null;
         try {
             mState = AndroidHack.findField(targetFragment,"mState");
@@ -302,7 +302,11 @@ public class RemoteFragment extends Fragment {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
+        try {
+            mCalled.set(this,true);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
         Field mState = null;
         try {
             mState = AndroidHack.findField(targetFragment,"mState");
@@ -321,7 +325,6 @@ public class RemoteFragment extends Fragment {
 
     @Override
     public void onHiddenChanged(boolean hidden) {
-        super.onHiddenChanged(hidden);
         targetFragment.onHiddenChanged(hidden);
     }
 
@@ -399,7 +402,7 @@ public class RemoteFragment extends Fragment {
 
     @Override
     public LayoutInflater getLayoutInflater(Bundle savedInstanceState) {
-        return LayoutInflater.from(remoteContext);
+        return LayoutInflater.from(remoteActivity);
     }
 
     @Override
@@ -433,6 +436,11 @@ public class RemoteFragment extends Fragment {
 
     @Override
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
+        try {
+            mCalled.set(this,true);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
         targetFragment.onViewStateRestored(savedInstanceState);
     }
 
