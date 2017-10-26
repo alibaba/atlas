@@ -16,6 +16,11 @@ import android.support.v4.app.LoaderManager;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.hack.AndroidHack;
+import android.taobao.atlas.remote.IRemote;
+import android.taobao.atlas.remote.IRemoteDelegator;
+import android.taobao.atlas.remote.IRemoteTransactor;
+import android.taobao.atlas.remote.RemoteActivityManager;
+import android.taobao.atlas.remote.view.RemoteView;
 import android.taobao.atlas.runtime.BundleUtil;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -48,7 +53,7 @@ import java.lang.reflect.Method;
         }
     });
  */
-public class RemoteFragment extends Fragment {
+public class RemoteFragment extends Fragment implements IRemoteDelegator,IRemoteTransactor{
 
     public interface OnRemoteFragmentStateListener{
         void onFragmentCreated(RemoteFragment fragment);
@@ -58,12 +63,12 @@ public class RemoteFragment extends Fragment {
 
     public static class RemoteFragmentFactory{
 
-        public static void createRemoteFragment(final Activity rFragmentHost, Intent intent, final OnRemoteFragmentStateListener listener){
+        public static void createRemoteFragment(final Activity activity, Intent intent, final OnRemoteFragmentStateListener listener){
             final String fragmentKey = intent.getComponent()!=null ? intent.getComponent().getClassName() :
                     intent.getAction();
             final String bundleName = AtlasBundleInfoManager.instance().getBundleForRemoteFragment(fragmentKey);
             if(TextUtils.isEmpty(bundleName)){
-                listener.onFailed("no such remote fragment: "+intent);
+                listener.onFailed("no such remote-fragment: "+intent);
             }
             BundleUtil.checkBundleStateAsync(bundleName, new Runnable() {
                 @Override
@@ -71,10 +76,13 @@ public class RemoteFragment extends Fragment {
                     //success
                     try {
                         RemoteFragment remoteFragment = new RemoteFragment();
-                        remoteFragment.remoteActivity = RemoteActivityManager.obtain(rFragmentHost).getRemoteFragmentHost(bundleName);
+                        remoteFragment.remoteActivity = RemoteActivityManager.obtain(activity).getRemoteHost(remoteFragment);
                         final BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(bundleName);
                         String fragmentClazzName = bi.remoteFragments.get(fragmentKey);
                         remoteFragment.targetFragment = (Fragment)remoteFragment.remoteActivity.getClassLoader().loadClass(fragmentClazzName).newInstance();
+                        if(!(remoteFragment.targetFragment instanceof IRemote)){
+                            throw new RuntimeException("Fragment for remote use must implements IRemote");
+                        }
                         remoteFragment.targetBundleName = bundleName;
                         listener.onFragmentCreated(remoteFragment);
                     } catch (Exception e) {
@@ -92,12 +100,37 @@ public class RemoteFragment extends Fragment {
         }
     }
 
-    public Fragment targetFragment;
-    public String targetBundleName;
-    public Activity remoteActivity;
-    public Field mCalled ;
+    private Fragment targetFragment;
+    private String targetBundleName;
+    private Activity remoteActivity;
+    private IRemoteTransactor hostTransactor;
+    private Field mCalled ;
 
 
+    @Override
+    public String getTargetBundle() {
+        return targetBundleName;
+    }
+
+    @Override
+    public IRemote getRemoteTarget() {
+        return (IRemote) targetFragment;
+    }
+
+    @Override
+    public IRemoteTransactor getHostTransactor() {
+        return hostTransactor;
+    }
+
+    @Override
+    public void registerHostTransactor(IRemoteTransactor transactor) {
+        hostTransactor = transactor;
+    }
+
+    @Override
+    public Bundle call(String commandName, Bundle args, IResponse callback) {
+        return ((IRemote)targetFragment).call(commandName,args,callback);
+    }
 
     private FragmentHostCallback getFragmentHostCallback(FragmentHostCallback callback){
         try {

@@ -1,4 +1,4 @@
-package android.taobao.atlas.remote.fragment;
+package android.taobao.atlas.remote;
 
 import android.app.Activity;
 import android.content.Context;
@@ -17,10 +17,12 @@ import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.hack.Hack;
 import android.taobao.atlas.runtime.RuntimeVariables;
-
+import android.util.Log;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by guanjie on 2017/10/13.
@@ -52,16 +54,17 @@ public class RemoteActivityManager {
     private HashMap<String,EmbeddedActivityRecord> mActivityRecords = new HashMap<>();
     private Activity mParent;
 
-    public synchronized Activity getRemoteFragmentHost(String bundleName) throws Exception{
+    public synchronized Activity getRemoteHost(IRemoteDelegator delegator) throws Exception{
+        String bundleName = delegator.getTargetBundle();
         if(!mActivityRecords.containsKey(bundleName)){
             EmbeddedActivityRecord record = startEmbeddedActivity(bundleName);
             mActivityRecords.put(bundleName,record);
         }
         EmbeddedActivityRecord ad = mActivityRecords.get(bundleName);
+        ad.activity.addBoundRemoteDelegator(delegator);
         return ad.activity;
 
     }
-
 
     public EmbeddedActivityRecord startEmbeddedActivity(String bundleName) throws Exception{
         EmbeddedActivityRecord activityRecord = new EmbeddedActivityRecord();
@@ -73,7 +76,7 @@ public class RemoteActivityManager {
         intent.putExtra("themeId",mThemeResource);
         intent.putExtra("bundleName",bundleName);
         ActivityInfo info = intent.resolveActivityInfo(mParent.getPackageManager(), PackageManager.GET_ACTIVITIES);
-        activityRecord.activity = (Activity) ActivityThread_startActivityNow.invoke(AndroidHack.getActivityThread(),
+        activityRecord.activity = (EmbeddedActivity) ActivityThread_startActivityNow.invoke(AndroidHack.getActivityThread(),
                 mParent, activityRecord.id, intent, info, activityRecord.activity, null, null);
         ((EmbeddedActivity)activityRecord.activity).parentActivityRef = new WeakReference<Activity>(mParent);
         activityRecord.activityInfo = info;
@@ -83,13 +86,20 @@ public class RemoteActivityManager {
     private class EmbeddedActivityRecord extends Binder {
         String id;                // Unique name of this record.
         ActivityInfo activityInfo;      // Package manager info about activity.
-        Activity activity;              // Currently instantiated activity.
+        EmbeddedActivity activity;              // Currently instantiated activity.
         Bundle instanceState;           // Last retrieved freeze state.
         int curState;
     }
 
     public static class EmbeddedActivity extends FragmentActivity{
         public WeakReference<Activity> parentActivityRef;
+        public List<IRemoteDelegator> mBoundRemoteItems = new ArrayList<>();
+
+        public void addBoundRemoteDelegator(IRemoteDelegator delegator){
+            if(!mBoundRemoteItems.contains(delegator)){
+                mBoundRemoteItems.add(delegator);
+            }
+        }
 
         @Override
         protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -108,6 +118,16 @@ public class RemoteActivityManager {
                 AtlasHacks.ContextThemeWrapper_mResources.set(this, RuntimeVariables.delegateResources);
             }
             AtlasHacks.ContextWrapper_mBase.set(this,context);
+        }
+
+        @Override
+        public Object getSystemService(String name) {
+            if(parentActivityRef!=null && parentActivityRef.get()!=null){
+                return parentActivityRef.get().getSystemService(name);
+            }else{
+                Log.e("EmbeddActivity","parent Activity has finished");
+                return null;
+            }
         }
 
         @Override
@@ -148,4 +168,5 @@ public class RemoteActivityManager {
             return classLoader;
         }
     }
+
 }
