@@ -378,6 +378,12 @@ public class ManifestHelper {
             } else if(attribute.getValue().startsWith("atlas.fragment.intent.action.")){
                 bundleInfo.getRemoteFragments().put(attribute.getValue(),
                         element.attribute("value").getValue());
+            }else if(attribute.getValue().startsWith("atlas.view.intent.action")){
+                bundleInfo.getRemoteViews().put(attribute.getValue(),
+                        element.attribute("value").getValue());
+            }else if(attribute.getValue().startsWith("atlas.transaction.intent.action")){
+                bundleInfo.getRemoteTransactors().put(attribute.getValue(),
+                        element.attribute("value").getValue());
             }
         }
 

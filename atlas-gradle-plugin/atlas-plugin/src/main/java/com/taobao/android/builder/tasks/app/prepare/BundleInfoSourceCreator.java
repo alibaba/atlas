@@ -10,7 +10,9 @@ import java.util.Map;
  * Created by guanjie on 2017/9/23.
  */
 public class BundleInfoSourceCreator {
-    public StringBuffer createBundleInfoSourceStr(List<BasicBundleInfo> basicBundleInfos){
+    private boolean supportRemote = true;
+    public StringBuffer createBundleInfoSourceStr(List<BasicBundleInfo> basicBundleInfos,boolean supportRemotecomponent){
+        supportRemote = supportRemotecomponent;
         StringBuffer buffer = new StringBuffer();
         buffer.append("package android.taobao.atlas.bundleInfo;\n" +
                 "\n" +
@@ -28,6 +30,8 @@ public class BundleInfoSourceCreator {
                 "        HashMap<String,Boolean> receivers;\n" +
                 "        HashMap<String,Boolean> providers;\n" +
                 "        HashMap<String,String> remoteFragments;\n" +
+                "        HashMap<String,String> remoteViews;\n" +
+                "        HashMap<String,String> remoteTransactors;\n" +
                 "        List<String> dependencies;\n" +
                 "        BundleListing.BundleInfo info;\n" +
                 "\n" +
@@ -54,12 +58,17 @@ public class BundleInfoSourceCreator {
                 "        receivers = new HashMap<>();\n" +
                 "        providers = new HashMap<>();\n" +
                 "        remoteFragments = new HashMap<>();\n" +
+                "        remoteViews = new HashMap<>();\n" +
+                "        remoteTransactors = new HashMap<>();\n" +
                 "        dependencies = new ArrayList<>();\n" +
                 "        info.activities = activities;\n" +
                 "        info.services = services;\n" +
                 "        info.receivers = receivers;\n" +
                 "        info.contentProviders = providers;\n" +
+                ( supportRemote ?
                 "        info.remoteFragments = remoteFragments;\n" +
+                "        info.remoteViews = remoteViews;\n" +
+                "        info.remoteTransactors = remoteTransactors;\n" : "")+
                 "        info.dependency = dependencies;\n");
 
         infoBuffer.append(String.format("info.unique_tag = \"%s\";\n",info.getUnique_tag()));
@@ -98,6 +107,20 @@ public class BundleInfoSourceCreator {
         if(remoteFragments!=null){
             for (Map.Entry<String, String> entry : remoteFragments.entrySet()) {
                 infoBuffer.append(String.format("remoteFragments.put(\"%s\",\"%s\");\n",entry.getKey(),entry.getValue()));
+            }
+        }
+
+        HashMap<String,String> remoteViews= info.getRemoteViews();
+        if(remoteViews!=null){
+            for (Map.Entry<String, String> entry : remoteViews.entrySet()) {
+                infoBuffer.append(String.format("remoteViews.put(\"%s\",\"%s\");\n",entry.getKey(),entry.getValue()));
+            }
+        }
+
+        HashMap<String,String> remoteTransactors= info.getRemoteTransactors();
+        if(remoteTransactors!=null){
+            for (Map.Entry<String, String> entry : remoteTransactors.entrySet()) {
+                infoBuffer.append(String.format("remoteTransactors.put(\"%s\",\"%s\");\n",entry.getKey(),entry.getValue()));
             }
         }
 
