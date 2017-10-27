@@ -9,7 +9,9 @@ import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
  * Created by guanjie on 2017/9/23.
  */
 public class BundleInfoSourceCreator {
-    public StringBuffer createBundleInfoSourceStr(List<BasicBundleInfo> basicBundleInfos) {
+    private boolean supportRemote = true;
+    public StringBuffer createBundleInfoSourceStr(List<BasicBundleInfo> basicBundleInfos,boolean supportRemotecomponent){
+        supportRemote = supportRemotecomponent;
         StringBuffer buffer = new StringBuffer();
         buffer.append("package android.taobao.atlas.bundleInfo;\n" + "\n" + "import java.util.ArrayList;\n"
             + "import java.util.HashMap;\n" + "import java.util.LinkedHashMap;\n" + "import java.util.List;\n" + "\n"
@@ -33,12 +35,24 @@ public class BundleInfoSourceCreator {
 
     private StringBuffer generateBundleInfoItem(BasicBundleInfo info) {
         StringBuffer infoBuffer = new StringBuffer();
-        infoBuffer.append("info = new BundleListing.BundleInfo();\n" + "        activities = new HashMap<>();\n"
-            + "        services = new HashMap<>();\n" + "        receivers = new HashMap<>();\n"
-            + "        providers = new HashMap<>();\n" + "        dependencies = new ArrayList<>();\n"
-            + "        info.setActivities(activities);\n" + "        info.setServices(services);\n"
-            + "        info.setReceivers(receivers);\n" + "        info.setContentProviders(providers);\n"
-            + "        info.setDependency(dependencies);\n");
+        infoBuffer.append("info = new BundleListing.BundleInfo();\n" +
+                "        activities = new HashMap<>();\n" +
+                "        services = new HashMap<>();\n" +
+                "        receivers = new HashMap<>();\n" +
+                "        providers = new HashMap<>();\n" +
+                "        remoteFragments = new HashMap<>();\n" +
+                "        remoteViews = new HashMap<>();\n" +
+                "        remoteTransactors = new HashMap<>();\n" +
+                "        dependencies = new ArrayList<>();\n" +
+                "        info.activities = activities;\n" +
+                "        info.services = services;\n" +
+                "        info.receivers = receivers;\n" +
+                "        info.contentProviders = providers;\n" +
+                ( supportRemote ?
+                "        info.remoteFragments = remoteFragments;\n" +
+                "        info.remoteViews = remoteViews;\n" +
+                "        info.remoteTransactors = remoteTransactors;\n" : "")+
+                "        info.dependency = dependencies;\n");
 
         infoBuffer.append(String.format("info.setUnique_tag(\"%s\");\n", info.getUnique_tag()));
         infoBuffer.append(String.format("info.setPkgName(\"%s\");\n", info.getPkgName()));
@@ -70,10 +84,33 @@ public class BundleInfoSourceCreator {
             }
         }
 
-        Set<String> dependencies = info.getDependency();
-        if (dependencies != null && dependencies.size() > 0) {
-            for (String dependency : dependencies) {
-                infoBuffer.append(String.format("dependencies.add(\"%s\");\n", dependency));
+        HashMap<String,String> remoteFragments= info.getRemoteFragments();
+        if(remoteFragments!=null){
+            for (Map.Entry<String, String> entry : remoteFragments.entrySet()) {
+                infoBuffer.append(String.format("remoteFragments.put(\"%s\",\"%s\");\n",entry.getKey(),entry.getValue()));
+            }
+        }
+
+        HashMap<String,String> remoteViews= info.getRemoteViews();
+        if(remoteViews!=null){
+            for (Map.Entry<String, String> entry : remoteViews.entrySet()) {
+                infoBuffer.append(String.format("remoteViews.put(\"%s\",\"%s\");\n",entry.getKey(),entry.getValue()));
+            }
+        }
+
+        HashMap<String,String> remoteTransactors= info.getRemoteTransactors();
+        if(remoteTransactors!=null){
+            for (Map.Entry<String, String> entry : remoteTransactors.entrySet()) {
+                infoBuffer.append(String.format("remoteTransactors.put(\"%s\",\"%s\");\n",entry.getKey(),entry.getValue()));
+            }
+        }
+
+        List<String> dependencies = info.getDependency();
+        if(dependencies!=null && dependencies.size()>0){
+            for(String dependency : dependencies){
+                if(dependency!=null) {
+                    infoBuffer.append(String.format("dependencies.add(\"%s\");\n", dependency));
+                }
             }
         }
         infoBuffer.append("bundleInfos.put(info.getPkgName(),info);\n");
