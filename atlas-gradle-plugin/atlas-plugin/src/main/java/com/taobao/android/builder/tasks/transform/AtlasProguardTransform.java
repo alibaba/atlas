@@ -229,7 +229,6 @@ import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformInvocation;
-import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -240,7 +239,6 @@ import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.FileNameUtils;
@@ -272,7 +270,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
     @Override
     public Set<ContentType> getOutputTypes() {
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()) {
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard() && !appVariantContext.getAtlasExtension().getTBuildConfig().isKeepJavaResAfterProguard()) {
             return TransformManager.CONTENT_CLASS;
         }
         return super.getOutputTypes();
