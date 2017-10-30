@@ -308,8 +308,8 @@ public class DiffResExtractor {
         // //Resource. Arsc must be generated
         File resDir = new File(destDir, "res");
         File valuesDir = new File(resDir, "values");
-        FileUtils.forceMkdir(valuesDir);
         if (fullValues) {
+            FileUtils.forceMkdir(valuesDir);
             appVariantContext.getProject().copy(new Closure(DiffResExtractor.class) {
                 public Object doCall(CopySpec cs) {
                     cs.from(fullResDir);
@@ -324,6 +324,7 @@ public class DiffResExtractor {
             //                    new File(destDir, "res/values/values.xml"));
         } else {
             if (!resDir.exists()) {
+                FileUtils.forceMkdir(valuesDir);
                 File stringsFile = new File(valuesDir, "strings.xml");
                 UUID uuid = UUID.randomUUID();
                 FileUtils.writeStringToFile(stringsFile,
