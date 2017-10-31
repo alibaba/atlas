@@ -40,7 +40,7 @@ You can see there were three main library in this project ([atlas-core](./atlas-
 
 ## Support
 ----------
-Atlas support all Android version from Android 4.0 to 7.0. 
+Atlas support all Android version from Android 4.0 to 8.0. 
 
 Follow is support status.
 
@@ -54,6 +54,7 @@ ART     | 5.0             | Yes
 ART     | 5.1             | Yes
 ART     | M               | Yes
 ART     | N               | Yes
+ART     | 8.0             | Yes
 
 <!--## Contributing
 
