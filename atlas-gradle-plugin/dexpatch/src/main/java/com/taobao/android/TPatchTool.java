@@ -876,6 +876,7 @@ public class TPatchTool extends BasePatchTool {
                                                                                                         .length() -
                                                                                                         4)),
                                                   mainDex);
+        dexTool.setDexPatch(dexPatch);
         DexDiffInfo dexDiffInfo = dexTool.createTPatchDex(dexDiffFile);
         if (dexDiffFile.exists()) {
             dexs.add(dexDiffFile);
@@ -973,6 +974,9 @@ public class TPatchTool extends BasePatchTool {
                 if (dexPatch){
                     patchBundleInfo.setName(artifactBundleInfo.getPkgName());
 
+                }
+                if (!modifyBundles.contains(artifactBundleInfo.getPkgName())){
+                    patchBundleInfo.setInherit(true);
                 }
                 patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());
                 patchBundleInfo.setArtifactId(artifactBundleInfo.getArtifactId());

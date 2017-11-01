@@ -1,26 +1,16 @@
 package com.taobao.android;
 
 import com.google.common.collect.Lists;
-import com.taobao.android.apatch.utils.TypeGenUtil;
 import com.taobao.android.differ.dex.DexDiffer;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.filter.DexDiffFilter;
 import com.taobao.android.object.ClassDiffInfo;
 import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.DiffType;
-import com.taobao.android.smali.AfBakSmali;
-import com.taobao.android.smali.SmaliMod;
 import org.antlr.runtime.RecognitionException;
-import org.apache.commons.io.FileUtils;
-import org.jf.baksmali.baksmaliOptions;
 import org.jf.dexlib2.DexFileFactory;
-import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.DexFile;
-import org.jf.dexlib2.util.SyntheticAccessorResolver;
-import org.jf.dexlib2.writer.builder.DexBuilder;
-import org.jf.dexlib2.writer.io.FileDataStore;
-import org.jf.util.ClassFileNameHandler;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -41,6 +31,12 @@ public class TPatchDexTool {
     private boolean mainBundle;
     private Map<String, ClassDef>lastBundleClassMap = new HashMap<String, ClassDef>();
     private boolean removeDupStrings;
+
+    public void setDexPatch(boolean dexPatch) {
+        this.dexPatch = dexPatch;
+    }
+
+    private boolean dexPatch;
 
     public TPatchDexTool(List<File> baseDexFiles, List<File> newDexFiles, int apiLevel, Map<String,ClassDef> map,boolean mainBundle) {
         this.baseDexFiles = baseDexFiles;
@@ -84,7 +80,8 @@ public class TPatchDexTool {
         DexDiffInfo dexDiffInfo = null;
 //        if (mainBundle){
             outDexFile.getParentFile().mkdirs();
-             dexDiffInfo = dexDiffer.doDiff();
+            dexDiffer.setDexpatch(dexPatch);
+            dexDiffInfo = dexDiffer.doDiff();
 
             // 将有变动的类写入到diff.dex
             final Set<ClassDef> modifyClasses = new HashSet<ClassDef>();
@@ -94,6 +91,7 @@ public class TPatchDexTool {
                     modifyClasses.add(classDiffInfo.getClassDef());
                 }
             }
+
             if (modifyClasses.size() > 0) {
                 DexFileFactory.writeDexFile(outDexFile.getAbsolutePath(), new DexFile() {
                     @Nonnull
