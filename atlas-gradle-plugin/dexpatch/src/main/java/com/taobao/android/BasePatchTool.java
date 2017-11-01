@@ -207,15 +207,6 @@
  */
 package com.taobao.android;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.List;
-import java.util.Set;
-
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
@@ -230,6 +221,15 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by shenghua.nish on 2016-03-19 下午9:51.
@@ -382,8 +382,7 @@ public class BasePatchTool {
                     productName;
             String response = HttpClientUtils.getUrl(httpUrl);
             if (StringUtils.isBlank(response) ||
-                    response.equals("\"\"") ||
-                    !productName.equals("taobao4android")) {
+                    response.equals("\"\"")) {
                 return null;
             }
             File downLoadFolder = new File(outPatchDir, "LastPatch");
