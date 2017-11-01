@@ -50,7 +50,7 @@ Dexpatch需要一个ap版本作为参照，和现在的代码比对做diff。假
 2. 修改依赖版本，将firbundle中grddle的verion改为`version = '1.0.1'`
 	
 	> 这里也可以修改firbundle依赖的某个aar的版本。一句话，你要通过版本号告诉编译器，我这个bundle的代码变了
-4. 指定参照的版本，生成dexPatch包<br> `./gradlew clean DexPatchPackageDebug -DapVersion=1.0.0`
+4. 指定参照的版本，生成dexPatch包<br> `./gradlew clean assembleDebug -DapVersion=1.0.0 -DversionName=1.0.0`
 
 PS: 
 > 这里要强调一下，代码的修改要内聚。<br>假设A依赖B,修改时，只改A或B自身的代码，不支持修改A与B之间的接口。
@@ -128,6 +128,7 @@ __客户端可以识别的接口，对打包产物包装处理过的配置__
           "isMainDex": false,
           "name": "com.taobao.firstbundle",
           "pkgName": "com.taobao.firstbundle",
+          "dependency":[],
           //重要
           "reset": false,
           "srcUnitTag": "6b3973d9d6592d15601017edabc8b31b",
