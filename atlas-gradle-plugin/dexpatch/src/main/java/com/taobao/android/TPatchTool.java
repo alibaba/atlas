@@ -413,8 +413,10 @@ public class TPatchTool extends BasePatchTool {
         mainDiffFolder.mkdirs();
         File lastPatchFile = null;
         readWhiteList(outPatchDir);
-        lastPatchFile = getLastPatchFile(baseApkBO.getVersionName(), productName, outPatchDir);
-        PatchUtils.getTpatchClassDef(lastPatchFile, bundleClassMap);
+        if (!dexPatch) {
+            lastPatchFile = getLastPatchFile(baseApkBO.getVersionName(), productName, outPatchDir);
+            PatchUtils.getTpatchClassDef(lastPatchFile, bundleClassMap);
+        }
         Profiler.release();
 
         Profiler.enter("unzip apks");
