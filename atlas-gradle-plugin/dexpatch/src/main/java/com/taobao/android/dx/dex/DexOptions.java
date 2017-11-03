@@ -21,7 +21,7 @@ import com.taobao.android.dex.DexFormat;
 import com.taobao.android.dx.dex.code.DalvInsnList;
 
 /**
- * Container for options used to control details of dex file generation.
+ * Container for options used to control details of dex file outputs.
  */
 public class DexOptions {
 
@@ -41,7 +41,7 @@ public class DexOptions {
     /** target API level */
     public int targetApiLevel = DexFormat.API_NO_EXTENDED_OPCODES;
 
-    /** force generation of jumbo opcodes */
+    /** force outputs of jumbo opcodes */
     public boolean forceJumbo = false;
 
     /**

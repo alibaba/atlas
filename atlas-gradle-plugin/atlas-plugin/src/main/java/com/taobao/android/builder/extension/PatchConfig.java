@@ -209,17 +209,16 @@
 
 package com.taobao.android.builder.extension;
 
+import com.google.common.collect.Sets;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.extension.annotation.Config;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.extension.annotation.Config;
-import com.taobao.android.builder.tools.EnvHelper;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by shenghua.nish on 2016-05-17 As in the morning.
@@ -265,6 +264,19 @@ public class PatchConfig {
     private String apatchMainBundleName = "com_taobao_maindex";
 
     private String tpatchHistoryUrl = "/rpc/dynamicBundle/getAllPatchInfo.json";
+
+    public String getLastPatchUrl() {
+        if (StringUtils.isEmpty(AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl)) {
+            return "";
+        }
+        return "http://" + AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl + LastPatchUrl;
+    }
+
+    public void setLastPatchUrl(String lastPatchUrl) {
+        LastPatchUrl = lastPatchUrl;
+    }
+
+    private String LastPatchUrl = "/rpc/dynamicBundle/getLastPatch.json?";
 
     private Boolean onlyBuildModifyAwb = false;
 
@@ -440,9 +452,7 @@ public class PatchConfig {
      * @return
      */
     public String getTpatchHistoryUrl() {
-        if ("true".equals(EnvHelper.getEnv("dexPatchEnabled", "false"))) {
-            return "";
-        }
+
         if (StringUtils.isEmpty(AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl)) {
             return "";
         }

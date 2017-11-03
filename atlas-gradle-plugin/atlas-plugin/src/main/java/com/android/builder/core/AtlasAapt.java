@@ -278,7 +278,7 @@ public class AtlasAapt extends AaptV1 {
         //    args.remove(indexD);
         //}
 
-        //Join the generation of the R.txt file
+        //Join the outputs of the R.txt file
         String sybolOutputDir = config.getSymbolOutputDir().getAbsolutePath();
         if (!args.contains("--output-text-symbols") && null != sybolOutputDir) {
             args.add("--output-text-symbols");

@@ -1307,7 +1307,7 @@ public class Main {
         /** whether to merge with the output dex file if it exists. */
         public boolean incremental = false;
 
-        /** whether to force generation of const-string/jumbo for all indexes,
+        /** whether to force outputs of const-string/jumbo for all indexes,
          *  to allow merges between dex files with many strings. */
         public boolean forceJumbo = false;
 
@@ -1335,7 +1335,7 @@ public class Main {
         /** number of threads to run with */
         public int numThreads = 1;
 
-        /** generation of multiple dex is allowed */
+        /** outputs of multiple dex is allowed */
         public boolean multiDex = false;
 
         /** Optional file containing a list of class files containing classes to be forced in main

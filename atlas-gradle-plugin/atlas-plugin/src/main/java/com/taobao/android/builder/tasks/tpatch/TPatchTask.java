@@ -220,6 +220,8 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.builder.signing.SigningException;
 import com.android.utils.Pair;
+import com.taobao.android.PatchManager;
+import com.taobao.android.PatchType;
 import com.taobao.android.TPatchTool;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -228,6 +230,9 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.BuildHelper;
 import com.taobao.android.builder.tools.VersionUtils;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.inputs.BaseInput;
+import com.taobao.android.inputs.DexPatchInput;
+import com.taobao.android.inputs.TpatchInput;
 import com.taobao.android.object.ApkFileList;
 import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.tpatch.model.ApkBO;
@@ -301,15 +306,60 @@ public class TPatchTask extends BaseTask {
 
         ApkBO apkBO = new ApkBO(baseApk, baseApkVersion, baseApk.getName());
         ApkBO newApkBO = new ApkBO(newApk, newApkVersion, newApk.getName());
+        BaseInput baseInput = createInput(apkBO,newApkBO,retainMainBundleRes);
+        PatchManager patchManager = new PatchManager(baseInput);
+        patchManager.setLogger(getILogger());
+        getLogger().info("start to do patch");
 
-        TPatchTool tPatchTool = new TPatchTool(apkBO,
-                                               newApkBO,
-                                               patchContext.diffBundleDex);
-        //TODO
-        if (null != patchContext.patchVersions) {
-            tPatchTool.setVersionList(patchContext.patchVersions);
+        patchManager.doPatch();
+
+        getLogger().info("finish  do patch");
+
+
+
+        try {
+
+            FileUtils.writeStringToFile(new File(getOutPatchFolder(), "tpatch-bundles.json"),
+                                        JSON.toJSONString(patchContext.artifactBundleInfos));
+
+
+            FileUtils.forceDelete(patchContext.newApk);
+
+        } catch (Exception e) {
+            throw new GradleException(e.getMessage(), e);
         }
 
+    }
+
+    private BaseInput createInput(ApkBO apkBO, ApkBO newApkBO, boolean retainMainBundleRes) throws IOException {
+        TpatchInput tpatchInput = new DexPatchInput();
+        tpatchInput.baseApkBo = apkBO;
+        tpatchInput.newApkBo = newApkBO;
+        tpatchInput.baseApkFileList = patchContext.getBaseApkFiles();
+        tpatchInput.newApkFileList = patchContext.getNewApkFiles(appVariantContext);
+        tpatchInput.outPatchDir = outPatchFolder;
+        tpatchInput.productName = patchContext.appSignName;
+        tpatchInput.outPutJson = new File(getOutPatchFolder(), "patchs.json");
+        tpatchInput.artifactBundleInfos = patchContext.artifactBundleInfos;
+        tpatchInput.diffBundleDex = true;
+        tpatchInput.mainBundleName = patchContext.mainBundleName;
+        tpatchInput.retainMainBundleRes = retainMainBundleRes;
+        if (StringUtils.isNotBlank(patchContext.excludeFiles)) {
+            tpatchInput.notIncludeFiles = (patchContext.excludeFiles.split(","));
+        }
+        if (apkBO.getVersionName().equals(newApkBO)){
+            tpatchInput.patchType = PatchType.DEXPATCH;
+            tpatchInput.mainBundleName = "com.taobao.maindex";
+        }else {
+            tpatchInput.patchType = PatchType.TPATCH;
+            tpatchInput.createHisPatch = true;
+            tpatchInput.createAll = StringUtils.isEmpty(patchContext.tpatchHistoryUrl);
+            tpatchInput.LAST_PATCH_URL = patchContext.LAST_PATCH_URL;
+            tpatchInput.hisPatchUrl = patchContext.tpatchHistoryUrl;
+            if (null != patchContext.patchVersions) {
+                tpatchInput.versionList = patchContext.patchVersions;
+            }
+        }
         List<Pair<BundleBO, BundleBO>> remoteBundles = new ArrayList<>();
 
         //Get the remote bundle
@@ -330,7 +380,7 @@ public class TPatchTask extends BaseTask {
                 if (baseBundleFile.exists()) {
 
                     getProject().getLogger().error(
-                        "add bundle compare " + baseBundleFile.getAbsolutePath() + "->" + bundleFile.getAbsolutePath());
+                            "add bundle compare " + baseBundleFile.getAbsolutePath() + "->" + bundleFile.getAbsolutePath());
 
                     baseBundleBO = new BundleBO(awbBundle.getResolvedCoordinates().getArtifactId(), baseBundleFile, "");
                 }
@@ -339,49 +389,9 @@ public class TPatchTask extends BaseTask {
         }
 
         if (remoteBundles.size() > 0) {
-            tPatchTool.setSplitDiffBundle(remoteBundles);
+            tpatchInput.splitDiffBundle = remoteBundles;
         }
 
-        tPatchTool.setMainBundleName(patchContext.mainBundleName);
-        if (StringUtils.isNotBlank(patchContext.excludeFiles)) {
-            tPatchTool.setNotIncludeFiles(patchContext.excludeFiles.split(","));
-        }
-        tPatchTool.setRetainMainBundleRes(retainMainBundleRes);
-        if (null != patchContext.artifactBundleInfos) {
-            tPatchTool.setArtifactBundleInfos(patchContext.artifactBundleInfos);
-        }
-
-        tPatchTool.setBaseApkFileList(patchContext.getBaseApkFiles());
-        tPatchTool.setNewApkFileList(patchContext.getNewApkFiles(appVariantContext));
-        tPatchTool.setLogger(getILogger());
-        tPatchTool.setOnlyIncludeModifyBundle(patchContext.onlyBuildModifyAwb);
-
-        if (StringUtils.isNotBlank(patchContext.excludeFiles)) {
-            tPatchTool.setNotIncludeFiles(patchContext.excludeFiles.split(","));
-        }
-
-        ApkFileList apkFileList = appVariantContext.getApkFiles().finalApkFileList;
-        try {
-
-            tPatchTool.setCreateAll(StringUtils.isEmpty(patchContext.tpatchHistoryUrl));
-            FileUtils.writeStringToFile(new File(getOutPatchFolder(), "tpatch-bundles.json"),
-                                        JSON.toJSONString(patchContext.artifactBundleInfos));
-
-            getLogger().info("start to do patch");
-            tPatchTool.doPatch(outPatchFolder,
-                               true,
-                               new File(getOutPatchFolder(), "patchs.json"),
-                               StringUtils.isNotEmpty(patchContext.tpatchHistoryUrl),
-                               patchContext.tpatchHistoryUrl,
-                               patchContext.appSignName);
-            getLogger().info("finish  do patch");
-
-
-            FileUtils.forceDelete(patchContext.newApk);
-
-        } catch (Exception e) {
-            throw new GradleException(e.getMessage(), e);
-        }
 
     }
 
@@ -506,6 +516,7 @@ public class TPatchTask extends BaseTask {
                                                                                 .getManifestOutputFile());
                     tPatchContext.tpatchHistoryUrl = tBuildType.getPatchConfig()
                         .getTpatchHistoryUrl();
+                    tPatchContext.LAST_PATCH_URL = tBuildType.getPatchConfig().getLastPatchUrl();
                     tPatchContext.onlyBuildModifyAwb = tBuildType.getPatchConfig()
                         .getOnlyBuildModifyAwb();
                     tPatchContext.artifactBundleInfos = appVariantOutputContext.artifactBundleInfos;
@@ -550,6 +561,8 @@ public class TPatchTask extends BaseTask {
         public String versionName;
 
         public String tpatchHistoryUrl;
+
+        public String LAST_PATCH_URL;
 
         public Boolean onlyBuildModifyAwb;
 

@@ -30,14 +30,12 @@ package com.taobao.android.baksmali.adaptors;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.taobao.android.APatchTool;
 import com.taobao.android.apatch.annotation.MethodReplaceAnnotation;
 import com.taobao.android.baksmali.adaptors.Debug.DebugMethodItem;
 import com.taobao.android.baksmali.adaptors.Debug.EndPrologueMethodItem;
 import com.taobao.android.baksmali.adaptors.Format.InstructionMethodItemFactory;
 import com.taobao.android.baksmali.util.ReferenceUtil;
 import com.taobao.android.object.DexDiffInfo;
-
 import org.jf.baksmali.baksmaliOptions;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.Format;
@@ -47,12 +45,7 @@ import org.jf.dexlib2.analysis.AnalysisException;
 import org.jf.dexlib2.analysis.AnalyzedInstruction;
 import org.jf.dexlib2.analysis.MethodAnalyzer;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile.InvalidItemIndex;
-import org.jf.dexlib2.iface.Annotation;
-import org.jf.dexlib2.iface.ExceptionHandler;
-import org.jf.dexlib2.iface.Method;
-import org.jf.dexlib2.iface.MethodImplementation;
-import org.jf.dexlib2.iface.MethodParameter;
-import org.jf.dexlib2.iface.TryBlock;
+import org.jf.dexlib2.iface.*;
 import org.jf.dexlib2.iface.debug.DebugItem;
 import org.jf.dexlib2.iface.instruction.Instruction;
 import org.jf.dexlib2.iface.instruction.OffsetInstruction;
@@ -69,15 +62,10 @@ import org.jf.util.ExceptionWithContext;
 import org.jf.util.IndentingWriter;
 import org.jf.util.SparseIntArray;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.*;
 
 public class MethodDefinition {
     @Nonnull
@@ -281,7 +269,7 @@ public class MethodDefinition {
         boolean writeCheckCast = false;
         List<MethodItem> methodItems = getMethodItems();
         for (MethodItem methodItem : methodItems) {
-            if (first && APatchTool.isApatch) {
+            if (first) {
                 first = false;
                 if (!fullMethod && !(methodItem instanceof EndPrologueMethodItem) && !DexDiffInfo.addedClasses.contains(classDef.getClassDef())) {
                     if (!AccessFlags.STATIC.isSet(method.getAccessFlags())) {
@@ -297,7 +285,7 @@ public class MethodDefinition {
                 writer.write('\n');
             }
 
-            if (!writeCheckCast && !fullMethod && APatchTool.isApatch && !DexDiffInfo.addedClasses.contains(classDef.getClassDef())) {
+            if (!writeCheckCast && !fullMethod && !DexDiffInfo.addedClasses.contains(classDef.getClassDef())) {
                 if (!AccessFlags.STATIC.isSet(method.getAccessFlags())) {
                     if (methodItem instanceof EndPrologueMethodItem) {
                         writer.write("check-cast p0, " + method.getDefiningClass());

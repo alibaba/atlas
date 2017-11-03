@@ -24,8 +24,7 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
 import com.android.utils.ILogger;
-import com.taobao.android.BasePatchTool;
-import com.taobao.android.TPatchTool;
+import com.taobao.android.tools.TPatchTool;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.object.PatchBundleInfo;
@@ -402,7 +401,7 @@ public class PatchFileBuilder {
                         } else {
                             downloadTPathAndUnzip(hisPatchInfo.getDownloadUrl(), hisTPatchFile, hisTPatchUnzipFolder);
                             File mainDexFile = new File(hisTPatchUnzipFolder,"libcom_taobao_maindex.so");
-                            if (mainDexFile.exists()&&Boolean.FALSE.booleanValue()){
+                            if (mainDexFile.exists()){
                                 try {
                                     System.out.println("start put bundleInfos for version:"+hisPatchInfo.getPatchVersion()+"......");
                                     TPatchTool.bundleInfos.put(hisPatchInfo.getPatchVersion(),new AtlasFrameworkPropertiesReader(
@@ -494,27 +493,6 @@ public class PatchFileBuilder {
         }
     }
 
-    private File getBaseDexFile(File newBundleFile, boolean base) {
-        File newApkUnzipFolder = new File(newBundleFile.getAbsolutePath().split("lib/armeabi")[0]);
-        File baseApkUnzipFolder = new File(newApkUnzipFolder.getParentFile(), BasePatchTool.BASE_APK_UNZIP_NAME);
-        File baseBundleFile = null;
-        File oldBundleFolder = null;
-        if (base) {
-            baseBundleFile = new File(baseApkUnzipFolder,
-                                      "lib" + File.separator + "armeabi" + File.separator + newBundleFile.getName());
-            oldBundleFolder = new File(baseBundleFile.getParentFile(),
-                                       FilenameUtils.getBaseName(baseBundleFile.getName()));
-            System.out.println("getBaseDexFile:" + new File(oldBundleFolder, "classes.dex").getAbsolutePath());
-            return new File(oldBundleFolder, "classes.dex");
-        } else {
-            baseBundleFile = new File(newApkUnzipFolder,
-                                      "lib" + File.separator + "armeabi" + File.separator + newBundleFile.getName());
-            oldBundleFolder = new File(baseBundleFile.getParentFile(),
-                                       FilenameUtils.getBaseName(baseBundleFile.getName()));
-            System.out.println("getNewDexFile:" + new File(oldBundleFolder, "classes.dex").getAbsolutePath());
-            return new File(oldBundleFolder, "classes.dex");
-        }
-    }
 
     /**
      * 将指定文件夹下的文件转换为map
