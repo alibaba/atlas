@@ -251,6 +251,16 @@ public class PatchConfig {
 
     private File finalBasePatchFile;
 
+    public File getHotClassListFile() {
+        return hotClassListFile;
+    }
+
+    public void setHotClassListFile(File hotClassListFile) {
+        this.hotClassListFile = hotClassListFile;
+    }
+
+    private File hotClassListFile;
+
     private Boolean devlopMode = false;
 
     private boolean onlyIncrementInMain = true;

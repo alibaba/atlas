@@ -3,10 +3,7 @@ package com.taobao.android;
 import com.android.utils.ILogger;
 import com.taobao.android.inputs.BaseInput;
 import com.taobao.android.outputs.PatchFile;
-import com.taobao.android.tools.APatchTool;
-import com.taobao.android.tools.AbstractTool;
-import com.taobao.android.tools.DexPatchTool;
-import com.taobao.android.tools.TPatchTool;
+import com.taobao.android.tools.*;
 
 /**
  * @author lilong
@@ -33,6 +30,8 @@ public class PatchManager {
            abstractTool = new DexPatchTool();
        }else if (input.patchType.equals(PatchType.APATCH)){
            abstractTool = new APatchTool();
+       }else if (input.patchType.equals(PatchType.HOTFIX)){
+           abstractTool = new HotPatchTool();
        }
        abstractTool.setInput(input);
        abstractTool.setLogger(logger);

@@ -7,4 +7,5 @@ package com.taobao.android.inputs;
 
 public class DexPatchInput extends TpatchInput {
 
+
 }

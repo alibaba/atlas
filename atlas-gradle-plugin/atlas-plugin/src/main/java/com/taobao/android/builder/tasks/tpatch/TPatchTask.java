@@ -222,7 +222,6 @@ import com.android.builder.signing.SigningException;
 import com.android.utils.Pair;
 import com.taobao.android.PatchManager;
 import com.taobao.android.PatchType;
-import com.taobao.android.TPatchTool;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildType;
@@ -232,6 +231,7 @@ import com.taobao.android.builder.tools.VersionUtils;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.inputs.BaseInput;
 import com.taobao.android.inputs.DexPatchInput;
+import com.taobao.android.inputs.HotPatchInput;
 import com.taobao.android.inputs.TpatchInput;
 import com.taobao.android.object.ApkFileList;
 import com.taobao.android.object.ArtifactBundleInfo;
@@ -332,7 +332,12 @@ public class TPatchTask extends BaseTask {
     }
 
     private BaseInput createInput(ApkBO apkBO, ApkBO newApkBO, boolean retainMainBundleRes) throws IOException {
-        TpatchInput tpatchInput = new DexPatchInput();
+        TpatchInput tpatchInput = null;
+        if (getProject().hasProperty("hotfix")){
+            tpatchInput = new HotPatchInput();
+        }else {
+             tpatchInput = new DexPatchInput();
+        }
         tpatchInput.baseApkBo = apkBO;
         tpatchInput.newApkBo = newApkBO;
         tpatchInput.baseApkFileList = patchContext.getBaseApkFiles();
@@ -348,7 +353,12 @@ public class TPatchTask extends BaseTask {
             tpatchInput.notIncludeFiles = (patchContext.excludeFiles.split(","));
         }
         if (apkBO.getVersionName().equals(newApkBO)){
-            tpatchInput.patchType = PatchType.DEXPATCH;
+            if (tpatchInput instanceof HotPatchInput){
+                ((HotPatchInput) tpatchInput).hotClassListFile = patchContext.hotClassListFile;
+                ((HotPatchInput) tpatchInput).patchType = PatchType.HOTFIX;
+            }else {
+                tpatchInput.patchType = PatchType.DEXPATCH;
+            }
             tpatchInput.mainBundleName = "com.taobao.maindex";
         }else {
             tpatchInput.patchType = PatchType.TPATCH;
@@ -391,7 +401,7 @@ public class TPatchTask extends BaseTask {
         if (remoteBundles.size() > 0) {
             tpatchInput.splitDiffBundle = remoteBundles;
         }
-
+        return tpatchInput;
 
     }
 
@@ -516,6 +526,7 @@ public class TPatchTask extends BaseTask {
                                                                                 .getManifestOutputFile());
                     tPatchContext.tpatchHistoryUrl = tBuildType.getPatchConfig()
                         .getTpatchHistoryUrl();
+                    tPatchContext.hotClassListFile = tBuildType.getPatchConfig().getHotClassListFile();
                     tPatchContext.LAST_PATCH_URL = tBuildType.getPatchConfig().getLastPatchUrl();
                     tPatchContext.onlyBuildModifyAwb = tBuildType.getPatchConfig()
                         .getOnlyBuildModifyAwb();
@@ -592,6 +603,8 @@ public class TPatchTask extends BaseTask {
         public String excludeFiles;
 
         public String appSignName;
+
+        public File hotClassListFile;
 
         public File getNewApkFiles(AppVariantContext appVariantContext) throws IOException {
             ApkFileList apkFileList = appVariantContext.getApkFiles().finalApkFileList;

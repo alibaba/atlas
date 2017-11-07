@@ -2,8 +2,11 @@ package com.taobao.android.tools;
 
 import com.alibaba.fastjson.JSON;
 import com.android.utils.Pair;
+import com.google.common.collect.Lists;
+import com.taobao.android.differ.dex.BundleDiffResult;
 import com.taobao.android.inputs.TpatchInput;
 import com.taobao.android.object.BuildPatchInfos;
+import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.PatchInfo;
 import com.taobao.android.outputs.DexPatchFile;
 import com.taobao.android.outputs.PatchFile;
@@ -19,6 +22,7 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -30,29 +34,14 @@ public class DexPatchTool extends TPatchTool {
 
 
     @Override
-    public void doBundlePatch(File newBundleFile, File baseBundleFile, File patchTmpDir, String bundleName, File destPatchBundleDir, File newBundleUnzipFolder, File baseBundleUnzipFolder) throws Exception {
-        CommandUtils.exec(patchTmpDir,
-                "unzip " + newBundleFile.getAbsolutePath() + " -d " + newBundleUnzipFolder.getAbsolutePath());
-        CommandUtils.exec(patchTmpDir, "unzip " + baseBundleFile.getAbsolutePath() + " -d " + baseBundleUnzipFolder
-                .getAbsolutePath());
-        File destDex = new File(destPatchBundleDir, DEX_NAME);
-        File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
-        createBundleDexPatch(newBundleUnzipFolder,
-                baseBundleUnzipFolder,
-                destDex,
-                tmpDexFolder,
-                false);
-    }
-
-    @Override
     public PatchFile doPatch() throws Exception {
 
         TpatchInput tpatchInput = (TpatchInput) input;
         DexPatchFile tpatchFile = new DexPatchFile();
-        tpatchFile.diffJson = new File(((TpatchInput) input).outPatchDir, "diff.json");
-        tpatchFile.patchInfo = new File(((TpatchInput) input).outPatchDir, "patchInfo.json");
-        final File patchTmpDir = new File(((TpatchInput) input).outPatchDir, "dexpatch-tmp");
-        final File mainDiffFolder = new File(patchTmpDir, ((TpatchInput)input).mainBundleName);
+        tpatchFile.diffJson = new File(tpatchInput.outPatchDir, "diff.json");
+        tpatchFile.patchInfo = new File(tpatchInput.outPatchDir, "patchInfo.json");
+        final File patchTmpDir = new File(tpatchInput.outPatchDir, "dexpatch-tmp");
+        final File mainDiffFolder = new File(patchTmpDir, tpatchInput.mainBundleName);
         patchTmpDir.mkdirs();
         FileUtils.cleanDirectory(patchTmpDir);
         mainDiffFolder.mkdirs();
@@ -70,7 +59,7 @@ public class DexPatchTool extends TPatchTool {
         Collection<File> soFiles = FileUtils.listFiles(newApkUnzipFolder, new String[] {"so"}, true);
 
         //process remote bumdle
-        if ((((TpatchInput) input).splitDiffBundle != null)) {
+        if (tpatchInput.splitDiffBundle != null) {
             for (final Pair<BundleBO, BundleBO> bundle : ((TpatchInput) input).splitDiffBundle) {
                 executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
                     @Override
@@ -90,41 +79,35 @@ public class DexPatchTool extends TPatchTool {
             public Boolean call() throws Exception {
                 // 得到主bundle的dex diff文件
                 File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
-                File tmpDexFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + "-dex");
+                File tmpDexFile = new File(patchTmpDir, tpatchInput.mainBundleName + "-dex");
                 createBundleDexPatch(newApkUnzipFolder,
                         baseApkUnzipFolder,
                         mianDiffDestDex,
                         tmpDexFile,
                         true);
 
-                // 是否保留主bundle的资源文件
-                if (isRetainMainBundleRes()) {
-                    copyMainBundleResources(newApkUnzipFolder,
-                            baseApkUnzipFolder,
-                            new File(patchTmpDir, ((TpatchInput)input).mainBundleName));
-                }
                 return true;
             }
         });
 
         for (final File soFile : soFiles) {
-            System.out.println("do patch:" + soFile.getAbsolutePath());
+            System.out.println("do dexpatch:" + soFile.getAbsolutePath());
             final String relativePath = PathUtils.toRelative(newApkUnzipFolder,
                     soFile.getAbsolutePath());
-            if (null != ((TpatchInput) input).notIncludeFiles && pathMatcher.match(((TpatchInput)input).notIncludeFiles, relativePath)) {
+            if (null != tpatchInput.notIncludeFiles && pathMatcher.match(tpatchInput.notIncludeFiles, relativePath)) {
                 continue;
             }
             executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
 
                 @Override
                 public Boolean call() throws Exception {
-                    File destFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + "/" +
+                    File destFile = new File(patchTmpDir, tpatchInput.mainBundleName + "/" +
                             relativePath);
                     File baseSoFile = new File(baseApkUnzipFolder, relativePath);
                     if (isBundleFile(soFile)) {
                         processBundleFiles(soFile, baseSoFile, patchTmpDir);
 
-                    } else if (isFileModify(soFile, baseSoFile)) { FileUtils.copyFile(soFile, destFile); }
+                    }
 
                     return true;
                 }
@@ -137,7 +120,7 @@ public class DexPatchTool extends TPatchTool {
 
         Profiler.enter("ziptpatchfile");
         // zip file
-        File patchFile = createDexPatchFile(((TpatchInput) input).outPatchDir, patchTmpDir);
+        File patchFile = createDexPatchFile(tpatchInput.outPatchDir, patchTmpDir);
         tpatchFile.patchFile = patchFile;
         PatchInfo curPatchInfo = createBasePatchInfo(patchFile);
 
@@ -150,7 +133,7 @@ public class DexPatchTool extends TPatchTool {
         buildPatchInfos.setBaseVersion(input.baseApkBo.getVersionName());
         buildPatchInfos.setDiffBundleDex(true);
 
-        FileUtils.writeStringToFile(((TpatchInput) input).outPutJson, JSON.toJSONString(buildPatchInfos));
+        FileUtils.writeStringToFile(tpatchInput.outPutJson, JSON.toJSONString(buildPatchInfos));
         // 删除临时的目录
         FileUtils.deleteDirectory(patchTmpDir);
         apkDiff.setBaseApkVersion(input.baseApkBo.getVersionName());
@@ -168,9 +151,9 @@ public class DexPatchTool extends TPatchTool {
         apkPatchInfos.setNewApkMd5(MD5Util.getFileMD5String(patchFile));
         FileUtils.writeStringToFile(tpatchFile.diffJson, JSON.toJSONString(apkDiff));
         FileUtils.writeStringToFile(tpatchFile.patchInfo, JSON.toJSONString(apkPatchInfos));
-        FileUtils.copyFileToDirectory(tpatchFile.diffJson, ((TpatchInput) input).outPatchDir.getParentFile(), true);
+        FileUtils.copyFileToDirectory(tpatchFile.diffJson, tpatchInput.outPatchDir.getParentFile(), true);
         if (newApkFileExist) {
-            FileUtils.copyFileToDirectory(input.newApkBo.getApkFile(), ((TpatchInput) input).outPatchDir.getParentFile(), true);
+            FileUtils.copyFileToDirectory(input.newApkBo.getApkFile(), tpatchInput.outPatchDir.getParentFile(), true);
         }
         Profiler.release();
         logger.warning(Profiler.dump());
@@ -203,6 +186,52 @@ public class DexPatchTool extends TPatchTool {
 
     @Override
     public boolean isRetainMainBundleRes() {
+
         return false;
+    }
+
+
+    @Override
+    public void doBundleResPatch(String bundleName, File destPatchBundleDir, File newBundleUnzipFolder, File baseBundleUnzipFolder) throws IOException {
+
+    }
+
+    public File createBundleDexPatch(File newApkUnzipFolder,
+                                     File baseApkUnzipFolder,
+                                     File destDex,
+                                     File tmpDexFile,
+                                     boolean mainDex) throws Exception {
+        List<File> dexs = Lists.newArrayList();
+        // 比较主bundle的dex
+        if (!tmpDexFile.exists()) {
+            tmpDexFile.mkdirs();
+        }
+        List<File> baseDexFiles = getFolderDexFiles(baseApkUnzipFolder);
+        List<File> newDexFiles = getFolderDexFiles(newApkUnzipFolder);
+        File dexDiffFile = new File(tmpDexFile, "diff.dex");
+        PatchDexTool dexTool = new DexPatchDexTool(baseDexFiles,
+                newDexFiles,
+                DEFAULT_API_LEVEL,
+                null,
+                mainDex);
+        DexDiffInfo dexDiffInfo = dexTool.createPatchDex(dexDiffFile);
+        if (dexDiffFile.exists()) {
+            dexs.add(dexDiffFile);
+            BundleDiffResult bundleDiffResult = new BundleDiffResult();
+            if (mainDex) {
+                bundleDiffResult.setBundleName("com.taobao.maindex");
+            } else {
+                bundleDiffResult.setBundleName(baseApkUnzipFolder.getName().substring(3).replace("_", "."));
+            }
+            bundleDiffResults.add(bundleDiffResult);
+            diffPatchInfos.add(bundleDiffResult);
+            dexDiffInfo.save(bundleDiffResult);
+        }
+        if (dexs.size() > 0) {
+            FileUtils.copyFile(dexs.get(0), destDex);
+        }
+        FileUtils.deleteDirectory(tmpDexFile);
+
+        return destDex;
     }
 }

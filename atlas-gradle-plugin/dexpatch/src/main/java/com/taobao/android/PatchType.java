@@ -6,5 +6,5 @@ package com.taobao.android;
  */
 
 public enum PatchType {
-    DEXPATCH,SOPHIX,APATCH,TPATCH;
+    DEXPATCH,SOPHIX,APATCH,TPATCH,HOTFIX;
 }

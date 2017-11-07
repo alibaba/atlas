@@ -224,7 +224,6 @@ import com.alibaba.fastjson.JSON;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.taobao.android.PatchType;
-import com.taobao.android.TPatchDexTool;
 import com.taobao.android.differ.dex.ApkDiff;
 import com.taobao.android.differ.dex.BundleDiffResult;
 import com.taobao.android.differ.dex.PatchException;
@@ -407,72 +406,86 @@ public class TPatchTool extends AbstractTool {
     public void doBundlePatch(File newBundleFile, File baseBundleFile, File patchTmpDir, String bundleName,
                                File destPatchBundleDir, final File newBundleUnzipFolder, File baseBundleUnzipFolder)
         throws Exception {
+
+
+        doBundleDexPatch(newBundleFile,baseBundleFile,patchTmpDir,bundleName,destPatchBundleDir,newBundleUnzipFolder,baseBundleUnzipFolder);
+
+        doBundleResPatch(bundleName,destPatchBundleDir,newBundleUnzipFolder,baseBundleUnzipFolder);
         // unzip
         // compare dex changes
-        CommandUtils.exec(patchTmpDir,
-                          "unzip " + newBundleFile.getAbsolutePath() + " -d " + newBundleUnzipFolder.getAbsolutePath());
-        CommandUtils.exec(patchTmpDir, "unzip " + baseBundleFile.getAbsolutePath() + " -d " + baseBundleUnzipFolder
-            .getAbsolutePath());
-        File destDex = new File(destPatchBundleDir, DEX_NAME);
-        File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
-        createBundleDexPatch(newBundleUnzipFolder,
-                             baseBundleUnzipFolder,
-                             destDex,
-                             tmpDexFolder,
-                             false);
 
+
+
+    }
+
+    public void doBundleResPatch(String bundleName, File destPatchBundleDir, File newBundleUnzipFolder, File baseBundleUnzipFolder) throws IOException {
         // compare resource changes
         Collection<File> newBundleResFiles = FileUtils.listFiles(newBundleUnzipFolder,
-                                                                 new IOFileFilter() {
+                new IOFileFilter() {
 
-                                                                     @Override
-                                                                     public boolean accept(File file) {
-                                                                         // 不包括dex文件
-                                                                         if (file.getName()
-                                                                             .endsWith(
-                                                                                 ".dex")) {
-                                                                             return false;
-                                                                         }
-                                                                         String relativePath = PathUtils
-                                                                             .toRelative(
-                                                                                 newBundleUnzipFolder,
-                                                                                 file.getAbsolutePath());
-                                                                         if (null !=
-                                                                                 ((TpatchInput)(input)).notIncludeFiles &&
-                                                                             pathMatcher.match(
-                                                                                     ((TpatchInput)(input)).notIncludeFiles,
-                                                                                 relativePath)) {
-                                                                             return false;
-                                                                         }
-                                                                         return true;
-                                                                     }
+                    @Override
+                    public boolean accept(File file) {
+                        // 不包括dex文件
+                        if (file.getName()
+                                .endsWith(
+                                        ".dex")) {
+                            return false;
+                        }
+                        String relativePath = PathUtils
+                                .toRelative(
+                                        newBundleUnzipFolder,
+                                        file.getAbsolutePath());
+                        if (null !=
+                                ((TpatchInput)(input)).notIncludeFiles &&
+                                pathMatcher.match(
+                                        ((TpatchInput)(input)).notIncludeFiles,
+                                        relativePath)) {
+                            return false;
+                        }
+                        return true;
+                    }
 
-                                                                     @Override
-                                                                     public boolean accept(File file,
-                                                                                           String s) {
-                                                                         return accept(new File(
-                                                                             file,
-                                                                             s));
-                                                                     }
-                                                                 },
-                                                                 TrueFileFilter.INSTANCE);
+                    @Override
+                    public boolean accept(File file,
+                                          String s) {
+                        return accept(new File(
+                                file,
+                                s));
+                    }
+                },
+                TrueFileFilter.INSTANCE);
 
         for (File newBundleResFile : newBundleResFiles) {
             String resPath = PathUtils.toRelative(newBundleUnzipFolder,
-                                                  newBundleResFile.getAbsolutePath());
+                    newBundleResFile.getAbsolutePath());
             File baseBundleResFile = new File(baseBundleUnzipFolder, resPath);
             File destResFile = new File(destPatchBundleDir, resPath);
             if (baseBundleResFile.exists()) {
                 if (isFileModify(newBundleResFile,
-                                 baseBundleResFile,
-                                 bundleName,
-                                 resPath)) { // modify resource
+                        baseBundleResFile,
+                        bundleName,
+                        resPath)) { // modify resource
                     FileUtils.copyFile(newBundleResFile, destResFile);
                 }
             } else {// new resource
                 FileUtils.copyFile(newBundleResFile, destResFile);
             }
         }
+    }
+
+    public void doBundleDexPatch(File newBundleFile, File baseBundleFile, File patchTmpDir, String bundleName, File destPatchBundleDir, File newBundleUnzipFolder, File baseBundleUnzipFolder) throws Exception {
+        CommandUtils.exec(patchTmpDir,
+                "unzip " + newBundleFile.getAbsolutePath() + " -d " + newBundleUnzipFolder.getAbsolutePath());
+        CommandUtils.exec(patchTmpDir, "unzip " + baseBundleFile.getAbsolutePath() + " -d " + baseBundleUnzipFolder
+                .getAbsolutePath());
+        File destDex = new File(destPatchBundleDir, DEX_NAME);
+        File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
+        createBundleDexPatch(newBundleUnzipFolder,
+                baseBundleUnzipFolder,
+                destDex,
+                tmpDexFolder,
+                false);
+
     }
 
     /**
@@ -550,7 +563,7 @@ public class TPatchTool extends AbstractTool {
         List<File> baseDexFiles = getFolderDexFiles(baseApkUnzipFolder);
         List<File> newDexFiles = getFolderDexFiles(newApkUnzipFolder);
         File dexDiffFile = new File(tmpDexFile, "diff.dex");
-        TPatchDexTool dexTool = new TPatchDexTool(baseDexFiles,
+        PatchDexTool dexTool = new TpatchDexTool(baseDexFiles,
                                                   newDexFiles,
                                                   DEFAULT_API_LEVEL,
                                                   bundleClassMap.get(tmpDexFile.getName().substring(0,
@@ -558,8 +571,7 @@ public class TPatchTool extends AbstractTool {
                                                                                                         .length() -
                                                                                                         4)),
                                                   mainDex);
-        dexTool.setDexPatch(input.patchType.equals(PatchType.DEXPATCH));
-        DexDiffInfo dexDiffInfo = dexTool.createTPatchDex(dexDiffFile);
+        DexDiffInfo dexDiffInfo = dexTool.createPatchDex(dexDiffFile);
         if (dexDiffFile.exists()) {
             dexs.add(dexDiffFile);
             BundleDiffResult bundleDiffResult = new BundleDiffResult();

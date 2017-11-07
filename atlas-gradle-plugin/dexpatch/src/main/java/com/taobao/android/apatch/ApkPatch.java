@@ -306,6 +306,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
 
             currentTimeStamp = System.currentTimeMillis();
             DexDiffer dexDiffer = new DexDiffer(baseFiles, newFiles, 19);
+            dexDiffer.setTpatch(false);
             // 创建白名单过滤类
             if ((this.filterPath != null) && !(this.filterPath.equals(""))) {
                 dexDiffer.createFilter(this.filterPath);
