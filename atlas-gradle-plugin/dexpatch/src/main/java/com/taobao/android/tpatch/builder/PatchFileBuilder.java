@@ -400,18 +400,18 @@ public class PatchFileBuilder {
                             }
                         } else {
                             downloadTPathAndUnzip(hisPatchInfo.getDownloadUrl(), hisTPatchFile, hisTPatchUnzipFolder);
-                            File mainDexFile = new File(hisTPatchUnzipFolder,"libcom_taobao_maindex.so");
-                            if (mainDexFile.exists()){
-                                try {
-                                    System.out.println("start put bundleInfos for version:"+hisPatchInfo.getPatchVersion()+"......");
-                                    TPatchTool.bundleInfos.put(hisPatchInfo.getPatchVersion(),new AtlasFrameworkPropertiesReader(
-                                                                                                new MethodReader(
-                                                                                                new ClassReader(
-                                                                                                new DexReader(mainDexFile))),TPatchTool.bundleInfos.get(currentBuildPatchInfo.getPatchVersion())).read("Landroid/taobao/atlas/framework/FrameworkProperties;","<clinit>"));
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
+//                            File mainDexFile = new File(hisTPatchUnzipFolder,"libcom_taobao_maindex.so");
+//                            if (mainDexFile.exists()){
+//                                try {
+//                                    System.out.println("start put bundleInfos for version:"+hisPatchInfo.getPatchVersion()+"......");
+//                                    TPatchTool.bundleInfos.put(hisPatchInfo.getPatchVersion(),new AtlasFrameworkPropertiesReader(
+//                                                                                                new MethodReader(
+//                                                                                                new ClassReader(
+//                                                                                                new DexReader(mainDexFile))),TPatchTool.bundleInfos.get(currentBuildPatchInfo.getPatchVersion())).read("Landroid/taobao/atlas/framework/FrameworkProperties;","<clinit>"));
+//                                } catch (Exception e) {
+//                                    e.printStackTrace();
+//                                }
+//                            }
                         }
                     }
                     if (!hisBundleFolder.exists()) {

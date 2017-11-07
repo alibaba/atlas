@@ -363,6 +363,7 @@ public class TPatchTask extends BaseTask {
         }else {
             tpatchInput.patchType = PatchType.TPATCH;
             tpatchInput.createHisPatch = true;
+            tpatchInput.bundleWhiteList = appVariantContext.bundleListCfg;
             tpatchInput.createAll = StringUtils.isEmpty(patchContext.tpatchHistoryUrl);
             tpatchInput.LAST_PATCH_URL = patchContext.LAST_PATCH_URL;
             tpatchInput.hisPatchUrl = patchContext.tpatchHistoryUrl;

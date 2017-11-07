@@ -590,22 +590,22 @@ public class TPatchTool extends AbstractTool {
         }
 
         FileUtils.deleteDirectory(tmpDexFile);
-        if (mainDex){
-            try {
-
-                bundleInfos.put(input.newApkBo.getVersionName(), new AtlasFrameworkPropertiesReader(
-                        new MethodReader(
-                                new ClassReader(
-                                        new DexReader(destDex))), null).read("Landroid/taobao/atlas/framework/FrameworkProperties;", "<clinit>"));
-                bundleInfos.put(input.baseApkBo.getVersionName(), new AtlasFrameworkPropertiesReader(
-                        new MethodReader(
-                                new ClassReader(
-                                        new DexReader(baseDexFiles))), bundleInfos.get(input.newApkBo.getVersionName())).read("Landroid/taobao/atlas/framework/FrameworkProperties;", "<clinit>"));
-            }catch (Throwable e){
-                e.printStackTrace();
-            }
-
-            }
+//        if (mainDex){
+//            try {
+//
+//                bundleInfos.put(input.newApkBo.getVersionName(), new AtlasFrameworkPropertiesReader(
+//                        new MethodReader(
+//                                new ClassReader(
+//                                        new DexReader(destDex))), null).read("Landroid/taobao/atlas/framework/FrameworkProperties;", "<clinit>"));
+//                bundleInfos.put(input.baseApkBo.getVersionName(), new AtlasFrameworkPropertiesReader(
+//                        new MethodReader(
+//                                new ClassReader(
+//                                        new DexReader(baseDexFiles))), bundleInfos.get(input.newApkBo.getVersionName())).read("Landroid/taobao/atlas/framework/FrameworkProperties;", "<clinit>"));
+//            }catch (Throwable e){
+//                e.printStackTrace();
+//            }
+//
+//            }
 
         return destDex;
     }
@@ -1135,15 +1135,15 @@ public class TPatchTool extends AbstractTool {
             Map<String,List<String>>map = new HashMap<>();
         for (PatchInfo patchInfo : buildPatchInfos.getPatches()) {
             UpdateInfo updateInfo = new UpdateInfo(patchInfo, buildPatchInfos.getBaseVersion());
-            System.out.println("start to check:"+patchInfo.getTargetVersion()+"......");
-            List<PatchChecker.ReasonMsg> msgs = new PatchChecker(updateInfo,bundleInfos.get(patchInfo.getTargetVersion()),new File(((TpatchInput) input).outPatchDir,patchInfo.getFileName())).check();
-            map.put(patchInfo.getFileName(),msgToString(msgs));
+//            System.out.println("start to check:"+patchInfo.getTargetVersion()+"......");
+//            List<PatchChecker.ReasonMsg> msgs = new PatchChecker(updateInfo,bundleInfos.get(patchInfo.getTargetVersion()),new File(((TpatchInput) input).outPatchDir,patchInfo.getFileName())).check();
+//            map.put(patchInfo.getFileName(),msgToString(msgs));
             File updateJson = new File(((TpatchInput) input).outPatchDir, "update-" + patchInfo.getTargetVersion() + ".json");
             FileUtils.writeStringToFile(updateJson, JSON.toJSONString(updateInfo, true));
             tpatchFile.updateJsons.add(updateJson);
         }
-        tpatchFile.patchChecker = new File(((TpatchInput) input).outPatchDir,"patch-check.json");
-        FileUtils.writeStringToFile(tpatchFile.patchChecker, JSON.toJSONString(map, true));
+//        tpatchFile.patchChecker = new File(((TpatchInput) input).outPatchDir,"patch-check.json");
+//        FileUtils.writeStringToFile(tpatchFile.patchChecker, JSON.toJSONString(map, true));
         // 删除临时的目录
         FileUtils.deleteDirectory(patchTmpDir);
         apkDiff.setBaseApkVersion(input.baseApkBo.getVersionName());
