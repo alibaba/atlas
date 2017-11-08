@@ -92,6 +92,11 @@ public class AtlasHotPatchManager implements BundleListener{
         patchMainDex();
     }
 
+    /**
+     * @param targetVersion app版本
+     * @param patchEntries <bundleName,<patchVersion,patchEntry>>
+     * @throws IOException
+     */
     public void installHotFixPatch(String targetVersion, HashMap<String,Pair<Integer,InputStream>> patchEntries) throws IOException{
         if(!sCurrentVersionPatchDir.exists()){
             sCurrentVersionPatchDir.mkdirs();
@@ -130,6 +135,13 @@ public class AtlasHotPatchManager implements BundleListener{
                 }
             }
         }
+    }
+
+    /**
+     * @return <bundleName,patchVersion>
+     */
+    public Map<String,Long> getAllInstallPatch(){
+        return new HashMap<>();
     }
 
     public void setPatchListener(OnPatchActivatedListener listener){
