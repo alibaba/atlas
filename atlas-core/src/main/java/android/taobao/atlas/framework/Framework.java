@@ -217,6 +217,7 @@ import android.os.Process;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
+import android.taobao.atlas.patch.AtlasHotPatchManager;
 import android.taobao.atlas.runtime.BundleUtil;
 import android.taobao.atlas.runtime.ClassNotFoundInterceptorCallback;
 import android.taobao.atlas.runtime.InstrumentationHook;
@@ -611,6 +612,7 @@ public final class Framework {
                 continue;
             }else if(!upgrade && dexPatchVersions[i]==-1){
                 updateBundles.put(locations[i],"-1");
+                AtlasHotPatchManager.getInstance().disablePatch(locations[i]);
                 continue;
             }
 
