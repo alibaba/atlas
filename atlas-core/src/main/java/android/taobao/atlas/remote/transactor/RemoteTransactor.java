@@ -16,6 +16,22 @@ import android.text.TextUtils;
 
 /**
  * Created by guanjie on 2017/10/25.
+ *
+ *  RemoteTransactor.RemoteTransactorFactory.createRemoteTransactor(activity, intent, new RemoteTransactor.OnRemoteTransactorStateListener(){
+        @Override
+        public void onTransactorCreated(RemoteTransactor transactor) {
+            transactor.call("exec_fun1", bundle, new IResponse() {
+                @Override
+                public void OnResponse(Bundle bundle) {
+
+                }
+            });
+        }
+        @Override
+        public void onFailed(String errorInfo) {
+
+        }
+    });
  */
 
 public class RemoteTransactor implements IRemoteDelegator,IRemoteTransactor{

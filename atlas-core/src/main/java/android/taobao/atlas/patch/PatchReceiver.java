@@ -228,7 +228,13 @@ import java.util.List;
 /**
  * Created by guanjie on 15/7/1.
  */
-public class PatchReceiver{
+@Process("com.taobao.taobao")
+public class PatchReceiver implements IAtlasHotPatch {
+    @Override
+    public void fix(Application application) {
+
+    }
+
 
 //    public static final String PATCH_ACTION = "com.taobao.atlas.intent.PATCH_APP";
 //    private static PatchReceiver sReceiver;

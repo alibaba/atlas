@@ -11,6 +11,7 @@ import android.taobao.atlas.remote.IRemote;
 import android.taobao.atlas.remote.IRemoteDelegator;
 import android.taobao.atlas.remote.IRemoteTransactor;
 import android.taobao.atlas.remote.RemoteActivityManager;
+import android.taobao.atlas.remote.transactor.RemoteTransactor;
 import android.taobao.atlas.runtime.BundleUtil;
 import android.text.TextUtils;
 import android.view.View;
