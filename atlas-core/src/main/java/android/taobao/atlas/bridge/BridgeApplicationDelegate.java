@@ -498,19 +498,4 @@ public class BridgeApplicationDelegate {
         mRealApplication.onCreate();
     }
 
-//    public void deleteDirectory(final File path) {
-//        final File[] files = path.listFiles();
-//        if (files == null){
-//            return;
-//        }
-//        Log.e("Bridgedelete",path.getAbsolutePath());
-//        for (int i = 0; i < files.length; i++) {
-//            if (files[i].isDirectory()) {
-//                deleteDirectory(files[i]);
-//            } else {
-//                files[i].delete();
-//            }
-//        }
-//        path.delete();
-//    }
 }
