@@ -38,7 +38,7 @@
 
 3. Then you will see the final step like this. 
 
-   ![createAtlasProjectAndConfig](http://darin726.qiniudn.com/createAtlasProjectAndConfig.png)
+   ![createAtlasProjectAndConfig](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/createAtlasProjectAndConfig.png)
      undefined**Atlas Gradle Plugin** : A Gradle Tool to build atlas project
    2. **Atlas Core**  :  Atlas Core runtime library
    3. **Atlas Update** : A Library make `Atlas` project can update through patches. (Optional) 
@@ -64,7 +64,7 @@ Create a bundle like this :
 
 3. Then you will see the final step like this. 
 
-   ![createAtlasBundle](http://darin726.qiniudn.com/createAtlasBundle.png)
+   ![createAtlasBundle](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/createAtlasBundle.png)
 
    Note that this step will be displayed only if this bundle is a `Android library`
 
@@ -83,11 +83,11 @@ Create a bundle like this :
 
 1. `Tools -> Atlas -> Configure Atlas in Project`
 
-   ![configureAtlas](http://darin726.qiniudn.com/configureAtlas.png)
+   ![configureAtlas](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/configureAtlas.png)
 
 2. And You will see something like this
 
-   ![configureAtlasinProject](http://darin726.qiniudn.com/configureAtlasinProject.png)
+   ![configureAtlasinProject](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/configureAtlasinProject.png)
 
 3. Click Ok or you can select these lib's version before. `Atlas`'s properties will be added into this project immediately.
 
@@ -97,13 +97,13 @@ First of all you should have some knowledge about [dexPatch](https://alibaba.git
 
 1. Add a Deploy Runconfiguration
 
-   ![EditDeployConfiguration](http://darin726.qiniudn.com/EditDeployConfiguration.png)
+   ![EditDeployConfiguration](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/EditDeployConfiguration.png)
 
-   ![addAtlasDeployRunconfiguration](http://darin726.qiniudn.com/addAtlasDeployRunconfiguration.png)
+   ![addAtlasDeployRunconfiguration](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/addAtlasDeployRunconfiguration.png)
 
 2. Configure 
 
-   ![configDeployConfiguration](http://darin726.qiniudn.com/configDeployConfiguration.png)
+   ![configDeployConfiguration](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/configDeployConfiguration.png)
 
    **①. MainDexModule:** The MainDex Of this project  
    **②. Deploy:** Dynamic type,  only DexPatch for now  
@@ -124,13 +124,13 @@ First of all you should have some knowledge about [dexPatch](https://alibaba.git
 
 1. Add a Run Runconfiguration
 
-    ![addRunConfiguration](http://darin726.qiniudn.com/addRunConfiguration.png)  
+    ![addRunConfiguration](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/addRunConfiguration.png)  
 
-    ![addAtlasRunConfigureAdd](http://darin726.qiniudn.com/addAtlasRunConfigureAdd.png)  
+    ![addAtlasRunConfigureAdd](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/addAtlasRunConfigureAdd.png)  
 
 2. Configure
 
-   ![RunconfigurationModules](http://darin726.qiniudn.com/RunconfigurationModules.png)
+   ![RunconfigurationModules](https://raw.githubusercontent.com/Darin726/altasPlugin/master/resource/pic/RunconfigurationModules.png)
 
    * **Ap Address :** Ap's Download. 
    * **Selected App :** The fast build app. `Mobile Taobao Android `,`Mobile Taobao Youku`, `Mobile Taobao Cainiao` are supported. Make us know if you want to use this function
