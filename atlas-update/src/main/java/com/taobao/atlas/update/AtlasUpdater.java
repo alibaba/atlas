@@ -28,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class AtlasUpdater {
 
+    private static boolean usePatchDivider = true;
+
     /**
      * 更新主入口
      * @param updateInfo  更新的基础信息
@@ -68,7 +70,10 @@ public class AtlasUpdater {
 
         PatchCleaner.clearUpdatePath(updateInfo.workDir.getAbsolutePath());
 
+    }
 
+    public static void dividePatch(boolean divide) {
+        usePatchDivider = divide;
     }
 
 
@@ -88,6 +93,10 @@ public class AtlasUpdater {
         if (TextUtils.isEmpty(versionName) || !versionName.equals(updateInfo.baseVersion)) {
             return;
         }
+        if (usePatchDivider) {
+            updateInfo.updateBundles = DexPatchDivider.getColdPatchList(updateInfo.updateBundles);
+        }
+
         Iterator<UpdateInfo.Item> itemIterator = updateInfo.updateBundles.iterator();
         while (itemIterator.hasNext()) {
             UpdateInfo.Item item = itemIterator.next();

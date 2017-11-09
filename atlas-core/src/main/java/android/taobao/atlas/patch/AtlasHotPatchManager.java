@@ -87,7 +87,7 @@ public class AtlasHotPatchManager implements BundleListener{
      * @param patchEntries <bundleName,<patchVersion,patchEntry>>
      * @throws IOException
      */
-    public void installHotFixPatch(String targetVersion, HashMap<String,Pair<Integer,InputStream>> patchEntries) throws IOException{
+    public void installHotFixPatch(String targetVersion, HashMap<String,Pair<Long,InputStream>> patchEntries) throws IOException{
         if(!sCurrentVersionPatchDir.exists()){
             sCurrentVersionPatchDir.mkdirs();
         }
@@ -103,7 +103,7 @@ public class AtlasHotPatchManager implements BundleListener{
         }
         Iterator iter = patchEntries.entrySet().iterator();
         while (iter.hasNext()) {
-            Map.Entry<String,Pair<Integer,InputStream>> entry = (Map.Entry) iter.next();
+            Map.Entry<String,Pair<Long,InputStream>> entry = (Map.Entry) iter.next();
             File patchBundleDir = new File(sPatchVersionDir,entry.getKey());
             patchBundleDir.mkdirs();
             if(patchBundleDir.exists()){
