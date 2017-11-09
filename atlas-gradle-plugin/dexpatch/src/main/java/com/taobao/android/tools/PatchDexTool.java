@@ -1,4 +1,4 @@
-package com.taobao.android;
+package com.taobao.android.tools;
 
 import com.google.common.collect.Lists;
 import com.taobao.android.differ.dex.DexDiffer;
@@ -20,25 +20,27 @@ import java.util.*;
 /**
  * tpatch diff tool
  */
-public class TPatchDexTool {
+public abstract class PatchDexTool {
 
     private List<File> baseDexFiles;
     private List<File> newDexFiles;
     private File outDexFile;
     private int apiLevel;
-    private DexDiffer dexDiffer;
+    public DexDiffer dexDiffer;
     private DexDiffFilter dexDiffFilter;
+    public Set<String>hotClassList;
+    DexDiffInfo dexDiffInfo = null;
     private boolean mainBundle;
     private Map<String, ClassDef>lastBundleClassMap = new HashMap<String, ClassDef>();
     private boolean removeDupStrings;
 
-    public void setDexPatch(boolean dexPatch) {
-        this.dexPatch = dexPatch;
+    public void setTPatch(boolean tpatch) {
+        this.tpatch = tpatch;
     }
 
-    private boolean dexPatch;
+    private boolean tpatch;
 
-    public TPatchDexTool(List<File> baseDexFiles, List<File> newDexFiles, int apiLevel, Map<String,ClassDef> map,boolean mainBundle) {
+    public PatchDexTool(List<File> baseDexFiles, List<File> newDexFiles, int apiLevel, Map<String,ClassDef> map,boolean mainBundle) {
         this.baseDexFiles = baseDexFiles;
         this.newDexFiles = newDexFiles;
         this.apiLevel = apiLevel;
@@ -55,7 +57,7 @@ public class TPatchDexTool {
 
     }
 
-    public TPatchDexTool(File baseDex, File newDex, int apiLevel,boolean mainBundle) {
+    public PatchDexTool(File baseDex, File newDex, int apiLevel,boolean mainBundle) {
         baseDexFiles = Lists.newArrayList();
         baseDexFiles.add(baseDex);
         newDexFiles = Lists.newArrayList();
@@ -76,49 +78,52 @@ public class TPatchDexTool {
      *
      * @param outDexFile
      */
-    public DexDiffInfo createTPatchDex(File outDexFile) throws IOException, RecognitionException, PatchException {
-        DexDiffInfo dexDiffInfo = null;
-//        if (mainBundle){
-            outDexFile.getParentFile().mkdirs();
-            dexDiffer.setDexpatch(dexPatch);
+
+
+    public Set<ClassDef> createModifyClasses() throws IOException, PatchException {
             dexDiffInfo = dexDiffer.doDiff();
-
-            // 将有变动的类写入到diff.dex
-            final Set<ClassDef> modifyClasses = new HashSet<ClassDef>();
-
-            for (ClassDiffInfo classDiffInfo : dexDiffInfo.getClassDiffInfoMap().values()) {
-                if (DiffType.MODIFY.equals(classDiffInfo.getType()) || DiffType.ADD.equals(classDiffInfo.getType()) || DiffType.OVERRIDE.equals(classDiffInfo.getType())) {
-                    modifyClasses.add(classDiffInfo.getClassDef());
-                }
+        final Set<ClassDef> modifyClasses = new HashSet<ClassDef>();
+        for (ClassDiffInfo classDiffInfo : dexDiffInfo.getClassDiffInfoMap().values()) {
+            if (DiffType.MODIFY.equals(classDiffInfo.getType()) || DiffType.ADD.equals(classDiffInfo.getType()) || DiffType.OVERRIDE.equals(classDiffInfo.getType())) {
+                modifyClasses.add(classDiffInfo.getClassDef());
             }
+        }
+        return modifyClasses;
 
+    }
+
+    public DexDiffInfo createPatchDex(File outDexFile) throws IOException, RecognitionException, PatchException {
+         Set<ClassDef>modifyClasses = createModifyClasses();
             if (modifyClasses.size() > 0) {
-                DexFileFactory.writeDexFile(outDexFile.getAbsolutePath(), new DexFile() {
+                writeDex(outDexFile,modifyClasses);
+            }
+        return dexDiffInfo;
+    }
+
+    public void writeDex(File outDexFile,Set<ClassDef>classDefs) throws IOException {
+
+        DexFileFactory.writeDexFile(outDexFile.getAbsolutePath(), new DexFile() {
+            @Nonnull
+            @Override
+            public Set<? extends ClassDef> getClasses() {
+                return new AbstractSet<ClassDef>() {
                     @Nonnull
                     @Override
-                    public Set<? extends ClassDef> getClasses() {
-                        return new AbstractSet<ClassDef>() {
-                            @Nonnull
-                            @Override
-                            public Iterator<ClassDef> iterator() {
-                                return modifyClasses.iterator();
-                            }
-
-                            @Override
-                            public int size() {
-                                return modifyClasses.size();
-                            }
-                        };
+                    public Iterator<ClassDef> iterator() {
+                        return classDefs.iterator();
                     }
-                });
-            }
-//        }else {
-//            dexDiffInfo = dexDiffer.doDiff();
-////            DexPatchGenerator dexPatchGenerator = new DexPatchGenerator(baseDexFiles.get(0),removeDebugInfo(newDexFiles.get(0)));
-////            dexPatchGenerator.executeAndSaveTo(outDexFile);
-//        }
-        return dexDiffInfo;
 
+                    @Override
+                    public int size() {
+                        return classDefs.size();
+                    }
+                };
+            }
+        });
+    }
+
+    public void setPatchClassList(Set<String> hotClassList){
+        this.hotClassList = hotClassList;
     }
 
 }

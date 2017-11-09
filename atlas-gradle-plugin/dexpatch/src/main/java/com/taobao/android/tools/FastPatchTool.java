@@ -656,7 +656,6 @@ public class FastPatchTool {
             fastBuild.setDiffInfo(dexDiffInfo);
             new AndFixFilterImpl(dexDiffInfo).filterDex();
             dexDiffInfo.update();
-            APatchTool.isApatch = true;
             File adiffFile = new File(outDir, "apatch-diff.txt");
             File adiffJsonFile = new File(outDir, "apatch-diff.json");
             dexDiffInfo.writeToFile(fastPatchObject.bundleName,adiffFile,adiffJsonFile);

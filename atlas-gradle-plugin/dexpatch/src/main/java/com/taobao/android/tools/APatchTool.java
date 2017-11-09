@@ -1,4 +1,4 @@
-package com.taobao.android;
+package com.taobao.android.tools;
 /*
  *
  *
@@ -213,7 +213,9 @@ import com.taobao.android.apatch.ApkPatch;
 import com.taobao.android.apatch.MergePatch;
 import com.taobao.android.apatch.annotation.MethodReplaceAnnotation;
 import com.taobao.android.differ.dex.PatchException;
-import com.taobao.android.tpatch.model.ApkBO;
+import com.taobao.android.inputs.ApatchInput;
+import com.taobao.android.outputs.APatchFile;
+import com.taobao.android.outputs.PatchFile;
 import com.taobao.android.tpatch.model.BundleBO;
 import com.taobao.android.tpatch.utils.PatchUtils;
 import com.taobao.android.tpatch.utils.PathUtils;
@@ -226,7 +228,6 @@ import org.apache.commons.io.FilenameUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -235,132 +236,11 @@ import java.util.Map;
  * this is tool for generate apatch.jar
  *
  */
-public class APatchTool extends BasePatchTool {
+public class APatchTool extends AbstractTool {
 
-    public static boolean isApatch = false;
-    private String andfixMainBundleName = "com_taobao_maindex";
-
-    public static String replaceAnnotation = "Lcom/alipay/euler/andfix/annotation/MethodReplace;";
-    private String[] notIncludeFiles;
+    public static Map<String, String> mappingMap;
     private final PathMatcher pathMatcher = new PathMatcher();
-    private String filterPath;                                 // 类白名单路径
 
-    public void setMappingFile(File mappingFile) {
-        this.mappingFile = mappingFile;
-    }
-
-    public static File mappingFile;
-    public static boolean debug = false;
-
-
-    public static Map<String,String>mappingMap = new HashMap<String, String>();
-
-
-    public APatchTool(ApkBO baseApkBO,ApkBO newApkBO) {
-        super(baseApkBO, newApkBO);
-    }
-
-
-    public void setAndfixMainBundleName(String andfixMainBundleName) {
-        this.andfixMainBundleName = andfixMainBundleName;
-    }
-
-    public void setFilterPath(String filterPath) {
-        this.filterPath = filterPath;
-    }
-
-    /**
-     * set resources no include in patch
-     *
-     * @param notIncludeFiles
-     */
-    public void setNotIncludeFiles(String[] notIncludeFiles) {
-        this.notIncludeFiles = notIncludeFiles;
-    }
-
-
-    /**
-     * method for generate patch file
-     *
-     * @param outPatchFile
-     * @param projectArtifactId
-     */
-    public void doPatch(File outPatchFile, String projectArtifactId) throws Exception {
-        isApatch = true;
-        if (mappingMap.get(replaceAnnotation) != null) {
-            MethodReplaceAnnotation.ANNOTATION = mappingMap.get(replaceAnnotation);
-        }
-        File patchTmpDir = new File(outPatchFile.getParentFile(), "apatch-tmp");
-        patchTmpDir.mkdirs();
-        File adiffFile = new File(outPatchFile.getParentFile(), "apatch-diff.txt");
-        File adiffJsonFile = new File(outPatchFile.getParentFile(), "apatch-diff.json");
-        FileUtils.deleteQuietly(adiffFile);
-        adiffFile.createNewFile();
-        // unzip apk
-        File unzipFolder = unzipApk(patchTmpDir);
-        final File newApkUnzipFolder = new File(unzipFolder, NEW_APK_UNZIP_NAME);
-        final File baseApkUnzipFolder = new File(unzipFolder, BASE_APK_UNZIP_NAME);
-
-        // first generate main bundle patch file
-        List<File> aPatches = createBundleAPatch(newApkUnzipFolder, baseApkUnzipFolder, patchTmpDir,
-                andfixMainBundleName, adiffFile, adiffJsonFile);
-
-        // second generate common bundle patch file
-        //
-        Collection<File> soFiles = FileUtils.listFiles(newApkUnzipFolder, new String[]{"so"}, true);
-        if (splitDiffBundle!= null) {
-            for (Pair<BundleBO, BundleBO> bundle : splitDiffBundle) {
-                if (bundle.getFirst() == null||bundle.getSecond() == null){
-                    continue;
-                }
-                List<File> aPatchFiles = processBundleFiles(bundle.getSecond().getBundleFile(), bundle.getFirst().getBundleFile(), patchTmpDir, adiffFile, adiffJsonFile);
-                if (null != aPatchFiles) {
-                    for (File aPatchFile : aPatchFiles) {
-                        if (null != aPatchFile && aPatchFile.exists()) {
-                            aPatches.add(aPatchFile);
-                        }
-                    }
-                }
-            }
-        }
-        for (File soFile : soFiles) {
-            String relativePath = PathUtils.toRelative(newApkUnzipFolder, soFile.getAbsolutePath());
-            if (null != notIncludeFiles && pathMatcher.match(notIncludeFiles, relativePath)) {
-                continue;
-            }
-            File baseSoFile = new File(baseApkUnzipFolder, relativePath);
-            if (PatchUtils.isBundleFile(soFile)) { // if bundle file
-                List<File> aPatchFiles = processBundleFiles(soFile, baseSoFile, patchTmpDir, adiffFile, adiffJsonFile);
-                if (null != aPatchFiles) {
-                    for (File aPatchFile : aPatchFiles) {
-                        if (null != aPatchFile && aPatchFile.exists()) {
-                            aPatches.add(aPatchFile);
-                        }
-                    }
-                }
-            }
-        }
-
-        if (aPatches.size() <= 0) {
-            throw new Exception("No apatch files! No classes modify!");
-        }
-
-        // merge apatch file
-        File[] aPatchFiles = new File[aPatches.size()];
-        aPatchFiles = aPatches.toArray(aPatchFiles);
-        File mergePatchFile = null;
-        if (null != aPatchFiles && aPatchFiles.length > 1) {
-            MergePatch mergePatch = new MergePatch(aPatchFiles, projectArtifactId, patchTmpDir);
-            mergePatchFile = mergePatch.doMerge();
-        } else if (null != aPatchFiles && aPatchFiles.length == 1) {
-            mergePatchFile = aPatchFiles[0];
-        }
-        if (null != mergePatchFile && mergePatchFile.exists()) {
-            FileUtils.moveFile(mergePatchFile, outPatchFile);
-        }
-        FileUtils.deleteDirectory(unzipFolder);
-        FileUtils.deleteDirectory(patchTmpDir);
-    }
 
     /**
      *
@@ -373,7 +253,8 @@ public class APatchTool extends BasePatchTool {
     private List<File> processBundleFiles(File newBundleFile, File baseBundleFile, File patchTmpDir, File diffFile,
                                           File diffJsonFile) throws PatchException, IOException, RecognitionException {
         String bundleName = FilenameUtils.getBaseName(newBundleFile.getName());
-        if (!isModifyBundle(newBundleFile.getName()) || !onlyIncludeModifyBundle) {
+
+        if (!isModifyBundle(newBundleFile.getName()) || !((ApatchInput)input).onlyIncludeModifyBundle) {
             return null;
         }
         if (null != logger) {
@@ -422,8 +303,8 @@ public class APatchTool extends BasePatchTool {
         ApkPatch apkPatch = new ApkPatch(baseDexFiles, newDexFiles, bundleName, patchTmpDir);
         apkPatch.setDiffFile(diffFile);
         apkPatch.setDiffJsonFile(diffJsonFile);
-        if (null != filterPath) {
-            apkPatch.setPath(filterPath);
+        if (null != ((ApatchInput)input).filterPath) {
+            apkPatch.setPath(((ApatchInput)input).filterPath);
         }
 
         File mainDexPatch = apkPatch.doPatch();
@@ -431,6 +312,94 @@ public class APatchTool extends BasePatchTool {
             apatchs.add(mainDexPatch);
         }
         return apatchs;
+    }
+
+    @Override
+    public PatchFile doPatch() throws Exception {
+        APatchFile patchFile = new APatchFile();
+        ApatchInput apatchInput = (ApatchInput) input;
+        mappingMap= apatchInput.mappingMap;
+        if (apatchInput.mappingMap.get(apatchInput.replaceAnnotation) != null) {
+            MethodReplaceAnnotation.ANNOTATION = apatchInput.mappingMap.get(apatchInput.replaceAnnotation);
+        }
+        File patchTmpDir = new File(input.outPutFile.getParentFile(), "apatch-tmp");
+        patchTmpDir.mkdirs();
+        patchFile.aDiffText = new File(input.outPutFile.getParentFile(), "apatch-diff.txt");
+        patchFile.diffJson = new File(input.outPutFile.getParentFile(), "apatch-diff.json");
+        FileUtils.deleteQuietly(patchFile.aDiffText);
+        patchFile.aDiffText.createNewFile();
+        // unzip apk
+        File unzipFolder = unzipApk(patchTmpDir);
+        final File newApkUnzipFolder = new File(unzipFolder, NEW_APK_UNZIP_NAME);
+        final File baseApkUnzipFolder = new File(unzipFolder, BASE_APK_UNZIP_NAME);
+
+        // first generate main bundle patch file
+        List<File> aPatches = createBundleAPatch(newApkUnzipFolder, baseApkUnzipFolder, patchTmpDir,
+                apatchInput.andfixMainBundleName, patchFile.aDiffText, patchFile.diffJson);
+
+        // second generate common bundle patch file
+        //
+        Collection<File> soFiles = FileUtils.listFiles(newApkUnzipFolder, new String[]{"so"}, true);
+        if (input.splitDiffBundle!= null) {
+            for (Pair<BundleBO, BundleBO> bundle : input.splitDiffBundle) {
+                if (bundle.getFirst() == null||bundle.getSecond() == null){
+                    continue;
+                }
+                List<File> aPatchFiles = processBundleFiles(bundle.getSecond().getBundleFile(), bundle.getFirst().getBundleFile(), patchTmpDir, patchFile.aDiffText, patchFile.diffJson);
+                if (null != aPatchFiles) {
+                    for (File aPatchFile : aPatchFiles) {
+                        if (null != aPatchFile && aPatchFile.exists()) {
+                            aPatches.add(aPatchFile);
+                        }
+                    }
+                }
+            }
+        }
+        for (File soFile : soFiles) {
+            String relativePath = PathUtils.toRelative(newApkUnzipFolder, soFile.getAbsolutePath());
+            if (null != apatchInput.notIncludeFiles && pathMatcher.match(apatchInput.notIncludeFiles, relativePath)) {
+                continue;
+            }
+            File baseSoFile = new File(baseApkUnzipFolder, relativePath);
+            if (PatchUtils.isBundleFile(soFile)) { // if bundle file
+                List<File> aPatchFiles = processBundleFiles(soFile, baseSoFile, patchTmpDir, patchFile.aDiffText, patchFile.diffJson);
+                if (null != aPatchFiles) {
+                    for (File aPatchFile : aPatchFiles) {
+                        if (null != aPatchFile && aPatchFile.exists()) {
+                            aPatches.add(aPatchFile);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (aPatches.size() <= 0) {
+            throw new Exception("No apatch files! No classes modify!");
+        }
+
+        // merge apatch file
+        File[] aPatchFiles = new File[aPatches.size()];
+        aPatchFiles = aPatches.toArray(aPatchFiles);
+        File mergePatchFile = null;
+        if (null != aPatchFiles && aPatchFiles.length > 1) {
+            MergePatch mergePatch = new MergePatch(aPatchFiles, apatchInput.projectArtifactId, patchTmpDir);
+            mergePatchFile = mergePatch.doMerge();
+        } else if (null != aPatchFiles && aPatchFiles.length == 1) {
+            mergePatchFile = aPatchFiles[0];
+        }
+        if (null != mergePatchFile && mergePatchFile.exists()) {
+            FileUtils.moveFile(mergePatchFile, input.outPutFile);
+        }
+        FileUtils.deleteDirectory(unzipFolder);
+        FileUtils.deleteDirectory(patchTmpDir);
+        patchFile.patchFile = input.outPutFile;
+
+        return patchFile;
+    }
+
+    @Override
+    public boolean isRetainMainBundleRes() {
+        return false;
     }
 
 

@@ -450,11 +450,11 @@ public class DexDiffer {
     //
     private Filter filter;
 
-    public void setDexpatch(boolean dexpatch) {
-        this.dexpatch = dexpatch;
+    public void setTpatch(boolean tpatch) {
+        this.tpatch = tpatch;
     }
 
-    private boolean dexpatch;
+    private boolean tpatch;
 
     private Map<String, DexBackedClassDef> baseClassDefMap = new HashMap<String, DexBackedClassDef>();
 
@@ -506,11 +506,11 @@ public class DexDiffer {
                 }
             }
             String className = getDalvikClassName(newClassDef.getType());
-            if (dexpatch&&newClassDef.getType().equals("Landroid/taobao/atlas/framework/FrameworkProperties;")){
+            if (!tpatch&&newClassDef.getType().equals("Landroid/taobao/atlas/framework/FrameworkProperties;")){
                 continue;
             }
             DexBackedClassDef baseClassDef = baseClassDefMap.get(className);
-            if (lastBundleClassMap.containsKey(newClassDef.getType())){
+            if (lastBundleClassMap.containsKey(newClassDef.getType())&&tpatch){
                 System.out.println("overide class:"+className);
                 ClassDiffInfo classDiffInfo = new ClassDiffInfo();
                 classDiffInfo.setType(DiffType.OVERRIDE);

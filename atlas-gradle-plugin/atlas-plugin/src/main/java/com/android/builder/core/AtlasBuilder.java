@@ -858,7 +858,7 @@ public class AtlasBuilder extends AndroidBuilder {
             args.addAll(origin.getArgs());
             //args.remove("--no-version-vectors");
 
-            //Join the generation of the R.txt file
+            //Join the outputs of the R.txt file
             if (!args.contains("--output-text-symbols") && null != sybolOutputDir) {
                 args.add("--output-text-symbols");
                 args.add(sybolOutputDir);
