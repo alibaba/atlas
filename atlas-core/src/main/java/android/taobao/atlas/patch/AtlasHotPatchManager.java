@@ -48,14 +48,19 @@ public class AtlasHotPatchManager implements BundleListener{
     private ConcurrentHashMap<String,Long> hotpatchBundles = new ConcurrentHashMap<>();
     private HashMap<String,String> activePatchs = new HashMap<>();
     private OnPatchActivatedListener mPatchListener;
+    private IPatchInstallListener mInstallListener;
 
     public static synchronized AtlasHotPatchManager getInstance(){
         return sPatchManager;
     }
 
     public interface OnPatchActivatedListener{
-        void onPatchActivated(String bundleName,String location);
+        void onPatchActivated(String bundleName,String location,long patchVersion);
     }
+    public interface IPatchInstallListener{
+        void install(boolean success,String bundleName,long patchVersion);
+    }
+
 
     private AtlasHotPatchManager(){
         try {
@@ -117,6 +122,9 @@ public class AtlasHotPatchManager implements BundleListener{
                     File hotFixFile = new File(patchBundleDir, entry.getValue().first+HOTFIX_NAME_POSTFIX);
                     installDex(entry.getValue().second, hotFixFile);
                     hotpatchBundles.put(entry.getKey(),Long.valueOf(entry.getValue().first));
+                    if (null != mInstallListener){
+                        mInstallListener.install(true,entry.getKey(),entry.getValue().first);
+                    }
                     BundleImpl bundle = (BundleImpl) Atlas.getInstance().getBundle(entry.getKey());
                     if(bundle!=null){
                         Patch p = new Patch(hotFixFile,bundle.getClassLoader());
@@ -124,6 +132,9 @@ public class AtlasHotPatchManager implements BundleListener{
                     }
                 }catch(Exception e){
                     e.printStackTrace();
+                    if (null != mInstallListener){
+                        mInstallListener.install(false,entry.getKey(),entry.getValue().first);
+                    }
                 }finally{
                     BundleLock.WriteUnLock(lockKey);
                 }
@@ -141,6 +152,10 @@ public class AtlasHotPatchManager implements BundleListener{
 
     public void setPatchListener(OnPatchActivatedListener listener){
         mPatchListener = listener;
+    }
+
+    public void setPatchInstallListener(IPatchInstallListener listener){
+        mInstallListener = listener;
     }
 
     public void storePatchInfo() throws IOException{
@@ -227,7 +242,7 @@ public class AtlasHotPatchManager implements BundleListener{
         try {
             patch.activate();
             if(mPatchListener!=null){
-                mPatchListener.onPatchActivated(patchBundleName,patch.file.getAbsolutePath());
+                mPatchListener.onPatchActivated(patchBundleName,patch.file.getAbsolutePath(),hotpatchBundles.get(patchBundleName));
             }
         }catch (Throwable e){
             e.printStackTrace();
