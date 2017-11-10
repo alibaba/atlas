@@ -8,10 +8,9 @@ import android.support.annotation.NonNull;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.remote.IRemote;
-import android.taobao.atlas.remote.IRemoteDelegator;
+import android.taobao.atlas.remote.IRemoteContext;
 import android.taobao.atlas.remote.IRemoteTransactor;
 import android.taobao.atlas.remote.RemoteActivityManager;
-import android.taobao.atlas.remote.transactor.RemoteTransactor;
 import android.taobao.atlas.runtime.BundleUtil;
 import android.text.TextUtils;
 import android.view.View;
@@ -34,7 +33,7 @@ import java.lang.reflect.Constructor;
     });
  */
 
-public class RemoteView extends FrameLayout implements IRemoteTransactor,IRemoteDelegator{
+public class RemoteView extends FrameLayout implements IRemoteTransactor,IRemoteContext {
 
     public interface OnRemoteViewStateListener{
         void onViewCreated(RemoteView remoteView);
@@ -96,6 +95,15 @@ public class RemoteView extends FrameLayout implements IRemoteTransactor,IRemote
     }
 
     @Override
+    public <T> T getRemoteInterface(Class<T> interfaceClass) {
+        if(!(targetView instanceof IRemote)){
+            throw new IllegalAccessError("targetView is not an implementation of : RemoteTransactor");
+        }else {
+            return ((IRemote)targetView).getRemoteInterface(interfaceClass);
+        }
+    }
+
+    @Override
     public void registerHostTransactor(IRemoteTransactor transactor) {
         hostTransactor = transactor;
     }
@@ -118,4 +126,6 @@ public class RemoteView extends FrameLayout implements IRemoteTransactor,IRemote
     public RemoteView(@NonNull Context context) {
         super(context);
     }
+
+
 }
