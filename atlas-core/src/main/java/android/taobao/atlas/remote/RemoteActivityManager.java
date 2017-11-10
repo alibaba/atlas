@@ -54,7 +54,7 @@ public class RemoteActivityManager {
     private HashMap<String,EmbeddedActivityRecord> mActivityRecords = new HashMap<>();
     private Activity mParent;
 
-    public synchronized Activity getRemoteHost(IRemoteDelegator delegator) throws Exception{
+    public synchronized Activity getRemoteHost(IRemoteContext delegator) throws Exception{
         String bundleName = delegator.getTargetBundle();
         if(!mActivityRecords.containsKey(bundleName)){
             EmbeddedActivityRecord record = startEmbeddedActivity(bundleName);
@@ -93,9 +93,9 @@ public class RemoteActivityManager {
 
     public static class EmbeddedActivity extends FragmentActivity{
         public WeakReference<Activity> parentActivityRef;
-        public List<IRemoteDelegator> mBoundRemoteItems = new ArrayList<>();
+        public List<IRemoteContext> mBoundRemoteItems = new ArrayList<>();
 
-        public void addBoundRemoteDelegator(IRemoteDelegator delegator){
+        public void addBoundRemoteDelegator(IRemoteContext delegator){
             if(!mBoundRemoteItems.contains(delegator)){
                 mBoundRemoteItems.add(delegator);
             }

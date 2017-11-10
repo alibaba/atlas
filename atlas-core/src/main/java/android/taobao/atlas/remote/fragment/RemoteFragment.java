@@ -17,10 +17,9 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.remote.IRemote;
-import android.taobao.atlas.remote.IRemoteDelegator;
+import android.taobao.atlas.remote.IRemoteContext;
 import android.taobao.atlas.remote.IRemoteTransactor;
 import android.taobao.atlas.remote.RemoteActivityManager;
-import android.taobao.atlas.remote.view.RemoteView;
 import android.taobao.atlas.runtime.BundleUtil;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -53,7 +52,7 @@ import java.lang.reflect.Method;
         }
     });
  */
-public class RemoteFragment extends Fragment implements IRemoteDelegator,IRemoteTransactor{
+public class RemoteFragment extends Fragment implements IRemoteContext,IRemoteTransactor{
 
     public interface OnRemoteFragmentStateListener{
         void onFragmentCreated(RemoteFragment fragment);
@@ -130,6 +129,11 @@ public class RemoteFragment extends Fragment implements IRemoteDelegator,IRemote
     @Override
     public Bundle call(String commandName, Bundle args, IResponse callback) {
         return ((IRemote)targetFragment).call(commandName,args,callback);
+    }
+
+    @Override
+    public <T> T getRemoteInterface(Class<T> interfaceClass) {
+        return ((IRemote)targetFragment).getRemoteInterface(interfaceClass);
     }
 
     private FragmentHostCallback getFragmentHostCallback(FragmentHostCallback callback){

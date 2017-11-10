@@ -7,7 +7,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.remote.IRemote;
-import android.taobao.atlas.remote.IRemoteDelegator;
+import android.taobao.atlas.remote.IRemoteContext;
 import android.taobao.atlas.remote.IRemoteTransactor;
 import android.taobao.atlas.remote.RemoteActivityManager;
 import android.taobao.atlas.runtime.BundleUtil;
@@ -34,7 +34,7 @@ import android.text.TextUtils;
     });
  */
 
-public class RemoteTransactor implements IRemoteDelegator,IRemoteTransactor{
+public class RemoteTransactor implements IRemoteContext,IRemoteTransactor{
 
     public interface OnRemoteTransactorStateListener{
         void onTransactorCreated(RemoteTransactor remoteTransactor);
@@ -108,5 +108,10 @@ public class RemoteTransactor implements IRemoteDelegator,IRemoteTransactor{
     @Override
     public Bundle call(String commandName, Bundle args, IResponse callback) {
         return targetTransactor.call(commandName,args,callback);
+    }
+
+    @Override
+    public <T> T getRemoteInterface(Class<T> interfaceClass) {
+        return targetTransactor.getRemoteInterface(interfaceClass);
     }
 }
