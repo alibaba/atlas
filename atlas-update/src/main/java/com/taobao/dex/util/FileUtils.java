@@ -118,4 +118,42 @@ public final class FileUtils {
                 || fileName.endsWith(".jar")
                 || fileName.endsWith(".apk");
     }
+
+    public static File makeNewFile(String filePath) throws IOException {
+        File file = new File(filePath);
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                throw new IOException("file can,t be a directory");
+            }
+            file.delete();
+        }
+        file.getParentFile().mkdirs();
+        file.createNewFile();
+        return file;
+    }
+
+    public static File makeNewDir(String dirPath) throws IOException {
+        File dir = new File(dirPath);
+        if (dir.exists()) {
+            if (dir.isFile()) {
+                throw new IOException("makeNewDir ,but find a file !");
+            }
+            deleteDir(dir);
+        }
+        dir.mkdirs();
+        return dir;
+    }
+
+    public static boolean deleteDir(File dir) {
+        if (dir.isDirectory()) {
+            String[] children = dir.list();
+            for (int i = 0; i < children.length; i++) {
+                boolean success = deleteDir(new File(dir, children[i]));
+                if (!success) {
+                    return false;
+                }
+            }
+        }
+        return dir.delete();
+    }
 }
