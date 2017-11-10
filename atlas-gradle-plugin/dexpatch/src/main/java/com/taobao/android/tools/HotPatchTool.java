@@ -16,6 +16,8 @@ import java.util.Set;
  */
 
 public class HotPatchTool extends DexPatchTool {
+
+
         private Set<String>hotClassList = new HashSet<>();
 
         @Override
@@ -27,15 +29,29 @@ public class HotPatchTool extends DexPatchTool {
             if (input instanceof HotPatchInput){
                 readClassFile(((HotPatchInput) input).hotClassListFile);
             }
+            boolean hasDexPatch = false;
+            boolean hasHotDexPatch = false;
             // 比较主bundle的dex
             if (!tmpDexFile.exists()) {
                 tmpDexFile.mkdirs();
+            }
+            String bundleName = null;
+            if (mainDex){
+                bundleName = "com.taobao.maindex";
+            }else {
+                bundleName = baseApkUnzipFolder.getName().substring(3).replace("_", ".");
             }
             List<File> baseDexFiles = getFolderDexFiles(baseApkUnzipFolder);
             List<File> newDexFiles = getFolderDexFiles(newApkUnzipFolder);
             File dexDiffFile = new File(tmpDexFile, "diff.dex");
             File hotDiffDexFile = new File(dexDiffFile.getParentFile(),"hot-diff.dex");
-            File hotdestDexFile = new File(destDex.getParentFile(),"hot.dex");
+            File hotdestDexFile = null;
+            if (mainDex) {
+                hotdestDexFile = new File(destDex.getParentFile().getParentFile(), "hot.dex");
+            }else {
+                hotdestDexFile = new File(destDex.getParentFile(), "hot.dex");
+
+            }
             PatchDexTool dexTool = new HotDexPatchDexTool(baseDexFiles,
                     newDexFiles,
                     DEFAULT_API_LEVEL,
@@ -44,19 +60,25 @@ public class HotPatchTool extends DexPatchTool {
             dexTool.setPatchClassList(hotClassList);
             DexDiffInfo dexDiffInfo = dexTool.createPatchDex(dexDiffFile);
             if (dexDiffFile.exists()) {
+                hasDexPatch = true;
                 BundleDiffResult bundleDiffResult = new BundleDiffResult();
-                if (mainDex) {
-                    bundleDiffResult.setBundleName("com.taobao.maindex");
-                } else {
-                    bundleDiffResult.setBundleName(baseApkUnzipFolder.getName().substring(3).replace("_", "."));
-                }
+                bundleDiffResult.setBundleName(bundleName);
                 bundleDiffResults.add(bundleDiffResult);
                 diffPatchInfos.add(bundleDiffResult);
                 dexDiffInfo.save(bundleDiffResult);
                 FileUtils.copyFile(dexDiffFile, destDex);
             }
             if (hotDiffDexFile.exists()){
+                hasHotDexPatch = true;
                 FileUtils.copyFile(hotDiffDexFile, hotdestDexFile);
+
+            }
+            if (hasDexPatch&&!hasHotDexPatch){
+                bundleTypes.put(bundleName,1);
+            }else if (hasDexPatch && hasHotDexPatch){
+                bundleTypes.put(bundleName,3);
+            }else if (!hasDexPatch && hasDexPatch){
+                bundleTypes.put(bundleName,2);
 
             }
             FileUtils.deleteDirectory(tmpDexFile);

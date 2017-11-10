@@ -206,6 +206,12 @@ public class DexPatchTool extends TPatchTool {
         if (!tmpDexFile.exists()) {
             tmpDexFile.mkdirs();
         }
+        String bundleName = null;
+        if (mainDex) {
+            bundleName = "com.taobao.maindex";
+        } else {
+            bundleName = baseApkUnzipFolder.getName().substring(3).replace("_", ".");
+        }
         List<File> baseDexFiles = getFolderDexFiles(baseApkUnzipFolder);
         List<File> newDexFiles = getFolderDexFiles(newApkUnzipFolder);
         File dexDiffFile = new File(tmpDexFile, "diff.dex");
@@ -218,16 +224,13 @@ public class DexPatchTool extends TPatchTool {
         if (dexDiffFile.exists()) {
             dexs.add(dexDiffFile);
             BundleDiffResult bundleDiffResult = new BundleDiffResult();
-            if (mainDex) {
-                bundleDiffResult.setBundleName("com.taobao.maindex");
-            } else {
-                bundleDiffResult.setBundleName(baseApkUnzipFolder.getName().substring(3).replace("_", "."));
-            }
+            bundleDiffResult.setBundleName(bundleName);
             bundleDiffResults.add(bundleDiffResult);
             diffPatchInfos.add(bundleDiffResult);
             dexDiffInfo.save(bundleDiffResult);
         }
         if (dexs.size() > 0) {
+            bundleTypes.put(bundleName,1);
             FileUtils.copyFile(dexs.get(0), destDex);
         }
         FileUtils.deleteDirectory(tmpDexFile);

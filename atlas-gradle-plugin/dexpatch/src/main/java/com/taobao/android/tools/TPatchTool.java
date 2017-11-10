@@ -270,6 +270,9 @@ public class TPatchTool extends AbstractTool {
 
     public ApkDiff apkDiff = new ApkDiff();
 
+
+    public Map<String,Integer> bundleTypes = new HashMap<>();
+
     public ApkDiff apkPatchInfos = new ApkDiff();
 
     public List<BundleDiffResult> bundleDiffResults = Collections.synchronizedList(new ArrayList<BundleDiffResult>());
@@ -645,6 +648,7 @@ public class TPatchTool extends AbstractTool {
                         patchBundleInfo.setName(((TpatchInput)input).mainBundleName);
                     patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
                     patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
+                    patchBundleInfo.setBuildPatchType(bundleTypes.get(artifactBundleInfo.getPkgName()));
                     patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());
                     patchBundleInfo.setArtifactId(artifactBundleInfo.getArtifactId());
                     patchBundleInfo.setPkgName(artifactBundleInfo.getPkgName());
@@ -661,6 +665,7 @@ public class TPatchTool extends AbstractTool {
                 patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
                 patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
                 patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
+                patchBundleInfo.setBuildPatchType(bundleTypes.get(artifactBundleInfo.getPkgName()));
                 patchBundleInfo.setName(artifactBundleInfo.getPkgName());
                 if (!modifyBundles.contains(artifactBundleInfo.getPkgName())){
                     patchBundleInfo.setInherit(true);
@@ -675,6 +680,7 @@ public class TPatchTool extends AbstractTool {
                 PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
                 patchBundleInfo.setNewBundle(false);
                 patchBundleInfo.setMainBundle(false);
+                patchBundleInfo.setBuildPatchType(bundleTypes.get(artifactBundleInfo.getPkgName()));
                 patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
                 patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
                 patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
