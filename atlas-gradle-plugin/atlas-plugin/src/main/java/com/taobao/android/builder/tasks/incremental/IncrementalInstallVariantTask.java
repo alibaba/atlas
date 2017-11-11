@@ -33,7 +33,7 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
 
     private static final String PATCH_NAME = "patch.zip";
 
-    private static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "files/debug_storage/";
+    /*private*/ static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "files/debug_storage/";
 
     @Override
     protected void install(String projectName, String variantName, String appPackageName, IDevice device,

@@ -14,6 +14,9 @@ import org.gradle.api.Task;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.ParallelizableTask;
 
+import static com.taobao.android.builder.tasks.incremental.BaseIncrementalInstallVariantTask.PATCH_INSTALL_DIRECTORY_PREFIX;
+import static com.taobao.android.builder.tasks.incremental.IncrementalInstallVariantTask.PATCH_INSTALL_DIRECTORY_SUFFIX;
+
 /**
  * @author chenhjohn
  * @date 2017/6/21
@@ -21,9 +24,6 @@ import org.gradle.api.tasks.ParallelizableTask;
 
 @ParallelizableTask
 public class UninstallPatchTask extends DeviceTask {
-    public static final String PATCH_INSTALL_DIRECTORY_PREFIX = "/sdcard/Android/data/";
-
-    private static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "files/debug_storage/";
 
     public UninstallPatchTask() {
         this.getOutputs().upToDateWhen(new Spec<Task>() {
@@ -39,7 +39,6 @@ public class UninstallPatchTask extends DeviceTask {
     protected void doFullTaskAction(IDevice device) throws Exception {
         runCommand(device, "rm -rf " + Joiner.on('/')
             .join(PATCH_INSTALL_DIRECTORY_PREFIX, getAppPackageName(), PATCH_INSTALL_DIRECTORY_SUFFIX));
-
     }
 
     @Override
@@ -64,7 +63,5 @@ public class UninstallPatchTask extends DeviceTask {
         public Class<UninstallPatchTask> getType() {
             return UninstallPatchTask.class;
         }
-
     }
-
 }
