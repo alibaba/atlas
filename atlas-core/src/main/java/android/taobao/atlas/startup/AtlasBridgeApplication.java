@@ -233,6 +233,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -359,8 +360,12 @@ public class AtlasBridgeApplication extends Application{
             try {
                 Method method = mBridgeApplicationDelegate.getClass().getDeclaredMethod("onCreate");
                 method.invoke(mBridgeApplicationDelegate);
-            } catch (Throwable e) {
-                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e.getTargetException());
+            } catch(NoSuchMethodException e){
+                throw new RuntimeException(e);
+            } catch(IllegalAccessException e){
+                throw new RuntimeException(e);
             }
         }
     }

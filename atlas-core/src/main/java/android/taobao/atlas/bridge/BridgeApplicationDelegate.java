@@ -413,7 +413,11 @@ public class BridgeApplicationDelegate {
                 AtlasHacks.ActivityThread$AppBindData_providers.set(mBoundApplication,null);
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            if(e instanceof InvocationTargetException){
+                throw new RuntimeException(((InvocationTargetException)e).getTargetException());
+            }else {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -482,7 +486,11 @@ public class BridgeApplicationDelegate {
             }
 
         }catch(Throwable e){
-            throw new RuntimeException(e);
+            if(e instanceof InvocationTargetException){
+                throw new RuntimeException(((InvocationTargetException)e).getTargetException());
+            }else {
+                throw new RuntimeException(e);
+            }
         }
 
         if(mRealApplication instanceof IMonitor){

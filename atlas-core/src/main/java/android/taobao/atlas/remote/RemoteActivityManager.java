@@ -1,6 +1,7 @@
 package android.taobao.atlas.remote;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -23,6 +24,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by guanjie on 2017/10/13.
@@ -32,7 +34,7 @@ public class RemoteActivityManager {
 
     private static Hack.HackedMethod ActivityThread_startActivityNow;
     private static Hack.HackedClass  NonConfigurationInstances;
-
+    private final static HashMap<Activity,RemoteActivityManager> sActivityManager = new HashMap();
     static{
         try {
             NonConfigurationInstances = Hack.into("android.app.Activity$NonConfigurationInstances");
@@ -43,18 +45,59 @@ public class RemoteActivityManager {
         }
     }
 
-    public static RemoteActivityManager obtain(Activity parent){
-        return new RemoteActivityManager(parent);
+    public static synchronized RemoteActivityManager obtain(Activity parent){
+        if(parent.isFinishing()){
+            throw new IllegalStateException("this activity has been finished : "+parent.toString());
+        }
+        if(sActivityManager.get(parent)==null){
+            RemoteActivityManager activityManager = new RemoteActivityManager(parent);
+            sActivityManager.put(parent,activityManager);
+        }
+        return sActivityManager.get(parent);
     }
 
     private RemoteActivityManager(Activity parent){
         mParent = parent;
+        RuntimeVariables.androidApplication.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+
+            }
+            @Override
+            public void onActivityStarted(Activity activity) {
+
+            }
+            @Override
+            public void onActivityResumed(Activity activity) {
+
+            }
+            @Override
+            public void onActivityPaused(Activity activity) {
+
+            }
+            @Override
+            public void onActivityStopped(Activity activity) {
+
+            }
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+            }
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+                if(activity == mParent) {
+                    onParentActivityDestroyed();
+                }
+            }
+        });
     }
 
     private HashMap<String,EmbeddedActivityRecord> mActivityRecords = new HashMap<>();
     private Activity mParent;
 
     public synchronized Activity getRemoteHost(IRemoteContext delegator) throws Exception{
+        if(mParent.isFinishing()){
+            throw new IllegalStateException("this activity has been finished : "+mParent.toString());
+        }
         String bundleName = delegator.getTargetBundle();
         if(!mActivityRecords.containsKey(bundleName)){
             EmbeddedActivityRecord record = startEmbeddedActivity(bundleName);
@@ -81,6 +124,13 @@ public class RemoteActivityManager {
         ((EmbeddedActivity)activityRecord.activity).parentActivityRef = new WeakReference<Activity>(mParent);
         activityRecord.activityInfo = info;
         return activityRecord;
+    }
+
+    public void onParentActivityDestroyed(){
+        for (Map.Entry<String, EmbeddedActivityRecord> entry : mActivityRecords.entrySet()) {
+            Activity activity = entry.getValue().activity;
+            activity.finish();
+        }
     }
 
     private class EmbeddedActivityRecord extends Binder {
@@ -150,7 +200,6 @@ public class RemoteActivityManager {
                 ((FragmentActivity)parentActivityRef.get()).startActivityFromFragment(fragment, intent, requestCode, options);
             }
         }
-
 
 
     }
