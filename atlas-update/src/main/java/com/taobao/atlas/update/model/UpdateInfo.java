@@ -74,8 +74,6 @@ public class UpdateInfo implements Serializable {
 
         public long dexpatchVersion = -1;
 
-        public long hotPatchVersion = -1;
-
         public boolean reset = false;
 
         public static Item makeCopy(Item origin) {
@@ -87,7 +85,6 @@ public class UpdateInfo implements Serializable {
             item.inherit = origin.inherit;
             item.patchType = origin.patchType;
             item.dexpatchVersion = origin.dexpatchVersion;
-            item.hotPatchVersion = origin.hotPatchVersion;
             item.reset = origin.reset;
             if (null != origin.dependency) {
                 List<String> copyDependency = new ArrayList<>(origin.dependency.size());

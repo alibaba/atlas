@@ -42,10 +42,10 @@ public class DexPatchUpdater {
             HashMap<String, Pair<Long, InputStream>> updateBundles = new HashMap<>(updateList.size());
             for (UpdateInfo.Item bundle : updateList) {
                 String entryName = "com.taobao.maindex".equals(bundle.name)
-                    ? "hotfix.dex"
-                    : String.format("%s%s/hotfix.dex", "lib", bundle.name.replace(".", "_"));
+                    ? "hot.dex"
+                    : String.format("%s%s/hot.dex", "lib", bundle.name.replace(".", "_"));
                 InputStream entryIn = patchZip.getInputStream(patchZip.getEntry(entryName));
-                updateBundles.put(bundle.name, new Pair<>(bundle.hotPatchVersion, entryIn));
+                updateBundles.put(bundle.name, new Pair<>(bundle.dexpatchVersion, entryIn));
             }
             AtlasHotPatchManager.getInstance().installHotFixPatch(updateVersion, updateBundles);
         } catch (IOException e) {
@@ -60,7 +60,7 @@ public class DexPatchUpdater {
             }
             for (UpdateInfo.Item item : updateList) {
                 boolean success = hotPatchInstall.containsKey(item.name);
-                monitor.install(success, item.name, item.hotPatchVersion, "");
+                monitor.install(success, item.name, item.dexpatchVersion, "");
             }
         }
     }
@@ -143,15 +143,7 @@ public class DexPatchUpdater {
                 continue;
             }
             Long version = installMap.get(item.name);
-
-            if (item.hotPatchVersion == -1) {
-                //本地已经安装过，并且处于未回滚状态
-                if (null != version && version != -1) {
-                    resultList.add(Item.makeCopy(item));
-                }
-                continue;
-            }
-            if (null == version || item.hotPatchVersion > version) {
+            if (null == version || item.dexpatchVersion > version) {
                 resultList.add(Item.makeCopy(item));
             }
         }

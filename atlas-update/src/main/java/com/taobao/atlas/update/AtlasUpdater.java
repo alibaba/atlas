@@ -89,7 +89,7 @@ public class AtlasUpdater {
             );
             DexPatchUpdater.installHotPatch(updateInfo.updateVersion, needPatchHotBundles, patchFile, hotMonitor);
         }
-        updateInfo.updateBundles = DexPatchUpdater.filterNeedHotPatchList(
+        updateInfo.updateBundles = DexPatchUpdater.filterNeedColdPatchList(
             DexPatchUpdater.dividePatchInfo(updateInfo.updateBundles, false)
         );
         DexPatchUpdater.installColdPatch(updateInfo, patchFile, coldMonitor);
