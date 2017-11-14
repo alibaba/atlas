@@ -37,9 +37,10 @@ public class UpdateInfo implements Serializable {
      * 更新的模块信息
      */
     public static class Item implements Serializable {
-        public static final int PATCH_DEX_COLD = 0;
-        public static final int PATCH_DEX_HOT = 1;
-        public static final int PATCH_DEX_C_AND_H = 2;
+        public static final int PATCH_DYNAMIC_ = 0;
+        public static final int PATCH_DEX_COLD = 1;
+        public static final int PATCH_DEX_HOT = 2;
+        public static final int PATCH_DEX_C_AND_H = 3;
 
         /**
          * 是不是主dex
@@ -74,8 +75,6 @@ public class UpdateInfo implements Serializable {
 
         public long dexpatchVersion = -1;
 
-        public long hotPatchVersion = -1;
-
         public boolean reset = false;
 
         public static Item makeCopy(Item origin) {
@@ -87,7 +86,6 @@ public class UpdateInfo implements Serializable {
             item.inherit = origin.inherit;
             item.patchType = origin.patchType;
             item.dexpatchVersion = origin.dexpatchVersion;
-            item.hotPatchVersion = origin.hotPatchVersion;
             item.reset = origin.reset;
             if (null != origin.dependency) {
                 List<String> copyDependency = new ArrayList<>(origin.dependency.size());
