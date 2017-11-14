@@ -266,7 +266,14 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
         lines.add("private String version = \"" + injectParam.version + "\";");
         lines.add("public String getVersion() {return version;}");
-        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
+        String escapeExprSpecialWord = escapeExprSpecialWord(injectParam.bundleInfo);
+        if (injectParam.bundleInfo.length() >= 65535) {
+            getLogger().warn("FrameworkProperties bundleInfo String more than 65535 long");
+
+            return;
+        }
+
+        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord + "\";");
         //lines.add("public static String bunleInfo = \"\";");
         if (StringUtils.isNotEmpty(injectParam.autoStartBundles)) {
             lines.add("public static String autoStartBundles = \"" + injectParam.autoStartBundles + "\";");
@@ -294,8 +301,9 @@ public class GenerateAtlasSourceTask extends BaseTask {
             output.put("outApp", injectParam.outApp);
             output.put("unit_tag", injectParam.unit_tag);
 
-            FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),
-                                     "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
+            FileUtils.write(
+                new File(appVariantContext.getProject().getBuildDir(), "outputs/atlasFrameworkProperties.json"),
+                JSON.toJSONString(output, true));
         } catch (Exception e) {
             throw new GradleException(e.getMessage(), e);
         }
