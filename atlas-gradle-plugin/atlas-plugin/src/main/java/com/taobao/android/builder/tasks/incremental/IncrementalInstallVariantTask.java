@@ -81,7 +81,7 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
             boolean success = false;
             for (Integer processId : processPids) {
                 /*device.executeShellCommand*/
-                success = runCommand(device, "run-as " + appPackageName + " kill -9 " + processId);
+                success |= runCommand(device, "run-as " + appPackageName + " kill -9 " + processId);
                 if (!success) {
                     getLogger().lifecycle("实验特性界面恢复重启适配性问题，使用强制杀死进程，请联系歩川（步有个点，歩），告知机型");
                     runCommand(device, "am force-stop " + appPackageName);
