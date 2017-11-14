@@ -31,7 +31,15 @@ public class RemoteFactory {
 
         final String key = intent.getComponent()!=null ? intent.getComponent().getClassName() :
                 intent.getAction();
-        final String bundleName = AtlasBundleInfoManager.instance().getBundleForRemoteTransactor(key);
+        String tempBundleName = null;
+        if(remoteClass == RemoteView.class){
+            tempBundleName = AtlasBundleInfoManager.instance().getBundleForRemoteView(key);
+        }else if(remoteClass == RemoteTransactor.class){
+            tempBundleName = AtlasBundleInfoManager.instance().getBundleForRemoteTransactor(key);
+        }else if(remoteClass == RemoteFragment.class){
+            tempBundleName = AtlasBundleInfoManager.instance().getBundleForRemoteFragment(key);
+        }
+        final String bundleName = tempBundleName;
         if(TextUtils.isEmpty(bundleName)){
             listener.onFailed("no match remote-item with intent : "+intent);
         }
@@ -41,11 +49,14 @@ public class RemoteFactory {
                 //success
                 try {
                     if(remoteClass == RemoteView.class){
-
+                        RemoteView view = RemoteView.createRemoteView(activity,key,bundleName);
+                        listener.onRemotePrepared(view);
                     }else if(remoteClass == RemoteTransactor.class){
-
+                        RemoteTransactor transactor = RemoteTransactor.crateRemoteTransactor(activity,key,bundleName);
+                        listener.onRemotePrepared(transactor);
                     }else if(remoteClass == RemoteFragment.class){
-
+                        RemoteFragment fragment = RemoteFragment.createRemoteFragment(activity,key,bundleName);
+                        listener.onRemotePrepared(fragment);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

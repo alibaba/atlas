@@ -38,65 +38,20 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-/**
- * Created by guanjie on 2017/10/12.
-    RemoteFragment.RemoteFragmentFactory.createRemoteFragment(activity, intent, new RemoteFragment.OnRemoteFragmentStateListener() {
-        @Override
-        public void onFragmentCreated(RemoteFragment fragment) {
-            FragmentTransaction transaction  = getSupportFragmentManager().beginTransaction();
-            transaction.add(containerViewId,fragment).commit();
-        }
-        @Override
-        public void onFailed(String errorInfo) {
 
-        }
-    });
- */
 public class RemoteFragment extends Fragment implements IRemoteContext,IRemoteTransactor{
 
-    public interface OnRemoteFragmentStateListener{
-        void onFragmentCreated(RemoteFragment fragment);
-
-        void onFailed(String errorInfo);
-    }
-
-    public static class RemoteFragmentFactory{
-
-        public static void createRemoteFragment(final Activity activity, Intent intent, final OnRemoteFragmentStateListener listener){
-            final String fragmentKey = intent.getComponent()!=null ? intent.getComponent().getClassName() :
-                    intent.getAction();
-            final String bundleName = AtlasBundleInfoManager.instance().getBundleForRemoteFragment(fragmentKey);
-            if(TextUtils.isEmpty(bundleName)){
-                listener.onFailed("no such remote-fragment: "+intent);
-            }
-            BundleUtil.checkBundleStateAsync(bundleName, new Runnable() {
-                @Override
-                public void run() {
-                    //success
-                    try {
-                        RemoteFragment remoteFragment = new RemoteFragment();
-                        remoteFragment.remoteActivity = RemoteActivityManager.obtain(activity).getRemoteHost(remoteFragment);
-                        final BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(bundleName);
-                        String fragmentClazzName = bi.remoteFragments.get(fragmentKey);
-                        remoteFragment.targetFragment = (Fragment)remoteFragment.remoteActivity.getClassLoader().loadClass(fragmentClazzName).newInstance();
-                        if(!(remoteFragment.targetFragment instanceof IRemote)){
-                            throw new RuntimeException("Fragment for remote use must implements IRemote");
-                        }
-                        remoteFragment.targetBundleName = bundleName;
-                        listener.onFragmentCreated(remoteFragment);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        listener.onFailed(e.getCause().toString());
-                    }
-                }
-            }, new Runnable() {
-                @Override
-                public void run() {
-                    //fail
-                    listener.onFailed("install bundle failed: "+bundleName);
-                }
-            });
+    public static RemoteFragment createRemoteFragment(Activity activity, String key,String bundleName) throws Exception{
+        RemoteFragment remoteFragment = new RemoteFragment();
+        remoteFragment.remoteActivity = RemoteActivityManager.obtain(activity).getRemoteHost(remoteFragment);
+        final BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(bundleName);
+        String fragmentClazzName = bi.remoteFragments.get(key);
+        remoteFragment.targetFragment = (Fragment)remoteFragment.remoteActivity.getClassLoader().loadClass(fragmentClazzName).newInstance();
+        if(!(remoteFragment.targetFragment instanceof IRemote)){
+            throw new RuntimeException("Fragment for remote use must implements IRemote");
         }
+        remoteFragment.targetBundleName = bundleName;
+        return remoteFragment;
     }
 
     private Fragment targetFragment;
