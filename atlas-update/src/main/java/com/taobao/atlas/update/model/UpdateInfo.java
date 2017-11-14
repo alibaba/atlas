@@ -37,9 +37,10 @@ public class UpdateInfo implements Serializable {
      * 更新的模块信息
      */
     public static class Item implements Serializable {
-        public static final int PATCH_DEX_COLD = 0;
-        public static final int PATCH_DEX_HOT = 1;
-        public static final int PATCH_DEX_C_AND_H = 2;
+        public static final int PATCH_DYNAMIC_ = 0;
+        public static final int PATCH_DEX_COLD = 1;
+        public static final int PATCH_DEX_HOT = 2;
+        public static final int PATCH_DEX_C_AND_H = 3;
 
         /**
          * 是不是主dex
