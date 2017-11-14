@@ -113,21 +113,7 @@ public class DexPatchUpdater {
         }
     }
 
-    public static List<Item> dividePatchInfo(List<Item> allItem, boolean hot) {
-        List<UpdateInfo.Item> list = new ArrayList<>();
-        if (null == allItem) {
-            return list;
-        }
-        int type = hot ? Item.PATCH_DEX_HOT : Item.PATCH_DEX_COLD;
-        for (UpdateInfo.Item item : allItem) {
-            if (item.patchType == type || item.patchType == Item.PATCH_DEX_C_AND_H) {
-                Item hotItem = Item.makeCopy(item);
-                hotItem.patchType = type;
-                list.add(hotItem);
-            }
-        }
-        return list;
-    }
+
 
     /**
      * @return hotPatch的数据
