@@ -126,4 +126,6 @@ public abstract class PatchDexTool {
         this.hotClassList = hotClassList;
     }
 
+    public abstract void setExculdeClasses(Set<String>classes);
+
 }

@@ -261,6 +261,21 @@ public class PatchConfig {
 
     private File hotClassListFile;
 
+    public Set<String> getExcludeClasses() {
+        if (excludeClasses.size() > 0){
+            return excludeClasses;
+        }else {
+            return Sets.newHashSet("Landroid/taobao/atlas/framework/FrameworkProperties;","Landroid/taobao/atlas/bundleInfo/AtlasBundleInfoGenerator;");
+        }
+    }
+
+    public void setExcludeClasses(Set<String> excludeClasses) {
+        this.excludeClasses = excludeClasses;
+    }
+
+    //排除的class列表
+    private Set<String>excludeClasses = new HashSet<>();
+
     private Boolean devlopMode = false;
 
     private boolean onlyIncrementInMain = true;

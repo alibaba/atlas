@@ -445,6 +445,16 @@ public class DexDiffer {
     private int apiLevel;
     private Map<String, org.jf.dexlib2.iface.ClassDef>lastBundleClassMap = new HashMap<String, org.jf.dexlib2.iface.ClassDef>();
     private DexDiffInfo dexDiffInfo = new DexDiffInfo();
+
+    public Set<String> getExludeClasses() {
+        return exludeClasses;
+    }
+
+    public void setExludeClasses(Set<String> exludeClasses) {
+        this.exludeClasses = exludeClasses;
+    }
+
+    private Set<String>exludeClasses = new HashSet<>();
     //dex filter
     private DexDiffFilter dexDiffFilter;
     //
@@ -506,7 +516,7 @@ public class DexDiffer {
                 }
             }
             String className = getDalvikClassName(newClassDef.getType());
-            if (!tpatch&&newClassDef.getType().equals("Landroid/taobao/atlas/framework/FrameworkProperties;")){
+            if (!tpatch&&exludeClasses.contains(newClassDef.getType())){
                 continue;
             }
             DexBackedClassDef baseClassDef = baseClassDefMap.get(className);
