@@ -58,6 +58,9 @@ public class DexPatchDiffTask extends BaseTask {
                             outDex.getParentFile().mkdirs();
                         }
                         DexDiffInfo dexDiffInfo = tPatchDexTool.createPatchDex(outDex);
+                        for (String className:dexDiffInfo.getClassDiffInfoMap().keySet()){
+                            System.out.println("modify class:"+className);
+                        }
 
                     } catch (IOException e) {
                         e.printStackTrace();

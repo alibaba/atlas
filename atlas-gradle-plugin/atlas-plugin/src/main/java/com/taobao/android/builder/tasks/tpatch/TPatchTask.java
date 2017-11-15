@@ -356,6 +356,8 @@ public class TPatchTask extends BaseTask {
             if (tpatchInput instanceof HotPatchInput){
                 ((HotPatchInput) tpatchInput).hotClassListFile = patchContext.hotClassListFile;
                 ((HotPatchInput) tpatchInput).patchType = PatchType.HOTFIX;
+                ((HotPatchInput)tpatchInput).excludeClasses = patchContext.excludeClasses;
+
             }else {
                 tpatchInput.patchType = PatchType.DEXPATCH;
                 ((DexPatchInput)tpatchInput).excludeClasses = patchContext.excludeClasses;
