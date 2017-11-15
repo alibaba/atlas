@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.taobao.android.differ.dex.BundleDiffResult;
+import com.taobao.android.inputs.DexPatchInput;
 import com.taobao.android.inputs.TpatchInput;
 import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.object.DexDiffInfo;
@@ -220,6 +221,8 @@ public class DexPatchTool extends TPatchTool {
                 DEFAULT_API_LEVEL,
                 null,
                 mainDex);
+        dexTool.setExculdeClasses(((DexPatchInput)input).excludeClasses);
+
         DexDiffInfo dexDiffInfo = dexTool.createPatchDex(dexDiffFile);
         if (dexDiffFile.exists()) {
             dexs.add(dexDiffFile);

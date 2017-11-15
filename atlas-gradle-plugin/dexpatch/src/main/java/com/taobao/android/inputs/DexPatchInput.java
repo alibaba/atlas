@@ -1,5 +1,7 @@
 package com.taobao.android.inputs;
 
+import java.util.Set;
+
 /**
  * @author lilong
  * @create 2017-11-02 下午11:57
@@ -7,5 +9,5 @@ package com.taobao.android.inputs;
 
 public class DexPatchInput extends TpatchInput {
 
-
+    public Set<String>excludeClasses;
 }

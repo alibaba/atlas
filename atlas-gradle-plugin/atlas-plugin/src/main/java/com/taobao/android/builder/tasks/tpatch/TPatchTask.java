@@ -352,12 +352,13 @@ public class TPatchTask extends BaseTask {
         if (StringUtils.isNotBlank(patchContext.excludeFiles)) {
             tpatchInput.notIncludeFiles = (patchContext.excludeFiles.split(","));
         }
-        if (apkBO.getVersionName().equals(newApkBO)){
+        if (apkBO.getVersionName().equals(newApkBO.getVersionName())){
             if (tpatchInput instanceof HotPatchInput){
                 ((HotPatchInput) tpatchInput).hotClassListFile = patchContext.hotClassListFile;
                 ((HotPatchInput) tpatchInput).patchType = PatchType.HOTFIX;
             }else {
                 tpatchInput.patchType = PatchType.DEXPATCH;
+                ((DexPatchInput)tpatchInput).excludeClasses = patchContext.excludeClasses;
             }
             tpatchInput.mainBundleName = "com.taobao.maindex";
         }else {
@@ -548,6 +549,8 @@ public class TPatchTask extends BaseTask {
                         .isOnlyIncrementInAwb();
                     tPatchContext.diffMainDex = tBuildType.getPatchConfig()
                         .isOnlyIncrementInMain();
+                    tPatchContext.excludeClasses = tBuildType.getPatchConfig()
+                            .getExcludeClasses();
                     tPatchContext.appSignName = tBuildType.getPatchConfig().getAppSignName();
 
                     tPatchContext.patchVersions = tBuildType.getPatchConfig().getPatchVersions();
@@ -588,6 +591,9 @@ public class TPatchTask extends BaseTask {
          * Decide whether to diff the bundle's dex file
          */
         public boolean diffBundleDex;
+
+
+        public Set<String>excludeClasses;
 
         public boolean diffMainDex;
 

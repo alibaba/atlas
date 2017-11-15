@@ -18,66 +18,20 @@ import android.widget.FrameLayout;
 
 import java.lang.reflect.Constructor;
 
-/**
- * Created by guanjie on 2017/10/23.
- *
-    RemoteView.RemoteViewFactory.createRemoteView(activity, intent, new RemoteView.OnRemoteViewStateListener() {
-        @Override
-        public void onViewCreated(RemoteView remoteView) {
-            findViewById(R.id.container).addView(remoteView);
-        }
-        @Override
-        public void onFailed(String errorInfo) {
-
-        }
-    });
- */
-
 public class RemoteView extends FrameLayout implements IRemoteTransactor,IRemoteContext {
 
-    public interface OnRemoteViewStateListener{
-        void onViewCreated(RemoteView remoteView);
-
-        void onFailed(String errorInfo);
-    }
-
-    public static class RemoteViewFactory{
-        public static void createRemoteView(final Activity activity, Intent intent, final OnRemoteViewStateListener listener){
-            final String key = intent.getComponent()!=null ? intent.getComponent().getClassName() :
-                    intent.getAction();
-            final String bundleName = AtlasBundleInfoManager.instance().getBundleForRemoteView(key);
-            if(TextUtils.isEmpty(bundleName)){
-                listener.onFailed("no such remote-view: "+intent);
-            }
-            BundleUtil.checkBundleStateAsync(bundleName, new Runnable() {
-                @Override
-                public void run() {
-                    //success
-                    try {
-                        RemoteView remoteView = new RemoteView(activity);
-                        remoteView.remoteActivity = RemoteActivityManager.obtain(activity).getRemoteHost(remoteView);
-                        final BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(bundleName);
-                        String viewClassName = bi.remoteViews.get(key);
-                        Class viewClass = remoteView.remoteActivity.getClassLoader().loadClass(viewClassName);
-                        Constructor cons = viewClass.getDeclaredConstructor(Context.class);
-                        cons.setAccessible(true);
-                        remoteView.targetView = (IRemote) cons.newInstance(remoteView.remoteActivity);
-                        remoteView.targetBundleName = bundleName;
-                        remoteView.addView((View)remoteView.targetView);
-                        listener.onViewCreated(remoteView);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        listener.onFailed(e.getCause().toString());
-                    }
-                }
-            }, new Runnable() {
-                @Override
-                public void run() {
-                    //fail
-                    listener.onFailed("install bundle failed: "+bundleName);
-                }
-            });
-        }
+    public static RemoteView createRemoteView(Activity activity,String remoteViewKey,String bundleName) throws Exception{
+        RemoteView remoteView = new RemoteView(activity);
+        remoteView.remoteActivity = RemoteActivityManager.obtain(activity).getRemoteHost(remoteView);
+        final BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(bundleName);
+        String viewClassName = bi.remoteViews.get(remoteViewKey);
+        Class viewClass = remoteView.remoteActivity.getClassLoader().loadClass(viewClassName);
+        Constructor cons = viewClass.getDeclaredConstructor(Context.class);
+        cons.setAccessible(true);
+        remoteView.targetView = (IRemote) cons.newInstance(remoteView.remoteActivity);
+        remoteView.targetBundleName = bundleName;
+        remoteView.addView((View)remoteView.targetView);
+        return remoteView;
     }
 
     private IRemote targetView;

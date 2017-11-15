@@ -29,4 +29,9 @@ public class TpatchDexTool extends PatchDexTool {
             dexDiffer.setTpatch(true);
         return super.createModifyClasses();
     }
+
+    @Override
+    public void setExculdeClasses(Set<String> classes) {
+
+    }
 }
