@@ -24,6 +24,7 @@ import com.android.ide.common.res2.FileStatus;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 
@@ -84,7 +85,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
             }
             install(projectName, variantName, appPackageName, device, apkFiles);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new GradleException("Failed to install on device '" + device + "'", e);
         }
     }
 
@@ -115,7 +116,10 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
         install(builder.build(), device);
     }
 
-    protected abstract void install(String projectName, String variantName, String appPackageName, IDevice device,
+    protected abstract void install(String projectName,
+                                    String variantName,
+                                    String appPackageName,
+                                    IDevice device,
                                     Collection<File> apkFiles) throws Exception;
 
     @InputFiles
@@ -146,12 +150,13 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
                 @Override
                 public ImmutableList<File> call() {
                     ImmutableList.Builder<File> builder = ImmutableList.builder();
-                    //Awb
+                    //推送Awb
                     Collection<File> awbApkFiles = appVariantOutputContext.getAwbApkFiles();
                     if (awbApkFiles != null) {
                         builder.addAll(awbApkFiles);
                     }
-                    //Main
+                    //TODO 先根据依赖判断
+                    //推送Main
                     AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                         deviceTask.getVariantName());
                     List<String> allDependencies = atlasDependencyTree.getMainBundle().getAllDependencies();
