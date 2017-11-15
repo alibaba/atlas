@@ -32,7 +32,7 @@ import com.taobao.atlas.update.util.PatchMerger;
 
 public class DexPatchUpdater {
 
-    public static void installHotPatch(String updateVersion,List<UpdateInfo.Item> updateList, File patchFile,IDexpatchMonitor monitor) {
+    public static void installHotPatch(String updateVersion,List<UpdateInfo.Item> updateList, File patchFile,IDexpatchMonitor monitor) throws Exception{
         if (null == updateList || updateList.isEmpty()){
             return;
         }
@@ -50,6 +50,7 @@ public class DexPatchUpdater {
             AtlasHotPatchManager.getInstance().installHotFixPatch(updateVersion, updateBundles);
         } catch (IOException e) {
             e.printStackTrace();
+            throw e;
         } finally {
             IOUtil.quietClose(patchZip);
         }
@@ -65,7 +66,7 @@ public class DexPatchUpdater {
         }
     }
 
-    public static void installColdPatch(UpdateInfo updateInfo, File patchFile,IDexpatchMonitor monitor) {
+    public static void installColdPatch(UpdateInfo updateInfo, File patchFile,IDexpatchMonitor monitor) throws Exception{
         if (null == updateInfo.updateBundles || updateInfo.updateBundles.isEmpty()){
             return;
         }
@@ -95,6 +96,7 @@ public class DexPatchUpdater {
             patchInstaller.install();
         } catch (Exception e) {
             e.printStackTrace();
+            throw e;
         } finally {
             PatchCleaner.clearUpdatePath(updateInfo.workDir.getAbsolutePath());
         }
