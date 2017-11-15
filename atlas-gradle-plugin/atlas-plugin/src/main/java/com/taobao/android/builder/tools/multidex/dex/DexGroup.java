@@ -238,20 +238,20 @@ public class DexGroup {
         int ms = dex.getTableOfContents().methodIds.size;
         int fs = dex.getTableOfContents().fieldIds.size;
 
-        Set<String> newstrings = new HashSet<>(strings);
-        newstrings.addAll(dex.strings());
+//        Set<String> newstrings = new HashSet<>(strings);
+//        newstrings.addAll(dex.strings());
 
         if (fs >= MAX_FIELD_IDS) {
             throw new DexIndexOverflowException("field ID not in [0, 0xffff]: " + fs);
         }
-        if (methods + ms >= (firstDex ? MAX_METHOD_IDS_FIRSTDEX : MAX_METHOD_IDS) || fields + fs >= MAX_FIELD_IDS || newstrings.size() >= MAX_FIELD_IDS) {
+        if (methods + ms >= (firstDex ? MAX_METHOD_IDS_FIRSTDEX : MAX_METHOD_IDS) || fields + fs >= MAX_FIELD_IDS /*|| newstrings.size() >= MAX_FIELD_IDS*/) {
             return false;
         }
 
         dexs.add(dex);
         methods += ms;
         fields += fs;
-        strings = newstrings;
+//        strings = newstrings;
 
         return true;
     }
