@@ -57,6 +57,7 @@ public class HotPatchTool extends DexPatchTool {
                     DEFAULT_API_LEVEL,
                     null,
                     mainDex);
+            dexTool.setExculdeClasses(((HotPatchInput)input).excludeClasses);
             dexTool.setPatchClassList(hotClassList);
             DexDiffInfo dexDiffInfo = dexTool.createPatchDex(dexDiffFile);
             if (dexDiffFile.exists()) {
