@@ -355,6 +355,19 @@
             
         </li>
     
+        <li class="chapter " data-level="1.5.4" data-path="../faq/dynamic_failed_help.html">
+            
+                <a href="../faq/dynamic_failed_help.html">
+            
+                    
+                    动态部署失败排查指南
+            
+                </a>
+            
+
+            
+        </li>
+    
 
             </ul>
             
@@ -579,7 +592,7 @@
 <p>&#x8FD9;&#x91CC;&#x4E5F;&#x53EF;&#x4EE5;&#x4FEE;&#x6539;firbundle&#x4F9D;&#x8D56;&#x7684;&#x67D0;&#x4E2A;aar&#x7684;&#x7248;&#x672C;&#x3002;&#x4E00;&#x53E5;&#x8BDD;&#xFF0C;&#x4F60;&#x8981;&#x901A;&#x8FC7;&#x7248;&#x672C;&#x53F7;&#x544A;&#x8BC9;&#x7F16;&#x8BD1;&#x5668;&#xFF0C;&#x6211;&#x8FD9;&#x4E2A;bundle&#x7684;&#x4EE3;&#x7801;&#x53D8;&#x4E86;</p>
 </blockquote>
 </li>
-<li>&#x6307;&#x5B9A;&#x53C2;&#x7167;&#x7684;&#x7248;&#x672C;&#xFF0C;&#x751F;&#x6210;dexPatch&#x5305;<br> <code>./gradlew clean DexPatchPackageDebug -DapVersion=1.0.0</code></li>
+<li>&#x6307;&#x5B9A;&#x53C2;&#x7167;&#x7684;&#x7248;&#x672C;&#xFF0C;&#x751F;&#x6210;dexPatch&#x5305;<br> <code>./gradlew clean assembleDebug -DapVersion=1.0.0 -DversionName=1.0.0</code></li>
 </ol>
 <p>PS: </p>
 <blockquote>
@@ -634,6 +647,7 @@
           <span class="hljs-string">&quot;isMainDex&quot;</span>: <span class="hljs-literal">false</span>,
           <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;com.taobao.firstbundle&quot;</span>,
           <span class="hljs-string">&quot;pkgName&quot;</span>: <span class="hljs-string">&quot;com.taobao.firstbundle&quot;</span>,
+          <span class="hljs-string">&quot;dependency&quot;</span>:[],
           <span class="hljs-comment">//&#x91CD;&#x8981;</span>
           <span class="hljs-string">&quot;reset&quot;</span>: <span class="hljs-literal">false</span>,
           <span class="hljs-string">&quot;srcUnitTag&quot;</span>: <span class="hljs-string">&quot;6b3973d9d6592d15601017edabc8b31b&quot;</span>,
@@ -715,7 +729,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"dexpatch使用教程","level":"1.4.3","depth":2,"next":{"title":"一些限制","level":"1.4.4","depth":2,"path":"update/guide.md","ref":"update/guide.md","articles":[]},"previous":{"title":"dexpatch","level":"1.4.2","depth":2,"path":"update/dexpatch.md","ref":"update/dexpatch.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"update/dexpatch_use_guide.md","mtime":"2017-09-08T02:48:44.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-09-08T02:57:50.562Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"dexpatch使用教程","level":"1.4.3","depth":2,"next":{"title":"一些限制","level":"1.4.4","depth":2,"path":"update/guide.md","ref":"update/guide.md","articles":[]},"previous":{"title":"dexpatch","level":"1.4.2","depth":2,"path":"update/dexpatch.md","ref":"update/dexpatch.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"update/dexpatch_use_guide.md","mtime":"2017-11-15T06:21:29.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-11-15T06:23:02.946Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
@@ -723,10 +737,6 @@
         
     <script src="../gitbook/gitbook.js"></script>
     <script src="../gitbook/theme.js"></script>
-    
-        
-        <script src="../gitbook/gitbook-plugin-livereload/plugin.js"></script>
-        
     
         
         <script src="../gitbook/gitbook-plugin-search/search-engine.js"></script>
