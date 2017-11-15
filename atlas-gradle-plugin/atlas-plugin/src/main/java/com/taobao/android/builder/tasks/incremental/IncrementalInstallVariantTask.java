@@ -36,7 +36,10 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
     /*private*/ static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "files/debug_storage/";
 
     @Override
-    protected void install(String projectName, String variantName, String appPackageName, IDevice device,
+    protected void install(String projectName,
+                           String variantName,
+                           String appPackageName,
+                           IDevice device,
                            Collection<File> apkFiles) throws Exception {
         //安装awb
         //安装mainDex
@@ -60,7 +63,7 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
         Iterable<Integer> processPids = getProcessPids(device, appPackageName);
         if (isEmpty(processPids)) {
             //杀死进程
-            getLogger().lifecycle("实验特性界面恢复重启适配性问题，使用强制杀死进程，请联系歩川（步有个点，歩），告知机型");
+            //getLogger().lifecycle("实验特性界面恢复重启适配性问题，使用强制杀死进程，请联系歩川（步有个点，歩），告知机型");
             runCommand(device, "am force-stop " + appPackageName);
             /*device.executeShellCommand("am " + "kill " + appPackageName,
                                        //$NON-NLS-1$
@@ -76,14 +79,14 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
                                        });*/
         } else {
             //退到后台
-            getLogger().lifecycle("实验特性，界面恢复重启，如有任何问题请随时与歩川（步有个点，歩）联系");
+            //getLogger().lifecycle("实验特性，界面恢复重启，如有任何问题请随时与歩川（步有个点，歩）联系");
             runCommand(device, "input keyevent 3");
             boolean success = false;
             for (Integer processId : processPids) {
                 /*device.executeShellCommand*/
                 success |= runCommand(device, "run-as " + appPackageName + " kill -9 " + processId);
                 if (!success) {
-                    getLogger().lifecycle("实验特性界面恢复重启适配性问题，使用强制杀死进程，请联系歩川（步有个点，歩），告知机型");
+                    //getLogger().lifecycle("实验特性界面恢复重启适配性问题，使用强制杀死进程，请联系歩川（步有个点，歩），告知机型");
                     runCommand(device, "am force-stop " + appPackageName);
                     break;
                 }
@@ -148,8 +151,13 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
         }
     }
 
-    private void installPatch(String projectName, String variantName, String appPackageName, IDevice device, File patch,
-                              String name, String patchInstallDirectory)
+    private void installPatch(String projectName,
+                              String variantName,
+                              String appPackageName,
+                              IDevice device,
+                              File patch,
+                              String name,
+                              String patchInstallDirectory)
         throws TimeoutException, AdbCommandRejectedException, SyncException, IOException {
         String remotePatchFile = Joiner.on('/').join(patchInstallDirectory, name, PATCH_NAME);
         getLogger().lifecycle("Installing awb '{}' on '{}' to '{}' for {}:{}", patch, device.getName(), remotePatchFile,
