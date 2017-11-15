@@ -121,7 +121,6 @@ public class RemoteActivityManager {
         ActivityInfo info = intent.resolveActivityInfo(mParent.getPackageManager(), PackageManager.GET_ACTIVITIES);
         activityRecord.activity = (EmbeddedActivity) ActivityThread_startActivityNow.invoke(AndroidHack.getActivityThread(),
                 mParent, activityRecord.id, intent, info, activityRecord.activity, null, null);
-        ((EmbeddedActivity)activityRecord.activity).parentActivityRef = new WeakReference<Activity>(mParent);
         activityRecord.activityInfo = info;
         return activityRecord;
     }
@@ -142,7 +141,6 @@ public class RemoteActivityManager {
     }
 
     public static class EmbeddedActivity extends FragmentActivity{
-        public WeakReference<Activity> parentActivityRef;
         public List<IRemoteContext> mBoundRemoteItems = new ArrayList<>();
 
         public void addBoundRemoteDelegator(IRemoteContext delegator){
@@ -172,32 +170,29 @@ public class RemoteActivityManager {
 
         @Override
         public Object getSystemService(String name) {
-            if(parentActivityRef!=null && parentActivityRef.get()!=null){
-                return parentActivityRef.get().getSystemService(name);
+            if (WINDOW_SERVICE.equals(name)) {
+                return getParent().getSystemService(name);
             }else{
-                Log.e("EmbeddActivity","parent Activity has finished");
-                return null;
+                return super.getSystemService(name);
             }
         }
 
         @Override
         public void startActivityForResult(Intent intent, int requestCode) {
-            if(parentActivityRef.get()!=null) {
-                parentActivityRef.get().startActivityForResult(intent, requestCode);
-            }
+            getParent().startActivityForResult(intent, requestCode);
         }
 
         @Override
         public void startActivityFromFragment(Fragment fragment, Intent intent, int requestCode) {
             if(parentActivityRef.get()!=null) {
-                ((FragmentActivity)parentActivityRef.get()).startActivityFromFragment(fragment, intent, requestCode);
+                ((FragmentActivity)getParent()).startActivityFromFragment(fragment, intent, requestCode);
             }
         }
 
         @Override
         public void startActivityFromFragment(Fragment fragment, Intent intent, int requestCode, @Nullable Bundle options) {
             if(parentActivityRef!=null) {
-                ((FragmentActivity)parentActivityRef.get()).startActivityFromFragment(fragment, intent, requestCode, options);
+                ((FragmentActivity)getParent()).startActivityFromFragment(fragment, intent, requestCode, options);
             }
         }
 
