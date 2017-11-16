@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -18,6 +19,7 @@ import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
+import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.base.Joiner;
 import org.gradle.api.tasks.ParallelizableTask;
 
@@ -45,11 +47,20 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
         //安装mainDex
         String patchInstallDirectory = getPatchInstallDirectory();
         if (apkFiles != null) {
+            WaitableExecutor mExecutor = WaitableExecutor.useGlobalSharedThreadPool();
+
             for (File apkFile : apkFiles) {
 
-                installPatch(projectName, variantName, appPackageName, device, apkFile, getAwbPackageName(apkFile),
-                    patchInstallDirectory);
+                mExecutor.execute(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        installPatch(projectName, variantName, appPackageName, device, apkFile,
+                            getAwbPackageName(apkFile), patchInstallDirectory);
+                        return null;
+                    }
+                });
             }
+            mExecutor.waitForTasksWithQuickFail(true /*cancelRemaining*/);
         }
 
         getLogger().lifecycle("Restarting '{}' on '{}' for {}:{}", appPackageName, device.getName(), projectName,
