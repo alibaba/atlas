@@ -214,10 +214,7 @@ import com.taobao.android.dex.DexIndexOverflowException;
 import com.taobao.android.dex.FieldId;
 import com.taobao.android.dex.MethodId;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class DexGroup {
 
@@ -229,29 +226,42 @@ public class DexGroup {
 
     public List<Dex> dexs = new ArrayList<>();
 
+    private Set<String>methodNames = new HashSet<>();
+
+    private Set<String>fieldNames = new HashSet<>();
+
     public int methods = 0;
     public int fields = 0;
-    public Set<String> strings = new HashSet<>();
 
     public boolean addDex(Dex dex) {
 
-        int ms = dex.getTableOfContents().methodIds.size;
-        int fs = dex.getTableOfContents().fieldIds.size;
+        Collection<String>tempMethods = new HashSet<>();
+        Collection<String>tempFields = new HashSet<>();
 
-        Set<String> newstrings = new HashSet<>(strings);
-        newstrings.addAll(dex.strings());
-
-        if (fs >= MAX_FIELD_IDS) {
-            throw new DexIndexOverflowException("field ID not in [0, 0xffff]: " + fs);
+        for (MethodId methodId:dex.methodIds()){
+            tempMethods.add(methodId.toString());
         }
-        if (methods + ms >= (firstDex ? MAX_METHOD_IDS_FIRSTDEX : MAX_METHOD_IDS) || fields + fs >= MAX_FIELD_IDS || newstrings.size() >= MAX_FIELD_IDS) {
+
+        for (FieldId fieldId:dex.fieldIds()){
+            tempFields.add(fieldId.toString());
+        }
+
+        if (tempMethods.size() > MAX_METHOD_IDS_FIRSTDEX || tempFields.size() > MAX_FIELD_IDS){
+            throw new DexIndexOverflowException("field or method ID not in [0, 0xffff]: " + "tempMethods size:"+tempMethods.size() + "tempFields size:" +tempFields.size());
+
+        }
+
+        Set<String>allMethods = new HashSet<>();
+        allMethods.addAll(methodNames);
+        allMethods.addAll(tempMethods);
+        Set<String>allFileds = new HashSet<>();
+        allFileds.addAll(fieldNames);
+        allFileds.addAll(tempMethods);
+        if (allMethods.size() > MAX_METHOD_IDS||allFileds.size() > MAX_FIELD_IDS){
             return false;
         }
-
-        dexs.add(dex);
-        methods += ms;
-        fields += fs;
-        strings = newstrings;
+        methodNames = allMethods;
+        fieldNames = allFileds;
 
         return true;
     }
