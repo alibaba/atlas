@@ -1,20 +1,5 @@
 package android.taobao.atlas.patch;
 
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.taobao.atlas.framework.Atlas;
-import android.taobao.atlas.framework.BundleImpl;
-import android.taobao.atlas.framework.Framework;
-import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.util.AtlasFileLock;
-import android.taobao.atlas.util.BundleLock;
-import android.taobao.atlas.util.IOUtil;
-import android.taobao.atlas.util.StringUtils;
-import android.text.TextUtils;
-import android.util.Pair;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleEvent;
-import org.osgi.framework.BundleListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -32,7 +17,22 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.taobao.atlas.framework.Atlas;
+import android.taobao.atlas.framework.BundleImpl;
+import android.taobao.atlas.framework.Framework;
+import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.util.AtlasFileLock;
+import android.taobao.atlas.util.BundleLock;
+import android.taobao.atlas.util.IOUtil;
+import android.taobao.atlas.util.StringUtils;
+import android.text.TextUtils;
+import android.util.Pair;
 import dalvik.system.DexFile;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleEvent;
+import org.osgi.framework.BundleListener;
 
 /**
  * Created by guanjie on 2017/11/6.
@@ -48,7 +48,6 @@ public class AtlasHotPatchManager implements BundleListener{
     private ConcurrentHashMap<String,Long> hotpatchBundles = new ConcurrentHashMap<>();
     private HashMap<String,String> activePatchs = new HashMap<>();
     private OnPatchActivatedListener mPatchListener;
-    private IPatchInstallListener mInstallListener;
 
     public static synchronized AtlasHotPatchManager getInstance(){
         return sPatchManager;
@@ -57,10 +56,6 @@ public class AtlasHotPatchManager implements BundleListener{
     public interface OnPatchActivatedListener{
         void onPatchActivated(String bundleName,String location,long patchVersion);
     }
-    public interface IPatchInstallListener{
-        void install(boolean success,String bundleName,long patchVersion);
-    }
-
 
     private AtlasHotPatchManager(){
         try {
@@ -122,9 +117,6 @@ public class AtlasHotPatchManager implements BundleListener{
                     File hotFixFile = new File(patchBundleDir, entry.getValue().first+HOTFIX_NAME_POSTFIX);
                     installDex(entry.getValue().second, hotFixFile);
                     hotpatchBundles.put(entry.getKey(),Long.valueOf(entry.getValue().first));
-                    if (null != mInstallListener){
-                        mInstallListener.install(true,entry.getKey(),entry.getValue().first);
-                    }
                     BundleImpl bundle = (BundleImpl) Atlas.getInstance().getBundle(entry.getKey());
                     if(bundle!=null){
                         Patch p = new Patch(hotFixFile,bundle.getClassLoader());
@@ -132,9 +124,6 @@ public class AtlasHotPatchManager implements BundleListener{
                     }
                 }catch(Exception e){
                     e.printStackTrace();
-                    if (null != mInstallListener){
-                        mInstallListener.install(false,entry.getKey(),entry.getValue().first);
-                    }
                 }finally{
                     BundleLock.WriteUnLock(lockKey);
                 }
@@ -152,10 +141,6 @@ public class AtlasHotPatchManager implements BundleListener{
 
     public void setPatchListener(OnPatchActivatedListener listener){
         mPatchListener = listener;
-    }
-
-    public void setPatchInstallListener(IPatchInstallListener listener){
-        mInstallListener = listener;
     }
 
     public void storePatchInfo() throws IOException{
