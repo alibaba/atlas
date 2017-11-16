@@ -264,6 +264,10 @@ public class DexGroup {
         methodNames = allMethods;
         fieldNames = allFileds;
         dexs.add(dex);
+
+        tempMethods.clear();
+        tempFields.clear();
+
         return true;
     }
 
