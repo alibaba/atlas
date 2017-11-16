@@ -430,12 +430,12 @@ public class PatchBundleInfo {
     private String  artifactId;
     private String baseVersion;
 
-    public int getBuildPatchType() {
+    public int getPatchType() {
         return patchType;
     }
 
-    public void setBuildPatchType(int buildPatchType) {
-        this.patchType = buildPatchType;
+    public void setPatchType(int patchType) {
+        this.patchType = patchType;
     }
 
     private int patchType = 0;

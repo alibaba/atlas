@@ -645,10 +645,10 @@ public class TPatchTool extends AbstractTool {
                     patchBundleInfo.setNewBundle(DiffType.ADD.equals(artifactBundleInfo.getDiffType()));
                     patchBundleInfo.setMainBundle(true);
                     patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
-                        patchBundleInfo.setName(((TpatchInput)input).mainBundleName);
+                    patchBundleInfo.setName(((TpatchInput)input).mainBundleName);
                     patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
                     patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
-                    patchBundleInfo.setBuildPatchType(bundleTypes.get(artifactBundleInfo.getPkgName()) == null? 0:bundleTypes.get(artifactBundleInfo.getPkgName()));
+                    patchBundleInfo.setPatchType(bundleTypes.get(((TpatchInput)input).mainBundleName) == null? 0:bundleTypes.get(((TpatchInput)input).mainBundleName));
                     patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());
                     patchBundleInfo.setArtifactId(artifactBundleInfo.getArtifactId());
                     patchBundleInfo.setPkgName(artifactBundleInfo.getPkgName());
@@ -665,7 +665,7 @@ public class TPatchTool extends AbstractTool {
                 patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
                 patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
                 patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
-                patchBundleInfo.setBuildPatchType(bundleTypes.get(artifactBundleInfo.getPkgName()) == null? 0:bundleTypes.get(artifactBundleInfo.getPkgName()));
+                patchBundleInfo.setPatchType(bundleTypes.get(artifactBundleInfo.getPkgName()) == null? 0:bundleTypes.get(artifactBundleInfo.getPkgName()));
                 patchBundleInfo.setName(artifactBundleInfo.getPkgName());
                 if (!modifyBundles.contains(artifactBundleInfo.getPkgName())){
                     patchBundleInfo.setInherit(true);
@@ -680,7 +680,7 @@ public class TPatchTool extends AbstractTool {
                 PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
                 patchBundleInfo.setNewBundle(false);
                 patchBundleInfo.setMainBundle(false);
-                patchBundleInfo.setBuildPatchType(bundleTypes.get(artifactBundleInfo.getPkgName()) == null? 0:bundleTypes.get(artifactBundleInfo.getPkgName()));
+                patchBundleInfo.setPatchType(bundleTypes.get(artifactBundleInfo.getPkgName()) == null? 0:bundleTypes.get(artifactBundleInfo.getPkgName()));
                 patchBundleInfo.setSrcUnitTag(artifactBundleInfo.getSrcUnitTag());
                 patchBundleInfo.setUnitTag(artifactBundleInfo.getUnitTag());
                 patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
