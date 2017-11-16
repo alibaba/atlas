@@ -431,14 +431,14 @@ public class PatchBundleInfo {
     private String baseVersion;
 
     public int getBuildPatchType() {
-        return buildPatchType;
+        return patchType;
     }
 
     public void setBuildPatchType(int buildPatchType) {
-        this.buildPatchType = buildPatchType;
+        this.patchType = buildPatchType;
     }
 
-    private int buildPatchType = 0;
+    private int patchType = 0;
 
     public boolean isInherit() {
         return inherit;

@@ -268,9 +268,7 @@ public class DexMerger {
     }
 
     public List<DexGroup> group() {
-
         List<DexGroup> dexGroupList = new ArrayList<>();
-
         addDexByRule(dexGroupList);
 
         addDexLimited(dexGroupList, true);

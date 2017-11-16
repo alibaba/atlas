@@ -211,41 +211,45 @@ package com.taobao.android.builder.tools.multidex.dex;
 
 import com.taobao.android.dex.Dex;
 import com.taobao.android.dex.DexIndexOverflowException;
-import com.taobao.android.dex.FieldId;
-import com.taobao.android.dex.MethodId;
 
 import java.util.*;
 
 public class DexGroup {
 
-    public static final int MAX_FIELD_IDS = 65530;
-    public static final int MAX_METHOD_IDS = 65530;
-    public static final int MAX_METHOD_IDS_FIRSTDEX = 65000;
+    public static final int MAX_FIELD_IDS = 65500;
+    public static final int MAX_METHOD_IDS = 65500;
+    public static final int MAX_METHOD_IDS_FIRSTDEX = 65500;
 
     public boolean firstDex;
 
     public List<Dex> dexs = new ArrayList<>();
 
     private Set<String>methodNames = new HashSet<>();
-
     private Set<String>fieldNames = new HashSet<>();
 
     public int methods = 0;
     public int fields = 0;
 
     public boolean addDex(Dex dex) {
-
         Collection<String>tempMethods = new HashSet<>();
         Collection<String>tempFields = new HashSet<>();
 
-        for (MethodId methodId:dex.methodIds()){
-            tempMethods.add(methodId.toString());
+        for (int i = 0 ; i < dex.methodIds().size();i++){
+            tempMethods.add(dex.methodIds().get(i).toString());
         }
 
 
-        for (FieldId fieldId:dex.fieldIds()){
-            tempFields.add(fieldId.toString());
+        for (int i = 0; i < dex.fieldIds().size();i++){
+            tempFields.add(dex.fieldIds().get(i).toString());
         }
+//        fields = fields+dex.fieldIds().size();
+//        if (fields > MAX_FIELD_IDS){
+//            return false;
+//        }
+//        methods = methods+dex.methodIds().size();
+//        if (methods > MAX_METHOD_IDS){
+//            return false;
+//        }
 
         if (tempMethods.size() > MAX_METHOD_IDS_FIRSTDEX || tempFields.size() > MAX_FIELD_IDS){
             throw new DexIndexOverflowException("field or method ID not in [0, 0xffff]: " + "tempMethods size:"+tempMethods.size() + "tempFields size:" +tempFields.size());
@@ -257,7 +261,7 @@ public class DexGroup {
         allMethods.addAll(tempMethods);
         Set<String>allFileds = new HashSet<>();
         allFileds.addAll(fieldNames);
-        allFileds.addAll(tempMethods);
+        allFileds.addAll(tempFields);
         if (allMethods.size() > MAX_METHOD_IDS||allFileds.size() > MAX_FIELD_IDS){
             return false;
         }
