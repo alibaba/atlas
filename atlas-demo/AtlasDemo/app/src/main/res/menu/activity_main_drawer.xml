@@ -20,6 +20,10 @@
         <item
             android:id="@+id/nav_databind_bundle"
             android:title="databinding模拟" />
+
+        <item
+            android:id="@+id/nav_remote"
+            android:title="跨bundle使用View模拟" />
     </group>
 
     <item android:title="Communicate">

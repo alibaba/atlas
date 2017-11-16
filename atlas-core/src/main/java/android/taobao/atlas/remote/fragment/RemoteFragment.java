@@ -43,6 +43,7 @@ public class RemoteFragment extends Fragment implements IRemoteContext,IRemoteTr
 
     public static RemoteFragment createRemoteFragment(Activity activity, String key,String bundleName) throws Exception{
         RemoteFragment remoteFragment = new RemoteFragment();
+        remoteFragment.targetBundleName = bundleName;
         remoteFragment.remoteActivity = RemoteActivityManager.obtain(activity).getRemoteHost(remoteFragment);
         final BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(bundleName);
         String fragmentClazzName = bi.remoteFragments.get(key);
@@ -50,7 +51,6 @@ public class RemoteFragment extends Fragment implements IRemoteContext,IRemoteTr
         if(!(remoteFragment.targetFragment instanceof IRemote)){
             throw new RuntimeException("Fragment for remote use must implements IRemote");
         }
-        remoteFragment.targetBundleName = bundleName;
         return remoteFragment;
     }
 

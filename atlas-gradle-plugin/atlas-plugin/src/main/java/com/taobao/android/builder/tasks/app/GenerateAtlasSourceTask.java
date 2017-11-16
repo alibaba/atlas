@@ -209,17 +209,7 @@
 
 package com.taobao.android.builder.tasks.app;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPOutputStream;
-
 import com.alibaba.fastjson.JSON;
-
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -238,6 +228,15 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 public class GenerateAtlasSourceTask extends BaseTask {
 
@@ -270,13 +269,15 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
         InjectParam injectParam = getInput();
         boolean supportRemoteComponent = true;
-        List<AndroidLibrary> libraries = AtlasBuildContext.androidDependencyTrees.get("debug").getMainBundle().getAndroidLibraries();
-        if(libraries.size()>0){
-            for(AndroidLibrary library : libraries){
-                MavenCoordinates coordinates = library.getResolvedCoordinates();
-                if(coordinates.getArtifactId().equals("atlas_core") && coordinates.getGroupId().equals("com.taobao.android")){
-                    if(coordinates.getVersion().compareTo("5.0.8")<0){
-                        supportRemoteComponent = false;
+        if (AtlasBuildContext.androidDependencyTrees.get(getVariantName())!= null) {
+            List<AndroidLibrary> libraries = AtlasBuildContext.androidDependencyTrees.get(getVariantName()).getMainBundle().getAndroidLibraries();
+            if (libraries.size() > 0) {
+                for (AndroidLibrary library : libraries) {
+                    MavenCoordinates coordinates = library.getResolvedCoordinates();
+                    if (coordinates.getArtifactId().equals("atlas_core") && coordinates.getGroupId().equals("com.taobao.android")) {
+                        if (coordinates.getVersion().compareTo("5.0.8") < 0) {
+                            supportRemoteComponent = false;
+                        }
                     }
                 }
             }

@@ -242,6 +242,7 @@ public class DexGroup {
             tempMethods.add(methodId.toString());
         }
 
+
         for (FieldId fieldId:dex.fieldIds()){
             tempFields.add(fieldId.toString());
         }
@@ -262,23 +263,8 @@ public class DexGroup {
         }
         methodNames = allMethods;
         fieldNames = allFileds;
-
+        dexs.add(dex);
         return true;
     }
 
-    private Set<String> getMethods(Dex dex) {
-        Set<String> sets = new HashSet<>();
-        for (MethodId mi : dex.methodIds()) {
-            sets.add(mi.toString());
-        }
-        return sets;
-    }
-
-    private Set<String> getFields(Dex dex) {
-        Set<String> sets = new HashSet<>();
-        for (FieldId filedId : dex.fieldIds()) {
-            sets.add(filedId.toString());
-        }
-        return sets;
-    }
 }

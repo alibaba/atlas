@@ -171,6 +171,12 @@ public class MainActivity extends AppCompatActivity
                 intent.setPackage(getPackageName());
                 intent.setClassName(this,"com.taobao.databindbundle.databind.DataBundleSampleActivity");
                 startActivity(intent);
+            }else if (id == R.id.nav_remote) {
+
+                Intent intent = new Intent();
+                intent.setPackage(getPackageName());
+                intent.setClassName(this,"com.taobao.firstbundle.UseremoteActivity");
+                startActivity(intent);
             }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
