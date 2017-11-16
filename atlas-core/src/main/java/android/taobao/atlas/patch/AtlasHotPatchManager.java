@@ -80,6 +80,7 @@ public class AtlasHotPatchManager implements BundleListener{
                 e.printStackTrace();
             }
         patchMainDex();
+        Atlas.getInstance().addBundleListener(this);
     }
 
     /**
@@ -88,13 +89,16 @@ public class AtlasHotPatchManager implements BundleListener{
      * @throws IOException
      */
     public void installHotFixPatch(String targetVersion, HashMap<String,Pair<Long,InputStream>> patchEntries) throws IOException{
+        if(!sCurrentVersionPatchDir.getName().equals(targetVersion)){
+            throw new IllegalStateException("mismatch version error");
+        }
         if(!sCurrentVersionPatchDir.exists()){
             sCurrentVersionPatchDir.mkdirs();
         }
         if(!sCurrentVersionPatchDir.exists()){
             return;
         }
-        File sPatchVersionDir = new File(sCurrentVersionPatchDir,targetVersion);
+        File sPatchVersionDir = sCurrentVersionPatchDir;
         if(!sPatchVersionDir.exists()){
             sPatchVersionDir.mkdirs();
         }
@@ -308,7 +312,7 @@ public class AtlasHotPatchManager implements BundleListener{
         private Patch(File patch,ClassLoader sourceClassLoader){
             file = patch;
             String patchNameWithoutPostFix = StringUtils.substringBetween(patch.getName(),"",HOTFIX_NAME_POSTFIX);
-            odexFile = new File(file.getName(),patchNameWithoutPostFix+".odex");
+            odexFile = new File(file.getParentFile(),patchNameWithoutPostFix+".odex");
             version = Integer.parseInt(patchNameWithoutPostFix);
             this.sourceClassLoader = sourceClassLoader;
         }

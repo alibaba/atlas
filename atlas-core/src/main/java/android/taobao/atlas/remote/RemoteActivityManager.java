@@ -184,16 +184,12 @@ public class RemoteActivityManager {
 
         @Override
         public void startActivityFromFragment(Fragment fragment, Intent intent, int requestCode) {
-            if(parentActivityRef.get()!=null) {
-                ((FragmentActivity)getParent()).startActivityFromFragment(fragment, intent, requestCode);
-            }
+            ((FragmentActivity)getParent()).startActivityFromFragment(fragment, intent, requestCode);
         }
 
         @Override
         public void startActivityFromFragment(Fragment fragment, Intent intent, int requestCode, @Nullable Bundle options) {
-            if(parentActivityRef!=null) {
-                ((FragmentActivity)getParent()).startActivityFromFragment(fragment, intent, requestCode, options);
-            }
+            ((FragmentActivity)getParent()).startActivityFromFragment(fragment, intent, requestCode, options);
         }
 
 
