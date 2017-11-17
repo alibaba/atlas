@@ -250,12 +250,18 @@ public class KernalVersionManager {
 
     public boolean cachePreVersion = false;
 
-    private static class SingleTonHolder{
-        private final static KernalVersionManager INSTANCE = new KernalVersionManager();
-    }
+    private volatile static KernalVersionManager mInstance;
 
     public static KernalVersionManager instance(){
-        return SingleTonHolder.INSTANCE;
+        if (null == mInstance){
+            synchronized (KernalVersionManager.class){
+                if (null == mInstance){
+                    mInstance = new KernalVersionManager();
+                }
+            }
+        }
+        return mInstance;
+
     }
 
     @Override

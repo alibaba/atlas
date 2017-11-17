@@ -256,12 +256,10 @@ public class Atlas {
     private Atlas(){
     }
 
-    private static class SingleTonHolder{
-        private final static Atlas INSTANCE = new Atlas();
-    }
+    private final static Atlas mInstance = new Atlas();
 
     public static Atlas getInstance() {
-       return SingleTonHolder.INSTANCE;
+       return mInstance;
     }
 
     private BundleLifecycleHandler    bundleLifecycleHandler;
