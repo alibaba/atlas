@@ -123,6 +123,9 @@ public class DexPatchTool extends TPatchTool {
         // zip file
         File patchFile = createDexPatchFile(tpatchInput.outPatchDir, patchTmpDir);
         tpatchFile.patchFile = patchFile;
+        if (!patchFile.exists()){
+            return null;
+        }
         PatchInfo curPatchInfo = createBasePatchInfo(patchFile);
 
         Profiler.release();
@@ -163,7 +166,7 @@ public class DexPatchTool extends TPatchTool {
 
     private File createDexPatchFile(File outPatchDir, File patchTmpDir) throws IOException {
         File mainBundleFoder = new File(patchTmpDir, ((TpatchInput)input).mainBundleName);
-        File mainBundleFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + ".so");
+        File mainBundleFile = new File(patchTmpDir, "lib"+((TpatchInput)input).mainBundleName.replace(".","_") + ".so");
         if (FileUtils.listFiles(mainBundleFoder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
                 .size() > 0) {
             CommandUtils.exec(mainBundleFoder, "zip -r " + mainBundleFile.getAbsolutePath() + " . -x */ -x .*");

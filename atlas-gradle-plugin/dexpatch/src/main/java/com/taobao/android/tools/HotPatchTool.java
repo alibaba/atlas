@@ -78,7 +78,7 @@ public class HotPatchTool extends DexPatchTool {
                 bundleTypes.put(bundleName,1);
             }else if (hasDexPatch && hasHotDexPatch){
                 bundleTypes.put(bundleName,3);
-            }else if (!hasDexPatch && hasDexPatch){
+            }else if (!hasDexPatch && hasHotDexPatch){
                 bundleTypes.put(bundleName,2);
 
             }
