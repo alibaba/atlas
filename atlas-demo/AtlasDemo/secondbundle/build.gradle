@@ -35,6 +35,7 @@ dependencies {
     compile project(":secondbundlelibrary");
     providedCompile 'com.android.support:appcompat-v7:25.1.0'
     providedCompile 'com.android.support:support-v4:25.3.0'
+    providedCompile 'com.taobao.android:atlas_core:5.0.8.0-SNAPSHOT'
     providedCompile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
     providedCompile project(':middlewarelibrary')
 

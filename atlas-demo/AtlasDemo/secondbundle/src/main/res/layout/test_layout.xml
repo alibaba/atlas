@@ -4,6 +4,7 @@
     android:layout_height="match_parent">
 
     <com.taobao.secondbundle.MyRichView
+        android:id="@+id/cccc"
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:textSize="18dp"
