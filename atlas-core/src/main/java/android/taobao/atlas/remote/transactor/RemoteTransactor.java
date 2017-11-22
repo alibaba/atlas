@@ -31,11 +31,11 @@ public class RemoteTransactor implements IRemoteContext,IRemoteTransactor{
 
     private String targetBundleName;
     private Activity remoteActivity;
-    private IRemoteTransactor hostTransactor;
+    private IRemote hostTransactor;
     private IRemote targetTransactor;
 
     @Override
-    public void registerHostTransactor(IRemoteTransactor transactor) {
+    public void registerHostTransactor(IRemote transactor) {
         hostTransactor = transactor;
     }
 
@@ -50,7 +50,7 @@ public class RemoteTransactor implements IRemoteContext,IRemoteTransactor{
     }
 
     @Override
-    public IRemoteTransactor getHostTransactor() {
+    public IRemote getHostTransactor() {
         return hostTransactor;
     }
 
@@ -60,7 +60,7 @@ public class RemoteTransactor implements IRemoteContext,IRemoteTransactor{
     }
 
     @Override
-    public <T> T getRemoteInterface(Class<T> interfaceClass) {
-        return targetTransactor.getRemoteInterface(interfaceClass);
+    public <T> T getRemoteInterface(Class<T> interfaceClass,Bundle args) {
+        return targetTransactor.getRemoteInterface(interfaceClass,args);
     }
 }

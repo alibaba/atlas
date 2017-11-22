@@ -5,8 +5,8 @@ package android.taobao.atlas.remote;
  */
 
 public interface IRemoteContext {
-    void registerHostTransactor(IRemoteTransactor transactor);
+    void registerHostTransactor(IRemote transactor);
     String  getTargetBundle();
     IRemote getRemoteTarget();
-    IRemoteTransactor getHostTransactor();
+    IRemote getHostTransactor();
 }

@@ -38,18 +38,18 @@ public class HostTransactor implements IRemoteTransactor {
 
 
 
-    private final IRemoteTransactor hostTransactor;
+    private final IRemote host;
     private final Activity          embeddedActivity;
 
-    private HostTransactor(IRemoteTransactor transactor,Activity activity){
-        hostTransactor = transactor;
+    private HostTransactor(IRemote remote,Activity activity){
+        host = remote;
         embeddedActivity = activity;
     }
 
     @Override
     public Bundle call(String commandName, Bundle args, IResponse callback) {
-        if(hostTransactor!=null) {
-            return hostTransactor.call(commandName, args, callback);
+        if(host!=null) {
+            return host.call(commandName, args, callback);
         }else{
             Log.e("HostTransactor","no real transactor");
             return null;
@@ -57,9 +57,9 @@ public class HostTransactor implements IRemoteTransactor {
     }
 
     @Override
-    public <T> T getRemoteInterface(Class<T> interfaceClass) {
-        if(hostTransactor!=null) {
-            return hostTransactor.getRemoteInterface(interfaceClass);
+    public <T> T getRemoteInterface(Class<T> interfaceClass,Bundle args) {
+        if(host!=null) {
+            return host.getRemoteInterface(interfaceClass,args);
         }else{
             Log.e("HostTransactor","no real transactor");
             return null;

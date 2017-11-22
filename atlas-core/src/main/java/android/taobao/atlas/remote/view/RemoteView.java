@@ -37,7 +37,7 @@ public class RemoteView extends FrameLayout implements IRemoteTransactor,IRemote
     private IRemote targetView;
     private String targetBundleName;
     private Activity remoteActivity;
-    private IRemoteTransactor hostTransactor;
+    private IRemote hostTransactor;
 
     @Override
     public Bundle call(String commandName, Bundle args, IResponse callback) {
@@ -49,16 +49,16 @@ public class RemoteView extends FrameLayout implements IRemoteTransactor,IRemote
     }
 
     @Override
-    public <T> T getRemoteInterface(Class<T> interfaceClass) {
+    public <T> T getRemoteInterface(Class<T> interfaceClass,Bundle args) {
         if(!(targetView instanceof IRemote)){
             throw new IllegalAccessError("targetView is not an implementation of : RemoteTransactor");
         }else {
-            return ((IRemote)targetView).getRemoteInterface(interfaceClass);
+            return ((IRemote)targetView).getRemoteInterface(interfaceClass,args);
         }
     }
 
     @Override
-    public void registerHostTransactor(IRemoteTransactor transactor) {
+    public void registerHostTransactor(IRemote transactor) {
         hostTransactor = transactor;
     }
 
@@ -73,7 +73,7 @@ public class RemoteView extends FrameLayout implements IRemoteTransactor,IRemote
     }
 
     @Override
-    public IRemoteTransactor getHostTransactor() {
+    public IRemote getHostTransactor() {
         return hostTransactor;
     }
 

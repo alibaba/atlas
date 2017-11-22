@@ -57,7 +57,7 @@ public class RemoteFragment extends Fragment implements IRemoteContext,IRemoteTr
     private Fragment targetFragment;
     private String targetBundleName;
     private Activity remoteActivity;
-    private IRemoteTransactor hostTransactor;
+    private IRemote hostTransactor;
     private Field mCalled ;
 
 
@@ -72,12 +72,12 @@ public class RemoteFragment extends Fragment implements IRemoteContext,IRemoteTr
     }
 
     @Override
-    public IRemoteTransactor getHostTransactor() {
+    public IRemote getHostTransactor() {
         return hostTransactor;
     }
 
     @Override
-    public void registerHostTransactor(IRemoteTransactor transactor) {
+    public void registerHostTransactor(IRemote transactor) {
         hostTransactor = transactor;
     }
 
@@ -87,8 +87,8 @@ public class RemoteFragment extends Fragment implements IRemoteContext,IRemoteTr
     }
 
     @Override
-    public <T> T getRemoteInterface(Class<T> interfaceClass) {
-        return ((IRemote)targetFragment).getRemoteInterface(interfaceClass);
+    public <T> T getRemoteInterface(Class<T> interfaceClass,Bundle args) {
+        return ((IRemote)targetFragment).getRemoteInterface(interfaceClass,args);
     }
 
     private FragmentHostCallback getFragmentHostCallback(FragmentHostCallback callback){
