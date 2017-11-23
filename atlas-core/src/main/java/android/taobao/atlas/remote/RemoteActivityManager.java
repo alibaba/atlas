@@ -130,6 +130,8 @@ public class RemoteActivityManager {
             Activity activity = entry.getValue().activity;
             activity.finish();
         }
+        mActivityRecords.clear();
+        sActivityManager.remove(mParent);
     }
 
     private class EmbeddedActivityRecord extends Binder {
