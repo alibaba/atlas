@@ -699,6 +699,26 @@ public class AtlasBuilder extends AndroidBuilder {
         } catch (IOException e) {
             throw new RuntimeException("Could not load file ", e);
         }
+        
+        // 检查 bundle 资源冲突
+        HashSet<String> resourceSet = new HashSet<>();
+
+        if (mergedSymbolFile.exists()) {
+            List<String> lines = FileUtils.readLines(mergedSymbolFile);
+            for (String line : lines) {
+                if (line != null) {
+                    String[] splits = line.split(" ");
+                    if (splits.length > 3) {
+                        String key = splits[1] + " " + splits[2];
+                        if (resourceSet.contains(key)) {
+                            sLogger.error("bundle 和主 APK 存在相同资源: "+ line);
+                        } else {
+                            resourceSet.add(key);
+                        }
+                    }
+                }
+            }
+        }
 
         //Generate awb Java files
         SymbolLoader awbSymbols = null;
