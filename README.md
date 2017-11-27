@@ -1,7 +1,9 @@
 # Atlas
 
 [![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/alibaba/atlas/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-5.0.7-yellow.svg)](https://github.com/alibaba/atlas/releases) 
+[![Release Version](https://img.shields.io/badge/atlas_core-5.0.7.55-orange.svg)]() 
+[![Release Version](https://img.shields.io/badge/atlasupdate-1.1.4.14-blue.svg)]() 
+[![Release Version](https://img.shields.io/badge/atlasplugin-2.3.3.rc41-green.svg)]() 
 
 > A powerful Android Dynamic Component Framework.
 
