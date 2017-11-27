@@ -667,7 +667,7 @@ public class TPatchTool extends AbstractTool {
                 patchBundleInfo.setVersion(artifactBundleInfo.getVersion());
                 patchBundleInfo.setPatchType(bundleTypes.get(artifactBundleInfo.getPkgName()) == null? 0:bundleTypes.get(artifactBundleInfo.getPkgName()));
                 patchBundleInfo.setName(artifactBundleInfo.getPkgName());
-                if (!modifyBundles.contains(artifactBundleInfo.getPkgName())){
+                if (!modifyBundles.contains(artifactBundleInfo.getPkgName().replace("_","."))){
                     patchBundleInfo.setInherit(true);
                 }
                 patchBundleInfo.setApplicationName(artifactBundleInfo.getApplicationName());
@@ -676,7 +676,7 @@ public class TPatchTool extends AbstractTool {
                 patchBundleInfo.setDependency(artifactBundleInfo.getDependency());
                 patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                 patchInfo.getBundles().add(patchBundleInfo);
-            } else if (modifyBundles.contains(artifactBundleInfo.getPkgName())) {
+            } else if (modifyBundles.contains(artifactBundleInfo.getPkgName().replace("_","."))) {
                 PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
                 patchBundleInfo.setNewBundle(false);
                 patchBundleInfo.setMainBundle(false);

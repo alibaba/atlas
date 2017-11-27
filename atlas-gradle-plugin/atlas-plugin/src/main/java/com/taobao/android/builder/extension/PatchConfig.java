@@ -265,7 +265,7 @@ public class PatchConfig {
         if (excludeClasses.size() > 0){
             return excludeClasses;
         }else {
-            return Sets.newHashSet("Landroid/taobao/atlas/framework/FrameworkProperties;","Landroid/taobao/atlas/bundleInfo/AtlasBundleInfoGenerator;","Lc8/As;");
+            return Sets.newHashSet("Landroid/taobao/atlas/framework/FrameworkProperties;","Landroid/taobao/atlas/bundleInfo/AtlasBundleInfoGenerator;");
         }
     }
 

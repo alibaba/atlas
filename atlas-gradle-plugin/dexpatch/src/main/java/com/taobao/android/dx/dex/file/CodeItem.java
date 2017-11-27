@@ -109,10 +109,10 @@ public final class CodeItem extends OffsettedItem {
         TypeIdsSection typeIds = file.getTypeIds();
 
         //去除debuginfo
-//        if (code.hasPositions() || code.hasLocals()) {
-//            debugInfo = new DebugInfoItem(code, isStatic, ref);
-//            byteData.add(debugInfo);
-//        }
+        if (code.hasPositions() || code.hasLocals()) {
+            debugInfo = new DebugInfoItem(code, isStatic, ref);
+            byteData.add(debugInfo);
+        }
 
         if (code.hasAnyCatches()) {
             for (Type type : code.getCatchTypes()) {

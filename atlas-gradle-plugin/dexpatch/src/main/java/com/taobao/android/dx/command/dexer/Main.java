@@ -884,6 +884,7 @@ public class Main {
                 DxConsole.err.println("\ntrouble writing output: " +
                                    ex.getMessage());
             }
+            ex.printStackTrace();
             return null;
         }
         return outArray;
