@@ -342,7 +342,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                     throw new GradleException(
                         "atlas plgin is not compatible with instant run， plese turn it off in your ide！");
                 }
-                //                new AwbProguradHook().hookProguardTask(appVariantContext);
+                // new AwbProguradHook().hookProguardTask(appVariantContext);
+
+                appVariantContext.getScope().getGenerateBuildConfigTask().get(tasks).setEnabled(false);
 
                 List<MtlTaskContext> mtlTaskContextList = new ArrayList<MtlTaskContext>();
 
