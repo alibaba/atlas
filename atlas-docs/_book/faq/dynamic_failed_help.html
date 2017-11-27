@@ -1,0 +1,796 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>动态部署失败排查指南 · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    
+    <link rel="prev" href="variant.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" >
+            
+                <span>
+            
+                    
+                    原理解析
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../principle-intro/Runtime_principle.html">
+            
+                <a href="../principle-intro/Runtime_principle.html">
+            
+                    
+                    框架原理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../principle-intro/Project_architectured.html">
+            
+                <a href="../principle-intro/Project_architectured.html">
+            
+                    
+                    名词解释
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../principle-intro/Apk_architecture.html">
+            
+                <a href="../principle-intro/Apk_architecture.html">
+            
+                    
+                    APK结构
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../principle-intro/File_architecture_runtime.html">
+            
+                <a href="../principle-intro/File_architecture_runtime.html">
+            
+                    
+                    运行期文件结构
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../guide-for-use/">
+            
+                <a href="../guide-for-use/">
+            
+                    
+                    接入指引
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../guide-for-use/guide_for_build.html">
+            
+                <a href="../guide-for-use/guide_for_build.html">
+            
+                    
+                    容器接入
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../guide-for-use/guide_for_bundle.html">
+            
+                <a href="../guide-for-use/guide_for_bundle.html">
+            
+                    
+                    bundle拆分|新建
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../guide-for-use/guide_for_compile.html">
+            
+                <a href="../guide-for-use/guide_for_compile.html">
+            
+                    
+                    awo编译
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../guide-for-use/bundleCommunicate.html">
+            
+                <a href="../guide-for-use/bundleCommunicate.html">
+            
+                    
+                    跨bundle的代码重用和通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../update/">
+            
+                <a href="../update/">
+            
+                    
+                    动态部署
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../update/principle.html">
+            
+                <a href="../update/principle.html">
+            
+                    
+                    技术原理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../update/dexpatch.html">
+            
+                <a href="../update/dexpatch.html">
+            
+                    
+                    dexpatch
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../update/dexpatch_use_guide.html">
+            
+                <a href="../update/dexpatch_use_guide.html">
+            
+                    
+                    dexpatch使用教程
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../update/guide.html">
+            
+                <a href="../update/guide.html">
+            
+                    
+                    一些限制
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" >
+            
+                <span>
+            
+                    
+                    FAQ
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.5.1" data-path="question.html">
+            
+                <a href="question.html">
+            
+                    
+                    问答
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.2" data-path="help.html">
+            
+                <a href="help.html">
+            
+                    
+                    故障排查
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.3" data-path="variant.html">
+            
+                <a href="variant.html">
+            
+                    
+                    构建定制包
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.5.4" data-path="dynamic_failed_help.html">
+            
+                <a href="dynamic_failed_help.html">
+            
+                    
+                    动态部署失败排查指南
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" >
+            
+                <span>
+            
+                    
+                    源码分析
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.6.1" data-path="../code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.html">
+            
+                <a href="../code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.html">
+            
+                    
+                    Atlas之Gradle配置
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.2" data-path="../code_read/atlas_start/atlas_start_1.html">
+            
+                <a href="../code_read/atlas_start/atlas_start_1.html">
+            
+                    
+                    Atlas之启动过程(一)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.3" data-path="../code_read/atlas_start/atlas_start_2.html">
+            
+                <a href="../code_read/atlas_start/atlas_start_2.html">
+            
+                    
+                    Atlas之启动过程(二)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.4" data-path="../code_read/atlas_bundle_load/atlas_bundle_load.html">
+            
+                <a href="../code_read/atlas_bundle_load/atlas_bundle_load.html">
+            
+                    
+                    Atlas之Bundle加载过程
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href=".." >动态部署失败排查指南</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <p>title: &#x52A8;&#x6001;&#x90E8;&#x7F72;&#x6392;&#x67E5;&#x7ECF;&#x9A8C;
+date: 2014-12-22 12:39:04</p>
+<h1 id="&#x6982;&#x8FF0;">&#x6982;&#x8FF0;</h1>
+<p>&#x7ECF;&#x5E38;&#x6709;&#x540C;&#x5B66;&#x5728;&#x7B54;&#x7591;&#x7FA4;&#x4E0A;&#x63D0;&#x51FA;&#x7591;&#x95EE;<code>&#x4E3A;&#x4EC0;&#x4E48;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x4E0D;&#x751F;&#x6548;&#xFF1F;</code>&#xFF0C;&#x7136;&#x540E;&#x5C31;&#x662F;&#x4E00;&#x901A;&#x6392;&#x67E5;&#x3002;&#x7531;&#x4E8E;&#x662F;&#x8FDC;&#x7A0B;&#x4EA4;&#x6D41;&#xFF0C;&#x4EE3;&#x4EF7;&#x5B9E;&#x5728;&#x662F;&#x592A;&#x9AD8;&#x3002;&#x8FD9;&#x7BC7;&#x6587;&#x7AE0;&#x4E3B;&#x8981;&#x662F;&#x548C;&#x5927;&#x5BB6;&#x5206;&#x4EAB;&#x4E00;&#x4E0B;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x6392;&#x67E5;&#x7684;&#x4E00;&#x4E9B;&#x7ECF;&#x9A8C;&#xFF0C;&#x5E0C;&#x671B;&#x80FD;&#x591F;&#x5E2E;&#x52A9;&#x5927;&#x5BB6;&#x5FEB;&#x901F;&#x5B9A;&#x4F4D;&#x3001;&#x89E3;&#x51B3;&#x95EE;&#x9898;&#x3002;</p>
+<p>&#x53E6;&#x5916;&#xFF0C;&#x6839;&#x636E;&#x5386;&#x53F2;&#x7ECF;&#x9A8C;&#xFF0C;&#x5927;&#x90E8;&#x5206;&#x90FD;&#x662F;&#x4F7F;&#x7528;&#x4E0D;&#x89C4;&#x8303;&#x9020;&#x6210;&#x7684;&#xFF0C;&#x4E3A;&#x4E86;&#x907F;&#x514D;&#x8FD9;&#x4E9B;&#x5947;&#x5947;&#x602A;&#x602A;&#x7684;&#x95EE;&#x9898;&#xFF0C;&#x5927;&#x5BB6;&#x6700;&#x597D;&#x6309;&#x7167;<a href="https://alibaba.github.io/atlas/" target="_blank">Atlas&#x5DE5;&#x7A0B;&#x7ED3;&#x6784;&#x6307;&#x5357;</a>&#x4EE5;&#x53CA;<a href="https://alibaba.github.io/atlas/guide-for-use/guide_for_build.html" target="_blank">&#x5BB9;&#x5668;&#x63A5;&#x5165;</a> &#x8FD9;&#x4E24;&#x7BC7;&#x6587;&#x7AE0;&#x63D0;&#x5230;&#x7684;&#x89C4;&#x8303;&#xFF0C;&#x6765;&#x7EC4;&#x7EC7;&#x5DE5;&#x7A0B;&#x7ED3;&#x6784;&#x3002;</p>
+<h1 id="&#x5FEB;&#x901F;&#x6392;&#x67E5;&#x4E09;&#x8FDE;">&#x5FEB;&#x901F;&#x6392;&#x67E5;&#x4E09;&#x8FDE;</h1>
+<p>&#x4ECE;demo&#x4E2D;&#x4E00;&#x4E2A;&#x4F8B;&#x5B50;&#x5F00;&#x59CB;&#xFF0C;&#x5047;&#x8BBE;&#x6211;&#x4EEC;&#x53D1;&#x4E86;1.0.0&#x7684;Ap,&#x4E4B;&#x540E;&#x4FEE;&#x6539;&#x4E86;splashscreen&#x548C;firstbundle&#x4E24;&#x4E2A;&#x5730;&#x65B9;&#x7684;&#x4EE3;&#x7801;,<strong>&#x5E76;&#x4E14;&#x4FEE;&#x6539;&#x4E86;&#x5BF9;&#x5E94;&#x7684;&#x7248;&#x672C;&#x53F7;</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left"></th>
+<th style="text-align:left">&#x57FA;&#x7EBF;&#x7248;&#x672C;</th>
+<th style="text-align:left">&#x65B0;&#x7248;&#x672C;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">&#x6574;&#x5305;(apk)</td>
+<td style="text-align:left">1.0.0</td>
+<td style="text-align:left">1.0.1</td>
+</tr>
+<tr>
+<td style="text-align:left">splashscreen&#xFF08;maindex&#xFF09;</td>
+<td style="text-align:left">1.0.0</td>
+<td style="text-align:left">1.0.1</td>
+</tr>
+<tr>
+<td style="text-align:left">firstbundle&#xFF08;bundle&#xFF09;</td>
+<td style="text-align:left">1.0.1</td>
+<td style="text-align:left">1.0.2</td>
+</tr>
+</tbody>
+</table>
+<h2 id="1-&#x6253;&#x5305;&#x4EA7;&#x7269;&#x68C0;&#x67E5;">1. &#x6253;&#x5305;&#x4EA7;&#x7269;&#x68C0;&#x67E5;</h2>
+<p>&#x9996;&#x5148;&#x68C0;&#x67E5;&#x6253;&#x5305;&#x7684;&#x4EA7;&#x7269;&#xFF0C;&#x6309;&#x7167;&#x5386;&#x53F2;&#x7ECF;&#x9A8C;&#xFF0C;90%&#x7684;&#x95EE;&#x9898;&#x90FD;&#x662F;&#x56E0;&#x4E3A;&#x6253;&#x5305;&#x4EA7;&#x7269;&#x4E0D;&#x5BF9;&#x9020;&#x6210;&#x7684;&#x3002;</p>
+<h3 id="&#x7B2C;&#x4E00;&#x70B9;&#xFF0C;&#x4F9D;&#x8D56;&#x53D8;&#x52A8;">&#x7B2C;&#x4E00;&#x70B9;&#xFF0C;&#x4F9D;&#x8D56;&#x53D8;&#x52A8;</h3>
+<p>&#x6253;&#x5F00;&#x4EA7;&#x7269;&#x4E2D;&#x7684;<code>dependencyDiff.json</code>&#x7684;&#x6587;&#x4EF6;&#xFF0C;&#x8FD9;&#x4E2A;&#x6587;&#x4EF6;&#x8BB0;&#x5F55;&#x4E86;&#x672C;&#x6B21;&#x6539;&#x52A8;&#x76F8;&#x5BF9;<code>AP</code>&#x7684;&#x4F9D;&#x8D56;&#x53D8;&#x5316;&#x4FE1;&#x606F;</p>
+<pre><code>{
+    &quot;awbDiffs&quot;:[&quot;com.atlas.demo:firstbundle&quot;],
+    &quot;mainDexDiffs&quot;:[&quot;com.atlas.demo:splashscreen(1.0.0@aar=&gt;1.0.1@aar)&quot;],
+    &quot;modifyLines&quot;:[
+        &quot;com.atlas.demo:firstbundle(1.0.1=&gt;1.0.2)&quot;
+    ],
+    &quot;newAwbs&quot;:[]
+}
+</code></pre><p>&#x53EF;&#x4EE5;&#x770B;&#x5230;&#xFF0C;firstbundle &#x548C; splashscreen &#x7684;&#x7248;&#x672C;&#x53D8;&#x5316;&#x548C;&#x6539;&#x52A8;&#x4E00;&#x81F4;&#xFF0C;&#x6CA1;&#x6709;&#x95EE;&#x9898;&#x3002;</p>
+<p>&#x5982;&#x679C;&#x5BF9;&#x4E0D;&#x4E0A;&#xFF0C;&#x8BF4;&#x660E;&#x6253;&#x5305;&#x4EA7;&#x7269;&#x9519;&#x8BEF;&#xFF0C;&#x4E0B;&#x9762;&#x662F;&#x4E24;&#x4E2A;&#x5E38;&#x89C1;&#x7684;&#x539F;&#x56E0;&#xFF0C;&#x9700;&#x8981;&#x540C;&#x5B66;&#x4EEC;&#x81EA;&#x5DF1;&#x505A;&#x4E00;&#x4E0B;&#x6392;&#x67E5;&#x3002;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">&#x6839;&#x672C;&#x539F;&#x56E0;</th>
+<th style="text-align:left">&#x53EF;&#x80FD;&#x7684;&#x9519;&#x8BEF;&#x64CD;&#x4F5C;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">&#x4FEE;&#x6539;&#x5F15;&#x5165;&#x4E86;&#x5176;&#x5B83;&#x9690;&#x542B;&#x7684;&#x6539;&#x52A8;</td>
+<td style="text-align:left">&#x5728;&#x53D1;&#x5E03;lib/bundle&#x7248;&#x672C;&#x65F6;&#xFF0C;&#x5E26;&#x52A8;&#x4E86;&#x5176;&#x5B83;lib&#xFF0F;bundle&#x7684;&#x7248;&#x672C;&#x53D8;&#x5316;</td>
+</tr>
+<tr>
+<td style="text-align:left">AP&#x4E0D;&#x5BF9;,mvn&#x4ED3;&#x5E93;&#x4E2D;&#x7684;AP&#xFF0C;&#x548C;&#x9884;&#x671F;&#x7684;&#x4E0D;&#x662F;&#x540C;&#x4E00;&#x4E2A;</td>
+<td style="text-align:left">1.&#x91CD;&#x65B0;publish&#x4E86;AP,&#x8001;AP&#x88AB;&#x8986;&#x76D6;&#x4E86;<br>2.gradle&#x5728;&#x672C;&#x5730;&#x4ED3;&#x5E93;&#x505A;&#x4E86;&#x4E00;&#x4EFD;cache&#xFF0C;&#x662F;&#x5426;&#x548C;&#x8FDC;&#x7A0B;&#x4ED3;&#x5E93;&#x4E2D;&#x7684;&#x4E00;&#x81F4;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="&#x7B2C;&#x4E8C;&#x70B9;&#xFF0C;&#x9A8C;&#x8BC1;&#x914D;&#x7F6E;&#x6587;&#x4EF6;">&#x7B2C;&#x4E8C;&#x70B9;&#xFF0C;&#x9A8C;&#x8BC1;&#x914D;&#x7F6E;&#x6587;&#x4EF6;</h3>
+<p>&#x6253;&#x5F00;<code>update-1.0.0.json</code></p>
+<pre><code>{
+    //&#x57FA;&#x7EBF;&#x7248;&#x672C;
+    &quot;baseVersion&quot;:&quot;1.0.0&quot;,
+    &quot;updateBundles&quot;:[
+        {
+            &quot;dependency&quot;:[
+                &quot;com.taobao.publicBundle&quot;
+            ],
+            &quot;isMainDex&quot;:false,
+            &quot;name&quot;:&quot;com.taobao.firstbundle&quot;,
+            //&#x57FA;&#x7EBF;&#x4F9D;&#x8D56;1.0.0&#x4E2D;&#x7684;&#x552F;&#x4E00;tag
+            &quot;srcUnitTag&quot;:&quot;1lxlheevwoeeg&quot;,
+            //&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x7248;&#x672C;1.0.1&#x7684;tag
+            &quot;unitTag&quot;:&quot;1x6r8iuzs90ff&quot;,
+            &quot;version&quot;:&quot;1.0.0@1.0.2&quot;
+        },
+        {
+            &quot;isMainDex&quot;:true,
+            &quot;name&quot;:&quot;com.taobao.maindex&quot;,
+            &quot;srcUnitTag&quot;:&quot;1nf3phs9djbuj&quot;,
+            &quot;unitTag&quot;:&quot;31jv86qvt1gc&quot;,
+            &quot;version&quot;:&quot;1.0.0@1.0.1&quot;
+        }
+    ],
+    //&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x66F4;&#x65B0;&#x7248;&#x672C;
+    &quot;updateVersion&quot;:&quot;1.0.1&quot;
+}
+</code></pre><ol>
+<li><p>&#x6D89;&#x53CA;&#x6539;&#x52A8;&#x786E;&#x8BA4;&#xFF0C;&#x914D;&#x7F6E;&#x4E2D;&#x7684;diff&#x4FE1;&#x606F;&#x548C;&#x6211;&#x4EEC;&#x7684;&#x6539;&#x52A8;&#x4E00;&#x81F4;&#xFF08;&#x4E24;&#x4E2A;&#x90E8;&#x5206;&#xFF0C;firstbundle&#x548C;maindex&#xFF09;</p>
+</li>
+<li><p>&#x6D89;&#x53CA;&#x7248;&#x672C;&#x786E;&#x8BA4;&#xFF0C;<code>baseVersion</code>(1.0.0), <code>updateVersion</code>(1.0.1),&#x5206;&#x522B;&#x5BF9;&#x5E94;&#x6253;&#x5305;&#x547D;&#x4EE4;&#x7684;<code>apVersion</code>&#x548C;<code>versionName</code>,&#x8868;&#x660E;&#x662F;1.0.0-&gt;1.0.1&#x7684;diff&#x4FE1;&#x606F;&#x3002;</p>
+</li>
+<li>srcUnitTag &#x548C; unittag&#x786E;&#x8BA4;&#x3002;&#xFF08;&#x5982;&#x679C;&#x540C;&#x5B66;&#x4EEC;&#x6CA1;&#x6709;&#x6309;&#x7167;&#x89C4;&#x8303;&#x6765;&#xFF0C;&#x8FD9;&#x4E2A;&#x5730;&#x65B9;&#x5F88;&#x5BB9;&#x6613;&#x51FA;&#x9519;&#xFF0C;&#x5BFC;&#x81F4;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x5931;&#x8D25;&#xFF09;</li>
+</ol>
+<p>&#x5173;&#x4E8E;&#x7B2C;&#x4E09;&#x4E2A;&#xFF0C;&#x6211;&#x4EEC;&#x4EE5;firstbundle&#x4E3A;&#x4F8B;&#xFF0C;&#x8BE6;&#x7EC6;&#x8BF4;&#x660E;&#x3002;&#x9996;&#x5148;&#xFF0C;&#x770B;&#x4E0B;&#x5728;&#x914D;&#x7F6E;&#x6587;&#x4EF6;<code>update-1.0.0.json</code>&#x4E2D;&#x7684;&#x503C;:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">key</th>
+<th style="text-align:left">val</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">srcUnitTag</td>
+<td style="text-align:left">1lxlheevwoeeg</td>
+</tr>
+<tr>
+<td style="text-align:left">unitTag</td>
+<td style="text-align:left">1x6r8iuzs90ff</td>
+</tr>
+</tbody>
+</table>
+<p>ok,&#x6211;&#x4EEC;&#x518D;&#x89E3;&#x538B;1.0.0&#x7684;ap&#x6587;&#x4EF6;&#xFF0C;&#x6253;&#x5F00;<code>atlasFrameworkProperties.json</code>&#x6587;&#x4EF6;&#xFF0C;&#x5173;&#x952E;&#x5B57;&#x641C;&#x7D22;<code>com.taobao.firstbundle</code></p>
+<pre><code>{
+    &quot;bundleInfo&quot;:[
+        {
+            &quot;pkgName&quot;:&quot;com.taobao.firstbundle&quot;,
+            &quot;unique_tag&quot;:&quot;1lxlheevwoeeg&quot;,
+            &quot;version&quot;:&quot;1.0.0@1.0.1&quot;
+        },
+        //...
+    ]
+}
+</code></pre><p>&#x5404;&#x4F4D;&#xFF0C;&#x6709;&#x6CA1;&#x6709;&#x7075;&#x5149;&#x4E00;&#x95EA;&#xFF1F;&#x662F;&#x7684;&#xFF0C;unittag&#x548C;srcunittag&#x662F;&#x6709;&#x8054;&#x7CFB;&#x7684;&#xFF0C;&#x5BA2;&#x6237;&#x7AEF;&#x7528;&#x6765;&#x9A8C;&#x8BC1;patch&#x7684;&#x5408;&#x6CD5;&#x6027;&#xFF0C;&#x770B;&#x56FE;:</p>
+<p><img src="dynamic_help_img/unit_tag_list.png" alt=""></p>
+<p>&#x4EE5;&#x4E0A;&#x662F;&#x6B63;&#x786E;&#x7684;&#x4F7F;&#x7528;&#x59FF;&#x52BF;&#xFF0C;&#x4E0B;&#x9762;&#x662F;&#x5E38;&#x89C1;&#x7684;&#x4E00;&#x4E9B;&#x5E38;&#x89C1;&#x7684;&#x9519;&#x8BEF;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">&#x9519;&#x8BEF;</th>
+<th style="text-align:left">&#x539F;&#x56E0;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>update-xxx.json</code>&#x4E2D;bundle&#x7684;srcUnittag&#x548C;<code>AP</code>&#x4E2D;&#x7684;unitttag&#x4E0D;&#x4E00;&#x6837;</td>
+<td style="text-align:left">AP&#x4E0D;&#x5BF9;&#xFF0C;&#x6BD4;&#x5BF9;&#x7684;AP&#x548C;&#x9884;&#x60F3;&#x7684;&#x4E0D;&#x662F;&#x540C;&#x4E00;&#x4E2A;</td>
+</tr>
+<tr>
+<td style="text-align:left">&#x5728;update-xxx.json&#x6587;&#x4EF6;&#x4E2D;&#xFF0C;&#x67D0;&#x4E2A;bundle&#x7684;srcUnittag&#x548C;unittag&#x4E00;&#x6837;</td>
+<td style="text-align:left">&#x901A;&#x5E38;&#x6765;&#x8BF4;&#x90FD;&#x662F;&#x6539;&#x4E86;&#x4EE3;&#x7801;&#xFF0C;&#x4F46;&#x662F;&#x6CA1;&#x6709;&#x53D8;&#x66F4;&#x4F9D;&#x8D56;lib/bundle&#x7684;&#x7248;&#x672C;&#x53F7;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="&#x7B2C;&#x4E09;&#x70B9;&#xFF0C;diff&#x4EE3;&#x7801;&#x9A8C;&#x8BC1;">&#x7B2C;&#x4E09;&#x70B9;&#xFF0C;diff&#x4EE3;&#x7801;&#x9A8C;&#x8BC1;</h3>
+<p>&#x89E3;&#x538B;tpatch</p>
+<pre><code>&#x2514;&#x2500;&#x2500; patch-1.0.1@1.0.0
+    &#x251C;&#x2500;&#x2500; libcom_taobao_firstbundle
+    &#x2502;   &#x2514;&#x2500;&#x2500; classes.dex
+    &#x2514;&#x2500;&#x2500; libcom_taobao_maindex.so
+</code></pre><p>&#x53CD;&#x7F16;&#x8BD1;Dex&#xFF0C;&#x67E5;&#x770B;patch&#x51FA;&#x6765;&#x7684;&#x4EE3;&#x7801;&#x548C;&#x4FEE;&#x6539;&#x7684;&#x662F;&#x5426;&#x4E00;&#x81F4;&#x3002;</p>
+<p>&#x6BD4;&#x5982;&#x4FEE;&#x6539;&#x4E86;firstbundle &#x4E2D;&#x7684;<code>first.java</code>&#x548C;splashscreen&#x4E2D;&#x7684;<code>maindex.java</code>,diff&#x51FA;&#x6765;&#x7684;&#x4EA7;&#x7269;&#x5C31;&#x4E00;&#x5B9A;&#x5982;&#x4E0A;&#x56FE;&#x6240;&#x793A;:</p>
+<ul>
+<li>libcom_taobao_firstbundle&#xFF0C;&#x53CD;&#x7F16;&#x8BD1;classes.dex&#xFF0C;&#x6709;&#x4E14;&#x53EA;&#x6709;<code>first.class</code>&#x8FD9;&#x4E2A;diff</li>
+<li>libcom_taobao_maindex.so&#xFF0C;&#x89E3;&#x538B;&#x53CD;&#x7F16;&#x8BD1;classes.dex&#xFF0C;&#x6709;&#x4E14;&#x53EA;&#x6709;<code>maindex.class</code>&#x8FD9;&#x4E2A;diff</li>
+<li>&#x6539;&#x4E86;&#x51E0;&#x4E2A;&#x7C7B;&#x8FD9;&#x91CC;&#x5C31;&#x4F1A;&#x5BF9;&#x5E94;diff&#x51FA;&#x51E0;&#x4E2A;&#xFF0C;<strong>&#x4E0D;&#x4F1A;&#x591A;&#x4E5F;&#x4E0D;&#x4F1A;&#x5C11;</strong>&#x3002;</li>
+</ul>
+<p>&#x5982;&#x679C;&#x6709;&#x5F02;&#x5E38;&#xFF0C;&#x548C;&#x7B2C;&#x4E0A;&#x9762;&#x4E00;&#x6837;</p>
+<ul>
+<li>&#x8FD8;&#x662F;AP&#x6709;&#x95EE;&#x9898;</li>
+<li>&#x6216;&#x8005;&#x672C;&#x6B21;&#x4FEE;&#x6539;&#x9690;&#x542B;&#x5E26;&#x5165;&#x4E86;&#x5176;&#x5B83;&#x6539;&#x52A8;&#x3002;</li>
+</ul>
+<h2 id="2-&#x5BA2;&#x6237;&#x7AEF;&#x68C0;&#x67E5;">2. &#x5BA2;&#x6237;&#x7AEF;&#x68C0;&#x67E5;</h2>
+<p>&#x901A;&#x5E38;&#x6765;&#x8BF4;&#xFF0C;&#x5982;&#x679C;&#x6253;&#x5305;&#x4EA7;&#x7269;&#x5982;&#x679C;&#x6CA1;&#x6709;&#x95EE;&#x9898;&#xFF0C;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x4E00;&#x822C;&#x90FD;&#x662F;&#x53EF;&#x4EE5;&#x6B63;&#x5E38;&#x751F;&#x6548;&#x7684;&#x3002;</p>
+<p>&#x9996;&#x5148;&#xFF0C;<strong>&#x786E;&#x4FDD;&#x624B;&#x673A;&#x5B58;&#x50A8;&#x5361;&#x5BB9;&#x91CF;&#x8DB3;&#x591F;(&#x81F3;&#x5C11;100m&#x5427;)</strong>&#xFF0C;&#x7136;&#x540E;&#x5728;&#x8FDB;&#x884C;&#x4E0B;&#x9762;&#x7684;&#x6392;&#x67E5;&#x6B65;&#x9AA4;&#x3002;</p>
+<p>&#x6309;&#x7167;&#x6587;&#x6863;&#xFF0C;&#x89E6;&#x53D1;patch&#x66F4;&#x65B0;&#x64CD;&#x4F5C;&#xFF0C;&#x89C2;&#x5BDF;&#x672C;&#x5730;&#x4E0A;&#x4E24;&#x4E2A;&#x5730;&#x65B9;</p>
+<pre><code>/data/data/\${pkg}/files/bundleBaseline/updateinfo
+/data/data/pkg/files/storage/\${bundle\_pkg\_name}/bundle.zip
+</code></pre><p>pkg&#x4E3A;app&#x7684;&#x5305;&#x540D;</p>
+<p>&#x5982;&#x679C;&#x540C;&#x65F6;&#x5B58;&#x5728;<code>updateinfo</code>&#x548C;<code>updateinfo_new</code>&#x4E24;&#x4E2A;&#x6587;&#x4EF6;,&#x4EE5;<code>updateinfo_new</code>&#x4E3A;&#x51C6;</p>
+<p>bundle_pkg_name&#x4E3A;bundle&#x7684;&#x5305;&#x540D;&#xFF0C;maindex&#x7684;&#x5305;&#x540D;&#x4E3A;<code>com.taobao.maindex</code></p>
+<h3 id="&#x91CD;&#x542F;&#x524D;">&#x91CD;&#x542F;&#x524D;</h3>
+<p>&#x5728;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x63D0;&#x793A;&#x91CD;&#x542F;&#x524D;&#xFF0C;&#x6267;&#x884C; <code>cat updateInfo</code> &#x547D;&#x4EE4;</p>
+<pre><code>1.0.1Ecom.taobao.maindex@31jv86qvt1gc;com.taobao.firstbundle@1x6r8iuzs90ff;
+</code></pre><p>&#x683C;&#x5F0F;&#x5F88;&#x7B80;&#x5355;</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x7248;&#x672C;</th>
+<th style="text-align:left">maindex tag</th>
+<th style="text-align:left">firstbudnle tag</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">1.0.1</td>
+<td style="text-align:left">31jv86qvt1gc</td>
+<td style="text-align:left">1x6r8iuzs90ff</td>
+</tr>
+</tbody>
+</table>
+<p>&#x5BF9;&#x5E94;&#x524D;&#x9762;&#x6253;&#x5305;&#x4EA7;&#x7269;<code>update-1.0.0.json</code>&#x4E2D;&#x7684;&#x8BB0;&#x5F55;&#x7684;unittag&#xFF0C;&#x6570;&#x636E;&#x6CA1;&#x6709;&#x95EE;&#x9898;&#x3002;</p>
+<p>&#x67E5;&#x770B;merge&#x7684;&#x4EA7;&#x7269;&#x662F;&#x5426;&#x5B58;&#x5728;&#xFF0C;&#x4EE5;firstbundle&#x4E3A;&#x4F8B;&#xFF0C;maindex&#x540C;&#x7406;&#x3002;</p>
+<p>cd&#x5230;&#x548C;<code>/data/data/com.taobao.demo/files/storage/com.taobao.firstbundle</code></p>
+<pre><code>bullhead:/data/data/com.taobao.demo/files/storage/com.taobao.firstbundle # ls
+1x6r8iuzs90ff lock
+</code></pre><p>&#x76EE;&#x5F55;&#x540D;&#x4E3A;&#x8BB0;&#x5F55;&#x7684;tag<code>1x6r8iuzs90ff</code>,cd &#x8FDB;&#x53BB;</p>
+<pre><code>bullhead:/data/data/com.taobao.demo/files/storage/com.taobao.firstbundle/1x6r8iuzs90ff # ls
+bundle.dex bundle.zip lock meta
+</code></pre><p>&#x53EF;&#x4EE5;&#x770B;&#x5230;&#x4EA7;&#x7269;merge&#x6210;&#x529F;&#x4E86;&#xFF0C;&#x53CD;&#x7F16;&#x8BD1;budnle.zip&#xFF08;apk&#xFF09;&#xFF0C;&#x53EF;&#x4EE5;&#x9A8C;&#x8BC1;&#x6539;&#x52A8;</p>
+<h3 id="&#x91CD;&#x542F;&#x540E;">&#x91CD;&#x542F;&#x540E;</h3>
+<p>&#x8FD8;&#x662F;&#x67E5;&#x770B;&#x8FD9;&#x4E24;&#x4E2A;&#x6587;&#x4EF6;&#xFF0C;updateinfo&#x7684;&#x5185;&#x5BB9;&#x6709;&#x6CA1;&#x6709;&#x53D8;&#xFF0C;&#x6216;&#x8005;storage&#x4E0B;merge&#x540E;bundle&#x7684;&#x4EA7;&#x7269;&#x662F;&#x5426;&#x5B58;&#x5728;</p>
+<pre><code>/data/data/\${pkg}/files/bundleBaseline/updateinfo
+/data/data/pkg/files/storage/\${bundle\_pkg\_name}/bundle.zip
+</code></pre><p>&#x6CA1;&#x6709;&#x5F02;&#x5E38;&#xFF0C;&#x8BF4;&#x660E;&#x672C;&#x6B21;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x751F;&#x6548;&#x3002;</p>
+<p>&#x5982;&#x679C;&#x6709;&#x5F02;&#x5E38;&#xFF0C;&#x8FD4;&#x56DE;&#x68C0;&#x67E5;&#x7B2C;&#x4E00;&#x6B65;&#x7684;&#x4EA7;&#x7269;&#x3002;</p>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="variant.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page: 构建定制包">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"动态部署失败排查指南","level":"1.5.4","depth":2,"next":{"title":"源码分析","level":"1.6","depth":1,"ref":"","articles":[{"title":"Atlas之Gradle配置","level":"1.6.1","depth":2,"path":"code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.md","ref":"code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.md","articles":[]},{"title":"Atlas之启动过程(一)","level":"1.6.2","depth":2,"path":"code_read/atlas_start/atlas_start_1.md","ref":"code_read/atlas_start/atlas_start_1.md","articles":[]},{"title":"Atlas之启动过程(二)","level":"1.6.3","depth":2,"path":"code_read/atlas_start/atlas_start_2.md","ref":"code_read/atlas_start/atlas_start_2.md","articles":[]},{"title":"Atlas之Bundle加载过程","level":"1.6.4","depth":2,"path":"code_read/atlas_bundle_load/atlas_bundle_load.md","ref":"code_read/atlas_bundle_load/atlas_bundle_load.md","articles":[]}]},"previous":{"title":"构建定制包","level":"1.5.3","depth":2,"path":"faq/variant.md","ref":"faq/variant.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"faq/dynamic_failed_help.md","mtime":"2017-11-27T09:41:52.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-11-27T10:00:49.012Z"},"basePath":"..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="../gitbook/gitbook.js"></script>
+    <script src="../gitbook/theme.js"></script>
+    
+        
+        <script src="../gitbook/gitbook-plugin-livereload/plugin.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

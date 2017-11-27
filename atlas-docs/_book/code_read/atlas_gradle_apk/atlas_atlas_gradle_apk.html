@@ -1,0 +1,786 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Atlas之Gradle配置 · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="../atlas_start/atlas_start_1.html" />
+    
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../../">
+            
+                <a href="../../">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" >
+            
+                <span>
+            
+                    
+                    原理解析
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../../principle-intro/Runtime_principle.html">
+            
+                <a href="../../principle-intro/Runtime_principle.html">
+            
+                    
+                    框架原理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../../principle-intro/Project_architectured.html">
+            
+                <a href="../../principle-intro/Project_architectured.html">
+            
+                    
+                    名词解释
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../../principle-intro/Apk_architecture.html">
+            
+                <a href="../../principle-intro/Apk_architecture.html">
+            
+                    
+                    APK结构
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../../principle-intro/File_architecture_runtime.html">
+            
+                <a href="../../principle-intro/File_architecture_runtime.html">
+            
+                    
+                    运行期文件结构
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../../guide-for-use/">
+            
+                <a href="../../guide-for-use/">
+            
+                    
+                    接入指引
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../../guide-for-use/guide_for_build.html">
+            
+                <a href="../../guide-for-use/guide_for_build.html">
+            
+                    
+                    容器接入
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../../guide-for-use/guide_for_bundle.html">
+            
+                <a href="../../guide-for-use/guide_for_bundle.html">
+            
+                    
+                    bundle拆分|新建
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../../guide-for-use/guide_for_compile.html">
+            
+                <a href="../../guide-for-use/guide_for_compile.html">
+            
+                    
+                    awo编译
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../../guide-for-use/bundleCommunicate.html">
+            
+                <a href="../../guide-for-use/bundleCommunicate.html">
+            
+                    
+                    跨bundle的代码重用和通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../../update/">
+            
+                <a href="../../update/">
+            
+                    
+                    动态部署
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../../update/principle.html">
+            
+                <a href="../../update/principle.html">
+            
+                    
+                    技术原理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../../update/dexpatch.html">
+            
+                <a href="../../update/dexpatch.html">
+            
+                    
+                    dexpatch
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../../update/dexpatch_use_guide.html">
+            
+                <a href="../../update/dexpatch_use_guide.html">
+            
+                    
+                    dexpatch使用教程
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../../update/guide.html">
+            
+                <a href="../../update/guide.html">
+            
+                    
+                    一些限制
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" >
+            
+                <span>
+            
+                    
+                    FAQ
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.5.1" data-path="../../faq/question.html">
+            
+                <a href="../../faq/question.html">
+            
+                    
+                    问答
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.2" data-path="../../faq/help.html">
+            
+                <a href="../../faq/help.html">
+            
+                    
+                    故障排查
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.3" data-path="../../faq/variant.html">
+            
+                <a href="../../faq/variant.html">
+            
+                    
+                    构建定制包
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.4" data-path="../../faq/dynamic_failed_help.html">
+            
+                <a href="../../faq/dynamic_failed_help.html">
+            
+                    
+                    动态部署失败排查指南
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" >
+            
+                <span>
+            
+                    
+                    源码分析
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter active" data-level="1.6.1" data-path="atlas_atlas_gradle_apk.html">
+            
+                <a href="atlas_atlas_gradle_apk.html">
+            
+                    
+                    Atlas之Gradle配置
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.2" data-path="../atlas_start/atlas_start_1.html">
+            
+                <a href="../atlas_start/atlas_start_1.html">
+            
+                    
+                    Atlas之启动过程(一)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.3" data-path="../atlas_start/atlas_start_2.html">
+            
+                <a href="../atlas_start/atlas_start_2.html">
+            
+                    
+                    Atlas之启动过程(二)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.4" data-path="../atlas_bundle_load/atlas_bundle_load.html">
+            
+                <a href="../atlas_bundle_load/atlas_bundle_load.html">
+            
+                    
+                    Atlas之Bundle加载过程
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="../.." >Atlas之Gradle配置</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <h1 id="&#x6982;&#x8FF0;">&#x6982;&#x8FF0;</h1>
+<p>Atlas&#x4E00;&#x4E2A;&#x8FD0;&#x884C;&#x4E8E;Android&#x7CFB;&#x7EDF;&#x4E0A;&#x7684;&#x4E00;&#x4E2A;&#x5BB9;&#x5668;&#x5316;&#x6846;&#x67B6;&#x3002;&#x4E3A;&#x4E86;&#x5B9E;&#x73B0;&#x8FD9;&#x4E00;&#x76EE;&#x6807;&#xFF0C;&#x5728;&#x7F16;&#x8BD1;&#x5668;&#x548C;&#x8FD0;&#x884C;&#x671F;&#xFF0C;Atlas&#x90FD;&#x505A;&#x4E86;&#x5F88;&#x591A;&#x5DE5;&#x4F5C;&#x3002;&#x672C;&#x6587;&#x662F;&#x4E00;&#x4E2A;&#x5165;&#x95E8;&#x7EA7;&#x522B;&#x7684;&#x6587;&#x7AE0;&#xFF0C;&#x68B3;&#x7406;&#x4ECE;gradle&#x914D;&#x7F6E;&#x5230;&#x751F;&#x6210;&#x6700;&#x7EC8;apk&#x7684;&#x671F;&#x95F4;&#xFF0C;Atlas&#x6846;&#x67B6;&#x5230;&#x5E95;&#x641E;&#x4E86;&#x54EA;&#x4E9B;&#x4E8B;&#x60C5;&#x3002;</p>
+<p>&#x4EE3;&#x7801;&#x4EE5; <a href="https://github.com/alibaba/atlas/tree/master/atlas-demo" target="_blank">&#x5B98;&#x65B9;demo</a> &#x4E3A;&#x4F8B;&#x3002;</p>
+<h1 id="gradle&#x5206;&#x6790;">gradle&#x5206;&#x6790;</h1>
+<p>gradle&#x90E8;&#x5206;&#xFF0C;&#x6211;&#x4EEC;&#x53EA;&#x7528;&#x770B;&#x4E3B;&#x5DE5;&#x7A0B;app&#x548C;bundle&#x7684;&#x914D;&#x7F6E;&#x5C31;&#x53EF;&#x4EE5;&#x4E86;&#x3002;</p>
+<h2 id="app">app</h2>
+<p>build.gradle</p>
+<pre><code class="lang-gradle"># &#x7B2C;&#x4E00;&#x90E8;&#x5206;
+android {
+    <span class="hljs-comment">//...</span>
+}
+
+# &#x7B2C;&#x4E8C;&#x90E8;&#x5206;
+atlas {
+    <span class="hljs-comment">//...</span>
+}
+
+# &#x7B2C;&#x4E09;&#x90E8;&#x5206;
+<span class="hljs-keyword">dependencies</span> {
+    <span class="hljs-keyword">compile</span> xxx
+    bundleCompile xxx
+}
+</code></pre>
+<p>&#x53EF;&#x4EE5;&#x5F88;&#x6E05;&#x695A;&#x7684;&#x770B;&#x5230;&#xFF0C;gradle&#x7684;&#x914D;&#x7F6E;&#x4E3B;&#x8981;&#x5206;&#x4E3A;&#x4E09;&#x5927;&#x5757;&#xFF0C;&#x4F9D;&#x6B21;&#x662F;&#x6807;&#x51C6;&#x7684;android&#x63D2;&#x4EF6;&#x914D;&#x7F6E;&#x3001;atlas&#x63D2;&#x4EF6;&#x7684;&#x914D;&#x7F6E;&#xFF0C;&#x4EE5;&#x53CA;&#x4F9D;&#x8D56;&#x7BA1;&#x7406;&#x90E8;&#x5206;&#x3002;&#x6211;&#x4EEC;&#x91CD;&#x70B9;&#x770B;&#x6700;&#x540E;&#x4E24;&#x4E2A;&#x90E8;&#x5206;&#x3002;</p>
+<h3 id="atlas&#x63D2;&#x4EF6;&#x914D;&#x7F6E;">Atlas&#x63D2;&#x4EF6;&#x914D;&#x7F6E;</h3>
+<p>atlas&#x63D2;&#x4EF6;&#x6709;&#x5F88;&#x591A;&#x53C2;&#x6570;&#xFF0C;&#x8FD9;&#x91CC;&#x53EA;&#x5173;&#x6CE8;demo&#x4E2D;&#x51FA;&#x73B0;&#x7684;&#x91CD;&#x70B9;&#x53C2;&#x6570;&#xFF0C;&#x5176;&#x5B83;&#x8BBE;&#x7F6E;&#x5927;&#x5BB6;&#x53EF;&#x4EE5;&#x67E5;&#x770B;<a href="http://atlas.taobao.org/docs/guide-for-use/guide_for_build.html" target="_blank">&#x5B98;&#x65B9;&#x6587;&#x6863;</a>&#x3002;</p>
+<pre><code>atlas {
+    atlasEnabled true
+    tBuildConfig {
+        autoStartBundles = [&apos;com.taobao.firstbundle&apos;] 
+        outOfApkBundles = [&apos;remotebundle&apos;]
+        preLaunch = &apos;com.taobao.demo.DemoPreLaunch&apos;
+    }
+}
+</code></pre><p><strong>atlasEnabled</strong>  &#x5F00;&#x542F;atlas&#x63D2;&#x4EF6;&#x7684;&#x5F00;&#x5173;&#xFF0C;&#x5728;&#x7F16;&#x8BD1;&#x671F;&#x4F1A;&#x505A;&#x5F88;&#x591A;&#x4E8B;&#x60C5;</p>
+<ul>
+<li>merge&#x5404;&#x4E2A;bundle&#x7684;manifest&#x5230;app&#x4E2D;</li>
+<li>&#x5C06;bunde&#x7684;&#x8D44;&#x6E90;&#x8FDB;&#x884C;&#x5206;&#x6BB5;</li>
+<li>&#x4E3A;&#x56DB;&#x5927;&#x7EC4;&#x4EF6;&#x9884;&#x7559;&#x4E00;&#x4E9B;&#x5751;&#x4F4D;</li>
+<li>&#x751F;&#x6210;&#x4E00;&#x4E9B;class&#xFF0C;&#x8BB0;&#x5F55;bundle&#x7684;&#x5173;&#x952E;&#x4FE1;&#x606F; </li>
+<li>&#x6253;&#x5305;bundle&#x7B49;&#x7B49;</li>
+</ul>
+<p><strong>autoStartBundles</strong> &#x6307;&#x5B9A;&#x7B2C;&#x4E00;&#x4E2A;&#x9700;&#x8981;&#x542F;&#x52A8;&#x7684;bundle&#xFF0C;&#x5728;Atlas&#x6846;&#x67B6;&#x521D;&#x59CB;&#x5316;&#x5B8C;&#x6BD5;&#x540E;&#xFF0C;&#x4F1A;&#x6267;&#x884C;&#x8FD9;&#x91CC;&#x8FD9;&#x91CC;&#x914D;&#x7F6E;bundle&#x7684;&#x4EE3;&#x7801;&#x3002;</p>
+<p><strong>preLaunch</strong> &#x81EA;&#x5B9A;&#x4E49;&#x521D;&#x59CB;&#x5316;&#x5165;&#x53E3;&#xFF0C;&#x8FD9;&#x4E2A;&#x7C7B;&#x9700;&#x8981;&#x5B9E;&#x73B0;<code>AtlasPreLauncher</code>&#x63A5;&#x53E3;&#xFF0C;&#x56DE;&#x8C03;&#x65F6;&#x673A;&#x662F;&#x5728;atlas&#x5BF9;&#x7CFB;&#x7EDF;&#x8FDB;&#x884C;hack&#x4E4B;&#x540E;&#xFF0C;atlas&#x6846;&#x67B6;&#x5F00;&#x59CB;&#x521D;&#x59CB;&#x5316;&#x4E4B;&#x524D;&#x3002;</p>
+<h3 id="&#x4F9D;&#x8D56;&#x7BA1;&#x7406;&#x914D;&#x7F6E;">&#x4F9D;&#x8D56;&#x7BA1;&#x7406;&#x914D;&#x7F6E;</h3>
+<p>&#x63A5;&#x7740;&#x770B;&#x4F9D;&#x8D56;&#x914D;&#x7F6E;&#x90E8;&#x5206;</p>
+<pre><code>atlas {
+    tBuildConfig {
+        outOfApkBundles = [&apos;remotebundle&apos;]
+    }
+}
+
+dependencies {
+    compile fileTree(dir: &apos;libs&apos;, include: [&apos;*.jar&apos;])
+    compile(&apos;com.taobao.android:atlas_core:5.0.7@aar&apos;) {
+        transitive = true
+    }
+
+    compile project(&apos;:middlewarelibrary&apos;)
+    compile project(&apos;:splashscreen&apos;)
+    compile project(&apos;:activitygroupcompat&apos;)
+
+    bundleCompile project(&apos;:firstbundle&apos;)
+    bundleCompile project(&apos;:secondbundle&apos;)
+    bundleCompile project(&apos;:remotebundle&apos;)
+    bundleCompile project(&apos;:publicbundle&apos;)
+
+    compile &apos;com.android.support:appcompat-v7:25.1.0&apos;
+}
+</code></pre><p><code>dependencies</code>&#x4E3B;&#x8981;&#x5206;&#x4E3A;&#x4E09;&#x4E2A;&#x90E8;&#x5206;</p>
+<ul>
+<li>comile xxx     </li>
+<li>bundleCompile xxx</li>
+<li>outOfApkBundles =[&apos;xxx&apos;]</li>
+</ul>
+<p><strong>compile</strong> : &#x5E38;&#x89C4;&#x7684;&#x6253;&#x5305;&#x914D;&#x7F6E;&#xFF0C;&#x4F1A;&#x5C06;&#x4F9D;&#x8D56;&#x4EE3;&#x7801;&#x6253;&#x5165;&#x5230;dex&#x4E2D;&#x53BB;</p>
+<p><strong>bundleCompile</strong> : atlas &#x7684;&#x914D;&#x7F6E;&#x9879;&#xFF0C;&#x8868;&#x793A;apk&#x7684;bunde&#x4F9D;&#x8D56;&#xFF0C;&#x5373;apk&#x662F;&#x7531;&#x8FD9;&#x4E9B;bundle&#x5171;&#x540C;&#x7EC4;&#x6210;&#x3002;</p>
+<blockquote>
+<p>bundle&#x4E2D;&#x7684;&#x4EE3;&#x7801;&#x4E0D;&#x4F1A;&#x6253;&#x5165;dex&#x4E2D;&#x53BB;&#xFF0C;bundle&#x5C06;&#x4EE5;libxxx.so&#x6587;&#x4EF6;&#x7684;&#x5F62;&#x5F0F;&#xFF0C;&#x653E;&#x5728;apk&#x7684;lib&#x76EE;&#x5F55;&#x4E0B;&#xFF0C;&#x968F;&#x5305;&#x53D1;&#x5E03;</p>
+</blockquote>
+<p><strong>outOfApkBundles</strong> : &#x6307;&#x5B9A;&#x8FDC;&#x7A0B;bundle </p>
+<blockquote>
+<p>&#x6BD4;&#x5982;&#x5728;demo&#x4E2D;&#xFF0C;firstbundle&#x3001;secondbundle&#x3001;publicbundle &#x4F1A;&#x6253;&#x5165;apk&#x4E2D;&#xFF0C;&#x800C;remotebundle&#x4E0D;&#x4F1A;</p>
+</blockquote>
+<h3 id="&#x5C0F;&#x7ED3;">&#x5C0F;&#x7ED3;</h3>
+<p><strong>&#x53EF;&#x4EE5;&#x770B;&#x5230;&#xFF0C;&#x5728;atlas&#x6846;&#x67B6;&#x4E2D;&#xFF0C;&#x4E3B;app&#x53EA;&#x662F;&#x4E00;&#x4E2A;&#x58F3;&#x5B50;&#xFF0C;&#x53EA;&#x662F;&#x7528;&#x6765;&#x914D;&#x7F6E;&#x6253;&#x5305;&#x53C2;&#x6570;&#x7684;</strong></p>
+<p>&#x6BD4;&#x5982;&#x5728;demo&#x4E2D;&#xFF0C;&#x914D;&#x7F6E;&#x4E86;&#x4EE5;&#x4E0B;&#x6253;&#x5305;&#x8BBE;&#x7F6E;</p>
+<ul>
+<li>app&#x7684;&#x5305;&#x540D;&#x3001;&#x7248;&#x672C;&#x53F7;...</li>
+<li>&#x9700;&#x8981;&#x6253;&#x5165;dex&#x7684;&#x4EE3;&#x7801; (appcompat...)</li>
+<li>&#x968F;&#x5305;&#x53D1;&#x5E03;&#x4F46;&#x662F;&#x4E0D;&#x6253;&#x5165;dex&#x7684;&#x4EE3;&#x7801; (firstbundle&#x3001;secondbundle&#x3001;publicbundle)</li>
+<li>&#x72EC;&#x7ACB;&#x6253;&#x5305;&#xFF0C;&#x7528;&#x4E8E;&#x540E;&#x7EED;&#x7684;&#x52A8;&#x6001;&#x4E0B;&#x53D1; (remotebundle)&#x3002;</li>
+</ul>
+<p>&#x76D7;&#x7528;&#x4E00;&#x5F20;&#x8001;&#x5927;&#x7684;&#x56FE;
+<img src="http://ata2-img.cn-hangzhou.img-pub.aliyun-inc.com/fdb39a090aa3604aa999704eec1348eb.png" alt=""></p>
+<h2 id="bundle">bundle</h2>
+<p>&#x4EE5;secondbundle&#x4E3A;&#x4F8B;&#xFF0C;&#x770B;&#x4E00;&#x4E0B;bundle&#x4E2D;gradle&#x7684;&#x914D;&#x7F6E;</p>
+<pre><code>apply plugin: &apos;com.android.library&apos;
+apply plugin: &apos;com.taobao.atlas&apos;
+
+atlas {
+    bundleConfig{
+        awbBundle true
+    }
+}
+
+android {
+    //...
+}
+
+dependencies {
+    compile fileTree(dir: &apos;libs&apos;, include: [&apos;*.jar&apos;])
+    compile project(&quot;:secondbundlelibrary&quot;);
+    providedCompile &apos;com.android.support:appcompat-v7:25.1.0&apos;
+    providedCompile &apos;com.android.support:support-v4:25.3.0&apos;
+    providedCompile &apos;com.android.support.constraint:constraint-layout:1.0.0-alpha8&apos;
+    providedCompile project(&apos;:middlewarelibrary&apos;)
+}
+</code></pre><p>&#x9996;&#x5148;<code>apply plugin: &apos;com.taobao.atlas&apos;</code>&#x548C;<code>awbBundle true</code>&#x8868;&#x660E;&#x542F;&#x7528;&#x4E86;atlas&#x63D2;&#x4EF6;&#xFF0C;&#x5E76;&#x5C06;&#x5F53;&#x524D;&#x6A21;&#x5757;&#x7F16;&#x8BD1;&#x6210;awb&#x5F62;&#x5F0F;&#x7684;bundle&#x4F9B;&#x4E3B;apk&#x4F7F;&#x7528;&#x3002;</p>
+<p>&#x800C;&#x5728; <code>dependencies</code> &#x4E2D;&#x53EF;&#x4EE5;&#x770B;&#x5230;&#x6709;&#x4E24;&#x79CD;&#x5F62;&#x5F0F;&#x7684;&#x4F9D;&#x8D56;</p>
+<table>
+<thead>
+<tr>
+<th>&#x4F9D;&#x8D56;&#x65B9;&#x5F0F;</th>
+<th>&#x8BF4;&#x660E;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>providedCompile</td>
+<td>&#x4E3B;dex&#x4E2D;&#x5DF2;&#x7ECF;&#x6253;&#x5165;&#x4E86;&#x5FC5;&#x8981;&#x7684;&#x516C;&#x7528;&#x4EE3;&#x7801;(appcompat&#x3001;middlewarelibrary)&#xFF0C;&#x5728;runtime&#x65F6;&#xFF0C;atlas&#x6846;&#x67B6;&#x4F1A;&#x81EA;&#x52A8;&#x627E;&#x5230;&#x4E3B;dex&#x4E2D;&#x7684;class&#x4F7F;&#x7528;&#xFF0C;&#x6240;&#x4EE5;secondbundl&#x5C31;&#x4E0D;&#x9700;&#x8981;&#x5728;&#x91CD;&#x590D;&#x6253;&#x5165;</td>
+</tr>
+<tr>
+<td>compile</td>
+<td>secondbundlelibrary&#x4E4B;&#x524D;&#x5E76;&#x6CA1;&#x6709;&#x6253;&#x5165;&#x4E3B;dex&#x4E2D;&#xFF0C;&#x56E0;&#x4E3A;&#x8FD9;&#x53EA;&#x662F;secondbundle&#x6240;&#x9700;&#x8981;&#x7684;&#x4F9D;&#x8D56;&#x3002;&#x6700;&#x7EC8;&#x4F1A;&#x5C06;secondbundle&#x548C;secondbundlelibrary&#x7684;&#x6253;&#x5728;&#x4E00;&#x4E2A;&#x540C;&#x4E00;&#x4E2A;dex&#x4E2D;&#xFF0C;&#x52A0;&#x4E0A;&#x4E24;&#x8005;&#x7684;&#x8D44;&#x6E90;&#xFF0C;&#x6210;&#x4E3A;&#x4E00;&#x4E2A;bundle</td>
+</tr>
+</tbody>
+</table>
+<h1 id="apk&#x7ED3;&#x6784;&#x5206;&#x6790;">apk&#x7ED3;&#x6784;&#x5206;&#x6790;</h1>
+<p>&#x5728;&#x770B;&#x5B8C;gradle&#x7684;&#x914D;&#x7F6E;&#x4E4B;&#x540E;&#xFF0C;&#x6211;&#x4EEC;&#x53CD;&#x7F16;&#x8BD1;demo&#x7684;apk&#xFF0C;&#x770B;&#x4E00;&#x4E0B;&#x6700;&#x7EC8;&#x751F;&#x6210;&#x7684;&#x7ED3;&#x6784;&#x3002;</p>
+<h2 id="host">host</h2>
+<h3 id="manifest">manifest</h3>
+<p>&#x9996;&#x5148;&#xFF0C;&#x8D34;&#x4E00;&#x5F20;&#x53CD;&#x7F16;&#x8BD1;&#x540E;&#x7684;manifest</p>
+<p><img src="http://ata2-img.cn-hangzhou.img-pub.aliyun-inc.com/d32dfd32381f11d4f64ce13ab772f9e4.png" alt=""></p>
+<p>&#x53EF;&#x4EE5;&#x770B;&#x5230;&#xFF0C;manifest&#x4E2D;&#x7684;&#x5185;&#x5BB9;&#x5927;&#x6982;&#x5206;&#x4E3A;&#x4E09;&#x5927;&#x5757;</p>
+<ul>
+<li>host &#x7684;manifest&#x90E8;&#x5206;</li>
+<li>bunde &#x7684;&#x7684;manifet&#x90E8;&#x5206;</li>
+<li>&#x989D;&#x5916;&#x7684;&#x914D;&#x7F6E;</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>manifest</th>
+<th>&#x8BF4;&#x660E;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>host</td>
+<td>&#x5E38;&#x89C4;&#x7F16;&#x8BD1;&#x4EA7;&#x751F;&#x7684;&#x6E05;&#x5355;&#x6570;&#x636E;&#xFF0C;&#x5305;&#x62EC;app&#x5DE5;&#x7A0B;&#x81EA;&#x8EAB;&#x7684;&#x4EE3;&#x7801;&#x548C;compile&#x4F9D;&#x8D56;&#x7684;&#x4EE3;&#x7801;</td>
+</tr>
+<tr>
+<td>bundle</td>
+<td>bundle&#x90E8;&#x5206;&#x7684;&#x6E05;&#x5355;&#x6570;&#x636E;&#xFF0C;&#x5305;&#x62EC;&#x5728;app&#x5DE5;&#x7A0B;&#x4E2D;bundleCompile&#x7684;&#x4F9D;&#x8D56;&#x4EE3;&#x7801;&#x548C;bundle&#x81EA;&#x8EAB;compile&#x7684;&#x4F9D;&#x8D56;&#x4EE3;&#x7801;</td>
+</tr>
+<tr>
+<td>&#x914D;&#x7F6E;</td>
+<td>atlas&#x63D2;&#x4EF6;&#x5728;&#x7F16;&#x8BD1;&#x671F;&#x751F;&#x6210;&#x7684;&#x914D;&#x7F6E;&#x4FE1;&#x606F;&#x3002;&#x6BD4;&#x5982;&#x5728;gradle&#x4E2D;&#x914D;&#x7F6E;&#x4E86; <code>autoStartBundles = [&apos;com.taobao.firstbundle&apos;]</code>&#xFF0C;&#x7F16;&#x8BD1;&#x65F6;&#xFF0C;&#x4F1A;&#x5C06;firstbundle&#x4E2D;application&#x8DEF;&#x5F84;&#x5199;&#x5165;manifest&#x3002;&#x7A0B;&#x5E8F;&#x8FD0;&#x884C;&#x65F6;&#xFF0C;atlas&#x4F1A;&#x7B2C;&#x4E00;&#x4E2A;&#x6267;&#x884C;firstbundle&#x4E2D;DemoApplication&#x4E2D;&#x7684;&#x4EE3;&#x7801;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="&#x4E3B;dex">&#x4E3B;dex</h3>
+<p>&#x5206;&#x6790;&#x5B8C;manifest&#x4E4B;&#x540E;&#xFF0C;&#x6211;&#x4EEC;&#x770B;&#x4E00;&#x770B;host&#x7684;dex&#x6587;&#x4EF6;&#xFF0C;&#x770B;&#x4E00;&#x770B;&#x6709;&#x6CA1;&#x6709;&#x5BF9;java&#x4EE3;&#x7801;&#x52A8;&#x624B;&#x811A;&#x3002;</p>
+<p><img src="http://ata2-img.cn-hangzhou.img-pub.aliyun-inc.com/51bc1436339313814e40bedfb466f53f.png" alt=""></p>
+<p>&#x4E4D;&#x770B;&#x4E4B;&#x4E0B;&#xFF0C;&#x4F3C;&#x4E4E;&#x5E76;&#x6CA1;&#x6709;&#x4EC0;&#x4E48;&#x4E0D;&#x59A5;&#x3002;&#x4F46;&#x662F;&#xFF0C;&#x7EC6;&#x5FC3;&#x7684;&#x540C;&#x5B66;&#x53EF;&#x80FD;&#x53D1;&#x73B0;&#x4E86;&#xFF0C;&#x5C11;&#x4E86;bundle&#x90E8;&#x5206;&#x7684;&#x4EE3;&#x7801;&#x3002;</p>
+<p>&#x7ED3;&#x5408;app&#x5DE5;&#x7A0B;gradle&#x7684;&#x914D;&#x7F6E;&#xFF0C;&#x6211;&#x4EEC;&#x53D1;&#x73B0;&#x4EE5;compile&#x5F00;&#x5934;&#x7684;&#x4F9D;&#x8D56;(middleware&#x3001;utils&#x3001;update),&#x90FD;&#x662F;&#x6B63;&#x5E38;&#x5C06;java&#x4EE3;&#x7801;&#x6253;&#x5165;dex&#x4E2D;&#x3002;&#x800C;&#x4EE5;budleCompile&#x5F00;&#x5934;&#x7684;&#x4F9D;&#x8D56;(firstbundle&#x3001;secondbundle)&#xFF0C;&#x4ED6;&#x4EEC;&#x7684;&#x4EE3;&#x7801;&#x5E76;&#x6CA1;&#x6709;&#x5728;dex&#x4E2D;&#x3002;</p>
+<p><strong>&#x90A3;&#x4E48;&#xFF0C;bundle&#x7684;&#x4EE3;&#x7801;&#x5728;&#x54EA;&#x91CC;&#x5462;&#xFF1F;</strong> &#x6211;&#x4EEC;&#x63A5;&#x7740;&#x5F80;&#x4E0B;&#x770B;</p>
+<h2 id="bundle">bundle</h2>
+<p>bundle&#x7684;&#x5B58;&#x653E;&#x4F4D;&#x7F6E;</p>
+<p><img src="http://ata2-img.cn-hangzhou.img-pub.aliyun-inc.com/ea15cdcaac2a617e7e1c7f76eade1edc.png" alt=""></p>
+<p>bundle&#x7684;&#x4EE3;&#x7801;&#x548C;&#x8D44;&#x6E90;&#x5176;&#x5B9E;&#x72EC;&#x7ACB;&#x6253;&#x6210;&#x4E86;&#x4E00;&#x4E2A;apk&#xFF0C;&#x653E;&#x5728;&#x4E86;apk&#x7684;lib&#x76EE;&#x5F55;&#x4E0B;&#xFF0C;&#x5728;&#x8FD0;&#x884C;&#x65F6;&#x8FDB;&#x884C;&#x52A8;&#x6001;&#x52A0;&#x8F7D;&#x3002;</p>
+<h3 id="manifest">manifest</h3>
+<p><strong>bundle&#x4E2D;&#x7684;manifest&#x4E2D;&#x6CA1;&#x6709;&#x4EFB;&#x4F55;&#x4E1C;&#x897F;&#xFF0C;</strong> &#x611F;&#x5174;&#x8DA3;&#x7684;&#x540C;&#x5B66;&#x53EF;&#x4EE5;&#x81EA;&#x884C;&#x9A8C;&#x8BC1;&#x3002;</p>
+<blockquote>
+<p>&#x8FD9;&#x90E8;&#x5206;&#x5185;&#x5BB9;&#x5728;&#x7F16;&#x8BD1;&#x671F;&#x5DF2;&#x7ECF;&#x5199;&#x5230;app&#x7684;manifest&#x4E2D;&#x4E86;&#xFF0C;&#x8FD9;&#x4E5F;&#x662F; <strong>&#x7EC4;&#x4EF6;&#x5316;&#x548C;&#x63D2;&#x4EF6;&#x5316;</strong> &#x7684;&#x533A;&#x522B;&#x4E4B;&#x4E00;</p>
+</blockquote>
+<h3 id="dex">dex</h3>
+<p>&#x6700;&#x540E;&#x786E;&#x8BA4;&#x4E00;&#x4E0B;&#x4EE5;secondbundle&#x7684;&#x4EE3;&#x7801;&#xFF0C;</p>
+<p><img src="http://ata2-img.cn-hangzhou.img-pub.aliyun-inc.com/96fcb2aabba52a13f2e0abf6768cf1bf.png" alt=""></p>
+<p>&#x679C;&#x7136;&#xFF0C;&#x6BCF;&#x4E2A;bundle&#x7684;&#x4EE3;&#x7801;&#x90FD;&#x662F;&#x5404;&#x81EA;&#x6253;&#x5305;&#x7684;&#x3002;</p>
+<h1 id="&#x603B;&#x7ED3;">&#x603B;&#x7ED3;</h1>
+<p>atlas&#x5C06;&#x4E00;&#x4E2A;apk&#x5206;&#x4E3A;host&#x548C;bundle&#x4E24;&#x5927;&#x90E8;&#x5206;</p>
+<ul>
+<li>host&#x4E3A;&#x5171;&#x7528;&#x4EE3;&#x7801;&#x8D44;&#x6E90;&#x548C;&#x5404;&#x4E2A;bundle&#x7684;manifest&#x4FE1;&#x606F;</li>
+<li>bundle&#x72EC;&#x7ACB;&#x6253;&#x5305;&#xFF0C;&#x62E5;&#x6709;&#x72EC;&#x7ACB;&#x7684;dex&#x548C;&#x8D44;&#x6E90;</li>
+<li>&#x50CF;&#x642D;&#x79EF;&#x6728;&#x4E00;&#x6837;&#xFF0C;host&#x548C;&#x4E0D;&#x540C;&#x7684;bundle&#x7EC4;&#x5408;&#x7F16;&#x8BD1;&#x6210;&#x4E00;&#x4E2A;apk</li>
+</ul>
+<hr>
+<p>&#x53C2;&#x8003;</p>
+<ul>
+<li><a href="http://atlas.taobao.org/docs" target="_blank">&#x5B98;&#x65B9;&#x6587;&#x6863;</a></li>
+<li><a href="https://github.com/alibaba/atlas/tree/master/atlas-demo" target="_blank">demo</a></li>
+</ul>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                
+                <a href="../atlas_start/atlas_start_1.html" class="navigation navigation-next navigation-unique" aria-label="Next page: Atlas之启动过程(一)">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Atlas之Gradle配置","level":"1.6.1","depth":2,"next":{"title":"Atlas之启动过程(一)","level":"1.6.2","depth":2,"path":"code_read/atlas_start/atlas_start_1.md","ref":"code_read/atlas_start/atlas_start_1.md","articles":[]},"previous":{"title":"源码分析","level":"1.6","depth":1,"ref":"","articles":[{"title":"Atlas之Gradle配置","level":"1.6.1","depth":2,"path":"code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.md","ref":"code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.md","articles":[]},{"title":"Atlas之启动过程(一)","level":"1.6.2","depth":2,"path":"code_read/atlas_start/atlas_start_1.md","ref":"code_read/atlas_start/atlas_start_1.md","articles":[]},{"title":"Atlas之启动过程(二)","level":"1.6.3","depth":2,"path":"code_read/atlas_start/atlas_start_2.md","ref":"code_read/atlas_start/atlas_start_2.md","articles":[]},{"title":"Atlas之Bundle加载过程","level":"1.6.4","depth":2,"path":"code_read/atlas_bundle_load/atlas_bundle_load.md","ref":"code_read/atlas_bundle_load/atlas_bundle_load.md","articles":[]}]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.md","mtime":"2017-09-12T02:32:41.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-11-27T10:00:49.012Z"},"basePath":"../..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="../../gitbook/gitbook.js"></script>
+    <script src="../../gitbook/theme.js"></script>
+    
+        
+        <script src="../../gitbook/gitbook-plugin-livereload/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

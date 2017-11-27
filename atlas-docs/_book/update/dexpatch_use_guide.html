@@ -1,0 +1,785 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>dexpatch使用教程 · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="guide.html" />
+    
+    
+    <link rel="prev" href="dexpatch.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" >
+            
+                <span>
+            
+                    
+                    原理解析
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../principle-intro/Runtime_principle.html">
+            
+                <a href="../principle-intro/Runtime_principle.html">
+            
+                    
+                    框架原理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../principle-intro/Project_architectured.html">
+            
+                <a href="../principle-intro/Project_architectured.html">
+            
+                    
+                    名词解释
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../principle-intro/Apk_architecture.html">
+            
+                <a href="../principle-intro/Apk_architecture.html">
+            
+                    
+                    APK结构
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../principle-intro/File_architecture_runtime.html">
+            
+                <a href="../principle-intro/File_architecture_runtime.html">
+            
+                    
+                    运行期文件结构
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../guide-for-use/">
+            
+                <a href="../guide-for-use/">
+            
+                    
+                    接入指引
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../guide-for-use/guide_for_build.html">
+            
+                <a href="../guide-for-use/guide_for_build.html">
+            
+                    
+                    容器接入
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../guide-for-use/guide_for_bundle.html">
+            
+                <a href="../guide-for-use/guide_for_bundle.html">
+            
+                    
+                    bundle拆分|新建
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../guide-for-use/guide_for_compile.html">
+            
+                <a href="../guide-for-use/guide_for_compile.html">
+            
+                    
+                    awo编译
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../guide-for-use/bundleCommunicate.html">
+            
+                <a href="../guide-for-use/bundleCommunicate.html">
+            
+                    
+                    跨bundle的代码重用和通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    动态部署
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="principle.html">
+            
+                <a href="principle.html">
+            
+                    
+                    技术原理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="dexpatch.html">
+            
+                <a href="dexpatch.html">
+            
+                    
+                    dexpatch
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.4.3" data-path="dexpatch_use_guide.html">
+            
+                <a href="dexpatch_use_guide.html">
+            
+                    
+                    dexpatch使用教程
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="guide.html">
+            
+                <a href="guide.html">
+            
+                    
+                    一些限制
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" >
+            
+                <span>
+            
+                    
+                    FAQ
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.5.1" data-path="../faq/question.html">
+            
+                <a href="../faq/question.html">
+            
+                    
+                    问答
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.2" data-path="../faq/help.html">
+            
+                <a href="../faq/help.html">
+            
+                    
+                    故障排查
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.3" data-path="../faq/variant.html">
+            
+                <a href="../faq/variant.html">
+            
+                    
+                    构建定制包
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.4" data-path="../faq/dynamic_failed_help.html">
+            
+                <a href="../faq/dynamic_failed_help.html">
+            
+                    
+                    动态部署失败排查指南
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" >
+            
+                <span>
+            
+                    
+                    源码分析
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.6.1" data-path="../code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.html">
+            
+                <a href="../code_read/atlas_gradle_apk/atlas_atlas_gradle_apk.html">
+            
+                    
+                    Atlas之Gradle配置
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.2" data-path="../code_read/atlas_start/atlas_start_1.html">
+            
+                <a href="../code_read/atlas_start/atlas_start_1.html">
+            
+                    
+                    Atlas之启动过程(一)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.3" data-path="../code_read/atlas_start/atlas_start_2.html">
+            
+                <a href="../code_read/atlas_start/atlas_start_2.html">
+            
+                    
+                    Atlas之启动过程(二)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.4" data-path="../code_read/atlas_bundle_load/atlas_bundle_load.html">
+            
+                <a href="../code_read/atlas_bundle_load/atlas_bundle_load.html">
+            
+                    
+                    Atlas之Bundle加载过程
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href=".." >dexpatch使用教程</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <h1 id="dexpatch&#x4F7F;&#x7528;&#x793A;&#x4F8B;">DexPatch&#x4F7F;&#x7528;&#x793A;&#x4F8B;</h1>
+<p>DexPatch&#x662F;&#x4EE5;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x6280;&#x672F;&#x65B9;&#x6848;&#x4E3A;&#x57FA;&#x7840;&#xFF0C;&#x4EE5;&#x5FEB;&#x901F;&#x89E3;&#x51B3;&#x7EBF;&#x4E0A;&#x6545;&#x969C;&#x4E3A;&#x552F;&#x4E00;&#x76EE;&#x7684;&#x7684;&#x52A8;&#x6001;&#x5316;&#x65B9;&#x6848;&#x3002;</p>
+<p>&#x7B80;&#x5355;&#x6765;&#x8BF4;&#xFF0C;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x662F;&#x9488;&#x5BF9;apk&#x7EA7;&#x522B;&#x7684;&#x52A8;&#x6001;&#x5347;&#x7EA7;&#xFF0C;DexPatch&#x662F;&#x9488;&#x5BF9;Bundle&#x7EA7;&#x522B;&#x7684;&#x52A8;&#x6001;&#x4FEE;&#x590D;(&#x4E3B;dex&#x53EF;&#x4EE5;&#x8BA4;&#x4E3A;&#x662F;&#x4E00;&#x4E2A;Bundle)</p>
+<p>&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;&#x53C2;&#x7167; <a href="https://alibaba.github.io/atlas/update/dexpatch.html" target="_blank">DexPatch&#x4ECB;&#x7ECD; </a></p>
+<h1 id="dexpatch&#x4E0E;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x5F02;&#x540C;">DexPatch&#x4E0E;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x5F02;&#x540C;</h1>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">&#x4E0D;&#x540C;&#x70B9;</th>
+<th style="text-align:left">DexPatch</th>
+<th style="text-align:left">&#x52A8;&#x6001;&#x90E8;&#x7F72;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">&#x573A;&#x666F;&#x5B9A;&#x4F4D;</td>
+<td style="text-align:left">bundle&#x7EA7;&#x522B;&#xFF0C;&#x4EE3;&#x7801;&#x52A8;&#x6001;&#x4FEE;&#x590D;</td>
+<td style="text-align:left">apk&#x52A8;&#x6001;&#x5347;&#x7EA7;</td>
+</tr>
+<tr>
+<td style="text-align:left">&#x7075;&#x6D3B;&#x5EA6;</td>
+<td style="text-align:left">&#x5404;&#x4E2A;bundle&#x968F;&#x65F6;&#x4E0B;&#x53D1;</td>
+<td style="text-align:left">&#x96C6;&#x6210;&#x5347;&#x7EA7;</td>
+</tr>
+<tr>
+<td style="text-align:left">&#x6784;&#x5EFA;&#x901F;&#x5EA6;</td>
+<td style="text-align:left">&#x5F88;&#x5FEB;</td>
+<td style="text-align:left">&#x4E00;&#x822C;</td>
+</tr>
+<tr>
+<td style="text-align:left">&#x751F;&#x6548;&#x901F;&#x5EA6;</td>
+<td style="text-align:left">&#x5FEB;</td>
+<td style="text-align:left">&#x4E00;&#x822C;</td>
+</tr>
+<tr>
+<td style="text-align:left">&#x4FEE;&#x6539;&#x8303;&#x56F4;</td>
+<td style="text-align:left">bundle&#x81EA;&#x8EAB;&#x5185;&#x805A;</td>
+<td style="text-align:left">apk&#x8303;&#x56F4;</td>
+</tr>
+<tr>
+<td style="text-align:left">versionName</td>
+<td style="text-align:left">&#x4E0D;&#x6539;</td>
+<td style="text-align:left">+1</td>
+</tr>
+<tr>
+<td style="text-align:left">java</td>
+<td style="text-align:left">&#x652F;&#x6301;</td>
+<td style="text-align:left">&#x652F;&#x6301;</td>
+</tr>
+<tr>
+<td style="text-align:left">so</td>
+<td style="text-align:left">x</td>
+<td style="text-align:left">&#x652F;&#x6301;</td>
+</tr>
+<tr>
+<td style="text-align:left">resource</td>
+<td style="text-align:left">x</td>
+<td style="text-align:left">&#x652F;&#x6301;</td>
+</tr>
+</tbody>
+</table>
+<h1 id="&#x7248;&#x672C;">&#x7248;&#x672C;</h1>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">&#x4F9D;&#x8D56;</th>
+<th style="text-align:left">&#x7248;&#x672C;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">atlasplugin</td>
+<td style="text-align:left">2.3.3.rc12-1</td>
+</tr>
+<tr>
+<td style="text-align:left">atlas_core</td>
+<td style="text-align:left">5.0.7.41</td>
+</tr>
+<tr>
+<td style="text-align:left">atlasupdate</td>
+<td style="text-align:left">1.1.4.11</td>
+</tr>
+</tbody>
+</table>
+<h1 id="&#x6253;&#x5305;">&#x6253;&#x5305;</h1>
+<p>Dexpatch&#x9700;&#x8981;&#x4E00;&#x4E2A;ap&#x7248;&#x672C;&#x4F5C;&#x4E3A;&#x53C2;&#x7167;&#xFF0C;&#x548C;&#x73B0;&#x5728;&#x7684;&#x4EE3;&#x7801;&#x6BD4;&#x5BF9;&#x505A;diff&#x3002;&#x5047;&#x8BBE;&#x5F53;&#x524D;&#x7248;&#x672C;&#x4E3A;1.0.0 (gradle&#x4E2D;&#x914D;&#x7F6E;)</p>
+<h2 id="&#x53D1;&#x5E03;&#x7248;&#x672C;">&#x53D1;&#x5E03;&#x7248;&#x672C;</h2>
+<p>&#x5982;&#x679C;&#x4E4B;&#x524D;&#x53D1;&#x5E03;&#x8FC7;ap&#x7248;&#x672C;&#xFF0C;&#x53EF;&#x4EE5;&#x8DF3;&#x8FC7;&#x6B64;&#x8282;&#x3002;&#x5047;&#x8BBE;&#x4ECE;&#x672A;&#x53D1;&#x5E03;&#x8FC7;ap&#xFF0C;&#x6309;&#x7167;&#x5982;&#x4E0B;&#x6B65;&#x9AA4;&#xFF0C;&#x53D1;&#x5E03;1.0.0&#x7684;ap</p>
+<ol>
+<li>&#x8FDB;&#x5165;app&#x76EE;&#x5F55;&#x4E0B;</li>
+<li>&#x751F;&#x6210;&#x57FA;&#x7EBF;&#x7248;&#x672C; <code>./gradlew clean assembleDebug</code></li>
+<li>&#x53D1;&#x5E03;ap&#x5230;&#x4ED3;&#x5E93;&#x4E2D; `./gradlew publish</li>
+</ol>
+<h2 id="&#x6253;patch">&#x6253;patch</h2>
+<ol>
+<li><p>&#x57FA;&#x4E8E;ap&#x6240;&#x5C5E;&#x7684;&#x7248;&#x672C;(1.0.0)&#xFF0C;&#x4FEE;&#x6539;&#x4EE3;&#x7801;,&#x4EE5;firstbundle&#x4E3A;&#x4F8B;&#xFF0C;&#x5C06;&quot;origin&quot;&#x4FEE;&#x6539;&#x4E3A;&quot;dexpatch&quot;</p>
+<p> <img src="img/dex_patch_edit.png" alt=""> </p>
+</li>
+<li><p>&#x4FEE;&#x6539;&#x4F9D;&#x8D56;&#x7248;&#x672C;&#xFF0C;&#x5C06;firbundle&#x4E2D;grddle&#x7684;verion&#x6539;&#x4E3A;<code>version = &apos;1.0.1&apos;</code></p>
+<blockquote>
+<p>&#x8FD9;&#x91CC;&#x4E5F;&#x53EF;&#x4EE5;&#x4FEE;&#x6539;firbundle&#x4F9D;&#x8D56;&#x7684;&#x67D0;&#x4E2A;aar&#x7684;&#x7248;&#x672C;&#x3002;&#x4E00;&#x53E5;&#x8BDD;&#xFF0C;&#x4F60;&#x8981;&#x901A;&#x8FC7;&#x7248;&#x672C;&#x53F7;&#x544A;&#x8BC9;&#x7F16;&#x8BD1;&#x5668;&#xFF0C;&#x6211;&#x8FD9;&#x4E2A;bundle&#x7684;&#x4EE3;&#x7801;&#x53D8;&#x4E86;</p>
+</blockquote>
+</li>
+<li>&#x6307;&#x5B9A;&#x53C2;&#x7167;&#x7684;&#x7248;&#x672C;&#xFF0C;&#x751F;&#x6210;dexPatch&#x5305;<br> <code>./gradlew clean assembleDebug -DapVersion=1.0.0 -DversionName=1.0.0</code></li>
+</ol>
+<p>PS: </p>
+<blockquote>
+<p>&#x8FD9;&#x91CC;&#x8981;&#x5F3A;&#x8C03;&#x4E00;&#x4E0B;&#xFF0C;&#x4EE3;&#x7801;&#x7684;&#x4FEE;&#x6539;&#x8981;&#x5185;&#x805A;&#x3002;<br>&#x5047;&#x8BBE;A&#x4F9D;&#x8D56;B,&#x4FEE;&#x6539;&#x65F6;&#xFF0C;&#x53EA;&#x6539;A&#x6216;B&#x81EA;&#x8EAB;&#x7684;&#x4EE3;&#x7801;&#xFF0C;&#x4E0D;&#x652F;&#x6301;&#x4FEE;&#x6539;A&#x4E0E;B&#x4E4B;&#x95F4;&#x7684;&#x63A5;&#x53E3;&#x3002;</p>
+</blockquote>
+<h1 id="&#x90E8;&#x7F72;patch">&#x90E8;&#x7F72;Patch</h1>
+<p>&#x751F;&#x6210;&#x7684;patch&#x6587;&#x4EF6;&#x5728; <code>app/build/outputs</code>&#x4E0B;&#xFF0C;&#x68C0;&#x67E5;&#x662F;&#x5426;&#x5B58;&#x5728;&#x4E24;&#x4E2A;&#x6587;&#x4EF6;</p>
+<ul>
+<li>1.0.0@1.0.0.tpatch</li>
+<li>dexpatch-1.0.0.json</li>
+</ul>
+<p>&#x6E05;&#x7A7A; <code>/sdcard/Android/data/com.taobao.demo/cache/</code>&#xFF0C;&#x5E76;&#x5C06;&#x4E0A;&#x8FF0;&#x4E24;&#x4E2A;&#x6587;&#x4EF6;push&#x5230;&#x4E0A;&#x8FF0;&#x8DEF;&#x5F84;&#x4E2D;</p>
+<h1 id="demo&#x4E2D;&#x6D4B;&#x8BD5;&#x5165;&#x53E3;">demo&#x4E2D;&#x6D4B;&#x8BD5;&#x5165;&#x53E3;</h1>
+<p>&#x4E3B;&#x754C;&#x9762;&#x70B9;&#x5F00;&#x4FA7;&#x8FB9;&#x680F;&#xFF0C;&#x70B9;&#x51FB;dexpatch</p>
+<p><img src="img/dexpatch_ui_click.png" alt=""></p>
+<p>&#x91CD;&#x542F;&#x5E94;&#x7528;,Toash&#x663E;&#x793A; &quot;dexpatch&quot;,&#x6210;&#x529F;~</p>
+<p><img src="img/dexpatch_result.png" alt=""></p>
+<h1 id="&#x4EA7;&#x7269;&#x8BF4;&#x660E;">&#x4EA7;&#x7269;&#x8BF4;&#x660E;</h1>
+<p><img src="img/dexpatch_build_output.png" alt=""></p>
+<h2 id="versionversiontpatch">version@version.tpatch</h2>
+<p>&#x5F53;&#x524D;&#x4EE3;&#x7801;&#x548C;&#x53C2;&#x8003;ap(1.0.0)diff&#x7684;&#x4EA7;&#x7269;&#xFF0C;&#x662F;&#x4E2A;zip&#x6587;&#x4EF6;&#xFF0C;&#x89E3;&#x538B;&#x5F00;&#x5C31;&#x662F;diff&#x7684;&#x4EE3;&#x7801;&#x3002;</p>
+<h2 id="patchsjson">patchs.json</h2>
+<p>&#x4E0A;&#x8FF0;&#x4EE3;&#x7801;diff&#x7684;&#x914D;&#x5957;json&#xFF0C;&#x63CF;&#x8FF0;&#x4E86;&#x672C;&#x6B21;diff&#x7684;&#x7ED3;&#x679C;:</p>
+<ul>
+<li>&#x6539;&#x52A8;&#x6A21;&#x5757;&#x4FE1;&#x606F;</li>
+<li>&#x6BD4;&#x5BF9;&#x7248;&#x672C;</li>
+<li>...</li>
+</ul>
+<h2 id="dexpatch-xxxjson">dexpatch-xxx.json</h2>
+<h2 id="&#x8BF4;&#x660E;">&#x8BF4;&#x660E;</h2>
+<p><strong>&#x5BA2;&#x6237;&#x7AEF;&#x53EF;&#x4EE5;&#x8BC6;&#x522B;&#x7684;&#x63A5;&#x53E3;&#xFF0C;&#x5BF9;&#x6253;&#x5305;&#x4EA7;&#x7269;&#x5305;&#x88C5;&#x5904;&#x7406;&#x8FC7;&#x7684;&#x914D;&#x7F6E;</strong></p>
+<p>&#x5BA2;&#x6237;&#x7AEF;&#x5E76;&#x4E0D;&#x80FD;&#x76F4;&#x63A5;&#x8BC6;&#x522B;&#x6253;&#x5305;&#x4EA7;&#x751F;&#x7684; <code>path.json</code> &#x6587;&#x4EF6;&#xFF0C;&#x9700;&#x8981;&#x670D;&#x52A1;&#x7AEF;&#x505A;&#x4E00;&#x4E9B;&#x5305;&#x88C5;&#x3002;</p>
+<h2 id="demo&#x8BF4;&#x660E;">Demo&#x8BF4;&#x660E;</h2>
+<p>&#x7531;&#x4E8E;demo&#x6CA1;&#x6709;&#x670D;&#x52A1;&#x7AEF;&#xFF0C;&#x6240;&#x4EE5;&#x5728;<code>app/dexPatchWraper.gradle</code>&#x4E2D;&#xFF0C;&#x5BF9;patch.json&#x5185;&#x5BB9;&#x505A;&#x4E86;&#x4E00;&#x4E2A;&#x5305;&#x88C5;&#xFF0C;&#x7B80;&#x5355;&#x6A21;&#x62DF;&#x670D;&#x52A1;&#x7AEF;&#x7684;&#x903B;&#x8F91;&#x3002;</p>
+<blockquote>
+<p>&#x7B80;&#x5355;&#x8D77;&#x89C1;&#xFF0C;&#x53EA;&#x662F;&#x6BCF;&#x6B21;&#x90FD;&#x628A;dexPatchVersion+1&#xFF0C;&#x7248;&#x672C;&#x53F7;&#x7F13;&#x5B58;&#x5728;&#x6839;&#x76EE;&#x5F55;&#x4E0B;&#x7684;<code>dexPatch.verion</code>&#x6587;&#x4EF6;&#x4E2D;&#x3002;</p>
+</blockquote>
+<h2 id="&#x5B57;&#x6BB5;&#x89E3;&#x91CA;">&#x5B57;&#x6BB5;&#x89E3;&#x91CA;</h2>
+<p>&#x5305;&#x88C5;&#x540E;&#x7684;&#x4EA7;&#x7269;&#x5B57;&#x7AEF;&#x5982;&#x4E0B;,&#x5927;&#x90E8;&#x5206;&#x5185;&#x5BB9;&#x76F4;&#x63A5;copy&#x81EA;<code>patch.json</code>,&#x9700;&#x8981;&#x5173;&#x5FC3;&#x7684;&#x53EA;&#x6709;&#x51E0;&#x4E2A;&#x5B57;&#x7AEF;</p>
+<pre><code class="lang-json">{
+  <span class="hljs-string">&quot;baseVersion&quot;</span>: <span class="hljs-string">&quot;1.0.0&quot;</span>,
+  <span class="hljs-string">&quot;diffBundleDex&quot;</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-string">&quot;patches&quot;</span>: [
+    {
+      <span class="hljs-string">&quot;bundles&quot;</span>: [
+        {
+          <span class="hljs-string">&quot;dependency&quot;</span>: [
+            <span class="hljs-string">&quot;com.taobao.publicBundle&quot;</span>
+          ],
+          <span class="hljs-comment">//&#x91CD;&#x8981;</span>
+          <span class="hljs-string">&quot;dexpatchVersion&quot;</span>: <span class="hljs-string">&quot;14&quot;</span>,
+          <span class="hljs-string">&quot;isMainDex&quot;</span>: <span class="hljs-literal">false</span>,
+          <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;com.taobao.firstbundle&quot;</span>,
+          <span class="hljs-string">&quot;pkgName&quot;</span>: <span class="hljs-string">&quot;com.taobao.firstbundle&quot;</span>,
+          <span class="hljs-string">&quot;dependency&quot;</span>:[],
+          <span class="hljs-comment">//&#x91CD;&#x8981;</span>
+          <span class="hljs-string">&quot;reset&quot;</span>: <span class="hljs-literal">false</span>,
+          <span class="hljs-string">&quot;srcUnitTag&quot;</span>: <span class="hljs-string">&quot;6b3973d9d6592d15601017edabc8b31b&quot;</span>,
+          <span class="hljs-string">&quot;unitTag&quot;</span>: <span class="hljs-string">&quot;e857557cc924f503a7304218469733a2&quot;</span>,
+          <span class="hljs-string">&quot;version&quot;</span>: <span class="hljs-string">&quot;1.0.1&quot;</span>
+        }
+      ],
+      <span class="hljs-comment">//&#x91CD;&#x8981;</span>
+      <span class="hljs-string">&quot;dexPatch&quot;</span>: <span class="hljs-literal">true</span>,
+      <span class="hljs-string">&quot;fileName&quot;</span>: <span class="hljs-string">&quot;1.0.0@1.0.0.tpatch&quot;</span>,
+      <span class="hljs-string">&quot;patchVersion&quot;</span>: <span class="hljs-string">&quot;1.0.0&quot;</span>,
+      <span class="hljs-string">&quot;targetVersion&quot;</span>: <span class="hljs-string">&quot;1.0.0&quot;</span>
+    }
+  ]
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">&#x5B57;&#x6BB5;</th>
+<th style="text-align:left">&#x8BF4;&#x660E;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">dexpatchVersion</td>
+<td style="text-align:left">&#x6BCF;&#x4E2A;&#x6A21;&#x5757;&#x6709;&#x4E00;&#x4E2A;dexPatchVersion&#x7684;&#x6982;&#x5FF5;<br>&#x5BA2;&#x6237;&#x7AEF;&#x4F1A;&#x5224;&#x65AD;bundle&#x7684;dexPatchVersion,&#x5224;&#x65AD;&#x8BE5;bundle&#x662F;&#x5426;&#x9700;&#x8981;&#x505A;merge<br>&#x901A;&#x5E38;&#x7531;&#x670D;&#x52A1;&#x7AEF;&#x8FDB;&#x884C;&#x7BA1;&#x7406;</td>
+</tr>
+<tr>
+<td style="text-align:left">reset</td>
+<td style="text-align:left">&#x56DE;&#x6EDA;&#x6807;&#x5FD7;&#xFF0C;&#x8BE5;bundle&#x4F1A;&#x56DE;&#x6EDA;&#x5230;dexpatch&#x524D;&#x7684;&#x7248;&#x672C;</td>
+</tr>
+<tr>
+<td style="text-align:left">dexPatch</td>
+<td style="text-align:left">&#x533A;&#x5206;&#x914D;&#x7F6E;&#x662F;&#x52A8;&#x6001;&#x90E8;&#x7F72;&#x8FD8;&#x662F; dexpatch</td>
+</tr>
+</tbody>
+</table>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="dexpatch.html" class="navigation navigation-prev " aria-label="Previous page: dexpatch">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="guide.html" class="navigation navigation-next " aria-label="Next page: 一些限制">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"dexpatch使用教程","level":"1.4.3","depth":2,"next":{"title":"一些限制","level":"1.4.4","depth":2,"path":"update/guide.md","ref":"update/guide.md","articles":[]},"previous":{"title":"dexpatch","level":"1.4.2","depth":2,"path":"update/dexpatch.md","ref":"update/dexpatch.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"update/dexpatch_use_guide.md","mtime":"2017-11-27T09:41:52.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-11-27T10:00:49.012Z"},"basePath":"..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="../gitbook/gitbook.js"></script>
+    <script src="../gitbook/theme.js"></script>
+    
+        
+        <script src="../gitbook/gitbook-plugin-livereload/plugin.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+
