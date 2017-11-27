@@ -229,7 +229,7 @@ import org.dom4j.DocumentException;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * 把 patch 安装到手机上的任务
+ * the patch Install the phone on your phone
  */
 public class TPatchInstallTask extends BaseTask {
 

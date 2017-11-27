@@ -232,7 +232,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
- * 打包 awb 的 resource
+ * Pack up awb the resource
  */
 public class ProcessResAwbsTask extends BaseTask {
 
@@ -272,7 +272,7 @@ public class ProcessResAwbsTask extends BaseTask {
                                                            "/" +
                                                            awbBundle.getName());
 
-                    //把资源写入ap中，给debug用
+                    //Write the resources to the ap for debug
                     if ("debug".equals(appVariantOutputContext.getVariantContext()
                                                .getBaseVariantData()
                                                .getName())) {

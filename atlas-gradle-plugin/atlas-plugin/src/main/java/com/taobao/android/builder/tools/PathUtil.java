@@ -211,20 +211,20 @@ package com.taobao.android.builder.tools;
 import java.io.File;
 
 /**
- * 路径的工具类 
- * @author shenghua.nish 2012-6-20 下午1:16:01
+ * The tool class of the path 
+ * @author shenghua.nish 2012-6-20 On the afternoon of 1:16:01
  */
 public class PathUtil {
 
     /**
-     * 获取当前Jar文件的文件对象
+     * Gets the file object of the current Jar file
      * @return
      */
     public static File getCurrentJarFile(){
        return getJarFile(PathUtil.class);
     }
     /**
-     * 得到jar包所在的文件夹
+     * Get the folder where the jar is located
      * @param klazz
      * @return
      */

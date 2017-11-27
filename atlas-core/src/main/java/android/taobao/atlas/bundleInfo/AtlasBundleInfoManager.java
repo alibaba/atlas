@@ -340,6 +340,52 @@ public class AtlasBundleInfoManager {
         }
     }
 
+    public String getBundleForRemoteFragment(String rFname){
+        if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
+            return null;
+        }
+        Iterator<Map.Entry<String, BundleListing.BundleInfo>> iterator = mCurrentBundleListing.getBundles().entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, BundleListing.BundleInfo> entry = iterator.next();
+            BundleListing.BundleInfo bundleInfo = entry.getValue();
+            if(bundleInfo!=null && bundleInfo.remoteFragments!=null && bundleInfo.remoteFragments.containsKey(rFname)) {
+                return bundleInfo.getPkgName();
+            }
+        }
+
+        return null;
+    }
+
+    public String getBundleForRemoteTransactor(String tName){
+        if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
+            return null;
+        }
+        Iterator<Map.Entry<String, BundleListing.BundleInfo>> iterator = mCurrentBundleListing.getBundles().entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, BundleListing.BundleInfo> entry = iterator.next();
+            BundleListing.BundleInfo bundleInfo = entry.getValue();
+            if(bundleInfo!=null && bundleInfo.remoteTransactors!=null && bundleInfo.remoteTransactors.containsKey(tName)) {
+                return bundleInfo.getPkgName();
+            }
+        }
+        return null;
+    }
+
+    public String getBundleForRemoteView(String rVname){
+        if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
+            return null;
+        }
+        Iterator<Map.Entry<String, BundleListing.BundleInfo>> iterator = mCurrentBundleListing.getBundles().entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, BundleListing.BundleInfo> entry = iterator.next();
+            BundleListing.BundleInfo bundleInfo = entry.getValue();
+            if(bundleInfo!=null && bundleInfo.remoteViews!=null && bundleInfo.remoteViews.containsKey(rVname)) {
+                return bundleInfo.getPkgName();
+            }
+        }
+        return null;
+    }
+
     public String getBundleForComponet(String componentName){
         if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
             return null;

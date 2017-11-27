@@ -1,5 +1,8 @@
 apply plugin: 'com.android.library'
 
+group = 'com.atlas.demo'
+version = '1.0.1'
+
 android {
     compileSdkVersion 25
     buildToolsVersion '25.0.0'
@@ -22,6 +25,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:25.1.0'
-    compile('com.taobao.android:atlas_core:5.0.7.41')
+    compile('com.taobao.android:atlas_core:5.0.8.0-SNAPSHOT')
     //compile project(':atlas-core')
 }

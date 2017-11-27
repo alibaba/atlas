@@ -234,8 +234,8 @@ import static com.taobao.android.builder.tools.xml.XmlHelper.removeStringValue;
 public class DiffResExtractor {
 
     /**
-     * assets : 直接通过比较apk
-     * res : 通过diffResFiles ， 再去apk 验证
+     * assets : Compare apk directly
+     * res : Through diffResFiles , Go to apk validation
      *
      * @param appVariantContext
      * @param diffResFiles
@@ -272,7 +272,7 @@ public class DiffResExtractor {
 
         //List<String> diffResPath = new ArrayList<String>();
 
-        //计算assets
+        //Calculate the assets
         for (File file : files) {
 
             String relativePath = file.getAbsolutePath().substring(basePathLength);
@@ -287,7 +287,7 @@ public class DiffResExtractor {
             }
         }
 
-        //计算res
+        //Calculate the res
         for (String diffFile : diffResFiles) {
 
             File baseFile = new File(baseApkDir, diffFile);
@@ -305,11 +305,11 @@ public class DiffResExtractor {
             }
         }
 
-        // //必须生成resource.arsc
+        // //Resource. Arsc must be generated
         File resDir = new File(destDir, "res");
         File valuesDir = new File(resDir, "values");
-        FileUtils.forceMkdir(valuesDir);
         if (fullValues) {
+            FileUtils.forceMkdir(valuesDir);
             appVariantContext.getProject().copy(new Closure(DiffResExtractor.class) {
                 public Object doCall(CopySpec cs) {
                     cs.from(fullResDir);
@@ -324,6 +324,7 @@ public class DiffResExtractor {
             //                    new File(destDir, "res/values/values.xml"));
         } else {
             if (!resDir.exists()) {
+                FileUtils.forceMkdir(valuesDir);
                 File stringsFile = new File(valuesDir, "strings.xml");
                 UUID uuid = UUID.randomUUID();
                 FileUtils.writeStringToFile(stringsFile,
@@ -337,7 +338,7 @@ public class DiffResExtractor {
             }
         }
 
-        //设置values.xml
+        //XML Settings values.
         File valuesXml = new File(resDir, "values/values.xml");
 
         AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.injectTpatchValuesRes(appVariantContext, valuesXml);

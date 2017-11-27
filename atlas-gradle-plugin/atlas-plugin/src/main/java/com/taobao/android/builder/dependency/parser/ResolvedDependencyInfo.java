@@ -220,8 +220,8 @@ import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier;
 
 /**
- * 解析后的依赖结果
- * Created by shenghua.nish on 2015-08-13 下午3:10.
+ * Resolved dependencies
+ * Created by shenghua.nish on 2015-08-13 "In the afternoon.
  */
 public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo> {
 
@@ -444,14 +444,14 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
     }
 
     /**
-     * 大小判断，在二者name等完全一致的情况下，按照层级进行划分
+     * Size judgment, in the case of the two names and so on completely consistent, according to the hierarchy
      *
      * @param other
      * @return
      */
     @Override
     public int compareTo(ResolvedDependencyInfo other) {
-        // 如果二者相等，按照前后顺序来判断
+        // If the two are equal, follow the same sequence
         if (this.indent < other.indent) {
             return -1;
         } else {
@@ -460,7 +460,7 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
     }
 
     /**
-     * 获取一个DependencyInfo的字符描述
+     * Gets a character description of DependencyInfo
      *
      * @return //TODO , do this later
      */

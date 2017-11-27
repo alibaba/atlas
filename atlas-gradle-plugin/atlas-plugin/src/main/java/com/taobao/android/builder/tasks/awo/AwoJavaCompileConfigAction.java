@@ -260,7 +260,7 @@ public class AwoJavaCompileConfigAction extends MtlBaseTaskAction<JavaCompile> {
     }
 
     /**
-     * Awb的编译,暂不支持instantRun
+     * AwbInstantRun is not supported for the moment
      *
      * @param javacTask
      */

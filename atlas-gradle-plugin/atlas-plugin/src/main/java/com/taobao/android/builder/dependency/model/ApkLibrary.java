@@ -216,7 +216,7 @@ import com.android.builder.model.MavenCoordinates;
 import java.io.File;
 
 /**
- * Created by shenghua.nish on 2016-05-06 上午11:10.
+ * Created by shenghua.nish on 2016-05-06 "In the morning.
  */
 public class ApkLibrary {
 

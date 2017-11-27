@@ -435,7 +435,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Dex文件差异性获取的类
+ * compile dex diff
  * Created by shenghua.nish on 2016-03-09 下午2:10.
  */
 public class DexDiffer {
@@ -445,10 +445,26 @@ public class DexDiffer {
     private int apiLevel;
     private Map<String, org.jf.dexlib2.iface.ClassDef>lastBundleClassMap = new HashMap<String, org.jf.dexlib2.iface.ClassDef>();
     private DexDiffInfo dexDiffInfo = new DexDiffInfo();
-    //dex过滤器
+
+    public Set<String> getExludeClasses() {
+        return exludeClasses;
+    }
+
+    public void setExludeClasses(Set<String> exludeClasses) {
+        this.exludeClasses = exludeClasses;
+    }
+
+    private Set<String>exludeClasses = new HashSet<>();
+    //dex filter
     private DexDiffFilter dexDiffFilter;
-    //类白名单过滤器
+    //
     private Filter filter;
+
+    public void setTpatch(boolean tpatch) {
+        this.tpatch = tpatch;
+    }
+
+    private boolean tpatch;
 
     private Map<String, DexBackedClassDef> baseClassDefMap = new HashMap<String, DexBackedClassDef>();
 
@@ -500,8 +516,11 @@ public class DexDiffer {
                 }
             }
             String className = getDalvikClassName(newClassDef.getType());
+            if (!tpatch&&exludeClasses.contains(newClassDef.getType())){
+                continue;
+            }
             DexBackedClassDef baseClassDef = baseClassDefMap.get(className);
-            if (lastBundleClassMap.containsKey(newClassDef.getType())){
+            if (lastBundleClassMap.containsKey(newClassDef.getType())&&tpatch){
                 System.out.println("overide class:"+className);
                 ClassDiffInfo classDiffInfo = new ClassDiffInfo();
                 classDiffInfo.setType(DiffType.OVERRIDE);
@@ -525,7 +544,7 @@ public class DexDiffer {
     }
 
     /**
-     * 扫描基础的dex，得到dex的信息
+     * scan base Dex,get base Dex info
      */
     private void scanBaseDexFile() throws IOException {
         for (File baseDexFile : baseDexFiles) {
@@ -540,7 +559,7 @@ public class DexDiffer {
     }
 
     /**
-     * 比较2个类的信息
+     * compare two classDef
      *
      * @param baseClassDef
      * @param newClassDef
@@ -600,19 +619,19 @@ public class DexDiffer {
             return false;
         }
         if (baseClassDef.equals(newClassDef)) {
-            // 判断access flag是否一致
+            // compare access flag
             if (baseClassDef.getAccessFlags() != newClassDef.getAccessFlags()) {
                 return true;
             }
-            // 判断supper class是否一致
+            // compare super class
             if (!StringUtils.equals(baseClassDef.getSuperclass(), newClassDef.getSuperclass())) {
                 return true;
             }
-            // 判断实现的接口是否一致
+            // compare interfaces
             if (!equalsImpl(baseClassDef.getInterfaces(), newClassDef.getInterfaces())) {
                 return true;
             }
-            // 判断注解是否一致
+            // compare annotations
             if (!equalsImpl(baseClassDef.getAnnotations(), newClassDef.getAnnotations())) {
                 return true;
             }
@@ -641,8 +660,8 @@ public class DexDiffer {
     }
 
     /**
-     * 比较二个dex中的类的方法差异性
-     * FIXME: 所有的diff操作都没有考虑accssFlag变化的情况
+     * compare two methods
+     * FIXME:
      *
      * @param baseClassDef
      * @param newClassDef
@@ -665,9 +684,8 @@ public class DexDiffer {
                 classDiffInfo.getModifyMethods().add(methodDiffInfo);
                 continue;
             }
-            // TODO: 首先判断方法的声明，包括access flag等是否一致
+            // TODO:
 
-            // 如果方法二边都存在,1. 判断实现
             Set<? extends Annotation>newAnnotations = newMethod.getAnnotations();
             Set<? extends Annotation>baseAnnotations = baseMethod.getAnnotations();
             int newAcc = newMethod.getAccessFlags();
@@ -675,7 +693,6 @@ public class DexDiffer {
 
             DexBackedMethodImplementation newMethodImplementation = newMethod.getImplementation();
             DexBackedMethodImplementation baseMethodImplementation = baseMethod.getImplementation();
-            // 判断2个方法是否一致
             if (!DexCompareUtils.compareMethod(newMethodImplementation, baseMethodImplementation)||
                     !equalsImpl(baseAnnotations,newAnnotations)||newAcc!=baseAcc) {
                 methodDiffInfo.setType(DiffType.MODIFY);
@@ -701,7 +718,7 @@ public class DexDiffer {
 
 
     /**
-     * 比较二个dex中的类的字段差异性
+     * compare filed in two dex Files
      *
      * @param baseClassDef
      * @param newClassDef
@@ -724,9 +741,8 @@ public class DexDiffer {
                 continue;
             }
 
-            // 首先判断字段的声明，包括access flag等是否一致
 
-            // 判断初始化值
+            // init value
             EncodedValue baseInitaValue = baseField.getInitialValue();
             EncodedValue newInitaValue = newField.getInitialValue();
             if (!Objects.equal(baseInitaValue, newInitaValue)) {
@@ -735,7 +751,7 @@ public class DexDiffer {
                 baseFieldMaps.remove(fieldDesc);
                 continue;
             }
-            //注解
+            //annotation
             Set<? extends DexBackedAnnotation> backedAnnotations = baseField.getAnnotations();
             if (!equalsImpl(backedAnnotations,newField.getAnnotations())){
                 fieldDiffInfo.setType(DiffType.MODIFY);
@@ -762,7 +778,7 @@ public class DexDiffer {
             baseFieldMaps.remove(fieldDesc);
 
         }
-        // 如果字段已经移除
+        // if member is removed
         if (baseFieldMaps.size() > 0) {
             for (Map.Entry<String, DexBackedField> entry : baseFieldMaps.entrySet()) {
                 FieldDiffInfo fieldDiffInfo = new FieldDiffInfo();
@@ -778,7 +794,7 @@ public class DexDiffer {
     }
 
     /**
-     * 获取davik中的class名字
+     * get dalvik className
      *
      * @param className
      * @return

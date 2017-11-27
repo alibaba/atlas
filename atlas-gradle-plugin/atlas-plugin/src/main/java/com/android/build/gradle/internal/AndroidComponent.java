@@ -220,7 +220,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Created by shenghua.nish on 2015-08-24 下午4:27.
+ * Created by shenghua.nish on 2015-08-24 And in the afternoon.
  */
 public class AndroidComponent implements SoftwareComponentInternal {
     private final Usage runtimeUsage = new RuntimeUsage();

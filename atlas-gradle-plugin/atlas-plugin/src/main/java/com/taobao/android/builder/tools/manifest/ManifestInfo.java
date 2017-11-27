@@ -218,8 +218,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Manifest文件中的常见信息
- * Created by shenghua.nish on 2015-04-22 上午11:06.
+ * ManifestCommon information in files
+ * Created by shenghua.nish on 2015-04-22 11:06 in the morning.
  */
 public class ManifestInfo {
 
@@ -285,12 +285,12 @@ public class ManifestInfo {
     }
 
     /**
-     * 获取需要替换的属性
+     * Gets the properties that need to be replaced
      * @return
      */
     public Map<String,String> _getReplaceApplicationAttribute(){
         Map<String,String> replaceAttrMap = new HashMap<String,String>();
-        //首先判断有没有replace属性
+        //Let's start by determining if there is a replace property
         if(applicationProperties.containsKey("tools:replace")){
             String replaceAttrs = applicationProperties.get("tools:replace");
             String[] attrs = StringUtils.split(replaceAttrs,",");
@@ -310,12 +310,12 @@ public class ManifestInfo {
     }
 
     /**
-     * 获取需要删除的属性
+     * Gets the properties that need to be deleted
      * @return
      */
     public List<String> _getRemoveApplicationAttribute(){
         List<String> removeAttrList = new ArrayList<String>();
-        //首先判断有没有replace属性
+        //Let's start by determining if there is a replace property
         if(applicationProperties.containsKey("tools:remove")){
             String replaceAttrs = applicationProperties.get("tools:remove");
             String[] attrs = StringUtils.split(replaceAttrs,",");

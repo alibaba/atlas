@@ -236,7 +236,7 @@ public class AsmTest implements Opcodes{
         ClassVisitor cv = new MethodChangeClassAdapter(cw);
         cr.accept(cv, Opcodes.ASM5);
 
-        //新增加一个方法
+        //Add a new method
         MethodVisitor mw = cw.visitMethod(ACC_PUBLIC + ACC_STATIC,
                                           "add",
                                           "([Ljava/lang/String;)V",

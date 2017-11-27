@@ -225,7 +225,7 @@ import org.gradle.api.Project;
 import org.gradle.api.tasks.bundling.Zip;
 
 /**
- * Created by shenghua.nish on 2016-07-15 上午9:06.
+ * Created by shenghua.nish on 2016-07-15 On the morning of 9:06.
  */
 public class LibVariantContext extends VariantContext<LibraryVariantImpl, LibraryExtension, AtlasExtension> {
 

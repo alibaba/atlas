@@ -246,6 +246,9 @@ public class BundleListing implements Serializable{
         public HashMap<String,Boolean> services;
         public HashMap<String,Boolean> receivers;
         public HashMap<String,Boolean> contentProviders;
+        public HashMap<String,String>  remoteFragments;
+        public HashMap<String,String>  remoteViews;
+        public HashMap<String,String>  remoteTransactors;
         public String unique_tag;
         public long size;
 

@@ -209,14 +209,12 @@ package com.taobao.android.apatch;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.taobao.android.TPatchTool;
 import com.taobao.android.apatch.utils.Formater;
 import com.taobao.android.apatch.utils.SmaliDiffUtils;
 import com.taobao.android.apatch.utils.TypeGenUtil;
 import com.taobao.android.differ.dex.DexDiffer;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.DexDiffInfo;
-import com.taobao.android.tpatch.model.ApkBO;
 import org.apache.commons.io.FileUtils;
 import org.jf.dexlib2.dexbacked.DexBackedAnnotation;
 import org.jf.dexlib2.dexbacked.DexBackedAnnotationElement;
@@ -245,7 +243,6 @@ import java.util.jar.Manifest;
 
 
 /**
- * @author sanping.li@alipay.com
  */
 public class ApkPatch extends com.taobao.android.apatch.Build {
 
@@ -309,6 +306,7 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
 
             currentTimeStamp = System.currentTimeMillis();
             DexDiffer dexDiffer = new DexDiffer(baseFiles, newFiles, 19);
+            dexDiffer.setTpatch(false);
             // 创建白名单过滤类
             if ((this.filterPath != null) && !(this.filterPath.equals(""))) {
                 dexDiffer.createFilter(this.filterPath);
@@ -519,35 +517,4 @@ public class ApkPatch extends com.taobao.android.apatch.Build {
         return manifest;
     }
 
-    public static void main(String[] args) throws IOException, PatchException {
-
-
-        TPatchTool tPatchTool = new TPatchTool(new ApkBO(new File("/Users/lilong/Downloads/tmallandroid-debug.apk"),"1.0.0","aa"),new ApkBO(new File("/Users/lilong/Downloads/tmallandroid-debug1.apk"),"2.0.0","aa"));
-        try {
-            tPatchTool.doPatch(new File("/Users/lilong/Downloads/tpatch/"),false,new File("/Users/lilong/Downloads/tpatch/1.json"),false,null,"taobao");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-//        String baseDir = "/Users/lilong/Downloads/tpatch/";
-//        File from = new File(baseDir + "classes.dex");
-//        File to = new File(baseDir + "classes1.dex");
-//
-//        File out = new File(baseDir);
-//        // FileUtils.cleanDirectory(out);
-//
-//        String keystore = "/Users/seker/programs/debugsign/seker.keystore";
-//        String password = "12345678";
-//        String alias = "seker.keystore";
-//        String entry = "12345678";
-//        String name = "main";
-////        APatchTool.mappingFile = new File("/Users/lilong/Downloads/mapping.txt/target/proguard/full-mapping.txt");
-//        ApkPatch apkPatch = new ApkPatch(from, to, name, out);
-//        apkPatch.setDiffFile(new File(baseDir, "diff.txt"));
-//        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-//        for (StackTraceElement stackTraceElement : stackTraceElements) {
-//            System.out.println(stackTraceElement.getClassName() + ":" + stackTraceElement.getMethodName());
-//        }
-//        apkPatch.doPatch();
-    }
 }

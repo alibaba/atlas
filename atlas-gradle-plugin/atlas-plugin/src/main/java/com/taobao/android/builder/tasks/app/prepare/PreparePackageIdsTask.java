@@ -241,7 +241,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * 分配packageId
+ * Distribution packageId
  */
 public class PreparePackageIdsTask extends BaseTask {
 
@@ -250,7 +250,7 @@ public class PreparePackageIdsTask extends BaseTask {
     AppVariantOutputContext.AppBuildInfo appBuildInfo;
 
     /**
-     * packageid 范围是 30 - 127
+     * packageid The range is 30 - 127
      */
     @TaskAction
     void generate() throws IOException {
@@ -288,7 +288,7 @@ public class PreparePackageIdsTask extends BaseTask {
 
         if (isAutoPackageId && autoConfigMap.containsValue("")) {
 
-            //自动分配autoConfig
+            //Automatic allocation of autoConfig
             List<String> keys = new ArrayList<String>(autoConfigMap.keySet());
             Collections.sort(keys);
 
@@ -317,7 +317,7 @@ public class PreparePackageIdsTask extends BaseTask {
         //check value
         if (autoConfigMap.containsValue("")) {
             getLogger().error(JSON.toJSONString(autoConfigMap, true));
-            throw new GradleException("packageId 配置错误，请检查");
+            throw new GradleException("packageId Error configuration, please check");
         }
 
         if (autoConfigMap.size() != new HashSet(autoConfigMap.values()).size()) {
@@ -351,7 +351,7 @@ public class PreparePackageIdsTask extends BaseTask {
             getLogger().error(JSON.toJSONString(packageList, true));
 
 
-            throw new GradleException("packageId 配置错误，有重复，请检查");
+            throw new GradleException("packageId Configuration error, duplicate, please check");
         }
 
         // check if packageID is not used
@@ -383,7 +383,7 @@ public class PreparePackageIdsTask extends BaseTask {
     }
 
     /**
-     * 读取组件的packageId
+     * Read the component's packageId
      *
      * @param packageIdFile
      * @return

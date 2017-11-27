@@ -225,16 +225,7 @@ import java.util.Set;
 /**
  * Created by lilong on 16/6/17.
  * <p/>
- * * 1.暂时不支持新增方法、新增类
- * 2.不支持新增Field
- * 3.不支持针对同一个方法的多次patch，如果客户端已经有一个patch包在运行，则下一个patch不会立即生效。
- * 4.父类、子类的classloader不同时，不能修改父类中被子类调用的方法。例如BaseActivity与MainActivity之间的关系，其中BaseActivity定义了test1方法，并且这个方法被MainActivity使用，由于BaseActivity正主dex里边，MainActivity在bundle里边，他们的classloader不一致，那么BaseActivity中的test1方法就不可以被patch
- * 被patch的方法不能被不同classloader加载的类直接调用，例如主dex的一个方法被patch，该方法被其他bundle中的类直接调用，会出现VerrifyError（切记，同上一条）
- * 5.参数包括：long、double、float的方法不能被patch
- * 6.使用Annotation的类不能patch
- * 7.参数超过8的方法不能被patch
- * 8.构造方法不能被patch
- * 9.泛型参数的方法如果patch存在兼容性问题
+
  */
 public class AndFixFilterImpl extends AbstractDexFilter {
 

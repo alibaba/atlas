@@ -4,13 +4,13 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.taobao.android.TPatchDexTool;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.task.ExecutorServicesHelper;
+import com.taobao.android.tools.DexPatchDexTool;
 import org.antlr.runtime.RecognitionException;
 import org.gradle.api.tasks.TaskAction;
 
@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * @author lilong
- * @create 2017-05-05 上午10:07
+ * @create 2017-05-05 At 10:07
  */
 
 public class DexPatchDiffTask extends BaseTask {
@@ -51,13 +51,16 @@ public class DexPatchDiffTask extends BaseTask {
 
                     List<File> baseDexFile = getBaseDexFile((String) entry.getKey());
 
-                    TPatchDexTool tPatchDexTool = new TPatchDexTool(baseDexFile, com.google.common.collect.Lists.newArrayList(newDexFile), 19, null, ((String) entry.getKey()).equals(MAIN_DEX));
+                    DexPatchDexTool tPatchDexTool = new DexPatchDexTool(baseDexFile, com.google.common.collect.Lists.newArrayList(newDexFile), 19, null, ((String) entry.getKey()).equals(MAIN_DEX));
                     try {
                         File outDex = new File(DexPatchContext.getInstance().getDiffFolder(), ((String) "lib" + ((String) entry.getKey().toString().replace(".", "_") + "/diff.dex")));
                         if (!outDex.getParentFile().exists()) {
                             outDex.getParentFile().mkdirs();
                         }
-                        DexDiffInfo dexDiffInfo = tPatchDexTool.createTPatchDex(outDex);
+                        DexDiffInfo dexDiffInfo = tPatchDexTool.createPatchDex(outDex);
+                        for (String className:dexDiffInfo.getClassDiffInfoMap().keySet()){
+                            System.out.println("modify class:"+className);
+                        }
 
                     } catch (IOException e) {
                         e.printStackTrace();

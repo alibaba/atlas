@@ -209,15 +209,15 @@
 
 package com.taobao.android.builder.tasks.manager;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by wuzhong on 2016/10/13.

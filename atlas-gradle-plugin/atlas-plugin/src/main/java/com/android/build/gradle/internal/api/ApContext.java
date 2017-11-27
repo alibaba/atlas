@@ -268,7 +268,7 @@ public class ApContext {
 
     private File baseUnzipBundleDirectory;
 
-    // 解压前
+    // Unpack the former
     public String getApDependency() {
         return apDependency;
     }
@@ -285,7 +285,7 @@ public class ApContext {
         this.apFile = apFile;
     }
 
-    // 解压后
+    // After decompression
     public File getApExploredFolder() {
         return apExploredFolder;
     }

@@ -239,6 +239,7 @@ import android.taobao.atlas.framework.BundleClassLoader;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.hack.Hack;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.StringUtils;
@@ -248,6 +249,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.content.BroadcastReceiver;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -1065,6 +1067,17 @@ public class InstrumentationHook extends Instrumentation {
     @Override
     public void callActivityOnDestroy(Activity activity) {
         mBase.callActivityOnDestroy(activity);
+		if(activity!=null && activity.getBaseContext() instanceof ContextImplHook){
+			try {
+				Hack.HackedMethod scheduleFinalCleanup = AtlasHacks.ContextImpl.method("scheduleFinalCleanup",String.class,String.class);
+				if(scheduleFinalCleanup.getMethod()!=null){
+					scheduleFinalCleanup.invoke(((ContextImplHook)activity.getBaseContext()).getBaseContext(),
+							activity.getClass().getName(),"Activity");
+				}
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+		}
     }
 
     @Override

@@ -217,7 +217,7 @@ import org.gradle.api.logging.Logger;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
- * Created by shenghua.nish on 2016-05-17 下午1:41.
+ * Created by shenghua.nish on 2016-05-17 On the afternoon of messias.
  */
 public class PatchConfigFactory implements NamedDomainObjectFactory<PatchConfig> {
 

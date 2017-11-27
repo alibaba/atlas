@@ -214,7 +214,7 @@ import com.android.build.gradle.LibraryPlugin;
 import org.gradle.api.Project;
 
 /**
- * Created by shenghua.nish on 2016-05-17 下午9:27.
+ * Created by shenghua.nish on 2016-05-17 But in the afternoon.
  */
 public class PluginTypeUtils {
 
@@ -234,7 +234,7 @@ public class PluginTypeUtils {
         "com.android.library"};
 
     /**
-     * 判断是否是Android的项目,以使用android的gradle插件作为依据
+     * To determine whether Android is a project, use the Android gradle plugin as the basis
      *
      * @param project
      * @return
@@ -244,7 +244,7 @@ public class PluginTypeUtils {
     }
 
     /**
-     * 判断是否是Library工程
+     * Decide if it's a Library project
      *
      * @param project
      * @return
@@ -254,7 +254,7 @@ public class PluginTypeUtils {
     }
 
     /**
-     * 判断是否是APP工程
+     * Determine whether it is an APP project
      *
      * @param project
      * @return
@@ -264,7 +264,7 @@ public class PluginTypeUtils {
     }
 
     /**
-     * 判断是否是使用了淘宝的androidPlugin
+     * Decide if you are using taobao's androidPlugin
      *
      * @param project
      * @return
@@ -274,7 +274,7 @@ public class PluginTypeUtils {
     }
 
     /**
-     * 判断是否是使用了Google的androidPlugin
+     * Decide if you're using GuGe's androidPlugin
      *
      * @param project
      * @return

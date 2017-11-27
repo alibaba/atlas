@@ -18,8 +18,10 @@ import static Constants.*
  */
 
 tasks.whenTaskAdded { task ->
-    if (task.name == "DexPatchPackageDebug") {
-        task.doLast { wrapDexPatchFile() }
+    if (task.name == "assembleDebug" || task.name == "assembleRelease") {
+        task.doLast {
+            wrapDexPatchFile(task.name.contains("Debug"))
+        }
     }
 //    if (task.name == "clean") {
 //        task.doLast { cleanPatchVersion() }
@@ -28,18 +30,36 @@ tasks.whenTaskAdded { task ->
 
 class Constants {
     static final ENCODE_UTF_8 = "UTF-8"
-    static final PATH_BUILD_OUTPUT = "app${File.separator}build${File.separator}outputs"
-    static final PATH_PATCH_JSON = "${PATH_BUILD_OUTPUT}${File.separator}patchs.json"
     static final PATH_VERSION_FILE = "dexPatch.version"
 }
 
-//task tesetm << {
-//    wrapDexPatchFile()
-//}
+task tesetm << {
+    wrapDexPatchFile(true)
+}
 
-def wrapDexPatchFile() {
-    println new File(PATH_PATCH_JSON).absolutePath
-    String fileContents = new File(PATH_PATCH_JSON).getText(ENCODE_UTF_8)
+def wrapDexPatchFile(boolean debug) {
+
+    println "root project :${rootProject.projectDir.path}"
+
+    def apVersion = getEnvValue("apVersion", "-1")
+    def versionName = getEnvValue("versionName", "-1")
+    if (apVersion == "-1" || versionName == "-1") {
+        println("jump dexPatch")
+        return
+    }
+
+    if (apVersion != versionName) {
+        return
+    }
+
+
+    println "DexPatch wrap ,version  $versionName"
+
+    String path = rootProject.projectDir.path + "/app/build/outputs/tpatch-" + (debug ? "debug" : "release") + "/patchs.json"
+    String patchPath = path.replace('/', File.separator)
+    println "patchFile path :$patchPath"
+
+    String fileContents = new File(patchPath).getText(ENCODE_UTF_8)
     def patchConfig = new JsonSlurper().parseText(fileContents)
     def updateInfo = patchConfig.patches[0]
     updateInfo.dexPatch = true
@@ -51,9 +71,14 @@ def wrapDexPatchFile() {
         it.dexpatchVersion = patchVersion
         it.isMainDex = it.mainBundle
         it.remove("mainBundle")
+        if (it.isMainDex) {
+            println "=================>add empty main_dex dependency ============="
+            it.dependency=[]
+        }
     }
     //写回到最终的dexPatch产物文件中
-    File wrapFile = new File(PATH_BUILD_OUTPUT, "dexpatch-${patchConfig.baseVersion}.json")
+    String wrapFilePath = "${rootProject.projectDir.path}/app/build/outputs/tpatch-" + (debug ? "debug" : "release") + "/dexpatch-${patchConfig.baseVersion}.json"
+    File wrapFile = new File(wrapFilePath.replace('/', File.separator))
     if (wrapFile.exists()) wrapFile.delete()
     wrapFile.createNewFile()
     def dexPatchJson = JsonOutput.toJson(patchConfig)
@@ -62,7 +87,7 @@ def wrapDexPatchFile() {
 
 //粗暴+1
 def getPatchVersion() {
-    File versionFile = new File(PATH_VERSION_FILE)
+    File versionFile = new File(rootProject.projectDir.path, PATH_VERSION_FILE)
     if (!versionFile.exists()) versionFile.createNewFile()
     String versionStr = versionFile.getText(ENCODE_UTF_8)
     if (null == versionStr || versionStr.isEmpty()) {
@@ -74,8 +99,20 @@ def getPatchVersion() {
 }
 
 def cleanPatchVersion() {
-    File versionFile = new File(PATH_VERSION_FILE)
+    File versionFile = new File(rootProject.projectDir.path, PATH_VERSION_FILE)
     if (versionFile.exists()) {
         versionFile.delete()
     }
+}
+
+String getEnvValue(key, defValue) {
+    def val = System.getProperty(key)
+    if (null != val) {
+        return val
+    }
+    val = System.getenv(key)
+    if (null != val) {
+        return val
+    }
+    return defValue
 }

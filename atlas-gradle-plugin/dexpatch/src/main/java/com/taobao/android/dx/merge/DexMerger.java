@@ -252,7 +252,10 @@ public final class DexMerger {
                 offsets[i] = readIntoMap(
                         dexSections[i], sections[i], indexMaps[i], indexes[i], values, i);
             }
+
             getSection(contentsOut).off = out.getPosition();
+
+
 
             int outCount = 0;
             while (!values.isEmpty()) {

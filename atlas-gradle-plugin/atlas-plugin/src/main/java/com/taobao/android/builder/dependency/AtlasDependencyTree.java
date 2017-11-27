@@ -223,11 +223,11 @@ import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 
 /**
- * Android的编译的依赖库
- * Created by shenghua.nish on 2016-05-05 下午5:59.
+ * AndroidCompiled dependency libraries
+ * Created by shenghua.nish on 2016-05-05 5:59 in the afternoon.
  * <p>
- * 1. 没有依赖的依赖了
- * 2. 只区分主bundle的依赖和 awb 依赖
+ * 1. There is no dependency
+ * 2. Just differentiate the dependencies of the main bundle awb Rely on
  *
  * @author shenghua.nish, wuzhong
  */
@@ -236,12 +236,12 @@ public class AtlasDependencyTree {
     private List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
 
     /**
-     * 主bundle的依赖信息
+     * The dependency information of the main bundle
      */
     private AwbBundle mainBundle = new AwbBundle();
 
     /**
-     * awb bundle的依赖信息
+     * awb bundleDependent information
      */
     private List<AwbBundle> awbBundles = Lists.newArrayList();
 
@@ -278,7 +278,7 @@ public class AtlasDependencyTree {
     }
 
     /**
-     * 获取所有的 aar 和 awb 依赖
+     * Get all aar and awb Rely on
      *
      * @return
      */
@@ -300,7 +300,7 @@ public class AtlasDependencyTree {
     }
 
     /**
-     * 获取所有awb依赖类型的依赖清单
+     * Get all the awb dependency lists
      *
      * @return
      */
@@ -346,7 +346,7 @@ public class AtlasDependencyTree {
     }
 
     /**
-     * 转换为ependencyJSon对象
+     * Convert to ependencyJSon object
      *
      * @return
      */

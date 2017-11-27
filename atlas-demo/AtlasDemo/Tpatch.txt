@@ -8,7 +8,7 @@
 
 ///////////////////////////////^^^^^^^准备工作^^^^^^^^^^////////////////////////
 
-4、 进行一些想要的修改（不支持manifest的修改）
+4、 进行一些想要的修改（不支持manifest的修改），改动完成后需要升级一下对应bundle/lib的版本号
 
 5、 app工程目录下执行../gradlew clean assembleDebug -DapVersion=apVersion -DversionName=newVersion,
     其中apVersion为之前打的完整apk的版本，newVersion为此次动态部署要生成的新的版本号，

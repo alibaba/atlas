@@ -259,8 +259,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * 本地签名工具类
- * Created by shenghua.nish on 2015-10-16 上午10:55.
+ * Local signature tool classes
+ * Created by shenghua.nish on 2015-10-16 Sqlstate morning.
  */
 public class LocalSignedJarBuilder {
     private static final String DIGEST_ALGORITHM = "SHA1";

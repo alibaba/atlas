@@ -243,8 +243,8 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     @ConfigGroup(order = 4, advance = false)
     public NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs;
 
-    //如果atlas开关开启了，自动会打开一些默认的开关
-    @Config(title = "是否启用atlas", message = "是否启用atlas , true/false", order = 0, group = "atlas")
+    //If the atlas switch is switched on, the default switch will be opened automatically
+    @Config(title = "Enable atlas", message = "Enable atlas , true/false", order = 0, group = "atlas")
     private boolean atlasEnabled;
 
     protected Project project;

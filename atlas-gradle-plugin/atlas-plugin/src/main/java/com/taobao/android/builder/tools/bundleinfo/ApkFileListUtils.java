@@ -234,7 +234,7 @@ import org.gradle.api.tasks.StopExecutionException;
 public class ApkFileListUtils {
 
     /**
-     * 记录apk文件的资源信息
+     * Records resource information for apk files
      */
     public static ApkFiles recordApkFileInfos(AppVariantContext appVariantContext) {
 
@@ -248,7 +248,7 @@ public class ApkFileListUtils {
             prepareApkFileList(resFolder, "res", apkFiles);
         }
 
-        // 记录各自bundle的资源信息
+        // Record the resource information for each bundle
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getScope().
             getVariantConfiguration().getFullName());
         if (null == dependencyTree) {
@@ -269,7 +269,7 @@ public class ApkFileListUtils {
     }
 
     /**
-     * 初始化apk文件的文件列表信息
+     * Initializes the file list information for the apk file
      *
      * @return
      */
@@ -277,7 +277,7 @@ public class ApkFileListUtils {
         if (!folder.exists()) {
             return;
         }
-        // 获取主bundle的信息
+        // Gets information about the main bundle
         Collection<File> files = FileUtils.listFiles(folder, new PureFileFilter(), TrueFileFilter.INSTANCE);
         for (File file : files) {
             if (file.isFile()) {
@@ -296,7 +296,7 @@ public class ApkFileListUtils {
         if (!folder.exists()) {
             return;
         }
-        // 获取主bundle的信息
+        // Gets information about the main bundle
         Collection<File> files = FileUtils.listFiles(folder, new PureFileFilter(), TrueFileFilter.INSTANCE);
         for (File file : files) {
             if (file.isFile()) {

@@ -36,7 +36,7 @@ import static com.google.common.base.Preconditions.*;
 
 /**
  * @author lilong
- * @create 2017-05-12 下午7:43
+ * @create 2017-05-12 Morning in the afternoon
  */
 
 public class DexByteCodeConverterHook extends DexByteCodeConverter {
@@ -195,7 +195,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                             "dexOptions is specifying a maximum number of %1$d concurrent dx processes,"
                                     + " but the Gradle daemon was initialized with %2$d.\n"
                                     + "To initialize with a different maximum value,"
-                                    + " first stop the Gradle daemon by calling ‘gradlew —-stop’.",
+                                    + " first stop the Gradle daemon by calling 'gradlew - stop '.",
                             dexOptions.getMaxProcessCount(),
                             DEX_PROCESS_COUNT.get());
                 }

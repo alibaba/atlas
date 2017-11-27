@@ -9,13 +9,18 @@
             android:name=".FirstBundleActivity"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <activity
+            android:name=".UseremoteActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <service
             android:name=".FirstBundleService"
             android:enabled="true"
             android:exported="true" />
 
-        <activity android:name=".WebViewDemoActivity"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity
+            android:name=".WebViewDemoActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>

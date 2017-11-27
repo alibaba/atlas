@@ -220,8 +220,8 @@ import org.gradle.api.artifacts.ResolvedArtifact;
 import java.io.File;
 
 /**
- * Solib的依赖
- * Created by shenghua.nish on 2016-05-03 下午4:18.
+ * SolibThe dependence of
+ * Created by shenghua.nish on 2016-05-03 When in the afternoon.
  */
 public class SoLibrary {
 
@@ -232,7 +232,7 @@ public class SoLibrary {
     private final File mSoLibFile;
 
     /**
-     * 解压的文件夹
+     * Unzip folders
      */
     private File mSoLibFolder;
 

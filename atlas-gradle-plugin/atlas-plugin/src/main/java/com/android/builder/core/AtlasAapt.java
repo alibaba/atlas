@@ -271,14 +271,14 @@ public class AtlasAapt extends AaptV1 {
 
         //args.remove("--no-version-vectors");
         //
-        ////不生成 manifest_keep.txt 文件
+        ////Does not generate manifest_keep.txt file
         //int indexD = args.indexOf("-D");
         //if (indexD > 0){
         //    args.remove(indexD);
         //    args.remove(indexD);
         //}
 
-        //加入R.txt文件的生成
+        //Join the outputs of the R.txt file
         String sybolOutputDir = config.getSymbolOutputDir().getAbsolutePath();
         if (!args.contains("--output-text-symbols") && null != sybolOutputDir) {
             args.add("--output-text-symbols");

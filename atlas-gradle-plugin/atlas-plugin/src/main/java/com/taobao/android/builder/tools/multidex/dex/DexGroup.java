@@ -214,61 +214,67 @@ import com.taobao.android.dex.DexIndexOverflowException;
 import com.taobao.android.dex.FieldId;
 import com.taobao.android.dex.MethodId;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class DexGroup {
 
-    public static final int MAX_FIELD_IDS = 65530;
-    public static final int MAX_METHOD_IDS = 65530;
-    public static final int MAX_METHOD_IDS_FIRSTDEX = 65000;
+    public static final int MAX_FIELD_IDS = 65500;
+    public static final int MAX_METHOD_IDS = 65500;
+    public static final int MAX_METHOD_IDS_FIRSTDEX = 65500;
 
     public boolean firstDex;
 
     public List<Dex> dexs = new ArrayList<>();
 
-    public int methods = 0;
-    public int fields = 0;
-    public Set<String> strings = new HashSet<>();
+    private TreeMap<MethodId,List<Dex>>methodTreeMap = new TreeMap<>();
+    private TreeMap<FieldId,List<Dex>>fieldTreeMap = new TreeMap<>();
 
     public boolean addDex(Dex dex) {
-
-        int ms = dex.getTableOfContents().methodIds.size;
-        int fs = dex.getTableOfContents().fieldIds.size;
-
-        Set<String> newstrings = new HashSet<>(strings);
-        newstrings.addAll(dex.strings());
-
-        if (fs >= MAX_FIELD_IDS) {
-            throw new DexIndexOverflowException("field ID not in [0, 0xffff]: " + fs);
+         TreeMap<MethodId,List<Dex>>tempMethodTreeMap = new TreeMap<>(methodTreeMap);
+         TreeMap<FieldId,List<Dex>>tempFieldTreeMap = new TreeMap<>(fieldTreeMap);
+        for (MethodId methodId:dex.methodIds()){
+            if (tempMethodTreeMap.containsKey(methodId)){
+                tempMethodTreeMap.get(methodId).add(dex);
+            }else {
+                List<Dex>dexes = new ArrayList<>();
+                dexes.add(dex);
+                tempMethodTreeMap.put(methodId,dexes);
+            }
         }
-        if (methods + ms >= (firstDex ? MAX_METHOD_IDS_FIRSTDEX : MAX_METHOD_IDS) || fields + fs >= MAX_FIELD_IDS || newstrings.size() >= MAX_FIELD_IDS) {
+
+        for (FieldId fieldId:dex.fieldIds()){
+            if (tempFieldTreeMap.containsKey(fieldId)){
+                tempFieldTreeMap.get(fieldId).add(dex);
+            }else {
+                List<Dex>dexes = new ArrayList<>();
+                dexes.add(dex);
+                tempFieldTreeMap.put(fieldId,dexes);
+            }
+        }
+
+//        fields = fields+dex.fieldIds().size();
+//        if (fields > MAX_FIELD_IDS){
+//            return false;
+//        }
+//        methods = methods+dex.methodIds().size();
+//        if (methods > MAX_METHOD_IDS){
+//            return false;
+//        }
+
+        if (dex.methodIds().size() > MAX_METHOD_IDS_FIRSTDEX || dex.fieldIds().size() > MAX_FIELD_IDS){
+            throw new DexIndexOverflowException("field or method ID not in [0, 0xffff]: " + "tempMethods size:"+dex.methodIds().size() + "tempFields size:" +dex.fieldIds().size());
+
+        }
+        if (tempMethodTreeMap.size() > MAX_METHOD_IDS||tempFieldTreeMap.size() > MAX_FIELD_IDS){
             return false;
         }
-
+        fieldTreeMap = new TreeMap<>(tempFieldTreeMap);
+        methodTreeMap = new TreeMap<>(tempMethodTreeMap);
         dexs.add(dex);
-        methods += ms;
-        fields += fs;
-        strings = newstrings;
+        tempFieldTreeMap.clear();
+        tempMethodTreeMap.clear();
 
         return true;
     }
 
-    private Set<String> getMethods(Dex dex) {
-        Set<String> sets = new HashSet<>();
-        for (MethodId mi : dex.methodIds()) {
-            sets.add(mi.toString());
-        }
-        return sets;
-    }
-
-    private Set<String> getFields(Dex dex) {
-        Set<String> sets = new HashSet<>();
-        for (FieldId filedId : dex.fieldIds()) {
-            sets.add(filedId.toString());
-        }
-        return sets;
-    }
 }

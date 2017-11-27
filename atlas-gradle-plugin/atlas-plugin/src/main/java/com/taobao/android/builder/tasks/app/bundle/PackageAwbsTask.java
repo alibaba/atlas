@@ -264,7 +264,7 @@ public class PackageAwbsTask extends BaseTask {
     private ApkVariantOutputData variantOutputData;
 
     /**
-     * 生成so的目录
+     * Directory of so
      */
     @TaskAction
     void createAwbPackages() throws ExecutionException, InterruptedException, IOException {

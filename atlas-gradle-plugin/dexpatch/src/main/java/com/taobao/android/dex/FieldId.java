@@ -63,6 +63,6 @@ public final class FieldId implements Comparable<FieldId> {
         if (dex == null) {
             return declaringClassIndex + " " + typeIndex + " " + nameIndex;
         }
-        return dex.typeNames().get(typeIndex) + "." + dex.strings().get(nameIndex);
+        return dex.typeNames().get(declaringClassIndex)+"."+dex.typeNames().get(typeIndex) + "." + dex.strings().get(nameIndex);
     }
 }

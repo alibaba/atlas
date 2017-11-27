@@ -218,7 +218,7 @@ import java.io.IOException;
 public interface Cache {
 
     /**
-     * 存缓存
+     * Memory cache
      *
      * @param type
      * @param key
@@ -228,7 +228,7 @@ public interface Cache {
     public void cacheFile(String type, String key, File file) throws FileCacheException;
 
     /**
-     * 读取缓存
+     * Read cache
      *
      * @param type
      * @param key

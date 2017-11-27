@@ -292,18 +292,18 @@ public class PublishToMavenRepositoryHook extends AbstractPublishToMaven {
                     String message = e.getMessage();
                     if (message.contains("Could not write to resource") &&
                             !publication.getVersion().endsWith("SNAPSHOT")) {
-                        throw new GradleException("无法deploy release版本，请通过mtl平台打包发布",e);
+                        throw new GradleException("Unable to deploy releaseThe release is packaged with the MTL platform",e);
                     }
 
                     if (message.contains("status code 400") &&
                             !publication.getVersion().endsWith("SNAPSHOT")) {
-                        throw new GradleException("您发布的版本 " +
+                        throw new GradleException("Your release " +
                                                           publication.getVersion() +
-                                                          " 在仓库里已经存在",e);
+                                                          " It already exists in the warehouse",e);
                     }
 
                     if (message.contains("status code 413")) {
-                        throw new GradleException("您发布超过200M，无法上传",e);
+                        throw new GradleException("You post more than 200M, unable to upload",e);
                     }
 
                     throw e;

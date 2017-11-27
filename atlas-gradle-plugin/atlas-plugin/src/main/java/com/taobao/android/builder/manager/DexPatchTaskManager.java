@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 
 /**
  * @author lilong
- * @create 2017-08-23 上午9:41
+ * @create 2017-08-23 In the morning he
  */
 
 public class DexPatchTaskManager extends AtlasBaseTaskManager {

@@ -209,8 +209,8 @@
 package com.taobao.android.builder.tools;
 
 /**
- * 判断操作系统的工具类
- * @author shenghua.nish 2014-6-22 上午9:19:07
+ * Determine the utility class for the operating system
+ * @author shenghua.nish 2014-6-22 On the morning of 9:19:07
  */
 public class OSUtils {
     private static String OS = System.getProperty("os.name").toLowerCase();  

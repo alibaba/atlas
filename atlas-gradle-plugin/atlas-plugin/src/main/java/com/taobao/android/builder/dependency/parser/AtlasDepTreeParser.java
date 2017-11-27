@@ -294,7 +294,7 @@ public class AtlasDepTreeParser {
         collectArtifacts(packageClasspath, artifacts);
         collectArtifacts(bundleClasspath, artifacts);
 
-        //依赖分组
+        //Rely on the group
         DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath,artifacts);
 
         DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts,
@@ -353,7 +353,7 @@ public class AtlasDepTreeParser {
 
         AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies);
 
-        //设置依赖关系
+        //Setting dependency
         for (ResolvedDependencyInfo dependencyInfo : mResolvedDependencies) {
 
             if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
@@ -385,7 +385,7 @@ public class AtlasDepTreeParser {
         }
         switch (DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
             case AAR:
-                //添加到主dex中去
+                //Add it to the main dex
                 awbBundle.getAndroidLibraries().add(
                     DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
                 break;
@@ -439,7 +439,7 @@ public class AtlasDepTreeParser {
 
         if (warnings.size() > 0) {
             logger.warning(JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
-            throw new GradleException("decency冲突 : " + StringUtils.join(warnings, "\r\n"));
+            throw new GradleException("decencyconflict : " + StringUtils.join(warnings, "\r\n"));
         }
     }
 

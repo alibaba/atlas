@@ -248,7 +248,7 @@ public class AwbGenerator {
     }
 
     /**
-     * 创建基本的AWB任务
+     * Create a basic AWB task
      */
     public void generateAwbArtifict(final Zip bundleTask, LibVariantOutputData libVariantOutputData) {
 
@@ -288,7 +288,7 @@ public class AwbGenerator {
                     return;
                 }
 
-                //重新生成aar
+                //Regenerating aar
                 if (atlasExtension.getBundleConfig().isAwbBundle()) {
                     try {
                         FileUtils.copyFile(outputFile,

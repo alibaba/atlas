@@ -225,14 +225,14 @@ public class BundleDependenyTest {
 
         List<AwbBundle> awbBundles = new ArrayList<>();
 
-        AwbBundle awbBundle1 = new AwbBundle("孤立bundle");
-        AwbBundle awbBundle2 = new AwbBundle("孤立的子bundleA");
-        AwbBundle awbBundle3 = new AwbBundle("依赖于bundle");
+        AwbBundle awbBundle1 = new AwbBundle("Isolated bundle");
+        AwbBundle awbBundle2 = new AwbBundle("Isolated child bundleA");
+        AwbBundle awbBundle3 = new AwbBundle("Depends on the bundle");
         awbBundle3.getBundleDependencies().add(awbBundle2);
 
-        AwbBundle awbBundle4 = new AwbBundle("循环依赖A");
-        AwbBundle awbBundle5 = new AwbBundle("循环依赖B");
-        AwbBundle awbBundle6 = new AwbBundle("循环依赖C");
+        AwbBundle awbBundle4 = new AwbBundle("Cycle dependence A");
+        AwbBundle awbBundle5 = new AwbBundle("Cycle dependence B");
+        AwbBundle awbBundle6 = new AwbBundle("Cycle dependence C");
         awbBundle5.getBundleDependencies().add(awbBundle6);
         awbBundle6.getBundleDependencies().add(awbBundle4);
         awbBundle4.getBundleDependencies().add(awbBundle5);
@@ -244,9 +244,9 @@ public class BundleDependenyTest {
         awbBundles.add(awbBundle5);
         awbBundles.add(awbBundle6);
 
-        //生成awbBundleGraph
+        //Generate awbBundleGraph
 
-        //先取最顶级的依赖
+        //Take the top one
         for (AwbBundle awbBundle: awbBundles){
 
         }

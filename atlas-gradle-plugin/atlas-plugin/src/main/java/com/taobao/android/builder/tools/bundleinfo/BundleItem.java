@@ -265,7 +265,7 @@ public class BundleItem {
         if (this.isResolved()){
             return false;
         }
-        //如果是循环
+        //If it's a cycle
         if (sets.contains(this)){
             return true;
         }
