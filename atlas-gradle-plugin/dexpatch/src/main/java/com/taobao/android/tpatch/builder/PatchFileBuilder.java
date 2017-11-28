@@ -439,7 +439,8 @@ public class PatchFileBuilder {
 
             if (addToPatch&&patchBundleInfo.getUnitTag().equals(patchBundleInfo.getSrcUnitTag())){
 
-                throw new PatchException(patchName+"patch中:"+patchBundleInfo.getPkgName()+"的srcunittag和unittag一致,"+patchBundleInfo.getUnitTag()+",无法动态部署，请重新集成!");
+                throw new PatchException(patchName+"patch中:"+patchBundleInfo.getPkgName()+"的srcunittag和unittag一致,"+patchBundleInfo.getUnitTag()+",无法动态部署，请重新集成!"
+                    +"\n检查是否修改了bundle的版本号，参见排查文档：https://alibaba.github.io/atlas/faq/dynamic_failed_help.html");
 
             }else if (addToPatch) {
                 patchInfo.getBundles().add(patchBundleInfo);
