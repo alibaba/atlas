@@ -227,10 +227,10 @@ public class ModuleInfo {
 
     public String version;
 
-    //模块相对于根目录的路径
+    //The path of the module relative to the root directory
     public String path;
 
-    //java源代码目录
+    //javaSource code directory
     public List<String> java_SrcDirs = new ArrayList();
 
     public List<String> res_srcDirs = new ArrayList();

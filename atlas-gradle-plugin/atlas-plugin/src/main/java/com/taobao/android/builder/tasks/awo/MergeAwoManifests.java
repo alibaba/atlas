@@ -221,7 +221,7 @@ import com.taobao.android.builder.tasks.app.merge.MergeManifestAwbsConfigAction.
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 
 /**
- * Created by shenghua.nish on 2016-07-15 上午11:22.
+ * Created by shenghua.nish on 2016-07-15 When in the morning.
  */
 public class MergeAwoManifests extends MergeAwbManifests {
 

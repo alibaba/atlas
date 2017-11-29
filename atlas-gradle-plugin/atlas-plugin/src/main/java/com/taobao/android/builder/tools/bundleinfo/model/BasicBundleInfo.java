@@ -211,6 +211,7 @@ package com.taobao.android.builder.tools.bundleinfo.model;
 
 import com.google.common.collect.Lists;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -221,7 +222,7 @@ public class BasicBundleInfo {
     private String pkgName;
 
     /**
-     * 主dex依赖+当前依赖的md5
+     * The main dex depends on + the md5 that is currently dependent
      */
     private String unique_tag;
 
@@ -239,7 +240,37 @@ public class BasicBundleInfo {
 
     private List<String> contentProviders = Lists.newArrayList();
 
+    private HashMap<String,String> remoteFragments= new HashMap<String,String>();
+
+    private HashMap<String,String> remoteViews = new HashMap<String,String>();
+
+    private HashMap<String,String> remoteTransactors = new HashMap<String,String>();
+
     private Boolean isInternal = true;
+
+    public HashMap<String, String> getRemoteViews() {
+        return remoteViews;
+    }
+
+    public void setRemoteViews(HashMap<String, String> remoteViews) {
+        this.remoteViews = remoteViews;
+    }
+
+    public HashMap<String, String> getRemoteTransactors() {
+        return remoteTransactors;
+    }
+
+    public void setRemoteTransactors(HashMap<String, String> remoteTransactors) {
+        this.remoteTransactors = remoteTransactors;
+    }
+
+    public HashMap<String, String> getRemoteFragments() {
+        return remoteFragments;
+    }
+
+    public void setRemoteFragments(HashMap<String, String> remoteFragments) {
+        this.remoteFragments = remoteFragments;
+    }
 
     public String getPkgName() {
         return pkgName;

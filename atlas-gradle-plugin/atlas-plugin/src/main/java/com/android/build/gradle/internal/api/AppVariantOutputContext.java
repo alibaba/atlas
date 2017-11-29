@@ -234,7 +234,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 /**
- * Created by shenghua.nish on 2016-05-04 下午3:46.
+ * Created by shenghua.nish on 2016-05-04 3:46 afternoon.
  */
 public class AppVariantOutputContext {
 
@@ -339,7 +339,7 @@ public class AppVariantOutputContext {
             AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                     variantContext.getVariantName());
             for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
-                //生成AwbTransform对象
+                //Generate the AwbTransform object
                 AwbTransform awbTransform = new AwbTransform(awbBundle);
                 //                awbTransform.setInputDir(awbJavaCompile.getDestinationDir());
                 awbTransform.getInputLibraries().addAll(awbBundle.getLibraryJars());  //ADD R.class
@@ -365,16 +365,24 @@ public class AppVariantOutputContext {
 
     public File getAwbPackageOutputFile(AwbBundle awbBundle) {
         String awbOutputName = awbBundle.getAwbSoName();
-        File file = new File(variantContext.getAwbApkOutputDir(),
-                             "lib/armeabi" + File.separator + awbOutputName);
-        file.getParentFile().mkdirs();
+
+        Set<String> libSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInLibSoNames();
+
+        File file = null;
+        if (libSoNames.isEmpty() || libSoNames.contains(awbOutputName)) {
+            file = new File(variantContext.getAwbApkOutputDir(),
+                                 "lib/armeabi" + File.separator + awbOutputName);
+            file.getParentFile().mkdirs();
+        }else {
+            file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
+        }
 
         awbBundle.outputBundleFile = file;
         return file;
     }
 
     /**
-     * 取动态下载的so的下载地址
+     * Download the download address for dynamic download
      *
      * @param awbBundle
      * @return
@@ -461,7 +469,7 @@ public class AppVariantOutputContext {
 
         List<File> otherFiles = new ArrayList<File>();
 
-        //路径和文件名
+        //Path and file name
         Map<String, File> otherFilesMap = new HashMap<>();
 
         File dependencyTreeFile;

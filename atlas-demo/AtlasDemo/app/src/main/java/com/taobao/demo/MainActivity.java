@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
+//        getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
 
@@ -170,6 +170,12 @@ public class MainActivity extends AppCompatActivity
                 Intent intent = new Intent();
                 intent.setPackage(getPackageName());
                 intent.setClassName(this,"com.taobao.databindbundle.databind.DataBundleSampleActivity");
+                startActivity(intent);
+            }else if (id == R.id.nav_remote) {
+
+                Intent intent = new Intent();
+                intent.setPackage(getPackageName());
+                intent.setClassName(this,"com.taobao.firstbundle.UseremoteActivity");
                 startActivity(intent);
             }
 

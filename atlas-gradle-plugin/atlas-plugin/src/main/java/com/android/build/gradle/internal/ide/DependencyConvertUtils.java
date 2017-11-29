@@ -232,13 +232,13 @@ import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
 
 /**
- * 依赖对象转换的工具类
- * Created by shenghua.nish on 2016-05-06 上午10:44.
+ * Tool classes that depend on object transformation
+ * Created by shenghua.nish on 2016-05-06 10:44 in the morning.
  */
 public class DependencyConvertUtils {
 
     /**
-     * 转换为jar依赖
+     * Convert to jar dependency
      *
      * @param resolvedDependencyInfo
      * @return
@@ -258,7 +258,7 @@ public class DependencyConvertUtils {
     }
 
     /**
-     * 简单的转换，没有任何的依赖
+     * Simple transformations, no dependencies
      *
      * @param resolvedDependencyInfo
      * @return

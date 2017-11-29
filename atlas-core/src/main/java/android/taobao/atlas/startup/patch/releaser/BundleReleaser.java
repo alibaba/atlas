@@ -428,64 +428,74 @@ public class BundleReleaser {
                 }
             }
         });
-        Log.e(TAG,"start new DexFile");
         dexFiles = new DexFile[validDexes.length];
-        Log.e(TAG,"start enable verify");
         if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
             KernalConstants.dexBooster.setVerificationEnabled(true);
             Log.e(TAG,"enable verify");
         }
-        Log.e(TAG,"start dexopt");
-        final CountDownLatch countDownLatch = new CountDownLatch(validDexes.length);
-        for (int i = 0;i < validDexes.length;i++) {
-            final int j = i;
-            service.submit(new Runnable() {
-                @Override
-                public void run() {
-                    long startTime = System.currentTimeMillis();
-                    String optimizedPath = optimizedPathFor(validDexes[j], dexOptDir());
-                    try {
-                        if(!externalStorage) {
-                            dexFiles[j] = DexFile.loadDex(validDexes[j].getPath(), optimizedPath, 0);
-                            if(!new File(optimizedPath).exists()){
-                                Log.e(TAG,"odex not exist");
-                            }
-                        }else{
-                            //interpretOnly
-                            if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {
-                                optimizedPath = KernalConstants.baseContext.getFilesDir()+File.separator+"fake.dex";
-                                new File(optimizedPath).createNewFile();
-                                dexFiles[j] = KernalConstants.dexBooster.loadDex(KernalConstants.baseContext, validDexes[j].getPath(), optimizedPath, 0, true);
-                            }else{
-                                dexFiles[j] = DexFileCompat.loadDex(KernalConstants.baseContext,validDexes[j].getPath(), optimizedPath,0);
-                            }
-                        }
-                        boolean result = verifyDexFile(dexFiles[j],optimizedPath);
-                        if (!result) {
-                            handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
-                    } finally {
+        if(!hasReleased) {
+            Log.e(TAG,"start dexopt | hasRelease : "+hasReleased);
+            final CountDownLatch countDownLatch = new CountDownLatch(validDexes.length);
+            for (int i = 0; i < validDexes.length; i++) {
+                final int j = i;
+                service.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        dexFiles[j] = dexoptInternal(validDexes[j]);
+                        countDownLatch.countDown();
                     }
-                    Log.e(TAG, String.format("dex %s consume %d ms", validDexes[j].getAbsolutePath(),
-                            System.currentTimeMillis() - startTime));
-                    countDownLatch.countDown();
-                }
-            });
-        }
-
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+                });
+            }
+            try {
+                countDownLatch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }else{
+            Log.e(TAG,"start dexopt | hasRelease : "+hasReleased);
+            for (int i = 0; i < validDexes.length; i++) {
+                dexFiles[i] = dexoptInternal(validDexes[i]);
+            }
         }
         if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
             KernalConstants.dexBooster.setVerificationEnabled(false);
         }
         Log.e(TAG, "dex opt done");
         handler.sendMessage(handler.obtainMessage(MSG_ID_DEX_OPT_DONE));
+    }
+
+    private DexFile dexoptInternal(File validDex){
+        long startTime = System.currentTimeMillis();
+        DexFile dexFile = null;
+        String optimizedPath = optimizedPathFor(validDex, dexOptDir());
+        try {
+            if(!externalStorage) {
+                dexFile = DexFile.loadDex(validDex.getPath(), optimizedPath, 0);
+                if(!new File(optimizedPath).exists()){
+                    Log.e(TAG,"odex not exist");
+                }
+            }else{
+                //interpretOnly
+                if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {
+                    optimizedPath = KernalConstants.baseContext.getFilesDir()+File.separator+"fake.dex";
+                    new File(optimizedPath).createNewFile();
+                    dexFile = KernalConstants.dexBooster.loadDex(KernalConstants.baseContext, validDex.getPath(), optimizedPath, 0, true);
+                }else{
+                    dexFile = DexFileCompat.loadDex(KernalConstants.baseContext,validDex.getPath(), optimizedPath,0);
+                }
+            }
+            boolean result = verifyDexFile(dexFile,optimizedPath);
+            if (!result) {
+                handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
+        } finally {
+            Log.e(TAG, String.format("dex %s consume %d ms", validDex.getAbsolutePath(),
+                    System.currentTimeMillis() - startTime));
+        }
+        return dexFile;
     }
 
     private boolean verifyDexFile(DexFile dexFile,String optimizedPath) throws IOException {

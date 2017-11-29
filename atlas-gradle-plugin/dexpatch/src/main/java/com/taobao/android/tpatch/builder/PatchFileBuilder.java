@@ -24,8 +24,7 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
 import com.android.utils.ILogger;
-import com.taobao.android.BasePatchTool;
-import com.taobao.android.TPatchTool;
+import com.taobao.android.tools.TPatchTool;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.BuildPatchInfos;
 import com.taobao.android.object.PatchBundleInfo;
@@ -79,7 +78,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 创建历史版本的tpatch
+     * create history tpatch
      */
     public BuildPatchInfos createHistoryTPatches(boolean diffBundleDex, final ILogger logger) throws PatchException {
         final BuildPatchInfos buildPatchInfos = new BuildPatchInfos();
@@ -128,7 +127,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 创建指定版本的patch文件
+     * create patch for target version
      *
      * @param targetVersion
      */
@@ -185,7 +184,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 生成主dex的so
+     * generate main dex so
      *
      * @param bundleFolder
      * @param soOutputFile
@@ -213,7 +212,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 比较2个patch版本之间的差异
+     * compare two patch
      *
      * @param hisPatchInfo
      * @param currentPatchInfo
@@ -309,7 +308,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 处理各自bundle的patch文件
+     * process so file
      *
      * @param hisPatchInfo
      * @param bundlePatchs
@@ -401,18 +400,18 @@ public class PatchFileBuilder {
                             }
                         } else {
                             downloadTPathAndUnzip(hisPatchInfo.getDownloadUrl(), hisTPatchFile, hisTPatchUnzipFolder);
-                            File mainDexFile = new File(hisTPatchUnzipFolder,"libcom_taobao_maindex.so");
-                            if (mainDexFile.exists()&&Boolean.FALSE.booleanValue()){
-                                try {
-                                    System.out.println("start put bundleInfos for version:"+hisPatchInfo.getPatchVersion()+"......");
-                                    TPatchTool.bundleInfos.put(hisPatchInfo.getPatchVersion(),new AtlasFrameworkPropertiesReader(
-                                                                                                new MethodReader(
-                                                                                                new ClassReader(
-                                                                                                new DexReader(mainDexFile))),TPatchTool.bundleInfos.get(currentBuildPatchInfo.getPatchVersion())).read("Landroid/taobao/atlas/framework/FrameworkProperties;","<clinit>"));
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
+//                            File mainDexFile = new File(hisTPatchUnzipFolder,"libcom_taobao_maindex.so");
+//                            if (mainDexFile.exists()){
+//                                try {
+//                                    System.out.println("start put bundleInfos for version:"+hisPatchInfo.getPatchVersion()+"......");
+//                                    TPatchTool.bundleInfos.put(hisPatchInfo.getPatchVersion(),new AtlasFrameworkPropertiesReader(
+//                                                                                                new MethodReader(
+//                                                                                                new ClassReader(
+//                                                                                                new DexReader(mainDexFile))),TPatchTool.bundleInfos.get(currentBuildPatchInfo.getPatchVersion())).read("Landroid/taobao/atlas/framework/FrameworkProperties;","<clinit>"));
+//                                } catch (Exception e) {
+//                                    e.printStackTrace();
+//                                }
+//                            }
                         }
                     }
                     if (!hisBundleFolder.exists()) {
@@ -494,27 +493,6 @@ public class PatchFileBuilder {
         }
     }
 
-    private File getBaseDexFile(File newBundleFile, boolean base) {
-        File newApkUnzipFolder = new File(newBundleFile.getAbsolutePath().split("lib/armeabi")[0]);
-        File baseApkUnzipFolder = new File(newApkUnzipFolder.getParentFile(), BasePatchTool.BASE_APK_UNZIP_NAME);
-        File baseBundleFile = null;
-        File oldBundleFolder = null;
-        if (base) {
-            baseBundleFile = new File(baseApkUnzipFolder,
-                                      "lib" + File.separator + "armeabi" + File.separator + newBundleFile.getName());
-            oldBundleFolder = new File(baseBundleFile.getParentFile(),
-                                       FilenameUtils.getBaseName(baseBundleFile.getName()));
-            System.out.println("getBaseDexFile:" + new File(oldBundleFolder, "classes.dex").getAbsolutePath());
-            return new File(oldBundleFolder, "classes.dex");
-        } else {
-            baseBundleFile = new File(newApkUnzipFolder,
-                                      "lib" + File.separator + "armeabi" + File.separator + newBundleFile.getName());
-            oldBundleFolder = new File(baseBundleFile.getParentFile(),
-                                       FilenameUtils.getBaseName(baseBundleFile.getName()));
-            System.out.println("getNewDexFile:" + new File(oldBundleFolder, "classes.dex").getAbsolutePath());
-            return new File(oldBundleFolder, "classes.dex");
-        }
-    }
 
     /**
      * 将指定文件夹下的文件转换为map
@@ -559,7 +537,7 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 如果下载的文件不存在，则下载文件
+     * download file
      *
      * @param httpUrl
      * @param saveFile
@@ -598,7 +576,6 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 转换为map
      *
      * @param bundles
      * @return
@@ -612,7 +589,6 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 创建Andfix的manifest信息
      *
      * @return
      */
@@ -626,7 +602,6 @@ public class PatchFileBuilder {
     }
 
     /**
-     * 往jar文件里增加文件
      *
      * @param jos
      * @param file

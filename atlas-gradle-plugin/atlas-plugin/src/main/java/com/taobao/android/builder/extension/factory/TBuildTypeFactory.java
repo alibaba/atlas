@@ -217,7 +217,7 @@ import org.gradle.api.logging.Logger;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
- * Created by shenghua.nish on 2016-05-17 下午1:40.
+ * Created by shenghua.nish on 2016-05-17 On the afternoon of 1:40.
  */
 public class TBuildTypeFactory implements NamedDomainObjectFactory<TBuildType> {
 

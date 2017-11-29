@@ -1,7 +1,9 @@
 # Atlas
 
 [![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/alibaba/atlas/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-5.0.7-yellow.svg)](https://github.com/alibaba/atlas/releases) 
+[![Release Version](https://img.shields.io/badge/atlas_core-5.0.7.55-orange.svg)](https://github.com/alibaba/atlas/releases/tag/5.0.7.55) 
+[![Release Version](https://img.shields.io/badge/atlasupdate-1.1.4.14-blue.svg)](https://github.com/alibaba/atlas/releases/tag/5.0.7.55) 
+[![Release Version](https://img.shields.io/badge/atlasplugin-2.3.3.rc41-green.svg)](https://github.com/alibaba/atlas/releases/tag/5.0.7.55) 
 
 > A powerful Android Dynamic Component Framework.
 
@@ -40,7 +42,7 @@ You can see there were three main library in this project ([atlas-core](./atlas-
 
 ## Support
 ----------
-Atlas support all Android version from Android 4.0 to 7.0. 
+Atlas support all Android version from Android 4.0 to 8.0. 
 
 Follow is support status.
 
@@ -54,6 +56,7 @@ ART     | 5.0             | Yes
 ART     | 5.1             | Yes
 ART     | M               | Yes
 ART     | N               | Yes
+ART     | 8.0             | Yes
 
 <!--## Contributing
 

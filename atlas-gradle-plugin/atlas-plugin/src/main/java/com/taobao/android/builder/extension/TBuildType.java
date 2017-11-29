@@ -215,7 +215,7 @@ import com.taobao.android.builder.extension.annotation.Config;
 import java.io.File;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午10:21.
+ * Created by shenghua.nish on 2016-05-17 1 in the morning.
  */
 public class TBuildType {
 
@@ -223,7 +223,7 @@ public class TBuildType {
 
     private File baseApFile;
 
-    @Config(title = "基线的依赖坐标",message = "如： com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
+    @Config(title = "The baseline depends on the coordinates",message = "Such as: com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
     private String baseApDependency;
 
     private PatchConfig patchConfig;

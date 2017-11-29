@@ -259,7 +259,7 @@ public class MainDexLister {
 
         Set<String> mainDexList = new HashSet<String>();
 
-        //混淆的map
+        //Confusion of the map
         //Map<String, String> classMap = getClassObfMap(config);
 
         File manifest = appVariantContext.getVariantData().getOutputs().get(0).manifestProcessorTask
@@ -330,7 +330,7 @@ public class MainDexLister {
             String.valueOf(appVariantContext.getScope().getGlobalScope().getBuildDir()), FD_OUTPUTS, "mapping",
             appVariantContext.getScope().getVariantConfiguration().getDirName()));
         File mappingFile = new File(proguardOut, "mapping.txt");
-        // 解析mapping文件,生成新的mainDexListFile
+        // Parse the mapping file to generate the new mainDexListFile
         if (isMinifyEnabled && mappingFile.exists()) {
             MappingReader mappingReader = new MappingReader(mappingFile);
             MappingReaderProcess process = new MappingReaderProcess();
@@ -359,7 +359,7 @@ public class MainDexLister {
             return;
         }
 
-        //增加黑名单
+        //blacklisting
         if (!multiDexConfig.getMainDexBlackList().isEmpty()) {
             for (String blackItem : multiDexConfig.getMainDexBlackList()) {
                 if (clazz.startsWith(blackItem)) {

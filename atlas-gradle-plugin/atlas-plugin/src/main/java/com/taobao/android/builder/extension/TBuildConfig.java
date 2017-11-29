@@ -219,81 +219,81 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.extension.annotation.Config;
 
 /**
- * Created by shenghua.nish on 2016-05-17 上午10:15.
+ * Created by shenghua.nish on 2016-05-17 At 10:15.
  */
 public class TBuildConfig {
 
-    @Config(message = "远程bundle清单, artifactId", advance = false, order = 1, group = "atlas")
+    @Config(message = "Remote bundle list, artifactId", advance = false, order = 1, group = "atlas")
     private Set<String> outOfApkBundles = Sets.newHashSet();
 
-    @Config(title = "自启动的bundle列表", message = "值是 packageName", order = 1, advance = false, group = "atlas")
+    @Config(title = "Self-initiated bundle list", message = "The value is packageName", order = 1, advance = false, group = "atlas")
     private List<String> autoStartBundles = new ArrayList<String>();
 
-    @Config(title = "提前启动列表",
-        message = "实现PreLaunch的类，多个类用 , 号分开", order = 1, advance = false, group = "atlas")
+    @Config(title = "Pre-launch list",
+        message = "To implement the PreLaunch class, multiple classes are used , No separate", order = 1, advance = false, group = "atlas")
     private String preLaunch = "";
 
-    @Config(title = "atlas 分包",
-        message = "atlas的主dex分包机制，第一个dex只放atlas对应的启动代码", order = 3, advance = false, group = "atlas")
+    @Config(title = "atlas The subcontract",
+        message = "atlasThe primary dex subcontracting mechanism, the first dex to set up only the startup code corresponding to atlas", order = 3, advance = false, group = "atlas")
     private boolean atlasMultiDex = false;
 
-    @Config(message = "需要删除的so文件列表", order = 4, advance = true, group = "atlas")
+    @Config(message = "List of so files to delete", order = 4, advance = true, group = "atlas")
     private Set<String> removeSoFiles = Sets.newHashSet();
 
-    @Config(title = "bundle的packageId定义文件", message = "bundle的packageId定义文件，不定义会自动分配", group = "atlas")
+    @Config(title = "bundleThe packageId definition file", message = "bundlePackageId defines files that are not defined automatically", group = "atlas")
     private File packageIdFile = new File("");
 
-    @Config(message = "自动生成bundle的packageId", order = 6, advance = false, group = "atlas")
+    @Config(message = "Automatically generate the bundle's packageId", order = 6, advance = false, group = "atlas")
     private boolean autoPackageId = true;
 
-    @Config(message = "自动分配的packageId 最小值", order = 6, advance = false, group = "atlas")
+    @Config(message = "Automatic allocation of packageId The minimum value", order = 6, advance = false, group = "atlas")
     private int minPackageId = 35;
 
-    @Config(title = "构建基线包", message = "构建基线包，建议开启，否则后面的patch包无法进行", order = 0, group = "atlas_patch")
+    @Config(title = "Build base pack", message = "Build the baseline package, and the suggestion is open, otherwise the patch package will not be able to proceed", order = 0, group = "atlas_patch")
     private Boolean createAP = true;
 
-    @Config(message = "合并bundle jar中的资源文件", order = 8, advance = true, group = "atlas")
+    @Config(message = "Merge the bundle jarResource file", order = 8, advance = true, group = "atlas")
     private Boolean mergeAwbJavaRes = false;
 
-    @Config(message = "是否依赖冲突终止打包", order = 0, group = "check")
+    @Config(message = "Whether to rely on conflict to terminate packaging", order = 0, group = "check")
     private boolean abortIfDependencyConflict = false;
 
-    @Config(message = "是否类冲突终止打包", order = 0, group = "check")
+    @Config(message = "Whether class conflicts terminate packaging", order = 0, group = "check")
     private boolean abortIfClassConflict = false;
 
-    @Config(title = "预处理manifest", message = "如果开启atlas，必须为true", order = 7, advance = true, group = "atlas")
+    @Config(title = "Pretreatment of the manifest", message = "If atlas is turned on, it must be true", order = 7, advance = true, group = "atlas")
     private Boolean preProcessManifest = true;
 
-    @Config(title = "使用自定义的aapt", message = "如果开启atlas，必须为true", order = 8, advance = true, group = "atlas")
+    @Config(title = "Use a custom aapt", message = "If atlas is turned on, it must be true", order = 8, advance = true, group = "atlas")
     private Boolean useCustomAapt = false;
 
-    @Config(title = "aapt输出的R为常量", message = "建议值设置为false， 可以减少动态部署的patch包大小", order = 9, advance = true,
+    @Config(title = "aaptThe output R is constant", message = "The recommended value is set to false, You can reduce the amount of patch packages that are dynamically deployed", order = 9, advance = true,
         group = "atlas")
     private Boolean aaptConstantId = true;
 
-    @Config(message = "注入核心的bundle信息", advance = true, order = 10, group = "atlas")
+    @Config(message = "Inject the core bundle information", advance = true, order = 10, group = "atlas")
     private Boolean classInject = false;
 
-    @Config(title = "主dex插桩", message = "老版本的主dex动态部署，已经废弃", advance = true, order = 11, group = "atlas")
+    @Config(title = "The main dex in pile", message = "The old version of the main dex dynamic deployment, has been deprecated", advance = true, order = 11, group = "atlas")
     private Boolean doPreverify = false;
 
     @Deprecated
     private Boolean resV4Enabled = true;
 
-    @Config(message = "class注入在proguard之前", advance = true, order = 12, group = "atlas")
+    @Config(message = "classInjection before proguard", advance = true, order = 12, group = "atlas")
     private Boolean injectBeforeProguard = false;
 
-    @Config(title = "使用databinding的bundle列表", message = "需要进行databinding的bundle， 值为 packageName ", order = 13,
+    @Config(title = "Use the databinding bundle list", message = "You need to do a databinding bundle, A value of packageName ", order = 13,
         advance = true, group = "atlas")
     private Set<String> dataBindingBundles = new HashSet<>();
 
-    @Config(message = "proguard是否需要读取bundle中的混淆配置", order = 14, advance = true, group = "atlas")
+    @Config(message = "proguardDo you need to read the confusing configuration in the bundle", order = 14, advance = true, group = "atlas")
     private boolean bundleProguardConfigEnabled = true;
 
-    @Config(message = "依赖中的混淆是否只读取keep规则", order = 15, advance = true, group = "atlas")
+    @Config(message = "The confusion in dependencies reads only the keep rule", order = 15, advance = true, group = "atlas")
     private boolean libraryProguardKeepOnly = true;
 
-    @Config(title = "proguard配置读取依赖黑名单", message = "group:name,group2:name2", order = 16, advance = true,
+    @Config(title = "proguardConfigure read dependency blacklist", message = "group:name,group2:name2", order = 16, advance = true,
         group = "atlas")
     private Set<String> bundleProguardConfigBlackList = new HashSet<>();
 
@@ -302,22 +302,27 @@ public class TBuildConfig {
 
     private boolean incremental = false;
 
-    @Config(message = "是否使用快速proguard", order = 16, advance = true, group = "atlas")
+    @Config(message = "Whether to use fast proguard", order = 16, advance = true, group = "atlas")
     private boolean fastProguard = false;
 
-    @Config(message = "是否使用proguard缓存", order = 17, advance = true, group = "atlas")
+    private boolean keepJavaResAfterProguard = false;
+
+    @Config(message = "Whether to use the proguard cache", order = 17, advance = true, group = "atlas")
     private boolean proguardCacheEnabled = true;
 
-    @Config(message = "是否使用远程proguard缓存", order = 16, advance = true, group = "atlas")
+    @Config(message = "Whether to use the remote proguard cache", order = 16, advance = true, group = "atlas")
     private boolean proguardNetworkCacheEnabled = false;
 
-    @Config(message = "是否使用dex缓存", order = 17, advance = true, group = "atlas")
+    @Config(message = "Whether to use the dex cache", order = 17, advance = true, group = "atlas")
     private boolean dexCacheEnabled = true;
 
-    @Config(message = "是否使用远程dex缓存", order = 18, advance = true, group = "atlas")
+    @Config(message = "Whether to use the remote dex cache", order = 18, advance = true, group = "atlas")
     private boolean dexNetworkCacheEnabled = false;
 
     private int proguardParallelCount = 8;
+
+    @Config(message = "put awb so in lib/armeabi , not assets dir", order = 19, advance = true, group = "atlas")
+    private Set<String> keepInLibSoNames = new HashSet<>();
 
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;
@@ -569,5 +574,21 @@ public class TBuildConfig {
 
     public void setDexNetworkCacheEnabled(boolean dexNetworkCacheEnabled) {
         this.dexNetworkCacheEnabled = dexNetworkCacheEnabled;
+    }
+
+    public Set<String> getKeepInLibSoNames() {
+        return keepInLibSoNames;
+    }
+
+    public void setKeepInLibSoNames(Set<String> keepInLibSoNames) {
+        this.keepInLibSoNames = keepInLibSoNames;
+    }
+
+    public boolean isKeepJavaResAfterProguard() {
+        return keepJavaResAfterProguard;
+    }
+
+    public void setKeepJavaResAfterProguard(boolean keepJavaResAfterProguard) {
+        this.keepJavaResAfterProguard = keepJavaResAfterProguard;
     }
 }

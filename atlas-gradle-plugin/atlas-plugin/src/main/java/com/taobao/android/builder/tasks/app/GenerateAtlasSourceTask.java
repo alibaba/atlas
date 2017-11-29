@@ -209,21 +209,12 @@
 
 package com.taobao.android.builder.tasks.app;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPOutputStream;
-
 import com.alibaba.fastjson.JSON;
-
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.MavenCoordinates;
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.app.prepare.BundleInfoSourceCreator;
@@ -237,6 +228,15 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 public class GenerateAtlasSourceTask extends BaseTask {
 
@@ -268,9 +268,23 @@ public class GenerateAtlasSourceTask extends BaseTask {
     void generate() {
 
         InjectParam injectParam = getInput();
+        boolean supportRemoteComponent = true;
+        if (AtlasBuildContext.androidDependencyTrees.get(getVariantName())!= null) {
+            List<AndroidLibrary> libraries = AtlasBuildContext.androidDependencyTrees.get(getVariantName()).getMainBundle().getAndroidLibraries();
+            if (libraries.size() > 0) {
+                for (AndroidLibrary library : libraries) {
+                    MavenCoordinates coordinates = library.getResolvedCoordinates();
+                    if (coordinates.getArtifactId().equals("atlas_core") && coordinates.getGroupId().equals("com.taobao.android")) {
+                        if (coordinates.getVersion().compareTo("5.0.8") < 0) {
+                            supportRemoteComponent = false;
+                        }
+                    }
+                }
+            }
+        }
         List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
         File outputSourceGeneratorFile = new File(outputDir,"android/taobao/atlas/framework/AtlasBundleInfoGenerator.java");
-        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info);
+        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info,supportRemoteComponent);
         outputSourceGeneratorFile.getParentFile().mkdirs();
         try {
             FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
@@ -287,7 +301,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
         lines.add("private String version = \"" + injectParam.version + "\";");
         lines.add("public String getVersion() {return version;}");
         String escapeExprBundleInfo = escapeExprSpecialWord(injectParam.bundleInfo);
-        if(escapeExprBundleInfo.length()<Integer.MAX_VALUE){
+        if(injectParam.bundleInfo.length()<65535){
             lines.add("public static String bundleInfo = \"" + escapeExprBundleInfo + "\";");
             lines.add("public static final boolean compressInfo = false;");
         }else{

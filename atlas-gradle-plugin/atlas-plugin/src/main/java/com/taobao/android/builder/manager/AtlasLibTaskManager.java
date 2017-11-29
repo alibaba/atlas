@@ -250,8 +250,8 @@ import org.gradle.api.Project;
 import org.gradle.api.tasks.bundling.Zip;
 
 /**
- * MTL插件编译lib库的任务管理
- * Created by shenghua.nish on 2016-05-09 下午3:55.
+ * MTLThe plug-in compiles the lib library's task management
+ * Created by shenghua.nish on 2016-05-09 3:55 in the afternoon.
  *
  * @author shenghua.nish, wuzhong
  */
@@ -304,7 +304,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
                             new JarExtractTask().generateJarArtifict(zipTask);
                         }
 
-                        //构建awb 和 extension
+                        //Build the awb and extension
                         if (atlasExtension.getBundleConfig().isAwbBundle()) {
                             awbGenerator.generateAwbArtifict(zipTask,libVariantOutputData);
                         }
@@ -348,7 +348,7 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
         mtlTaskContexts.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
 
-        //判断依赖与AP中的冲突,减少打入到apk中的awb的依赖
+        //Judgment depends on conflicts in AP and reduces the dependency on awb in apk
         mtlTaskContexts.add(new MtlTaskContext(DiffDependencyTask.ConfigAction.class, null));
 
         mtlTaskContexts.add(new MtlTaskContext(PrepareAwoBundleTask.ConfigAction.class, null));
@@ -378,12 +378,12 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
         //package
         mtlTaskContexts.add(new MtlTaskContext(AwoPackageTask.ConfigAction.class, null));
 
-        //安装到手机
+        //Installation to mobile phone
         mtlTaskContexts.add(new MtlTaskContext(AwoInstallTask.ConfigAction.class, null));
 
         mtlTaskContexts.add(new MtlTaskContext(AssemblePatchTask.ConfigAction.class, null));
 
-        //签名&zipalign
+        //Signature & zipalign
         //        mtlTaskContexts.add(new MtlTaskContext(AwoFullApkBuildTask.ConfigAction.class, null));
 
         //mtlTaskContexts.add(new MtlTaskContext(libVariantContext.getBaseVariantData().assembleVariantTask));

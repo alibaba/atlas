@@ -225,21 +225,21 @@ public class MultiDexConfig {
         this.name = name;
     }
 
-    @Config(title = "是否启用快速", message = "是否启用atlas , true/false", order = 0, group = "atlas")
+    @Config(title = "Whether to enable fast", message = "Enable atlas , true/false", order = 0, group = "atlas")
     private boolean fastMultiDex = false;
 
-    @Config(title = "额外第一个dex类列表", message = "自定义需要放到第一个dex中的入口类", order = 3, group = "atlas")
+    @Config(title = "The extra first dex class list", message = "The custom needs to be placed in the entry class in the first dex", order = 3, group = "atlas")
     private Set<String> firstDexClasses = Sets.newHashSet();
     /**
-     * dex 的分包个数， 0 表示不进行限制，不做2次merge
+     * dex The number of subcontracting, 0 No restrictions, no two merges
      */
-    @Config(title = "dex的个数", message = "0表示无限制", order = 1, group = "atlas")
+    @Config(title = "dexThe number of", message = "0unlimited", order = 1, group = "atlas")
     private int dexCount;
 
-    @Config(title = "dex分隔的规则", message = "a,b;c,d", order = 2, group = "atlas")
+    @Config(title = "dexSeparated rules", message = "a,b;c,d", order = 2, group = "atlas")
     private String dexSplitRules;
 
-    @Config(title = "不进入第一个dex的黑名单列表", message = "a", order = 2, group = "atlas")
+    @Config(title = "Does not enter the list of the first dex's blacklist", message = "a", order = 2, group = "atlas")
     private Set<String> mainDexBlackList = Sets.newHashSet();
 
     public String getName() {

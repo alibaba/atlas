@@ -241,13 +241,13 @@ import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * 对manifest文件进行预处理的任务
+ * The task of preprocessing the manifest file
  * <p>
- * 1. 去除 application 信息
- * 2. 去除 use-sdk
- * 4. 补全 className
+ * 1. Get rid of application information
+ * 2. Get rid of use-sdk
+ * 4. complemented className
  * <p>
- * Created by shenghua.nish on 2016-05-09 下午11:31.
+ * Created by shenghua.nish on 2016-05-09 Faith in the afternoon.
  *
  * @author shenghua.nish, wuzhong
  */
@@ -318,7 +318,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
     }
 
     /**
-     * 获取mainifest文件的内容
+     * Get the contents of the mainifest file
      *
      * @param manifestFile
      * @return
@@ -328,8 +328,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
         ManifestInfo manifestFileObject = new ManifestInfo();
         manifestFileObject.setManifestFile(manifestFile);
         if (manifestFile.exists()) {
-            Document document = XmlHelper.readXml(manifestFile);// 读取XML文件
-            Element root = document.getRootElement();// 得到根节点
+            Document document = XmlHelper.readXml(manifestFile);// Read the XML file
+            Element root = document.getRootElement();// Get the root node
             for (Attribute attribute : root.attributes()) {
                 if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
                     manifestFileObject.addManifestProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),

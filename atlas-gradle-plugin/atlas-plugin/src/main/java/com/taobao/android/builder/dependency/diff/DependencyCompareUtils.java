@@ -222,15 +222,15 @@ import java.util.*;
 
 
 /**
- * 依赖比较的工具类
- * Created by shenghua.nish on 2016-04-05 下午3:25.
+ * Rely on the comparison tool class
+ * Created by shenghua.nish on 2016-04-05 Good afternoon.
  */
 public class DependencyCompareUtils {
 
     private static Logger logger = LoggerFactory.getLogger(DependencyCompareUtils.class);
 
     /**
-     * 获取二者版本依赖的差异
+     * Get the difference in dependency between the two versions
      *
      * @param baseDependecyFile
      * @param newDependencyJson
@@ -244,7 +244,7 @@ public class DependencyCompareUtils {
 
 
     /**
-     * 比较二者的依赖差异性
+     * Compare their dependency differences
      *
      * @param baseDependencyJson
      * @param newDependencyJson
@@ -252,7 +252,7 @@ public class DependencyCompareUtils {
      */
     public static DependencyDiff diff(DependencyJson baseDependencyJson, DependencyJson newDependencyJson) {
         DependencyDiff diffResult = new DependencyDiff();
-        // 1. 先判断主dex的变化，对于remove的，不作为变化之列
+        // 1. First judge the change of the main dex, for remove, not as a column of change
         List<String> baseMainDependecies = baseDependencyJson.getMainDex();
         List<String> newMainDependecies = newDependencyJson.getMainDex();
         diffResult.setMainDexDiffs(getDiffDependencies(baseMainDependecies, newMainDependecies));
@@ -262,7 +262,7 @@ public class DependencyCompareUtils {
             }
             logger.info("[Diff]MainBundle,Diff:" + StringUtils.join(diffResult.getMainDexDiffs(), ","));
         }
-        // 2. 判断awb的变化
+        // 2. Determine the change in awb
         Map<String, AwbDependency> baseAwbs = toAwbDependencies(baseDependencyJson.getAwbs());
         Map<String, AwbDependency> newAwbs = toAwbDependencies(newDependencyJson.getAwbs());
 
@@ -277,7 +277,7 @@ public class DependencyCompareUtils {
                     if (!awbDiffs.isEmpty()) {
                         System.out.println("[DiffAwb]" + bundleName + ",Diff:" + StringUtils.join(awbDiffs, ","));
                         diffResult.getAwbDiffs().add(bundleName);
-                        // 写入变化的而文件
+                        // Writes a change to the file
                         diffResult.getModifyLines().add(bundleName + "(" + newAwbDeps.version + ")");
                         for (String awbDiff : awbDiffs) {
                             diffResult.getModifyLines().add("  " + awbDiff);
@@ -286,12 +286,12 @@ public class DependencyCompareUtils {
                 } else {
                     logger.info("[DiffAwb]" + bundleName + ",baseVersion:" + baseAwbDeps.version + ",newVersion:"
                             + newAwbDeps.version);
-                    // 写入变化的而文件
+                    // Writes a change to the file
                     diffResult.getModifyLines().add(bundleName + "(" + baseAwbDeps.version + "=>" + newAwbDeps.version
                             + ")");
                     Set<String> awbDiffs = getDiffDependencies(baseAwbDeps.dependencies, newAwbDeps.dependencies);
                     if (!awbDiffs.isEmpty()) {
-                        // 写入变化的而文件
+                        // Writes a change to the file
                         for (String awbDiff : awbDiffs) {
                             diffResult.getModifyLines().add("  " + awbDiff);
                         }
@@ -303,7 +303,7 @@ public class DependencyCompareUtils {
                 diffResult.getAwbDiffs().add(bundleName);
                 diffResult.getNewAwbs().add(bundleName);
                 diffResult.getModifyLines().add(bundleName + "(0=>" + newAwbDeps.version + ")");
-                // 判断是否是全新的bundle
+                // Decide if it's a new bundle
                 if (!baseAwbBundles.contains(bundleName)) {
                     diffResult.getNewAwbs().add(bundleName);
                 }
@@ -313,7 +313,7 @@ public class DependencyCompareUtils {
     }
 
     /**
-     * 比较diff
+     * To compare the diff
      *
      * @param baseDependecies
      * @param newDependecies

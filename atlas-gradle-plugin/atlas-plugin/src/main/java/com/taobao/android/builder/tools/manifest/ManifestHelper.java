@@ -362,8 +362,8 @@ public class ManifestHelper {
                                          List<AndroidLibrary> androidLibraries)
         throws DocumentException {
         SAXReader reader = new SAXReader();
-        Document document = reader.read(getModifyManifestFile(manifest, appVariantContext));// 读取XML文件
-        Element root = document.getRootElement();// 得到根节点
+        Document document = reader.read(getModifyManifestFile(manifest, appVariantContext));// Read the XML file
+        Element root = document.getRootElement();// Get the root node
 
         List<? extends Node> metadataNodes = root.selectNodes("//meta-data");
         for (Node node : metadataNodes) {
@@ -375,6 +375,15 @@ public class ManifestHelper {
             } else if (attribute.getValue().equals("description")) {
                 Attribute descAttribute = element.attribute("value");
                 bundleInfo.setDesc(descAttribute.getValue());
+            } else if(attribute.getValue().startsWith("atlas.fragment.intent.action.")){
+                bundleInfo.getRemoteFragments().put(attribute.getValue(),
+                        element.attribute("value").getValue());
+            }else if(attribute.getValue().startsWith("atlas.view.intent.action")){
+                bundleInfo.getRemoteViews().put(attribute.getValue(),
+                        element.attribute("value").getValue());
+            }else if(attribute.getValue().startsWith("atlas.transaction.intent.action")){
+                bundleInfo.getRemoteTransactors().put(attribute.getValue(),
+                        element.attribute("value").getValue());
             }
         }
 
@@ -384,8 +393,8 @@ public class ManifestHelper {
             for (AndroidLibrary depLib : androidLibraries) {
                 SAXReader reader2 = new SAXReader();
                 Document document2 = reader2.read(
-                    getModifyManifestFile(depLib.getManifest(), appVariantContext));// 读取XML文件
-                Element root2 = document2.getRootElement();// 得到根节点
+                    getModifyManifestFile(depLib.getManifest(), appVariantContext));// Read the XML file
+                Element root2 = document2.getRootElement();// Get the root node
                 addComponents(bundleInfo, root2);
             }
         }

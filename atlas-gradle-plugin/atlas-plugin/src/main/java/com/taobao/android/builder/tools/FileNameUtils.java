@@ -243,7 +243,7 @@ public class FileNameUtils {
             String inputPath = inputFile.getAbsolutePath();
             String rootInputPath = "";
 
-            //计算最原始的jar路径
+            //Calculate the original jar path
             while (true) {
                 rootInputPath = AtlasBuildContext.jarTraceMap.get(inputPath);
                 if (null == rootInputPath) {
@@ -317,7 +317,7 @@ public class FileNameUtils {
     private static MavenCoordinates getMavenCoordinate(String path) {
         File file = new File(path);
         File parentDir = file.getParentFile();
-        //查找3级
+        //Look for level 3
         for (int i = 0; i < 3; i++) {
             MavenCoordinates mavenCoordinates = AtlasBuildContext.dependencyTraceMap.get(parentDir.getAbsolutePath());
             if (null != mavenCoordinates) {

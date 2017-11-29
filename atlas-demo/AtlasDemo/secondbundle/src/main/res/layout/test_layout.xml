@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.taobao.secondbundle.MyRichView
+        android:id="@+id/cccc"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:textSize="18dp"
+        android:text="不要激动">
+        </com.taobao.secondbundle.MyRichView>
+</LinearLayout>

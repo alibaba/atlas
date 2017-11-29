@@ -245,9 +245,9 @@ import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * Android的awb的dex编译任务,为了简单起见,不走DexTransform任务,目前不支持predex等功能
- * Created by shenghua.nish on 2016-06-07 上午10:59.<br/>
- * TODO: 增加Awb dex的preDex的支持
+ * AndroidThe awb's dex compilation task, for the sake of simplicity, does not take the DexTransform task and currently does not support predex and other functions
+ * Created by shenghua.nish on 2016-06-07 On the morning of 10:59. < br / >
+ * TODO: Increase the Awb dexPreDex support
  */
 @ParallelizableTask
 public class AwbDexTask extends BaseTask {
@@ -412,7 +412,7 @@ public class AwbDexTask extends BaseTask {
     }
 
     /**
-     * 任务配置的内部类
+     * Internal classes for task configuration
      */
     public static class ConfigAction extends MtlBaseTaskAction<AwbDexTask> {
 

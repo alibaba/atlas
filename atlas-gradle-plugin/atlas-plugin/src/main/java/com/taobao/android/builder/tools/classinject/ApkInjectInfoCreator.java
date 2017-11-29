@@ -266,7 +266,7 @@ public class ApkInjectInfoCreator {
         injectParam.unit_tag = md5base36;
         appVariantContext.unit_tag = md5base36;
 
-        //依赖是否发送变更
+        //Depends on whether the change is sent
         DependencyDiff dependencyDiff = appVariantContext.getDependencyDiff();
         Map<String, String> baseTagMap = appVariantContext.getBaseUnitTagMap();
 
@@ -312,6 +312,15 @@ public class ApkInjectInfoCreator {
             }
             if (!bundleInfo.getServices().isEmpty()) {
                 basicBundleInfo.setServices(bundleInfo.getServices());
+            }
+            if (!bundleInfo.getRemoteFragments().isEmpty()) {
+                basicBundleInfo.setRemoteFragments(bundleInfo.getRemoteFragments());
+            }
+            if (!bundleInfo.getRemoteViews().isEmpty()) {
+                basicBundleInfo.setRemoteViews(bundleInfo.getRemoteViews());
+            }
+            if (!bundleInfo.getRemoteTransactors().isEmpty()) {
+                basicBundleInfo.setRemoteTransactors(bundleInfo.getRemoteTransactors());
             }
 
             basicBundleInfos.add(basicBundleInfo);
@@ -382,6 +391,16 @@ public class ApkInjectInfoCreator {
                 if (!baseBundleInfo.getServices().isEmpty()) {
                     basicBundleInfo.setServices(concatList(baseBundleInfo.getServices(),
                                                            basicBundleInfo.getServices()));
+                }
+
+                if(!baseBundleInfo.getRemoteFragments().isEmpty()){
+                    basicBundleInfo.getRemoteFragments().putAll(baseBundleInfo.getRemoteFragments());
+                }
+                if(!baseBundleInfo.getRemoteViews().isEmpty()){
+                    basicBundleInfo.getRemoteViews().putAll(baseBundleInfo.getRemoteViews());
+                }
+                if(!baseBundleInfo.getRemoteTransactors().isEmpty()){
+                    basicBundleInfo.getRemoteTransactors().putAll(baseBundleInfo.getRemoteTransactors());
                 }
             }
             injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);

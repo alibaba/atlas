@@ -11,6 +11,7 @@
         <activity
             android:theme="@style/AppTheme.NoActionBar"
             android:name="com.taobao.secondbundle.SecondBundleActivity"></activity>
+        <meta-data android:name="atlas.view.intent.action.SECOND_RICH" android:value="com.taobao.secondbundle.MyRichFrameLayout"/>
     </application>
 
 </manifest>

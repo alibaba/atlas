@@ -234,7 +234,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Created by wuzhong on 2016/11/24.
  * <p>
- * 根据依赖树搜集所有的bundle信息
+ * Collect all bundle information based on the dependent tree
  */
 public class BundleInfoUtils {
 
@@ -247,7 +247,7 @@ public class BundleInfoUtils {
                 getVariantConfiguration().getFullName());
 
         /**
-         * name 是artifictId
+         * name Is artifictId
          */
         Map<String, BundleInfo> bundleInfoMap = getBundleInfoMap(appVariantContext);
 
@@ -263,7 +263,7 @@ public class BundleInfoUtils {
     }
 
     /**
-     * 解析manifest文件，得到BundleInfo
+     * Resolve the manifest file and get BundleInfo
      *
      * @return
      */
@@ -307,7 +307,7 @@ public class BundleInfoUtils {
                                                .getProject()
                                                .getProjectDir(), "bundleBaseInfoFile.json");
 
-        //使用插件里的文件替换
+        //Use the file replacement in the plug-in
         Map<String, BundleInfo> bundleFileMap = Maps.newHashMap();
         if (null != baseBunfleInfoFile &&
             baseBunfleInfoFile.exists() &&

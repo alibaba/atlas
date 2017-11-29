@@ -284,7 +284,7 @@ public class AtlasProxy {
 
     public static void addAtlasProxyClazz(Document document, Set<String> nonProxyChannels,  Result result) {
 
-        Element root = document.getRootElement();// 得到根节点
+        Element root = document.getRootElement();// Get the root node
 
         List<? extends Node> serviceNodes = root.selectNodes("//@android:process");
 

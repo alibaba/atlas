@@ -244,8 +244,8 @@ import org.gradle.api.tasks.StopExecutionException;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * 做代码注入的类
- * Created by shenghua.nish on 2016-06-15 下午2:38.
+ * Code injection classes
+ * Created by shenghua.nish on 2016-06-15 Instant in the afternoon.
  */
 public class ClassInjectTransform extends MtlInjectTransform {
 
@@ -315,7 +315,7 @@ public class ClassInjectTransform extends MtlInjectTransform {
 
             File to = getOutputFile(outputProvider, jarInput);
 
-            //只对 atlas 做代码注入, 没有做多jarmerge
+            //Only to atlas Code injection, No more jarmerge
             if (injectParam.removePreverify && !isAtlasDependency(jarInput.getFile(), to) && jarInputs.size() > 1) {
                 FileUtils.copyFile(jarInput.getFile(), to);
             } else {
@@ -327,7 +327,7 @@ public class ClassInjectTransform extends MtlInjectTransform {
             }
         }
 
-        // 注入目录中的代码
+        // Inject the code in the directory
         for (DirectoryInput directoryInput : directoryInputs) {
             if (null != logger) {
                 logger.debug("[ClassInject]" + directoryInput.getFile().getAbsolutePath());
@@ -376,7 +376,7 @@ public class ClassInjectTransform extends MtlInjectTransform {
                 e.printStackTrace();
             }
         } else {
-            //logger.warn(">>> 请勿开启daemon <<<<");
+            //logger.warn(">>> Do not open daemon <<<<");
         }
 
         final ClassPool pool = ClassPool.getDefault();

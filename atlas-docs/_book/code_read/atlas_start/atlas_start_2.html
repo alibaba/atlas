@@ -1,0 +1,794 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Atlas之启动过程(二) · GitBook</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.2">
+        
+        
+        
+    
+    <link rel="stylesheet" href="../../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="../../gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="../atlas_bundle_load/atlas_bundle_load.html" />
+    
+    
+    <link rel="prev" href="atlas_start_1.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../../">
+            
+                <a href="../../">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" >
+            
+                <span>
+            
+                    
+                    原理解析
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.2.1" data-path="../../principle-intro/Runtime_principle.html">
+            
+                <a href="../../principle-intro/Runtime_principle.html">
+            
+                    
+                    框架原理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.2" data-path="../../principle-intro/Project_architectured.html">
+            
+                <a href="../../principle-intro/Project_architectured.html">
+            
+                    
+                    名词解释
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.3" data-path="../../principle-intro/Apk_architecture.html">
+            
+                <a href="../../principle-intro/Apk_architecture.html">
+            
+                    
+                    APK结构
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2.4" data-path="../../principle-intro/File_architecture_runtime.html">
+            
+                <a href="../../principle-intro/File_architecture_runtime.html">
+            
+                    
+                    运行期文件结构
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3" data-path="../../guide-for-use/">
+            
+                <a href="../../guide-for-use/">
+            
+                    
+                    接入指引
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.3.1" data-path="../../guide-for-use/guide_for_build.html">
+            
+                <a href="../../guide-for-use/guide_for_build.html">
+            
+                    
+                    容器接入
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.2" data-path="../../guide-for-use/guide_for_bundle.html">
+            
+                <a href="../../guide-for-use/guide_for_bundle.html">
+            
+                    
+                    bundle拆分|新建
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.3" data-path="../../guide-for-use/guide_for_compile.html">
+            
+                <a href="../../guide-for-use/guide_for_compile.html">
+            
+                    
+                    awo编译
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.3.4" data-path="../../guide-for-use/bundleCommunicate.html">
+            
+                <a href="../../guide-for-use/bundleCommunicate.html">
+            
+                    
+                    跨bundle的代码重用和通信
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4" data-path="../../update/">
+            
+                <a href="../../update/">
+            
+                    
+                    动态部署
+            
+                </a>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.4.1" data-path="../../update/principle.html">
+            
+                <a href="../../update/principle.html">
+            
+                    
+                    技术原理
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.2" data-path="../../update/dexpatch.html">
+            
+                <a href="../../update/dexpatch.html">
+            
+                    
+                    dexpatch
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.3" data-path="../../update/dexpatch_use_guide.html">
+            
+                <a href="../../update/dexpatch_use_guide.html">
+            
+                    
+                    dexpatch使用教程
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.4.4" data-path="../../update/guide.html">
+            
+                <a href="../../update/guide.html">
+            
+                    
+                    一些限制
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5" >
+            
+                <span>
+            
+                    
+                    FAQ
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.5.1" data-path="../../faq/question.html">
+            
+                <a href="../../faq/question.html">
+            
+                    
+                    问答
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.2" data-path="../../faq/help.html">
+            
+                <a href="../../faq/help.html">
+            
+                    
+                    故障排查
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.3" data-path="../../faq/variant.html">
+            
+                <a href="../../faq/variant.html">
+            
+                    
+                    构建定制包
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.5.4" data-path="../../faq/dynamic_failed_help.html">
+            
+                <a href="../../faq/dynamic_failed_help.html">
+            
+                    
+                    动态部署失败排查指南
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6" >
+            
+                <span>
+            
+                    
+                    源码分析
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="1.6.1" data-path="../atlas_gradle_apk/atlas_atlas_gradle_apk.html">
+            
+                <a href="../atlas_gradle_apk/atlas_atlas_gradle_apk.html">
+            
+                    
+                    Atlas之Gradle配置
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.2" data-path="atlas_start_1.html">
+            
+                <a href="atlas_start_1.html">
+            
+                    
+                    Atlas之启动过程(一)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="1.6.3" data-path="atlas_start_2.html">
+            
+                <a href="atlas_start_2.html">
+            
+                    
+                    Atlas之启动过程(二)
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.6.4" data-path="../atlas_bundle_load/atlas_bundle_load.html">
+            
+                <a href="../atlas_bundle_load/atlas_bundle_load.html">
+            
+                    
+                    Atlas之Bundle加载过程
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="../.." >Atlas之启动过程(二)</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <h1 id="&#x6982;&#x8FF0;">&#x6982;&#x8FF0;</h1>
+<p>&#x63A5;&#x4E0A;&#x7BC7; <a href="atlas_start_1.html">Atlasz&#x4E4B;&#x542F;&#x52A8;&#x8FC7;&#x7A0B;(&#x4E00;)</a> ,&#x7EE7;&#x7EED; 6-10 &#x6B65;&#x7684;&#x542F;&#x52A8;&#x8FC7;&#x7A0B;&#x3002;</p>
+<p><img src="atlas_core_start_img.svg" alt=""></p>
+<h1 id="6-oncreate">6. onCreate</h1>
+<p>AtlasBridgeApplication.java</p>
+<pre><code class="lang-java"><span class="hljs-meta">@Override</span>
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onCreate</span><span class="hljs-params">()</span> </span>{
+    <span class="hljs-keyword">super</span>.onCreate();
+    Method method = mBridgeApplicationDelegate.getClass().getDeclaredMethod(<span class="hljs-string">&quot;onCreate&quot;</span>);
+    method.invoke(mBridgeApplicationDelegate);       
+}
+</code></pre>
+<p>&#x76F4;&#x63A5;&#x53CD;&#x5C04;&#x8C03;&#x7528;<code>mBridgeApplicationDelegate</code>&#x7684;<code>onCreate</code>&#x65B9;&#x6CD5;.</p>
+<h1 id="7-bridgeapplicationdelegateoncreate">7. BridgeApplicationDelegate.onCreate</h1>
+<p>BridgeApplicationDelegate.java</p>
+<pre><code>public void onCreate(){
+   // 7.1 &#x5B9E;&#x4F8B;application
+    mRealApplication = (Application) mRawApplication.getBaseContext()
+        .getClassLoader().loadClass(mRealApplicationName).newInstance();
+
+    //7.2 replace xxx
+    AtlasHacks.ContextImpl_setOuterContext.invoke(
+        mRawApplication.getBaseContext(), mRealApplication);
+    //...
+
+    //7.3 mRealApplication.attach
+    AtlasHacks.Application_attach
+           .invoke(mRealApplication,mRawApplication.getBaseContext());
+
+    //7.4 install content providers
+    Object mBoundApplication = AtlasHacks.ActivityThread_mBoundApplication.get(activityThread);
+    AtlasHacks.ActivityThread$AppBindData_providers.set(mBoundApplication,mBoundApplication_provider);
+    AtlasHacks.ActivityThread_installContentProviders.invoke(activityThread,mRealApplication,mBoundApplication_provider);
+
+    //7.5. startup
+    Atlas.getInstance().startup(mRealApplication,mIsUpdated);
+
+    //7.6 onCreate
+    mRealApplication.onCreate();
+}
+</code></pre><p>&#x51FD;&#x6570;&#x6709;&#x70B9;&#x957F;&#xFF0C;&#x4E0D;&#x8FC7;&#x5185;&#x5BB9;&#x5927;&#x6982;&#x5206;&#x4E3A;6&#x5757;</p>
+<ol>
+<li>&#x5B9E;&#x4F8B;&#x5316;app&#x5DE5;&#x7A0B;&#x4E2D;&#x6307;&#x5B9A;&#x7684;mRealApplication</li>
+<li>&#x66FF;&#x6362;application</li>
+<li>&#x53CD;&#x5C04;&#x6267;&#x884C;mRealApplication&#x7684;attach&#x65B9;&#x6CD5;</li>
+<li>&#x52A0;&#x8F7D;provider</li>
+<li>Atlas.startup</li>
+<li>&#x8C03;&#x7528;mRealApplication.onCreate&#x65B9;&#x6CD5;</li>
+</ol>
+<h2 id="71-&#x5B9E;&#x4F8B;application">7.1 &#x5B9E;&#x4F8B;application</h2>
+<pre><code class="lang-java">mRealApplication = (Application) mRawApplication.getBaseContext()
+        .getClassLoader().loadClass(mRealApplicationName).newInstance();
+</code></pre>
+<p><code>mRealApplicationName</code>&#x5B9E;&#x9645;&#x4E0A;&#x662F;&#x6307;<code>com.taobao.demo.DemoApplication</code>&#x3002;&#x5728;&#x8FD9;&#x91CC;&#xFF0C;&#x6784;&#x9020;&#x51FA;&#x4E86;app&#x5DE5;&#x7A0B;&#x4E2D;&#x6307;&#x5B9A;application&#x7684;&#x5BF9;&#x8C61;&#x5B9E;&#x4F8B;&#x3002;</p>
+<h2 id="72-&#x66FF;&#x6362;application">7.2 &#x66FF;&#x6362;application</h2>
+<pre><code class="lang-java"><span class="hljs-comment">//replace baseContext.mOuterContext</span>
+AtlasHacks.ContextImpl_setOuterContext.invoke(mRawApplication.getBaseContext(), mRealApplication);
+
+<span class="hljs-comment">//replace baseContext.mPackageInfo.mApplication</span>
+Object mPackageInfo = AtlasHacks.ContextImpl_mPackageInfo.get(mRawApplication.getBaseContext());
+
+<span class="hljs-comment">//...</span>
+</code></pre>
+<p>7.2&#x90E8;&#x5206;&#xFF0C;&#x4E3A;&#x4E86;&#x4FDD;&#x8BC1;DemoApplication&#x80FD;&#x591F;&#x50CF;&#x6B63;&#x5E38;&#x58F0;&#x660E;&#x7684;application&#x4E00;&#x6837;&#x6B63;&#x5E38;&#x5DE5;&#x4F5C;&#xFF0C;&#x505A;&#x4E86;&#x5927;&#x91CF;&#x7684;hook&#x3002;&#x8FD9;&#x91CC;&#x4E0D;&#x5173;&#x6CE8;&#x5177;&#x4F53;hook&#x5B9E;&#x73B0;&#xFF0C;&#x53EA;&#x7ED9;&#x51FA;hook&#x540E;&#x7684;&#x6620;&#x5C04;&#xFF0C;&#x611F;&#x5174;&#x8DA3;&#x7684;&#x7AE5;&#x978B;&#x53EF;&#x4EE5;&#x81EA;&#x884C;&#x7814;&#x7A76;&#x3002;</p>
+<table>
+<thead>
+<tr>
+<th>&#x66FF;&#x6362;&#x70B9;</th>
+<th>&#x5B9E;&#x73B0;&#x7C7B;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ContextImpl.mOuterContextt</td>
+<td>DemoApplication</td>
+</tr>
+<tr>
+<td>ContextImp.mPackageInfo</td>
+<td>DemoApplication</td>
+</tr>
+<tr>
+<td>ActivityThread.mInitialApplication</td>
+<td>DemoApplication</td>
+</tr>
+<tr>
+<td>ActivityThread.mAllApplications</td>
+<td>DemoApplication</td>
+</tr>
+</tbody>
+</table>
+<h2 id="73-applicationattach">7.3 Application.attach</h2>
+<pre><code class="lang-java">AtlasHacks.Application_attach.invoke(mRealApplication,mRawApplication.getBaseContext());
+</code></pre>
+<p>mRealApplication&#x5B9E;&#x9645;&#x4E0A;&#x5C31;&#x662F;DemoApplication,&#x53CD;&#x5C04;&#x6267;&#x884C;application&#x7684;attach&#x65B9;&#x6CD5;,&#x5373;&#x7B2C;8&#x6B65;&#x3002;</p>
+<h2 id="74-&#x52A0;&#x8F7D;provider">7.4 &#x52A0;&#x8F7D;provider</h2>
+<pre><code class="lang-java">Object mBoundApplication = AtlasHacks.ActivityThread_mBoundApplication.get(activityThread);
+
+AtlasHacks.ActivityThread$AppBindData_providers.set(mBoundApplication,mBoundApplication_provider);
+
+AtlasHacks.ActivityThread_installContentProviders.invoke(activityThread,mRealApplication,mBoundApplication_provider);
+</code></pre>
+<p>&#x5728;<a href="atlas_start_1.html">Atlas&#x542F;&#x52A8;&#x8FC7;&#x7A0B;(&#x4E0A;)</a>&#x7684;2.4&#x5C0F;&#x8282;&#x4E2D;&#xFF0C;&#x4E3A;&#x4E86;&#x9632;&#x6B62;&#x5728;&#x4E3B;dex&#x4E2D;&#x627E;&#x4E0D;&#x5230;bundle&#x4E2D;&#x7684;class,&#x4E0D;&#x5F97;&#x5DF2;&#x5EF6;&#x8FDF;&#x4E86;&#x5BF9;provider&#x7684;&#x52A0;&#x8F7D;&#x3002;&#x800C;&#x5728;&#x7B2C;5&#x6B65;&#x4E2D;&#xFF0C;atlas&#x5B8C;&#x6210;&#x4E86;&#x5BF9;classloader&#x7B49;&#x5173;&#x952E;&#x5730;&#x65B9;&#x7684;hook&#x3002;&#x7531;&#x4E8E;DelegateClassLoader&#x7684;&#x5B58;&#x5728;&#xFF0C;&#x6B64;&#x65F6;&#x8FDB;&#x884C;&#x52A0;&#x8F7D;provider&#xFF0C;&#x662F;&#x4E0D;&#x4F1A;&#x51FA;&#x73B0;&#x95EE;&#x9898;&#x7684;&#x3002;</p>
+<h1 id="8-demoapplicationattach">8. DemoApplication.attach</h1>
+<p>DemoApplication.java</p>
+<pre><code class="lang-java"><span class="hljs-function"><span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title">attach</span><span class="hljs-params">(Context context)</span> </span>{
+    attachBaseContext(context);
+    mLoadedApk = ContextImpl.getImpl(context).mPackageInfo;
+}
+</code></pre>
+<p>&#x7531;7.3&#x53EF;&#x77E5;&#xFF0C;mRealApplication&#x5B9E;&#x9645;&#x4E0A;&#x5C31;&#x662F;<code>DemoApplication</code></p>
+<ul>
+<li>&#x8C03;&#x7528;DemoApplication&#x7684;attachBaseContext&#x65B9;&#x6CD5;</li>
+<li>&#x4E3A;DemoApplication&#x521B;&#x5EFA;&#x4E00;&#x4E2A;LoadedApk&#x5BF9;&#x8C61;</li>
+</ul>
+<h1 id="9-startup">9. startUp</h1>
+<p><img src="atlas_java_startup_img.svg" alt=""></p>
+<p>&#x5728;startup&#x6574;&#x4E2A;&#x51FD;&#x6570;&#x5468;&#x671F;&#x5185;&#xFF0C;&#x505A;&#x7684;&#x4E8B;&#x60C5;&#x975E;&#x5E38;&#x4E4B;&#x591A;&#xFF0C;&#x91CD;&#x8981;&#x7684;&#x662F;&#x7B2C;3&#x3001;4&#x3001;6&#x3001;7&#x548C;8&#x6B65;&#x3002;</p>
+<h2 id="93">9.3</h2>
+<pre><code>public void init(Context context, boolean hookedJavaVM) {
+    if(VMUtil.IS_VM_ART) {
+        success = Boolean.valueOf(ARTUtils.init(context, hookedJavaVM));
+    } else {
+       success = Boolean.valueOf(DalvikUtils.init());
+   }
+}
+</code></pre><p>&#x770B;&#x51FD;&#x6570;&#x540D;&#xFF0C;&#x662F;&#x9488;&#x5BF9;art&#x548C;dalvik&#x5DE5;&#x5177;&#x7C7B;&#x8FDB;&#x884C;&#x521D;&#x59CB;&#x5316;&#x3002; </p>
+<pre><code>//DalvikUtils.java
+public static boolean init() {
+    System.loadLibrary(&quot;dalvikhack&quot;);
+    nativeInit();
+}
+
+//ARTUtils.java
+public static boolean init(Context context, boolean hookedJavaVM) {
+    System.loadLibrary(&quot;dexinterpret&quot;);
+    nativeInit(...);
+}
+</code></pre><h2 id="94">9.4</h2>
+<pre><code>public static int patchIfPossible() {
+    System.loadLibrary(&quot;dalvikpatch&quot;);
+    if(isDalvik()) {
+           int ingored = adjustLinearAlloc();
+    }
+    return 0;
+}
+</code></pre><p>&#x9996;&#x5148;&#x52A0;&#x8F7D;<code>dalvikpatch</code>so,&#x7528;&#x9014;&#xFF1A; <strong>todo</strong> <br>
+&#x63A5;&#x7740;&#x6267;&#x884C; <code>adjustLinearAlloc</code>&#x65B9;&#x6CD5; &#xFF0C;&#x7528;&#x9014; <strong>todo</strong></p>
+<h2 id="97">9.7</h2>
+<pre><code>private synchronized void InitBundleInfoByVersionIfNeed(){
+    String bundleInfoStr = (String)RuntimeVariables.getFrameworkProperty(&quot;bundleInfo&quot;);
+    if(!TextUtils.isEmpty(bundleInfoStr)) {
+        LinkedHashMap&lt;String,BundleListing.BundleInfo&gt; infos = BundleListingUtil.parseArray(bundleInfoStr);
+        BundleListing listing = new BundleListing();
+        listing.setBundles(infos);
+        mCurrentBundleListing = listing;
+    }
+}
+</code></pre><p>&#x53EF;&#x4EE5;&#x770B;&#x5230;&#xFF0C;&#x51FD;&#x6570;&#x662F;&#x4ECE;<code>RuntimeVariables</code>&#x8BFB;&#x53D6;&#x5B57;&#x7B26;&#x4E32;&#xFF0C;&#x4E4B;&#x540E;&#x89E3;&#x6790;&#x6210;&#x5BF9;&#x8C61;&#x5B58;&#x50A8;&#x3002;&#x5F88;&#x660E;&#x663E;&#xFF0C;&#x8FD9;&#x4E2A;&#x5B57;&#x7B26;&#x4E32;&#x5E94;&#x8BE5;&#x662F;&#x914D;&#x7F6E;&#x4E4B;&#x7C7B;&#x7684;&#x4FE1;&#x606F;&#x3002;&#x5728;<a href="atlas_gradle_apk.md">atals&#x4ECE;gradle&#x5230;apk</a>&#x4E2D;&#xFF0C;&#x6211;&#x4EEC;&#x63D0;&#x5230;&#x8FC7;&#xFF0C;atlas&#x4F1A;&#x5728;&#x7F16;&#x8BD1;&#x671F;&#x95F4;&#x4F1A;&#x5206;&#x6790;bundle&#x548C;gradle&#x914D;&#x7F6E;&#xFF0C;&#x5C06;&#x4E00;&#x4E9B;&#x914D;&#x7F6E;&#x5199;&#x5165;RuntimeVariables&#x4E2D;&#x3002;</p>
+<pre><code>package android.taobao.atlas.framework;
+
+public class FrameworkProperties
+{
+  public static String autoStartBundles;
+  public static String bundleInfo = &quot;[{\&quot;activities\&quot;:[\&quot;com.taobao.firstbundle.FirstBundleActivity\&quot;],\&quot;contentProviders\&quot;:[],\&quot;dependency\&quot;:[],\&quot;isInternal\&quot;:true,\&quot;pkgName\&quot;:\&quot;com.taobao.firstbundle\&quot;,\&quot;receivers\&quot;:[],\&quot;services\&quot;:[\&quot;com.taobao.firstbundle.FirstBundleService\&quot;],\&quot;version\&quot;:\&quot;1.0.0@unspecified\&quot;},{\&quot;activities\&quot;:[\&quot;com.taobao.secondbundle.SecondBundleActivity\&quot;,\&quot;com.taobao.secondbundlelibrary.SecondbundleShareActivity\&quot;],\&quot;contentProviders\&quot;:[],\&quot;dependency\&quot;:[],\&quot;isInternal\&quot;:true,\&quot;pkgName\&quot;:\&quot;com.taobao.secondbundle\&quot;,\&quot;receivers\&quot;:[],\&quot;services\&quot;:[],\&quot;version\&quot;:\&quot;1.0.0@unspecified\&quot;},{\&quot;activities\&quot;:[\&quot;com.taobao.remotebunle.RemoteBundleActivity\&quot;],\&quot;contentProviders\&quot;:[],\&quot;dependency\&quot;:[],\&quot;isInternal\&quot;:false,\&quot;pkgName\&quot;:\&quot;com.taobao.remotebunle\&quot;,\&quot;receivers\&quot;:[],\&quot;services\&quot;:[],\&quot;version\&quot;:\&quot;1.0.0@unspecified\&quot;},{\&quot;activities\&quot;:[],\&quot;contentProviders\&quot;:[],\&quot;dependency\&quot;:[],\&quot;isInternal\&quot;:true,\&quot;pkgName\&quot;:\&quot;com.taobao.publicBundle\&quot;,\&quot;receivers\&quot;:[],\&quot;services\&quot;:[],\&quot;version\&quot;:\&quot;1.0.0@unspecified\&quot;}]&quot;;
+
+  static
+  {
+    autoStartBundles = &quot;com.taobao.firstbundle&quot;;
+  }
+}
+</code></pre><p>&#x53EF;&#x4EE5;&#x770B;&#x5230;&#xFF0C;<code>bundleInfo</code> &#x5B57;&#x6BB5;&#x662F;&#x4E00;&#x5806;json&#x5B57;&#x6BB5;&#xFF0C;&#x89E3;&#x6790;&#x540E;&#x683C;&#x5F0F;BundleInfo,&#x4FDD;&#x5B58;&#x7740;bundle&#x7684;&#x4FE1;&#x606F;&#x3002;</p>
+<pre><code>public static class BundleInfo{
+    private String pkgName;
+    private String applicationName&#xFF1B;
+    private List&lt;String&gt; dependency;
+    private HashMap&lt;String,Boolean&gt; activities;
+    private HashMap&lt;String,Boolean&gt; services;
+    private HashMap&lt;String,Boolean&gt; receivers;
+    private HashMap&lt;String,Boolean&gt; contentProviders;
+    //...
+}
+</code></pre><p>&#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#xFF0C;&#x5728;&#x8FD9;&#x4E00;&#x6B65;&#xFF0C; <strong>atlas&#x83B7;&#x5F97;&#x4E86;&#x6240;&#x6709;bundle&#x7684;&#x4FE1;&#x606F;</strong> &#x3002;</p>
+<h2 id="98">9.8</h2>
+<pre><code>private void started(){
+    //&#x8BFB;&#x53D6;&#x914D;&#x7F6E;
+    String autoStartBundle = (String) RuntimeVariables.getFrameworkProperty(&quot;autoStartBundles&quot;);
+    String[] bundles = autoStartBundle.split(&quot;,&quot;);
+
+    //&#x5F02;&#x6B65;&#x5B89;&#x88C5;bundle
+    for (int x = 0; x &lt; bundles.length; x++) {
+        final String bundleName = bundles[x];
+        BundleInstaller.startDelayInstall(bundleName, ...);
+    }                        
+}
+</code></pre><p>&#x7B80;&#x5316;&#x4E86;&#x5927;&#x90E8;&#x5206;&#x4EE3;&#x7801;&#xFF0C;&#x53EA;&#x5173;&#x6CE8;&#x6838;&#x5FC3;&#x903B;&#x8F91;&#x3002;&#x4EE3;&#x7801;&#x8BFB;&#x53D6;<code>RuntimeVariables</code>&#x4E0A;&#x7684;&#x5B57;&#x6BB5;<code>autoStartBundles</code>,&#x8FD9;&#x4E2A;&#x503C;&#x662F;&#x5728;gradle&#x4E2D;&#x914D;&#x7F6E;&#x7684;<code>com.taobao.firstbundle</code>&#xFF0C;&#x7136;&#x540E;&#x5F00;&#x59CB;&#x5F02;&#x6B65;&#x52A0;&#x8F7D;firstbundle</p>
+<p>bundle&#x7684;&#x52A0;&#x8F7D;&#x8FC7;&#x7A0B;&#x548C;&#x52A0;&#x8F7D;&#x89E6;&#x53D1;&#x65F6;&#x673A;&#x8BF7;&#x53C2;&#x8003; <a href="../atlas_bundle_load/atlas_bundle_load.html">Atlas&#x4E4B;bundle&#x52A0;&#x8F7D;&#x8FC7;&#x7A0B;</a>&#xFF0C;&#x8FD9;&#x91CC;&#x4E0D;&#x5728;&#x8BA8;&#x8BBA;&#x3002;</p>
+<h1 id="10-demoapplicationoncreate">10. DemoApplication.onCreate</h1>
+<p>DemoApplication.java</p>
+<pre><code class="lang-java"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onCreate</span><span class="hljs-params">()</span> </span>{
+    <span class="hljs-keyword">super</span>.onCreate();
+    <span class="hljs-comment">//...</span>
+}
+</code></pre>
+<p>&#x6267;&#x884C;app&#x5DE5;&#x7A0B;&#x5B9A;&#x4E49;&#x7684;DemoApplication&#x7684;onCreate&#x65B9;&#x6CD5;&#x3002;</p>
+<hr>
+<p>&#x81F3;&#x6B64;&#xFF0C;Atlas&#x542F;&#x52A8;&#x8FC7;&#x7A0B;&#x7684;&#x5206;&#x6790;&#x5B8C;&#x6210;&#x3002;</p>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+                
+                <a href="atlas_start_1.html" class="navigation navigation-prev " aria-label="Previous page: Atlas之启动过程(一)">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+                
+                
+                <a href="../atlas_bundle_load/atlas_bundle_load.html" class="navigation navigation-next " aria-label="Next page: Atlas之Bundle加载过程">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                
+            
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Atlas之启动过程(二)","date":"2017-05-03T15:00:00.000Z","level":"1.6.3","depth":2,"next":{"title":"Atlas之Bundle加载过程","level":"1.6.4","depth":2,"path":"code_read/atlas_bundle_load/atlas_bundle_load.md","ref":"code_read/atlas_bundle_load/atlas_bundle_load.md","articles":[]},"previous":{"title":"Atlas之启动过程(一)","level":"1.6.2","depth":2,"path":"code_read/atlas_start/atlas_start_1.md","ref":"code_read/atlas_start/atlas_start_1.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":["livereload"],"pluginsConfig":{"livereload":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"code_read/atlas_start/atlas_start_2.md","mtime":"2017-09-12T02:32:41.000Z","type":"markdown"},"gitbook":{"version":"3.2.2","time":"2017-11-27T10:00:49.012Z"},"basePath":"../..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="../../gitbook/gitbook.js"></script>
+    <script src="../../gitbook/theme.js"></script>
+    
+        
+        <script src="../../gitbook/gitbook-plugin-livereload/plugin.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="../../gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+
+    </body>
+</html>
+

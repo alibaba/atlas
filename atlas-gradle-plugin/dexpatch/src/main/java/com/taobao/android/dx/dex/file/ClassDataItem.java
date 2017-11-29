@@ -37,7 +37,7 @@ import java.util.HashMap;
  * {@code dex} file, as opposed to a random-access form.
  */
 public final class ClassDataItem extends OffsettedItem {
-    /** {@code non-null;} what class this data is for, just for listing generation */
+    /** {@code non-null;} what class this data is for, just for listing outputs */
     private final CstType thisClass;
 
     /** {@code non-null;} list of static fields */
@@ -69,7 +69,7 @@ public final class ClassDataItem extends OffsettedItem {
      * empty.
      *
      * @param thisClass {@code non-null;} what class this data is for, just
-     * for listing generation
+     * for listing outputs
      */
     public ClassDataItem(CstType thisClass) {
         super(1, -1);

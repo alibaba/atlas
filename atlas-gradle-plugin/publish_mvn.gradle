@@ -174,20 +174,20 @@ publishing {
         if (publishToRemote) {
             if (version.endsWith("-SNAPSHOT")) {
                 maven {
-                    url 'SNAPSHOT_REPOSITORY_URL'
+                    url 'http://mvnrepo.alibaba-inc.com/nexus/content/repositories/snapshots'
                     credentials {
-                        username = NEXUS_USERNAME
-                        password = NEXUS_PASSWORD
+                        username = 'snapshotsAdmin'
+                        password = '123456'
                     }
                 }
             } else {
                 def accountMap = getAccount();
                 maven {
                    url RELEASE_REPOSITORY_URL
-                   credentials {
-                       username = accountMap.get("username")
-                       password = accountMap.get("password")
-                   }
+//                   credentials {
+//                       username = accountMap.get("username")
+//                       password = accountMap.get("password")
+//                   }
                 }
             }
         }

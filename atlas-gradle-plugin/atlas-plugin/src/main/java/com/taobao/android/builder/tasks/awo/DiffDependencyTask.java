@@ -237,12 +237,12 @@ import org.gradle.api.tasks.TaskAction;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 比较AWB的依赖和ap中的依赖的差别
- * Created by shenghua.nish on 2016-07-15 上午11:01.
+ * Compare the difference between AWB's dependency and the dependency in ap
+ * Created by shenghua.nish on 2016-07-15 11:01 in the morning.
  */
 public class DiffDependencyTask extends DefaultAndroidTask {
 
-    // 基础的依赖文件
+    // Basic dependency files
     private File apDependenciesFile;
 
     private File diffOutFile;

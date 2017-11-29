@@ -244,7 +244,7 @@ public class PrepareBundleInfoTask extends BaseTask {
         AppVariantContext appVariantContext = appVariantOutputContext.getVariantContext();
         BundleInfoUtils.setupAwbBundleInfos(appVariantContext);
 
-        //生成bundle清单文件
+        //Generate the bundle manifest file
         generateBundleListCfg(appVariantContext);
 
     }
@@ -259,7 +259,7 @@ public class PrepareBundleInfoTask extends BaseTask {
         FileUtils.writeLines(outputFile, bundleLists);
 
         appVariantContext.bundleListCfg = outputFile;
-        //设置bundle依赖关系
+        //Set the bundle dependencies
 
         List<BundleInfo> bundleInfos = new ArrayList<>();
         AtlasBuildContext.awbBundleMap.values().stream().forEach(new Consumer<AwbBundle>() {
