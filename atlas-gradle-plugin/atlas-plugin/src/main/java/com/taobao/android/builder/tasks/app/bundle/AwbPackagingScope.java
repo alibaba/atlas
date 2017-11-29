@@ -38,7 +38,6 @@ import org.gradle.api.Project;
  */
 
 public class AwbPackagingScope implements PackagingScope {
-    protected final VariantOutputScope variantOutputScope;
 
     protected final VariantScope variantScope;
 
@@ -54,13 +53,12 @@ public class AwbPackagingScope implements PackagingScope {
 
     private final AwbBundle awbBundle;
 
-    public AwbPackagingScope(VariantOutputScope variantOutputScope, AppVariantContext appVariantContext,
+    public AwbPackagingScope(VariantScope variantOutputScope, AppVariantContext appVariantContext,
                              AwbBundle awbBundle) {
-        this.variantOutputScope = variantOutputScope;
-        this.variantScope = variantOutputScope.getVariantScope();
+        this.variantScope = variantOutputScope;
         this.globalScope = variantScope.getGlobalScope();
         this.appVariantContext = appVariantContext;
-        config = variantOutputScope.getVariantScope().getVariantConfiguration();
+        config = variantScope.getVariantConfiguration();
         variantOutputData = (ApkVariantOutputData)variantOutputScope.getVariantOutputData();
         appVariantOutputContext = appVariantContext.getAppVariantOutputContext(variantOutputData);
         this.awbBundle = awbBundle;

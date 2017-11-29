@@ -209,21 +209,20 @@
 
 package com.taobao.android.builder.tasks.manager.transform;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.SortedMap;
-
 import com.android.build.api.transform.Transform;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.pipeline.TransformTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.VariantConfiguration;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.tools.ReflectUtils;
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskCollection;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.SortedMap;
 
 public class TransformManager {
 
@@ -262,7 +261,7 @@ public class TransformManager {
     }
 
     public static void replaceTransformTask(AppVariantContext appVariantContext,
-                                            BaseVariantOutputData baseVariantOutputData,
+//                                            BaseVariantOutputData baseVariantOutputData,
                                             Class<? extends Transform> baseTransform, Class<? extends Transform> newTransformClazz) {
 
         List<TransformTask> baseTransforms = TransformManager.findTransformTaskByTransformType(
@@ -270,7 +269,7 @@ public class TransformManager {
 
         for (TransformTask transformTask : baseTransforms) {
 
-            Transform newTransform = createTransform(appVariantContext, baseVariantOutputData, newTransformClazz);
+            Transform newTransform = createTransform(appVariantContext,  newTransformClazz);
 
             try {
                 ReflectUtils.updateField(newTransform,"oldTransform", transformTask.getTransform());
@@ -285,7 +284,6 @@ public class TransformManager {
     }
 
     public static <T extends Transform> T createTransform(AppVariantContext appVariantContext,
-                                                          BaseVariantOutputData vod,
                                                           Class<T> clazz) {
 
         if (null == clazz) {
@@ -295,7 +293,7 @@ public class TransformManager {
         try {
 
             return (T)getConstructor(appVariantContext, clazz).newInstance(
-                appVariantContext, vod);
+                appVariantContext);
 
         } catch (Throwable e) {
             e.printStackTrace();
@@ -309,10 +307,9 @@ public class TransformManager {
                                                                        transformClazz)
         throws NoSuchMethodException {
         try {
-            return transformClazz.getConstructor(appVariantContext.getClass(), BaseVariantOutputData.class);
+            return transformClazz.getConstructor(appVariantContext.getClass());
         } catch (NoSuchMethodException e) {
-            return transformClazz.getConstructor(appVariantContext.getClass().getSuperclass(),
-                                                 BaseVariantOutputData.class);
+            return transformClazz.getConstructor(appVariantContext.getClass().getSuperclass());
         }
     }
 

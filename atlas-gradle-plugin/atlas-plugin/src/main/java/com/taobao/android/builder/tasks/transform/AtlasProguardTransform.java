@@ -276,8 +276,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
         return super.getOutputTypes();
     }
 
-    public AtlasProguardTransform(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
-        super(appVariantContext.getScope(), false);
+    public AtlasProguardTransform(AppVariantContext appVariantContext) {
+        super(appVariantContext.getScope());
         this.appVariantContext = appVariantContext;
         defaultProguardFiles.addAll(
             appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>()));
@@ -285,9 +285,6 @@ public class AtlasProguardTransform extends ProGuardTransform {
         this.buildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
     }
 
-    public AtlasProguardTransform(VariantScope variantScope, boolean asJar) {
-        super(variantScope, asJar);
-    }
 
     @Override
     public void transform(TransformInvocation invocation) throws TransformException {

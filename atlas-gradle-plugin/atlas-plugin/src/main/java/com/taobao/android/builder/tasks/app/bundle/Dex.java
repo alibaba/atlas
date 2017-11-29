@@ -3,6 +3,8 @@ package com.taobao.android.builder.tasks.app.bundle;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -354,7 +356,7 @@ public class Dex extends BaseTask {
             ConventionMappingHelper.map(dexTask, "outputFolder", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return appVariantOutputContext.getVariantContext().getAwbDexOutput(awbBundle.getName());
+                    return appVariantOutputContext.getAwbDexOutput(awbBundle.getName());
                 }
 
             });
@@ -392,7 +394,7 @@ public class Dex extends BaseTask {
                     if (!awbBundle.getManifest().exists()) {
                         return null;
                     }
-                    return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
+                    return appVariantOutputContext.apContext.getBaseAwb(awbBundle.getAwbSoName());
                 }
             });
             ConventionMappingHelper.map(dexTask, "libraries", new Callable<List<File>>() {
