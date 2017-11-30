@@ -5,8 +5,8 @@ buildscript {
         mavenLocal()
         jcenter()
         maven {
-            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
-//            url "http://maven.aliyun.com/nexus/content/groups/public"
+ //           url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+           url "http://maven.aliyun.com/nexus/content/groups/public"
         }
     }
     configurations.all {
@@ -22,8 +22,8 @@ subprojects {
     repositories {
         jcenter()
         maven {
-            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
-//            url "http://maven.aliyun.com/nexus/content/groups/public"
+//            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+            url "http://maven.aliyun.com/nexus/content/groups/public"
         }
     }
 }
