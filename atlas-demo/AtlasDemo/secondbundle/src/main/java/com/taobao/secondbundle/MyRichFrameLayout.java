@@ -7,9 +7,7 @@ import android.support.annotation.AttrRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.StyleRes;
-import android.support.v7.app.AlertDialog;
 import android.taobao.atlas.remote.IRemote;
-import android.taobao.atlas.remote.IRemoteTransactor;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -57,12 +55,12 @@ public class MyRichFrameLayout extends FrameLayout implements IRemote{
     }
 
     @Override
-    public Bundle call(String s, Bundle bundle, IResponse iResponse) {
+    public Bundle call(String commandName, Bundle args, IResponse callback) {
         return null;
     }
 
     @Override
-    public <T> T getRemoteInterface(Class<T> aClass) {
+    public <T> T getRemoteInterface(Class<T> interfaceClass, Bundle args) {
         return null;
     }
 }
