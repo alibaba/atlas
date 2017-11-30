@@ -214,6 +214,7 @@ repositories {
     //本地库，local repository(${user.home}/.m2/repository)
     mavenLocal()
     jcenter()
+    google()
 }
 
 sourceSets {
@@ -223,13 +224,14 @@ sourceSets {
         resources.srcDirs = ['src/main/resources']
     }
 }
+
 tasks.findByName("test").enabled=false
 
 dependencies {
     compile localGroovy()
     compile gradleApi()
     compile "com.taobao.android:dex_patch:1.4.4.15"
-    compile "com.android.tools.build:gradle:2.3.3"
+    compile "com.android.tools.build:gradle:3.0.1"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
     compile "com.alibaba:fastjson:1.2.6"

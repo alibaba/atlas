@@ -229,8 +229,8 @@ description = """atlas gradle plugin"""
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.12'
-    distributionUrl = 'http://services.gradle.org/distributions/gradle-2.12-all.zip'
+    gradleVersion = '4.2.1'
+    distributionUrl = 'http://services.gradle.org/distributions/gradle-4.2.1-all.zip'
 }
 
 subprojects {
