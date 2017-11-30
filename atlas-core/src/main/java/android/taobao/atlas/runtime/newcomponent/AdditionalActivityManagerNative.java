@@ -1,4 +1,4 @@
-package android.taobao.atlas.runtime.newcomponent.service;
+package android.taobao.atlas.runtime.newcomponent;
 
 import android.app.IServiceConnection;
 import android.content.ComponentName;
@@ -12,9 +12,8 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
-import android.taobao.atlas.runtime.newcomponent.BridgeUtil;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
+import android.taobao.atlas.runtime.newcomponent.service.IDelegateBinder;
 import android.util.Log;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,11 +25,11 @@ import java.util.concurrent.CountDownLatch;
  * Created by guanjie on 2017/4/5.
  */
 
-public class ServiceBridge {
+public class AdditionalActivityManagerNative {
 
     private static HandlerThread shandlerThread;
     private static Handler sServicehandler;
-    private static ConcurrentHashMap<String,ServiceBridge> sBridges = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<String,AdditionalActivityManagerNative> sBridges = new ConcurrentHashMap<>();
 
     private IDelegateBinder mRemoteDelegate;
     private CountDownLatch mCountDownLatch;
@@ -46,15 +45,15 @@ public class ServiceBridge {
 
     }
 
-    private ServiceBridge(String processname) {
+    private AdditionalActivityManagerNative(String processname) {
         this.processName = processname;
     }
 
-    private static ServiceBridge obtain(String processName) {
+    private static AdditionalActivityManagerNative obtain(String processName) {
         if (sBridges.get(processName) == null) {
-            synchronized (ServiceBridge.class) {
+            synchronized (AdditionalActivityManagerNative.class) {
                 if (sBridges.get(processName) == null) {
-                    ServiceBridge bridge = new ServiceBridge(processName);
+                    AdditionalActivityManagerNative bridge = new AdditionalActivityManagerNative(processName);
                     sBridges.put(processName,bridge);
                 }
             }
@@ -102,7 +101,7 @@ public class ServiceBridge {
             public void run() {
                 String processName = info.processName;
                 try {
-                    ServiceBridge.obtain(processName).getRemoteDelegate().startService(service,info);
+                    AdditionalActivityManagerNative.obtain(processName).getRemoteDelegate().startService(service,info);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -122,7 +121,7 @@ public class ServiceBridge {
             public void run() {
                 try {
                     String processName = info.processName;
-                    ServiceBridge.obtain(processName).getRemoteDelegate().stopService(service);
+                    AdditionalActivityManagerNative.obtain(processName).getRemoteDelegate().stopService(service);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -142,8 +141,8 @@ public class ServiceBridge {
             public void run() {
                 try {
                     String processName = info.processName;
-                    ServiceBridge.obtain(processName).mActiveServiceInfo.put(service,connection);
-                    ServiceBridge.obtain(processName).getRemoteDelegate().bindService(service,token,connection);
+                    AdditionalActivityManagerNative.obtain(processName).mActiveServiceInfo.put(service,connection);
+                    AdditionalActivityManagerNative.obtain(processName).getRemoteDelegate().bindService(service,token,connection);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -154,7 +153,7 @@ public class ServiceBridge {
 
     public static boolean unbindService(final IServiceConnection conn) {
         String tmp = null;
-        for (Map.Entry<String,ServiceBridge> entry : sBridges.entrySet()) {
+        for (Map.Entry<String,AdditionalActivityManagerNative> entry : sBridges.entrySet()) {
             if(entry.getValue().mActiveServiceInfo.containsValue(conn)){
                 tmp = entry.getKey();
             }
@@ -165,7 +164,7 @@ public class ServiceBridge {
                 @Override
                 public void run() {
                     try {
-                        ServiceBridge.obtain(processOfRemoteService).mRemoteDelegate.unbindService(conn);
+                        AdditionalActivityManagerNative.obtain(processOfRemoteService).mRemoteDelegate.unbindService(conn);
                     } catch (RemoteException e) {
                         e.printStackTrace();
                     }
@@ -182,7 +181,7 @@ public class ServiceBridge {
             @Override
             public void run() {
                 try {
-                    Intent result = ServiceBridge.obtain(info.processName).getRemoteDelegate().handleActivityStack(intent,info);
+                    Intent result = AdditionalActivityManagerNative.obtain(info.processName).getRemoteDelegate().handleActivityStack(intent,info);
                     if(observer!=null){
                         observer.onPrepared(result);
                     }
@@ -198,7 +197,7 @@ public class ServiceBridge {
             @Override
             public void run() {
                 try {
-                    ServiceBridge.obtain(info.processName).getRemoteDelegate().handleReceiver(intent,info);
+                    AdditionalActivityManagerNative.obtain(info.processName).getRemoteDelegate().handleReceiver(intent,info);
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }

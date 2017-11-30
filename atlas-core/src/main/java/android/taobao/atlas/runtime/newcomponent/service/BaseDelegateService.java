@@ -21,6 +21,8 @@ import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.taobao.atlas.runtime.newcomponent.receiver.ReceiverBridge;
 import android.util.Log;
+
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -166,15 +168,17 @@ public class BaseDelegateService extends Service{
                 Object contextImpl = null;
                 Object activityThread = AndroidHack.getActivityThread();
                 Object loadedApk =  AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,activityThread,RuntimeVariables.androidApplication.getPackageName());
-
-                Hack.HackedMethod ContextImpl_createAppContext = AtlasHacks.ContextImpl.method("createAppContext",AtlasHacks.ActivityThread.getmClass(),AtlasHacks.LoadedApk.getmClass());
-                if(ContextImpl_createAppContext.getMethod()!=null){
-                    contextImpl = ContextImpl_createAppContext.invoke(AtlasHacks.ContextImpl.getmClass(),activityThread,loadedApk);
-                }else{
+                try {
+                    Hack.HackedMethod ContextImpl_createAppContext = AtlasHacks.ContextImpl.method("createAppContext", AtlasHacks.ActivityThread.getmClass(), AtlasHacks.LoadedApk.getmClass());
+                    if (ContextImpl_createAppContext.getMethod() != null) {
+                        contextImpl = ContextImpl_createAppContext.invoke(AtlasHacks.ContextImpl.getmClass(), activityThread, loadedApk);
+                    }
+                }catch(Throwable e){
                     Hack.HackedMethod ContextImpl_init = AtlasHacks.ContextImpl.method("init",AtlasHacks.LoadedApk.getmClass(), IBinder.class,AtlasHacks.ActivityThread.getmClass());
-                    contextImpl = AtlasHacks.ContextImpl.getmClass().newInstance();
+                    Constructor cons = AtlasHacks.ContextImpl.getmClass().getDeclaredConstructor();
+                    cons.setAccessible(true);
+                    contextImpl = cons.newInstance();
                     ContextImpl_init.invoke(contextImpl, loadedApk,null,activityThread);
-
                 }
 
                 Object gDefault = null;
