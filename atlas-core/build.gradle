@@ -1,7 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
-apply from: 'http://gitlab.alibaba-inc.com/android-build-system/buildscript/raw/master/mtl-publish.gradle'
 
 
 def mini = getEnvValue("mini", 'false')
