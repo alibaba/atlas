@@ -318,14 +318,14 @@ public class DependencyManager {
 
     public void addDependenciesToPrepareTask(
             @NonNull TaskFactory tasks,
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull BaseVariantData variantData,
             @NonNull AndroidTask<PrepareDependenciesTask> prepareDependenciesTask) {
         VariantDependencies variantDeps = variantData.getVariantDependency();
 
-        final AndroidTask<DefaultTask> preBuildTask = variantData.getScope().getPreBuildTask();
+        final AndroidTask<? extends DefaultTask> preBuildTask = variantData.getScope().getPreBuildTask();
 
         final ImmutableList<AndroidDependency> compileLibraries = variantDeps
-                .getCompileDependencies().getAllAndroidDependencies();
+                .().getAllAndroidDependencies();
         final ImmutableList<AndroidDependency> packageLibraries = variantDeps
                 .getPackageDependencies().getAllAndroidDependencies();
 

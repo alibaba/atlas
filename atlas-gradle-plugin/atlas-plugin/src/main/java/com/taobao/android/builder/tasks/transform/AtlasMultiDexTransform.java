@@ -209,18 +209,16 @@
 
 package com.taobao.android.builder.tasks.transform;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by wuzhong on 2017/4/13.
@@ -229,15 +227,16 @@ public class AtlasMultiDexTransform extends MultiDexTransform {
 
     private AppVariantContext appVariantContext;
 
-    public AtlasMultiDexTransform(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
-        super(appVariantContext.getScope(), appVariantContext.getAppExtension().getDexOptions(), null);
+    private MultiDexTransform oldTransform;
+
+    public AtlasMultiDexTransform(AppVariantContext appVariantContext) {
+        super(appVariantContext.getScope(), appVariantContext.getAppExtension().getDexOptions());
         this.appVariantContext = appVariantContext;
     }
 
     public AtlasMultiDexTransform(VariantScope variantScope,
-                                  DexOptions dexOptions,
-                                  File includeInMainDexJarFile) {
-        super(variantScope, dexOptions, includeInMainDexJarFile);
+                                  DexOptions dexOptions) {
+        super(variantScope, dexOptions);
     }
 
 

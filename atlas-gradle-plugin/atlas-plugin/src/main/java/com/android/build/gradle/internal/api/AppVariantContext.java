@@ -209,24 +209,15 @@
 
 package com.android.build.gradle.internal.api;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
+import com.android.ide.common.build.ApkData;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -239,6 +230,14 @@ import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tools.bundleinfo.ApkFileListUtils;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * ApplicaitonThe compiled context
@@ -274,7 +273,7 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
         super(applicationVariant, project, atlasExtension, appExtension);
         this.applicationVariant = applicationVariant;
-        this.variantData = (ApplicationVariantData)applicationVariant.getApkVariantData();
+        this.variantData = (ApplicationVariantData)applicationVariant.getVariantData();
         this.scope = this.variantData.getScope();
     }
 
@@ -425,17 +424,17 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                         "source/atlasproxy/" + getVariantConfiguration().getDirName());
     }
 
-    public AppVariantOutputContext getAppVariantOutputContext(BaseVariantOutputData vod) {
+    public AppVariantOutputContext getAppVariantOutputContext(ApkData apkData) {
 
         AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)this.getOutputContextMap()
-            .get(vod.getFullName());
+            .get(apkData.getFullName());
 
         if (null == appVariantOutputContext) {
-            appVariantOutputContext = new AppVariantOutputContext(vod.getFullName(),
+            appVariantOutputContext = new AppVariantOutputContext(apkData.getFullName(),
                                                                   this,
-                                                                  vod.getScope(),
-                                                                  vod.variantData);
-            this.getOutputContextMap().put(vod.getFullName(), appVariantOutputContext);
+                                                                  apkData,
+                                                                  applicationVariant.getVariantData());
+            this.getOutputContextMap().put(apkData.getFullName(), appVariantOutputContext);
         }
 
         return appVariantOutputContext;

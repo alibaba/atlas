@@ -221,6 +221,7 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.signing.SigningException;
+import com.android.ide.common.build.ApkData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
@@ -293,8 +294,8 @@ public class AwoInstallTask extends BaseTask {
 
         private final AtlasExtension atlasExtension;
 
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
-            super(appVariantContext, baseVariantOutputData);
+        public ConfigAction(AppVariantContext appVariantContext, ApkData apkData) {
+            super(appVariantContext, apkData);
             this.appVariantContext = appVariantContext;
             this.atlasExtension = this.appVariantContext.getAtlasExtension();
         }
