@@ -211,7 +211,6 @@ package com.taobao.android.builder.tasks.app;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -268,12 +267,13 @@ public class GenerateAtlasSourceTask extends BaseTask {
     void generate() {
 
         InjectParam injectParam = getInput();
-        List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
-        File outputSourceGeneratorFile = new File(outputDir,"android/taobao/atlas/framework/AtlasBundleInfoGenerator.java");
+        List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo, BasicBundleInfo.class);
+        File outputSourceGeneratorFile = new File(outputDir,
+            "android/taobao/atlas/framework/AtlasBundleInfoGenerator.java");
         StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info);
         outputSourceGeneratorFile.getParentFile().mkdirs();
         try {
-            FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
+            FileUtils.writeStringToFile(outputSourceGeneratorFile, infoGeneratorSourceStr.toString());
         } catch (IOException e) {
             throw new GradleException(e.getMessage(), e);
         }
@@ -287,15 +287,15 @@ public class GenerateAtlasSourceTask extends BaseTask {
         lines.add("private String version = \"" + injectParam.version + "\";");
         lines.add("public String getVersion() {return version;}");
         String escapeExprBundleInfo = escapeExprSpecialWord(injectParam.bundleInfo);
-        if(escapeExprBundleInfo.length()<Integer.MAX_VALUE){
+        if (escapeExprBundleInfo.length() < Integer.MAX_VALUE) {
             lines.add("public static String bundleInfo = \"" + escapeExprBundleInfo + "\";");
             lines.add("public static final boolean compressInfo = false;");
-        }else{
+        } else {
             String compressBundleInfo = compressBundleInfo(injectParam.bundleInfo);
             lines.add("public static String bundleInfo = \"" + compressBundleInfo + "\";");
             lines.add("public static final boolean compressInfo = true;");
         }
-//        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
+        //        lines.add("public static String bundleInfo = \"" + escapeExprSpecialWord(injectParam.bundleInfo) + "\";");
         //lines.add("public static String bunleInfo = \"\";");
         if (StringUtils.isNotEmpty(injectParam.autoStartBundles)) {
             lines.add("public static String autoStartBundles = \"" + injectParam.autoStartBundles + "\";");
@@ -321,16 +321,15 @@ public class GenerateAtlasSourceTask extends BaseTask {
             output.put("outApp", injectParam.outApp);
             output.put("unit_tag", injectParam.unit_tag);
 
-            FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),
-                                     "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
-
+            FileUtils.write(
+                new File(appVariantContext.getProject().getBuildDir(), "outputs/atlasFrameworkProperties.json"),
+                JSON.toJSONString(output, true));
         } catch (Exception e) {
             throw new GradleException(e.getMessage(), e);
         }
-
     }
 
-    private String compressBundleInfo(String bundleInfo){
+    private String compressBundleInfo(String bundleInfo) {
         ByteArrayOutputStream cc = new ByteArrayOutputStream();
         GZIPOutputStream gzip = null;
         try {
@@ -362,8 +361,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
         private AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -388,7 +386,6 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
             atlasSourceTask.outputDir = srcDir;
             atlasSourceTask.appVariantContext = appVariantContext;
-
         }
     }
 }
