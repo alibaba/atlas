@@ -287,7 +287,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
         lines.add("private String version = \"" + injectParam.version + "\";");
         lines.add("public String getVersion() {return version;}");
         String escapeExprBundleInfo = escapeExprSpecialWord(injectParam.bundleInfo);
-        if (escapeExprBundleInfo.length() < Integer.MAX_VALUE) {
+        if (injectParam.bundleInfo.length() < 65535) {
             lines.add("public static String bundleInfo = \"" + escapeExprBundleInfo + "\";");
             lines.add("public static final boolean compressInfo = false;");
         } else {
