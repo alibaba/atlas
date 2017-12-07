@@ -208,6 +208,7 @@
 
 package android.taobao.atlas.hack;
 
+import android.app.Activity;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.content.Context;
@@ -235,6 +236,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
@@ -500,6 +502,20 @@ public class AndroidHack {
 
         }catch(Throwable e){
             e.printStackTrace();
+        }
+
+        if(Build.VERSION.SDK_INT>=21) {
+            List<WeakReference<Activity>> aList = ActivityTaskMgr.getInstance().getActivityList();
+            if (aList != null) {
+                for (int x = 0; x < aList.size(); x++) {
+                    Activity a = aList.get(x).get();
+                    if(a!=null) {
+                        Field mThemeField = AndroidHack.findField(a,"mTheme");
+                        mThemeField.set(a,null);
+                        a.getTheme();
+                    }
+                }
+            }
         }
 
     }
