@@ -93,16 +93,12 @@ public class Dex extends BaseTask {
         });
 
         //noinspection GroovyAssignabilityCheck
-        inputs.removed(new Action<InputFileDetails>() {
-            @Override
-            public void execute(InputFileDetails change) {
-                // force full dx run if existing jar file is removed
-                if (((InputFileDetails)change).getFile().getPath().endsWith(SdkConstants.DOT_JAR)) {
-                    getProject().getLogger().info(
-                        "Force full dx run: Found removed " + String.valueOf(((InputFileDetails)change).getFile()));
-                    forceFullRun.set(true);
-                }
-
+        inputs.removed(change -> {
+            // force full dx run if existing jar file is removed
+            if (((InputFileDetails)change).getFile().getPath().endsWith(SdkConstants.DOT_JAR)) {
+                getProject().getLogger().info(
+                    "Force full dx run: Found removed " + String.valueOf(((InputFileDetails)change).getFile()));
+                forceFullRun.set(true);
             }
 
         });
@@ -386,15 +382,15 @@ public class Dex extends BaseTask {
                     return awbTransform.getInputFiles();
                 }
             });
-            ConventionMappingHelper.map(dexTask, "dexBaseFile", new Callable<File>() {
-                @Override
-                public File call() {
-                    if (!awbBundle.getManifest().exists()) {
-                        return null;
-                    }
-                    return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
-                }
-            });
+//            ConventionMappingHelper.map(dexTask, "dexBaseFile", new Callable<File>() {
+//                @Override
+//                public File call() {
+//                    if (!awbBundle.getManifest().exists()) {
+//                        return null;
+//                    }
+//                    return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
+//                }
+//            });
             ConventionMappingHelper.map(dexTask, "libraries", new Callable<List<File>>() {
                 @Override
                 public List<File> call() {
