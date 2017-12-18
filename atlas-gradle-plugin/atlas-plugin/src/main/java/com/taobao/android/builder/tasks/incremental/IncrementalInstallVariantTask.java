@@ -5,10 +5,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.testing.api.DeviceException;
@@ -20,7 +21,11 @@ import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
+import com.android.ide.common.process.ProcessInfoBuilder;
+import com.android.ide.common.process.ProcessResult;
 import com.google.common.base.Joiner;
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.ParallelizableTask;
 
 import static com.google.common.collect.Iterables.isEmpty;
@@ -48,14 +53,14 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
 
             for (File apkFile : apkFiles) {
 
-                mExecutor.execute(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        installPatch(projectName, variantName, appPackageName, device, apkFile,
-                            getAwbPackageName(apkFile), patchInstallDirectory);
-                        return null;
-                    }
-                });
+                // mExecutor.execute(new Callable<Void>() {
+                //     @Override
+                //     public Void call() throws Exception {
+                installPatch(projectName, variantName, appPackageName, device, apkFile, getAwbPackageName(apkFile),
+                    patchInstallDirectory);
+                //     return null;
+                // }
+                // });
             }
             mExecutor.waitForTasksWithQuickFail(true /*cancelRemaining*/);
         }
@@ -165,7 +170,23 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
         String remotePatchFile = Joiner.on('/').join(patchInstallDirectory, name, PATCH_NAME);
         getLogger().lifecycle("Installing awb '{}' on '{}' to '{}' for {}:{}", patch, device.getName(), remotePatchFile,
             projectName, variantName);
-        device.pushFile(patch.getAbsolutePath(), remotePatchFile);
+        try {
+            device.pushFile(patch.getAbsolutePath(), remotePatchFile);
+        } catch (IOException | AdbCommandRejectedException | TimeoutException | SyncException e) {
+            e.printStackTrace();
+            ProcessInfoBuilder builder = new ProcessInfoBuilder();
+            builder.setExecutable(getAdbExe());
+            builder.addArgs("push");
+            builder.addArgs(patch.getAbsolutePath());
+            builder.addArgs(remotePatchFile);
+            ProcessResult result = new GradleProcessExecutor(getProject()).execute(builder.createProcess(),
+                new LoggedProcessOutputHandler(new LoggerWrapper(getLogger())));
+            if (result.getExitValue() != 0) {
+                throw new GradleException(String
+                    .format("Failed to install  awb '%s' on '%s' to '%s' for %s:%s", patch, device.getName(),
+                        remotePatchFile, projectName, variantName));
+            }
+        }
     }
 
     private String getPatchInstallDirectory() {
