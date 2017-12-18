@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -53,14 +54,14 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
 
             for (File apkFile : apkFiles) {
 
-                // mExecutor.execute(new Callable<Void>() {
-                //     @Override
-                //     public Void call() throws Exception {
-                installPatch(projectName, variantName, appPackageName, device, apkFile, getAwbPackageName(apkFile),
-                    patchInstallDirectory);
-                //     return null;
-                // }
-                // });
+                mExecutor.execute(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        installPatch(projectName, variantName, appPackageName, device, apkFile,
+                            getAwbPackageName(apkFile), patchInstallDirectory);
+                        return null;
+                    }
+                });
             }
             mExecutor.waitForTasksWithQuickFail(true /*cancelRemaining*/);
         }
