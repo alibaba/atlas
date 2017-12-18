@@ -38,10 +38,7 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
     /*private*/ static final String PATCH_INSTALL_DIRECTORY_SUFFIX = "files/debug_storage/";
 
     @Override
-    protected void install(String projectName,
-                           String variantName,
-                           String appPackageName,
-                           IDevice device,
+    protected void install(String projectName, String variantName, String appPackageName, IDevice device,
                            Collection<File> apkFiles) throws Exception {
         //安装awb
         //安装mainDex
@@ -162,13 +159,8 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
         }
     }
 
-    private void installPatch(String projectName,
-                              String variantName,
-                              String appPackageName,
-                              IDevice device,
-                              File patch,
-                              String name,
-                              String patchInstallDirectory)
+    private void installPatch(String projectName, String variantName, String appPackageName, IDevice device, File patch,
+                              String name, String patchInstallDirectory)
         throws TimeoutException, AdbCommandRejectedException, SyncException, IOException {
         String remotePatchFile = Joiner.on('/').join(patchInstallDirectory, name, PATCH_NAME);
         getLogger().lifecycle("Installing awb '{}' on '{}' to '{}' for {}:{}", patch, device.getName(), remotePatchFile,
@@ -178,18 +170,6 @@ public class IncrementalInstallVariantTask extends BaseIncrementalInstallVariant
 
     private String getPatchInstallDirectory() {
         return Joiner.on('/').join(PATCH_INSTALL_DIRECTORY_PREFIX, getAppPackageName(), PATCH_INSTALL_DIRECTORY_SUFFIX);
-    }
-
-    private static String getAwbPackageName(@NonNull File inputFile) {
-        // get the filename
-        String name = inputFile.getName();
-        // remove the extension
-        int pos = name.lastIndexOf('.');
-        if (pos != -1) {
-            name = name.substring(0, pos);
-        }
-
-        return name.substring(3).replace("_", ".");
     }
 
     public static class ConfigAction

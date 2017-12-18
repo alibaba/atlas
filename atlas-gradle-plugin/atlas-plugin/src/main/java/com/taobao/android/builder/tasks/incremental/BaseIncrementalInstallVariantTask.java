@@ -24,6 +24,7 @@ import com.android.ide.common.res2.FileStatus;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
@@ -40,6 +41,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
     private static final Pattern VERSION_NAME_PATTERN = Pattern.compile("versionName=([^']*)$");
 
     private Collection<File> apkFiles;
+    /*private*/ AtlasDependencyTree atlasDependencyTree;
 
     static boolean hasBinary(IDevice device, String path) {
         CountDownLatch latch = new CountDownLatch(1);
@@ -56,6 +58,25 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
         }
         String value = receiver.getOutput().trim();
         return !value.endsWith("No such file or directory");
+    }
+
+    /*static*/ String getAwbPackageName(@NonNull File inputFile) {
+        // // get the filename
+        // String name = inputFile.getName();
+        // // remove the extension
+        // int pos = name.lastIndexOf('.');
+        // if (pos != -1) {
+        //     name = name.substring(0, pos);
+        // }
+        //
+        // return name.substring(3).replace("_", ".");
+        List<AwbBundle> awbBundles = atlasDependencyTree.getAwbBundles();
+        for (AwbBundle awbBundle : awbBundles) {
+            if (awbBundle.getAwbSoName().equals(inputFile.getName())) {
+                return awbBundle.getPackageName();
+            }
+        }
+        throw new IllegalStateException("Cannot find package for:" + inputFile);
     }
 
     @Override
@@ -116,10 +137,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
         install(builder.build(), device);
     }
 
-    protected abstract void install(String projectName,
-                                    String variantName,
-                                    String appPackageName,
-                                    IDevice device,
+    protected abstract void install(String projectName, String variantName, String appPackageName, IDevice device,
                                     Collection<File> apkFiles) throws Exception;
 
     @InputFiles
@@ -144,6 +162,8 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
             super.execute(deviceTask);
             AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
                 baseVariantOutputData);
+            AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                deviceTask.getVariantName());
             //TODO 先根据依赖判断
             ConventionMappingHelper.map(deviceTask, "apkFiles", new Callable<ImmutableList<File>>() {
 
@@ -157,8 +177,6 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
                     }
                     //TODO 先根据依赖判断
                     //推送Main
-                    AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                        deviceTask.getVariantName());
                     List<String> allDependencies = atlasDependencyTree.getMainBundle().getAllDependencies();
                     if (allDependencies.size() > 0) {
                         builder.add(getAppVariantOutputContext().getPatchApkOutputFile());
@@ -166,6 +184,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
                     return builder.build();
                 }
             });
+            deviceTask.atlasDependencyTree = atlasDependencyTree;
         }
     }
 
