@@ -24,6 +24,7 @@ import com.android.ide.common.res2.FileStatus;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
@@ -60,22 +61,27 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
     }
 
     /*static*/ String getAwbPackageName(@NonNull File inputFile) {
-        // get the filename
+        // // get the filename
+        // String name = inputFile.getName();
+        // // remove the extension
+        // int pos = name.lastIndexOf('.');
+        // if (pos != -1) {
+        //     name = name.substring(0, pos);
+        // }
+        //
+        // return name.substring(3).replace("_", ".");
         String name = inputFile.getName();
-        // remove the extension
-        int pos = name.lastIndexOf('.');
-        if (pos != -1) {
-            name = name.substring(0, pos);
+        if (name.equals(MAINDEX_FILE_NAME)) {
+            return "com.taobao.maindex";
         }
 
-        return name.substring(3).replace("_", ".");
-        // List<AwbBundle> awbBundles = atlasDependencyTree.getAwbBundles();
-        // for (AwbBundle awbBundle : awbBundles) {
-        //     if (awbBundle.getAwbSoName().equals(inputFile.getName())) {
-        //         return awbBundle.getPackageName();
-        //     }
-        // }
-        // throw new IllegalStateException("Cannot find package for:" + inputFile);
+        List<AwbBundle> awbBundles = atlasDependencyTree.getAwbBundles();
+        for (AwbBundle awbBundle : awbBundles) {
+            if (awbBundle.getAwbSoName().equals(name)) {
+                return awbBundle.getPackageName();
+            }
+        }
+        throw new IllegalStateException("Cannot find package for:" + inputFile);
     }
 
     @Override
