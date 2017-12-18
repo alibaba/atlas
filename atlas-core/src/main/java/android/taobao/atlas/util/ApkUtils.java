@@ -339,9 +339,14 @@ public class ApkUtils {
         }
         final String suSearchPaths[] = { "/system/bin/", "/system/xbin/", "/system/sbin/", "/sbin/", "/vendor/bin/" };
         for (String searchPath : suSearchPaths) {
-            File file = new File(searchPath, "su");
-            if (file.exists()) {
-                systemRootState = SYSTEM_ROOT_STATE_ENABLE;
+            try {
+                File file = new File(searchPath, "su");
+                if (file.exists()) {
+                    systemRootState = SYSTEM_ROOT_STATE_ENABLE;
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
                 return true;
             }
         }
