@@ -27,7 +27,7 @@ repositories {
 group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
-version "5.0.8.0${postFix}-rc7"
+version "5.0.8.0${postFix}-rc8"
 
 String getEnvValue(key, defValue) {
     def val = System.getProperty(key);
@@ -210,8 +210,8 @@ artifacts {
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
 bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
+    user = project.hasProperty('bintray.user') ? project.getProperty('bintray.user') : properties.getProperty("bintray.user")
+    key = project.hasProperty('bintray.apikey') ? project.getProperty('bintray.apikey') : properties.getProperty("bintray.apikey")
     configurations = ['archives']
     pkg {
         repo = "maven"
