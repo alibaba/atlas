@@ -632,15 +632,20 @@ public class InstrumentationHook extends Instrumentation {
 			AtlasHacks.ContextThemeWrapper_mResources.set(activity,RuntimeVariables.delegateResources);
 		}
 		AtlasHacks.ContextWrapper_mBase.set(activity,hook);
+		ClassLoader classLoader = RuntimeVariables.delegateClassLoader;
 		String Location = null;
-        if (activity.getClass().getClassLoader() instanceof BundleClassLoader) {
+		if (activity.getClass().getClassLoader() instanceof BundleClassLoader) {
             BundleClassLoader bundleClassLoader = (BundleClassLoader) activity.getClass().getClassLoader();
-            BundleImpl bundle = bundleClassLoader.getBundle();
-			bundle.startBundle();
+					if (null != bundleClassLoader) {
+						classLoader = bundleClassLoader;
+						BundleImpl bundle = bundleClassLoader.getBundle();
+						bundle.startBundle();
+					}
         } else if ((Location = AtlasBundleInfoManager.instance().getBundleForComponet(activity.getClass().getName())) != null) {
         	//yunos, get the bundle from bundleInfoList and Frameworks
         	BundleImpl bundle = (BundleImpl)Framework.getBundle(Location);
 			if (bundle != null)
+				classLoader = bundle.getClassLoader();
 				bundle.startBundle();
         }
 
@@ -654,7 +659,7 @@ public class InstrumentationHook extends Instrumentation {
 			launchActivityName = "com.taobao.tao.welcome.Welcome";
         }
 		if(activity.getIntent()!=null){
-			activity.getIntent().setExtrasClassLoader(RuntimeVariables.delegateClassLoader);
+			activity.getIntent().setExtrasClassLoader(classLoader);
 		}
         if(activity.getClass().getName().equals(launchActivityName)){
             mBase.callActivityOnCreate(activity, null);
