@@ -252,6 +252,9 @@ public class ResourceIdFetcher {
                                            String defPackage) {
         if(defType==null && defPackage==null)
         {
+            if (TextUtils.isEmpty(name)) {
+                return 0;
+            }
             String rawName = name;
             name = rawName.substring(name.indexOf("/")+1);
             defType = rawName.substring(rawName.indexOf(":")+1, rawName.indexOf("/"));
