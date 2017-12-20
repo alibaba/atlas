@@ -37,10 +37,15 @@ public enum AtlasExtendedContentType implements ContentType {
     //  */
     // JACK(0x8000),
 
+    AWB_CLASSES(0x03),
+
+    AWB_RESOURCES(0x04),
+
+    AWB_APKS(0x1000000);
+
     /**
      * The content is an artifact exported by the data binding compiler.
      */
-    AWB_APKS(0x1000000);
 
     private final int value;
 

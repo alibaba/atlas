@@ -210,14 +210,14 @@
 package com.taobao.android.builder.tasks.manager;
 
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import com.android.ide.common.internal.WaitableExecutor;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.DefaultTask;
-import org.gradle.api.GradleException;
+import org.gradle.api.internal.project.DefaultProject;
 import org.gradle.api.tasks.TaskAction;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * Created by wuzhong on 2016/10/13.
@@ -229,6 +229,9 @@ public class MtlParallelTask extends BaseTask {
     public List<DefaultTask> parallelTask;
 
     public boolean concurrent = true;
+
+
+    WaitableExecutor waitableExecutor = WaitableExecutor.useGlobalSharedThreadPool();
 
     @TaskAction
     void run() {
@@ -244,25 +247,17 @@ public class MtlParallelTask extends BaseTask {
                 taskName = parallelTask.get(0).getClass().getSimpleName();
             }
 
-            ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
-                                                                                       getLogger(),
-                                                                                       0);
-            List<Runnable> runnables = new ArrayList<>();
-
-            for (final DefaultTask task : parallelTask) {
-                runnables.add(new Runnable() {
-                    @Override
-                    public void run() {
-                        task.execute();
-                    }
-                });
-            }
+            parallelTask.forEach(task -> waitableExecutor.execute((Callable) () -> {
+                task.execute();
+                return null;
+            }));
 
             try {
-                executorServicesHelper.execute(runnables);
+                waitableExecutor.waitForTasksWithQuickFail(true);
             } catch (InterruptedException e) {
-                throw new GradleException(e.getMessage(), e);
+                e.printStackTrace();
             }
+
 
         } else {
             for (final DefaultTask task : parallelTask) {

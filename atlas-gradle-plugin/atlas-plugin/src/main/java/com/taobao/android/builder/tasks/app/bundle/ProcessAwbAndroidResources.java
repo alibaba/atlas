@@ -208,39 +208,48 @@
  */
 package com.taobao.android.builder.tasks.app.bundle;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.AndroidGradleOptions;
+
+import java.io.FilenameFilter;
+import java.nio.file.Path;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.aapt.AaptGeneration;
+import com.android.build.gradle.internal.aapt.AaptGradleFactory;
+import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
+import com.android.build.gradle.internal.dsl.DslAdaptersKt;
 import com.android.build.gradle.internal.incremental.FileType;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.*;
+import com.android.build.gradle.internal.tasks.ApplicationId;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.internal.variant.SplitHandlingPolicy;
-import com.android.builder.core.AaptPackageProcessBuilder;
+import com.android.build.gradle.options.BooleanOption;
+import com.android.build.gradle.options.DeploymentDevice;
+import com.android.build.gradle.options.ProjectOptions;
+import com.android.build.gradle.options.StringOption;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.VariantType;
+import com.android.builder.internal.aapt.Aapt;
+import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.symbols.SymbolIo;
+import com.android.builder.utils.FileCache;
+import com.android.ide.common.blame.MergingLog;
+import com.android.ide.common.blame.MergingLogRewriter;
+import com.android.ide.common.blame.ParsingProcessOutputHandler;
+import com.android.ide.common.blame.parser.ToolOutputParser;
+import com.android.ide.common.blame.parser.aapt.Aapt2OutputParser;
+import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Iterators;
 import com.google.common.io.Files;
@@ -250,17 +259,24 @@ import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.GradleException;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Nested;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.ParallelizableTask;
-import org.gradle.api.tasks.StopExecutionException;
 
-@ParallelizableTask
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
+
+/**
+ * @author lilong
+ * @create 2017-12-06 上午11:17
+ */
+
+
 public class ProcessAwbAndroidResources extends IncrementalTask {
 
     private File manifestFile;
@@ -322,11 +338,18 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
     private File rtxtFile;
 
     private File baselineFile;
+    private AwbBundle awbBundle;
+    private AppVariantOutputContext appVariantContext;
+    private AaptGeneration aaptGeneration;
+
 
     @Override
     protected void doFullTaskAction() throws IOException {
-        // we have to clean the source folder output in case the package name changed.
         File srcOut = getSourceOutputDir();
+        aaptGeneration = AaptGeneration.fromProjectOptions(appVariantContext.getScope().getGlobalScope().getProjectOptions());
+
+//        aaptGeneration = AaptGeneration.AAPT_V1;
+
         if (srcOut != null) {
             //            FileUtils.emptyFolder(srcOut);
             srcOut.delete();
@@ -341,42 +364,53 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         // If are in instant run mode and we have an instant run enabled manifest
         File instantRunManifest = getInstantRunManifestFile();
         File manifestFileToPackage = instantRunBuildContext.isInInstantRunMode() &&
-                                     instantRunManifest != null &&
-                                     instantRunManifest.exists() ? instantRunManifest : getManifestFile();
+                instantRunManifest != null &&
+                instantRunManifest.exists() ? instantRunManifest : getManifestFile();
 
         //Add additional parameters required for the awb module to compile
+
+        Set<File> libraries = new HashSet<>();
+        for (AndroidLibrary androidLibrary:getLibraries()){
+            if (androidLibrary.getSymbolFile().exists()) {
+                if (androidLibrary.getManifest().exists() && androidLibrary.getSymbolFile().exists()) {
+                    File libraryRtxt = androidLibrary.getSymbolFile();
+                    File awbPackageR = new File(libraryRtxt.getParentFile(),"package-aware-r.txt");
+                    SymbolIo.writeSymbolTableWithPackage(libraryRtxt.toPath(),androidLibrary.getManifest().toPath(), awbPackageR.toPath());
+                    libraries.add(awbPackageR);
+                }
+            }
+        }
+
         addAaptOptions();
-        AaptPackageProcessBuilder aaptPackageCommandBuilder = new AaptPackageProcessBuilder(
-                manifestFileToPackage,
-                getAaptOptions()).setAssetsFolder(getAssetsDir())
-                .setResFolder(getResDir())
-                .setLibraries(getLibraries())
-                .setPackageForR(getPackageForR())
-                .setSourceOutputDir(absolutePath(srcOut))
-                .setSymbolOutputDir(absolutePath(getTextSymbolOutputDir()))
-                .setResPackageOutput(absolutePath(resOutBaseNameFile))
-                .setProguardOutput(absolutePath(getProguardOutputFile()))
-                .setType(getType())
-                .setDebuggable(getDebuggable())
-                .setPseudoLocalesEnabled(getPseudoLocalesEnabled())
+        AaptPackageConfig.Builder aaptPackageCommandBuilder = new AaptPackageConfig.Builder()
+                .setManifestFile(manifestFileToPackage)
+                .setOptions(DslAdaptersKt.convert(getAaptOptions()))
+                .setResourceDir(getResDir())
+                .setLibrarySymbolTableFiles(libraries)
+                .setCustomPackageForR(getPackageForR())
+                .setSourceOutputDir(srcOut)
+                .setSymbolOutputDir(getTextSymbolOutputDir())
+                .setResourceOutputApk(resOutBaseNameFile)
+                .setProguardOutputFile(getProguardOutputFile())
+                .setVariantType(getType())
+                .setDebuggable(debuggable)
                 .setResourceConfigs(getResourceConfigs())
                 .setSplits(getSplits())
-                .setPreferredDensity(getPreferredDensity());
+                .setPreferredDensity(getPreferredDensity())
+                .setPseudoLocalize(getPseudoLocalesEnabled())
+                .setListResourceFiles(aaptGeneration == AaptGeneration.AAPT_V2)
+                .setPackageId(Integer.valueOf(getCustomPackageId()));
 
-        @NonNull AtlasBuilder builder = (AtlasBuilder) getBuilder();
+        @NonNull AndroidBuilder builder = getBuilder();
 
-        //        MergingLog mergingLog = new MergingLog(getMergeBlameLogFolder());
-        //
-        //        ProcessOutputHandler processOutputHandler = new ParsingProcessOutputHandler(
-        //                new ToolOutputParser(new AaptOutputParser(), getILogger()),
-        //                 builder.getErrorReporter());
+        Aapt aapt = makeAapt();
 
-        ProcessOutputHandler processOutputHandler = new LoggedProcessOutputHandler(getILogger());
         try {
-            builder.processAwbResources(aaptPackageCommandBuilder,
-                                        getEnforceUniquePackageName(),
-                                        processOutputHandler,
-                                        getMainSymbolFile());
+            if (builder instanceof AtlasBuilder) {
+                ((AtlasBuilder) builder).processAwbResources(aapt, aaptPackageCommandBuilder,getEnforceUniquePackageName(),getMainSymbolFile());
+            }else {
+                builder.processResources(aapt,aaptPackageCommandBuilder);
+            }
             if (resOutBaseNameFile != null) {
                 if (instantRunBuildContext.isInInstantRunMode()) {
 
@@ -435,6 +469,10 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             options.add("--main-package");
             options.add(getSktPackageName());
         }
+        if (getAssetsDir()!= null){
+            options.add("-A");
+            options.add(getAssetsDir().getAbsolutePath());
+        }
         if (null != getShareResourceFile() && getShareResourceFile().exists()) {
             options.add("-I");
             options.add(getShareResourceFile().getAbsolutePath());
@@ -448,6 +486,11 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             options.add(getBaselineFile().getAbsolutePath());
             options.add("--merge");
         }
+        if (!options.contains("--output-text-symbols")){
+            options.add("--output-text-symbols");
+            options.add(getTextSymbolOutputDir().getAbsolutePath());
+        }
+
 
         aaptOptions.additionalParameters(options.toArray(new String[0]));
     }
@@ -463,6 +506,29 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         return false;
     }
 
+    private Aapt makeAapt() throws IOException {
+        AndroidBuilder builder = getBuilder();
+        MergingLog mergingLog = new MergingLog(getMergeBlameLogFolder());
+        FileCache fileCache = appVariantContext.getScope().getGlobalScope().getBuildCache();
+        ProcessOutputHandler processOutputHandler =
+                new ParsingProcessOutputHandler(
+                        new ToolOutputParser(
+                                aaptGeneration == AaptGeneration.AAPT_V1
+                                        ? new AaptOutputParser()
+                                        : new Aapt2OutputParser(),
+                                getILogger()),
+                        new MergingLogRewriter(mergingLog::find, builder.getErrorReporter()));
+
+        return AaptGradleFactory.make(
+                aaptGeneration,
+                builder,
+                processOutputHandler,
+                fileCache,
+                true,
+                FileUtils.mkdirs(new File(getIncrementalFolder(), "awb-aapt-temp/"+awbBundle.getName())),
+                aaptOptions.getCruncherProcesses());
+    }
+
     @Nullable
     private static String absolutePath(@Nullable File file) {
         return file == null ? null : file.getAbsolutePath();
@@ -470,7 +536,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
     public static class ConfigAction implements TaskConfigAction<ProcessAwbAndroidResources> {
 
-        private final VariantOutputScope scope;
+        private final VariantScope scope;
 
         private final File symbolLocation;
 
@@ -478,17 +544,21 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
         private final AwbBundle awbBundle;
 
-        private final AtlasBuilder tAndroidBuilder;
+        private final AndroidBuilder tAndroidBuilder;
+        private BaseVariantOutput variantOutput;
+
+        private InstantRunBuildContext instantRunBuildContext;
 
         private final AppVariantOutputContext appVariantOutputContext;
 
-        public ConfigAction(VariantOutputScope scope, File symbolLocation, boolean generateResourcePackage, AwbBundle awbBundle, AtlasBuilder tAndroidBuilder, AppVariantOutputContext appVariantOutputContext) {
+        public ConfigAction(VariantScope scope, File symbolLocation, boolean generateResourcePackage, AwbBundle awbBundle, AndroidBuilder androidBuilder, AppVariantOutputContext appVariantOutputContext, BaseVariantOutput variantOutput) {
             this.scope = scope;
             this.symbolLocation = symbolLocation;
             this.generateResourcePackage = generateResourcePackage;
             this.awbBundle = awbBundle;
-            this.tAndroidBuilder = tAndroidBuilder;
+            this.tAndroidBuilder = androidBuilder;
             this.appVariantOutputContext = appVariantOutputContext;
+            this.variantOutput = variantOutput;
         }
 
         @NonNull
@@ -505,30 +575,28 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
         @Override
         public void execute(@NonNull ProcessAwbAndroidResources processResources) {
-            final BaseVariantOutputData variantOutputData = scope.getVariantOutputData();
-            final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantScope()
-                    .getVariantData();
+            final BaseVariantData variantData = scope.getVariantData();
             final GradleVariantConfiguration config = variantData.getVariantConfiguration();
             appVariantOutputContext.getAwbAndroidResourcesMap()
                     .put(awbBundle.getName(), processResources);
 
             processResources.setAndroidBuilder(tAndroidBuilder);
             processResources.setVariantName(config.getFullName());
+            processResources.awbBundle = awbBundle;
 
-            if (variantData.getSplitHandlingPolicy() ==
-                SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
+//            if (variantData.getSplitHandlingPolicy() ==
+//                SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
                 Set<String> allFilters = new HashSet<String>();
                 allFilters.addAll(variantData.getFilters(com.android.build.OutputFile.FilterType.DENSITY));
                 allFilters.addAll(variantData.getFilters(com.android.build.OutputFile.FilterType.LANGUAGE));
                 processResources.splits = allFilters;
-            }
+//            }
 
             //Set the special parameters needed for the AWB resource processing
             ConventionMappingHelper.map(processResources, "mainSymbolFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return new File(variantOutputData.processResourcesTask.getTextSymbolOutputDir(),
-                                    "R.txt");
+                    return variantOutput.getProcessResources().getTextSymbolOutputFile();
                 }
             });
 
@@ -562,17 +630,45 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                                         new Callable<File>() {
                                             @Override
                                             public File call() throws Exception {
-                                                return variantOutputData.processResourcesTask.getPackageOutputFile();
+                                                List<File>files = new ArrayList<>();
+                                                variantData.getScope().getOutputScope().getOutputs(VariantScope.TaskOutputType.PROCESSED_RES).forEach(buildOutput -> files.add(buildOutput.getOutputFile()));
+                                                if (files.size() == 0){
+                                                    return variantData.getScope().getProcessResourcePackageOutputDirectory().listFiles(new FilenameFilter() {
+                                                        @Override
+                                                        public boolean accept(File dir, String name) {
+                                                            return name.endsWith(".ap_");
+                                                        }
+                                                    })[0];
+                                                }
+                                                return files.get(0);
                                             }
                                         });
 
             ConventionMappingHelper.map(processResources, "sktPackageName", new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    String packageName = ManifestFileUtils.getApplicationId(variantOutputData.manifestProcessorTask
-                                                                                    .getManifestOutputFile());
-                    if (null != packageName) {
-                        return packageName;
+                    FileCollection files = null;
+//                    if (scope.isBaseFeature()) {
+//                         files = scope.getArtifactFileCollection(
+//                                METADATA_VALUES, MODULE, METADATA_APP_ID_DECLARATION);
+//                    }
+                    String packageOverride;
+                    if (files != null && !files.isEmpty()) {
+                        packageOverride =
+                                ApplicationId.load(files.getSingleFile()).getApplicationId();
+                    } else {
+                        packageOverride = scope.getVariantConfiguration().getIdOverride();
+                    }
+
+                    if (packageOverride == null){
+                        File androidManifest = FileUtils.join(
+                                variantOutput.getProcessManifest().getManifestOutputDirectory(),
+                                variantOutput.getDirName(),
+                                SdkConstants.ANDROID_MANIFEST_XML);
+                     packageOverride = ManifestFileUtils.getApplicationId(androidManifest);
+                    }
+                    if (null != packageOverride) {
+                        return packageOverride;
                     } else {
                         return config.getOriginalApplicationId();
                     }
@@ -587,9 +683,10 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             //                    .getFilter(com.android.build.OutputFile.DENSITY) == null
             //                    && variantData.generateRClassTask == null) {
             //                variantData.generateRClassTask = processResources;
-            processResources.enforceUniquePackageName = scope.getGlobalScope()
-                    .getExtension()
-                    .getEnforceUniquePackageName();
+//            processResources.enforceUniquePackageName = scope.getGlobalScope().getExtension().getPackagingOptions().
+//                    .getExtension()
+//                    .getEnforceUniquePackageName();
+            processResources.enforceUniquePackageName = true;
 
             ConventionMappingHelper.map(processResources,
                                         "libraries",
@@ -657,13 +754,13 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 public File call() throws Exception {
 
                     File file = null;
-                    if (appVariantOutputContext.getVariantContext().isDataBindEnabled(awbBundle)) {
-                        file = appVariantOutputContext.getVariantContext()
-                                .getAwbLayoutFolderOutputForDataBinding(awbBundle);
-                    } else {
+//                    if (appVariantOutputContext.getVariantContext().isDataBindEnabled(awbBundle)) {
+//                        file = appVariantOutputContext.getVariantContext()
+//                                .getAwbLayoutFolderOutputForDataBinding(awbBundle);
+//                    } else {
                         file = appVariantOutputContext.getVariantContext()
                                 .getMergeResources(awbBundle);
-                    }
+//                    }
 
                     if (!file.exists()) {
                         file.mkdirs();
@@ -708,7 +805,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
             processResources.setType(config.getType());
             processResources.setDebuggable(config.getBuildType().isDebuggable());
-
+            processResources.appVariantContext =appVariantOutputContext;
             AaptOptions aaptOptions = scope.getGlobalScope().getExtension().getAaptOptions();
             AaptOptions cloneAaptOptions = new MyAaptOptions();
             try {
@@ -726,49 +823,60 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                                         new Callable<Collection<String>>() {
                                             @Override
                                             public Collection<String> call() throws Exception {
-                                                Collection<String> resConfigs = config.getMergedFlavor()
-                                                        .getResourceConfigurations();
-                                                if (resConfigs.size() == 1 &&
-                                                    Iterators.getOnlyElement(resConfigs.iterator())
-                                                            .equals("auto")) {
-                                                    if (scope.getGlobalScope()
-                                                                .getAndroidBuilder()
-                                                                .getTargetInfo()
-                                                                .getBuildTools()
-                                                                .getRevision()
-                                                                .getMajor() >= 21) {
-                                                        return variantData.discoverListOfResourceConfigsNotDensities();
-                                                    } else {
-                                                        return variantData.discoverListOfResourceConfigs();
-                                                    }
-                                                }
-                                                return config.getMergedFlavor()
-                                                        .getResourceConfigurations();
+                                                FileCollection splitList =
+                                                        scope.getOutput(TaskOutputHolder.TaskOutputType.SPLIT_LIST);
+
+                                                SplitList splitList1 = SplitList.load(splitList);
+
+                                                return splitList1.getFilters(SplitList.RESOURCE_CONFIGS);
+//                                                Collection<String> resConfigs = config.getMergedFlavor()
+//                                                        .getResourceConfigurations();
+//                                                if (resConfigs.size() == 1 &&
+//                                                    Iterators.getOnlyElement(resConfigs.iterator())
+//                                                            .equals("auto")) {
+//                                                    if (scope.getGlobalScope()
+//                                                                .getAndroidBuilder()
+//                                                                .getTargetInfo()
+//                                                                .getBuildTools()
+//                                                                .getRevision()
+//                                                                .getMajor() >= 21) {
+//                                                        return variantData.discoverListOfResourceConfigs();
+//                                                    } else {
+//                                                        return variantData.discoverListOfResourceConfigs();
+//                                                    }
+//                                                }
+//                                                return config.getMergedFlavor()
+//                                                        .getResourceConfigurations();
                                             }
                                         });
 
             ConventionMappingHelper.map(processResources,
                                         "preferredDensity",
-                                        new Callable<String>() {
-                                            @Override
-                                            @Nullable
-                                            public String call() throws Exception {
-                                                String variantFilter = variantOutputData.getMainOutputFile()
-                                                        .getFilter(com.android.build.OutputFile.DENSITY);
-                                                if (variantFilter != null) {
-                                                    return variantFilter;
-                                                }
-                                                return AndroidGradleOptions.getBuildTargetDensity(
-                                                        scope.getGlobalScope().getProject());
-                                            }
-                                        });
+                    (Callable<String>) () -> {
+                        FileCollection splitList =
+                                scope.getOutput(TaskOutputHolder.TaskOutputType.SPLIT_LIST);
+
+                        SplitList splitList1 = SplitList.load(splitList);
+                        return splitList1.getFilters(SplitList.RESOURCE_CONFIGS).isEmpty()
+                                ? scope.getGlobalScope().getProjectOptions().get(StringOption.IDE_BUILD_TARGET_DENSITY)
+                                : null;
+                    }
+                    );
 
             processResources.setMergeBlameLogFolder(getResourceBlameLogDir(config));
 
             processResources.instantRunSupportDir = getInstantRunSupportDir(config);
-            InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
-            instantRunBuildContext.setInstantRunMode(false);
-            processResources.instantRunBuildContext = instantRunBuildContext;
+
+            ProjectOptions projectOptions = scope.getGlobalScope().getProjectOptions();
+            this.instantRunBuildContext =
+                    new InstantRunBuildContext(
+                            variantData.getVariantConfiguration().isInstantRunBuild(scope.getGlobalScope()),
+                            AaptGeneration.fromProjectOptions(projectOptions),
+                            DeploymentDevice.getDeploymentDeviceAndroidVersion(projectOptions),
+                            projectOptions.get(StringOption.IDE_BUILD_TARGET_ABI),
+                            projectOptions.get(StringOption.IDE_BUILD_TARGET_DENSITY),
+                            projectOptions.get(BooleanOption.ENABLE_SEPARATE_APK_RESOURCES));
+           processResources.instantRunBuildContext = instantRunBuildContext;
             //processResources.buildInfoFile = InstantRunWrapperTask.ConfigAction.getTmpBuildInfoFile(
             //        scope.getVariantScope());
         }
@@ -970,7 +1078,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
     }
 
     @Nested
-    public AaptOptions getAaptOptions() {
+    public com.android.build.gradle.internal.dsl.AaptOptions getAaptOptions() {
         return aaptOptions;
     }
 

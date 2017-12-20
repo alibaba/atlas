@@ -209,15 +209,10 @@
 
 package com.taobao.android.builder.tasks.tpatch;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.concurrent.Callable;
-import java.util.zip.ZipEntry;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.Profiler;
@@ -227,6 +222,11 @@ import org.apache.commons.io.FileUtils;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.concurrent.Callable;
+import java.util.zip.ZipEntry;
 
 /**
  * Created by wuzhong on 2016/9/27.
@@ -310,7 +310,7 @@ public class TPatchDiffApkBuildTask extends BaseTask {
     public static class ConfigAction extends MtlBaseTaskAction<TPatchDiffApkBuildTask> {
 
 
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
         }
 

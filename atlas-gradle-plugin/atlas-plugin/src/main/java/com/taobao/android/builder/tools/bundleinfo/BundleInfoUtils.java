@@ -209,15 +209,8 @@
 
 package com.taobao.android.builder.tools.bundleinfo;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -230,6 +223,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.DocumentException;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by wuzhong on 2016/11/24.
@@ -288,7 +287,7 @@ public class BundleInfoUtils {
         bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
         bundleInfo.setPkgName(awbBundle.getPackageName());
 
-        String applicationName = ManifestFileUtils.getApplicationName(awbBundle.getAndroidLibrary().getManifest());
+        String applicationName = ManifestFileUtils.getApplicationName(awbBundle.getManifest());
         if (StringUtils.isNotEmpty(applicationName)) {
             if (applicationName.startsWith(".")) {
                 applicationName = awbBundle.getPackageName() + applicationName;
@@ -296,7 +295,7 @@ public class BundleInfoUtils {
             bundleInfo.setApplicationName(applicationName);
         }
 
-        ManifestHelper.collectBundleInfo(appVariantContext, bundleInfo, awbBundle.getAndroidLibrary().getManifest(),
+        ManifestHelper.collectBundleInfo(appVariantContext, bundleInfo, awbBundle.getManifest(),
                                          awbBundle.getAndroidLibraries());
 
     }

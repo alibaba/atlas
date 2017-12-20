@@ -209,16 +209,7 @@
 
 package com.taobao.android.builder.tools.multidex.mutli;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.google.common.base.Joiner;
@@ -234,6 +225,10 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proguard.obfuscate.MappingReader;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
@@ -253,7 +248,7 @@ public class MainDexLister {
         this.multiDexConfig = multiDexConfig;
     }
 
-    public List<String> getMainDexList(Collection<File> files) {
+    public List<String> getMainDexList(Collection<File> files, File mainDexListFile) {
 
         GradleVariantConfiguration config = appVariantContext.getVariantConfiguration();
 
@@ -261,9 +256,8 @@ public class MainDexLister {
 
         //Confusion of the map
         //Map<String, String> classMap = getClassObfMap(config);
-
-        File manifest = appVariantContext.getVariantData().getOutputs().get(0).manifestProcessorTask
-            .getManifestOutputFile();
+        Collection<BaseVariantOutput> collection = appVariantContext.getVariantOutputData();
+        File manifest = new File(collection.iterator().next().getProcessManifest().getManifestOutputDirectory(),"AndroidManifest.xml");
 
         String applicationName = ManifestFileUtils.getApplicationName(manifest);
 
@@ -289,6 +283,7 @@ public class MainDexLister {
         headClasses.add(applicationName);
         headClasses.add("android.taobao.atlas.bridge.BridgeApplicationDelegate");
         headClasses.addAll(multiDexConfig.getFirstDexClasses());
+        List<String> maindexListClazz = new ArrayList<String>();
 
         String preLaunchStr = tBuildConfig.getPreLaunch();
         if (!org.apache.commons.lang3.StringUtils.isEmpty(preLaunchStr)) {
@@ -302,20 +297,24 @@ public class MainDexLister {
             }
         }
 
+        for (String clazz:headClasses){
+            clazz = clazz.replaceAll("\\.", "/") + ".class";
+            maindexListClazz.add(clazz);
+        }
+
         for (String headClass : headClasses) {
             addRefClazz(classPool, headClass, mainDexList, handleList,"");
         }
 
         //get manifest
-        List<String> maindexListClazz = new ArrayList<String>();
         for (String newLine : mainDexList) {
             newLine = newLine.replaceAll("\\.", "/") + ".class";
             maindexListClazz.add(newLine);
         }
 
         try {
-            FileUtils.writeLines(new File(appVariantContext.getProject().getBuildDir(), "outputs/maindexlist.txt"),
-                                 mainDexList);
+            FileUtils.writeLines(mainDexListFile,
+                                 maindexListClazz);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -325,7 +324,7 @@ public class MainDexLister {
 
     private Map<String, String> getClassObfMap(GradleVariantConfiguration config) {
         Map<String, String> classMap = new HashMap<String, String>();
-        boolean isMinifyEnabled = config.isMinifyEnabled();
+        boolean isMinifyEnabled = config.getBuildType().isMinifyEnabled();
         File proguardOut = new File(Joiner.on(File.separatorChar).join(
             String.valueOf(appVariantContext.getScope().getGlobalScope().getBuildDir()), FD_OUTPUTS, "mapping",
             appVariantContext.getScope().getVariantConfiguration().getDirName()));

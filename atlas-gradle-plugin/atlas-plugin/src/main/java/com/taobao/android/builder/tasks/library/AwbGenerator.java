@@ -209,13 +209,11 @@
 
 package com.taobao.android.builder.tasks.library;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
-import com.android.build.gradle.internal.variant.LibVariantOutputData;
+import com.android.build.gradle.options.ProjectOptions;
+import com.android.build.gradle.tasks.AndroidZip;
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.model.MavenCoordinates;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -231,6 +229,9 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.bundling.Zip;
+
+import java.io.File;
+import java.io.IOException;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -250,14 +251,17 @@ public class AwbGenerator {
     /**
      * Create a basic AWB task
      */
-    public void generateAwbArtifict(final Zip bundleTask, LibVariantOutputData libVariantOutputData) {
+    public void generateAwbArtifict(final Zip bundleTask, LibVariantContext libVariantOutputData) {
 
         Project project = bundleTask.getProject();
 
         bundleTask.setExtension("awb");
 
-        bundleTask.setArchiveName(FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".awb");
+        if (bundleTask instanceof AndroidZip) {
+            String fileName = FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".awb";
+            ((AndroidZip) bundleTask).setArchiveNameSupplier(() -> fileName);
 
+        }
         bundleTask.setDestinationDir(new File(bundleTask.getDestinationDir().getParentFile(), "awb"));
 
         bundleTask.doFirst(new Action<Task>() {
@@ -267,7 +271,7 @@ public class AwbGenerator {
                 File bundleBaseInfoFile = project.file("bundleBaseInfoFile.json");
                 if (bundleBaseInfoFile.exists()) {
                     project.getLogger().warn("copy " + bundleBaseInfoFile.getAbsolutePath() + " to awb");
-                    File destDir = libVariantOutputData.getScope().getVariantScope().getBaseBundleDir();
+                    File destDir = libVariantOutputData.getScope().getBaseBundleDir();
                     try {
                         FileUtils.copyFileToDirectory(bundleBaseInfoFile, destDir);
                     } catch (IOException e) {
@@ -312,7 +316,7 @@ public class AwbGenerator {
         if (null == libDependencyTree) {
 
             libDependencyTree = new AtlasDepTreeParser(libVariantContext.getProject(),
-                                                       new ExtraModelInfo(libVariantContext.getProject()), null)
+                                                       new ExtraModelInfo(new ProjectOptions(libVariantContext.getProject()),null))
                 .parseDependencyTree(libVariantContext.getVariantDependency());
             AtlasBuildContext.libDependencyTrees.put(variantName, libDependencyTree);
         }

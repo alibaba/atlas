@@ -209,29 +209,40 @@
 
 package com.android.build.gradle.internal;
 
+import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.artifacts.ModuleDependency;
-import org.gradle.api.artifacts.PublishArtifact;
+import org.gradle.api.attributes.Usage;
 import org.gradle.api.internal.component.SoftwareComponentInternal;
-import org.gradle.api.internal.component.Usage;
+import org.gradle.api.internal.component.UsageContext;
+import org.gradle.api.model.ObjectFactory;
 
-import java.util.Collections;
 import java.util.Set;
 
 /**
  * Created by shenghua.nish on 2015-08-24 And in the afternoon.
  */
 public class AndroidComponent implements SoftwareComponentInternal {
-    private final Usage runtimeUsage = new RuntimeUsage();
+
 
     private final DependencySet compileDependencies;
 
     private final Configuration compileConfiguration;
 
-    public AndroidComponent(Configuration compileConfiguration, DependencySet compileDependencies) {
+    private Project project;
+     Usage apiUsage = null;
+
+     Usage runtimeUsage = null;
+
+
+    public AndroidComponent(Configuration compileConfiguration, DependencySet compileDependencies, Project project) {
         this.compileConfiguration = compileConfiguration;
         this.compileDependencies = compileDependencies;
+        this.project = project;
+        ObjectFactory factory = project.getObjects();
+        apiUsage = factory.named(Usage.class, Usage.JAVA_API);
+        runtimeUsage = factory.named(Usage.class, Usage.JAVA_RUNTIME);
+
     }
 
     @Override
@@ -240,24 +251,7 @@ public class AndroidComponent implements SoftwareComponentInternal {
     }
 
     @Override
-    public Set<Usage> getUsages() {
-        return Collections.singleton(runtimeUsage);
-    }
-
-    private class RuntimeUsage implements Usage {
-        @Override
-        public String getName() {
-            return "runtime";
-        }
-
-        @Override
-        public Set<PublishArtifact> getArtifacts() {
-            return compileConfiguration.getArtifacts();
-        }
-
-        @Override
-        public Set<ModuleDependency> getDependencies() {
-            return compileDependencies.withType(ModuleDependency.class);
-        }
+    public Set<UsageContext> getUsages() {
+        return null;
     }
 }

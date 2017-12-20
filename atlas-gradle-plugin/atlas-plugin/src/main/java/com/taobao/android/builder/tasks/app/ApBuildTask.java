@@ -209,24 +209,23 @@
 
 package com.taobao.android.builder.tasks.app;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.Callable;
-
 import com.alibaba.fastjson.JSON;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.Callable;
 
 /**
  * APTask to package files
@@ -238,7 +237,7 @@ public class ApBuildTask extends DefaultAndroidTask {
 
     protected AppVariantContext appVariantContext;
 
-    protected BaseVariantOutputData baseVariantOutputData;
+    protected BaseVariantOutput baseVariantOutputData;
 
     private AppVariantOutputContext.AppBuildInfo appBuildInfo;
 
@@ -265,19 +264,19 @@ public class ApBuildTask extends DefaultAndroidTask {
     }
 
     private File createAP(File apkFile,
-                          BaseVariantOutputData variantOutputData,
+                          BaseVariantOutput variantOutputData,
                           AppVariantContext appVariantContext) throws IOException {
 
         File jarshrinkLog = new File(variantOutputData.getOutputFile()
                                          .getParentFile()
                                          .getParentFile(), "jar-shrink.log");
 
-        File proguardOut = new File(String.valueOf(variantOutputData.getScope()
+        File proguardOut = new File(String.valueOf(appVariantContext.getScope()
                                                        .getGlobalScope()
                                                        .getBuildDir()) +
                                         "/outputs/mapping/" +
-                                        variantOutputData.getScope()
-                                            .getVariantScope()
+                                        appVariantContext
+                                            .getScope()
                                             .getVariantConfiguration()
                                             .getDirName());
 
@@ -289,10 +288,15 @@ public class ApBuildTask extends DefaultAndroidTask {
         int index = path.lastIndexOf(".apk");
         File APFile = new File(path.substring(0, index) + ".ap");
 
-        addFile(variantOutputData.manifestProcessorTask.getManifestOutputFile(),
+        addFile(new File(baseVariantOutputData.getProcessManifest().getManifestOutputDirectory(),"AndroidManifest.xml"),
                 "AndroidManifest.xml");
         addFile(apkFile, ApContext.AP_INLINE_APK_FILENAME);
-        addFile(new File(variantOutputData.processResourcesTask.getTextSymbolOutputDir(), "R.txt"),
+        addFile(new File(
+                appVariantContext.getScope().getGlobalScope().getIntermediatesDir().getAbsolutePath()+"/"+
+                "symbols/"
+                        + appVariantContext.getScope().getVariantData()
+                        .getVariantConfiguration()
+                        .getDirName(), "R.txt"),
                 "R.txt");
 
         addFile(appBuildInfo.getPackageIdFile());
@@ -387,7 +391,7 @@ public class ApBuildTask extends DefaultAndroidTask {
         private AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+                            BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -425,7 +429,7 @@ public class ApBuildTask extends DefaultAndroidTask {
             });
 
             apBuildTask.appVariantContext = appVariantContext;
-            apBuildTask.baseVariantOutputData = scope.getVariantOutputData();
+            apBuildTask.baseVariantOutputData = baseVariantOutput;
             apBuildTask.appBuildInfo = getAppVariantOutputContext().appBuildInfo;
         }
     }

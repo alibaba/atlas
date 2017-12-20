@@ -224,7 +224,6 @@ public class AtlasAppPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-
         PluginManager.addPluginIfNot(project, AppPlugin.class);
 
         PluginManager.addPluginIfNot(project, AtlasPlugin.class);

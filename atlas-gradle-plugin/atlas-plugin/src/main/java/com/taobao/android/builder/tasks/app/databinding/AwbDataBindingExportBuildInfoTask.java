@@ -209,31 +209,34 @@
 
 package com.taobao.android.builder.tasks.app.databinding;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-
 import android.databinding.tool.DataBindingBuilder;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.base.Predicate;
+import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tasks.manager.TaskCreater;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tasks.manager.TaskCreater;
+import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by wuzhong on 2017/3/27.
@@ -299,7 +302,7 @@ public class AwbDataBindingExportBuildInfoTask extends BaseTask {
 
         private AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -352,41 +355,67 @@ public class AwbDataBindingExportBuildInfoTask extends BaseTask {
 
         @Override
         public void execute(DataBindingExportBuildInfoTask task) {
-            final BaseVariantData<? extends BaseVariantOutputData> variantData = appVariantContext.getScope()
+            final BaseVariantData variantData = appVariantContext.getScope()
                 .getVariantData();
             task.setXmlProcessor(
                 AwbXmlProcessor.getLayoutXmlProcessor(appVariantContext, awbBundle, dataBindingBuilder));
             task.setSdkDir(appVariantContext.getScope().getGlobalScope().getSdkHandler().getSdkFolder());
+            if (!appVariantContext.getAwbLayoutInfoOutputForDataBinding(awbBundle).exists()) {
+                appVariantContext.getAwbLayoutInfoOutputForDataBinding(awbBundle).mkdirs();
+            }
             task.setXmlOutFolder(appVariantContext.getAwbLayoutInfoOutputForDataBinding(awbBundle));
 
-            ConventionMappingHelper.map(task, "compilerClasspath", new Callable<FileCollection>() {
+            ReflectUtils.updateField(task, "compilerClasspath", (Supplier<FileCollection>) () -> appVariantContext.getScope().getJavaClasspath(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactType.CLASSES));
+            Object o = new Supplier<Collection<ConfigurableFileTree>>() {
                 @Override
-                public FileCollection call() {
-                    return appVariantContext.getScope().getJavaClasspath();
+                public Collection<ConfigurableFileTree> get() {
+                    Iterable ier = Iterables.filter(appVariantContext.getAwSourceOutputDir(awbBundle), new Predicate<ConfigurableFileTree>() {
+                        @Override
+                        public boolean apply(ConfigurableFileTree input) {
+                            File dataBindingOut = appVariantContext
+                                    .getAwbClassOutputForDataBinding(awbBundle);
+                            return !dataBindingOut.equals(input.getDir());
+                        }
+                    });
+                    return ImmutableList.copyOf(ier);
+
                 }
-            });
-            ConventionMappingHelper
-                .map(task, "compilerSources", new Callable<Iterable<ConfigurableFileTree>>() {
-                    @Override
-                    public Iterable<ConfigurableFileTree> call() throws Exception {
-                        return Iterables.filter(appVariantContext.getAwSourceOutputDir(awbBundle),
-                                                new Predicate<ConfigurableFileTree>() {
-                                                    @Override
-                                                    public boolean apply(ConfigurableFileTree input) {
-                                                        File
-                                                            dataBindingOut = appVariantContext
-                                                            .getAwbClassOutputForDataBinding(awbBundle);
-                                                        return !dataBindingOut.equals(input.getDir());
-                                                    }
-                                                });
-                    }
-                });
+            };
+            ReflectUtils.updateField(task, "compilerSources", o);
+
+//                    new Predicate<ConfigurableFileTree>() {
+//                        @Override
+//                        public boolean apply(ConfigurableFileTree input) {
+//                            File
+//                                    dataBindingOut = appVariantContext
+//                                    .getAwbClassOutputForDataBinding(awbBundle);
+//                            return !dataBindingOut.equals(input.getDir());
+//                        }
+//                    })));
+//
+//            ConventionMappingHelper
+//                .map(task, "compilerSources", new Callable<Iterable<ConfigurableFileTree>>() {
+//                    @Override
+//                    public Iterable<ConfigurableFileTree> call() throws Exception {
+//                        return Iterables.filter(appVariantContext.getAwSourceOutputDir(awbBundle),
+//                                                new Predicate<ConfigurableFileTree>() {
+//                                                    @Override
+//                                                    public boolean apply(ConfigurableFileTree input) {
+//                                                        File
+//                                                            dataBindingOut = appVariantContext
+//                                                            .getAwbClassOutputForDataBinding(awbBundle);
+//                                                        return !dataBindingOut.equals(input.getDir());
+//                                                    }
+//                                                });
+//                    }
+//                });
 
             task.setExportClassListTo(variantData.getType().isExportDataBindingClassList() ?
                                           new File(appVariantContext.getAwbLayoutFolderOutputForDataBinding(awbBundle),
                                                    "_generated.txt") : null);
             //task.setPrintMachineReadableErrors(printMachineReadableErrors);
             task.setDataBindingClassOutput(appVariantContext.getAwbClassOutputForDataBinding(awbBundle));
+
         }
 
     }

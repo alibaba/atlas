@@ -209,39 +209,37 @@
 
 package com.taobao.android.builder.dependency.parser.helper;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
 import com.taobao.android.builder.AtlasPlugin;
 import org.apache.commons.lang.StringUtils;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.ModuleVersionIdentifier;
-import org.gradle.api.artifacts.ResolvedArtifact;
-import org.gradle.api.artifacts.UnknownConfigurationException;
+import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.result.DependencyResult;
+import org.gradle.api.artifacts.result.UnresolvedArtifactResult;
+import org.gradle.api.internal.artifacts.DefaultResolvedArtifact;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import org.gradle.api.internal.artifacts.result.DefaultResolvedDependencyResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.function.Consumer;
 
 public class DependencyGroup {
 
     private static Logger logger = LoggerFactory.getLogger(DependencyGroup.class);
 
+    public Map<String, Set<DependencyResult>> bundleCompileMap = new HashMap<>();
+
     public List<DependencyResult> compileDependencies = new ArrayList<>();
     public List<DependencyResult> bundleDependencies = new ArrayList<>();
+    private Set<String>mainDexs = new HashSet<>();
 
     /**
      * bundle (group:name) It corresponds to that Private rely on
      */
     public Map<String, Set<String>> bundleProvidedMap = new HashMap<>();
+    public static Map<ModuleVersionIdentifier,ResolvedArtifact> bundleCompileId = new HashMap();
 
     public DependencyGroup(Configuration compileClasspath,
                            Configuration bundleClasspath,
@@ -278,18 +276,23 @@ public class DependencyGroup {
         for (DependencyResult dependencyResult : compileDependencies) {
             if (!bundleSets.contains(dependencyResult.toString())) {
                 this.compileDependencies.add(dependencyResult);
+                mainDexs.add(dependencyResult.toString());
             } else {
                 bundleAddedSets.add(dependencyResult.toString());
                 this.bundleDependencies.add(dependencyResult);
+
             }
         }
         for (DependencyResult dependencyResult : bundleCompileDependencies) {
             if (!bundleAddedSets.contains(dependencyResult.toString())) {
                 this.bundleDependencies.add(dependencyResult);
+                bundleAddedSets.add(dependencyResult.toString());
             }
         }
 
         this.bundleProvidedMap = getBundleProvidedMap(bundleClasspath);
+
+
 
     }
 
@@ -359,6 +362,48 @@ public class DependencyGroup {
             }
         });
         return bundleMap;
+    }
+
+    private Map<String, Set<DependencyResult>>getProjectBundleCompile(Configuration configuration, Set<String> bundleAddedSets){
+        Map<String,Set<DependencyResult>>bundleMap = new HashMap<>();
+        configuration.getAllDependencies().forEach(new Consumer<Dependency>() {
+            @Override
+            public void accept(Dependency dependency) {
+                if (dependency instanceof DefaultProjectDependency) {
+                    DefaultProjectDependency projectDependency = (DefaultProjectDependency)dependency;
+                    String key = "project " + ":" + projectDependency.getName();
+                    if (!bundleAddedSets.contains(key)){
+                        return;
+                    }
+                    Set<DependencyResult> compileSets = new HashSet<>();
+                    try {
+                        Set<ResolvedArtifact> resolvedArtifacts = projectDependency.getDependencyProject().getConfigurations().getByName("compile").getResolvedConfiguration().getResolvedArtifacts();
+                        projectDependency.getDependencyProject().getConfigurations().getByName("compile").getIncoming().getResolutionResult().getRoot().getDependencies().forEach(new Consumer<DependencyResult>() {
+                            @Override
+                            public void accept(DependencyResult dependencyResult) {
+                                if (!mainDexs.contains(dependencyResult.toString())){
+                                        compileSets.add(dependencyResult);
+                                        if (dependencyResult instanceof DefaultResolvedDependencyResult){
+                                            ModuleVersionIdentifier moduleVersionIdentifier = ((DefaultResolvedDependencyResult) dependencyResult).getSelected().getModuleVersion();
+                                            for (ResolvedArtifact resolvedArtifact:resolvedArtifacts) {
+                                                if (resolvedArtifact.getModuleVersion().getId().equals(moduleVersionIdentifier)) {
+                                                    bundleCompileId.put(moduleVersionIdentifier, resolvedArtifact);
+                                                }
+                                            }
+                                        }
+                                }
+                            }
+                        });
+
+                    } catch (UnknownConfigurationException e) {
+
+                    }
+                    bundleMap.put(projectDependency.getGroup()+":"+projectDependency.getName(), compileSets);
+                }
+            }
+        });
+        return bundleMap;
+
     }
 
 }

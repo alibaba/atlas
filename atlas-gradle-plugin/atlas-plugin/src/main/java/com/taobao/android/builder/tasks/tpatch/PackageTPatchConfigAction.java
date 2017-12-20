@@ -1,9 +1,9 @@
 package com.taobao.android.builder.tasks.tpatch;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.Sync;
 
@@ -12,7 +12,7 @@ import org.gradle.api.tasks.Sync;
  */
 
 public class PackageTPatchConfigAction extends MtlBaseTaskAction<Sync> {
-    public PackageTPatchConfigAction(VariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
+    public PackageTPatchConfigAction(VariantContext variantContext, BaseVariantOutput baseVariantOutputData) {
         super(variantContext, baseVariantOutputData);
     }
 

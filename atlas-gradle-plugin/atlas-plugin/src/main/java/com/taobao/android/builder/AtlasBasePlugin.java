@@ -1,10 +1,7 @@
 package com.taobao.android.builder;
 
-import com.android.build.gradle.internal.AtlasDependencyManager;
-import com.android.build.gradle.internal.DependencyManager;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
-import com.taobao.android.builder.tools.PathUtil;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import com.taobao.android.builder.tools.log.LogOutputListener;
 import org.gradle.api.Plugin;
@@ -26,8 +23,8 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
     public static final String PROVIDED_COMPILE = "providedCompile";
 
     protected Project project;
-    public static final Pattern PLUGIN_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[3-9].*");
-    public static final String PLUGIN_MIN_VERSIONS = "2.3.0";
+    public static final Pattern PLUGIN_ACCEPTABLE_VERSIONS = Pattern.compile("3\\.[0-9].*");
+    public static final String PLUGIN_MIN_VERSIONS = "3.0.0";
 
     public static final Pattern JDK_VERSIONS = Pattern.compile("1\\.[8-9].*");
     public static final String JDK_MIN_VERSIONS = "1.8";
@@ -51,6 +48,9 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
         checkPluginSetup();
 
         atlasConfigurationHelper = getConfigurationHelper(project);
+
+        AtlasBuildContext.atlasConfigurationHelper = atlasConfigurationHelper;
+
         atlasConfigurationHelper.createExtendsion();
 
     }
@@ -89,10 +89,6 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
 //            //throw new StopExecutionException(errorMessage);
 //        }
 
-        if(!PathUtil.getJarFile(DependencyManager.class).getAbsolutePath().equals(PathUtil.getJarFile(AtlasDependencyManager.class).getAbsolutePath())){
-            throw new StopExecutionException("please remove the google plugin `classpath 'com.android.tools.build:gradle:xxx'` in buildscript dependencies \n"
-                    + "it will be auto include by atlasplugin");
-        }
 
     }
 

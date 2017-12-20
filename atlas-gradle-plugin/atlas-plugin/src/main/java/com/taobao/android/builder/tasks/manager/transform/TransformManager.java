@@ -210,9 +210,13 @@
 package com.taobao.android.builder.tasks.manager.transform;
 
 import com.android.build.api.transform.Transform;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.builder.core.VariantConfiguration;
+import com.android.ide.common.build.ApkData;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.tools.ReflectUtils;
 import org.apache.commons.lang.reflect.FieldUtils;
@@ -226,7 +230,7 @@ import java.util.SortedMap;
 
 public class TransformManager {
 
-    public static List<TransformTask> findTransformTaskByTransformType(AppVariantContext appVariantContext, Class<?>
+    public static List<TransformTask> findTransformTaskByTransformType(VariantContext appVariantContext, Class<?>
         transformClass) {
         List<TransformTask> transformTasksList = Lists.newArrayList();
         VariantConfiguration config = appVariantContext.getVariantConfiguration();
@@ -245,55 +249,18 @@ public class TransformManager {
         return transformTasksList;
     }
 
-    public static void replaceTransformTask(TransformTask transformTask,
-                                            Transform newTransform) {
 
-        Field transfromField = FieldUtils.getDeclaredField(TransformTask.class,
-                                                           "transform",
-                                                           true);
-        if (null != transfromField) {
-            try {
-                transfromField.set(transformTask, newTransform);
-            } catch (IllegalAccessException e) {
-                throw new GradleException(e.getMessage(), e);
-            }
-        }
-    }
-
-    public static void replaceTransformTask(AppVariantContext appVariantContext,
-//                                            BaseVariantOutputData baseVariantOutputData,
-                                            Class<? extends Transform> baseTransform, Class<? extends Transform> newTransformClazz) {
-
-        List<TransformTask> baseTransforms = TransformManager.findTransformTaskByTransformType(
-            appVariantContext, baseTransform);
-
-        for (TransformTask transformTask : baseTransforms) {
-
-            Transform newTransform = createTransform(appVariantContext,  newTransformClazz);
-
-            try {
-                ReflectUtils.updateField(newTransform,"oldTransform", transformTask.getTransform());
-            } catch (Throwable e) {
-
-            }
-
-            replaceTransformTask(transformTask, newTransform);
-
-        }
-
-    }
 
     public static <T extends Transform> T createTransform(AppVariantContext appVariantContext,
-                                                          Class<T> clazz) {
+                                                          Class<T> clazz, BaseVariantOutput vod) {
 
         if (null == clazz) {
             return null;
         }
-
         try {
 
-            return (T)getConstructor(appVariantContext, clazz).newInstance(
-                appVariantContext);
+            return (T)getConstructor(appVariantContext, clazz,ApkDataUtils.get(vod)).newInstance(
+                appVariantContext, ApkDataUtils.get(vod));
 
         } catch (Throwable e) {
             e.printStackTrace();
@@ -304,12 +271,12 @@ public class TransformManager {
 
     private static Constructor<? extends Transform> getConstructor(AppVariantContext appVariantContext,
                                                                    Class<? extends Transform>
-                                                                       transformClazz)
+                                                                           transformClazz, ApkData apkData)
         throws NoSuchMethodException {
         try {
-            return transformClazz.getConstructor(appVariantContext.getClass());
+            return transformClazz.getConstructor(appVariantContext.getClass(),ApkData.class);
         } catch (NoSuchMethodException e) {
-            return transformClazz.getConstructor(appVariantContext.getClass().getSuperclass());
+            return transformClazz.getConstructor(appVariantContext.getClass().getSuperclass(),ApkData.class);
         }
     }
 

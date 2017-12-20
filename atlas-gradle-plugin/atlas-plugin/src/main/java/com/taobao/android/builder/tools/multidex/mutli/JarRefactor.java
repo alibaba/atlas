@@ -210,7 +210,7 @@
 package com.taobao.android.builder.tools.multidex.mutli;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.transforms.JarMerger;
+import com.android.builder.packaging.JarMerger;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.multidex.dex.DexMerger;
@@ -245,10 +245,16 @@ public class JarRefactor {
         this.multiDexConfig = multiDexConfig;
     }
 
-    public Collection<File> repackageJarList(Collection<File> files) throws IOException {
+    public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile) throws IOException {
 
 
-        List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files);
+        List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files,mainDexListFile);
+
+        return generateFirstDexJar(mainDexList,files);
+
+    }
+
+    private Collection<File> generateFirstDexJar(List<String>mainDexList,Collection<File> files)throws IOException {
 
         List<File> jarList = new ArrayList<>();
         List<File> folderList = new ArrayList<>();
@@ -261,7 +267,7 @@ public class JarRefactor {
         }
 
         File dir = new File(appVariantContext.getScope().getGlobalScope().getIntermediatesDir(),
-                            "fastmultidex/" + appVariantContext.getVariantName());
+                "fastmultidex/" + appVariantContext.getVariantName());
         FileUtils.deleteDirectory(dir);
         dir.mkdirs();
 
@@ -270,9 +276,9 @@ public class JarRefactor {
             mergedJar.getParentFile().mkdirs();
             mergedJar.delete();
             mergedJar.createNewFile();
-            JarMerger jarMerger = new JarMerger(mergedJar);
+            JarMerger jarMerger = new JarMerger(mergedJar.toPath());
             for (File folder : folderList) {
-                jarMerger.addFolder(folder);
+                jarMerger.addDirectory(folder.toPath());
             }
             jarMerger.close();
             if (mergedJar.length() > 0) {
@@ -284,7 +290,7 @@ public class JarRefactor {
         File maindexJar = new File(dir, DexMerger.FASTMAINDEX_JAR + ".jar");
 
         JarOutputStream mainJarOuputStream = new JarOutputStream(
-            new BufferedOutputStream(new FileOutputStream(maindexJar)));
+                new BufferedOutputStream(new FileOutputStream(maindexJar)));
 
         //First order
         Collections.sort(jarList, new NameComparator());

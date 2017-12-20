@@ -796,6 +796,8 @@ public class ManifestFileUtils {
         // First, we will manually process the tools:remove and tools:replace rules, and find that some of them are not necessarily possible through the ManifestMerge
         Element applicationElement = root.element("application");
 
+        List<Node> supportVersion = root.selectNodes("//meta-data");
+
         //Determines whether there is application and needs to be deleted
         if (null != applicationElement) {
             Attribute attribute = applicationElement.attribute("name");
@@ -803,6 +805,20 @@ public class ManifestFileUtils {
                 applicationElement.remove(attribute);
             }
         }
+
+        for (Node node : supportVersion) {
+            Element element = (Element)node;
+            Attribute attribute = element.attribute("name");
+            if (attribute != null) {
+                if (attribute.getValue().equals("android.support.VERSION")) {
+                    if (element.attribute("value")!= null)
+                    element.attribute("value").setValue("25.3.1");
+                }
+            }
+        }
+//        if (supportVersion!= null && supportVersion.size() > 0){
+//            if (supportVersion.("name");
+//        }
 
         Map<String, String> replaceAttrs = mainManifestFileObject.getReplaceApplicationAttribute();
         List<String> removeAttrs = mainManifestFileObject.getRemoveApplicationAttribute();
@@ -1109,5 +1125,12 @@ public class ManifestFileUtils {
         }
 
         return nodes;
+    }
+
+    public static void main(String []args) throws DocumentException {
+        File manifest = new File("/Users/lilong/.gradle/caches/transforms-1/files-1.1/recyclerview-v7-25.3.1.aar/1046cd92fdcfb77468417d61ed21e0db/AndroidManifest.xml");
+        Document document = XmlHelper.readXml(manifest);
+        Element element = document.getRootElement();
+        Attribute attribute = element.attribute("meta-data");
     }
 }

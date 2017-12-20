@@ -209,15 +209,9 @@
 
 package com.taobao.android.builder.tasks.app.prepare;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -227,6 +221,12 @@ import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.dom4j.DocumentException;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FD_AAR_LIBS;
@@ -312,7 +312,7 @@ public class AddLocalJarTask extends BaseTask {
 
         AppVariantContext appVariantContext;
         public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+                            BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }

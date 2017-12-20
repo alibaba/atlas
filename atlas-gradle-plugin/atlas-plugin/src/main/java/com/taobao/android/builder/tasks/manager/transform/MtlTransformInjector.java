@@ -209,14 +209,15 @@
 
 package com.taobao.android.builder.tasks.manager.transform;
 
-import java.util.List;
-
+import com.android.build.VariantOutput;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.pipeline.TransformTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskCollection;
+
+import java.util.List;
 
 /**
  * Created by wuzhong on 2016/11/30.
@@ -233,7 +234,9 @@ public class MtlTransformInjector {
 
     public void injectTasks(List<MtlTransformContext> mtlTaskContexts) {
 
-        for (final BaseVariantOutputData vod : appVariantContext.getVariantData().getOutputs()) {
+
+
+        for (final Object vod : appVariantContext.getVariantOutputData()) {
 
             for (MtlTransformContext mtlTransformContext : mtlTaskContexts) {
 
@@ -241,9 +244,9 @@ public class MtlTransformInjector {
 
                 TransformTask injectedTask = appVariantContext.getInjectTransformManager()
                     .addInjectTransformBeforeTransform(transformTask.getTransform().getClass(),
-                                                       TransformManager.createTransform(appVariantContext, vod,
+                                                       TransformManager.createTransform(appVariantContext,
                                                                                         mtlTransformContext
-                                                                                            .getTransformTask()),
+                                                                                            .getTransformTask(), (BaseVariantOutput) vod),
                                                        appVariantContext.getScope());
 
                 injectedTask.dependsOn(appVariantContext.getVariantData().compileTask);

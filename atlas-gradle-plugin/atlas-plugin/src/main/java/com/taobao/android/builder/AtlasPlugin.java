@@ -245,42 +245,38 @@ public class AtlasPlugin extends AtlasBasePlugin {
             Map<String, String> multiDex = new HashMap<>();
             multiDex.put("group", "com.android.support");
             multiDex.put("module", "multidex");
-            project.getConfigurations().all(new Action<Configuration>() {
-                @Override
-                public void execute(Configuration configuration) {
-                    configuration.exclude(multiDex);
-                }
-            });
+            project.getConfigurations().all(configuration -> configuration.exclude(multiDex));
 
             if (AtlasBuildContext.sBuilderAdapter.addAtlasDependency){
                 project.getDependencies().add("compile", "com.taobao.android:atlasupdate:1.1.4.5");
                 project.getDependencies().add("compile", "com.taobao.android:atlas_core:5.0.6-rc21@aar");
             }
-            atlasConfigurationHelper.hookAtlasDependencyManager();
+
 
         }
+        project.afterEvaluate(project1 -> {
 
-        project.afterEvaluate(new Action<Project>()
+            if (PluginTypeUtils.isAppProject(project1)) {
+                atlasConfigurationHelper.registAtlasStreams();
+                atlasConfigurationHelper.configDependencies();
 
-        {
-            @Override
-            public void execute(Project project) {
-
-                //3. update extension
-                atlasConfigurationHelper.updateExtensionAfterEvaluate();
-
-                //4. Set up the android builder
-                try {
-                    atlasConfigurationHelper.createBuilderAfterEvaluate();
-                } catch (Exception e) {
-                    throw new GradleException("update builder failed", e);
-                }
-
-                //5. Configuration tasks
-                atlasConfigurationHelper.configTasksAfterEvaluate();
-
-                project.getTasks().create("atlasList", AtlasListTask.class);
             }
+
+
+            //3. update extension
+            atlasConfigurationHelper.updateExtensionAfterEvaluate();
+
+            //4. Set up the android builder
+            try {
+                atlasConfigurationHelper.createBuilderAfterEvaluate();
+            } catch (Exception e) {
+                throw new GradleException("update builder failed", e);
+            }
+
+            //5. Configuration tasks
+           atlasConfigurationHelper.configTasksAfterEvaluate();
+
+            project1.getTasks().create("atlasList", AtlasListTask.class);
         });
 
     }

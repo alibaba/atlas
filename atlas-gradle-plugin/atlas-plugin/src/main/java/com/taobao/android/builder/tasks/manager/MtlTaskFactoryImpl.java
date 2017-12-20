@@ -209,14 +209,14 @@
 
 package com.taobao.android.builder.tasks.manager;
 
-import java.lang.reflect.Constructor;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import org.gradle.api.GradleException;
 import org.gradle.api.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Constructor;
 
 /**
  * Created by wuzhong on 16/7/5.
@@ -226,7 +226,7 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
     private static Logger sLogger = LoggerFactory.getLogger(MtlTaskFactory.class);
 
     @Override
-    public Task createTask(VariantContext variantContext, BaseVariantOutputData vod,
+    public Task createTask(VariantContext variantContext, BaseVariantOutput vod,
                            Class<? extends MtlBaseTaskAction> baseTaskAction) {
 
         if (null == baseTaskAction) {
@@ -262,7 +262,7 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
                                                                     Class variantClazz) throws NoSuchMethodException {
 
         try {
-            return baseTaskAction.getConstructor(variantClazz, BaseVariantOutputData.class);
+            return baseTaskAction.getConstructor(variantClazz, BaseVariantOutput.class);
         } catch (NoSuchMethodException ex1) {
 
             Class superClazz = variantClazz.getSuperclass();

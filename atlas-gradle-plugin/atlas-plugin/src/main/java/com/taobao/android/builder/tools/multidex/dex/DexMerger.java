@@ -209,18 +209,18 @@
 
 package com.taobao.android.builder.tools.multidex.dex;
 
+import com.android.dex.Dex;
+import com.android.dex.DexIndexOverflowException;
+import com.android.dx.command.dexer.DxContext;
+import com.android.dx.merge.CollisionPolicy;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
-import com.taobao.android.dex.Dex;
-import com.taobao.android.dex.DexIndexOverflowException;
-import com.taobao.android.dx.merge.CollisionPolicy;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -327,9 +327,9 @@ public class DexMerger {
 
     private void mergeDex(File outDexFolder, List<Dex> tmpList, int index, Dex[] mergedList) throws IOException {
 
-        com.taobao.android.dx.merge.DexMerger dexMerger = new com.taobao.android.dx.merge.DexMerger(
+        com.android.dx.merge.DexMerger dexMerger = new com.android.dx.merge.DexMerger(
             tmpList.toArray(new Dex[0]),
-            CollisionPolicy.KEEP_FIRST);
+            CollisionPolicy.KEEP_FIRST,new DxContext());
 
         dexMerger.setCompactWasteThreshold(1024);
 

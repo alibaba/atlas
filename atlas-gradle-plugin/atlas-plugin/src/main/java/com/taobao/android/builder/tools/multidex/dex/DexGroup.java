@@ -209,10 +209,10 @@
 
 package com.taobao.android.builder.tools.multidex.dex;
 
-import com.taobao.android.dex.Dex;
-import com.taobao.android.dex.DexIndexOverflowException;
-import com.taobao.android.dex.FieldId;
-import com.taobao.android.dex.MethodId;
+import com.android.dex.Dex;
+import com.android.dex.DexIndexOverflowException;
+import com.android.dex.FieldId;
+import com.android.dex.MethodId;
 
 import java.util.*;
 

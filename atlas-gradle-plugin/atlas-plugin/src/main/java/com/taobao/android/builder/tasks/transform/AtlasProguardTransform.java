@@ -209,34 +209,16 @@
 
 package com.taobao.android.builder.tasks.transform;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Supplier;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.DirectoryInput;
-import com.android.build.api.transform.Format;
-import com.android.build.api.transform.JarInput;
-import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.*;
 import com.android.build.api.transform.QualifiedContent.ContentType;
-import com.android.build.api.transform.TransformException;
-import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.BaseProguardAction;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -252,9 +234,18 @@ import com.taobao.android.builder.tools.proguard.domain.Input;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
+import org.gradle.api.file.ConfigurableFileCollection;
 import proguard.ClassPath;
 import proguard.Configuration;
 import proguard.ParseException;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by wuzhong on 2017/4/25.
@@ -280,7 +271,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
         super(appVariantContext.getScope());
         this.appVariantContext = appVariantContext;
         defaultProguardFiles.addAll(
-            appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>()));
+            appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
 
         this.buildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
     }
@@ -321,12 +312,11 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
         try {
 
-            List oldConfigList = (List)ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
+            ConfigurableFileCollection oldConfigurableFileCollection = (ConfigurableFileCollection)ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
                                                              "configurationFiles");
 
-            List configList = (List)ReflectUtils.getField(ProguardConfigurable.class, this, "configurationFiles");
+            ReflectUtils.updateField(this,"configurationFiles",oldConfigurableFileCollection);
 
-            configList.addAll(oldConfigList);
 
             Configuration configuration = (Configuration)ReflectUtils.getField(BaseProguardAction.class,
                                                                                oldTransform, "configuration");
@@ -459,11 +449,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
     }
 
-    //TODO include bundles's configuration
-    @Override
-    public void setConfigurationFiles(Supplier<Collection<File>> configFiles) {
-        super.setConfigurationFiles(configFiles);
-    }
+
 
     @Override
     public void applyConfigurationFile(File file) throws IOException, ParseException {
@@ -477,7 +463,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
         super.applyConfigurationFile(file);
     }
 
-    private static void handleQualifiedContent(
+    private void handleQualifiedContent(
         @NonNull ClassPath classPath,
         @NonNull QualifiedContent content,
         @Nullable List<String> baseFilter) {
@@ -498,7 +484,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
             filter = ImmutableList.of("**.class");
         }
 
-        inputJar(classPath, content.getFile(), filter);
+        super.inputJar(classPath, content.getFile(), filter);
     }
 
     public void applyLibConfigurationFile(@NonNull File file) throws IOException, ParseException {
@@ -508,6 +494,18 @@ public class AtlasProguardTransform extends ProGuardTransform {
             parser.parse(configuration);
         } finally {
             parser.close();
+        }
+    }
+
+    @Override
+    protected void inputJar(
+            @NonNull ClassPath classPath, @NonNull File file, @Nullable List<String> filter){
+            if (file.isDirectory()){
+            super.inputJar(classPath, file, filter);
+        }else {
+            if (AtlasBuildContext.mainDexMap.containsKey(file.getParentFile().getParentFile().getAbsolutePath())) {
+                super.inputJar(classPath, file, filter);
+            }
         }
     }
 }

@@ -244,7 +244,7 @@ public class SoLibrary {
     public SoLibrary(ResolvedDependencyInfo resolvedDependencyInfo) {
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
 
-        this.mResolvedCoordinates = DependencyConvertUtils.convert(artifact);
+        this.mResolvedCoordinates = DependencyConvertUtils.convert(artifact, DependencyConvertUtils.Type.SOLIB);
         this.mSoLibFile = artifact.getFile();
         this.mSoLibFolder = resolvedDependencyInfo.getExplodedDir();
     }

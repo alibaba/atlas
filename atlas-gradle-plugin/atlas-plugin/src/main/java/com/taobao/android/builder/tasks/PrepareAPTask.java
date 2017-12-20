@@ -213,17 +213,11 @@ package com.taobao.android.builder.tasks;
  * Created by wuzhong on 16/6/13.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.utils.FileUtils;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -242,17 +236,17 @@ import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
-import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_APK_FILENAME;
-import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_AWB_EXPLODED_DIRECTORY;
-import static com.android.build.gradle.internal.api.ApContext.AP_INLINE_AWB_EXTRACT_DIRECTORY;
+import static com.android.build.gradle.internal.api.ApContext.*;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
@@ -375,8 +369,8 @@ public class PrepareAPTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {
 
-        public ConfigAction(VariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
-            super(variantContext, baseVariantOutputData);
+        public ConfigAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            super(variantContext, baseVariantOutput);
         }
 
         @Override
@@ -410,40 +404,24 @@ public class PrepareAPTask extends BaseTask {
                 + "/");
             variantContext.apContext.setApExploredFolder(explodedDir);
 
-            ConventionMappingHelper.map(prepareAPTask, "apFile", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    File apFile = variantContext.apContext.getApFile();
-                    if (apFile != null) {
-                        return apFile.exists() ? apFile : null;
-                    } else {
-                        return null;
-                    }
+            ConventionMappingHelper.map(prepareAPTask, "apFile", (Callable<File>) () -> {
+                File apFile = variantContext.apContext.getApFile();
+                if (apFile != null) {
+                    return apFile.exists() ? apFile : null;
+                } else {
+                    return null;
                 }
             });
-            ConventionMappingHelper.map(prepareAPTask, "apDependency", new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return variantContext.apContext.getApDependency();
-                }
-            });
-            ConventionMappingHelper.map(prepareAPTask, "explodedDir", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return explodedDir;
-                }
-            });
+            ConventionMappingHelper.map(prepareAPTask, "apDependency", (Callable<String>) () -> variantContext.apContext.getApDependency());
+            ConventionMappingHelper.map(prepareAPTask, "explodedDir", (Callable<File>) () -> explodedDir);
 
             if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                ConventionMappingHelper.map(prepareAPTask, "awbBundles", new Callable<Set<String>>() {
-                    @Override
-                    public Set<String> call() throws Exception {
-                        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                            variantContext.getVariantName());
-                        Set<String> awbBundles = Sets.newHashSet(
-                            Iterables.transform(dependencyTree.getAwbBundles(), AwbBundle::getAwbSoName));
-                        return awbBundles;
-                    }
+                ConventionMappingHelper.map(prepareAPTask, "awbBundles", (Callable<Set<String>>) () -> {
+                    AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                        variantContext.getVariantName());
+                    Set<String> awbBundles = Sets.newHashSet(
+                        Iterables.transform(dependencyTree.getAwbBundles(), AwbBundle::getAwbSoName));
+                    return awbBundles;
                 });
             }
         }

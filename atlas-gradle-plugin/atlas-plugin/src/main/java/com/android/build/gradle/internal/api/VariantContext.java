@@ -331,7 +331,7 @@ public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, 
 
     public File getMergeAssets(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
-                "/awb-assets/" + variantConfiguration.getFullName() + "/"
+                "/awb-assets/merged/" + variantConfiguration.getFullName() + "/"
                         + awbBundle.getName());
     }
 
@@ -340,11 +340,63 @@ public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, 
                 "/awb-res/merged/" + variantConfiguration.getFullName() + "/" + awbBundle.getName());
     }
 
+    public File getMergeNotCompiledFolder(AwbBundle awbBundle) {
+
+        return new File(
+                scope.getGlobalScope().getIntermediatesDir()
+                        + "/awb-merged-not-compiled-resources/"
+                        + scope.getVariantConfiguration().getDirName()+"/"+awbBundle.getName());
+    }
+    public File getGenerateResValue(AwbBundle awbBundle){
+        return new File(scope.getGlobalScope().getGeneratedDir().getParentFile(),
+                "/awb-generated/" + StringHelper.toStrings("res", "resValue", scope.getDirectorySegments(),
+                        awbBundle.getName()));
+    }
+
+    public File getGenerateRs(AwbBundle awbBundle){
+        return new File(scope.getGlobalScope().getGeneratedDir().getParentFile(),
+                "/awb-generated/" + StringHelper.toStrings("res", "rs", scope.getDirectorySegments(),
+                        awbBundle.getName()));
+    }
+
     public File getPngsOutputDir(AwbBundle awbBundle) {
         return FileUtils.join(new File(scope.getGlobalScope().getGeneratedDir().getParentFile(),
                         "awb-generated"),
                 StringHelper.toStrings("res", "pngs", scope.getDirectorySegments(),
                         awbBundle.getName()));
+    }
+
+    public File getRenderOutputDir(AwbBundle awbBundle) {
+        return FileUtils.join(new File(scope.getGlobalScope().getGeneratedDir().getParentFile(),
+                        "awb-generated"),
+                StringHelper.toStrings("res","renderscript", scope.getDirectorySegments(),
+                        awbBundle.getName()));
+    }
+
+    public File getAwbResourceBlameLogDir(AwbBundle awbBundle) {
+        return FileUtils.join(
+                scope.getGlobalScope().getIntermediatesDir(),
+                StringHelper.toStrings(
+                        "awb-blame", "res", scope.getDirectorySegments(),awbBundle.getName()));
+
+    }
+
+    public File getAwbShadersOutputDir(AwbBundle awbBundle) {
+        return FileUtils.join(new File(
+                scope.getGlobalScope().getGeneratedDir().getParentFile(),"/awb-generated/"),
+                StringHelper.toStrings(
+                        "assets", "shaders", scope.getDirectorySegments(),awbBundle.getName()));
+
+    }
+
+    public File getAwbMergeNativeLibsOutputDir(AwbBundle awbBundle) {
+        return FileUtils.join(scope.getGlobalScope().getIntermediatesDir(),
+                "/awb-jniLibs/" + getVariantConfiguration().getDirName(),awbBundle.getName());
+    }
+
+    public File getMergeShadersOutputDir(AwbBundle awbBundle) {
+        return FileUtils.join(scope.getGlobalScope().getIntermediatesDir(),
+                "/awb-shaders/" + getVariantConfiguration().getDirName(),awbBundle.getName());
     }
 
 

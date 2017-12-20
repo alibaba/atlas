@@ -209,6 +209,8 @@
 
 package com.taobao.android.builder.tasks.manager;
 
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.VariantContext;
@@ -216,7 +218,6 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.ide.common.build.ApkData;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.StopExecutionException;
@@ -234,14 +235,14 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
 
     protected BaseVariantData baseVariantData;
 
-    protected  ApkData apkData;
+    protected  BaseVariantOutput baseVariantOutput;
 
     public MtlBaseTaskAction(VariantContext variantContext,
-                             ApkData apkData) {
+                             BaseVariantOutput baseVariantOutput) {
         this.variantContext = variantContext;
         this.baseVariantData = variantContext.getBaseVariantData();
         this.scope = baseVariantData.getScope();
-        this.apkData = apkData;
+        this.baseVariantOutput = baseVariantOutput;
     }
 
     protected AppVariantOutputContext getAppVariantOutputContext() {
@@ -259,10 +260,10 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
         if (null == appVariantOutputContext) {
             appVariantOutputContext = new AppVariantOutputContext(baseVariantData.getVariantConfiguration().getFullName(),
                                                                   appVariantContext,
-                                                                  apkData,
+                    ApkDataUtils.get(baseVariantOutput),
                                                                   baseVariantData);
             appVariantContext.getOutputContextMap()
-                    .put(apkData.getFullName(), appVariantOutputContext);
+                    .put(ApkDataUtils.get(baseVariantOutput).getFullName(), appVariantOutputContext);
         }
 
         return appVariantOutputContext;

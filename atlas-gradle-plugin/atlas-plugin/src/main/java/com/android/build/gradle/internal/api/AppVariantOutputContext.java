@@ -406,26 +406,36 @@ public class AppVariantOutputContext {
                         awbBundle.getName());
     }
 
+
+    public File getAwbJavaResFolder(AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/awb-java-res/" +
+                        variantData.getVariantConfiguration().getDirName() +
+                        "/" +
+                        awbBundle.getName());
+    }
+
     public File getApkOutputFile(boolean checkExist) {
-        File file = variantScope.getGlobalScope()
-                .getProject()
-                .file(apkData.getDirName() +
-                      "/" +
-                      variantScope.getGlobalScope().getProjectBaseName() +
-                      "-" +
-                      variantData.getVariantConfiguration().getBaseName() +
-                      ".apk");
+        File apkFile = new File(variantScope.getApkLocation(),apkData.getOutputFileName());
+//        File file = variantScope.getGlobalScope()
+//                .getProject()
+//                .file(apkData.getDirName() +
+//                      "/" +
+//                      variantScope.getGlobalScope().getProjectBaseName() +
+//                      "-" +
+//                      variantData.getVariantConfiguration().getBaseName() +
+//                      ".apk");
+//
+//        if (checkExist && !apkFile.exists()) {
+//            apkFile = new File(apkData.getDirName(),apkData.getFullName());
+////            if (checkExist && !file.exists()) {
+////                file = variantData.getOutputScope().;
+////            }
+//            return apkFile;
+//            //return outputScope.getPackageApk();
+//        }
 
-        if (checkExist && !file.exists()) {
-            file = new File(apkData.getDirName(),apkData.getFullName());
-//            if (checkExist && !file.exists()) {
-//                file = variantData.getOutputScope().;
-//            }
-            return file;
-            //return outputScope.getPackageApk();
-        }
-
-        return file;
+        return apkFile;
     }
 
     public File getDiffResourceAp() {
@@ -456,6 +466,18 @@ public class AppVariantOutputContext {
 
     public File getDiffApk() {
         return new File(getTPatchFolder(), "tpatch-diff.apk");
+    }
+
+    public File getAwbDexOutput(String name) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/awb-dex/" + variantScope.getVariantConfiguration().getDirName() + "/" + name);
+
+    }
+
+    public File getAwbExternalLibsMergeFolder(AwbBundle key) {
+
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/awb-external-dex/" + variantScope.getVariantConfiguration().getDirName() + "/" + key.getName());
     }
 
 

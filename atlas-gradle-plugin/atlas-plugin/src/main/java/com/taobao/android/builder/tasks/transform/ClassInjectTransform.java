@@ -209,23 +209,12 @@
 
 package com.taobao.android.builder.tasks.transform;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-
-import com.android.build.api.transform.DirectoryInput;
-import com.android.build.api.transform.Format;
-import com.android.build.api.transform.JarInput;
-import com.android.build.api.transform.QualifiedContent;
-import com.android.build.api.transform.TransformException;
-import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformInvocation;
-import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.scope.VariantScopeImpl;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.ide.common.build.ApkData;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -241,6 +230,11 @@ import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.StopExecutionException;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -252,8 +246,8 @@ public class ClassInjectTransform extends MtlInjectTransform {
     private final Logger logger;
 
     public ClassInjectTransform(AppVariantContext appVariantContext,
-                                BaseVariantOutputData baseVariantOutputData) {
-        super(appVariantContext, baseVariantOutputData);
+                                ApkData apkData) {
+        super(appVariantContext, apkData);
         this.logger = appVariantContext.getProject().getLogger();
     }
 
@@ -274,7 +268,7 @@ public class ClassInjectTransform extends MtlInjectTransform {
 
     @Override
     public Set<QualifiedContent.ScopeType> getScopes() {
-        return TransformManager.SCOPE_FULL_INSTANT_RUN_PROJECT;
+        return TransformManager.SCOPE_FULL_WITH_IR_FOR_DEXING;
     }
 
     @Override
@@ -384,7 +378,7 @@ public class ClassInjectTransform extends MtlInjectTransform {
         try {
             File verifyFile = PathUtil.getJarFile(com.taobao.verify.Verifier.class);
             pool.insertClassPath(verifyFile.getAbsolutePath());
-            for (File file : appVariantContext.getScope().getJavaClasspath()) {
+            for (File file : scope.getJavaClasspath(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactType.CLASSES)) {
                 if (file.isFile()) {
                     pool.insertClassPath(file.getAbsolutePath());
                 } else {

@@ -212,7 +212,6 @@ package com.taobao.android.builder.extension;
 import com.android.annotations.NonNull;
 import com.taobao.android.builder.extension.annotation.Config;
 import com.taobao.android.builder.extension.annotation.ConfigGroup;
-
 import com.taobao.android.builder.extension.factory.MultiDexConfigFactory;
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
@@ -347,5 +346,9 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     public void setMultiDexConfigs(
         NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs) {
         this.multiDexConfigs = multiDexConfigs;
+    }
+
+    public Boolean getBaseFeature() {
+        return false;
     }
 }
