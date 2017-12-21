@@ -317,7 +317,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
         if (StringUtils.isNotEmpty(injectParam.blackDialogActivity)) {
             lines.add("public static String blackDialogActivity = \"" + injectParam.blackDialogActivity + "\";");
         }
-            lines.add("public static boolean autoStart = \"" + injectParam.autoStart + "\";");
+            lines.add("public static String autoStart = \"" + injectParam.autoStart + "\";");
 
         if (StringUtils.isNotEmpty(injectParam.preLaunch)) {
             lines.add("public static String preLaunch = \"" + injectParam.preLaunch + "\";");
