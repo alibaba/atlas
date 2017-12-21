@@ -245,7 +245,6 @@ public class ApkInjectInfoCreator {
         injectParam.removePreverify = !appVariantContext.getAtlasExtension()
             .getTBuildConfig()
             .getDoPreverify();
-
         injectParam.version = appVariantContext.getVariantConfiguration().getVersionName();
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(

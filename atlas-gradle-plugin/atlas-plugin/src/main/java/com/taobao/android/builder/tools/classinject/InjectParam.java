@@ -231,6 +231,10 @@ public class InjectParam implements Serializable {
 
     public boolean outApp = false;
 
+    public boolean autoStart = true;
+
+    public String blackDialogActivity;
+
     public boolean removePreverify;
 
     public File outputFile;
