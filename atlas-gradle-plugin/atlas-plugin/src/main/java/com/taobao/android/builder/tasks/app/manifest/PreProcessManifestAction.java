@@ -281,13 +281,18 @@ public class PreProcessManifestAction implements Action<Task> {
             List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(appVariantContext, dependencyTree,
                                                                                       atlasExtension);
 
+            List<ManifestProvider> mainDexProviders = ManifestHelper.getMainDexManifest(appVariantContext, dependencyTree,
+                    atlasExtension);
+
             List<ManifestProvider> allManifest = new ArrayList<>();
             modifyForIncremental(mergeManifests, allManifest);
 //            allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
             allManifest.addAll(bundleProviders);
-            AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).manifestProviders = allManifest;
-            mergeManifests.setAndroidBuilder(AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()));
+            allManifest.addAll(mainDexProviders);
 
+            AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).manifestProviders = allManifest;
+
+            mergeManifests.setAndroidBuilder(AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()));
             //if (sLogger.isInfoEnabled()) {
             //    for (ManifestProvider manifestProvider : allManifest) {
             //        sLogger.warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());

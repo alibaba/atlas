@@ -429,8 +429,8 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                         IncrementalFileMergerOutput baseOutput;
                         if (mergedType == QualifiedContent.DefaultContentType.RESOURCES) {
                             File outputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()),"res.jar");
-                            if (!outputLocation.getParentFile().exists()) {
-                                outputLocation.mkdirs();
+                            if (!appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).exists()) {
+                                appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).mkdirs();
                             }
                             createEmptyZipFile(outputLocation);
                             baseOutput =
@@ -515,7 +515,6 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
     }
 
     private void createEmptyZipFile(File outputLocation) throws IOException {
-
         ZipOutputStream zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(outputLocation)));
         zipOutputStream.close();
 

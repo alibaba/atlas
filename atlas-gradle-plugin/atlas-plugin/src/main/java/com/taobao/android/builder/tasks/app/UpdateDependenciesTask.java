@@ -224,6 +224,9 @@ public class UpdateDependenciesTask extends BaseTask {
         }
         FileCollection updateFileCollection = fileCollection.filter(element -> filesNames.contains(element.getParentFile().getParentFile().getName()));
         ReflectUtils.updateField(processAndroidResources,"symbolListsWithPackageNames",updateFileCollection);
+        appVariantContext.processResAwbsTask.mainDexSymbolFileCollection = updateFileCollection;
+
+
 
 
         try {

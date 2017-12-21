@@ -229,6 +229,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
+import com.taobao.android.builder.tasks.app.bundle.ProcessResAwbsTask;
 import com.taobao.android.builder.tools.bundleinfo.ApkFileListUtils;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
@@ -257,6 +258,9 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     public final Map<String, ProcessAwbAndroidResources> awbsProcessResourcesTask = new HashMap<>();
 
     private final Map<String, AppVariantOutputContext> outputContextMap = Maps.newHashMap();
+
+
+    public ProcessResAwbsTask processResAwbsTask = null;
 
     /**
      * buildCache The manifest of the directory cannot be changed, So save the modified manifest reference

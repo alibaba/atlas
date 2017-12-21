@@ -450,6 +450,28 @@ public class ManifestHelper {
         return modifyManifest;
     }
 
+    public static List<ManifestProvider> getMainDexManifest(AppVariantContext appVariantContext, AtlasDependencyTree dependencyTree, AtlasExtension atlasExtension) {
+
+        Set<String> notMergedArtifacts = getNotMergedBundles(atlasExtension);
+
+        List<ManifestProvider> mainProviders = new ArrayList<>();
+
+        for (AndroidLibrary androidLibrary:dependencyTree.getMainBundle().getAndroidLibraries()){
+            String cord = String.format("%s:%s",
+                    androidLibrary.getResolvedCoordinates().getGroupId(),
+                    androidLibrary.getResolvedCoordinates().getArtifactId());
+
+            if (null != notMergedArtifacts && notMergedArtifacts.contains(cord)) {
+                continue;
+            }
+
+            mainProviders.add(createManifestProvider(androidLibrary, appVariantContext));
+        }
+
+        return mainProviders;
+
+    }
+
     public static class BundleManifestProvider implements ManifestProvider {
 
         private File manifest;

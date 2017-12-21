@@ -254,6 +254,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Iterators;
 import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.apache.commons.beanutils.BeanUtils;
@@ -341,6 +342,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
     private AwbBundle awbBundle;
     private AppVariantOutputContext appVariantContext;
     private AaptGeneration aaptGeneration;
+    public FileCollection mainDexSymbolFileCollection;
 
 
     @Override
@@ -380,6 +382,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 }
             }
         }
+//        libraries.addAll(mainDexSymbolFileCollection.getFiles());
 
         addAaptOptions();
         AaptPackageConfig.Builder aaptPackageCommandBuilder = new AaptPackageConfig.Builder()
@@ -579,7 +582,6 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             final GradleVariantConfiguration config = variantData.getVariantConfiguration();
             appVariantOutputContext.getAwbAndroidResourcesMap()
                     .put(awbBundle.getName(), processResources);
-
             processResources.setAndroidBuilder(tAndroidBuilder);
             processResources.setVariantName(config.getFullName());
             processResources.awbBundle = awbBundle;
@@ -693,7 +695,10 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                                         new Callable<List<? extends AndroidLibrary>>() {
                                             @Override
                                             public List<? extends AndroidLibrary> call() throws Exception {
-                                                return awbBundle.getAndroidLibraries();
+                                                List<AndroidLibrary>awbLibraries = new ArrayList<>();
+                                                awbLibraries.addAll(awbBundle.getAndroidLibraries());
+                                                awbLibraries.add(awbBundle.getAndroidLibrary());
+                                                return awbLibraries;
                                             }
                                         });
             ConventionMappingHelper.map(processResources, "packageForR", new Callable<String>() {

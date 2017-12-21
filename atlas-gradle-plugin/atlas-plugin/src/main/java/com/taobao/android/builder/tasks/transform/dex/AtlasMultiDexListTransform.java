@@ -11,6 +11,7 @@ import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.TransformInputUtil;
 import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.app.UpdateDependenciesTask;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.LoggingManager;
@@ -18,10 +19,13 @@ import org.gradle.api.logging.LoggingManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+
 
 public class AtlasMultiDexListTransform extends BaseProguardAction {
 
@@ -71,7 +75,8 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
         return Stream.of(manifestKeepListProguardFile, userMainDexKeepFile, userMainDexKeepProguard)
                 .filter(Objects::nonNull)
                 .map(SecondaryFile::nonIncremental)
-                .collect(Collectors.toList());    }
+                .collect(Collectors.toList());
+    }
 
     @Override
     public boolean isIncremental() {
@@ -86,18 +91,27 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
         Collection<File> inputs =
                 TransformInputUtil.getAllFiles(transformInvocation.getReferencedInputs());
 
-        if (AtlasBuildContext.androidBuilderMap.get(variantScope.getGlobalScope().getProject()) == null){
+        inputs = filterMainDex();
+
+        if (AtlasBuildContext.androidBuilderMap.get(variantScope.getGlobalScope().getProject()) == null) {
             super.transform(transformInvocation);
-        }else if (AtlasBuildContext.androidBuilderMap.get(variantScope.getGlobalScope().getProject()).multiDexer == null){
+        } else if (AtlasBuildContext.androidBuilderMap.get(variantScope.getGlobalScope().getProject()).multiDexer == null) {
             super.transform(transformInvocation);
         }
         FastMultiDexer fastMultiDexer = (FastMultiDexer) AtlasBuildContext.androidBuilderMap.get(variantScope.getGlobalScope().getProject()).multiDexer;
 
-        fastMultiDexer.repackageJarList(inputs,mainDexListFile);
+        fastMultiDexer.repackageJarList(inputs, mainDexListFile);
 
     }
 
+    private Collection<File> filterMainDex() {
+        Set<File> fileSet = new HashSet<>();
+        for (UpdateDependenciesTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
+            fileSet.add(fileIdentity.file);
+
+        }
+        return fileSet;
 
 
-
+    }
 }

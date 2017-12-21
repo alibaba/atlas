@@ -417,13 +417,13 @@ public class AtlasBuilder extends AndroidBuilder {
                 }
 
                 //why do this?
-//                writeLines(mergedSymbolFile, FileUtils.readLines(mainRTxt), true);
+                writeLines(mergedSymbolFile, FileUtils.readLines(mainRTxt), true);
             } catch (IOException e) {
                 throw new RuntimeException("Could not load file ", e);
             }
             SymbolTable mainSymbols =
                     mainRTxt.isFile()
-                            ? SymbolIo.readFromAapt(mainRTxt, mainPackageName)
+                            ? SymbolIo.readFromAapt(mergedSymbolFile, mainPackageName)
                             : SymbolTable.builder().tablePackage(mainPackageName).build();
 
             // For each dependency, load its symbol file.

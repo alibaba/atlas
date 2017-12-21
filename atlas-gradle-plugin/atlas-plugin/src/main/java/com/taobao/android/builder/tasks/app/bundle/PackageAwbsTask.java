@@ -287,9 +287,6 @@ public class PackageAwbsTask extends BaseTask {
 
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-            if (awbBundle.getName().contains("wangxin")){
-                continue;
-            }
             runnables.add(() -> {
 
                 try {

@@ -133,9 +133,6 @@ public class AtlasDexMergerTransform extends DexMergerTransform{
                 Map.Entry<AwbBundle,Multimap> entry =(Map.Entry<AwbBundle,Multimap> )iterator.next();
                 Multimap<QualifiedContent,File> multimap = entry.getValue();
                 AwbBundle awbBundle = entry.getKey();
-                if (awbBundle.getName().contains("wangxin")){
-                    continue;
-                }
                 File outPutFolder = appVariantOutputContext.getAwbDexOutput(awbBundle.getName());
                 List<File>inputs = new ArrayList<>();
                 for (QualifiedContent qualifiedContent : multimap.asMap().keySet()){

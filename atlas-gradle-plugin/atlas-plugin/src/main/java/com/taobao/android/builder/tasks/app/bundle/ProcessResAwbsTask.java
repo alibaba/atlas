@@ -221,6 +221,7 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tasks.manager.TaskCreater;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.gradle.api.GradleException;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -238,6 +239,8 @@ public class ProcessResAwbsTask extends BaseTask {
 
     private AppVariantContext appVariantContext;
     private AppVariantOutputContext appVariantOutputContext;
+
+    public FileCollection mainDexSymbolFileCollection;
 
     private BaseVariantOutput baseVariantOutput;
 
@@ -295,6 +298,7 @@ public class ProcessResAwbsTask extends BaseTask {
                             getProject(),
                             configAction.getName(),
                             configAction.getType());
+                    processAwbAndroidResources.mainDexSymbolFileCollection = mainDexSymbolFileCollection;
 
                     appVariantContext.awbsProcessResourcesTask.put(awbBundle.getName(),processAwbAndroidResources);
                     configAction.execute(processAwbAndroidResources);
@@ -336,8 +340,8 @@ public class ProcessResAwbsTask extends BaseTask {
             super.execute(processResAwbsTask);
             processResAwbsTask.baseVariantOutput = baseVariantOutput;
             processResAwbsTask.appVariantContext = variantContext;
-
             processResAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
+            variantContext.processResAwbsTask= processResAwbsTask;
         }
     }
 }

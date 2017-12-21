@@ -485,15 +485,15 @@ public class AtlasConfigurationHelper {
         dependencyHandler.registerTransform(
                 reg ->{
                     reg.getFrom().attribute(ARTIFACT_FORMAT,explodedAwbType);
-                    reg.getTo().attribute(ARTIFACT_FORMAT,AtlasAndroidArtifacts.AtlasArtifactType.LIBS.getType());
+                    reg.getTo().attribute(ARTIFACT_FORMAT,AtlasAndroidArtifacts.TYPE_LIBS);
                     reg.artifactTransform(LoadSolibFromLibsTransform.class);
                 }
         );
 
         dependencyHandler.registerTransform(
                 reg ->{
-                    reg.getFrom().attribute(ARTIFACT_FORMAT,AtlasAndroidArtifacts.ArtifactType.EXPLODED_AAR.getType());
-                    reg.getTo().attribute(ARTIFACT_FORMAT,AtlasAndroidArtifacts.AtlasArtifactType.LIBS.getType());
+                    reg.getFrom().attribute(ARTIFACT_FORMAT, AtlasAndroidArtifacts.AtlasArtifactType.EXPLODED_AAR.getType());
+                    reg.getTo().attribute(ARTIFACT_FORMAT,AtlasAndroidArtifacts.TYPE_LIBS);
                     reg.artifactTransform(LoadSolibFromLibsTransform.class);
                 }
         );
