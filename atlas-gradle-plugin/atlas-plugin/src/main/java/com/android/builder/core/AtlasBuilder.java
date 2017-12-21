@@ -235,6 +235,7 @@ import com.android.utils.ILogger;
 import com.taobao.android.AaptLib;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tasks.app.bundle.AtlasSymbolIo;
 import com.taobao.android.builder.tools.*;
 import com.taobao.android.builder.tools.cache.FileCacheCenter;
 import com.taobao.android.builder.tools.cache.FileCacheException;
@@ -417,13 +418,13 @@ public class AtlasBuilder extends AndroidBuilder {
                 }
 
                 //why do this?
-                writeLines(mergedSymbolFile, FileUtils.readLines(mainRTxt), true);
+                writeLines(mergedSymbolFile, FileUtils.readLines(mainRTxt), false);
             } catch (IOException e) {
                 throw new RuntimeException("Could not load file ", e);
             }
             SymbolTable mainSymbols =
-                    mainRTxt.isFile()
-                            ? SymbolIo.readFromAapt(mergedSymbolFile, mainPackageName)
+                    mergedSymbolFile.isFile()
+                            ? AtlasSymbolIo.readFromAapt(mergedSymbolFile, mainPackageName)
                             : SymbolTable.builder().tablePackage(mainPackageName).build();
 
             // For each dependency, load its symbol file.
@@ -687,12 +688,8 @@ public class AtlasBuilder extends AndroidBuilder {
 
         //todo  Set the dexOptions
         DefaultDexOptions defaultDexOptions = DefaultDexOptions.copyOf(dexOptions);
-        if (defaultDexOptions.getAdditionalParameters().contains("--useMyDex")) {
-            defaultDexOptions.getAdditionalParameters().remove("--useMyDex");
-            useMyDex = true;
-        }
 
-        if (!multiDex || useMyDex) {
+        if (!multiDex) {
             defaultDexOptions.setJavaMaxHeapSize("500m");
             defaultDexOptions.setDexInProcess(true);
         }
@@ -782,7 +779,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
 
     public void writeLines(File file,List<String>lines,boolean append){
-         Set<String>mergeLines = new HashSet<>();
+         Set<String>mergeLines = new LinkedHashSet<>();
         try {
             List<String> readLines = FileUtils.readLines(file);
             mergeLines.addAll(readLines);
@@ -794,4 +791,6 @@ public class AtlasBuilder extends AndroidBuilder {
 
 
     }
+
+
 }
