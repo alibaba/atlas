@@ -364,24 +364,18 @@ public class AtlasBuilder extends AndroidBuilder {
 
                 getTargetInfo();
 
-                AaptOptions aaptOptions = (AaptOptions)FieldUtils.readField(aaptConfigBuilder.build(),
-                                                                            "mAaptOptions",
-                                                                            true);
+                AaptOptions aaptOptions = (AaptOptions)FieldUtils.readField(aaptConfigBuilder.build(), "mAaptOptions",
+                    true);
 
                 ProcessExecutor processExecutor = (ProcessExecutor)FieldUtils.readField(aapt, "mProcessExecutor", true);
                 ProcessOutputHandler processOutputHandler = (ProcessOutputHandler)FieldUtils.readField(aapt,
-                                                                                                       "mProcessOutputHandler",
-                                                                                                       true);
+                    "mProcessOutputHandler", true);
                 BuildToolInfo buildToolInfo = (BuildToolInfo)FieldUtils.readField(aapt, "mBuildToolInfo", true);
                 PngProcessMode processMode = (PngProcessMode)FieldUtils.readField(aapt, "mProcessMode", true);
                 int cruncherProcesses = aaptOptions.getCruncherProcesses();
 
-                aapt = new AtlasAapt(processExecutor,
-                                     processOutputHandler,
-                                     buildToolInfo,
-                                     getLogger(),
-                                     processMode,
-                                     cruncherProcesses);
+                aapt = new AtlasAapt(processExecutor, processOutputHandler, buildToolInfo, getLogger(), processMode,
+                    cruncherProcesses);
             } catch (Throwable e) {
                 throw new GradleException("aapt exception", e);
             }
@@ -422,6 +416,7 @@ public class AtlasBuilder extends AndroidBuilder {
         aaptConfigBuilder.setLogger(mLogger);
         AaptPackageConfig aaptConfig = aaptConfigBuilder.build();
         try {
+            com.android.utils.FileUtils.deleteDirectoryContents(aaptConfig.getSymbolOutputDir());
             aapt.link(aaptConfig).get();
         } catch (Exception e) {
             throw new ProcessException("Failed to execute aapt", e);
@@ -454,13 +449,9 @@ public class AtlasBuilder extends AndroidBuilder {
 
             if (hasResources) {
                 // Load the main symbol file.
-                File explodedDir = atlasExtension.getProject().file(atlasExtension.getProject()
-                                                                        .getBuildDir()
-                                                                        .getAbsolutePath()
-                                                                        + "/"
-                                                                        + FD_INTERMEDIATES
-                                                                        + "/exploded-ap"
-                                                                        + "/");
+                File explodedDir = atlasExtension.getProject().file(
+                    atlasExtension.getProject().getBuildDir().getAbsolutePath() + "/" + FD_INTERMEDIATES
+                        + "/exploded-ap" + "/");
                 File mainRTxt2 = new File(explodedDir, "R.txt");
                 SymbolTable mainSymbols2 = mainRTxt2.isFile() ? SymbolIo.read(mainRTxt2)
                     : SymbolTable.builder().build();
@@ -480,9 +471,8 @@ public class AtlasBuilder extends AndroidBuilder {
                     throw new IOException("Failed to read manifest " + depMan.getAbsolutePath(), e);
                 }
                 if (mainPackageName.equals(depPackageName) && enforceUniquePackageName) {
-                    throw new RuntimeException(String.format(
-                        "Error: A library uses the same package as this project: %s",
-                        depPackageName));
+                    throw new RuntimeException(
+                        String.format("Error: A library uses the same package as this project: %s", depPackageName));
                 }
                 File rFile = dependency.getSymbolFile();
                 SymbolTable depSymbols = rFile.exists() ? SymbolIo.read(rFile) : SymbolTable.builder().build();
@@ -561,7 +551,7 @@ public class AtlasBuilder extends AndroidBuilder {
                 if (appPackageName.equals(packageName)) {
                     if (enforceUniquePackageName) {
                         String msg = String.format("Error: A library uses the same package as this project: %s",
-                                                   packageName);
+                            packageName);
                         throw new RuntimeException(msg);
                     }
 
@@ -628,9 +618,8 @@ public class AtlasBuilder extends AndroidBuilder {
         checkState(getTargetInfo() != null, "Cannot call processResources() before setTargetInfo() is called.");
 
         // launch aapt: create the command line
-        ProcessInfo processInfo = aaptCommand.build(getTargetInfo().getBuildTools(),
-                                                    getTargetInfo().getTarget(),
-                                                    getLogger());
+        ProcessInfo processInfo = aaptCommand.build(getTargetInfo().getBuildTools(), getTargetInfo().getTarget(),
+            getLogger());
 
         processInfo = new TProcessInfo(processInfo, aaptCommand.getSymbolOutputDir());
 
@@ -673,14 +662,12 @@ public class AtlasBuilder extends AndroidBuilder {
                 if (baseSymbolFile != null) {
                     FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(baseSymbolFile), true);
                 } else {
-                    FileUtils.writeLines(mergedSymbolFile,
-                                         Collections2.filter(FileUtils.readLines(mergedSymbolFile),
-                                                             input -> !input.contains("styleable")));
+                    FileUtils.writeLines(mergedSymbolFile, Collections2
+                        .filter(FileUtils.readLines(mergedSymbolFile), input -> !input.contains("styleable")));
 
                     sLogger.warn(String.format(
                         "Please check and update your baseline project atlasplugin : processAwbResources expected a base symbol file"
-                            + " at:\n %s \nbut the file does not exist or is a directory",
-                        baseSymbolFile));
+                            + " at:\n %s \nbut the file does not exist or is a directory", baseSymbolFile));
                 }
             }
         } catch (IOException e) {
@@ -725,9 +712,8 @@ public class AtlasBuilder extends AndroidBuilder {
                 if (appPackageName.equals(packageName)) {
                     if (enforceUniquePackageName) {
                         String msg = String.format("Error: A library uses the same package as this project: %s\n"
-                                                       + "You can temporarily disable this error with android.enforceUniquePackageName=false\n"
-                                                       + "However, this is temporary and will be enforced in 1.0",
-                                                   packageName);
+                            + "You can temporarily disable this error with android.enforceUniquePackageName=false\n"
+                            + "However, this is temporary and will be enforced in 1.0", packageName);
                         throw new RuntimeException(msg);
                     }
 
@@ -753,9 +739,8 @@ public class AtlasBuilder extends AndroidBuilder {
 
                 if (enforceUniquePackageName && symbols.size() > 1) {
                     String msg = String.format("Error: more than one library with package name '%s'\n"
-                                                   + "You can temporarily disable this error with android.enforceUniquePackageName=false\n"
-                                                   + "However, this is temporary and will be enforced in 1.0",
-                                               packageName);
+                        + "You can temporarily disable this error with android.enforceUniquePackageName=false\n"
+                        + "However, this is temporary and will be enforced in 1.0", packageName);
                     throw new RuntimeException(msg);
                 }
 
@@ -970,9 +955,8 @@ public class AtlasBuilder extends AndroidBuilder {
 
                     multiDexer.dexMerge(dexs, outDexFolder);
                 } else {
-                    DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
-                                                        CollisionPolicy.KEEP_FIRST,
-                                                        new DxContext());
+                    DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]), CollisionPolicy.KEEP_FIRST,
+                        new DxContext());
                     Dex dex = dexMerger.merge();
 
                     File dexFile = new File(outDexFolder, "classes.dex");
@@ -988,9 +972,8 @@ public class AtlasBuilder extends AndroidBuilder {
 
             long finishTime = System.currentTimeMillis();
 
-            sLogger.info("[mtldex] dex consume {} , dexmerge consume {}",
-                         endDexTime - startTime,
-                         finishTime - endDexTime);
+            sLogger.info("[mtldex] dex consume {} , dexmerge consume {}", endDexTime - startTime,
+                finishTime - endDexTime);
         } else {
             super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler);
         }
@@ -1032,8 +1015,8 @@ public class AtlasBuilder extends AndroidBuilder {
         String md5 = "";
         File dexFile = new File(outFile, "classes.dex");
 
-        if (!inputFile.getName().startsWith("combined") && !(inputFile.getName().startsWith("main")
-            && inputFile.getName().endsWith("jar"))) {
+        if (!inputFile.getName().startsWith("combined") && !(inputFile.getName().startsWith("main") && inputFile
+            .getName().endsWith("jar"))) {
 
             if (inputFile.isFile()) {
                 md5 = MD5Util.getFileMD5(inputFile);
@@ -1044,9 +1027,8 @@ public class AtlasBuilder extends AndroidBuilder {
             if (StringUtils.isNotEmpty(md5)) {
                 AtlasBuildContext.sBuilderAdapter.fileCache.fetchFile(md5, dexFile, "pre-dex");
                 if (dexFile.exists() && dexFile.length() > 0) {
-                    sLogger.info("[mtldex] hit cache dex for {} , {}",
-                                 inputFile.getAbsolutePath(),
-                                 dexFile.getAbsolutePath());
+                    sLogger.info("[mtldex] hit cache dex for {} , {}", inputFile.getAbsolutePath(),
+                        dexFile.getAbsolutePath());
                     return;
                 } else {
                     sLogger.info("[mtldex] discache dex for {}", inputFile.getAbsolutePath());
@@ -1107,13 +1089,12 @@ public class AtlasBuilder extends AndroidBuilder {
                 javaResourceArchiveMods.put(resourceLocation, FileStatus.NEW);
             } else {
                 Set<RelativeFile> files = RelativeFiles.fromDirectory(resourceLocation,
-                                                                      new java.util.function.Predicate<RelativeFile>() {
-                                                                          @Override
-                                                                          public boolean test(
-                                                                              RelativeFile relativeFile) {
-                                                                              return relativeFile.getFile().isFile();
-                                                                          }
-                                                                      });
+                    new java.util.function.Predicate<RelativeFile>() {
+                        @Override
+                        public boolean test(RelativeFile relativeFile) {
+                            return relativeFile.getFile().isFile();
+                        }
+                    });
                 javaResourceMods.putAll(Maps.asMap(files, Functions.constant(FileStatus.NEW)));
             }
         }
@@ -1126,15 +1107,13 @@ public class AtlasBuilder extends AndroidBuilder {
                 jniArchiveMods.put(jniLoc, FileStatus.NEW);
             } else {
                 Set<RelativeFile> files = RelativeFiles.fromDirectory(jniLoc,
-                                                                      RelativeFiles.fromPathPredicate(
-                                                                          nativeLibraryPredicate));
+                    RelativeFiles.fromPathPredicate(nativeLibraryPredicate));
                 jniMods.putAll(Maps.asMap(files, Functions.constant(FileStatus.NEW)));
             }
         }
 
         Set<RelativeFile> assets = assetsFolder == null ? Collections.emptySet() : RelativeFiles.fromDirectory(
-            assetsFolder,
-            new java.util.function.Predicate<RelativeFile>() {
+            assetsFolder, new java.util.function.Predicate<RelativeFile>() {
                 @Override
                 public boolean test(RelativeFile relativeFile) {
                     return relativeFile.getFile().isFile();
@@ -1146,20 +1125,12 @@ public class AtlasBuilder extends AndroidBuilder {
         boolean v1SigningEnabled = false;
         boolean v2SigningEnabled = false;
 
-        ApkCreatorFactory.CreationData creationData = new ApkCreatorFactory.CreationData(outApkLocation,
-                                                                                         key,
-                                                                                         certificate,
-                                                                                         v1SigningEnabled,
-                                                                                         v2SigningEnabled,
-                                                                                         null,
-                                                                                         // BuiltBy
-                                                                                         "atlas",
-                                                                                         minSdkVersion,
-                                                                                         NativeLibrariesPackagingMode.COMPRESSED,
-                                                                                         noCompressPredicate::apply);
-        try (OldPackager packager = new OldPackager(creationData,
-                                                    androidResPkgLocation,
-                                                    LoggerWrapper.getLogger(AtlasBuilder.class))) {
+        ApkCreatorFactory.CreationData creationData = new ApkCreatorFactory.CreationData(outApkLocation, key,
+            certificate, v1SigningEnabled, v2SigningEnabled, null,
+            // BuiltBy
+            "atlas", minSdkVersion, NativeLibrariesPackagingMode.COMPRESSED, noCompressPredicate::apply);
+        try (OldPackager packager = new OldPackager(creationData, androidResPkgLocation,
+            LoggerWrapper.getLogger(AtlasBuilder.class))) {
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
                 packager.addDexFiles(dexFolders);
@@ -1171,14 +1142,13 @@ public class AtlasBuilder extends AndroidBuilder {
             }
 
             for (Map.Entry<File, FileStatus> resourceArchiveUpdate : javaResourceArchiveMods.entrySet()) {
-                packager.updateResourceArchive(resourceArchiveUpdate.getKey(),
-                                               resourceArchiveUpdate.getValue(),
-                                               new java.util.function.Predicate<String>() {
-                                                   @Override
-                                                   public boolean test(String s) {
-                                                       return false;
-                                                   }
-                                               });
+                packager.updateResourceArchive(resourceArchiveUpdate.getKey(), resourceArchiveUpdate.getValue(),
+                    new java.util.function.Predicate<String>() {
+                        @Override
+                        public boolean test(String s) {
+                            return false;
+                        }
+                    });
             }
 
             for (Map.Entry<RelativeFile, FileStatus> jniLibUpdates : jniMods.entrySet()) {
@@ -1186,14 +1156,13 @@ public class AtlasBuilder extends AndroidBuilder {
             }
 
             for (Map.Entry<File, FileStatus> resourceArchiveUpdate : jniArchiveMods.entrySet()) {
-                packager.updateResourceArchive(resourceArchiveUpdate.getKey(),
-                                               resourceArchiveUpdate.getValue(),
-                                               new java.util.function.Predicate<String>() {
-                                                   @Override
-                                                   public boolean test(String s) {
-                                                       return nativeLibraryPredicate.test(s);
-                                                   }
-                                               });
+                packager.updateResourceArchive(resourceArchiveUpdate.getKey(), resourceArchiveUpdate.getValue(),
+                    new java.util.function.Predicate<String>() {
+                        @Override
+                        public boolean test(String s) {
+                            return nativeLibraryPredicate.test(s);
+                        }
+                    });
             }
 
             for (RelativeFile asset : assets) {
@@ -1209,18 +1178,14 @@ public class AtlasBuilder extends AndroidBuilder {
 
     private static final String MANIFEST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
         + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-        + "          package=\"${packageName}\"\n"
-        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-        + "          android:versionCode=\"${versionCode}\"\n"
-        + "          android:versionName=\"${versionName}\">\n"
-        + "    <application></application>\n"
-        + "</manifest>\n";
+        + "          package=\"${packageName}\"\n" + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+        + "          android:versionCode=\"${versionCode}\"\n" + "          android:versionName=\"${versionName}\">\n"
+        + "    <application></application>\n" + "</manifest>\n";
 
     public void mergeManifestsForBunlde(File outputFile, String packageName, String versionName, String versionCode)
         throws IOException {
 
-        String xml = MANIFEST_TEMPLATE.replace("${packageName}", packageName)
-            .replace("${versionCode}", versionCode)
+        String xml = MANIFEST_TEMPLATE.replace("${packageName}", packageName).replace("${versionCode}", versionCode)
             .replace("${versionName}", versionName);
 
         outputFile.getParentFile().mkdirs();
@@ -1235,10 +1200,8 @@ public class AtlasBuilder extends AndroidBuilder {
             return super.getDexByteCodeConverter();
         }
         if (dexByteCodeConverter == null) {
-            dexByteCodeConverter = new DexByteCodeConverterHook(getLogger(),
-                                                                defaultBuilder.getTargetInfo(),
-                                                                javaProcessExecutor,
-                                                                verboseExec);
+            dexByteCodeConverter = new DexByteCodeConverterHook(getLogger(), defaultBuilder.getTargetInfo(),
+                javaProcessExecutor, verboseExec);
         }
         sLogger.debug("use DexByteCodeConverterHook......");
         return dexByteCodeConverter;
