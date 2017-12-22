@@ -11,7 +11,8 @@ import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.TransformInputUtil;
 import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.tasks.app.UpdateDependenciesTask;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.LoggingManager;
@@ -106,7 +107,7 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
 
     private Collection<File> filterMainDex() {
         Set<File> fileSet = new HashSet<>();
-        for (UpdateDependenciesTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
+        for (BuildAtlasEnvTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
             fileSet.add(fileIdentity.file);
 
         }

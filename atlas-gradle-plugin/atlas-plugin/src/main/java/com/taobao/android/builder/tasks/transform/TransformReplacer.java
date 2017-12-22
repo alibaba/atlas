@@ -86,6 +86,7 @@ public class TransformReplacer {
                     projectOptions.get(IntegerOption.DEXING_READ_BUFFER_SIZE),
                     projectOptions.get(IntegerOption.DEXING_WRITE_BUFFER_SIZE),
                     variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable());
+            atlasDexArchiveBuilderTransform.setTransformTask(transformTask);
             ReflectUtils.updateField(transformTask,"transform",atlasDexArchiveBuilderTransform);
         }
 

@@ -12,6 +12,7 @@ import com.android.build.gradle.internal.packaging.ParsedPackagingOptions;
 import com.android.build.gradle.internal.pipeline.AtlasIncrementalFileMergeTransformUtils;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.IncrementalFileMergerTransformUtils;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
 import com.android.builder.files.FileCacheByPath;
@@ -20,7 +21,9 @@ import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.FileUtils;
 import com.android.utils.ImmutableCollectors;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 
 import java.io.*;
@@ -52,7 +55,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
     private final File intermediateDir;
 
     private final Predicate<String> acceptedPathsPredicate;
-    @NonNull private final File cacheDir;
+    @NonNull private File cacheDir;
 
 
     private AppVariantOutputContext appVariantOutputContext;
@@ -69,8 +72,6 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                 variantScope.getFullVariantName() + "-" + name);
         waitableExecutor = WaitableExecutor.useGlobalSharedThreadPool();
         this.appVariantOutputContext = appVariantOutputContext;
-        cacheDir = new File(intermediateDir, "zip-cache");
-
         if (mergedType == QualifiedContent.DefaultContentType.RESOURCES) {
             acceptedPathsPredicate =
                     path -> !path.endsWith(SdkConstants.DOT_CLASS)
@@ -104,6 +105,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
         waitableExecutor.execute(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
+                cacheDir = new File(intermediateDir, "zip-cache");
                 FileUtils.mkdirs(cacheDir);
                 FileCacheByPath zipCache = new FileCacheByPath(cacheDir);
                 TransformOutputProvider outputProvider = invocation.getOutputProvider();
@@ -314,10 +316,10 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                              * This is a full build.
                              */
                             state = new IncrementalFileMergerState();
-                            if (appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle()).exists()) {
+                            if (appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle()).exists() && mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
                                 FileUtils.deleteDirectoryContents(appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle()));
                             }
-                            if (appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).exists()) {
+                            if (appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).exists() && mergedType.contains(QualifiedContent.DefaultContentType.RESOURCES)) {
                                 FileUtils.deleteDirectoryContents(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()));
                             }
 
@@ -438,9 +440,6 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                                             mergeTransformAlgorithm, MergeOutputWriters.toZip(outputLocation));
                         } else {
                             File outputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
-                            if (!outputLocation.exists()) {
-                                outputLocation.mkdirs();
-                            }
                             baseOutput =
                                     IncrementalFileMergerOutputs.fromAlgorithmAndWriter(
                                             mergeTransformAlgorithm,
@@ -500,7 +499,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
 
                         cacheUpdates.forEach(Runnable::run);
 
-                        return null;
+                       return null;
                     }
                 });
 
@@ -513,6 +512,8 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
         }
 
     }
+
+
 
     private void createEmptyZipFile(File outputLocation) throws IOException {
         ZipOutputStream zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(outputLocation)));

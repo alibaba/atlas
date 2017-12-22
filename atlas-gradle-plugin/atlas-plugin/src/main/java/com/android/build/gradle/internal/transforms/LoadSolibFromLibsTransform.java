@@ -17,7 +17,7 @@ public class LoadSolibFromLibsTransform extends ArtifactTransform {
     @Override
     public List<File> transform(File input) {
 
-        File libs =  new File(input,"libs");
+        File libs =  new File(input,"jars/libs");
 
         if (!libs.exists()){
             return ImmutableList.of();

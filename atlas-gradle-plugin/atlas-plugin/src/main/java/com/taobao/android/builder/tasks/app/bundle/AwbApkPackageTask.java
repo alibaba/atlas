@@ -185,9 +185,12 @@ public class AwbApkPackageTask {
 
 //        if (packagingScope.getMultiOutputPolicy() == MultiOutputPolicy.MULTI_APK) {
 
-        FileUtils.copyFileToDirectory(outputFile,new File(packagingScope.getJniFolders().getSingleFile(),"lib/armeabi"));
+            FileUtils.copyFileToDirectory(outputFile, new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi"));
+
 //        }
 //        recordMetrics(outputFile, processedResources);
+
+
 
         return outputFile;
     }

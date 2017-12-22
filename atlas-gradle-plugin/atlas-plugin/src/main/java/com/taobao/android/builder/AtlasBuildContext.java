@@ -218,7 +218,7 @@ import com.taobao.android.builder.adapter.BuilderAdapter;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
-import com.taobao.android.builder.tasks.app.UpdateDependenciesTask;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import org.gradle.api.Project;
 
 import java.io.File;
@@ -253,9 +253,9 @@ public class AtlasBuildContext {
 
     public static AtlasConfigurationHelper atlasConfigurationHelper;
 
-    public static LinkedHashSet<UpdateDependenciesTask.FileIdentity>mainDexJar = new LinkedHashSet<>();
+    public static LinkedHashSet<BuildAtlasEnvTask.FileIdentity>mainDexJar = new LinkedHashSet<>();
 
-    public static LinkedHashSet<UpdateDependenciesTask.FileIdentity>awbDexJar = new LinkedHashSet<>();
+    public static LinkedHashSet<BuildAtlasEnvTask.FileIdentity>awbDexJar = new LinkedHashSet<>();
 
     public static Map<AwbBundle, Multimap<QualifiedContent, File>> awbDexFiles = new HashMap<AwbBundle, com.google.common.collect.Multimap<QualifiedContent, File>>();
 
@@ -276,6 +276,7 @@ public class AtlasBuildContext {
     public static Map<String, Boolean> mainNativeSoMap = new LinkedHashMap<>();
 
     public static Map<String, Boolean> mainResMap = new LinkedHashMap<>();
+    public static Set<File> localLibs = new HashSet<>();
 
     public static void reset(){
         dependencyTraceMap.clear();

@@ -232,6 +232,7 @@ import com.android.manifmerger.MergingReport;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.BuildToolInfo.PathId;
 import com.android.utils.ILogger;
+import com.google.common.collect.Sets;
 import com.taobao.android.AaptLib;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
@@ -418,24 +419,34 @@ public class AtlasBuilder extends AndroidBuilder {
                 }
 
                 //why do this?
-                writeLines(mergedSymbolFile, FileUtils.readLines(mainRTxt), false);
+                FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(mainRTxt), true);
             } catch (IOException e) {
                 throw new RuntimeException("Could not load file ", e);
             }
+            for (File file:aaptConfig.getLibrarySymbolTableFiles()){
+                List<String>lines = FileUtils.readLines(file);
+                if (lines.size() > 1) {
+                    FileUtils.writeLines(mergedSymbolFile, lines.subList(1, lines.size() - 1), true);
+                }
+            }
+
             SymbolTable mainSymbols =
                     mergedSymbolFile.isFile()
                             ? AtlasSymbolIo.readFromAapt(mergedSymbolFile, mainPackageName)
                             : SymbolTable.builder().tablePackage(mainPackageName).build();
+
 
             // For each dependency, load its symbol file.
             Set<SymbolTable> depSymbolTables =
                     SymbolUtils.loadDependenciesSymbolTables(
                             aaptConfig.getLibrarySymbolTableFiles(), mainPackageName);
 
-            boolean finalIds = true;
+            boolean finalIds = false;
             if (aaptConfig.getVariantType() == VariantType.LIBRARY) {
                 finalIds = false;
             }
+
+            SymbolIo.exportToJava(mainSymbols, sourceOut, finalIds);
 
             RGeneration.generateRForLibraries(mainSymbols, depSymbolTables, sourceOut, finalIds);
         }

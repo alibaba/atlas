@@ -2,6 +2,7 @@ package com.taobao.android.builder.tasks.app;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -9,6 +10,9 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.ide.AtlasAndroidLibraryImpl;
 import com.android.build.gradle.internal.ide.AtlasDependencyGraph;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
+import com.android.build.gradle.internal.pipeline.OriginalStream;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.publishing.AtlasAndroidArtifacts;
 import com.android.build.gradle.internal.tasks.BaseTask;
@@ -60,7 +64,7 @@ import static com.android.build.gradle.internal.publishing.AndroidArtifacts.Cons
  * @create 2017-12-02 上午7:34
  */
 
-public class UpdateDependenciesTask extends BaseTask {
+public class BuildAtlasEnvTask extends BaseTask {
 
 
     private  AppVariantOutputContext appVariantOutputContext;
@@ -97,6 +101,11 @@ public class UpdateDependenciesTask extends BaseTask {
         //this is no used ,if used in future add to transform!
 
         Set<ResolvedArtifactResult> nativeLibsArtifacts2 = nativeLibs2.getArtifacts();
+
+        nativeLibsArtifacts.addAll(nativeLibsArtifacts2);
+
+        AtlasBuildContext.localLibs = nativeLibs2.getArtifactFiles().getFiles();
+
 
         for (ResolvedArtifactResult resolvedArtifactResult: jarArtifacts){
             ComponentIdentifier componentIdentifier = resolvedArtifactResult.getId().getComponentIdentifier();
@@ -345,7 +354,7 @@ public class UpdateDependenciesTask extends BaseTask {
     }
 
 
-    public static class ConfigAction extends MtlBaseTaskAction<UpdateDependenciesTask> {
+    public static class ConfigAction extends MtlBaseTaskAction<BuildAtlasEnvTask> {
 
         private AppVariantContext appVariantContext;
 
@@ -357,16 +366,16 @@ public class UpdateDependenciesTask extends BaseTask {
 
         @Override
         public String getName() {
-            return scope.getTaskName("update", "Dependencies");
+            return scope.getTaskName("build", "atlasEnv");
         }
 
         @Override
-        public Class<UpdateDependenciesTask> getType() {
-            return UpdateDependenciesTask.class;
+        public Class<BuildAtlasEnvTask> getType() {
+            return BuildAtlasEnvTask.class;
         }
 
         @Override
-        public void execute(UpdateDependenciesTask updateDependenciesTask) {
+        public void execute(BuildAtlasEnvTask updateDependenciesTask) {
             super.execute(updateDependenciesTask);
             updateDependenciesTask.appVariantContext = this.appVariantContext;
             updateDependenciesTask.compileManifests =

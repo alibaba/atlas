@@ -5,10 +5,8 @@ import com.android.annotations.Nullable;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.transforms.DexMergerTransform;
 import com.android.build.gradle.internal.transforms.DexMergerTransformCallable;
-import com.android.build.gradle.internal.transforms.TransformInputUtil;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.dexing.DexMergerTool;
 import com.android.builder.dexing.DexingType;
@@ -21,9 +19,14 @@ import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.transform.cache.CacheFactory;
+import com.taobao.android.builder.tasks.transform.cache.DexCache;
+import com.taobao.android.builder.tasks.transform.cache.DexMergeCache;
 import org.gradle.api.file.FileCollection;
 import java.nio.file.Path;
 import java.io.File;
@@ -46,6 +49,9 @@ public class AtlasDexMergerTransform extends DexMergerTransform{
     private ErrorReporter errorReporter;
     private ILogger logger;
     private DexMergerTool dexMergerTool;
+    private DexMergeCache dexCache;
+    private static final String id = "atlasDexmerge";
+    private static final String CACHE_VERSION="1.0";
 
     private int minSDK;
     private boolean isDebuggable;
@@ -103,7 +109,10 @@ public class AtlasDexMergerTransform extends DexMergerTransform{
 
     @Override
     public Map<String, Object> getParameterInputs() {
-        return super.getParameterInputs();
+        Map<String, Object> params = new LinkedHashMap<>(2);
+        params.put("dexing-type", dexingType.name());
+        params.put("dex-merger-tool", dexMergerTool.name());
+        return params;
     }
 
     @Override
@@ -119,6 +128,7 @@ public class AtlasDexMergerTransform extends DexMergerTransform{
     @Override
     public void transform(TransformInvocation transformInvocation) throws TransformException, IOException, InterruptedException {
         super.transform(transformInvocation);
+        dexCache = (DexMergeCache) CacheFactory.get(appVariantOutputContext.getVariantContext().getProject(),id,CACHE_VERSION,this,transformInvocation, DexMergeCache.class);
         ProcessOutputHandler outputHandler =
                 new ParsingProcessOutputHandler(
                         new ToolOutputParser(new DexParser(), Message.Kind.ERROR, logger),
@@ -140,6 +150,7 @@ public class AtlasDexMergerTransform extends DexMergerTransform{
                 }
                 mergeTasks = handleLegacyAndMonoDex(inputs,outputHandler.createOutput(),outPutFolder);
                 mergeTasks.forEach(ForkJoinTask::join);
+                dexCache.saveContent();
             }
 
         }
@@ -164,11 +175,17 @@ public class AtlasDexMergerTransform extends DexMergerTransform{
             return ImmutableList.of();
 
         }
+         ArrayList dexesToMerges = new ArrayList<Path>();
 
-        FileUtils.cleanOutputDir(awbDexOutFolder);
+        dexesToMerges.addAll(dexesToMerge);
 
-
-        return ImmutableList.of(submitForMerging(output, awbDexOutFolder, dexesToMerge, null));
+        if (dexCache.getCache(dexesToMerges).size() > 0){
+            return ImmutableList.of();
+        }else {
+            FileUtils.cleanOutputDir(awbDexOutFolder);
+            dexCache.mergeCache(dexesToMerges, Lists.newArrayList(awbDexOutFolder.listFiles()));
+        }
+        return ImmutableList.of(submitForMerging(output, awbDexOutFolder, dexesToMerges, null));
     }
 
     private boolean valid(File file){

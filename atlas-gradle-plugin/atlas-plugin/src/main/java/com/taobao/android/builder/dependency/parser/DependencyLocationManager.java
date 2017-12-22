@@ -212,7 +212,7 @@ package com.taobao.android.builder.dependency.parser;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.utils.FileCache;
 import com.android.utils.FileUtils;
-import com.taobao.android.builder.tasks.app.UpdateDependenciesTask;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 
@@ -236,9 +236,9 @@ public class DependencyLocationManager {
             project.getLogger().info("missing " + mavenCoordinates.toString());
         }
 
-//        if (UpdateDependenciesTask.allManifests.containsKey(mavenCoordinates.)){
+//        if (BuildAtlasEnvTask.allManifests.containsKey(mavenCoordinates.)){
 //
-//            return UpdateDependenciesTask.allManifests.get(mavenCoordinates.toString().split("@")[0]);
+//            return BuildAtlasEnvTask.allManifests.get(mavenCoordinates.toString().split("@")[0]);
 //        }
 
 //        AtlasDependencyGraph.HashableResolvedArtifactResult hashableResolvedArtifactResult = AtlasDependencyGraph.sLibraryMap.get(mavenCoordinates.toString().intern());

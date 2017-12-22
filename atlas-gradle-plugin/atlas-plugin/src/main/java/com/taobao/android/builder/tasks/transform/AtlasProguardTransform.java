@@ -223,7 +223,7 @@ import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
-import com.taobao.android.builder.tasks.app.UpdateDependenciesTask;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.Profiler;
 import com.taobao.android.builder.tools.ReflectUtils;
@@ -501,7 +501,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
     @Override
     protected void outJar(@NonNull File file) {
         AtlasBuildContext.mainDexJar.clear();
-        UpdateDependenciesTask.FileIdentity fileIdentity = new UpdateDependenciesTask.FileIdentity("proguard-main",file,false,false);
+        BuildAtlasEnvTask.FileIdentity fileIdentity = new BuildAtlasEnvTask.FileIdentity("proguard-main",file,false,false);
         AtlasBuildContext.mainDexJar.add(fileIdentity);
        super.outJar(file);
     }
@@ -512,7 +512,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
         if (file.isDirectory()) {
             super.inputJar(classPath, file, filter);
         } else {
-            for (UpdateDependenciesTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
+            for (BuildAtlasEnvTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
                 if (fileIdentity.file.getAbsolutePath().equals(file.getParentFile().getParentFile().getAbsolutePath())) {
                     super.inputJar(classPath, file, filter);
                 }

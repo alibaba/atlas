@@ -10,9 +10,7 @@ import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AwbTransform;
-import com.android.build.gradle.internal.pipeline.ExtendedContentType;
-import com.android.build.gradle.internal.pipeline.OriginalStream;
-import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.*;
 import com.android.build.gradle.internal.transforms.DexArchiveBuilderTransform;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
@@ -34,9 +32,14 @@ import com.google.common.collect.*;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tasks.app.UpdateDependenciesTask;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 
+import com.taobao.android.builder.tasks.transform.cache.CacheFactory;
+import com.taobao.android.builder.tasks.transform.cache.DexCache;
 import com.taobao.android.builder.tools.FileNameUtils;
+import com.taobao.android.builder.tools.MD5Util;
+import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.log.FileLogger;
 import org.gradle.tooling.BuildException;
 import org.gradle.workers.IsolationMode;
 
@@ -52,7 +55,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
 
 
 /**
@@ -68,8 +70,15 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
 
     public static int NUMBER_OF_BUCKETS = 5;
 
+    private static final String CACHE_ID = "dex-archive";
+
+    private static final String CACHE_VERSION="1.0";
+
+
     @NonNull
     private final DexOptions dexOptions;
+
+    private DexCache dexCache;
     @NonNull
     private final ErrorReporter errorReporter;
     @VisibleForTesting
@@ -86,6 +95,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
     private final boolean isDebuggable;
     private final AppVariantContext variantContext;
     private final BaseVariantOutput variantOutput;
+    private TransformTask transformTask;
 
     public AtlasDexArchiveBuilderTransform(AppVariantContext variantContext, VariantOutput variantOutput,
                                            @NonNull DexOptions dexOptions,
@@ -115,6 +125,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
         this.outBufferSize =
                 (outBufferSize == null ? DEFAULT_BUFFER_SIZE_IN_KB : outBufferSize) * 1024;
         this.isDebuggable = isDebuggable;
+
     }
 
     @NonNull
@@ -145,7 +156,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
     @Override
     public Map<String, Object> getParameterInputs() {
         try {
-            Map<String, Object> params = Maps.newHashMapWithExpectedSize(4);
+            Map<String, Object> params = new LinkedHashMap<>(4);
             params.put("optimize", !dexOptions.getAdditionalParameters().contains("--no-optimize"));
             params.put("jumbo", dexOptions.getJumboMode());
             params.put("min-sdk-version", minSdkVersion);
@@ -165,7 +176,12 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
     @Override
     public void transform(@NonNull TransformInvocation transformInvocation)
             throws IOException {
+
+        AtlasIntermediateStreamHelper atlasIntermediateStreamHelper = new AtlasIntermediateStreamHelper(transformTask);
+        atlasIntermediateStreamHelper.replaceProvider();
         AtlasBuildContext.status = AtlasBuildContext.STATUS.DEXARCHIVE;
+        dexCache = (DexCache) CacheFactory.get(variantContext.getProject(),CACHE_ID,CACHE_VERSION,this,transformInvocation,DexCache.class);
+
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         Preconditions.checkNotNull(outputProvider, "Missing output provider.");
 
@@ -178,11 +194,11 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
         }
 
         logger.verbose("Task is incremental : %b ", transformInvocation.isIncremental());
-
-        if (!transformInvocation.isIncremental()) {
-            outputProvider.deleteAll();
-            org.apache.commons.io.FileUtils.cleanDirectory(variantContext.getAwbDexAchiveOutputs());
-        }
+//
+//        if (!transformInvocation.isIncremental()) {
+//            outputProvider.deleteAll();
+//            org.apache.commons.io.FileUtils.cleanDirectory(variantContext.getAwbDexAchiveOutputs());
+//        }
 
         List<QualifiedContent> listFiles = new ArrayList<>();
         try {
@@ -233,10 +249,12 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             e.printStackTrace();
         }
 
+        dexCache.saveContent();
+
     }
 
     private boolean inMainDex(JarInput jarInput) {
-        for (UpdateDependenciesTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
+        for (BuildAtlasEnvTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
             if (fileIdentity.file.getAbsolutePath().equals(jarInput.getFile().getAbsolutePath())) {
                 return true;
             }
@@ -272,13 +290,17 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             TransformOutputProvider transformOutputProvider)
             throws Exception {
         if (!isIncremental) {
+//            if (dexCache.getCache(jarInput).size() > 0){
+//                return ImmutableList.of();
+//            }
             Preconditions.checkState(
                     jarInput.getFile().exists(),
                     "File %s does not exist, yet it is reported as input. Try \n"
                             + "cleaning the build directory.",
                     jarInput.getFile().toString());
-            return convertJarToDexArchive(context, jarInput, transformOutputProvider);
-        } else if (jarInput.getStatus() != Status.NOTCHANGED) {
+            List<File> files =  convertJarToDexArchive(context, jarInput, transformOutputProvider);
+            return files;
+            } else if (jarInput.getStatus() != Status.NOTCHANGED) {
             // delete all preDex jars if they exists.
             for (int bucketId = 0; bucketId < NUMBER_OF_BUCKETS; bucketId++) {
                 File shardedOutput = getPreDexJar(transformOutputProvider, jarInput, bucketId);
@@ -335,7 +357,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                 return convertAwbJarToDexArchive(context, jarInput, transformOutputProvider);
             }
         }
-        return ImmutableList.of();
+        return dexCache.getCache(jarInput);
     }
 
     private List<File> convertJarToDexArchive(
@@ -376,6 +398,10 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             // no need to try to cache an already cached version.
             return ImmutableList.of();
         }
+    }
+
+    public void setTransformTask(TransformTask transformTask) {
+        this.transformTask = transformTask;
     }
 
     public static class DexConversionParameters implements Serializable {
@@ -490,11 +516,21 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             throws Exception {
 
         logger.verbose("Dexing {}", input.getFile().getAbsolutePath());
-
         ImmutableList.Builder<File> dexArchives = ImmutableList.builder();
+
+        if (dexCache.getCache(input).size() > 0){
+                dexArchives.addAll(dexCache.getCache(input));
+            return dexArchives.build();
+
+        }
         for (int bucketId = 0; bucketId < NUMBER_OF_BUCKETS; bucketId++) {
             File preDexOutputFile = getPreDexFile(outputProvider, input, bucketId);
             dexArchives.add(preDexOutputFile);
+            if (preDexOutputFile.isDirectory()) {
+                FileUtils.cleanOutputDir(preDexOutputFile);
+            }else {
+                FileUtils.deleteIfExists(preDexOutputFile);
+            }
             AtlasDexArchiveBuilderTransform.DexConversionParameters parameters =
                     new AtlasDexArchiveBuilderTransform.DexConversionParameters(
                             input,
@@ -545,8 +581,11 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                         });
             }
         }
-        return dexArchives.build();
+        List<File> files = dexArchives.build();
+        dexCache.cache(input,files);
+        return files;
     }
+
 
     private static void launchProcessing(
             @NonNull AtlasDexArchiveBuilderTransform.DexConversionParameters dexConversionParameters,
@@ -647,9 +686,19 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
         logger.verbose("Dexing {}", input.getFile().getAbsolutePath());
 
         ImmutableList.Builder<File> dexArchives = ImmutableList.builder();
+
+        if (dexCache.getCache(input).size() > 0){
+            dexArchives.addAll(dexCache.getCache(input));
+            return dexArchives.build();
+        }
         for (int bucketId = 0; bucketId < NUMBER_OF_BUCKETS; bucketId++) {
             File preDexOutputFile = getAwbPreDexFile(outputProvider, input, bucketId);
             dexArchives.add(preDexOutputFile);
+            if (preDexOutputFile.isDirectory()) {
+                FileUtils.cleanOutputDir(preDexOutputFile);
+            }else {
+                FileUtils.deleteIfExists(preDexOutputFile);
+            }
             AtlasDexArchiveBuilderTransform.DexConversionParameters parameters =
                     new AtlasDexArchiveBuilderTransform.DexConversionParameters(
                             input,
@@ -702,7 +751,9 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
         }
 
         NUMBER_OF_BUCKETS = 5;
-        return dexArchives.build();
+       List<File>files =  dexArchives.build();
+       dexCache.cache(input,files);
+        return files;
     }
 
 
@@ -844,14 +895,14 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
 
 
     private JarInput makeJarInput(File file) {
-        UpdateDependenciesTask.FileIdentity fileIdentity = null;
-        for (UpdateDependenciesTask.FileIdentity fy : AtlasBuildContext.awbDexJar) {
+        BuildAtlasEnvTask.FileIdentity fileIdentity = null;
+        for (BuildAtlasEnvTask.FileIdentity fy : AtlasBuildContext.awbDexJar) {
             if (fy.file == file) {
                 fileIdentity = fy;
                 break;
             }
         }
-        UpdateDependenciesTask.FileIdentity finalFileIdentity = fileIdentity;
+        BuildAtlasEnvTask.FileIdentity finalFileIdentity = fileIdentity;
         return new JarInput() {
             @Override
             public Status getStatus() {
@@ -861,16 +912,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             @Override
             public String getName() {
 
-                if (finalFileIdentity == null){
-                        return FileNameUtils.getUniqueJarName(file);
-                }
-
-                if (finalFileIdentity.localJar) {
-
-                    return OriginalStream.LOCAL_JAR_GROUPID + file.getName();
-                } else {
-                    return finalFileIdentity.name;
-                }
+               return MD5Util.getFileMD5(file);
             }
 
             @Override
