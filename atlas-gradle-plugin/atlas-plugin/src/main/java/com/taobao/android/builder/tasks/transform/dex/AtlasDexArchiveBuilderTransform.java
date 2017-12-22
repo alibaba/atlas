@@ -178,7 +178,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             throws IOException {
 
         AtlasIntermediateStreamHelper atlasIntermediateStreamHelper = new AtlasIntermediateStreamHelper(transformTask);
-        atlasIntermediateStreamHelper.replaceProvider();
+        atlasIntermediateStreamHelper.replaceProvider(transformInvocation);
         AtlasBuildContext.status = AtlasBuildContext.STATUS.DEXARCHIVE;
         dexCache = (DexCache) CacheFactory.get(variantContext.getProject(),CACHE_ID,CACHE_VERSION,this,transformInvocation,DexCache.class);
 
