@@ -30,16 +30,20 @@ public class DexCache extends TransformCache<File> {
 
     protected String version;
 
+    private Set<String> keys = new HashSet<>();
+
     private FileLogger fileLogger = FileLogger.getInstance("dexcache");
 
-
+    private boolean increment;
 
 
     protected Map<String, List<String>> cacheMap = new HashMap<>();
 
-    public DexCache(Project project,Transform transform, String type, String version, File location) {
-        super(project,transform);
+    public DexCache(Project project, Transform transform, String type, String version, File location) {
+        super(project, transform);
         this.type = type;
+
+        increment = transform.isIncremental();
 
         this.version = version;
 
@@ -55,9 +59,10 @@ public class DexCache extends TransformCache<File> {
         try {
             String key = calculateKey(qualifiedContent.getFile());
             cacheMap.put(key, toString(result));
+            keys.add(key);
             StringBuilder stringBuilder = new StringBuilder();
-            for (File file1:result) {
-                stringBuilder.append(file1.getAbsolutePath()+",");
+            for (File file1 : result) {
+                stringBuilder.append(file1.getAbsolutePath() + ",");
             }
             String log = "miss cache:" + qualifiedContent.getFile().getAbsolutePath() + " newCache:" + stringBuilder.toString();
             project.getLogger().info(log);
@@ -71,23 +76,23 @@ public class DexCache extends TransformCache<File> {
     private String calculateKey(File file) throws Exception {
         String key = null;
         if (file.isFile()) {
-             key = MD5Util.getMD5(MD5Util.getMD5(getTransformParameters()) + MD5Util.getFileMD5(file) + MD5Util.getMD5(type + version));
-        }else if (file.isDirectory()){
-            Collection<File> files = FileUtils.listFiles(file,new String[]{".class"},true);
+            key = MD5Util.getMD5(MD5Util.getMD5(getTransformParameters()) + MD5Util.getFileMD5(file) + MD5Util.getMD5(type + version));
+        } else if (file.isDirectory()) {
+            Collection<File> files = FileUtils.listFiles(file, new String[]{"class"}, true);
             ArrayList<File> classFiles = new ArrayList<>();
             classFiles.addAll(files);
             Collections.sort(classFiles);
             key = MD5Util.getMD5(getTransformParameters());
-            for (File classFile:classFiles){
-                key = key+MD5Util.getFileMD5(classFile);
+            for (File classFile : classFiles) {
+                key = key + MD5Util.getFileMD5(classFile);
             }
 
-            key = MD5Util.getMD5(key+MD5Util.getMD5(type + version));
+            key = MD5Util.getMD5(key + MD5Util.getMD5(type + version));
         }
         return key;
     }
 
-        @Override
+    @Override
     public void cache(List<QualifiedContent> qualifiedContents, List<File> result) {
 
     }
@@ -107,9 +112,10 @@ public class DexCache extends TransformCache<File> {
         try {
             String key = calculateKey(file);
             List<String> strings = cacheMap.get(key);
-            if (strings == null){
+            if (strings == null) {
                 return ImmutableList.of();
             }
+            keys.add(key);
             for (String s : strings) {
                 files.add(new File(s));
             }
@@ -147,8 +153,8 @@ public class DexCache extends TransformCache<File> {
         }
 
         StringBuilder stringBuilder = new StringBuilder();
-        for (File file1:files) {
-            stringBuilder.append(file1.getAbsolutePath()+",");
+        for (File file1 : files) {
+            stringBuilder.append(file1.getAbsolutePath() + ",");
         }
 
         String log = "hit cache:" + qualifiedContent.getFile().getAbsolutePath() + " cache:" + stringBuilder.toString();
@@ -194,12 +200,21 @@ public class DexCache extends TransformCache<File> {
             FileUtils.deleteQuietly(cacheFile);
         } else {
             cacheFile.getParentFile().mkdirs();
-            try {
-                FileUtils.writeStringToFile(cacheFile, JSON.toJSONString(cacheMap));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
 
+        if (!increment) {
+            Iterator iterator = cacheMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry entry = (Map.Entry) iterator.next();
+                if (!keys.contains(entry.getKey())) {
+                    iterator.remove();
+                }
+            }
+        }
+        try {
+            FileUtils.writeStringToFile(cacheFile, JSON.toJSONString(cacheMap));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

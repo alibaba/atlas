@@ -68,7 +68,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
 
     public static final int DEFAULT_BUFFER_SIZE_IN_KB = 100;
 
-    public static int NUMBER_OF_BUCKETS = 5;
+    public static int NUMBER_OF_BUCKETS = 1;
 
     private static final String CACHE_ID = "dex-archive";
 
@@ -218,6 +218,9 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                         listFiles.add(jarInput);
                         continue;
                     }
+                    if (!validJar(jarInput)){
+                        continue;
+                    }
                     logger.verbose("Jar input %s", jarInput.getFile().toString());
                     List<File> dexArchives =
                             processJarInput(
@@ -251,6 +254,14 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
 
         dexCache.saveContent();
 
+    }
+
+    private boolean validJar(JarInput jarInput) {
+        if (computerClassCount(jarInput.getFile()) == 0){
+            return false;
+        }else {
+            return true;
+        }
     }
 
     private boolean inMainDex(JarInput jarInput) {
@@ -340,6 +351,9 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             // delete all preDex jars if they exists.
             for (int bucketId = 0; bucketId < NUMBER_OF_BUCKETS; bucketId++) {
                 File shardedOutput = getAwbPreDexJar(transformOutputProvider, jarInput, bucketId);
+                if (dexCache.getCache(jarInput).size() > 0){
+                    return dexCache.getCache(jarInput);
+                }
                 FileUtils.deleteIfExists(shardedOutput);
                 if (jarInput.getStatus() != Status.REMOVED) {
                     FileUtils.mkdirs(shardedOutput.getParentFile());
@@ -677,11 +691,12 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             boolean isIncremental)
             throws Exception {
 
+        int count = 0;
         if (input.getFile().isFile()) {
-            int count = computerClassCount(input.getFile());
-            if (count < 5) {
-                NUMBER_OF_BUCKETS = count;
-            }
+             count = computerClassCount(input.getFile());
+           
+        }else if (input.getFile().isDirectory()){
+            count = 1;
         }
         logger.verbose("Dexing {}", input.getFile().getAbsolutePath());
 
@@ -691,7 +706,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             dexArchives.addAll(dexCache.getCache(input));
             return dexArchives.build();
         }
-        for (int bucketId = 0; bucketId < NUMBER_OF_BUCKETS; bucketId++) {
+        for (int bucketId = 0; bucketId < count; bucketId++) {
             File preDexOutputFile = getAwbPreDexFile(outputProvider, input, bucketId);
             dexArchives.add(preDexOutputFile);
             if (preDexOutputFile.isDirectory()) {
@@ -750,7 +765,6 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             }
         }
 
-        NUMBER_OF_BUCKETS = 5;
        List<File>files =  dexArchives.build();
        dexCache.cache(input,files);
         return files;
@@ -836,19 +850,22 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
     }
 
 
-     static Map<String,Integer> dexcount = new HashMap<>();
+      Map<String,Integer> dexcount = new HashMap<>();
 
-    private static File getAwbPreDexJar(
+
+    private File getAwbPreDexJar(
             @NonNull File output,
             @NonNull JarInput qualifiedContent,
             @Nullable Integer bucketId) {
         if (bucketId == null){
             return new File(output, qualifiedContent.getName() + (bucketId == null ? "" : ("-" + bucketId)) + ".jar");
         }
-        if (bucketId > 5){
-            bucketId = dexcount.get(output.getName());
-        }
-        dexcount.put(output.getName(),bucketId++);
+//        synchronized (object) {
+            if (bucketId > 5) {
+                bucketId = dexcount.get(qualifiedContent.getName());
+            }
+            dexcount.put(qualifiedContent.getName(), bucketId++);
+//        }
         if (!output.exists()){
             output.mkdirs();
         }
@@ -953,8 +970,8 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             if (jarEntry.getName().endsWith(".class")){
                 count ++;
             }
-            if (count > 5){
-                return 10;
+            if (count > 1){
+                return 1;
             }
         }
        return count;
