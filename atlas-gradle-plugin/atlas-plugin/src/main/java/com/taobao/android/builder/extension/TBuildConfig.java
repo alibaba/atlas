@@ -226,6 +226,18 @@ public class TBuildConfig {
     @Config(message = "Remote bundle list, artifactId", advance = false, order = 1, group = "atlas")
     private Set<String> outOfApkBundles = Sets.newHashSet();
 
+    public String getAppCoordinate() {
+        return appCoordinate;
+    }
+
+    public void setAppCoordinate(String appCoordinate) {
+        this.appCoordinate = appCoordinate;
+    }
+
+    @Config(message = "appCoordinate groupId:artifactId", advance = false, order = 1, group = "atlas")
+    private String appCoordinate = "";
+
+
     @Config(title = "Self-initiated bundle list", message = "The value is packageName", order = 1, advance = false, group = "atlas")
     private List<String> autoStartBundles = new ArrayList<String>();
 
