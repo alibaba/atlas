@@ -377,7 +377,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
 
         for (DirectoryInput dirInput : transformInput.getDirectoryInputs()) {
             if (awbTransform == null) {
-                if (!AtlasBuildContext.atlasMainDexHelper.getMainResFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
                     continue;
                 }
 

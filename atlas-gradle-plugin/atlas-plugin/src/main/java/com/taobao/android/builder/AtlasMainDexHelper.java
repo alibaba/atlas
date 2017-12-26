@@ -80,7 +80,7 @@ public class AtlasMainDexHelper {
     }
 
     public void updateMainDexFile(JarInput oldFile,File newFile){
-        
+
         for (BuildAtlasEnvTask.FileIdentity id:mainDexJar){
             if (id.file.equals(oldFile.getFile())){
                 id.file = newFile;
