@@ -377,6 +377,11 @@ public class AppVariantOutputContext {
             file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
         }
 
+        Set<String> assetsSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames();
+        if (!assetsSoNames.isEmpty() && assetsSoNames.contains(awbOutputName)) {
+            file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
+        }
+
         awbBundle.outputBundleFile = file;
         return file;
     }
