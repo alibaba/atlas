@@ -46,7 +46,7 @@ public class MainDexArtifactCollection implements ArtifactCollection {
             mainDexs = new HashSet<>();
         for (ResolvedArtifactResult resolvedArtifactResult:fullArtifacts){
             String name = resolvedArtifactResult.getFile().getAbsolutePath();
-            if (AtlasBuildContext.mainDexMap.containsKey(name.substring(0,name.lastIndexOf("/")))){
+            if (AtlasBuildContext.atlasMainDexHelper.getMainManifestFiles().containsKey(name.substring(0,name.lastIndexOf("/")))){
                 mainDexs.add(resolvedArtifactResult);
             }
         }

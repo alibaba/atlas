@@ -37,6 +37,12 @@ import java.util.zip.ZipOutputStream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+
+/**
+ * @author lilong
+ * @create 2017-12-27 下午2:30
+ */
+
 public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransform {
 
     private static final Pattern JAR_ABI_PATTERN = Pattern.compile("lib/([^/]+)/[^/]+");

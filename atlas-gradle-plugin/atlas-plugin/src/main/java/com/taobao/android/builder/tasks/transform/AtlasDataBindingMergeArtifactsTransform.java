@@ -89,7 +89,7 @@ public class AtlasDataBindingMergeArtifactsTransform extends DataBindingMergeArt
 
         inputs.forEach(input -> input.getDirectoryInputs().stream().filter((Predicate<DirectoryInput>) input1 -> {
              File file = input1.getFile().getParentFile();
-            if (AtlasBuildContext.mainDexMap.containsKey(file.getAbsolutePath())){
+            if (AtlasBuildContext.atlasMainDexHelper.getMainManifestFiles().containsKey(file.getAbsolutePath())){
                 return false;
             }
             return true;
@@ -147,7 +147,7 @@ public class AtlasDataBindingMergeArtifactsTransform extends DataBindingMergeArt
                 if (!dataBindingDir.exists()) {
                     continue;
                 }
-                if (!AtlasBuildContext.mainDexMap.containsKey(dataBindingDir.getParentFile().getAbsolutePath())){
+                if (!AtlasBuildContext.atlasMainDexHelper.getMainManifestFiles().containsKey(dataBindingDir.getParentFile().getAbsolutePath())){
                     continue;
                 }
 

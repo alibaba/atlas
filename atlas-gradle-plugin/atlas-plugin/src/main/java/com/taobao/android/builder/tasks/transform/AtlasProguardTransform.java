@@ -500,10 +500,10 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
     @Override
     protected void outJar(@NonNull File file) {
-        AtlasBuildContext.mainDexJar.clear();
+        AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().clear();
         BuildAtlasEnvTask.FileIdentity fileIdentity = new BuildAtlasEnvTask.FileIdentity("proguard-main",file,false,false);
-        AtlasBuildContext.mainDexJar.add(fileIdentity);
-       super.outJar(file);
+        AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().add(fileIdentity);
+        super.outJar(file);
     }
 
     @Override
@@ -511,12 +511,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
             @NonNull ClassPath classPath, @NonNull File file, @Nullable List<String> filter) {
         if (file.isDirectory()) {
             super.inputJar(classPath, file, filter);
-        } else {
-            for (BuildAtlasEnvTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
-                if (fileIdentity.file.getAbsolutePath().equals(file.getParentFile().getParentFile().getAbsolutePath())) {
-                    super.inputJar(classPath, file, filter);
-                }
-            }
+        } else if (AtlasBuildContext.atlasMainDexHelper.inMainDex(file)){
+            super.inputJar(classPath, file, filter);
         }
     }
 }

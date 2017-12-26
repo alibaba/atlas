@@ -265,12 +265,8 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
     }
 
     private boolean inMainDex(JarInput jarInput) {
-        for (BuildAtlasEnvTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
-            if (fileIdentity.file.getAbsolutePath().equals(jarInput.getFile().getAbsolutePath())) {
-                return true;
-            }
-        }
-        return false;
+
+        return AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput);
     }
 
     private static void removeDeletedEntries(
@@ -837,7 +833,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                 }
             }
 
-            AtlasBuildContext.awbDexFiles.put(awbBundle, cacheableItems);
+            AtlasBuildContext.atlasMainDexHelper.getAwbDexFiles().put(awbBundle, cacheableItems);
 
 
         }
@@ -912,14 +908,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
 
 
     private JarInput makeJarInput(File file) {
-        BuildAtlasEnvTask.FileIdentity fileIdentity = null;
-        for (BuildAtlasEnvTask.FileIdentity fy : AtlasBuildContext.awbDexJar) {
-            if (fy.file == file) {
-                fileIdentity = fy;
-                break;
-            }
-        }
-        BuildAtlasEnvTask.FileIdentity finalFileIdentity = fileIdentity;
+        BuildAtlasEnvTask.FileIdentity finalFileIdentity = AtlasBuildContext.atlasMainDexHelper.get(file);
         return new JarInput() {
             @Override
             public Status getStatus() {

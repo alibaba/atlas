@@ -246,18 +246,13 @@ public class AtlasBuildContext {
 
     public static Map<String, AwbBundle> awbBundleMap = new HashMap<String, AwbBundle>();
 
+    public static AtlasMainDexHelper atlasMainDexHelper = new AtlasMainDexHelper();
 
     public static Set<String> conflictDependencies;
 
-    public static Map<String,Boolean>mainDexMap = new HashMap<>();
 
     public static AtlasConfigurationHelper atlasConfigurationHelper;
 
-    public static LinkedHashSet<BuildAtlasEnvTask.FileIdentity>mainDexJar = new LinkedHashSet<>();
-
-    public static LinkedHashSet<BuildAtlasEnvTask.FileIdentity>awbDexJar = new LinkedHashSet<>();
-
-    public static Map<AwbBundle, Multimap<QualifiedContent, File>> awbDexFiles = new HashMap<AwbBundle, com.google.common.collect.Multimap<QualifiedContent, File>>();
 
     public static STATUS status;
 
@@ -273,9 +268,6 @@ public class AtlasBuildContext {
      */
     public static Map<String, String> jarTraceMap = new HashMap<String, String>();
 
-    public static Map<String, Boolean> mainNativeSoMap = new LinkedHashMap<>();
-
-    public static Map<String, Boolean> mainResMap = new LinkedHashMap<>();
     public static Set<File> localLibs = new HashSet<>();
 
     public static void reset(){

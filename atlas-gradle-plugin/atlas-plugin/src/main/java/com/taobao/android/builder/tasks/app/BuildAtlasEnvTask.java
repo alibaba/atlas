@@ -203,7 +203,7 @@ public class BuildAtlasEnvTask extends BaseTask {
 
 
 
-        AtlasBuildContext.awbDexJar.addAll(allJars);
+        AtlasBuildContext.atlasMainDexHelper.addAwbDexJars(allJars);
 
 
         MergeResources mergeResources = appVariantContext.getScope().getMergeResourcesTask().get(new TaskContainerAdaptor(getProject().getTasks()));
@@ -228,7 +228,7 @@ public class BuildAtlasEnvTask extends BaseTask {
         ProcessAndroidResources processAndroidResources = appVariantContext.getScope().getProcessResourcesTask().get(new TaskContainerAdaptor(appVariantContext.getProject().getTasks()));
         FileCollection fileCollection = processAndroidResources.getSymbolListsWithPackageNames();
         Set<String>filesNames = new HashSet<>();
-        for (String fileName:AtlasBuildContext.mainDexMap.keySet()){
+        for (String fileName:AtlasBuildContext.atlasMainDexHelper.getMainManifestFiles().keySet()){
             filesNames.add(fileName.substring(fileName.lastIndexOf("/")+1));
         }
         FileCollection updateFileCollection = fileCollection.filter(element -> filesNames.contains(element.getParentFile().getParentFile().getName()));
@@ -315,7 +315,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             id = allManifests.get(moudleName);
         }
         if (id!= null) {
-            AtlasBuildContext.mainDexMap.put(id.getParentFile().getAbsolutePath(), true);
+            AtlasBuildContext.atlasMainDexHelper.getMainManifestFiles().put(id.getParentFile().getAbsolutePath(), true);
         }
     }
 
@@ -325,7 +325,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             id = allSolibs.get(moudleName);
         }
         if (id!= null) {
-            AtlasBuildContext.mainNativeSoMap.put(id.getAbsolutePath(), true);
+            AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().put(id.getAbsolutePath(), true);
         }
     }
 
@@ -335,7 +335,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             id = allJavaRes.get(moudleName);
         }
         if (id!= null) {
-            AtlasBuildContext.mainResMap.put(id.getAbsolutePath(), true);
+            AtlasBuildContext.atlasMainDexHelper.getMainResFiles().put(id.getAbsolutePath(), true);
         }
     }
 
@@ -347,7 +347,7 @@ public class BuildAtlasEnvTask extends BaseTask {
         while (identities.hasNext()){
             FileIdentity fileIdentity = identities.next();
             if (fileIdentity.name.equals(name)||fileIdentity.name.equals(moudleName)){
-                AtlasBuildContext.mainDexJar.add(fileIdentity);
+                AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().add(fileIdentity);
                 identities.remove();
             }
         }

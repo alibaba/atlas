@@ -137,7 +137,7 @@ public class AtlasDexMergerTransform extends DexMergerTransform{
 
         List<ForkJoinTask<Void>> mergeTasks;
         if (AtlasBuildContext.status.equals(AtlasBuildContext.STATUS.EXTERNALLIBSMERGE) || AtlasBuildContext.status.equals(AtlasBuildContext.STATUS.DEXARCHIVE)){
-            Map map = AtlasBuildContext.awbDexFiles;
+            Map map = AtlasBuildContext.atlasMainDexHelper.getAwbDexFiles();
             Iterator iterator = map.entrySet().iterator();
             while (iterator.hasNext()){
                 Map.Entry<AwbBundle,Multimap> entry =(Map.Entry<AwbBundle,Multimap> )iterator.next();

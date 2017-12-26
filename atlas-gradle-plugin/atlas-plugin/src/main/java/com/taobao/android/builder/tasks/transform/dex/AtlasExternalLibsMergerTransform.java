@@ -87,7 +87,7 @@ public class AtlasExternalLibsMergerTransform extends Transform {
         for (TransformInput transformInput : transformInvocation.getInputs()) {
             jarInputs.addAll(transformInput.getJarInputs());
         }
-        for (Map.Entry entry : AtlasBuildContext.awbDexFiles.entrySet()) {
+        for (Map.Entry entry : AtlasBuildContext.atlasMainDexHelper.getAwbDexFiles().entrySet()) {
             Multimap multimap = HashMultimap.create();
             List<File> externalDexs = new ArrayList<>();
             Multimap<QualifiedContent, File> dexMultimap = (Multimap<QualifiedContent, File>) entry.getValue();
@@ -126,8 +126,8 @@ public class AtlasExternalLibsMergerTransform extends Transform {
         }
 
         AtlasBuildContext.status = AtlasBuildContext.STATUS.EXTERNALLIBSMERGE;
-
-        AtlasBuildContext.awbDexFiles =cacheItems;
+        AtlasBuildContext.atlasMainDexHelper.getAwbDexFiles().clear();
+        AtlasBuildContext.atlasMainDexHelper.addAwbDexFiles(cacheItems);
         boolean changed = false;
         for (JarInput jarInput : jarInputs) {
             if (!jarInput.getStatus().equals(Status.NOTCHANGED)) {

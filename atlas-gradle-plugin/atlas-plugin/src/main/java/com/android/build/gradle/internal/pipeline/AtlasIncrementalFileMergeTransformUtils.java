@@ -284,7 +284,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
         for (JarInput jarInput : transformInput.getJarInputs()) {
 
             if (awbTransform == null) {
-                if (!AtlasBuildContext.mainResMap.containsKey(jarInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelper.getMainResFiles().containsKey(jarInput.getFile().getAbsolutePath())) {
                     continue;
                 }
             } else {
@@ -298,7 +298,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
 
         for (DirectoryInput dirInput : transformInput.getDirectoryInputs()) {
             if (awbTransform == null) {
-                if (!AtlasBuildContext.mainNativeSoMap.containsKey(dirInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
                     continue;
                 }
 
@@ -313,7 +313,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
 
         for (DirectoryInput dirInput : buildLocalDirInput()) {
             if (awbTransform == null) {
-                if (!AtlasBuildContext.mainNativeSoMap.containsKey(dirInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
                     continue;
                 }
 
@@ -358,7 +358,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
 
         for (JarInput jarInput : transformInput.getJarInputs()) {
             if (awbTransform == null) {
-                if (!AtlasBuildContext.mainResMap.containsKey(jarInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelper.getMainResFiles().containsKey(jarInput.getFile().getAbsolutePath())) {
                     continue;
                 }
             } else {
@@ -377,7 +377,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
 
         for (DirectoryInput dirInput : transformInput.getDirectoryInputs()) {
             if (awbTransform == null) {
-                if (!AtlasBuildContext.mainNativeSoMap.containsKey(dirInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelper.getMainResFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
                     continue;
                 }
 
@@ -440,7 +440,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
 
         for (DirectoryInput dirInput : buildLocalDirInput()) {
             if (awbBundle == null) {
-                if (!AtlasBuildContext.mainNativeSoMap.containsKey(dirInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
                     continue;
                 }
 

@@ -26,6 +26,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * @author lilong
+ * @create 2017-12-27 下午2:30
+ */
 
 
 public class AtlasMultiDexListTransform extends BaseProguardAction {
@@ -92,7 +96,7 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
         Collection<File> inputs =
                 TransformInputUtil.getAllFiles(transformInvocation.getReferencedInputs());
 
-        inputs = filterMainDex();
+        inputs = AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
 
         if (AtlasBuildContext.androidBuilderMap.get(variantScope.getGlobalScope().getProject()) == null) {
             super.transform(transformInvocation);
@@ -105,14 +109,4 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
 
     }
 
-    private Collection<File> filterMainDex() {
-        Set<File> fileSet = new HashSet<>();
-        for (BuildAtlasEnvTask.FileIdentity fileIdentity : AtlasBuildContext.mainDexJar) {
-            fileSet.add(fileIdentity.file);
-
-        }
-        return fileSet;
-
-
-    }
 }
