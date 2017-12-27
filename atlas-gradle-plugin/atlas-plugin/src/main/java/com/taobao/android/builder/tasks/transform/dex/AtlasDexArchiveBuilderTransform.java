@@ -201,16 +201,18 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
 //        }
 
         List<QualifiedContent> listFiles = new ArrayList<>();
-        try {
+        Map<QualifiedContent, List<File>> cacheableItems = new HashMap<>();
 
+        try {
             for (TransformInput input : transformInvocation.getInputs()) {
                 for (DirectoryInput dirInput : input.getDirectoryInputs()) {
                     logger.verbose("Dir input %s", dirInput.getFile().toString());
-                    convertToDexArchive(
+                    List<File> mainDexFolder = convertToDexArchive(
                             transformInvocation.getContext(),
                             dirInput,
                             outputProvider,
                             transformInvocation.isIncremental());
+                    cacheableItems.put(dirInput,mainDexFolder);
                 }
 
                 for (JarInput jarInput : input.getJarInputs()) {
@@ -228,6 +230,10 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                                     transformInvocation.isIncremental(),
                                     jarInput,
                                     outputProvider);
+                    cacheableItems.put(jarInput,dexArchives);
+
+                    AtlasBuildContext.atlasMainDexHelper.addMainDexAchives(cacheableItems);
+//                    mainDexFiles.addAll(dexArchives);
 //                    cacheableItems.putAll(jarInput, dexArchives);
                 }
             }
@@ -327,7 +333,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                 return convertJarToDexArchive(context, jarInput, transformOutputProvider);
             }
         }
-        return ImmutableList.of();
+        return dexCache.getCache(jarInput);
     }
 
     private List<File> processAwbJarInput(
@@ -386,7 +392,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                     outputFile.toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
             // no need to try to cache an already cached version.
-            return ImmutableList.of();
+            return ImmutableList.of(outputFile);
         }
     }
 
@@ -527,14 +533,15 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
 
         logger.verbose("Dexing {}", input.getFile().getAbsolutePath());
         ImmutableList.Builder<File> dexArchives = ImmutableList.builder();
-
-        if (dexCache.getCache(input).size() > 0){
-                dexArchives.addAll(dexCache.getCache(input));
+        List<File>cacheFiles = dexCache.getCache(input);
+        if (cacheFiles.size() > 0){
+            dexArchives.addAll(cacheFiles);
             return dexArchives.build();
-
         }
+//        dexArchives.addAll(cacheFiles);
         for (int bucketId = 0; bucketId < NUMBER_OF_BUCKETS; bucketId++) {
             File preDexOutputFile = getPreDexFile(outputProvider, input, bucketId);
+
             dexArchives.add(preDexOutputFile);
             if (preDexOutputFile.isDirectory()) {
                 FileUtils.cleanOutputDir(preDexOutputFile);
@@ -592,7 +599,9 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             }
         }
         List<File> files = dexArchives.build();
-        dexCache.cache(input,files);
+        if (cacheFiles.size() == 0) {
+            dexCache.cache(input, files);
+        }
         return files;
     }
 
@@ -780,6 +789,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
         }
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+
             Multimap<QualifiedContent, File> cacheableItems = HashMultimap.create();
 
             List<QualifiedContent> qualifiedContents = new LinkedList<>();

@@ -32,12 +32,30 @@ public class DexMergeCache extends DexCache{
 
     @Override
     public void saveContent() {
-            super.saveContent();
+        if (cacheFile.exists()) {
+            FileUtils.deleteQuietly(cacheFile);
+        } else {
+            cacheFile.getParentFile().mkdirs();
         }
+            Iterator iterator = cacheMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry entry = (Map.Entry) iterator.next();
+                if (!keys.contains(entry.getKey())) {
+                    List<String>values = cacheMap.get(entry.getKey());
+                    clearAllFiles(values);
+                    iterator.remove();
+                }
+            }
+        try {
+            FileUtils.writeStringToFile(cacheFile, JSON.toJSONString(cacheMap));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }        }
 
     public synchronized void mergeCache(List<Path>filePaths,List<File> outFiles){
         try {
             String key = calculateKey(filePaths);
+            keys.add(key);
             List<String>value = calculateCacheValue(outFiles);
             cacheMap.put(key,value);
             StringBuilder stringBuilder = new StringBuilder();
@@ -82,8 +100,9 @@ public class DexMergeCache extends DexCache{
 
     public synchronized List<Path> getCache(List<Path>filePaths){
         List<Path> results = new ArrayList<>();
+        String key = null;
         try {
-            String key = calculateKey(filePaths);
+             key = calculateKey(filePaths);
             List<String> paths = cacheMap.get(key);
             if (paths == null){
                 return ImmutableList.of();
@@ -106,6 +125,7 @@ public class DexMergeCache extends DexCache{
         }
 
         fileLogger.log("hit cache:"+stringBuilder.toString());
+        keys.add(key);
         return results;
 
 

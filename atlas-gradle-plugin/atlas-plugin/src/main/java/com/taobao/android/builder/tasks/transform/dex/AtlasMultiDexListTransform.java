@@ -90,6 +90,10 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
 
     public void transform(@NonNull TransformInvocation transformInvocation)
             throws TransformException, InterruptedException, IOException {
+
+        if (mainDexListFile.exists() && !variantScope.getVariantData().getName().equals("release")){
+            return;
+        }
         LoggingManager loggingManager = transformInvocation.getContext().getLogging();
         loggingManager.captureStandardOutput(LogLevel.INFO);
         loggingManager.captureStandardError(LogLevel.WARN);

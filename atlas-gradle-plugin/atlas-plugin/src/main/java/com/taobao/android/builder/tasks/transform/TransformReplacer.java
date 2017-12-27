@@ -136,14 +136,15 @@ public class TransformReplacer {
         ErrorReporter errorReporter = variantContext.getScope().getGlobalScope().getAndroidBuilder().getErrorReporter();
         DexMergerTransformCallable.Factory factory = (dexingType1, processOutput, dexOutputDir, dexArchives, mainDexList, forkJoinPool, dexMerger, minSdkVersion, isDebuggable) -> new DexMergerTransformCallable(dexingType1,processOutput,dexOutputDir,dexArchives,mainDexList,forkJoinPool,dexMerger,minSdkVersion,isDebuggable);
         for (TransformTask transformTask: list){
-            AtlasExternalLibsMergerTransform atlasExternalLibsMergerTransform = new AtlasExternalLibsMergerTransform(variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),
-                    dexingType,
-                    dexMergerTool,
-                    sdkVerision,
-                    debug,
-                    errorReporter,
-                    factory);
-                    ReflectUtils.updateField(transformTask,"transform",atlasExternalLibsMergerTransform);
+            transformTask.setEnabled(false);
+//            AtlasExternalLibsMergerTransform atlasExternalLibsMergerTransform = new AtlasExternalLibsMergerTransform(variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),
+//                    dexingType,
+//                    dexMergerTool,
+//                    sdkVerision,
+//                    debug,
+//                    errorReporter,
+//                    factory);
+//                    ReflectUtils.updateField(transformTask,"transform",atlasExternalLibsMergerTransform);
 
         }
     }

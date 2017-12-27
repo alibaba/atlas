@@ -138,12 +138,7 @@ public class AtlasExternalLibsMergerTransform extends Transform {
         if (transformInvocation.isIncremental() && !changed) {
             return;
         }
-        List<JarInput> jarInputsFilter = jarInputs.stream().filter(new Predicate<JarInput>() {
-            @Override
-            public boolean test(JarInput jarInput) {
-                return jarInput.getStatus() != Status.REMOVED;
-            }
-        }).collect(Collectors.toList());
+        List<JarInput> jarInputsFilter = jarInputs.stream().filter(jarInput -> jarInput.getStatus() != Status.REMOVED).collect(Collectors.toList());
 
         File outputDir = transformInvocation.getOutputProvider().getContentLocation("main",
                 getOutputTypes(),

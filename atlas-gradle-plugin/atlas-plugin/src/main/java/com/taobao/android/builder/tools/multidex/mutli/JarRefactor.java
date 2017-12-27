@@ -249,8 +249,9 @@ public class JarRefactor {
 
 
         List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files,mainDexListFile);
+        return null;
 
-        return generateFirstDexJar(mainDexList,files);
+//        return generateFirstDexJar(mainDexList,files);
 
     }
 

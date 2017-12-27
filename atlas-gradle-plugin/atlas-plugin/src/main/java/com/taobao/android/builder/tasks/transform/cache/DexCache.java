@@ -30,7 +30,7 @@ public class DexCache extends TransformCache<File> {
 
     protected String version;
 
-    private Set<String> keys = new HashSet<>();
+    protected Set<String> keys = new HashSet<>();
 
     private FileLogger fileLogger = FileLogger.getInstance("dexcache");
 
@@ -86,7 +86,6 @@ public class DexCache extends TransformCache<File> {
             for (File classFile : classFiles) {
                 key = key + MD5Util.getFileMD5(classFile);
             }
-
             key = MD5Util.getMD5(key + MD5Util.getMD5(type + version));
         }
         return key;
@@ -140,14 +139,15 @@ public class DexCache extends TransformCache<File> {
                     cacheMap.remove(key);
                     return ImmutableList.of();
                 }
-            } else if (qualifiedContent instanceof DirectoryInput) {
-                Map<File, Status> map = ((DirectoryInput) qualifiedContent).getChangedFiles();
-                if (map.values().contains(Status.CHANGED) || map.values().contains(Status.REMOVED) || map.values().contains(Status.ADDED) || !qualifiedContent.getFile().exists()) {
-                    clearAllFiles(files);
-                    cacheMap.remove(key);
-                    return ImmutableList.of();
-                }
             }
+//            else if (qualifiedContent instanceof DirectoryInput) {
+//                Map<File, Status> map = ((DirectoryInput) qualifiedContent).getChangedFiles();
+//                if (map.values().contains(Status.CHANGED) || map.values().contains(Status.REMOVED) || map.values().contains(Status.ADDED) || !qualifiedContent.getFile().exists()) {
+//                    clearAllFiles(files);
+//                    cacheMap.remove(key);
+//                    return ImmutableList.of();
+//                }
+//            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -207,6 +207,8 @@ public class DexCache extends TransformCache<File> {
             while (iterator.hasNext()) {
                 Map.Entry entry = (Map.Entry) iterator.next();
                 if (!keys.contains(entry.getKey())) {
+                    List<String>values = cacheMap.get(entry.getKey());
+                    clearAllFiles(values);
                     iterator.remove();
                 }
             }

@@ -443,12 +443,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               transformReplacer.replaceProguardTransform();
 
-                                                              appVariantContext.getVariantData().generateResValuesTask.getOutputs().cacheIf(new Spec<Task>() {
-                                                                  @Override
-                                                                  public boolean isSatisfiedBy(Task element) {
-                                                                      return false;
-                                                                  }
-                                                              });
 
                                                               if (variantScope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
                                                                   transformReplacer.replaceDataBindingMergeArtifactsTransform();
