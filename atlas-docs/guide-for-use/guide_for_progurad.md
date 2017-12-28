@@ -44,7 +44,7 @@ productFlavors {
     }
 }
 ```
-最终在不同的`BuildType`中和`Flavor`中声明的ProGuard规则文件，会根据编译的命令，把ProGuard规则给合并到一个文件中去，也就是我们上面说的``build/intermediates/bundles/debug/proguard.txt`。
+最终在不同的`BuildType`中和`Flavor`中声明的ProGuard规则文件，会根据编译的命令，把ProGuard规则给合并到一个文件中去，也就是我们上面说的`build/intermediates/bundles/debug/proguard.txt`。
 
 比如你执行的是`assembleDebug`，那么最终：
 
