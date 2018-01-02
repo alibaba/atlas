@@ -219,8 +219,8 @@ import java.util.*;
 public class DexGroup {
 
     public static final int MAX_FIELD_IDS = 65500;
-    public static final int MAX_METHOD_IDS = 65500;
-    public static final int MAX_METHOD_IDS_FIRSTDEX = 65500;
+    public static final int MAX_METHOD_IDS = 64400;
+    public static final int MAX_METHOD_IDS_FIRSTDEX = 64400;
 
     public boolean firstDex;
 
