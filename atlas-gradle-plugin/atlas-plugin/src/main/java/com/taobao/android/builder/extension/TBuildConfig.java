@@ -237,6 +237,18 @@ public class TBuildConfig {
     @Config(message = "appCoordinate groupId:artifactId", advance = false, order = 1, group = "atlas")
     private String appCoordinate = "";
 
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    @Config(message = "group", advance = false, order = 1, group = "atlas")
+
+    private String group = "";
+
 
     @Config(title = "Self-initiated bundle list", message = "The value is packageName", order = 1, advance = false, group = "atlas")
     private List<String> autoStartBundles = new ArrayList<String>();
