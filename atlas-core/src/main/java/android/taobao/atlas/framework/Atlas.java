@@ -244,6 +244,7 @@ import android.taobao.atlas.runtime.FrameworkLifecycleHandler;
 import android.taobao.atlas.runtime.InstrumentationHook;
 import android.taobao.atlas.runtime.RuntimeVariables;
 
+import static android.taobao.atlas.runtime.InstrumentationHook.sIntentExternalDirectListener;
 import static android.taobao.atlas.runtime.InstrumentationHook.sOnIntentRedirectListener;
 
 public class Atlas {
@@ -363,6 +364,10 @@ public class Atlas {
 
     public void setIntentRedirectListener(InstrumentationHook.OnIntentRedirectListener listener){
         sOnIntentRedirectListener = listener;
+    }
+
+    public static void setIntentExternalDirectListener(InstrumentationHook.IntentExternalDirectListener listener) {
+        sIntentExternalDirectListener = listener;
     }
 
      ///////////////////////////////////////////////Deprecated method////////////////////////////////////////////
