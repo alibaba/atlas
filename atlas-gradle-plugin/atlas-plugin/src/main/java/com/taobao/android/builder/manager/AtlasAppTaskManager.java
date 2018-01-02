@@ -265,6 +265,7 @@ import com.taobao.android.builder.tasks.manager.transform.MtlTransformInjector;
 import com.taobao.android.builder.tasks.manager.transform.TransformManager;
 import com.taobao.android.builder.tasks.tpatch.DiffBundleInfoTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchDiffApkBuildTask;
+import com.taobao.android.builder.tasks.tpatch.TPatchDiffResAPBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchTask;
 import com.taobao.android.builder.tasks.transform.AtlasProguardTransform;
 import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
@@ -338,8 +339,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
 
-//                                                              mtlTaskContextList.add(new MtlTaskContext(MergeSoLibTask.ConfigAction.class, null));
-
                                                               mtlTaskContextList.add(new MtlTaskContext(PrepareAaptTask.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(AidlCompile.class));
@@ -349,8 +348,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(MergeResAwbsConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(MergeAssetAwbsConfigAction.class, null));
-
-//                                                              mtlTaskContextList.add(new MtlTaskContext(MergeAwbsJniFolder.class, null));
 
                                                               if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled()) {
 
@@ -414,6 +411,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(ApBuildTask.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(DiffBundleInfoTask.ConfigAction.class, null));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(TPatchDiffResAPBuildTask.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(TPatchDiffApkBuildTask.ConfigAction.class, null));
 
