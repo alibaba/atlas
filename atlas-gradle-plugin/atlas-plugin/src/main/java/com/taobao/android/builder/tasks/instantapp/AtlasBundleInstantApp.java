@@ -1,12 +1,15 @@
 package com.taobao.android.builder.tasks.instantapp;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.scope.*;
 import com.android.build.gradle.internal.tasks.ApplicationId;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.tasks.BundleInstantApp;
 import com.android.utils.FileUtils;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.apache.commons.compress.utils.IOUtils;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
@@ -53,49 +56,23 @@ public class AtlasBundleInstantApp extends DefaultAndroidTask {
             }
         }
 
-        // Write the json output.
-        InstantAppOutputScope instantAppOutputScope =
-                new InstantAppOutputScope(
-                        ApplicationId.load(applicationId.getSingleFile()).getApplicationId(),
-                        bundleFile,
-                        apkDirectories.getFiles().stream().collect(Collectors.toList()));
-        instantAppOutputScope.save(bundleDirectory);
+//        // Write the json output.
+//        InstantAppOutputScope instantAppOutputScope =
+//                new InstantAppOutputScope(
+//                        ApplicationId.load(applicationId.getSingleFile()).getApplicationId(),
+//                        bundleFile,
+//                        apkDirectories.getFiles().stream().collect(Collectors.toList()));
+//        instantAppOutputScope.save(bundleDirectory);
     }
 
-    @OutputDirectory
-    @NonNull
-    public File getBundleDirectory() {
-        return bundleDirectory;
-    }
-
-    @Input
-    @NonNull
-    public String getBundleName() {
-        return bundleName;
-    }
-
-    @InputFiles
-    @NonNull
-    public FileCollection getApplicationId() {
-        return applicationId;
-    }
-
-    @InputFiles
-    @NonNull
-    public FileCollection getApkDirectories() {
-        return apkDirectories;
-    }
 
     private File bundleDirectory;
     private String bundleName;
-    private FileCollection applicationId;
-    private FileCollection apkDirectories;
 
-    public static class ConfigAction implements TaskConfigAction<AtlasBundleInstantApp> {
+    public static class ConfigAction extends MtlBaseTaskAction<AtlasBundleInstantApp> {
 
-        public ConfigAction(@NonNull VariantScope scope, @NonNull File bundleDirectory) {
-            this.scope = scope;
-            this.bundleDirectory = bundleDirectory;
+        public ConfigAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            super(variantContext, baseVariantOutput);
         }
 
         @NonNull
@@ -119,16 +96,6 @@ public class AtlasBundleInstantApp extends DefaultAndroidTask {
                             + "-"
                             + scope.getVariantConfiguration().getBaseName()
                             + DOT_ZIP;
-            bundleInstantApp.applicationId =
-                    scope.getArtifactFileCollection(
-                            AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
-                            AndroidArtifacts.ArtifactScope.MODULE,
-                            AndroidArtifacts.ArtifactType.FEATURE_APPLICATION_ID_DECLARATION);
-            bundleInstantApp.apkDirectories =
-                    scope.getArtifactFileCollection(
-                            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                            AndroidArtifacts.ArtifactScope.MODULE,
-                            AndroidArtifacts.ArtifactType.APK);
         }
 
         private final VariantScope scope;

@@ -258,6 +258,7 @@ import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbAssets;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
+import com.taobao.android.builder.tasks.instantapp.AtlasBundleInstantApp;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tasks.manager.transform.MtlTransformContext;
@@ -407,6 +408,12 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               VariantScope variantScope = appVariantContext.getVariantData().getScope();
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PackageApplication.class));
+
+                                                              if (appVariantContext.getAtlasExtension().isInstantAppEnabled()){
+
+                                                                  mtlTaskContextList.add(new MtlTaskContext(AtlasBundleInstantApp.ConfigAction.class,null));
+
+                                                              }
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ApBuildTask.ConfigAction.class, null));
 

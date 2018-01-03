@@ -248,6 +248,17 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     protected Project project;
 
+
+    public boolean isInstantAppEnabled() {
+        return instantAppEnabled;
+    }
+
+    public void setInstantAppEnabled(boolean instantAppEnabled) {
+        this.instantAppEnabled = instantAppEnabled;
+    }
+
+    private boolean instantAppEnabled;
+
     protected Logger logger;
 
     public AtlasExtension() {
