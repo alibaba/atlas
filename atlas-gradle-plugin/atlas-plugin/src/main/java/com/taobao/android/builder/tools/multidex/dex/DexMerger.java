@@ -356,7 +356,7 @@ public class DexMerger {
         dexDtos.add(0, fistDto);
         for (File file : fileList) {
             if (file.getParentFile().getName().startsWith(FASTMAINDEX_JAR)) {
-                logger.warn("add %s to first dex!",file.getAbsolutePath());
+                logger.warn(String.format("add %s to first dex!",file.getAbsolutePath()));
                 Dex dex = jarDexMap.get(file);
                 fistDto.addDex(dex);
                 dexList.remove(dex);
