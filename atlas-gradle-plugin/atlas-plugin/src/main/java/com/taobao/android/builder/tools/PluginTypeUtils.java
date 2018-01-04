@@ -233,6 +233,12 @@ public class PluginTypeUtils {
     private static final String[] GOOGLE_ANDROID_PLUGINS = new String[] {"com.android.application",
         "com.android.library"};
 
+    private static final String[] FEATURE_ANDROID_PLUGINS = new String[] {"com.android.feature",
+            "com.taobao.atlas.feature"};
+
+    private static final String[] INSTANTAPP_ANDROID_PLUGINS = new String[] {"com.android.instantapp",
+            "com.taobao.atlas.instantapp"};
+
     /**
      * To determine whether Android is a project, use the Android gradle plugin as the basis
      *
@@ -252,7 +258,13 @@ public class PluginTypeUtils {
     public static boolean isLibraryProject(Project project) {
         return hasPlugins(project, LIBRARY_SUPPORT_PLUGINS);
     }
+    public static boolean isFeatureProject(Project project) {
+        return hasPlugins(project, FEATURE_ANDROID_PLUGINS);
+    }
 
+    public static boolean isInstantAppProject(Project project) {
+        return hasPlugins(project, INSTANTAPP_ANDROID_PLUGINS);
+    }
     /**
      * Determine whether it is an APP project
      *

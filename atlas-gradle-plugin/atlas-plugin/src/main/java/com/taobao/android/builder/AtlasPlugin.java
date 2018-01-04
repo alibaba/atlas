@@ -258,8 +258,8 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
             if (PluginTypeUtils.isAppProject(project1)) {
                 atlasConfigurationHelper.registAtlasStreams();
-                atlasConfigurationHelper.configDependencies();
 
+                atlasConfigurationHelper.configDependencies();
             }
 
 

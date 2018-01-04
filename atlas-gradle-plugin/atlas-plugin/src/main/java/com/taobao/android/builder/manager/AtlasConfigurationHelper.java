@@ -374,6 +374,14 @@ public class AtlasConfigurationHelper {
                                     libExtension,
                                     project,
                                     atlasExtension).run();
+        }else if (PluginTypeUtils.isFeatureProject(project)){
+            LibraryExtension featureExtension = DefaultGroovyMethods.asType(DefaultGroovyMethods.getAt(
+                    project.getExtensions(),
+                    "android"), FeatureExtension.class);
+            new AtlasFeatureTaskManager(AtlasBuildContext.androidBuilderMap.get(project),
+                                        featureExtension,
+                                        project,
+                                        atlasExtension).run();
         }
     }
 

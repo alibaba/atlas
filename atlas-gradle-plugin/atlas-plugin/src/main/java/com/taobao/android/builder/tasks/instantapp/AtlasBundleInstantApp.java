@@ -3,71 +3,100 @@ package com.taobao.android.builder.tasks.instantapp;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.publishing.AndroidArtifacts;
+import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.scope.*;
-import com.android.build.gradle.internal.tasks.ApplicationId;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
-import com.android.build.gradle.tasks.BundleInstantApp;
+import com.android.build.gradle.internal.variant.MultiOutputPolicy;
+import com.android.builder.signing.DefaultSigningConfig;
+import com.android.builder.signing.SigningException;
 import com.android.utils.FileUtils;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.sign.AndroidSigner;
 import org.apache.commons.compress.utils.IOUtils;
-import org.gradle.api.file.FileCollection;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.Enumeration;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static com.android.SdkConstants.DOT_ANDROID_PACKAGE;
 import static com.android.SdkConstants.DOT_ZIP;
 
 public class AtlasBundleInstantApp extends DefaultAndroidTask {
 
-    @TaskAction
-    public void taskAction() throws IOException {
-        FileUtils.mkdirs(bundleDirectory);
-
-        File bundleFile = new File(bundleDirectory, bundleName);
-        FileUtils.deleteIfExists(bundleFile);
-
-        // FIXME: Use ZFile to compress in parallel.
-        try (ZipOutputStream zipOutputStream =
-                     new ZipOutputStream(new FileOutputStream(bundleFile))) {
-            for (File apkDirectory : apkDirectories) {
-                Collection<BuildOutput> buildOutputs = BuildOutputs.load(apkDirectory);
-                for (BuildOutput buildOutput : buildOutputs) {
-                    if (buildOutput.getType() == TaskOutputHolder.TaskOutputType.APK) {
-                        File apkFile = buildOutput.getOutputFile();
-                        try (FileInputStream fileInputStream = new FileInputStream(apkFile)) {
-                            byte[] inputBuffer = IOUtils.toByteArray(fileInputStream);
-                            zipOutputStream.putNextEntry(new ZipEntry(apkFile.getName()));
-                            zipOutputStream.write(inputBuffer, 0, inputBuffer.length);
-                            zipOutputStream.closeEntry();
-                        }
-                    }
-                }
-            }
-        }
-
-//        // Write the json output.
-//        InstantAppOutputScope instantAppOutputScope =
-//                new InstantAppOutputScope(
-//                        ApplicationId.load(applicationId.getSingleFile()).getApplicationId(),
-//                        bundleFile,
-//                        apkDirectories.getFiles().stream().collect(Collectors.toList()));
-//        instantAppOutputScope.save(bundleDirectory);
-    }
-
+    private File apkFile;
 
     private File bundleDirectory;
     private String bundleName;
+    private VariantScope scope;
+    private static Pattern excludePattern = Pattern.compile("^(META-INF/)\\w*");
+    private static Pattern apkPattern = Pattern.compile("libcom_\\w*(.so)$");
+    private static Pattern storePattern = Pattern.compile("^(raw/)|(^assets/)");
+
+
+
+    @TaskAction
+    public void taskAction() throws IOException {
+        FileUtils.mkdirs(bundleDirectory);
+        File bundleFile = new File(bundleDirectory, bundleName);
+        FileUtils.deleteIfExists(bundleFile);
+        File baseFeatureApk = new File(bundleDirectory, "baseFeature.apk");
+        if (apkFile.exists()) {
+            try {
+                make(baseFeatureApk, apkFile, bundleFile, scope.getVariantConfiguration().getSigningConfig());
+            } catch (SigningException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    private void make(File baseFeatureApk, File apkFile, File bundleFile, CoreSigningConfig signingConfig) throws IOException, SigningException {
+        ZipFile zipFile = new ZipFile(apkFile);
+        Enumeration entries = zipFile.entries();
+        ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(bundleFile));
+        ZipOutputStream baseFeatureStream = new ZipOutputStream(new FileOutputStream(baseFeatureApk));
+        while (entries.hasMoreElements()) {
+            ZipEntry zipEntry = (ZipEntry) entries.nextElement();
+            if (excludePattern.matcher(zipEntry.getName()).find()) {
+                continue;
+            } else if (apkPattern.matcher(zipEntry.getName()).find()) {
+                byte[] inputBuffer = IOUtils.toByteArray(zipFile.getInputStream(zipEntry));
+                zipOutputStream.putNextEntry(new ZipEntry(zipEntry.getName().substring(zipEntry.getName().lastIndexOf("/") + 1).replace(".so", DOT_ANDROID_PACKAGE)));
+                zipOutputStream.write(inputBuffer, 0, inputBuffer.length);
+                zipOutputStream.closeEntry();
+            } else {
+                byte[] inputBuffer = IOUtils.toByteArray(zipFile.getInputStream(zipEntry));
+                if (storePattern.matcher(zipEntry.getName()).find()) {
+                    baseFeatureStream.putNextEntry(new ZipEntry(zipEntry));
+                } else {
+                    baseFeatureStream.putNextEntry(new ZipEntry(zipEntry.getName()));
+
+                }
+                baseFeatureStream.write(inputBuffer, 0, inputBuffer.length);
+                baseFeatureStream.closeEntry();
+            }
+        }
+        baseFeatureStream.close();
+        AndroidSigner androidSigner = new AndroidSigner();
+        File signedApk = new File(baseFeatureApk.getParentFile(), "baseFeature-signed.apk");
+        androidSigner.signFile(baseFeatureApk, signedApk, (DefaultSigningConfig) signingConfig);
+        byte[] inputBuffer = IOUtils.toByteArray(new ZipInputStream(new FileInputStream(signedApk)));
+        zipOutputStream.putNextEntry(new ZipEntry(baseFeatureApk.getName()));
+        zipOutputStream.write(inputBuffer, 0, inputBuffer.length);
+        zipOutputStream.closeEntry();
+        zipOutputStream.close();
+        FileUtils.deleteIfExists(signedApk);
+        FileUtils.deleteIfExists(baseFeatureApk);
+    }
+
 
     public static class ConfigAction extends MtlBaseTaskAction<AtlasBundleInstantApp> {
 
@@ -90,15 +119,22 @@ public class AtlasBundleInstantApp extends DefaultAndroidTask {
         @Override
         public void execute(@NonNull AtlasBundleInstantApp bundleInstantApp) {
             bundleInstantApp.setVariantName(scope.getFullVariantName());
-            bundleInstantApp.bundleDirectory = bundleDirectory;
-            bundleInstantApp.bundleName =
-                    scope.getGlobalScope().getProjectBaseName()
-                            + "-"
-                            + scope.getVariantConfiguration().getBaseName()
-                            + DOT_ZIP;
-        }
+            final boolean splitsArePossible =
+                    scope.getOutputScope().getMultiOutputPolicy() == MultiOutputPolicy.SPLITS;
+            File finalApkLocation = scope.getApkLocation();
+            File outputDirectory =
+                    splitsArePossible
+                            ? scope.getFullApkPackagesOutputDirectory()
+                            : finalApkLocation;
+            bundleInstantApp.bundleName = scope.getOutputScope().getApkDatas().get(0).getOutputFileName().replace(DOT_ANDROID_PACKAGE, DOT_ZIP);
 
-        private final VariantScope scope;
-        private final File bundleDirectory;
+            bundleInstantApp.bundleDirectory = outputDirectory;
+
+            bundleInstantApp.scope = variantContext.getScope();
+
+            bundleInstantApp.apkFile = new File(outputDirectory, scope.getOutputScope().getApkDatas().get(0).getOutputFileName());
+
+        }
     }
+
 }

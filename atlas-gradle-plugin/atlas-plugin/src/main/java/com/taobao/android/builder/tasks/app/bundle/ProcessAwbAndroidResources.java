@@ -401,8 +401,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                 .setSplits(getSplits())
                 .setPreferredDensity(getPreferredDensity())
                 .setPseudoLocalize(getPseudoLocalesEnabled())
-                .setListResourceFiles(aaptGeneration == AaptGeneration.AAPT_V2)
-                .setPackageId(Integer.valueOf(getCustomPackageId()));
+                .setListResourceFiles(aaptGeneration == AaptGeneration.AAPT_V2);
+//                .setPackageId(Integer.valueOf(getCustomPackageId()));
 
         @NonNull AndroidBuilder builder = getBuilder();
 

@@ -412,7 +412,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               if (appVariantContext.getAtlasExtension().isInstantAppEnabled()){
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(AtlasBundleInstantApp.ConfigAction.class,null));
-
                                                               }
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ApBuildTask.ConfigAction.class, null));

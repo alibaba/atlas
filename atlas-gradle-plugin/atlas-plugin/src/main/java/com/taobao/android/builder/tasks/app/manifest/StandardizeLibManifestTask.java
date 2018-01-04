@@ -276,6 +276,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
     @TaskAction
     public void preProcess() throws IOException, DocumentException, InterruptedException {
+
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getVariantName());
         androidLibraries = dependencyTree.getAllAndroidLibrarys();
 

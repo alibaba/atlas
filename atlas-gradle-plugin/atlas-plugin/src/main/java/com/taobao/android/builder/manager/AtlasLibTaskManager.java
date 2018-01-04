@@ -266,69 +266,66 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 
         new UpdatePomTask(project).updatePom();
 
-        libraryExtension.getLibraryVariants().forEach(new Consumer<LibraryVariant>() {
+        libraryExtension.getLibraryVariants().forEach(libraryVariant -> {
 
-            @Override
-            public void accept(LibraryVariant libraryVariant) {
+            LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant,
+                                                                        project,
+                                                                        atlasExtension,
+                                                                        libraryExtension);
 
-                LibVariantContext libVariantContext = new LibVariantContext((LibraryVariantImpl)libraryVariant,
-                                                                            project,
-                                                                            atlasExtension,
-                                                                            libraryExtension);
-
-                TBuildType tBuildType = libVariantContext.getBuildType();
-                if (null != tBuildType) {
-                    try {
-                        new AwoPropHandler().process(tBuildType,
-                                                     atlasExtension.getBundleConfig());
-                    } catch (Exception e) {
-                        throw new GradleException("process awo exception", e);
-                    }
+            TBuildType tBuildType = libVariantContext.getBuildType();
+            if (null != tBuildType) {
+                try {
+                    new AwoPropHandler().process(tBuildType,
+                                                 atlasExtension.getBundleConfig());
+                } catch (Exception e) {
+                    throw new GradleException("process awo exception", e);
                 }
+            }
 
-                AwbGenerator awbGenerator = new AwbGenerator(atlasExtension);
+            AwbGenerator awbGenerator = new AwbGenerator(atlasExtension);
 
-                Collection<BaseVariantOutput> list = libVariantContext.getBaseVariant().getOutputs();
+            Collection<BaseVariantOutput> list = libVariantContext.getBaseVariant().getOutputs();
 
-                if (null != list) {
+            if (null != list) {
 
-                    for (BaseVariantOutput libVariantOutputData : list) {
+                for (BaseVariantOutput libVariantOutputData : list) {
 
-                        Zip zipTask = ((LibraryVariantOutput)(libVariantOutputData)).getPackageLibrary();
+                    Zip zipTask = ((LibraryVariantOutput)(libVariantOutputData)).getPackageLibrary();
 
-                        if (atlasExtension.getBundleConfig().isJarEnabled()) {
-                            new JarExtractTask().generateJarArtifict(zipTask);
+                    if (atlasExtension.getBundleConfig().isJarEnabled()) {
+                        new JarExtractTask().generateJarArtifict(zipTask);
+                    }
+
+                    //Build the awb and extension
+                    if (atlasExtension.getBundleConfig().isAwbBundle()) {
+                        awbGenerator.generateAwbArtifict(zipTask,libVariantContext);
+                    }
+
+                    if (null != tBuildType && (StringUtils.isNotEmpty(tBuildType.getBaseApDependency())
+                        || null != tBuildType.getBaseApFile()) &&
+
+                        libraryVariant.getName().equals("debug")) {
+
+                        atlasExtension.getTBuildConfig().setUseCustomAapt(true);
+
+                        libVariantContext.setBundleTask(zipTask);
+
+                        try {
+
+                            libVariantContext.setAwbBundle(awbGenerator.createAwbBundle(libVariantContext));
+                        } catch (IOException e) {
+                            throw new GradleException("set awb bundle error");
                         }
-
-                        //Build the awb and extension
-                        if (atlasExtension.getBundleConfig().isAwbBundle()) {
-                            awbGenerator.generateAwbArtifict(zipTask,libVariantContext);
-                        }
-
-                        if (null != tBuildType && (StringUtils.isNotEmpty(tBuildType.getBaseApDependency())
-                            || null != tBuildType.getBaseApFile()) &&
-
-                            libraryVariant.getName().equals("debug")) {
-
-                            atlasExtension.getTBuildConfig().setUseCustomAapt(true);
-
-                            libVariantContext.setBundleTask(zipTask);
-
-                            try {
-
-                                libVariantContext.setAwbBundle(awbGenerator.createAwbBundle(libVariantContext));
-                            } catch (IOException e) {
-                                throw new GradleException("set awb bundle error");
-                            }
 
 //                            if (atlasExtension.getBundleConfig().isAwbBundle()) {
 //                                createAwoTask(libVariantContext, zipTask);
 //                            } else {
 //                                createDexTask(libVariantContext, zipTask);
 //                            }
-                        }
-
                     }
+
+                }
 
 //                    List<TransformTask>transformTasks =  TransformManager.findTransformTaskByTransformType(libVariantContext,LibraryAarJarsTransform.class);
 //                    for (TransformTask transformTask: transformTasks){
@@ -338,9 +335,8 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 //                        }
 //                    }
 
-                }
-
             }
+
         });
     }
 
