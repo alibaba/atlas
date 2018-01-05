@@ -213,7 +213,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
@@ -227,6 +229,7 @@ import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 
 /**
@@ -245,10 +248,21 @@ public class ActivityThreadHook implements Handler.Callback{
 
     public void ensureLoadedApk() throws Exception{
         Object loadedapk = AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,mActivityThread,RuntimeVariables.androidApplication.getPackageName());
+
         if(loadedapk==null){
 //            AtlasMonitor.getInstance().trace(AtlasMonitor.LOADEDAPK_MISSING,"loaded apk","handle message","");
             ActivityTaskMgr.getInstance().clearActivityStack();
             android.os.Process.killProcess(android.os.Process.myPid());
+        } else {
+            ClassLoader classLoader = AtlasHacks.LoadedApk_mClassLoader.get(loadedapk);
+            if(!(classLoader instanceof DelegateClassLoader)){
+                AtlasHacks.LoadedApk_mClassLoader.set(loadedapk, RuntimeVariables.delegateClassLoader);
+                AtlasHacks.LoadedApk_mResources.set(loadedapk,RuntimeVariables.delegateResources);
+
+                Map<String, Object> detail = new HashMap<>();
+                detail.put("classLoader", classLoader.getClass());
+                AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_LOADEDAPK_CHANGE, detail,new RuntimeException("classloader change"));
+            }
         }
     }
 
