@@ -428,8 +428,10 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
         File outFile = invocation.getOutputProvider().getContentLocation("main", getOutputTypes(), getScopes(),
                 Format.JAR);
+
         outFile.delete();
-        input.proguardOutputDir = outFile.getParentFile();
+        input.proguardOutputDir = invocation.getOutputProvider().getContentLocation("main", getOutputTypes(), getScopes(),
+                Format.DIRECTORY);
         input.printMapping = (File) ReflectUtils.getField(oldTransform, "printMapping");
         input.dump = (File) ReflectUtils.getField(oldTransform, "dump");
         input.printSeeds = (File) ReflectUtils.getField(oldTransform, "printSeeds");

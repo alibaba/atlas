@@ -20,6 +20,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -37,17 +38,44 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
     private AppVariantOutputContext variantOutputContext;
 
+    private ILogger logger;
+
+    Collection<File>inputFile= new ArrayList<>();
+
     private WaitableExecutor waitableExecutor = WaitableExecutor.useGlobalSharedThreadPool();
 
     public DexByteCodeConverterHook(VariantContext variantContext, AppVariantOutputContext variantOutputContext, ILogger logger, TargetInfo targetInfo, JavaProcessExecutor javaProcessExecutor, boolean verboseExec, ErrorReporter errorReporter) {
         super(logger, targetInfo, javaProcessExecutor, verboseExec, errorReporter);
         this.variantContext = variantContext;
         this.variantOutputContext = variantOutputContext;
+        this.logger = logger;
     }
 
+
+    @Override
+    public void runDexer(DexProcessBuilder builder, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) throws ProcessException, IOException, InterruptedException {
+        builder.addInputs(inputFile);
+        super.runDexer(builder,dexOptions,processOutputHandler);
+
+
+    }
     @Override
     public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
 
+        for (File file: inputs){
+                logger.info("input dexFile:",file.getAbsolutePath());
+                 if (file.isDirectory()){
+                File[]jars = file.listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        return name.endsWith(".jar");
+                    }
+                });
+                if (jars!= null) {
+                    inputFile.addAll(Arrays.asList(jars));
+                }
+            }
+        }
         waitableExecutor.execute((Callable<Void>) () -> {
                     DexByteCodeConverterHook.super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
                     return null;
@@ -64,11 +92,6 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                         new ToolOutputParser(new DexParser(), Message.Kind.ERROR, LoggerWrapper.getLogger(DexByteCodeConverterHook.class)),
                         new ToolOutputParser(new DexParser(), LoggerWrapper.getLogger(DexByteCodeConverterHook.class)),
                         AtlasBuildContext.androidBuilderMap.get(variantContext.getProject()).getErrorReporter());
-
-        final AtomicLong dexTotalTime = new AtomicLong(0);
-        final AtomicLong packageTotalTime = new AtomicLong(0);
-        final Map<String, Long[]> monitors = new HashMap<String, Long[]>();
-        long startTime = System.currentTimeMillis();
 
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
