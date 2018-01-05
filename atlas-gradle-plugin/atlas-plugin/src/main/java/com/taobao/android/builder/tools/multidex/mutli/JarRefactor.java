@@ -237,7 +237,7 @@ public class JarRefactor {
     private MultiDexConfig multiDexConfig;
     private boolean splitJar = false;
 
-    public static final int MAX_CLASSES = 1000;
+    public static final int MAX_CLASSES = 2000;
 
     public JarRefactor(AppVariantContext appVariantContext,
                        MultiDexConfig multiDexConfig) {
