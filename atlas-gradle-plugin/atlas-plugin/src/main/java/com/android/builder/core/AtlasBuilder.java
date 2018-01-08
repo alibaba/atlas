@@ -232,7 +232,6 @@ import com.android.manifmerger.MergingReport;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.BuildToolInfo.PathId;
 import com.android.utils.ILogger;
-import com.google.common.collect.Sets;
 import com.taobao.android.AaptLib;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
@@ -240,12 +239,10 @@ import com.taobao.android.builder.tasks.app.bundle.AtlasSymbolIo;
 import com.taobao.android.builder.tools.*;
 import com.taobao.android.builder.tools.cache.FileCacheCenter;
 import com.taobao.android.builder.tools.cache.FileCacheException;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.gradle.api.GradleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -782,7 +779,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
     public static interface MultiDexer {
 
-        public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile) throws IOException;
+        public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile, boolean release) throws IOException;
 
         public void dexMerge(Map<File, Dex> fileDexMap, File outDexFolder) throws IOException;
 

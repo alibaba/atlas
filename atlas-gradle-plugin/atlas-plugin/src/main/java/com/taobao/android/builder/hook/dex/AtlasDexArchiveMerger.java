@@ -2,16 +2,15 @@ package com.taobao.android.builder.hook.dex;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.builder.dexing.*;
 import com.android.dex.Dex;
-import com.android.dex.DexFormat;
 import com.android.dx.command.dexer.DxContext;
-import com.android.ide.common.internal.WaitableExecutor;
+import com.android.utils.ILogger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +34,8 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
 
     private ForkJoinPool forkJoinPool = null;
 
+    private ILogger logger = LoggerWrapper.getLogger(AtlasDexArchiveMerger.class);
+
     private DexMergingStrategy mergingStrategy = new AtlasDexMergingStrategy();
 
 
@@ -46,15 +47,15 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
     public void mergeDexArchives(Iterable<Path> inputs, Path outputDir, Path mainDexClasses, DexingType dexingType) throws DexArchiveMergerException {
 
         List<Path> inputPaths = Ordering.natural().sortedCopy(inputs);
-        Set<String> mainClasses = null;
-        try {
-            mainClasses = Sets.newHashSet(readAllLines(mainDexClasses));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        Set<String> mainClasses = null;
+//        try {
+//            mainClasses = Sets.newHashSet(readAllLines(mainDexClasses));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
 
-        Iterator<DexArchiveEntry> entries =
+        Iterator<DexMergeEntry> entries =
                 null;
         try {
             entries = getAllEntriesFromArchives(inputPaths).iterator();
@@ -66,39 +67,52 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
             return;
         }
 
-        int classesDexSuffix;
-        if (dexingType == DexingType.LEGACY_MULTIDEX) {
-            classesDexSuffix = 1;
-        } else {
-            classesDexSuffix = 0;
-        }
+        int classesDexSuffix = 0;
+
 
         List<ForkJoinTask<Void>> subTasks = new ArrayList<>();
-        List<Dex> toMergeInMain = Lists.newArrayList();
+        List<String> toMergeInMain = Lists.newArrayList();
         mergingStrategy.startNewDex();
 
         while (entries.hasNext()) {
-            DexArchiveEntry entry = entries.next();
+            DexMergeEntry entry = entries.next();
             Dex dex = null;
             try {
-                dex = new Dex(entry.getDexFileContent());
+                dex = new Dex(entry.dexFileContent);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             if (dexingType == DexingType.LEGACY_MULTIDEX) {
-                // check if this should go to the main dex
-                String relativeUnixPath =
-                        DexArchiveEntry.withClassExtension(entry.getRelativePathInArchive());
-                if (mainClasses.contains(relativeUnixPath)) {
-                    toMergeInMain.add(dex);
-                    continue;
+                if (entry.name.startsWith("fastmaindex")) {
+                    logger.info("add fastmultidex.jar to first dex");
+                    toMergeInMain.add(entry.name);
+                    mergingStrategy.tryToAddForMerging(dex);
+                    break;
                 }
             }
-
+        }
+        try {
+            entries = getAllEntriesFromArchives(inputPaths).iterator();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        while (entries.hasNext()) {
+            DexMergeEntry entry = entries.next();
+            Dex dex = null;
+            try {
+                dex = new Dex(entry.dexFileContent);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (toMergeInMain.contains(entry.name)){
+                continue;
+            }
             if (!mergingStrategy.tryToAddForMerging(dex)) {
                 Path dexOutput = new File(outputDir.toFile(), getDexFileName(classesDexSuffix++)).toPath();
-                subTasks.add(submitForMerging(mergingStrategy.getAllDexToMerge(), dexOutput));
+                if (mergingStrategy.getAllDexToMerge().size() > 0) {
+                    subTasks.add(submitForMerging(mergingStrategy.getAllDexToMerge(), dexOutput));
+                }
                 mergingStrategy.startNewDex();
 
                 // adding now should succeed
@@ -109,15 +123,13 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
             }
         }
 
-        if (dexingType == DexingType.LEGACY_MULTIDEX) {
-            // write the main dex file
-            subTasks.add(submitForMerging(toMergeInMain, new File(outputDir.toFile(), getDexFileName(0)).toPath()));
-        }
 
         // if there are some remaining unprocessed dex files, merge them
         if (!mergingStrategy.getAllDexToMerge().isEmpty()) {
             Path dexOutput = new File(outputDir.toFile(), getDexFileName(classesDexSuffix)).toPath();
-            subTasks.add(submitForMerging(mergingStrategy.getAllDexToMerge(), dexOutput));
+            if (mergingStrategy.getAllDexToMerge().size() > 0) {
+                subTasks.add(submitForMerging(mergingStrategy.getAllDexToMerge(), dexOutput));
+            }
         }
 
         // now wait for all subtasks completion.
@@ -125,20 +137,13 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
 
     }
 
-    @NonNull
-    static List<DexArchiveEntry> getEntriesFromSingleArchive(@NonNull Path archivePath)
-            throws IOException {
-        try (DexArchive archive = DexArchives.fromInput(archivePath)) {
-            return archive.getFiles();
-        }
-    }
 
     @NonNull
-    static List<DexArchiveEntry> getAllEntriesFromArchives(@NonNull Collection<Path> inputs)
+    static List<DexMergeEntry> getAllEntriesFromArchives(@NonNull Collection<Path> inputs)
             throws IOException {
-        List<DexArchiveEntry> entries = Lists.newArrayList();
+        List<DexMergeEntry> entries = Lists.newArrayList();
         for (Path p : inputs) {
-            entries.addAll(getEntriesFromSingleArchive(p));
+            entries.add(new DexMergeEntry(Files.readAllBytes(p),p.toFile().getParentFile().getName()));
         }
         return entries;
     }
@@ -199,6 +204,19 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
         @Override
         public ImmutableList<Dex> getAllDexToMerge() {
             return ImmutableList.copyOf(currentDexesToMerge);
+        }
+    }
+
+
+    static class DexMergeEntry{
+
+         public byte[] dexFileContent;
+
+         public String name;
+
+        public DexMergeEntry(byte[] dexFileContent, String name) {
+            this.dexFileContent = dexFileContent;
+            this.name = name;
         }
     }
 }

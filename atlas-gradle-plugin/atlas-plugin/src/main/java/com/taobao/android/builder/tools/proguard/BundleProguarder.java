@@ -259,7 +259,9 @@ public class BundleProguarder {
     private static FileLogger fileLogger = FileLogger.getInstance("proguard");
 
     public static void execute(AppVariantContext appVariantContext, Input input) throws Exception {
-
+        if (input.proguardOutputDir != null && input.proguardOutputDir.exists()) {
+            FileUtils.cleanDirectory(input.proguardOutputDir);
+        }
         if (!appVariantContext.getAtlasExtension().getTBuildConfig().isProguardCacheEnabled()) {
             doProguard(appVariantContext, input);
             return;
@@ -319,7 +321,6 @@ public class BundleProguarder {
         Map<String,File> md5Map = input.getMd5Files();
 
         if (input.getAwbBundles().get(0).getAwbBundle().isMainBundle()) {
-
             for (File file : cacheDir.listFiles()) {
                 if (file.getName().endsWith("jar") && ZipUtils.isZipFile(file)) {
 
@@ -516,6 +517,7 @@ public class BundleProguarder {
 
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+                AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(inputLibrary,obsJar);
             }
 
             //configs.add();

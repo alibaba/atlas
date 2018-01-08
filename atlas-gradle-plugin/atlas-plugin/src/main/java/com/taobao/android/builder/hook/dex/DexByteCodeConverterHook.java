@@ -21,10 +21,13 @@ import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.cache.FileCacheCenter;
 import com.taobao.android.builder.tools.cache.FileCacheException;
+import org.apache.commons.compress.compressors.FileNameUtil;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -135,21 +138,8 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         }
 
         File tempDexFolder = null;
-        for (File file : inputs) {
-            if (file.isDirectory()) {
-                File[] jars = file.listFiles(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File dir, String name) {
-                        return name.endsWith(".jar");
-                    }
-                });
-                if (jars != null) {
-                    inputFile.addAll(Arrays.asList(jars));
-                }
-            }
-            inputFile.add(file);
 
-        }
+        inputFile = AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
 
         if (!multidex) {
             waitableExecutor.execute((Callable<Void>) () -> {
@@ -175,7 +165,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                File outPutFolder = new File(tempDexFolder,key);
+                File outPutFolder = new File(tempDexFolder, FilenameUtils.getBaseName(file.getName()));
                 if (!outPutFolder.exists()){
                     outPutFolder.mkdirs();
                 }

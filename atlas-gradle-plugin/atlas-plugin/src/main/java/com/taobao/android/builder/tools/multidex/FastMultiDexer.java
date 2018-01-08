@@ -224,7 +224,6 @@ import com.android.dx.merge.DexMerger;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.multidex.dex.DexGroup;
 import com.taobao.android.builder.tools.multidex.mutli.JarRefactor;
-import org.gradle.api.GradleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -269,9 +268,9 @@ public class FastMultiDexer implements MultiDexer {
     }
 
     @Override
-    public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile) throws IOException {
+    public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile, boolean release) throws IOException {
 
-        return new JarRefactor(appVariantContext, multiDexConfig).repackageJarList(files,mainDexListFile);
+        return new JarRefactor(appVariantContext, multiDexConfig).repackageJarList(files,mainDexListFile,release);
 
     }
 
