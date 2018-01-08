@@ -480,6 +480,11 @@ public class AppVariantOutputContext {
                 "/awb-external-dex/" + variantScope.getVariantConfiguration().getDirName() + "/" + key.getName());
     }
 
+    public File getMainDexOutDir() {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/main-dex/" + variantScope.getVariantConfiguration().getDirName() + "/" );
+    }
+
 
     public static class AppBuildInfo {
 

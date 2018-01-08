@@ -493,6 +493,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             options.add("--output-text-symbols");
             options.add(getTextSymbolOutputDir().getAbsolutePath());
         }
+        aaptOptions.getAdditionalParameters().add("--non-constant-id");
+
 
 
         aaptOptions.additionalParameters(options.toArray(new String[0]));
