@@ -420,13 +420,7 @@ public class ApBuildTask extends DefaultAndroidTask {
                 return;
             }
 
-            ConventionMappingHelper.map(apBuildTask, "apkFile", new Callable<File>() {
-
-                @Override
-                public File call() {
-                    return getAppVariantOutputContext().getApkOutputFile(true);
-                }
-            });
+            ConventionMappingHelper.map(apBuildTask, "apkFile", (Callable<File>) () -> getAppVariantOutputContext().getApkOutputFile(true));
 
             apBuildTask.appVariantContext = appVariantContext;
             apBuildTask.baseVariantOutputData = baseVariantOutput;

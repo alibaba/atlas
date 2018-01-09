@@ -242,7 +242,7 @@ public class AwbApkPackageTask {
         try (IncrementalPackager packager =
                      new IncrementalPackagerBuilder()
                              .withOutputFile(outputFile)
-                             .withSigning(signingConfig)
+                             .withSigning(null)
                              .withCreatedBy(androidBuilder.getCreatedBy())
                              .withMinSdk(miniSdkVersion)
                              // TODO: allow extra metadata to be saved in the split scope to avoid
@@ -397,31 +397,6 @@ public class AwbApkPackageTask {
         }
         return copiedZip;
     }
-
-//    @NonNull
-//    private File generateEmptyAndroidResourcesForInstantRun(File manifestFile) throws IOException {
-//        try (Aapt aapt =
-//                     InstantRunSplitApkBuilder.makeAapt(
-//                             aaptGeneration, getBuilder(), fileCache, aaptIntermediateFolder)) {
-//
-//            // use default values for aaptOptions since we don't package any resources.
-//            return InstantRunSliceSplitApkBuilder.generateSplitApkResourcesAp(
-//                    getLogger(),
-//                    aapt,
-//                    manifestFile,
-//                    instantRunSupportDir,
-//                    new com.android.builder.internal.aapt.AaptOptions(
-//                            ImmutableList.of(), false, ImmutableList.of()),
-//                    getBuilder(),
-//                    resourceFiles,
-//                    "main_resources");
-//        } catch (InterruptedException e) {
-//            Thread.interrupted();
-//            throw new IOException("Exception while generating InstantRun main resources APK", e);
-//        } catch (ProcessException e) {
-//            throw new IOException("Exception while generating InstantRun main resources APK", e);
-//        }
-//    }
 
 
     public void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {

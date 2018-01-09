@@ -416,26 +416,20 @@ public class AppVariantOutputContext {
     }
 
     public File getApkOutputFile(boolean checkExist) {
-        File apkFile = new File(variantScope.getApkLocation(),apkData.getOutputFileName());
-//        File file = variantScope.getGlobalScope()
-//                .getProject()
-//                .file(apkData.getDirName() +
-//                      "/" +
-//                      variantScope.getGlobalScope().getProjectBaseName() +
-//                      "-" +
-//                      variantData.getVariantConfiguration().getBaseName() +
-//                      ".apk");
-//
-//        if (checkExist && !apkFile.exists()) {
-//            apkFile = new File(apkData.getDirName(),apkData.getFullName());
-////            if (checkExist && !file.exists()) {
-////                file = variantData.getOutputScope().;
-////            }
-//            return apkFile;
-//            //return outputScope.getPackageApk();
-//        }
+        File apkFile;
 
-        return apkFile;
+        apkFile = new File(variantScope.getApkLocation(),
+                      variantScope.getGlobalScope().getProjectBaseName() +
+                      "-" +
+                      variantData.getVariantConfiguration().getBaseName() +
+                      ".apk");
+
+        if (checkExist && !apkFile.exists()) {
+
+            apkFile = new File(variantScope.getApkLocation(), apkData.getOutputFileName());
+        }
+
+            return apkFile;
     }
 
     public File getDiffResourceAp() {

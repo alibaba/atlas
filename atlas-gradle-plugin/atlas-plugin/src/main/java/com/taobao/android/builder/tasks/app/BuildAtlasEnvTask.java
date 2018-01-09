@@ -28,6 +28,7 @@ import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.tasks.app.merge.MainDexArtifactCollection;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.ReflectUtils;
@@ -161,6 +162,8 @@ public class BuildAtlasEnvTask extends BaseTask {
 
         List<AndroidLibrary> mainDexAndroidLibraries = atlasDependencyTree.getMainBundle().getAndroidLibraries();
         List<JavaLibrary>mainDexJarLibraries = atlasDependencyTree.getMainBundle().getJavaLibraries();
+        List<SoLibrary>mainSoLibraries = atlasDependencyTree.getMainBundle().getSoLibraries();
+
         for (AndroidLibrary androidLibrary : mainDexAndroidLibraries) {
             String name = androidLibrary.getResolvedCoordinates().getGroupId()+":"+androidLibrary.getResolvedCoordinates().getArtifactId();
             String moudleName = androidLibrary.getResolvedCoordinates().toString().split(":")[1];
@@ -176,9 +179,18 @@ public class BuildAtlasEnvTask extends BaseTask {
             fillMainJar(name,moudleName);
         }
 
+        for (SoLibrary soLibrary:mainSoLibraries){
+            String name = soLibrary.getResolvedCoordinates().getGroupId() + ":" + soLibrary.getResolvedCoordinates().getArtifactId();
+            String moudleName = soLibrary.getResolvedCoordinates().toString().split(":")[1];
+            fillMainSolibs(name,moudleName);
+        }
+
+
         for (AwbBundle awbBundle:atlasDependencyTree.getAwbBundles()){
             List<AndroidLibrary> awbAndroidLibraries = awbBundle.getAndroidLibraries();
             List<JavaLibrary>awbJarLibraries = awbBundle.getJavaLibraries();
+            List<SoLibrary>awbSoLibraries = awbBundle.getSoLibraries();
+
             for (AndroidLibrary androidLibrary:awbAndroidLibraries) {
                 String name = androidLibrary.getResolvedCoordinates().getGroupId() + ":" + androidLibrary.getResolvedCoordinates().getArtifactId();
                 String moudleName = androidLibrary.getResolvedCoordinates().toString().split(":")[1];
@@ -191,6 +203,11 @@ public class BuildAtlasEnvTask extends BaseTask {
                 String moudleName = jarLibrary.getName().split(":")[1];
                 String name = jarLibrary.getResolvedCoordinates().getGroupId()+":"+jarLibrary.getResolvedCoordinates().getArtifactId();
                 fillAwbJar(name,moudleName,awbBundle);
+            }
+            for (SoLibrary soLibrary:awbSoLibraries){
+                String name = soLibrary.getResolvedCoordinates().getGroupId() + ":" + soLibrary.getResolvedCoordinates().getArtifactId();
+                String moudleName = soLibrary.getResolvedCoordinates().toString().split(":")[1];
+                fillAwbSolibs(name,moudleName,awbBundle);
             }
             String name = awbBundle.getResolvedCoordinates().getGroupId() + ":" + awbBundle.getResolvedCoordinates().getArtifactId();
             String moudleName = awbBundle.getResolvedCoordinates().toString().split(":")[1];
@@ -238,11 +255,12 @@ public class BuildAtlasEnvTask extends BaseTask {
 
 
 
-        try {
-            duplicateClazzNote();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//
+//        try {
+//            duplicateClazzNote();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
     }
 
