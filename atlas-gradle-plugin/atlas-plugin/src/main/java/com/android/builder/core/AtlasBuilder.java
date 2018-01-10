@@ -410,13 +410,13 @@ public class AtlasBuilder extends AndroidBuilder {
             File mainRTxt = new File(aaptConfig.getSymbolOutputDir(), "R.txt");
             File mergedSymbolFile = new File(aaptConfig.getSymbolOutputDir(), "R-all.txt");
             try {
-                sLogger.info("mainSymbolFile:" + mainSymbolFile);
-                if (null != mainSymbolFile && mainSymbolFile.exists()) {
-                    FileUtils.copyFile(mainSymbolFile, mergedSymbolFile);
+                sLogger.info("awbSymbolFile:" + mainRTxt);
+                if (null != mainRTxt && mainRTxt.exists()) {
+                    FileUtils.copyFile(mainRTxt, mergedSymbolFile);
                 }
 
                 //why do this?
-                FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(mainRTxt), true);
+                FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(mainSymbolFile), true);
             } catch (IOException e) {
                 throw new RuntimeException("Could not load file ", e);
             }

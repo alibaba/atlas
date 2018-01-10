@@ -412,7 +412,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                     outputFile.toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
             // no need to try to cache an already cached version.
-            return ImmutableList.of();
+            return ImmutableList.of(outputFile);
         }
     }
 
@@ -808,6 +808,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             }
 
             for (File file : inputFiles) {
+                logger.warning(awbBundle.getName()+":"+file.getAbsolutePath());
                 boolean find = false;
                 for (QualifiedContent content : listFiles) {
                     if (content.getFile().getAbsolutePath().equals(file.getAbsolutePath())) {

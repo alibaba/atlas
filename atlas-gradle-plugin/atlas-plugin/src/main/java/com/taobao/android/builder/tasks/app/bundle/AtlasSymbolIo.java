@@ -3,10 +3,12 @@ package com.taobao.android.builder.tasks.app.bundle;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.builder.symbols.*;
 import com.android.ide.common.xml.AndroidManifestParser;
 import com.android.resources.ResourceType;
 import com.android.utils.FileUtils;
+import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
@@ -25,6 +27,7 @@ import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
@@ -40,6 +43,8 @@ public class AtlasSymbolIo {
 
 
     public static final String ANDROID_ATTR_PREFIX = "android_";
+
+    private static ILogger logger = LoggerWrapper.getLogger(AtlasSymbolIo.class);
 
     private AtlasSymbolIo() {}
 
@@ -78,7 +83,7 @@ public class AtlasSymbolIo {
             @NonNull Function<String, AtlasSymbolIo.StyleableIndexHandler> handlerFunction)
             throws IOException {
         List<String> lines = Files.readAllLines(file.toPath(), Charsets.UTF_8);
-
+//        Collections.reverse(lines);
         SymbolTable.Builder table = readLines(lines, 1, file.toPath(), handlerFunction);
 
         if (tablePackage != null) {
@@ -168,6 +173,8 @@ public class AtlasSymbolIo {
                                 indexHandler.getChildrenNames());
                         if (!table.contains(symbol)) {
                             table.add(symbol);
+                        }else {
+                            logger.warning("duplicate symbol:"+symbol.getName()+":"+symbol.getValue());
                         }
                     }
 
@@ -180,6 +187,8 @@ public class AtlasSymbolIo {
                             ImmutableList.of());
                     if (!table.contains(symbol)) {
                         table.add(symbol);
+                    }else {
+                        logger.warning("duplicate symbol:"+symbol.getName()+":"+symbol.getValue());
                     }
                 }
             }
