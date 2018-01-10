@@ -4,6 +4,7 @@ import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import com.taobao.android.builder.tools.log.LogOutputListener;
+import com.taobao.android.builder.tools.process.ApkProcessor;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.StopExecutionException;
@@ -52,6 +53,7 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
         AtlasBuildContext.atlasConfigurationHelper = atlasConfigurationHelper;
 
         atlasConfigurationHelper.createExtendsion();
+
 
     }
 

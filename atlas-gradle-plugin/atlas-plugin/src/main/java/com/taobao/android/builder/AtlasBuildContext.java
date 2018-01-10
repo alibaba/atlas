@@ -219,6 +219,7 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
+import com.taobao.android.builder.tools.process.ApkProcessor;
 import org.gradle.api.Project;
 
 import java.io.File;
@@ -247,6 +248,8 @@ public class AtlasBuildContext {
     public static Map<String, AwbBundle> awbBundleMap = new HashMap<String, AwbBundle>();
 
     public static AtlasMainDexHelper atlasMainDexHelper = new AtlasMainDexHelper();
+
+    public static ApkProcessor atlasApkProcessor = new ApkProcessor.AtlasApkProcessor();
 
     public static Set<String> conflictDependencies;
 

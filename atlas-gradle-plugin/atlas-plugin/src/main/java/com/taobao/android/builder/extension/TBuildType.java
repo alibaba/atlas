@@ -226,6 +226,16 @@ public class TBuildType {
     @Config(title = "The baseline depends on the coordinates",message = "Such as: com.taobao.android:taobao-android-release:6.3.0-SNAPSHOT@ap ", order = 1, group = "atlas_patch")
     private String baseApDependency;
 
+    public boolean isRealign() {
+        return realign;
+    }
+
+    public void setRealign(boolean realign) {
+        this.realign = realign;
+    }
+
+    private boolean realign;
+
     private PatchConfig patchConfig;
 
     public DexConfig getDexConfig() {
