@@ -1040,10 +1040,14 @@ public class TPatchTool extends AbstractTool {
         //process remote bumdle
         if ((((TpatchInput) input).splitDiffBundle != null)) {
             for (final Pair<BundleBO, BundleBO> bundle : ((TpatchInput) input).splitDiffBundle) {
+                if (bundle.getFirst() == null || bundle.getSecond() == null){
+                    logger.warning("remote bundle is not set to splitDiffBundles");
+                    continue;
+                }
                 executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
                     @Override
                     public Boolean call() throws Exception {
-                        processBundleFiles(bundle.getSecond().getBundleFile(), bundle.getFirst().getBundleFile(), patchTmpDir);
+                        TPatchTool.this.processBundleFiles(bundle.getSecond().getBundleFile(), bundle.getFirst().getBundleFile(), patchTmpDir);
                         return true;
                     }
                 });
@@ -1053,26 +1057,23 @@ public class TPatchTool extends AbstractTool {
 
         Profiler.enter("awbspatch");
 
-        executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                // 得到主bundle的dex diff文件
-                File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
-                File tmpDexFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + "-dex");
-                createBundleDexPatch(newApkUnzipFolder,
-                        baseApkUnzipFolder,
-                        mianDiffDestDex,
-                        tmpDexFile,
-                        true);
+        executorServicesHelper.submitTask(taskName, () -> {
+            // 得到主bundle的dex diff文件
+            File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
+            File tmpDexFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + "-dex");
+            createBundleDexPatch(newApkUnzipFolder,
+                    baseApkUnzipFolder,
+                    mianDiffDestDex,
+                    tmpDexFile,
+                    true);
 
-                // 是否保留主bundle的资源文件
-                if (isRetainMainBundleRes()) {
-                    copyMainBundleResources(newApkUnzipFolder,
-                            baseApkUnzipFolder,
-                            new File(patchTmpDir, ((TpatchInput)input).mainBundleName));
-                }
-                return true;
+            // 是否保留主bundle的资源文件
+            if (isRetainMainBundleRes()) {
+                copyMainBundleResources(newApkUnzipFolder,
+                        baseApkUnzipFolder,
+                        new File(patchTmpDir, ((TpatchInput)input).mainBundleName));
             }
+            return true;
         });
 
         for (final File soFile : soFiles) {
