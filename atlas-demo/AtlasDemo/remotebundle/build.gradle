@@ -27,5 +27,5 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    providedCompile project(':middlewarelibrary')
+    providedCompile project(path:':middlewarelibrary',configuration: "compileProject")
 }

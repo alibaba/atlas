@@ -250,7 +250,10 @@ import static com.android.build.gradle.internal.publishing.AndroidArtifacts.Cons
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH;
 import static com.android.build.gradle.internal.scope.TaskOutputHolder.TaskOutputType.ANNOTATION_PROCESSOR_LIST;
 import static com.android.build.gradle.internal.scope.TaskOutputHolder.TaskOutputType.DATA_BINDING_DEPENDENCY_ARTIFACTS;
-
+/**
+ * @author lilong
+ * @create 2017-12-08 上午3:43
+ */
 
 public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJavaCompile> {
 
@@ -338,9 +341,6 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
                         .getCompileSdkVersion(),
                 VariantScope.Java8LangSupport.UNUSED);
         javacTask.getOptions().setEncoding(compileOptions.getEncoding());
-
-        Configuration annotationProcessorConfiguration =
-                scope.getVariantDependencies().getAnnotationProcessorConfiguration();
 
         Boolean includeCompileClasspath =
                 scope.getVariantConfiguration()

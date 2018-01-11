@@ -41,7 +41,7 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    providedCompile project(':middlewarelibrary')
+    providedCompile project(path:':middlewarelibrary',configuration: "compileProject")
 //    bundleCompile project(':publicbundle')
 
     providedCompile 'com.android.support:support-v4:25.3.0'

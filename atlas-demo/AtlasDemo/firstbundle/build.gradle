@@ -39,10 +39,13 @@ android {
 //    }
 }
 
+
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    providedCompile project(':middlewarelibrary')
-    providedCompile project(':publicbundle')
+    providedCompile project(path: ':middlewarelibrary',configuration: "compileProject")
+
+    providedCompile project(path: ':publicbundle',configuration: "compileProject")
 
     compile 'com.android.support.constraint:constraint-layout:1.0.0'
     providedCompile 'com.android.support:support-v4:25.3.0'

@@ -1,4 +1,4 @@
-include ':middlewarelibrary'
+include ':middlewarelibrary', ':databindinglibrary'
 include ':secondbundlelibrary'
 include ':lottie'
 include ':activitygroupcompat'

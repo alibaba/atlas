@@ -8,6 +8,11 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 
+/**
+ * @author lilong
+ * @create 2017-12-08 上午3:43
+ */
+
 public class AwbAndroidJavaCompile extends AndroidJavaCompile {
 
     private static boolean analyticsed = false;

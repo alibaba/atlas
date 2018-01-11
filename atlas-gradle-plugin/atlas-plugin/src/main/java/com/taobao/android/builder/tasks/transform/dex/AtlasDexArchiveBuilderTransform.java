@@ -232,11 +232,9 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                                     outputProvider);
                     cacheableItems.put(jarInput,dexArchives);
 
-                    AtlasBuildContext.atlasMainDexHelper.addMainDexAchives(cacheableItems);
-//                    mainDexFiles.addAll(dexArchives);
-//                    cacheableItems.putAll(jarInput, dexArchives);
                 }
             }
+            AtlasBuildContext.atlasMainDexHelper.addMainDexAchives(cacheableItems);
 
 
             processAwbDexArchive(transformInvocation, listFiles);
@@ -248,6 +246,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             }
 
             // if we are in incremental mode, delete all removed files.
+
             if (transformInvocation.isIncremental()) {
                 for (TransformInput transformInput : transformInvocation.getInputs()) {
                     removeDeletedEntries(outputProvider, transformInput);

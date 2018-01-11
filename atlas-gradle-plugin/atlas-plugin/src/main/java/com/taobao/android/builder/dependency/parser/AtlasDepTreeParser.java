@@ -277,7 +277,7 @@ public class AtlasDepTreeParser {
         ensureConfigured(compileClasspath);
         ensureConfigured(runtimeClasspath);
         ensureConfigured(bundleClasspath);
-        ensureConfigured(apiClasspath);
+       ensureConfigured(apiClasspath);
 
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
         collectArtifacts(compileClasspath, artifacts);

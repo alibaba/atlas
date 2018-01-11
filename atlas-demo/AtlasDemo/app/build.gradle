@@ -4,7 +4,7 @@ def apVersion = getEnvValue("apVersion", "");
 
 apply plugin: 'com.android.application'
 apply plugin: 'com.taobao.atlas'
-apply plugin: 'com.taobao.atlas.dexpatch'
+//apply plugin: 'com.taobao.atlas.dexpatch'
 apply from: 'dexPatchWraper.gradle'
 
 //通过增加判断逻辑，打出不同类型的定制包
@@ -101,24 +101,23 @@ atlas {
     }
 }
 
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile('com.taobao.android:atlas_core:5.0.7.52-rc52@aar') {
+    compile('com.taobao.android:atlas_core:5.0.8.0-rc12@aar') {
 
         transitive = true
     }
-
-
-    compile project(':middlewarelibrary')
-    compile project(':splashscreen')
-    compile project(':activitygroupcompat')
-
-    bundleCompile project(':firstbundle')
-    bundleCompile project(':secondbundle')
-    bundleCompile project(':remotebundle')
-    bundleCompile project(':publicbundle')
-    bundleCompile project(':databindbundle')
+    compile project(path:':middlewarelibrary',configuration: "compileProject")
+    compile project(path:':splashscreen',configuration: "compileProject")
+    compile project(path:':databindinglibrary',configuration: "compileProject")
+    compile project(path:':activitygroupcompat',configuration: "compileProject")
+    bundleCompile project(path:':firstbundle',configuration: "compileProject")
+    bundleCompile project(path:':secondbundle',configuration: "compileProject")
+    bundleCompile project(path:':remotebundle',configuration: "compileProject")
+    bundleCompile project(path:':publicbundle',configuration: "compileProject")
+    bundleCompile project(path:':databindbundle',configuration: "compileProject")
 
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.taobao.databindlibrary">
+
+    <application
+        android:allowBackup="true"
+        android:supportsRtl="true">
+        <activity
+            android:name="com.taobao.databinding.library.DataBingAarActivity"
+            android:label="aaa"
+            android:theme="@style/Theme.AppCompat.NoActionBar"></activity>
+
+    </application>
+
+</manifest>
