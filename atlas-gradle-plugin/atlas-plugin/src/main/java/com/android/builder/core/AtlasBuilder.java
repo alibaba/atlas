@@ -438,7 +438,7 @@ public class AtlasBuilder extends AndroidBuilder {
                     SymbolUtils.loadDependenciesSymbolTables(
                             aaptConfig.getLibrarySymbolTableFiles(), mainPackageName);
 
-            boolean finalIds = false;
+            boolean finalIds = true;
             if (aaptConfig.getVariantType() == VariantType.LIBRARY) {
                 finalIds = false;
             }

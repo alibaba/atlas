@@ -397,7 +397,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
                     value = appVariantOutputContext.getVariantContext().getAwbLayoutInfoOutputForDataBinding(awbBundle)
                             .getAbsolutePath();
                 } else if ("android.databinding.bindingBuildFolder".equals(key)) {
-                    value = appVariantOutputContext.getVariantContext().getAwbDataBindingMergeArtifacts(awbBundle)
+                    value = appVariantOutputContext.getVariantContext().getAwbDataBindingMergeArtifacts(awbBundle).getParentFile()
                             .getAbsolutePath();
                 } else if ("android.databinding.generationalFileOutDir".equals(key)) {
                     value = value + "-" + awbBundle.getName();
@@ -421,17 +421,19 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
 //
 
 
-            FileCollection files =
-                    appVariantOutputContext.getScope().getArtifactCollection(COMPILE_CLASSPATH, ALL, DATA_BINDING_ARTIFACT).getArtifactFiles();
-            for (File databingFile : files.getFiles()) {
-                for (File binFile : databingFile.listFiles()[0].listFiles()) {
-                    try {
-                        FileUtils.copyFileToDirectory(binFile, appVariantOutputContext.getVariantContext().getAwbDataBindingMergeArtifacts(awbBundle));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+//            FileCollection files =
+//                    appVariantOutputContext.getScope().getArtifactCollection(COMPILE_CLASSPATH, ALL, DATA_BINDING_ARTIFACT).getArtifactFiles();
+//            for (File databingFile : files.getFiles()) {
+//                for (File binFile : org.apache.commons.io.FileUtils.listFiles(databingFile,new String[]{"bin"},true)) {
+//                    if (binFile.getName().contains("baseAdapters")) {
+//                        try {
+//                            FileUtils.copyFileToDirectory(binFile, appVariantOutputContext.getVariantContext().getAwbDataBindingMergeArtifacts(awbBundle));
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//            }
         }
 
 
