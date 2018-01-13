@@ -318,7 +318,9 @@ public final class BundleClassLoader extends BaseDexClassLoader {
             BundleImpl dependencyBundle = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
             if (dependencyBundle == null || dependencyBundle.getArchive() == null || !dependencyBundle.getArchive()
                 .isDexOpted()) {
-                Log.e("BundleClassLoader", "dexopt is failed: " + dependencyBundle);
+                Log.e("BundleClassLoader",
+                    "dexopt is failed: " + dependencyBundle + ", bundleName=" + bundleName + ", this=" + this,
+                    new Exception());
                 return false;
             }
         }
