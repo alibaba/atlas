@@ -213,7 +213,9 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 
 import java.io.File;
@@ -224,8 +226,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
@@ -299,8 +303,8 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         }
 
         this.bundle = bundle;
-        this.archive = bundle.archive;
-        this.location = bundle.location;
+        archive = bundle.archive;
+        location = bundle.location;
 
         this.dependencies = dependencies;
     }
@@ -321,6 +325,21 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                 Log.e("BundleClassLoader",
                     "dexopt is failed: " + dependencyBundle + ", bundleName=" + bundleName + ", this=" + this,
                     new Exception());
+                Map<String, Object> detail = new HashMap<>();
+                detail.put("location", location);
+                detail.put("dependencies", dependencies);
+                detail.put("bundles", Atlas.getInstance().getBundles());
+                detail.put("bundleName", bundleName);
+                detail.put("dependencyBundle", dependencyBundle);
+                if (dependencyBundle != null) {
+                    detail.put("state", dependencyBundle.getState());
+                    detail.put("archive", dependencyBundle.getArchive());
+                    if (dependencyBundle.getArchive() != null) {
+                        detail.put("dexOpted", dependencyBundle.getArchive().isDexOpted());
+                    }
+                }
+                Exception e = new Exception();
+                AtlasMonitor.getInstance().report(AtlasMonitor.VALIDATE_CLASSES, detail, e);
                 return false;
             }
         }
@@ -328,7 +347,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
     }
 
     public BundleImpl getBundle() {
-        return this.bundle;
+        return bundle;
     }
 
     private void checkEE(final String[] req, final String[] having) throws BundleException {
