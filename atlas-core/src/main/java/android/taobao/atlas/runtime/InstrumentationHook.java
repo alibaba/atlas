@@ -597,8 +597,12 @@ public class InstrumentationHook extends Instrumentation {
             			intent.setClassName(context,className);
 
             		}
-            		Framework.getClassNotFoundCallback().returnIntent(intent);
-                	}
+                        try {
+                            Framework.getClassNotFoundCallback().returnIntent(intent);
+                        } catch (/*Exception*/Throwable e1) {
+                            e1.printStackTrace();
+                        }
+                    }
                 }
             }
             activity = mBase.newActivity(cl, launchActivityName, intent);
