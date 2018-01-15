@@ -215,7 +215,6 @@
 
 package com.taobao.android.builder.tasks.app.bundle;
 
-import com.alibaba.fastjson.JSON;
 import com.android.SdkConstants;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.api.BaseVariantOutput;
@@ -227,17 +226,10 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.TaskOutputHolder;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.tasks.PackageApplication;
-import com.android.builder.core.DefaultDexOptions;
-import com.android.builder.core.DexOptions;
 import com.android.dex.DexException;
 import com.android.dx.command.dexer.DxContext;
 import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
-import com.android.ide.common.blame.Message;
-import com.android.ide.common.blame.ParsingProcessOutputHandler;
-import com.android.ide.common.blame.parser.DexParser;
-import com.android.ide.common.blame.parser.ToolOutputParser;
-import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableSet;
@@ -245,19 +237,17 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.app.bundle.actions.FirstApkAction;
+import com.taobao.android.builder.tasks.app.bundle.actions.LastApkAction;
+import com.taobao.android.builder.tasks.app.bundle.actions.LastBundleAction;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.bundleinfo.DynamicBundleInfo;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.log.FileLogger;
-import com.taobao.android.builder.tools.manifest.ManifestHelper;
 import com.taobao.android.builder.tools.zip.BetterZip;
-import org.gradle.api.Action;
 import org.gradle.api.GradleException;
-import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -279,6 +269,8 @@ public class PackageAwbsTask extends BaseTask {
     private AppVariantOutputContext appVariantOutputContext;
 
     private GradleVariantConfiguration config;
+
+    Map<AwbBundle,File>bundles = new HashMap<>();
 
     private BaseVariantOutput variantOutputData;
     private ILogger mLogger = LoggerWrapper.getLogger(PackageAwbsTask.class);
@@ -307,8 +299,6 @@ public class PackageAwbsTask extends BaseTask {
         final AtomicLong packageTotalTime = new AtomicLong(0);
         final Map<String, Long[]> monitors = new HashMap<String, Long[]>();
         long startTime = System.currentTimeMillis();
-
-
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
             runnables.add(() -> {
 
@@ -385,7 +375,9 @@ public class PackageAwbsTask extends BaseTask {
                     }
 
                     AwbApkPackageTask awbApkPackageTask = new AwbApkPackageTask(getProject().files(resourceFile),appVariantContext,awbBundle,appVariantOutputContext,getProject().files(dexFolders),getProject().files(javaResourcesLocations),getProject().files(appVariantOutputContext.getVariantContext().getMergeAssets(awbBundle)),getProject().files(jniFolders),getProject().files(awbBundle.getMergedManifest()),getBuilder(),config.getMinSdkVersion().getApiLevel(),getName());
-                    awbApkPackageTask.doFullTaskAction();
+                    File awbFile = awbApkPackageTask.doFullTaskAction();
+                    bundles.put(awbBundle,awbFile);
+
 
 ////                        //TODO 2.3
 //                        AtlasBuildContext.androidBuilderMap.get(getProject())
@@ -437,58 +429,12 @@ public class PackageAwbsTask extends BaseTask {
 
         getLogger().info(">>>>> packageAwbs >>>>>>>>>>>>");
 
-        List<DynamicBundleInfo> dynamicBundleInfos = AtlasBuildContext.atlasApkProcessor.generateAllBundleInfo(atlasDependencyTree.getAwbBundles());
-
-        File bundleInfoFile = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),
-                "bundleInfo-" +
-                        appVariantContext.getVariantConfiguration()
-                                .getVersionName() +
-                        ".json");
-
-        org.apache.commons.io.FileUtils.write(bundleInfoFile, JSON.toJSONString(dynamicBundleInfos));
-
 
         PackageApplication packageApplication = appVariantContext.getScope().getPackageApplicationTask().get(new TaskContainerAdaptor(appVariantContext.getScope().getGlobalScope().getProject().getTasks()));
 
-        packageApplication.doFirst(new Action<Task>() {
-            @Override
-            public void execute(Task task) {
-                File resOutBaseNameFile =
-                        new File(
-                                packageApplication.getResourceFiles().getSingleFile(),
-                                FN_RES_BASE
-                                        + RES_QUALIFIER_SEP
-                                        + appVariantContext.getVariantName()
-                                        + SdkConstants.DOT_RES);
-                
-                File[]dexs = packageApplication.getDexFolders().getSingleFile().listFiles(pathname -> pathname.getName().equals("classes.dex"));
-                if (dexs!= null) {
-                    File file = AtlasBuildContext.atlasApkProcessor.securitySignApk(dexs[0], new File(appVariantContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).getSingleFile(),"AndroidManifest.xml"),appVariantContext.getBuildType(),false);
-                    if (file!= null && file.exists()){
-                        try {
-                            BetterZip.addFile(resOutBaseNameFile, "res/drawable/".concat(file.getName()), file);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+        packageApplication.doFirst(new FirstApkAction(appVariantOutputContext));
 
-                    }
-                }
-                if (bundleInfoFile.exists()){
-                    try {
-                        BetterZip.addFile(resOutBaseNameFile, "assets/".concat(bundleInfoFile.getName()), bundleInfoFile);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            }
-        });
-        packageApplication.doLast(new Action<Task>() {
-            @Override
-            public void execute(Task task) {
-                mLogger.info("packageApplication do nothing at last!");
-            }
-        });
+        packageApplication.doLast(new LastApkAction());
 
     }
 
@@ -505,6 +451,10 @@ public class PackageAwbsTask extends BaseTask {
             return supportedAbis;
         }
         return ImmutableSet.of();
+    }
+
+    public Map<AwbBundle,File> getAwbMap() {
+        return bundles;
     }
 
     public static class ConfigAction extends MtlBaseTaskAction<PackageAwbsTask> {
@@ -529,14 +479,14 @@ public class PackageAwbsTask extends BaseTask {
 
         @Override
         public void execute(PackageAwbsTask packageAwbsTask) {
-
             super.execute(packageAwbsTask);
-
             packageAwbsTask.androidConfig = appVariantContext.getAppExtension();
             packageAwbsTask.appVariantContext = appVariantContext;
             packageAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
             packageAwbsTask.config = scope.getVariantConfiguration();
             packageAwbsTask.variantOutputData = baseVariantOutput;
+            packageAwbsTask.doLast(new LastBundleAction(packageAwbsTask.getAwbMap(),getAppVariantOutputContext()));
+
         }
     }
 

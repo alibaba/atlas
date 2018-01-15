@@ -264,43 +264,36 @@ public class AwbGenerator {
         }
         bundleTask.setDestinationDir(new File(bundleTask.getDestinationDir().getParentFile(), "awb"));
 
-        bundleTask.doFirst(new Action<Task>() {
-            @Override
-            public void execute(Task task) {
+        bundleTask.doFirst(task -> {
 
-                File bundleBaseInfoFile = project.file("bundleBaseInfoFile.json");
-                if (bundleBaseInfoFile.exists()) {
-                    project.getLogger().warn("copy " + bundleBaseInfoFile.getAbsolutePath() + " to awb");
-                    File destDir = libVariantOutputData.getScope().getBaseBundleDir();
-                    try {
-                        FileUtils.copyFileToDirectory(bundleBaseInfoFile, destDir);
-                    } catch (IOException e) {
-                        throw new GradleException(e.getMessage(), e);
-                    }
+            File bundleBaseInfoFile = project.file("bundleBaseInfoFile.json");
+            if (bundleBaseInfoFile.exists()) {
+                project.getLogger().warn("copy " + bundleBaseInfoFile.getAbsolutePath() + " to awb");
+                File destDir = libVariantOutputData.getScope().getBaseBundleDir();
+                try {
+                    FileUtils.copyFileToDirectory(bundleBaseInfoFile, destDir);
+                } catch (IOException e) {
+                    throw new GradleException(e.getMessage(), e);
                 }
             }
         });
 
-        bundleTask.doLast(new Action<Task>() {
+        bundleTask.doLast(task -> {
 
-            @Override
-            public void execute(Task task) {
+            File outputFile = new File(bundleTask.getDestinationDir(), bundleTask.getArchiveName());
 
-                File outputFile = new File(bundleTask.getDestinationDir(), bundleTask.getArchiveName());
+            if (!outputFile.exists()) {
+                return;
+            }
 
-                if (!outputFile.exists()) {
-                    return;
-                }
-
-                //Regenerating aar
-                if (atlasExtension.getBundleConfig().isAwbBundle()) {
-                    try {
-                        FileUtils.copyFile(outputFile,
-                                           new File(new File(bundleTask.getDestinationDir().getParentFile(), "aar"),
-                                                    FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".aar"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+            //Regenerating aar
+            if (atlasExtension.getBundleConfig().isAwbBundle()) {
+                try {
+                    FileUtils.copyFile(outputFile,
+                                       new File(new File(bundleTask.getDestinationDir().getParentFile(), "aar"),
+                                                FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".aar"));
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         });

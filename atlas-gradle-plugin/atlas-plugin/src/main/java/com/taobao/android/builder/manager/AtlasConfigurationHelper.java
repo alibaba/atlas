@@ -226,6 +226,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.ErrorReporter;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.AtlasFeaturePlugin;
 import com.taobao.android.builder.AtlasPlugin;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.TBuildConfig;
@@ -315,7 +316,7 @@ public class AtlasConfigurationHelper {
      */
     public void updateExtensionAfterEvaluate() {
 
-        if (atlasExtension.isAtlasEnabled()) {
+        if (atlasExtension.isAtlasEnabled() && !(project.getPlugins().hasPlugin(FeaturePlugin.class)||project.getPlugins().hasPlugin(AtlasFeaturePlugin.class))) {
             TBuildConfig tBuildConfig = atlasExtension.getTBuildConfig();
             //            tBuildConfig.setAaptConstantId(false);
             //tBuildConfig.setClassInject(true);

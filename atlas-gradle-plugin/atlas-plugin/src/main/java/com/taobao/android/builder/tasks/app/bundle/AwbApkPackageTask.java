@@ -107,7 +107,7 @@ public class AwbApkPackageTask {
 
     }
 
-    public void doFullTaskAction() throws IOException {
+    public File doFullTaskAction() throws IOException {
         ApkData apkData = appVariantOutputContext.getScope().getOutputScope().getApkDatas().get(0);
         if (dexFolders.getSingleFile().exists() && awbBundle.getMergedManifest().exists()) {
             File[] dexFile = dexFolders.getSingleFile().listFiles((dir, name) -> name.equals("classes.dex"));
@@ -118,8 +118,9 @@ public class AwbApkPackageTask {
                 }
             }
         }
-        splitFullAction(apkData, resourceFiles.getSingleFile());
+        File file = splitFullAction(apkData, resourceFiles.getSingleFile());
         outputScope.save(VariantScope.TaskOutputType.APK, outputDirectory);
+        return file;
     }
 
 
@@ -193,23 +194,9 @@ public class AwbApkPackageTask {
         saveData.setInputSet(updatedJniResources.keySet(), KnownFilesSaveData.InputSet.NATIVE_RESOURCE);
         saveData.saveCurrentData();
 
-//        if (packagingScope.getMultiOutputPolicy() == MultiOutputPolicy.MULTI_APK) {
-
-        String url = AtlasBuildContext.atlasApkProcessor.uploadBundle(appVariantOutputContext.getVariantContext().getProject(),outputFile,awbBundle,appVariantOutputContext.getVariantContext().getBuildType());
-        if (StringUtils.isNotEmpty(url)) {
-            awbBundle.bundleInfo.setUrl(url);
-        }
-        awbBundle.bundleInfo.setMd5(MD5Util.getFileMD5(outputFile));
-        awbBundle.bundleInfo.setSize(outputFile.length());
-                        AtlasBuildContext.atlasApkProcessor.removeBundle(appVariantOutputContext, awbBundle, outputFile);
-        if (!awbBundle.isRemote)
         FileUtils.copyFileToDirectory(outputFile, new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi"));
 
-//        }
-//        recordMetrics(outputFile, processedResources);
-
-
-        return outputFile;
+        return new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi/"+outputFile.getName());
     }
 
     private void doTask(

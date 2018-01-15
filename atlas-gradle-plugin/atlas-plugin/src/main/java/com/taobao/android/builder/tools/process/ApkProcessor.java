@@ -14,6 +14,7 @@ import org.gradle.api.Project;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -33,7 +34,7 @@ public interface ApkProcessor {
 
     void removeBundle(AppVariantOutputContext appVariantOutputContext,AwbBundle awbBundle,File bundleFile);
 
-    List<DynamicBundleInfo> generateAllBundleInfo(List<AwbBundle>awbBundles);
+    List<DynamicBundleInfo> generateAllBundleInfo(Collection<AwbBundle> awbBundles);
 
     void signApk(File apkFile, SigningConfig signingConfig);
 
@@ -72,7 +73,7 @@ public interface ApkProcessor {
         }
 
         @Override
-        public List<DynamicBundleInfo> generateAllBundleInfo(List<AwbBundle> awbBundles) {
+        public List<DynamicBundleInfo> generateAllBundleInfo(Collection<AwbBundle> awbBundles) {
             List<DynamicBundleInfo> bundleInfoList = new ArrayList<>();
             if (awbBundles == null){
                 return bundleInfoList;

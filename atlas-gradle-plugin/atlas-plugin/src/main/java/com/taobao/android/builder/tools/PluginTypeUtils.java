@@ -210,6 +210,7 @@
 package com.taobao.android.builder.tools;
 
 import com.android.build.gradle.AppPlugin;
+import com.android.build.gradle.FeaturePlugin;
 import com.android.build.gradle.LibraryPlugin;
 import org.gradle.api.Project;
 
@@ -231,7 +232,7 @@ public class PluginTypeUtils {
     private static final String[] MTL_ANDROID_PLUGINS = new String[] {"com.taobao.android.application",
         "com.taobao.android.library", "com.taobao.atlas.library", "com.taobao.atlas.application"};
     private static final String[] GOOGLE_ANDROID_PLUGINS = new String[] {"com.android.application",
-        "com.android.library"};
+        "com.android.library","com.android.feature","com.android.instantapp"};
 
     private static final String[] FEATURE_ANDROID_PLUGINS = new String[] {"com.android.feature",
             "com.taobao.atlas.feature"};
@@ -293,7 +294,8 @@ public class PluginTypeUtils {
      */
     public static boolean usedGooglePlugin(Project project) {
         return hasPlugins(project, GOOGLE_ANDROID_PLUGINS) || project.getPlugins().hasPlugin(AppPlugin.class)
-            || project.getPlugins().hasPlugin(LibraryPlugin.class);
+            || project.getPlugins().hasPlugin(LibraryPlugin.class)||project.getPlugins().hasPlugin(FeaturePlugin.class);
+
     }
 
     public static boolean hasApplyGooglePlugin(Project project) {

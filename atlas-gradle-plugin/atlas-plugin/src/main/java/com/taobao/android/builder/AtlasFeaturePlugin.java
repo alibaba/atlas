@@ -1,8 +1,12 @@
 package com.taobao.android.builder;
 import com.android.build.gradle.*;
+import com.taobao.android.builder.manager.PluginManager;
+import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
+import javax.inject.Inject;
 
 /**
  * AtlasFeaturePlugin
@@ -12,15 +16,14 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
  * @time 下午7:04
  * @description  
  */
-public class AtlasFeaturePlugin extends FeaturePlugin {
+public class AtlasFeaturePlugin implements Plugin<Project> {
 
-    public AtlasFeaturePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
-        super(instantiator, registry);
-    }
 
     @Override
     public void apply(Project project) {
-        super.apply(project);
+        PluginManager.addPluginIfNot(project,FeaturePlugin.class);
+        PluginManager.addPluginIfNot(project,AtlasPlugin.class);
+
     }
 
 }
