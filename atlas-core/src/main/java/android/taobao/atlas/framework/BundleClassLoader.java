@@ -323,7 +323,8 @@ public final class BundleClassLoader extends BaseDexClassLoader {
             if (dependencyBundle == null || dependencyBundle.getArchive() == null || !dependencyBundle.getArchive()
                 .isDexOpted()) {
                 Log.e("BundleClassLoader",
-                    "dexopt is failed: " + dependencyBundle + ", bundleName=" + bundleName + ", this=" + this,
+                    "dexopt is failed: " + dependencyBundle + ", bundleName=" + bundleName + ", dependencies="
+                        + dependencies + ", this=" + this,
                     new Exception());
                 // Map<String, Object> detail = new HashMap<>();
                 // detail.put("location", location);
