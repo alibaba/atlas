@@ -568,18 +568,18 @@ public class InstrumentationHook extends Instrumentation {
         }
 
         try {
-			BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(AtlasBundleInfoManager
-				.instance().getBundleForComponet(className));
-			if(info!=null){
-				BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(info.getPkgName());
-				if(impl==null || !impl.checkValidate()){
-					Log.e("Instrumentation","bundleInvalid: "+info.getPkgName());
-					throw new ClassNotFoundException("bundleInvalid");
-				}
-			}
-            activity = mBase.newActivity(cl, className, intent);
-        } catch (ClassNotFoundException e) {
-        	String launchActivityName = "";
+			// BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(AtlasBundleInfoManager
+			// 	.instance().getBundleForComponet(className));
+			// if(info!=null){
+			// 	BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(info.getPkgName());
+			// 	if(impl==null || !impl.checkValidate()){
+			// 		Log.e("Instrumentation","bundleInvalid: "+info.getPkgName());
+			// 		throw new ClassNotFoundException("bundleInvalid");
+			// 	}
+			// }
+			activity = mBase.newActivity(cl, className, intent);
+		} catch (ClassNotFoundException e) {
+			String launchActivityName = "";
 			Intent launchIntentForPackage = RuntimeVariables.androidApplication.getPackageManager().getLaunchIntentForPackage(RuntimeVariables.androidApplication.getPackageName());
 			if (launchIntentForPackage != null) {
 				ComponentName componentName = launchIntentForPackage.resolveActivity(RuntimeVariables.androidApplication.getPackageManager());
