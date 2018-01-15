@@ -476,7 +476,8 @@ public final class Framework {
             if (FileUtils.getUsableSpace(Environment.getDataDirectory()) < LowDiskException.thredshold) {
                 throw new LowDiskException(FileUtils.getAvailableDisk(), e);
             }
-            throw new BundleException("Failed to install bundle.", e);
+            throw new BundleException(
+                "Failed to install bundle." + FileUtils.getAvailableDisk() + ", location=" + location, e);
         } catch (BundleException e) {
             BundleException e1 = new BundleException(
                 "Failed to install bundle." + FileUtils.getAvailableDisk() + ", location=" + location, e);
