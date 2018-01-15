@@ -499,7 +499,7 @@ public class BundleInstaller implements Callable{
                     synchronized (this) {
                         deliveryTask(sync);
                         Log.d("BundleInstaller", "call wait:" + this);
-                        this.wait(30000);
+                        wait(30000);
                         BundleInstallerFetcher.recycle(this);
                     }
                 }
@@ -521,6 +521,9 @@ public class BundleInstaller implements Callable{
                         call();
                     } catch (Throwable e) {
                         e.printStackTrace();
+                        Map<String, Object> detail = new HashMap<>();
+                        detail.put("mLocation", mLocation);
+                        AtlasMonitor.getInstance().report(AtlasMonitor.INSTALL, detail, e);
                     } finally {
                         BundleInstaller.this.notify();
                         if (mListener != null) {

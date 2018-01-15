@@ -227,6 +227,8 @@ public class AtlasMonitor {
     public static final String CONTAINER_LOADEDAPK_CHANGE = "container_loadapk_change";
     public static final String WALKROUND_GETLAYOUT = "walkround_getlayout";
     public static final String VALIDATE_CLASSES = "validate_classes";
+    public static final String INSTALL = "install";
+
 
 
 
