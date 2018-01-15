@@ -325,21 +325,21 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                 Log.e("BundleClassLoader",
                     "dexopt is failed: " + dependencyBundle + ", bundleName=" + bundleName + ", this=" + this,
                     new Exception());
-                Map<String, Object> detail = new HashMap<>();
-                detail.put("location", location);
-                detail.put("dependencies", dependencies);
-                detail.put("bundles", Atlas.getInstance().getBundles());
-                detail.put("bundleName", bundleName);
-                detail.put("dependencyBundle", dependencyBundle);
-                if (dependencyBundle != null) {
-                    detail.put("state", dependencyBundle.getState());
-                    detail.put("archive", dependencyBundle.getArchive());
-                    if (dependencyBundle.getArchive() != null) {
-                        detail.put("dexOpted", dependencyBundle.getArchive().isDexOpted());
-                    }
-                }
-                Exception e = new Exception();
-                AtlasMonitor.getInstance().report(AtlasMonitor.VALIDATE_CLASSES, detail, e);
+                // Map<String, Object> detail = new HashMap<>();
+                // detail.put("location", location);
+                // detail.put("dependencies", dependencies);
+                // detail.put("bundles", Atlas.getInstance().getBundles());
+                // detail.put("bundleName", bundleName);
+                // detail.put("dependencyBundle", dependencyBundle);
+                // if (dependencyBundle != null) {
+                //     detail.put("state", dependencyBundle.getState());
+                //     detail.put("archive", dependencyBundle.getArchive());
+                //     if (dependencyBundle.getArchive() != null) {
+                //         detail.put("dexOpted", dependencyBundle.getArchive().isDexOpted());
+                //     }
+                // }
+                // Exception e = new Exception();
+                // AtlasMonitor.getInstance().report(AtlasMonitor.VALIDATE_CLASSES, detail, e);
                 return false;
             }
         }
