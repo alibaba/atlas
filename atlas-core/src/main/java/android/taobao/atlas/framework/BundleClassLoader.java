@@ -324,7 +324,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                 .isDexOpted()) {
                 Log.e("BundleClassLoader",
                     "dexopt is failed: " + dependencyBundle + ", bundleName=" + bundleName + ", dependencies="
-                        + dependencies + ", this=" + this,
+                        + dependencies + ", this=" + this + ", thread=" + Thread.currentThread(),
                     new Exception());
                 // Map<String, Object> detail = new HashMap<>();
                 // detail.put("location", location);
@@ -445,7 +445,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
 
         throw new ClassNotFoundException(
             "Can't find class " + classname + " in BundleClassLoader: " + bundle.getLocation() + ", dependencies="
-                + dependencies);
+                + dependencies + ", thread=" + Thread.currentThread());
     }
 
     /**

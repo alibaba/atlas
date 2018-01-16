@@ -610,7 +610,8 @@ public class BundleInstaller implements Callable{
                 for (int x = 0; x < mLocation.length; x++) {
                     List<String> bundlesForInstall = AtlasBundleInfoManager.instance().getBundleInfo(mLocation[x])
                         .getTotalDependency();
-                    Log.e("BundleInstaller", mLocation[x] + "-->" + bundlesForInstall.toString());
+                    Log.e("BundleInstaller",
+                        mLocation[x] + "-->" + bundlesForInstall.toString() + ", thread=" + Thread.currentThread());
                     for (String bundleName : bundlesForInstall) {
                         if ((bundle = getInstalledBundle(bundleName)) == null) {
                             if ((BaselineInfoManager.instance().isDexPatched(bundleName) || BaselineInfoManager
