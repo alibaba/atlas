@@ -101,7 +101,7 @@ public class AtlasFeatureTaskManager extends AtlasBaseTaskManager{
             invokeHandle(libVariantContext.getScope());
 
             List<MtlTaskContext> featureTaskList = new ArrayList<>();
-            featureTaskList.add(new MtlTaskContext(PrePareFeatureTask.ConfigAction.class,null);
+            featureTaskList.add(new MtlTaskContext(PrePareFeatureTask.ConfigAction.class,null));
             featureTaskList.add(new MtlTaskContext(libVariantContext.getVariantData().preBuildTask));
 
             TBuildType tBuildType = libVariantContext.getBuildType();

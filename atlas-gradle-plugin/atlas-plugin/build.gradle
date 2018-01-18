@@ -248,4 +248,4 @@ dependencies {
 }
 
 
-version = '2.3.4-test-SNAPSHOT'
+version = '4.0.1-rc1'
