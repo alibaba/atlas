@@ -214,6 +214,7 @@ import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.runtime.LowDiskException;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.ApkUtils;
+import android.taobao.atlas.util.BundleLock;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
@@ -548,9 +549,24 @@ public class BundleInstaller implements Callable{
     }
 
     public Bundle getInstalledBundle(String bundleName){
+        // boolean lockSuccess = false;
         Bundle bundle = Framework.getBundle(bundleName);
-        if(bundle==null){
-            bundle = Framework.restoreFromExistedBundle(bundleName);
+        if (bundle == null) {
+            try {
+                /*lockSuccess = */
+                BundleLock./*Read*/WriteLock(bundleName/*location*/);
+                bundle = Framework.getBundle(bundleName);
+                if (bundle == null) {
+                    bundle = Framework.restoreFromExistedBundle(bundleName);
+                }
+            } finally {
+                // if (lockSuccess) {
+                try {
+                    BundleLock./*Read*/WriteUnLock(bundleName/*location*/);
+                } catch (Throwable e) {
+                }
+                // }
+            }
         }
         if(bundle==null && (BaselineInfoManager.instance().isDexPatched(bundleName) || BaselineInfoManager.instance().isUpdated(bundleName))){
             Log.e("BundleInstaller","restore existed bundle failed : "+bundleName);
