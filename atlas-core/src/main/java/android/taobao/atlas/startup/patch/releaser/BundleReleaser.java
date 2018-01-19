@@ -470,7 +470,7 @@ public class BundleReleaser {
         String optimizedPath = optimizedPathFor(validDex, dexOptDir());
         try {
             if(!externalStorage) {
-                dexFile = KernalConstants.dexBooster.loadDex(KernalConstants.baseContext, validDex.getPath(), optimizedPath, 0, false);
+                dexFile = DexFile.loadDex(validDex.getPath(), optimizedPath, 0);
                 if(!new File(optimizedPath).exists()){
                     Log.e(TAG,"odex not exist");
                 }
