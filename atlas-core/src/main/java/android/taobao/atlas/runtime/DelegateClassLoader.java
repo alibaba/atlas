@@ -304,7 +304,7 @@ public class DelegateClassLoader extends PathClassLoader {
             }
             bundle.startBundle();
             ClassLoader classloader = bundle.getClassLoader();
-            if (bundle != null && bundle.checkValidate()) {
+            // if (bundle != null && bundle.checkValidate()) {
                 try {
                     if (classloader != null) {
                         clazz = classloader.loadClass(className);
@@ -314,9 +314,9 @@ public class DelegateClassLoader extends PathClassLoader {
                     }
                 } catch (ClassNotFoundException e) {
                 }
-            } else {
-
-            }
+            // } else {
+            //
+            // }
 
             if((Thread.currentThread().getId() == Looper.getMainLooper().getThread().getId())){
                 Throwable ex = new Throwable();
