@@ -774,6 +774,9 @@ public final class Framework {
     }
 
     static void addBundleListener(BundleListener listener) {
+        if (listener == null) {
+            Log.e("Framework", "the listener must not be null", new Exception());
+        }
         bundleListeners.add(listener);
     }
 
