@@ -219,6 +219,7 @@ import com.alibaba.fastjson.TypeReference;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -243,8 +244,8 @@ public class ApkInjectInfoCreator {
 
         injectParam.version = appVariantContext.getVariantConfiguration().getVersionName();
 
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-            appVariantContext.getScope().
+        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext
+            .getScope().
                 getVariantConfiguration().getFullName());
 
         List<BasicBundleInfo> basicBundleInfos = new ArrayList<BasicBundleInfo>();
@@ -303,8 +304,8 @@ public class ApkInjectInfoCreator {
         //    autoStartBundles.add(0, updateConfig.getSdkPkgName());
         //}
         //
-        injectParam.autoStartBundles = StringUtils.join(
-            appVariantContext.getAtlasExtension().getTBuildConfig().getAutoStartBundles(), ",");
+        injectParam.autoStartBundles = StringUtils.join(appVariantContext.getAtlasExtension().getTBuildConfig()
+            .getAutoStartBundles(), ",");
         injectParam.preLaunch = appVariantContext.getAtlasExtension().getTBuildConfig().getPreLaunch();
         mergeBundleInfos(appVariantContext, injectParam);
         return injectParam;
@@ -314,17 +315,17 @@ public class ApkInjectInfoCreator {
     public void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam) {
         if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
             File atlasFrameworkPropertiesFile = new File(appVariantContext.apContext.getApExploredFolder(),
-                                                         "atlasFrameworkProperties.json");
+                "atlasFrameworkProperties.json");
             if (!atlasFrameworkPropertiesFile.exists()) {
                 return;
             }
             List<BasicBundleInfo> basicBundleInfos = JSON.parseObject(injectParam.bundleInfo,
-                                                                      new TypeReference<List<BasicBundleInfo>>() {
-                                                                      });
+                new TypeReference<List<BasicBundleInfo>>() {
+                });
             FrameworkProperties atlasFrameworkProperties;
             try {
-                atlasFrameworkProperties = JSON.parseObject(
-                    Files.toString(atlasFrameworkPropertiesFile, Charsets.UTF_8), FrameworkProperties.class);
+                atlasFrameworkProperties = JSON.parseObject(Files
+                    .toString(atlasFrameworkPropertiesFile, Charsets.UTF_8), FrameworkProperties.class);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -333,8 +334,7 @@ public class ApkInjectInfoCreator {
             List<BasicBundleInfo> mergeBasicBundleInfos = Lists.newArrayList(baseBundleInfos);
             for (BasicBundleInfo basicBundleInfo : basicBundleInfos) {
                 BasicBundleInfo baseBasicBundleInfo = Iterables.find(baseBundleInfos,
-                                                                     input -> basicBundleInfo.getPkgName()
-                                                                         .equals(input.getPkgName()));
+                    input -> basicBundleInfo.getPkgName().equals(input.getPkgName()));
 
                 if (baseBasicBundleInfo == null) {
                     mergeBasicBundleInfos.add(basicBundleInfo);
@@ -351,7 +351,16 @@ public class ApkInjectInfoCreator {
             }
 
             injectParam.bundleInfo = JSON.toJSONString(mergeBasicBundleInfos);
-            injectParam.autoStartBundles = atlasFrameworkProperties.autoStartBundles;
+
+            if (Strings.isNullOrEmpty(injectParam.autoStartBundles)) {
+                injectParam.autoStartBundles = atlasFrameworkProperties.autoStartBundles;
+            } else {
+                if (!Strings.isNullOrEmpty(atlasFrameworkProperties.autoStartBundles)) {
+                    injectParam.autoStartBundles = injectParam.autoStartBundles + ","
+                        + atlasFrameworkProperties.autoStartBundles;
+                }
+            }
+
             injectParam.preLaunch = atlasFrameworkProperties.preLaunch;
         }
     }
