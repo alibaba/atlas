@@ -228,6 +228,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.model.Library;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Iterables;
@@ -332,8 +333,8 @@ public class ApDependencies /*extends BaseTask*/ {
                 Dependency dependency = project.getDependencies().create(apDependency);
                 Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
                 configuration.setTransitive(false);
-                apBaseFile = Iterables.getOnlyElement(
-                    Collections2.filter(configuration.getFiles(), new Predicate<File>() {
+                apBaseFile = Iterables.getOnlyElement(Collections2
+                    .filter(configuration.getFiles(), new Predicate<File>() {
                         @Override
                         public boolean apply(@Nullable File file) {
                             return file.getName().endsWith(".ap");
@@ -393,24 +394,29 @@ public class ApDependencies /*extends BaseTask*/ {
         //     return null;
         // }
         if (!(row.size() == 1)) {
-            throw new IllegalStateException(
-                String.valueOf("Unable to find AwbDependencies for '" + moduleIdentifier + "'"));
+            throw new IllegalStateException(String
+                .valueOf("Unable to find AwbDependencies for '" + moduleIdentifier + "'"));
         }
-        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> element = Iterables.getOnlyElement(
-            row.entrySet());
+        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> element = Iterables.getOnlyElement(row
+            .entrySet());
         if (!AWB.equals(element.getValue().getArtifactType())) {
-            throw new IllegalStateException(String.valueOf(String
-                .format("Expected artifactType '%s' but found '%s' in '%s'", AWB, element.getValue().getArtifactType(),
-                    moduleIdentifier)));
+            throw new IllegalStateException(String.valueOf(String.format(
+                "Expected artifactType '%s' but found '%s' in '%s'",
+                AWB,
+                element.getValue().getArtifactType(),
+                moduleIdentifier)));
         }
         return mDependenciesTable.column(element.getKey());
     }
 
     private void addDependency(String dependencyString, ParsedModuleStringNotation awb) {
         ParsedModuleStringNotation parsedNotation = new ParsedModuleStringNotation(dependencyString);
-        ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(parsedNotation.getGroup(),
-            parsedNotation.getName());
-        mDependenciesTable.put(moduleIdentifier, awb, parsedNotation);
+        String group = parsedNotation.getGroup();
+
+        if (!Strings.isNullOrEmpty(group)) {
+            ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(group, parsedNotation.getName());
+            mDependenciesTable.put(moduleIdentifier, awb, parsedNotation);
+        }
     }
 
     //public boolean isMainLibrary(Library library) {
@@ -463,8 +469,8 @@ public class ApDependencies /*extends BaseTask*/ {
         if (row.size() == 0) {
             return false;
         }
-        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> notationEntry = Iterables.getOnlyElement(
-            row.entrySet());
+        Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> notationEntry = Iterables.getOnlyElement(row
+            .entrySet());
         return !(AWB.equals(notationEntry.getValue().getArtifactType())) && !(notationEntry.getKey() == MAIN_DEX);
     }
 
@@ -485,16 +491,18 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
     public boolean hasSameResolvedDependency(ModuleVersionIdentifier moduleVersion) {
-        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(
-            moduleVersion.getModule());
+        Map<ParsedModuleStringNotation, ParsedModuleStringNotation> row = mDependenciesTable.row(moduleVersion
+            .getModule());
         if (row.size() == 0) {
             return false;
         }
         String mainVersion = Iterables.getOnlyElement(row.entrySet()).getValue().getVersion();
 
         if (versionStringComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
-            LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping", moduleVersion.getModule(),
-                mainVersion, moduleVersion.getVersion());
+            LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping",
+                moduleVersion.getModule(),
+                mainVersion,
+                moduleVersion.getVersion());
             // LOGGER.quiet("{} apVersion({}) is larger than yourVersion({}), skipping",
             //              moduleVersion.getModule(),
             //              mainVersion,
@@ -511,8 +519,8 @@ public class ApDependencies /*extends BaseTask*/ {
         DependencySet dependencies = configuration.getAllDependencies();
         for (Dependency dependency : dependencies) {
             //所属的Awb
-            ParsedModuleStringNotation awbParsedNotation = getAwb(
-                DefaultModuleIdentifier.newId(dependency.getGroup(), dependency.getName()));
+            ParsedModuleStringNotation awbParsedNotation = getAwb(DefaultModuleIdentifier
+                .newId(dependency.getGroup(), dependency.getName()));
             //所属的Awb依赖不存在
             if (awbParsedNotation != null && awbParsedNotation != MAIN_DEX && !containsDependency(dependencies,
                 awbParsedNotation)) {
@@ -526,9 +534,8 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
     private static boolean containsDependency(DependencySet dependencies, ParsedModuleStringNotation parsedNotation) {
-        return dependencies.stream().anyMatch(
-            dependency -> dependency.getGroup().equals(parsedNotation.getGroup()) && dependency.getName()
-                .equals(parsedNotation.getName()));
+        return dependencies.stream().anyMatch(dependency -> dependency.getGroup().equals(parsedNotation.getGroup())
+            && dependency.getName().equals(parsedNotation.getName()));
     }
 
     public DependencyJson getApDependencyJson() {
