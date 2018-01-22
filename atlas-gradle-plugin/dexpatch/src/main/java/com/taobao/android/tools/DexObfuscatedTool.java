@@ -420,6 +420,7 @@ import com.taobao.android.repatch.mapping.MappingProcessorImpl;
 import com.taobao.android.repatch.mapping.MappingReader;
 import com.taobao.android.repatch.processor.MappingClassProcessor;
 import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.DexFile;
 
@@ -470,7 +471,7 @@ public class DexObfuscatedTool {
         mappingProcessor.updateMethod();
         mappingProcessor.updateFieldType();
         InsTructionsReIClassDef insTructionsReDef = new InsTructionsReIClassDef(new MappingClassProcessor(mappingProcessor));
-        DexFile dFile = DexFileFactory.loadDexFile(inputFile.getAbsolutePath(), 19, true);
+        DexFile dFile = DexFileFactory.loadDexFile(inputFile.getAbsolutePath(), Opcodes.getDefault());
         Set<ClassDef> classes = new HashSet<ClassDef>();
         classes.addAll(dFile.getClasses());
         final Set<ClassDef> obfuscateClasses = new HashSet<ClassDef>();
@@ -493,6 +494,12 @@ public class DexObfuscatedTool {
                         return obfuscateClasses.size();
                     }
                 };
+            }
+
+            @Nonnull
+            @Override
+            public Opcodes getOpcodes() {
+                return Opcodes.getDefault();
             }
         });
 

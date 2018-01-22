@@ -424,6 +424,7 @@ import com.taobao.android.object.*;
 import com.taobao.android.utils.DexCompareUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.*;
 import org.jf.dexlib2.iface.Annotation;
 import org.jf.dexlib2.iface.value.EncodedValue;
@@ -504,7 +505,7 @@ public class DexDiffer {
         scanBaseDexFile();
         Set<DexBackedClassDef> newDexClassDefs = Sets.newHashSet();
         for (File newDexFile : newDexFiles) {
-            DexBackedDexFile newBackedDexFile = DexFileFactory.loadDexFile(newDexFile, apiLevel, true);
+            DexBackedDexFile newBackedDexFile = DexFileFactory.loadDexFile(newDexFile, Opcodes.getDefault());
             newDexClassDefs.addAll(newBackedDexFile.getClasses());
             dexDiffInfo.setNewClasses(newDexClassDefs);
         }
@@ -517,6 +518,9 @@ public class DexDiffer {
             }
             String className = getDalvikClassName(newClassDef.getType());
             if (!tpatch&&exludeClasses.contains(newClassDef.getType())){
+                continue;
+            }
+            if (!tpatch &&(newClassDef.getType().contains("/R$")||newClassDef.getType().contains("/R;"))){
                 continue;
             }
             DexBackedClassDef baseClassDef = baseClassDefMap.get(className);
@@ -548,7 +552,7 @@ public class DexDiffer {
      */
     private void scanBaseDexFile() throws IOException {
         for (File baseDexFile : baseDexFiles) {
-            DexBackedDexFile baseBackedDexFile = DexFileFactory.loadDexFile(baseDexFile, apiLevel, true);
+            DexBackedDexFile baseBackedDexFile = DexFileFactory.loadDexFile(baseDexFile, Opcodes.getDefault());
             final Set<? extends DexBackedClassDef> baseClassDefs = baseBackedDexFile.getClasses();
             dexDiffInfo.setOldClasses(baseClassDefs);
             for (DexBackedClassDef baseClassDef : baseClassDefs) {
@@ -641,11 +645,11 @@ public class DexDiffer {
         return true;
     }
 
-    private boolean equalsImpl(Set<?> s, @Nullable Object object) {
+    private boolean equalsImpl(Collection<?> s, @Nullable Object object) {
         if (s == object) {
             return true;
-        } else if (object instanceof Set) {
-            Set o = (Set) object;
+        } else if (object instanceof List) {
+            List o = (List) object;
 
             try {
                 return s.size() == o.size() && s.containsAll(o);

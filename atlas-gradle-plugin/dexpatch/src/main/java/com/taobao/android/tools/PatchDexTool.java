@@ -9,6 +9,7 @@ import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.DiffType;
 import org.antlr.runtime.RecognitionException;
 import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.DexFile;
 
@@ -118,6 +119,12 @@ public abstract class PatchDexTool {
                         return classDefs.size();
                     }
                 };
+            }
+
+            @Nonnull
+            @Override
+            public Opcodes getOpcodes() {
+                return Opcodes.getDefault();
             }
         });
     }

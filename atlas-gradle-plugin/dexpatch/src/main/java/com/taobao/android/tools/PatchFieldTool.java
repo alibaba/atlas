@@ -424,6 +424,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.builder.MutableMethodImplementation;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.jf.dexlib2.iface.*;
@@ -479,6 +480,12 @@ public class PatchFieldTool {
                     }
                 };
             }
+
+            @Nonnull
+            @Override
+            public Opcodes getOpcodes() {
+                return Opcodes.getDefault();
+            }
         });
     }
 
@@ -523,7 +530,7 @@ public class PatchFieldTool {
 
     private static DexFile readDexFile(String fileName) throws IOException {
         File srcFile = new File(fileName);
-        return DexFileFactory.loadDexFile(srcFile, 15, true);
+        return DexFileFactory.loadDexFile(srcFile, Opcodes.getDefault());
     }
 
     private static void reDexFile(@Nonnull DexFile dexFile) {

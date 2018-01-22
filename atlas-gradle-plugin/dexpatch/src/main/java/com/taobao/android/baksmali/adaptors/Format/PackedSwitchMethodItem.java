@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PackedSwitchMethodItem extends InstructionMethodItem<PackedSwitchPayload> {
-    private final List<PackedSwitchTarget> targets;
+    private final List<PackedSwitchMethodItem.PackedSwitchTarget> targets;
     private final int firstKey;
 
     // Whether this sparse switch instruction should be commented out because it is never referenced
@@ -52,7 +52,7 @@ public class PackedSwitchMethodItem extends InstructionMethodItem<PackedSwitchPa
 
         int baseCodeAddress = methodDef.getPackedSwitchBaseAddress(codeAddress);
 
-        targets = new ArrayList<PackedSwitchTarget>();
+        targets = new ArrayList<PackedSwitchMethodItem.PackedSwitchTarget>();
 
         boolean first = true;
         int firstKey = 0;
@@ -65,7 +65,7 @@ public class PackedSwitchMethodItem extends InstructionMethodItem<PackedSwitchPa
                 LabelMethodItem label = methodDef.getLabelCache().internLabel(
                         new LabelMethodItem(methodDef.classDef.options, baseCodeAddress + switchElement.getOffset(),
                                 "pswitch_"));
-                targets.add(new PackedSwitchLabelTarget(label));
+                targets.add(new PackedSwitchMethodItem.PackedSwitchLabelTarget(label));
             }
         } else {
             commentedOut = true;
@@ -74,7 +74,7 @@ public class PackedSwitchMethodItem extends InstructionMethodItem<PackedSwitchPa
                     firstKey = switchElement.getKey();
                     first = false;
                 }
-                targets.add(new PackedSwitchOffsetTarget(switchElement.getOffset()));
+                targets.add(new PackedSwitchMethodItem.PackedSwitchOffsetTarget(switchElement.getOffset()));
             }
         }
         this.firstKey = firstKey;
@@ -83,14 +83,14 @@ public class PackedSwitchMethodItem extends InstructionMethodItem<PackedSwitchPa
     @Override
     public boolean writeTo(IndentingWriter writer) throws IOException {
         if (commentedOut) {
-            writer = new CommentingIndentingWriter(writer);
+            writer = new org.jf.baksmali.Adaptors.CommentingIndentingWriter(writer);
         }
         writer.write(".packed-switch ");
-        IntegerRenderer.writeTo(writer, firstKey);
+        org.jf.baksmali.Renderers.IntegerRenderer.writeTo(writer, firstKey);
         writer.indent(4);
         writer.write('\n');
         int key = firstKey;
-        for (PackedSwitchTarget target: targets) {
+        for (PackedSwitchMethodItem.PackedSwitchTarget target: targets) {
             target.writeTargetTo(writer);
             writeCommentIfResourceId(writer, key);
             writer.write('\n');

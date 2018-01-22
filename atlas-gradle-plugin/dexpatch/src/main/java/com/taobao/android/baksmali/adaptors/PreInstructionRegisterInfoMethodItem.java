@@ -28,7 +28,7 @@
 
 package com.taobao.android.baksmali.adaptors;
 
-import org.jf.baksmali.baksmaliOptions;
+import org.jf.baksmali.BaksmaliOptions;
 import org.jf.dexlib2.analysis.AnalyzedInstruction;
 import org.jf.dexlib2.analysis.MethodAnalyzer;
 import org.jf.dexlib2.analysis.RegisterType;
@@ -73,29 +73,29 @@ public class PreInstructionRegisterInfoMethodItem extends MethodItem {
         BitSet registers = new BitSet(registerCount);
         BitSet mergeRegisters = null;
 
-        if ((registerInfo & baksmaliOptions.ALL) != 0) {
+        if ((registerInfo & BaksmaliOptions.ALL) != 0) {
             registers.set(0, registerCount);
         } else {
-            if ((registerInfo & baksmaliOptions.ALLPRE) != 0) {
+            if ((registerInfo & BaksmaliOptions.ALLPRE) != 0) {
                 registers.set(0, registerCount);
             } else {
-                if ((registerInfo & baksmaliOptions.ARGS) != 0) {
+                if ((registerInfo & BaksmaliOptions.ARGS) != 0) {
                     addArgsRegs(registers);
                 }
-                if ((registerInfo & baksmaliOptions.MERGE) != 0) {
+                if ((registerInfo & BaksmaliOptions.MERGE) != 0) {
                     if (analyzedInstruction.isBeginningInstruction()) {
                         addParamRegs(registers, registerCount);
                     }
                     mergeRegisters = new BitSet(registerCount);
                     addMergeRegs(mergeRegisters, registerCount);
-                } else if ((registerInfo & baksmaliOptions.FULLMERGE) != 0 &&
+                } else if ((registerInfo & BaksmaliOptions.FULLMERGE) != 0 &&
                         (analyzedInstruction.isBeginningInstruction())) {
                     addParamRegs(registers, registerCount);
                 }
             }
         }
 
-        if ((registerInfo & baksmaliOptions.FULLMERGE) != 0) {
+        if ((registerInfo & BaksmaliOptions.FULLMERGE) != 0) {
             if (mergeRegisters == null) {
                 mergeRegisters = new BitSet(registerCount);
                 addMergeRegs(mergeRegisters, registerCount);

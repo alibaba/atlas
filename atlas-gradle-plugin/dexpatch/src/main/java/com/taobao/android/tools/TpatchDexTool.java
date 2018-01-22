@@ -1,6 +1,7 @@
 package com.taobao.android.tools;
 
 import com.taobao.android.differ.dex.PatchException;
+import org.antlr.runtime.RecognitionException;
 import org.jf.dexlib2.iface.ClassDef;
 
 import java.io.File;
@@ -33,5 +34,19 @@ public class TpatchDexTool extends PatchDexTool {
     @Override
     public void setExculdeClasses(Set<String> classes) {
 
+    }
+
+    public static void main(String []args){
+        TpatchDexTool tpatchDexTool = new TpatchDexTool(new File("/Users/lilong/Downloads/taobao-android-debug1/lib/armeabi/libcom_taobao_taolive/classes.dex"),new File("/Users/lilong/Downloads/patch-7.4.5.62173@7.4.2.48/libcom_taobao_taolive/classes.dex"),21,false);
+        File outDex = new File("/Users/lilong/Downloads/taobao-android-debug1/lib/armeabi/libcom_taobao_taolive/patch.dex");
+        try {
+            tpatchDexTool.createPatchDex(outDex);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (RecognitionException e) {
+            e.printStackTrace();
+        } catch (PatchException e) {
+            e.printStackTrace();
+        }
     }
 }

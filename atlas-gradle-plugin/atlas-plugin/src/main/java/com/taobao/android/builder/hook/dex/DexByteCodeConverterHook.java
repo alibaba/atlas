@@ -182,7 +182,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                 String key = null;
                 String key2 = null;
                 try {
-                    key = MD5Util.getMD5(dexOptions.getAdditionalParameters().toString());
+                    key = MD5Util.getMD5(dexOptions.getJumboMode()+dexOptions.getAdditionalParameters().toString());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

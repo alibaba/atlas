@@ -375,13 +375,15 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
             resFolder.mkdirs();
         }
 
+        aaptOptions.getAdditionalParameters().add("-A");
+        aaptOptions.getAdditionalParameters().add(assetsFolder.getAbsolutePath());
         AaptGeneration aaptGeneration = AaptGeneration.fromProjectOptions(appVariantContext.getScope().getGlobalScope().getProjectOptions());
         Aapt aapt = makeAapt(aaptGeneration);
         AaptPackageConfig.Builder config =
                 new AaptPackageConfig.Builder()
                         .setManifestFile(miniManifest)
                         .setOptions(DslAdaptersKt.convert(aaptOptions))
-                        .setResourceDir(diffResDir)
+                        .setResourceDir(resFolder)
                         .setLibrarySymbolTableFiles(
                                 ImmutableSet.of())
                         .setCustomPackageForR(packageForR)

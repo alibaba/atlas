@@ -63,7 +63,7 @@ public class ArrayDataMethodItem extends InstructionMethodItem<ArrayPayload> {
         }
 
         for (Number number: elements) {
-            LongRenderer.writeSignedIntOrLongTo(writer, number.longValue());
+            org.jf.baksmali.Renderers.LongRenderer.writeSignedIntOrLongTo(writer, number.longValue());
             writer.write(suffix);
             if (elementWidth == 8) {
                 writeCommentIfLikelyDouble(writer, number.longValue());

@@ -220,6 +220,7 @@ import com.taobao.android.builder.tools.zip.BetterZip;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
@@ -277,7 +278,11 @@ public class TPatchDiffApkBuildTask extends BaseTask {
 
         if (getProject().hasProperty("atlas.createDiffApk")) {
             BetterZip.zipDirectory(tmpWorkDir, diffAPkFile);
-        }else {
+        }
+        else {
+            if (diffAPkFile.exists()){
+                FileUtils.deleteDirectory(diffAPkFile);
+            }
             FileUtils.moveDirectory(tmpWorkDir,diffAPkFile);
         }
 
@@ -302,7 +307,7 @@ public class TPatchDiffApkBuildTask extends BaseTask {
         return apkFile;
     }
 
-    @OutputFile
+    @OutputDirectory
     public File getDiffAPkFile() {
         return diffAPkFile;
     }

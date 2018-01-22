@@ -212,6 +212,7 @@ package com.taobao.android.builder.tasks.tpatch;
 import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.ApkDataUtils;
+import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -521,7 +522,7 @@ public class TPatchTask extends BaseTask {
                     tPatchContext.diffApkFile = appVariantOutputContext.getDiffApk();
                     tPatchContext.newApk = appVariantOutputContext.getApkOutputFile(true);
                     tPatchContext.outPatchFolder = appVariantOutputContext.getTPatchFolder();
-                    tPatchContext.manifestFile = ApkDataUtils.get(baseVariantOutput).getMainOutputFile().getOutputFile();
+                    tPatchContext.manifestFile = new File(scope.getManifestProcessorTask().get(new TaskContainerAdaptor(scope.getGlobalScope().getProject().getTasks())).getManifestOutputDirectory(),"AndroidManifest.xml");
                     tPatchContext.apExplodeFolder = appVariantContext.apContext.getApExploredFolder();
                     tPatchContext.versionName = ApkDataUtils.get(baseVariantOutput).getVersionName();
                     tPatchContext.tpatchHistoryUrl = tBuildType.getPatchConfig()
