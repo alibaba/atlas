@@ -76,21 +76,14 @@ public class AtlasFeatureTaskManager extends AtlasBaseTaskManager{
         }
 
 
-//        featureExtension.getFeatureVariants().forEach(featureVariant -> {
-//
-//            FeatureVariantContext featureVariantContext = new FeatureVariantContext((FeatureVariantImpl)featureVariant,
-//                    project,atlasExtension,featureExtension);
-//
-//            List<MtlTaskContext> taskContexts = new ArrayList<>();
-//            taskContexts.add(new MtlTaskContext(featureVariantContext.getScope().getMergeAssetsTask().get(new TaskContainerAdaptor(project.getTasks()))));
-//            taskContexts.add(new MtlTaskContext(FeatureLibManifestTask.ConfigAction.class, null));
-//            taskContexts.add(new MtlTaskContext(GenerateBuildConfig.class));
-//            taskContexts.add(new MtlTaskContext(ProcessAndroidResources.class));
-//            new MtlTaskInjector(featureVariantContext).injectTasks(taskContexts, tAndroidBuilder);
-//
-//
-//
-//        });
+        featureExtension.getFeatureVariants().forEach(featureVariant -> {
+
+            FeatureVariantContext featureVariantContext = new FeatureVariantContext((FeatureVariantImpl)featureVariant,
+                    project,atlasExtension,featureExtension);
+            invokeHandle(featureVariantContext.getScope());
+            featureVariantContext.getScope().getProcessResourcesTask().get(new TaskContainerAdaptor(featureVariantContext.getProject().getTasks())).setEnableAapt2(true);
+
+        });
 
         featureExtension.getLibraryVariants().forEach(libraryVariant -> {
 
@@ -98,7 +91,6 @@ public class AtlasFeatureTaskManager extends AtlasBaseTaskManager{
                     project,
                     atlasExtension,
                     featureExtension);
-            invokeHandle(libVariantContext.getScope());
 
             List<MtlTaskContext> featureTaskList = new ArrayList<>();
             featureTaskList.add(new MtlTaskContext(PrePareFeatureTask.ConfigAction.class,null));

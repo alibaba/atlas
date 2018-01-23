@@ -648,9 +648,8 @@ public class DexDiffer {
     private boolean equalsImpl(Collection<?> s, @Nullable Object object) {
         if (s == object) {
             return true;
-        } else if (object instanceof List) {
-            List o = (List) object;
-
+        } else if (object instanceof Collection){
+            Collection o = (Collection) object;
             try {
                 return s.size() == o.size() && s.containsAll(o);
             } catch (NullPointerException var4) {
