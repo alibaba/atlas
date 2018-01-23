@@ -15,13 +15,15 @@ buildscript {
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:3.0.1-rc1"
+        classpath "com.taobao.android:atlasplugin:3.0.1-rc2"
     }
 }
 
 subprojects {
     repositories {
         jcenter()
+        google()
+
 //        maven {
 //            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
 ////            url "http://maven.aliyun.com/nexus/content/groups/public"

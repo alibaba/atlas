@@ -264,6 +264,18 @@ public class AtlasConfigurationHelper {
 
         Configuration compileConfiguration = project.getConfigurations()
                 .getByName(COMPILE_CONFIGURATION_NAME);
+        Configuration archivesConfiguration = project.getConfigurations()
+                .getByName(ARCHIVES_CONFIGURATION_NAME);
+        Configuration compileProjectConfiguration = project.getConfigurations()
+                .findByName(COMPILE_PROJECT_CONFIGURATION_NAME);
+        if (compileProjectConfiguration == null){
+            project.getConfigurations().create(COMPILE_PROJECT_CONFIGURATION_NAME, new Action<Configuration>() {
+                @Override
+                public void execute(Configuration configuration) {
+                    configuration.extendsFrom(compileConfiguration,archivesConfiguration);
+                }
+            });
+        }
 
 //        project.getComponents()
 //                .add(new AndroidComponent(compileConfiguration,
@@ -417,6 +429,12 @@ public class AtlasConfigurationHelper {
     private String creator;
 
     public static final String COMPILE_CONFIGURATION_NAME = "compile";
+
+    public static final String ARCHIVES_CONFIGURATION_NAME = "archives";
+
+
+    public static final String COMPILE_PROJECT_CONFIGURATION_NAME = "compileProject";
+
 
     protected AtlasExtension atlasExtension;
 

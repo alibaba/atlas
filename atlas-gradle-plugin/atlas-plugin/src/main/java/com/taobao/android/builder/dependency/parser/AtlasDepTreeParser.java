@@ -227,6 +227,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.dependency.parser.helper.DependencyGroup;
 import com.taobao.android.builder.dependency.parser.helper.DependencyResolver;
+import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -277,13 +278,18 @@ public class AtlasDepTreeParser {
         ensureConfigured(compileClasspath);
         ensureConfigured(runtimeClasspath);
         ensureConfigured(bundleClasspath);
-       ensureConfigured(apiClasspath);
+        ensureConfigured(apiClasspath);
 
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
         collectArtifacts(compileClasspath, artifacts);
         collectArtifacts(runtimeClasspath, artifacts);
         collectArtifacts(apiClasspath,artifacts);
         collectArtifacts(bundleClasspath, artifacts);
+        unEnsureConfigured(compileClasspath);
+        unEnsureConfigured(runtimeClasspath);
+        unEnsureConfigured(bundleClasspath);
+        unEnsureConfigured(apiClasspath);
+
 
         //Rely on the group
         DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath,artifacts);
@@ -304,13 +310,46 @@ public class AtlasDepTreeParser {
         return atlasDependencyTree;
     }
 
+    private void unEnsureConfigured(Configuration config) {
+        for (Dependency dependency : config.getAllDependencies()) {
+            if (dependency instanceof ProjectDependency) {
+                ProjectDependency projectDependency = (ProjectDependency)dependency;
+                unPrepareProject(projectDependency,config);
+
+            }
+        }
+    }
+
+    private void unPrepareProject(ProjectDependency projectDependency, Configuration config) {
+        if (projectDependency.getTargetConfiguration()!= null && projectDependency.getTargetConfiguration().equals(AtlasConfigurationHelper.COMPILE_PROJECT_CONFIGURATION_NAME)){
+            projectDependency.setTargetConfiguration(null);
+        }
+        Configuration configuration = projectDependency.getDependencyProject().getConfigurations().findByName(config.getName());
+        if (configuration!= null && configuration.getAllDependencies()!= null) {
+            unEnsureConfigured(configuration);
+        }
+    }
+
     private void ensureConfigured(Configuration config) {
         for (Dependency dependency : config.getAllDependencies()) {
             if (dependency instanceof ProjectDependency) {
                 ProjectDependency projectDependency = (ProjectDependency)dependency;
+                prepareProject(projectDependency,config);
+
                 project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
             }
         }
+    }
+
+    private void prepareProject(ProjectDependency projectDependency,Configuration configuration) {
+        if (projectDependency.getTargetConfiguration() == null || projectDependency.getTargetConfiguration().equals("default")){
+            projectDependency.setTargetConfiguration(AtlasConfigurationHelper.COMPILE_PROJECT_CONFIGURATION_NAME);
+            }
+        Configuration config = projectDependency.getDependencyProject().getConfigurations().findByName(configuration.getName());
+        if (config!= null && config.getAllDependencies()!= null) {
+            ensureConfigured(config);
+        }
+
     }
 
     private void collectArtifacts(Configuration configuration,

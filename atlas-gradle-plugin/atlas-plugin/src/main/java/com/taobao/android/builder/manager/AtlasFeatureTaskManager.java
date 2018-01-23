@@ -1,5 +1,6 @@
 package com.taobao.android.builder.manager;
 
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.FeatureExtension;
 import com.android.build.gradle.api.BaseVariantOutput;
@@ -13,6 +14,7 @@ import com.android.build.gradle.internal.api.FeatureVariantImpl;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.api.LibraryVariantImpl;
 import com.android.build.gradle.internal.dependency.FilteredArtifactCollection;
+import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -80,9 +82,8 @@ public class AtlasFeatureTaskManager extends AtlasBaseTaskManager{
 
             FeatureVariantContext featureVariantContext = new FeatureVariantContext((FeatureVariantImpl)featureVariant,
                     project,atlasExtension,featureExtension);
-            invokeHandle(featureVariantContext.getScope());
-            featureVariantContext.getScope().getProcessResourcesTask().get(new TaskContainerAdaptor(featureVariantContext.getProject().getTasks())).setEnableAapt2(true);
 
+            featureVariantContext.getScope().getProcessResourcesTask().get(new TaskContainerAdaptor(featureVariantContext.getProject().getTasks())).setEnableAapt2(true);
         });
 
         featureExtension.getLibraryVariants().forEach(libraryVariant -> {
