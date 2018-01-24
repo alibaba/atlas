@@ -69,7 +69,7 @@ android {
 }
 
 atlas {
-
+    instantAppEnabled true
     atlasEnabled true
     tBuildConfig {
         autoStartBundles = ['com.taobao.firstbundle'] //自启动bundle配置

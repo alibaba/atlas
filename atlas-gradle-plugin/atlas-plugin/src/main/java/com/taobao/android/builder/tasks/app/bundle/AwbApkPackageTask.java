@@ -233,14 +233,6 @@ public class AwbApkPackageTask {
         BuildOutput manifestForSplit =
                 OutputScope.getOutput(manifestOutputs, TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS, apkData);
 
-//        if (manifestForSplit == null || manifestForSplit.getOutputFile() == null) {
-//            throw new RuntimeException(
-//                    "Found a .ap_ for split "
-//                            + apkData
-//                            + " but no "
-//                            + TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS
-//                            + " associated manifest file");
-//        }
         FileUtils.mkdirs(outputFile.getParentFile());
 
         try (IncrementalPackager packager =
@@ -257,7 +249,7 @@ public class AwbApkPackageTask {
                                              manifestForSplit.getOutputFile()))
                              .withNoCompressPredicate(
                                      PackagingUtils.getNoCompressPredicate(
-                                             aaptOptionsNoCompress, manifestForSplit.getOutputFile()))
+                                             aaptOptionsNoCompress, manifestForSplit == null ? awbManifestFolder.getSingleFile():manifestForSplit.getOutputFile()))
                              .withIntermediateDir(incrementalDirForSplit)
                              .withProject(appVariantOutputContext.getScope().getGlobalScope().getProject())
                              .withDebuggableBuild(debug)

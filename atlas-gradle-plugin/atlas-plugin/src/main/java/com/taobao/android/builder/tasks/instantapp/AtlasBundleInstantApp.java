@@ -12,6 +12,7 @@ import com.android.builder.signing.SigningException;
 import com.android.utils.FileUtils;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.sign.AndroidSigner;
+import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.compress.utils.IOUtils;
 import org.gradle.api.tasks.TaskAction;
 import java.io.File;
@@ -38,8 +39,6 @@ public class AtlasBundleInstantApp extends DefaultAndroidTask {
     private VariantScope scope;
     private static Pattern excludePattern = Pattern.compile("^(META-INF/)\\w*");
     private static Pattern apkPattern = Pattern.compile("libcom_\\w*(.so)$");
-    private static Pattern storePattern = Pattern.compile("^(raw/)|(^assets/)");
-
 
 
     @TaskAction
@@ -74,7 +73,7 @@ public class AtlasBundleInstantApp extends DefaultAndroidTask {
                 zipOutputStream.closeEntry();
             } else {
                 byte[] inputBuffer = IOUtils.toByteArray(zipFile.getInputStream(zipEntry));
-                if (storePattern.matcher(zipEntry.getName()).find()) {
+                if (zipEntry.getMethod() == ZipEntry.STORED) {
                     baseFeatureStream.putNextEntry(new ZipEntry(zipEntry));
                 } else {
                     baseFeatureStream.putNextEntry(new ZipEntry(zipEntry.getName()));
@@ -85,14 +84,11 @@ public class AtlasBundleInstantApp extends DefaultAndroidTask {
             }
         }
         baseFeatureStream.close();
+        zipOutputStream.close();
         AndroidSigner androidSigner = new AndroidSigner();
         File signedApk = new File(baseFeatureApk.getParentFile(), "baseFeature-signed.apk");
         androidSigner.signFile(baseFeatureApk, signedApk, (DefaultSigningConfig) signingConfig);
-        byte[] inputBuffer = IOUtils.toByteArray(new ZipInputStream(new FileInputStream(signedApk)));
-        zipOutputStream.putNextEntry(new ZipEntry(baseFeatureApk.getName()));
-        zipOutputStream.write(inputBuffer, 0, inputBuffer.length);
-        zipOutputStream.closeEntry();
-        zipOutputStream.close();
+        BetterZip.addFile(bundleFile,"baseFeature.apk",signedApk);
         FileUtils.deleteIfExists(signedApk);
         FileUtils.deleteIfExists(baseFeatureApk);
     }

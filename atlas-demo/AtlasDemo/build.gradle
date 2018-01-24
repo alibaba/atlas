@@ -5,17 +5,17 @@ buildscript {
         mavenLocal()
         jcenter()
         google()
-//        maven {
-//            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
-////            url "http://maven.aliyun.com/nexus/content/groups/public"
-//        }
+        maven {
+            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+//            url "http://maven.aliyun.com/nexus/content/groups/public"
+        }
     }
     configurations.all {
         resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:3.0.1-rc2"
+        classpath "com.taobao.android:atlasplugin:2.3.4-test-SNAPSHOT"
     }
 }
 
