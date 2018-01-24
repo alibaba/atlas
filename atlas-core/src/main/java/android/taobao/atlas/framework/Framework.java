@@ -759,7 +759,11 @@ public final class Framework {
             return;
         }
 
-        final BundleListener[] asyncs = (BundleListener[]) bundleListeners.toArray(new BundleListener[bundleListeners.size()]);
+        final BundleListener[] asyncs;
+        synchronized (bundleListeners) {
+            asyncs = (BundleListener[])bundleListeners.toArray(new BundleListener[bundleListeners.size()]);
+        }
+
         for (int i = 0; i < asyncs.length; i++) {
             asyncs[i].bundleChanged(event);
         }
@@ -777,11 +781,16 @@ public final class Framework {
         if (listener == null) {
             Log.e("Framework", "the listener must not be null", new Exception());
         }
-        bundleListeners.add(listener);
+        synchronized (bundleListeners) {
+            bundleListeners.add(listener);
+        }
     }
 
     static void removeBundleListener(BundleListener listener) {
-        bundleListeners.remove(listener);
+        synchronized (bundleListeners) {
+            bundleListeners.remove(listener);
+        }
+
     }
 
     /**
