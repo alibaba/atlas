@@ -515,6 +515,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
             super.inputJar(classPath, file, filter);
         } else if (AtlasBuildContext.atlasMainDexHelper.inMainDex(file)){
             super.inputJar(classPath, file, filter);
+        }else if (appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true).contains(file)){
+            super.inputJar(classPath, file, filter);
         }
     }
 }

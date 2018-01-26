@@ -244,10 +244,6 @@ public class PrepareAaptTask extends BaseTask {
             aaptOptions.setAdditionalParameters(new ArrayList<String>());
         }
 
-        if (!appVariantContext.getAtlasExtension().getTBuildConfig().getAaptConstantId()) {
-            aaptOptions.getAdditionalParameters().add("--non-constant-id");
-        }
-
         processAndroidResources.setAndroidBuilder(getBuilder());
         processAndroidResources.setAaptOptions(aaptOptions);
 

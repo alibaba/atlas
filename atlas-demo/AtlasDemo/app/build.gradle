@@ -76,6 +76,7 @@ atlas {
         outOfApkBundles = ['remotebundle']
         preLaunch = 'com.taobao.demo.DemoPreLaunch'
         classInject false
+        aaptConstantId true
         dataBindingBundles = ['com.taobao.databindbundle']
     }
 

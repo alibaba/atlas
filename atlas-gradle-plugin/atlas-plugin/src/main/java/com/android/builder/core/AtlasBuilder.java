@@ -368,7 +368,12 @@ public class AtlasBuilder extends AndroidBuilder {
     public void processResources(Aapt aapt,
                                  Builder aaptConfigBuilder)
         throws IOException, InterruptedException, ProcessException {
+        if (!atlasExtension.getTBuildConfig().getAaptConstantId() && !aaptConfigBuilder.build().getOptions().getAdditionalParameters().contains("--non-constant-id")) {
+            aaptConfigBuilder.build().getOptions().getAdditionalParameters().add("--non-constant-id");
+        }else {
+             aaptConfigBuilder.build().getOptions().getAdditionalParameters().remove("--non-constant-id");
 
+        }
         super.processResources(aapt, aaptConfigBuilder);
 
     }

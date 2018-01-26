@@ -15,10 +15,8 @@ import com.taobao.android.builder.tools.sign.AndroidSigner;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.compress.utils.IOUtils;
 import org.gradle.api.tasks.TaskAction;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+
+import java.io.*;
 import java.util.Enumeration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,12 +45,25 @@ public class AtlasBundleInstantApp extends DefaultAndroidTask {
         File bundleFile = new File(bundleDirectory, bundleName);
         FileUtils.deleteIfExists(bundleFile);
         File baseFeatureApk = new File(bundleDirectory, "baseFeature.apk");
+        if (!apkFile.exists()){
+            File[]apkFiles = apkFile.getParentFile().listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.getName().endsWith(".apk");
+                }
+            });
+            if (apkFiles != null){
+                apkFile = apkFiles[0];
+            }
+        }
         if (apkFile.exists()) {
             try {
                 make(baseFeatureApk, apkFile, bundleFile, scope.getVariantConfiguration().getSigningConfig());
             } catch (SigningException e) {
                 e.printStackTrace();
             }
+        }else {
+            getLogger().error(apkFile.getAbsolutePath()+" is not exist!");
         }
     }
 
@@ -122,7 +133,7 @@ public class AtlasBundleInstantApp extends DefaultAndroidTask {
                     splitsArePossible
                             ? scope.getFullApkPackagesOutputDirectory()
                             : finalApkLocation;
-            bundleInstantApp.bundleName = scope.getOutputScope().getApkDatas().get(0).getOutputFileName().replace(DOT_ANDROID_PACKAGE, DOT_ZIP);
+            bundleInstantApp.bundleName = scope.getGlobalScope().getProjectBaseName().concat("-").concat(scope.getFullVariantName()).concat(DOT_ZIP);
 
             bundleInstantApp.bundleDirectory = outputDirectory;
 
