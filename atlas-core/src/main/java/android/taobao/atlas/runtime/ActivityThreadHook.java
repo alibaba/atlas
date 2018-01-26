@@ -217,6 +217,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import android.app.ActivityThread;
 import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
 import android.os.Handler;
@@ -227,10 +228,13 @@ import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.hack.Hack.HackDeclaration.HackAssertionException;
+import android.taobao.atlas.hack.Hack.HackedField;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
+import android.view.WindowManager.BadTokenException;
 
 /**
  * Created by guanjie on 15/8/28.
@@ -322,7 +326,18 @@ public class ActivityThreadHook implements Handler.Callback{
                     throw new RuntimeException(appVersion+"avalialbeSpace = " + avliableSpace  + 
                     		"rootSize = " + rootSize + " filesSize = " + filesSize + " databasesSize =  " + databasesSize + " prefSize =" + prefSize + "From Atlas:classNotFound ---", e);
                 }
-            }else if(e.toString().contains("android.content.res.Resources") && !e.toString().contains("OutOfMemoryError")){
+            } else if (e instanceof BadTokenException) {
+                try {
+                    HackedField<Object, Object> ActivityThread_mActivities = AtlasHacks.ActivityThread.field(
+                        "mActivities").ofGenericType(Map.class);
+                    Object mActivities = ActivityThread_mActivities.get(mActivityThread);
+                    throw new RuntimeException("mActivities=" + mActivities, e);
+                } catch (HackAssertionException e1) {
+                    e1.printStackTrace();
+                }
+                throw new RuntimeException(appVersion, e);
+            } else if (e.toString().contains("android.content.res.Resources") && !e.toString().contains(
+                "OutOfMemoryError")) {
                 Object loadedapk = AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,
                         mActivityThread,RuntimeVariables.androidApplication.getPackageName());
                 if (loadedapk == null){
