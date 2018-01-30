@@ -163,19 +163,24 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
         inputFile = AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
 
+        initDexExecutorService(dexOptions);
+
         if (!multidex) {
-            waitableExecutor.execute((Callable<Void>) () -> {
-                DexByteCodeConverterHook.super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
-                return null;
-            });
+            DexByteCodeConverterHook.super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+            try {
+                for (Future future : futureList) {
+                    future.get();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         } else {
 
             tempDexFolder = variantOutputContext.getMainDexOutDir();
             if (tempDexFolder.exists()) {
                 FileUtils.cleanDirectory(tempDexFolder);
             }
-
-            initDexExecutorService(dexOptions);
 
             for (File file : inputFile) {
 
@@ -257,7 +262,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             }
 
         }
-        if (tempDexFolder.exists()) {
+        if (tempDexFolder!= null && tempDexFolder.exists()) {
             FileUtils.deleteDirectory(tempDexFolder);
         }
         waitableExecutor.waitForTasksWithQuickFail(true);

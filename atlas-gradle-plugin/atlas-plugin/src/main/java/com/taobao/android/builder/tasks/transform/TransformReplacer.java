@@ -212,9 +212,10 @@ public class TransformReplacer {
 
             AtlasProguardTransform newTransform = new AtlasProguardTransform(variantContext);
 
+            newTransform.oldTransform = (ProGuardTransform) transformTask.getTransform();
+
             ReflectUtils.updateField(transformTask, "transform",
                     newTransform);
-            newTransform.oldTransform = (ProGuardTransform) transformTask.getTransform();
 //
         }
     }

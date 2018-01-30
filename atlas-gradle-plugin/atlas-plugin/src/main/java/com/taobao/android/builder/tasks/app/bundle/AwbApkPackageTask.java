@@ -108,6 +108,9 @@ public class AwbApkPackageTask {
     }
 
     public File doFullTaskAction() throws IOException {
+        if (supportAbis == null){
+            supportAbis = ImmutableSet.of();
+        }
         ApkData apkData = appVariantOutputContext.getScope().getOutputScope().getApkDatas().get(0);
         if (dexFolders.getSingleFile().exists() && awbBundle.getMergedManifest().exists()) {
             File[] dexFile = dexFolders.getSingleFile().listFiles((dir, name) -> name.equals("classes.dex"));

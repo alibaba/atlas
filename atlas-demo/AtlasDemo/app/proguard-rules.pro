@@ -28,3 +28,4 @@
 -dontoptimize
 -dontobfuscate
 -ignorewarnings
+
