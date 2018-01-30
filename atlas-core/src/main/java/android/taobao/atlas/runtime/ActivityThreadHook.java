@@ -217,7 +217,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import android.app.ActivityThread;
 import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
 import android.os.Handler;
@@ -231,7 +230,6 @@ import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.hack.Hack.HackDeclaration.HackAssertionException;
 import android.taobao.atlas.hack.Hack.HackedField;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.view.WindowManager.BadTokenException;
@@ -331,7 +329,13 @@ public class ActivityThreadHook implements Handler.Callback{
                     HackedField<Object, Object> ActivityThread_mActivities = AtlasHacks.ActivityThread.field(
                         "mActivities").ofGenericType(Map.class);
                     Object mActivities = ActivityThread_mActivities.get(mActivityThread);
-                    throw new RuntimeException("mActivities=" + mActivities, e);
+
+                    Map<String, Object> detail = new HashMap<>();
+                    detail.put("mActivities", mActivities);
+                    AtlasMonitor.getInstance().report(AtlasMonitor.ACTIVITY_THREAD_HOOK, detail, e);
+
+                    // throw new RuntimeException("mActivities=" + mActivities, e);
+                    return true;
                 } catch (HackAssertionException e1) {
                     e1.printStackTrace();
                 }
