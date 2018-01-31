@@ -542,7 +542,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
             File preDexOutputFile = getPreDexFile(outputProvider, input, bucketId);
 
             dexArchives.add(preDexOutputFile);
-            if (preDexOutputFile.isDirectory()) {
+            if (preDexOutputFile.isDirectory() && !isIncremental) {
                 FileUtils.cleanOutputDir(preDexOutputFile);
             }else {
                 FileUtils.deleteIfExists(preDexOutputFile);
@@ -730,7 +730,7 @@ public class AtlasDexArchiveBuilderTransform extends DexArchiveBuilderTransform 
                             outBufferSize,
                             dexer,
                             isDebuggable,
-                            isIncremental);
+                            false);
 
             if (useGradleWorkers) {
                 context.getWorkerExecutor()
