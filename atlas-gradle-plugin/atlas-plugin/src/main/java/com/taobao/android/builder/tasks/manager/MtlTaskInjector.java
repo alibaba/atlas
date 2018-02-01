@@ -264,7 +264,6 @@ public class MtlTaskInjector {
                         }
                     }
                 } else {
-
                     Task task = mtlTaskFactory.createTask(variantContext, vod, mtlTaskContext.getTaskActionClazz());
                     if (null != task) {
 

@@ -332,9 +332,14 @@ public class BundleInfoUtils {
                     appVariantContext.getProject().getLogger().error(
                         "bundleBaseInfoFile>>>" + name + " has declared bundleBaseInfoFile");
                     duplicatedBundleInfo.add(name);
+                    for (String dependency:bundleInfo.getDependency()) {
+                        if (!bundleFileMap.get(name).getDependency().contains(dependency))
+                        bundleFileMap.get(name).getDependency().add(dependency);
+                    }
+                }else {
+                    bundleFileMap.put(name,bundleInfo);
                 }
 
-                bundleFileMap.put(name, bundleInfo);
             }
         }
 

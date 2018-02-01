@@ -14,38 +14,38 @@
  * limitations under the License.
  */
 
-package com.example.android.unsplash;
+package com.example.android.unsplash
 
-import android.content.Intent;
-import com.example.android.unsplash.base.R;
+import android.content.Intent
+import com.example.android.unsplash.base.R
 
 /**
  * Holding intent extra names and utility methods for intent handling.
  */
-public class IntentUtil {
-    public static final String FONT_SIZE = "fontSize";
-    public static final String PADDING = "padding";
-    public static final String PHOTO = "photo";
-    public static final String TEXT_COLOR = "color";
-    public static final String RELEVANT_PHOTOS = "relevant";
-    public static final String SELECTED_ITEM_POSITION = "selected";
-    public static final String BUNDLE_PHOTOS = "photos";
-    public static final int REQUEST_CODE = R.id.requestCode;
+object IntentUtil {
+    val FONT_SIZE = "fontSize"
+    val PADDING = "padding"
+    val PHOTO = "photo"
+    val TEXT_COLOR = "color"
+    val RELEVANT_PHOTOS = "relevant"
+    val SELECTED_ITEM_POSITION = "selected"
+    val BUNDLE_PHOTOS = "photos"
+    val REQUEST_CODE = R.id.requestCode
 
     /**
      * Checks if all extras are present in an intent.
      *
      * @param intent The intent to check.
      * @param extras The extras to check for.
-     * @return <code>true</code> if all extras are present, else <code>false</code>.
+     * @return `true` if all extras are present, else `false`.
      */
-    public static boolean hasAll(Intent intent, String... extras) {
-        for (String extra : extras) {
+    fun hasAll(intent: Intent, vararg extras: String): Boolean {
+        for (extra in extras) {
             if (!intent.hasExtra(extra)) {
-                return false;
+                return false
             }
         }
-        return true;
+        return true
     }
 
     /**
@@ -53,14 +53,14 @@ public class IntentUtil {
      *
      * @param intent The intent to check.
      * @param extras The extras to check for.
-     * @return <code>true</code> if any checked extra is present, else <code>false</code>.
+     * @return `true` if any checked extra is present, else `false`.
      */
-    public static boolean hasAny(Intent intent, String... extras) {
-        for (String extra : extras) {
+    fun hasAny(intent: Intent, vararg extras: String): Boolean {
+        for (extra in extras) {
             if (intent.hasExtra(extra)) {
-                return true;
+                return true
             }
         }
-        return false;
+        return false
     }
 }

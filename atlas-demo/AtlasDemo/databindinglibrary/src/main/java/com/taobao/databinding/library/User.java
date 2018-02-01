@@ -2,6 +2,7 @@ package com.taobao.databinding.library;
 
 import android.databinding.BaseObservable;
 import android.databinding.Bindable;
+
 import com.taobao.databindlibrary.BR;
 
 /**

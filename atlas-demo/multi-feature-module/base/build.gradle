@@ -15,6 +15,8 @@
  */
 
 apply plugin: 'com.taobao.atlas.feature'
+apply plugin: 'kotlin-android'
+
 
 android {
     baseFeature true

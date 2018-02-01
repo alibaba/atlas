@@ -256,6 +256,7 @@ public class TransformReplacer {
             MergeJavaResourcesTransform transform = (MergeJavaResourcesTransform) transformTask.getTransform();
             PackagingOptions packagingOptions = (PackagingOptions) ReflectUtils.getField(transform,"packagingOptions");
             packagingOptions.exclude("**.aidl");
+            packagingOptions.exclude("**.cfg");
             Set<? super QualifiedContent.Scope> mergeScopes = (Set<? super QualifiedContent.Scope>) ReflectUtils.getField(transform,"mergeScopes");
             Set<QualifiedContent.ContentType> mergedType = (Set<QualifiedContent.ContentType>) ReflectUtils.getField(transform,"mergedType");
             String name = (String) ReflectUtils.getField(transform,"name");

@@ -143,7 +143,7 @@ public class DetailActivity extends Activity {
             return;
         }
         Intent intent = new Intent();
-        intent.putExtra(IntentUtil.SELECTED_ITEM_POSITION, viewPager.getCurrentItem());
+        intent.putExtra(IntentUtil.INSTANCE.getSELECTED_ITEM_POSITION(), viewPager.getCurrentItem());
         setResult(RESULT_OK, intent);
     }
 

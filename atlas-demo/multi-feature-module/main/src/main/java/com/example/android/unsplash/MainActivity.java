@@ -77,7 +77,7 @@ public class MainActivity extends Activity {
         setupRecyclerView();
 
         if (savedInstanceState != null) {
-            relevantPhotos = savedInstanceState.getParcelableArrayList(IntentUtil.RELEVANT_PHOTOS);
+            relevantPhotos = savedInstanceState.getParcelableArrayList(IntentUtil.INSTANCE.getRELEVANT_PHOTOS());
         }
         displayData();
     }
@@ -115,7 +115,7 @@ public class MainActivity extends Activity {
                 final ActivityOptions activityOptions = getActivityOptions(pvh);
 
                 activity.startActivityForResult(
-                        intent, IntentUtil.REQUEST_CODE, activityOptions.toBundle());
+                        intent, IntentUtil.INSTANCE.getREQUEST_CODE(), activityOptions.toBundle());
             }
         });
         empty.setVisibility(View.GONE);
@@ -123,7 +123,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList(IntentUtil.RELEVANT_PHOTOS, relevantPhotos);
+        outState.putParcelableArrayList(IntentUtil.INSTANCE.getRELEVANT_PHOTOS(), relevantPhotos);
         super.onSaveInstanceState(outState);
     }
 
@@ -144,7 +144,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        final int selectedItem = data.getIntExtra(IntentUtil.SELECTED_ITEM_POSITION, 0);
+        final int selectedItem = data.getIntExtra(IntentUtil.INSTANCE.getSELECTED_ITEM_POSITION(), 0);
         grid.scrollToPosition(selectedItem);
 
         PhotoViewHolder holder = (PhotoViewHolder) grid.
@@ -198,14 +198,14 @@ public class MainActivity extends Activity {
                 holder.itemView.findViewById(com.example.android.unsplash.base.R.id.author);
 
         // Working around unboxing issues with multiple dex files on platforms prior to N.
-        intent.putExtra(IntentUtil.SELECTED_ITEM_POSITION, position);
-        intent.putExtra(IntentUtil.FONT_SIZE, author.getTextSize());
-        intent.putExtra(IntentUtil.PADDING,
+        intent.putExtra(IntentUtil.INSTANCE.getSELECTED_ITEM_POSITION(), position);
+        intent.putExtra(IntentUtil.INSTANCE.getFONT_SIZE(), author.getTextSize());
+        intent.putExtra(IntentUtil.INSTANCE.getPADDING(),
                 new Rect(author.getPaddingLeft(),
                         author.getPaddingTop(),
                         author.getPaddingRight(),
                         author.getPaddingBottom()));
-        intent.putExtra(IntentUtil.TEXT_COLOR, author.getCurrentTextColor());
+        intent.putExtra(IntentUtil.INSTANCE.getTEXT_COLOR(), author.getCurrentTextColor());
         return intent;
     }
 

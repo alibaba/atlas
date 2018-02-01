@@ -228,6 +228,8 @@ import com.android.build.gradle.internal.tasks.ExtractProguardFiles;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
+import com.android.build.gradle.options.BooleanOption;
+import com.android.build.gradle.options.ProjectOptions;
 import com.android.build.gradle.tasks.*;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.DefaultDexOptions;
@@ -281,9 +283,11 @@ import org.gradle.api.Task;
 import org.gradle.api.specs.Spec;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -410,9 +414,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PackageApplication.class));
 
-                                                              if (appVariantContext.getAtlasExtension().isInstantAppEnabled()){
+                                                              if (appVariantContext.getAtlasExtension().isInstantAppEnabled()) {
 
-                                                                  mtlTaskContextList.add(new MtlTaskContext(AtlasBundleInstantApp.ConfigAction.class,null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(AtlasBundleInstantApp.ConfigAction.class, null));
                                                               }
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ApBuildTask.ConfigAction.class, null));
@@ -459,8 +463,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   transformReplacer.replaceDexArchiveBuilderTransform(vod);
                                                                   transformReplacer.replaceDexExternalLibMerge(vod);
                                                                   transformReplacer.replaceDexMerge(vod);
-                                                                  transformReplacer.replaceDexTransform(appVariantContext,vod);
-                                                                  transformReplacer.replaceMergeJavaResourcesTransform(appVariantContext,vod);
+                                                                  transformReplacer.replaceDexTransform(appVariantContext, vod);
+                                                                  transformReplacer.replaceMergeJavaResourcesTransform(appVariantContext, vod);
 
 
                                                                   if (atlasExtension.getTBuildConfig().isIncremental()) {
@@ -509,8 +513,13 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
             if (applicationVariant instanceof ApplicationVariantImpl) {
                 VariantScope variantScope = ((ApplicationVariantImpl) applicationVariant).getVariantData().getScope();
                 GlobalScope globalScope = variantScope.getGlobalScope();
-                ReflectUtils.updateField(globalScope, "androidBuilder", AtlasBuildContext.androidBuilderMap.get(globalScope.getProject()));
+//                ReflectUtils.updateField(globalScope, "androidBuilder", AtlasBuildContext.androidBuilderMap.get(globalScope.getProject()));
+//                Field f = ProjectOptions.class.getDeclaredField("booleanOptions");
+//                f.setAccessible(true);
+//                Map map = (Map) f.get(((ApplicationVariantImpl) applicationVariant).getVariantData().getScope().getGlobalScope().getProjectOptions());
+//                map.put(BooleanOption.ENABLE_AAPT2, false);
                 AtlasBuildContext.androidBuilderMap.get(globalScope.getProject()).initAapt(globalScope.getProjectOptions());
+
             }
         } catch (Exception e) {
             logger.error(e, "write globalScope androidBuilder field failed!");

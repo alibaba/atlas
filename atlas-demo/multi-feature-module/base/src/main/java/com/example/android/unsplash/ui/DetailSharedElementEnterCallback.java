@@ -58,12 +58,12 @@ public class DetailSharedElementEnterCallback extends SharedElementCallback {
                 author.getPaddingTop(),
                 author.getPaddingRight(),
                 author.getPaddingBottom());
-        if (IntentUtil.hasAll(intent,
-                IntentUtil.TEXT_COLOR, IntentUtil.FONT_SIZE, IntentUtil.PADDING)) {
-            author.setTextColor(intent.getIntExtra(IntentUtil.TEXT_COLOR, Color.BLACK));
-            float textSize = intent.getFloatExtra(IntentUtil.FONT_SIZE, targetTextSize);
+        if (IntentUtil.INSTANCE.hasAll(intent,
+                IntentUtil.INSTANCE.getTEXT_COLOR(), IntentUtil.INSTANCE.getFONT_SIZE(), IntentUtil.INSTANCE.getPADDING())) {
+            author.setTextColor(intent.getIntExtra(IntentUtil.INSTANCE.getTEXT_COLOR(), Color.BLACK));
+            float textSize = intent.getFloatExtra(IntentUtil.INSTANCE.getFONT_SIZE(), targetTextSize);
             author.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
-            Rect padding = intent.getParcelableExtra(IntentUtil.PADDING);
+            Rect padding = intent.getParcelableExtra(IntentUtil.INSTANCE.getPADDING());
             author.setPadding(padding.left, padding.top, padding.right, padding.bottom);
         }
     }

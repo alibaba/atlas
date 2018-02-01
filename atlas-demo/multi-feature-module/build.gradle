@@ -39,11 +39,13 @@ buildscript {
         google()
 //        maven {
 //            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
-////            url "http://maven.aliyun.com/nexus/content/groups/public"
+//////            url "http://maven.aliyun.com/nexus/content/groups/public"
 //        }
     }
     dependencies {
-        classpath 'com.taobao.android:atlasplugin:3.0.1-rc3'
+        classpath 'com.taobao.android:atlasplugin:3.0.1-rc6'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.1.51"
+
     }
 }
 allprojects {
@@ -52,7 +54,7 @@ allprojects {
         jcenter()
 //        maven {
 //            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
-////            url "http://maven.aliyun.com/nexus/content/groups/public"
+//////            url "http://maven.aliyun.com/nexus/content/groups/public"
 //        }
     }
 
