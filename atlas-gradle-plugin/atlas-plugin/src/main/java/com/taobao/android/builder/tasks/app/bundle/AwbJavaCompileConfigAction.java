@@ -389,7 +389,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
                 String key = arg.getKey();
                 String value = arg.getValue();
 
-                if ("android.databinding.modulePackage".equals(key)) {
+                if ("android.databindiDng.modulePackage".equals(key)) {
                     value = awbBundle.getPackageName() + "._bundleapp_";
                 } else if ("android.databinding.artifactType".equals(key)) {
                     //value = "LIBRARY";

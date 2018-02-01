@@ -290,8 +290,31 @@ public class AwbDataBindingRenameTask extends BaseTask {
                         if (!dataMapperClazz.exists()) {
                             throw new GradleException("missing datamapper class");
                         }
+                        File dataBindComponentClazz = new File(dataBindingClazzFolder,
+                                "android/databinding/DataBindingComponent.class");
+                        if (!dataBindComponentClazz.exists()) {
+                            throw new GradleException("missing dataBindComponent.class");
+                        }
+                        File dataBindDynamicUtilsClazz = new File(dataBindingClazzFolder,
+                                "android/databinding/DynamicUtil.class");
+                        if (!dataBindDynamicUtilsClazz.exists()) {
+                            throw new GradleException("missing dataBindDynamicUtils.class");
+                        }
 
-                        rewriteDataBinderMapper(dataBindingClazzFolder, packageName, dataMapperClazz);
+                        ClassNameRenamer.rewriteDataBinderMapper(dataBindingClazzFolder, "android/databinding/DataBinderMapper",
+                                packageName.replace(".", "/") +
+                                        "/DataBinderMapper", dataMapperClazz);
+                        ClassNameRenamer.rewriteDataBinderMapper(dataBindingClazzFolder, "android/databinding/DataBindingComponent",
+                                packageName.replace(".", "/") +
+                                        "/DataBindingComponent", dataBindComponentClazz);
+
+                        ClassNameRenamer.rewriteDataBinderMapper(dataBindingClazzFolder, "android/databinding/dataBindDynamicUtils",
+                                packageName.replace(".", "/") +
+                                        "/dataBindDynamicUtils", dataBindDynamicUtilsClazz);
+
+                        FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "com/android/databinding"));
+
+
                         //FileUtils.deleteDirectory(new File(dataBindingClazzFolder, packageName.replace(".", "/") +
                         // "/_bundleapp_" ));
 
@@ -381,16 +404,6 @@ public class AwbDataBindingRenameTask extends BaseTask {
 
         }
     }
-
-    private void rewriteDataBinderMapper(File dataBindingClazzFolder, String packageName,
-                                         File dataMapperClazz) throws IOException {
-
-        ClassNameRenamer.rewriteDataBinderMapper(dataBindingClazzFolder, "android/databinding/DataBinderMapper",
-                                                 packageName.replace(".", "/") +
-                                                     "/DataBinderMapper", dataMapperClazz);
-
-        FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "android/databinding"));
-        FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "com/android/databinding"));
-    }
+    
 
 }
