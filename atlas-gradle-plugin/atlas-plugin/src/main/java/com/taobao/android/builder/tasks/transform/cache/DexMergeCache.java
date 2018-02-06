@@ -42,7 +42,11 @@ public class DexMergeCache extends DexCache{
                 Map.Entry entry = (Map.Entry) iterator.next();
                 if (!keys.contains(entry.getKey())) {
                     List<String>values = cacheMap.get(entry.getKey());
-                    clearAllFiles(values);
+                    try {
+                        clearAllFiles(values);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     iterator.remove();
                 }
             }

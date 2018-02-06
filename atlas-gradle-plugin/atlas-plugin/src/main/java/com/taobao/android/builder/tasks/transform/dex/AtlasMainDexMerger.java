@@ -169,13 +169,13 @@ public class AtlasMainDexMerger {
             @NonNull TransformOutputProvider outputProvider,
             boolean isIncremental)
             throws IOException {
-        return null;
+        ImmutableList.Builder<ForkJoinTask<Void>> subTasks = ImmutableList.builder();
 
-//        ImmutableList.Builder<ForkJoinTask<Void>> subTasks = ImmutableList.builder();
-//
-//        List<DirectoryInput> directoryInputs = new ArrayList<>();
-//        List<JarInput> externalLibs = new ArrayList<>();
-//        List<JarInput> nonExternalJars = new ArrayList<>();
+        throw new IOException("instantRun in AtlasPlugin is deprecared!");
+
+//        List<File> directoryInputs = new ArrayList<>();
+//        List<File> externalLibs = new ArrayList<>();
+//        List<File> nonExternalJars = new ArrayList<>();
 //        collectInputsForNativeMultiDex(inputs, directoryInputs, externalLibs, nonExternalJars);
 //
 //        boolean mergeAllInputs = shouldMergeInputsForNative(directoryInputs, nonExternalJars);
@@ -230,19 +230,18 @@ public class AtlasMainDexMerger {
      * the collections in its parameters.
      */
     private static void collectInputsForNativeMultiDex(
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<DirectoryInput> directoryInputs,
-            @NonNull Collection<JarInput> externalLibs,
-            @NonNull Collection<JarInput> nonExternalJars) {
-        for (TransformInput input : inputs) {
-            directoryInputs.addAll(input.getDirectoryInputs());
+            @NonNull Map<QualifiedContent, List<File>> inputs,
+            @NonNull Collection<File> directoryInputs,
+            @NonNull Collection<File> externalLibs,
+            @NonNull Collection<File> nonExternalJars) {
+        for (Map.Entry input : inputs.entrySet()) {
+            if (((QualifiedContent)input.getKey()).getFile().isDirectory()) {
+                directoryInputs.addAll((Collection<? extends File>) input.getValue());
+            }else if (((QualifiedContent) input.getKey()).getScopes().equals(Collections.singleton(QualifiedContent.Scope.EXTERNAL_LIBRARIES))){
+                externalLibs.addAll((Collection<? extends File>) input.getValue());
 
-            for (JarInput jarInput : input.getJarInputs()) {
-                if (jarInput.getScopes().equals(Collections.singleton(QualifiedContent.Scope.EXTERNAL_LIBRARIES))) {
-                    externalLibs.add(jarInput);
-                } else {
-                    nonExternalJars.add(jarInput);
-                }
+            }else {
+                nonExternalJars.addAll((Collection<? extends File>) input.getValue());
             }
         }
     }
@@ -327,116 +326,7 @@ public class AtlasMainDexMerger {
         }
     }
 
-    private List<ForkJoinTask<Void>> processDirectories(
-            @NonNull ProcessOutput output,
-            @NonNull TransformOutputProvider outputProvider,
-            boolean isIncremental,
-            @NonNull Collection<DirectoryInput> inputs,
-            boolean mergeAllInputs)
-            throws IOException {
-        ImmutableList.Builder<ForkJoinTask<Void>> subTasks = ImmutableList.builder();
-        List<DirectoryInput> deleted = new ArrayList<>();
-        List<DirectoryInput> changed = new ArrayList<>();
-        List<DirectoryInput> notChanged = new ArrayList<>();
 
-        for (DirectoryInput directoryInput : inputs) {
-            Path rootFolder = directoryInput.getFile().toPath();
-            if (!Files.isDirectory(rootFolder)) {
-                deleted.add(directoryInput);
-            } else {
-                boolean runAgain = !isIncremental;
-
-                if (!runAgain) {
-                    // check the incremental case
-                    Collection<Status> statuses = directoryInput.getChangedFiles().values();
-                    runAgain =
-                            statuses.contains(Status.ADDED)
-                                    || statuses.contains(Status.REMOVED)
-                                    || statuses.contains(Status.CHANGED);
-                }
-
-                if (runAgain) {
-                    changed.add(directoryInput);
-                } else {
-                    notChanged.add(directoryInput);
-                }
-            }
-        }
-
-        if (isIncremental && deleted.isEmpty() && changed.isEmpty()) {
-            return subTasks.build();
-        }
-
-        if (mergeAllInputs) {
-            File dexOutput =
-                    getDexOutputLocation(
-                            outputProvider, "directories", ImmutableSet.of(QualifiedContent.Scope.PROJECT));
-            FileUtils.cleanOutputDir(dexOutput);
-
-            List<Path> toMerge = new ArrayList<>(changed.size() + notChanged.size());
-            for (DirectoryInput input : Iterables.concat(changed, notChanged)) {
-                toMerge.add(input.getFile().toPath());
-            }
-            if (!toMerge.isEmpty()) {
-                subTasks.add(submitForMerging(output, dexOutput, toMerge, null));
-            }
-        } else {
-            for (DirectoryInput directoryInput : deleted) {
-                File dexOutput =
-                        getDexOutputLocation(
-                                outputProvider,
-                                directoryInput.getName(),
-                                directoryInput.getScopes());
-                FileUtils.cleanOutputDir(dexOutput);
-            }
-            for (DirectoryInput directoryInput : changed) {
-                File dexOutput =
-                        getDexOutputLocation(
-                                outputProvider,
-                                directoryInput.getName(),
-                                directoryInput.getScopes());
-                FileUtils.cleanOutputDir(dexOutput);
-                subTasks.add(
-                        submitForMerging(
-                                output,
-                                dexOutput,
-                                ImmutableList.of(directoryInput.getFile().toPath()),
-                                null));
-            }
-        }
-        return subTasks.build();
-    }
-
-    @NonNull
-    private List<ForkJoinTask<Void>> processExternalJars(
-            @NonNull ProcessOutput output,
-            @NonNull TransformOutputProvider outputProvider,
-            boolean isIncremental,
-            List<JarInput> externalLibs)
-            throws IOException {
-        ImmutableList.Builder<ForkJoinTask<Void>> subTasks = ImmutableList.builder();
-        File externalLibsOutput =
-                getDexOutputLocation(
-                        outputProvider, "externalLibs", ImmutableSet.of(QualifiedContent.Scope.EXTERNAL_LIBRARIES));
-
-        if (!isIncremental
-                || externalLibs.stream().anyMatch(i -> i.getStatus() != Status.NOTCHANGED)) {
-            // if non-incremental, or inputs have changed, merge again
-            FileUtils.cleanOutputDir(externalLibsOutput);
-            Iterable<Path> externalLibsToMerge =
-                    externalLibs
-                            .stream()
-                            .filter(i -> i.getStatus() != Status.REMOVED)
-                            .map(input -> input.getFile().toPath())
-                            .collect(Collectors.toList());
-            if (!Iterables.isEmpty(externalLibsToMerge)) {
-                subTasks.add(
-                        submitForMerging(output, externalLibsOutput, externalLibsToMerge, null));
-            }
-        }
-
-        return subTasks.build();
-    }
 
     /**
      * Add a merging task to the queue of tasks.

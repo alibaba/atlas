@@ -108,26 +108,23 @@ public class DexCache extends TransformCache<File> {
     public synchronized List<File> getCache(QualifiedContent qualifiedContent) {
         File file = qualifiedContent.getFile();
         List<File> files = new ArrayList<>();
+        String key = null;
         try {
-            String key = calculateKey(file);
+             key = calculateKey(file);
             List<String> strings = cacheMap.get(key);
             if (strings == null) {
                 return ImmutableList.of();
             }
-            keys.add(key);
             for (String s : strings) {
                 files.add(new File(s));
             }
             if (files.size() == 0) {
-                cacheMap.remove(key);
                 return ImmutableList.of();
             }
 
             for (File cacheFile : files) {
                 if (!cacheFile.exists()) {
                     clearAllFiles(files);
-                    cacheMap.remove(key);
-
                     return ImmutableList.of();
                 }
             }
@@ -136,7 +133,6 @@ public class DexCache extends TransformCache<File> {
                 Status status = ((JarInput) qualifiedContent).getStatus();
                 if (status.equals(Status.REMOVED) || !qualifiedContent.getFile().exists()) {
                     clearAllFiles(files);
-                    cacheMap.remove(key);
                     return ImmutableList.of();
                 }
             }
@@ -158,25 +154,39 @@ public class DexCache extends TransformCache<File> {
         }
 
         String log = "hit cache:" + qualifiedContent.getFile().getAbsolutePath() + " cache:" + stringBuilder.toString();
+        keys.add(key);
         project.getLogger().info(log);
         fileLogger.log(log);
         return files;
     }
 
-    protected void clearAllFiles(List<?> files) {
+    protected void clearAllFiles(List<?> files) throws IOException {
 
         for (Object file : files) {
             if (file.getClass() == String.class) {
                 if (new File(String.valueOf(file)).exists()) {
-                    FileUtils.deleteQuietly(new File(String.valueOf(file)));
+                    if (new File(String.valueOf(file)).isDirectory()){
+                       FileUtils.deleteDirectory(new File(String.valueOf(file)));
+                    }else {
+                        FileUtils.deleteQuietly(new File(String.valueOf(file)));
+                    }
                 }
             } else if (file.getClass() == File.class) {
                 if (((File) file).exists()) {
-                    FileUtils.deleteQuietly((File) file);
+                    if (((File) file).isDirectory()){
+                        FileUtils.deleteDirectory((File) file);
+
+                    }else {
+                        FileUtils.deleteQuietly((File) file);
+                    }
                 }
             } else if (file instanceof Path) {
                 if (((Path) file).toFile().exists()) {
-                    FileUtils.deleteQuietly(((Path) file).toFile());
+                    if (((Path) file).toFile().isDirectory()){
+                        FileUtils.deleteDirectory(((Path) file).toFile());
+                    }else {
+                        FileUtils.deleteQuietly(((Path) file).toFile());
+                    }
 
                 }
             }
@@ -208,7 +218,11 @@ public class DexCache extends TransformCache<File> {
                 Map.Entry entry = (Map.Entry) iterator.next();
                 if (!keys.contains(entry.getKey())) {
                     List<String>values = cacheMap.get(entry.getKey());
-                    clearAllFiles(values);
+                    try {
+                        clearAllFiles(values);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     iterator.remove();
                 }
             }

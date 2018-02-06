@@ -229,8 +229,10 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.*;
 
 import java.io.File;
@@ -407,12 +409,17 @@ public class StandardizeLibManifestTask extends DefaultTask {
             baseVariantOutput.getProcessManifest().doFirst(
                 new PreProcessManifestAction(appVariantContext, baseVariantOutput));
 
-            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                baseVariantOutput.getProcessManifest().doLast(
+//            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+            baseVariantOutput.getProcessManifest().doLast(
                     new PostProcessManifestAction(appVariantContext, baseVariantOutput));
-            }
+
+            File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
+            appVariantContext.getVariantData().javacTask.source(proxySrcDir);
 
         }
+
+
+//        }
 
     }
 }
