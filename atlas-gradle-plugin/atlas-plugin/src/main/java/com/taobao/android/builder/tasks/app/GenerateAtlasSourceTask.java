@@ -300,6 +300,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
         if (StringUtils.isNotEmpty(injectParam.autoStartBundles)) {
             lines.add("public static String autoStartBundles = \"" + injectParam.autoStartBundles + "\";");
         }
+        lines.add("public static String autoStart = \"" + true/*injectParam.autoStart */ + "\";");
         if (StringUtils.isNotEmpty(injectParam.preLaunch)) {
             lines.add("public static String preLaunch = \"" + injectParam.preLaunch + "\";");
         }
@@ -321,9 +322,8 @@ public class GenerateAtlasSourceTask extends BaseTask {
             output.put("outApp", injectParam.outApp);
             output.put("unit_tag", injectParam.unit_tag);
 
-            FileUtils.write(
-                new File(appVariantContext.getProject().getBuildDir(), "outputs/atlasFrameworkProperties.json"),
-                JSON.toJSONString(output, true));
+            FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),
+                "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
         } catch (Exception e) {
             throw new GradleException(e.getMessage(), e);
         }
