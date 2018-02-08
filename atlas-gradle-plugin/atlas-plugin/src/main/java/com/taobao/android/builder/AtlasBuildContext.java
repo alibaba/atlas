@@ -257,7 +257,7 @@ public class AtlasBuildContext {
     public static AtlasConfigurationHelper atlasConfigurationHelper;
 
 
-    public static STATUS status;
+    public static STATUS status = STATUS.DEXARCHIVE;
 
     /**
      * Depending on the original coordinate address, classInject You need to find atlas.

@@ -3,7 +3,6 @@ package com.taobao.demo;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -30,28 +29,23 @@ public class MainActivity extends AppCompatActivity
     private ViewGroup mActivityGroupContainer;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
-                    Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
-                    return true;
-                case R.id.navigation_dashboard:
-                    switchToActivity("second","com.taobao.secondbundle.SecondBundleActivity");
-                    return true;
-                case R.id.navigation_notifications:
-//                    Intent intent3 = new Intent();
-//                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
-//                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);
-                    return true;
-            }
-            return false;
-        }
-
-    };
+            = item -> {
+                switch (item.getItemId()) {
+                    case R.id.navigation_home:
+                        switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
+                        Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
+                        return true;
+                    case R.id.navigation_dashboard:
+                        switchToActivity("second","com.taobao.secondbundle.SecondBundleActivity");
+                        return true;
+                    case R.id.navigation_notifications:
+    //                    Intent intent3 = new Intent();
+    //                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
+    //                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);
+                        return true;
+                }
+                return false;
+            };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

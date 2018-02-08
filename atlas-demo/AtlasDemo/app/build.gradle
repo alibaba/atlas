@@ -36,11 +36,18 @@ android {
         }else{
         	buildConfigField "boolean", "API_ENV", "false"
         }
+        multiDexEnabled = false
+
     }
 
 
     dataBinding {
         enabled = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
 
@@ -119,7 +126,6 @@ dependencies {
     bundleCompile project(path:':remotebundle',configuration: "compileProject")
     bundleCompile project(path:':publicbundle',configuration: "compileProject")
     bundleCompile project(path:':databindbundle',configuration: "compileProject")
-
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
     compile 'com.android.support:support-vector-drawable:25.1.0'

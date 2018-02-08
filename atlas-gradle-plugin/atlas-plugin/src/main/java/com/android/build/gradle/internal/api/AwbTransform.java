@@ -210,6 +210,7 @@
 package com.android.build.gradle.internal.api;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -229,6 +230,16 @@ public class AwbTransform {
     private File              outDexFile;
     private Map<String, File> inputLibrariesMap = Maps.newHashMap();
     private File              javaResourcesInputDir;
+
+    public Map<File, File> getFileTransform() {
+        return fileTransform;
+    }
+
+    public void setFileTransform(Map<File, File> fileTransform) {
+        this.fileTransform = fileTransform;
+    }
+
+    private Map<File,File>    fileTransform = new HashMap<>();
 
     public List<File> getLibraryResourcesInutDir() {
         return libraryResourcesInutDir;

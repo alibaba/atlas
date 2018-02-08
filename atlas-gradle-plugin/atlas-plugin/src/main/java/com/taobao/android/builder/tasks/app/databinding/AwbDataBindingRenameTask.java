@@ -354,6 +354,7 @@ public class AwbDataBindingRenameTask extends BaseTask {
 
                             new ClazzReplacer(inputJar, outputJar, replaceMap).execute();
                             newLibrarys.add(outputJar);
+                            awbTransform.getFileTransform().put(inputJar,outputJar);
                         }
 
                         awbTransform.setInputLibraries(newLibrarys);

@@ -206,4 +206,72 @@ public class AtlasDexArchiveBuilderCacheHander {
             return buildCache;
         }
     }
+
+    void populateCache(Multimap<QualifiedContent, File> cacheableItems)
+            throws IOException, ExecutionException {
+
+        for (QualifiedContent input : cacheableItems.keys()) {
+            FileCache cache =
+                    getBuildCache(
+                            input.getFile(), isExternalLib(input), userLevelCache);
+            if (cache != null) {
+                FileCache.Inputs buildCacheInputs =
+                        AtlasDexArchiveBuilderCacheHander.getBuildCacheInputs(
+                                input.getFile(), dexOptions, dexer, minSdkVersion, isDebuggable);
+                FileCache.QueryResult result =
+                        cache.createFileInCacheIfAbsent(
+                                buildCacheInputs,
+                                in -> {
+                                    Collection<File> dexArchives = cacheableItems.get(input);
+                                    logger.verbose(
+                                            "Merging %1$s into %2$s",
+                                            Joiner.on(',').join(dexArchives), in.getAbsolutePath());
+                                    mergeJars(in, cacheableItems.get(input));
+                                });
+                if (result.getQueryEvent().equals(FileCache.QueryEvent.CORRUPTED)) {
+                    Verify.verifyNotNull(result.getCauseOfCorruption());
+                    logger.info(
+                            "The build cache at '%1$s' contained an invalid cache entry.\n"
+                                    + "Cause: %2$s\n"
+                                    + "We have recreated the cache entry.\n"
+                                    + "%3$s",
+                            cache.getCacheDirectory().getAbsolutePath(),
+                            Throwables.getStackTraceAsString(result.getCauseOfCorruption()),
+                            BuildCacheUtils.BUILD_CACHE_TROUBLESHOOTING_MESSAGE);
+                }
+            }
+        }
+    }
+
+    private static void mergeJars(File out, Iterable<File> dexArchives) throws IOException {
+
+        try (JarOutputStream jarOutputStream =
+                     new JarOutputStream(new BufferedOutputStream(new FileOutputStream(out)))) {
+
+            Set<String> usedNames = new HashSet<>();
+            for (File dexArchive : dexArchives) {
+                if (dexArchive.exists()) {
+                    try (JarFile jarFile = new JarFile(dexArchive)) {
+                        Enumeration<JarEntry> entries = jarFile.entries();
+                        while (entries.hasMoreElements()) {
+                            JarEntry jarEntry = entries.nextElement();
+                            // Get unique name as jars might have multiple classes.dex, as for D8
+                            // we do not want to output single dex per class for performance reasons
+                            String entryName = jarEntry.getName();
+                            while (!usedNames.add(entryName)) {
+                                entryName = "_" + entryName;
+                            }
+                            jarOutputStream.putNextEntry(new JarEntry(entryName));
+                            try (InputStream inputStream =
+                                         new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
+                                ByteStreams.copy(inputStream, jarOutputStream);
+                            }
+                            jarOutputStream.closeEntry();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }

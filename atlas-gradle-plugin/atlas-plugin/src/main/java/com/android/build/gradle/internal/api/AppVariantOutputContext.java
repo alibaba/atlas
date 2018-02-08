@@ -209,6 +209,7 @@
 
 package com.android.build.gradle.internal.api;
 
+import com.android.build.api.transform.JarInput;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
@@ -220,6 +221,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
+import com.taobao.android.builder.tasks.transform.AtlasFixStackFramesTransform;
 import com.taobao.android.object.ArtifactBundleInfo;
 import org.gradle.api.tasks.compile.JavaCompile;
 
@@ -477,6 +479,29 @@ public class AppVariantOutputContext {
     public File getMainDexOutDir() {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
                 "/main-dex/" + variantScope.getVariantConfiguration().getDirName() + "/" );
+    }
+
+    public  File updateAwbDexFile(JarInput jarInput, File output) {
+        for (AwbTransform awbTransform:awbTransformMap.values()){
+            if (awbTransform.getFileTransform().containsKey(jarInput.getFile())){
+                File currentFile = awbTransform.getFileTransform().get(jarInput.getFile());
+                awbTransform.getInputLibraries().remove(currentFile);
+                awbTransform.getInputLibraries().add(output);
+                return currentFile;
+            }else {
+               Iterator<File>iterator = awbTransform.getInputLibraries().iterator();
+               while (iterator.hasNext()){
+                   File file = iterator.next();
+                   if (file.equals(jarInput.getFile())){
+                       iterator.remove();
+                       awbTransform.getInputLibraries().add(output);
+                       return jarInput.getFile();
+                   }
+               }
+            }
+
+        }
+        return null;
     }
 
 

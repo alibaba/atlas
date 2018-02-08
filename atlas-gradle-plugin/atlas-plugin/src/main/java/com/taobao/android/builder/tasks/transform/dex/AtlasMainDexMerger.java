@@ -4,7 +4,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.*;
+import com.android.build.gradle.internal.BuildCacheUtils;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.transforms.DexMergerTransform;
 import com.android.build.gradle.internal.transforms.DexMergerTransformCallable;
@@ -12,6 +15,7 @@ import com.android.build.gradle.internal.transforms.TransformInputUtil;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.dexing.DexMergerTool;
 import com.android.builder.dexing.DexingType;
+import com.android.builder.utils.FileCache;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
 import com.android.ide.common.blame.parser.DexParser;
@@ -20,22 +24,26 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tools.MD5Util;
+import com.taobao.android.builder.tools.ReflectUtils;
+import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -54,12 +62,19 @@ public class AtlasMainDexMerger {
     @NonNull private final DexingType dexingType;
     @Nullable private final FileCollection mainDexListFile;
     @NonNull private final DexMergerTool dexMerger;
+    private static final String id = "atlasmaindexmerge";
+
+    private static final String CACHE_VERSION="1.0.1";
+
+
     private final int minSdkVersion;
     private final boolean isDebuggable;
     @NonNull private final ErrorReporter errorReporter;
     @NonNull private final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
-    public AtlasMainDexMerger(DexingType dexingType, FileCollection mainDexListFile, ErrorReporter errorReporter, DexMergerTool dexMerger, int minSdkVersion, boolean isDebuggable) {
+    private AppVariantOutputContext variantOutputContext;
+
+    public AtlasMainDexMerger(DexingType dexingType, FileCollection mainDexListFile, ErrorReporter errorReporter, DexMergerTool dexMerger, int minSdkVersion, boolean isDebuggable, AppVariantOutputContext appVariantOutputContext) {
         this.dexingType = dexingType;
         this.mainDexListFile = mainDexListFile;
         this.dexMerger = dexMerger;
@@ -69,83 +84,161 @@ public class AtlasMainDexMerger {
                 (dexingType == DexingType.LEGACY_MULTIDEX) == (mainDexListFile != null),
                 "Main dex list must only be set when in legacy multidex");
         this.errorReporter = errorReporter;
+        this.variantOutputContext = appVariantOutputContext;
 
     }
 
-    public void merge(TransformOutputProvider outputProvider) throws TransformException {
+    public void merge(TransformInvocation transformInvocation) throws TransformException {
 
         if (dexMerger == DexMergerTool.D8) {
             logger.info("D8 is used to merge dex.");
         }
+
+        TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
+        Collection<TransformInput>transformInputs = transformInvocation.getInputs();
+
+
+        List<File>mainDexFiles = new ArrayList<>();
+
+
+        final File[][] mergeDexs = {new File[0]};
+
+
+        File outputDir =
+                getDexOutputLocation(outputProvider, "main", TransformManager.SCOPE_FULL_PROJECT);
+        // this deletes and creates the dir for the output
         try {
-            outputProvider.deleteAll();
+            FileUtils.cleanOutputDir(outputDir);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        transformInputs.forEach((TransformInput transformInput) -> {
+            File file = (File) ReflectUtils.getField(transformInput, "optionalRootLocation");
+            if (file!= null && file.exists()) {
+                mainDexFiles.addAll(org.apache.commons.io.FileUtils.listFiles(file, new String[]{"jar", "dex"}, true));
+                mergeDexs[0] = file.listFiles(pathname -> pathname.getName().endsWith(".jar")||pathname.isDirectory());
+            }
+        });
+
+        File outDexFile = new File(outputDir,"classes.dex");
+        Collections.sort(mainDexFiles, (o1, o2) -> {
+            if (o1.length() > o2.length()) {
+                return 1;
+            }else if (o1.length() < o2.length()){
+                return -1;
+            }else {
+                return 0;
+            }
+        });
+        FileCache.Inputs buildCacheInputs =
+                getBuildCacheInputs(
+                        mainDexFiles, dexingType, dexMerger, mainDexListFile == null? null:mainDexListFile.getSingleFile(),minSdkVersion, isDebuggable);
 
         ProcessOutputHandler outputHandler =
                 new ParsingProcessOutputHandler(
                         new ToolOutputParser(new DexParser(), Message.Kind.ERROR, logger),
                         new ToolOutputParser(new DexParser(), logger),
                         errorReporter);
+        ProcessOutput output = outputHandler.createOutput();
+        FileCache fileCache = BuildCacheUtils.createBuildCacheIfEnabled(variantOutputContext.getVariantContext().getProject(),variantOutputContext.getScope().getGlobalScope().getProjectOptions());
+        try {
+            FileCache.QueryResult result = fileCache.createFileInCacheIfAbsent(
+                    buildCacheInputs,
+                    in -> {
+                        List<ForkJoinTask<Void>> mergeTasks = new ArrayList<>();
+                        if (dexingType == DexingType.NATIVE_MULTIDEX) {
+                            mergeTasks =
+                                    handleNativeMultiDex(
+                                            Arrays.asList(mergeDexs[0]),
+                                            output,
+                                            outputDir,
+                                            false);
+                        } else {
+                            mergeTasks =
+                                    handleLegacyAndMonoDex(
+                                            Arrays.asList(mergeDexs[0]), output,outputDir);
+                        }
 
-        ProcessOutput output = null;
-        List<ForkJoinTask<Void>> mergeTasks;
-        try (Closeable ignored = output = outputHandler.createOutput()) {
-            if (dexingType == DexingType.NATIVE_MULTIDEX) {
-                mergeTasks =
-                        handleNativeMultiDex(
-                                AtlasBuildContext.atlasMainDexHelper.getMainDexAchives(),
-                                output,
-                                outputProvider,
-                                false);
-            } else {
-                mergeTasks =
-                        handleLegacyAndMonoDex(
-                                AtlasBuildContext.atlasMainDexHelper.getMainDexAchives(), output, outputProvider);
-            }
+                        mergeTasks.forEach(ForkJoinTask::join);
 
-            // now wait for all merge tasks completion
-            mergeTasks.forEach(ForkJoinTask::join);
+                        File []dexs = outputDir.listFiles((dir, name) -> name.endsWith(".dex"));
+                        if (dexs!= null && dexs.length > 1){
+                            for (File file:dexs){
+                                org.apache.commons.io.FileUtils.copyFileToDirectory(file,in.getParentFile());
+                            }
 
-        } catch (IOException e) {
-            throw new TransformException(e);
-        } catch (Exception e) {
-            throw new TransformException(Throwables.getRootCause(e));
-        } finally {
-            if (output != null) {
-                try {
-                    outputHandler.handleOutput(output);
-                } catch (ProcessException e) {
-                    // ignore this one
+                        }else if (dexs.length ==1){
+                            Files.copy(outDexFile.toPath(), in.toPath());
+                        }
+
+                        if (output != null) {
+                            try {
+                                outputHandler.handleOutput(output);
+                            } catch (ProcessException e) {
+                                // ignore this one
+                            }
+                        }
+                    });
+
+            if (result.getQueryEvent().equals(FileCache.QueryEvent.HIT)){
+                if (result.getCachedFile().exists()) {
+                    logger.info("hit maindex dexmerge cache ->"+result.getCachedFile().getAbsolutePath());
+                    org.apache.commons.io.FileUtils.copyFile(result.getCachedFile(), outDexFile);
+                }else if (!result.getCachedFile().exists()){
+                    File[]dexs = result.getCachedFile().getParentFile().listFiles((dir, name) -> name.endsWith(".dex"));
+                    if (dexs!= null && dexs.length > 0){
+                        for (File dex:dexs) {
+                            logger.info("hit maindex dexmerge cache ->"+dex.getAbsolutePath());
+                            org.apache.commons.io.FileUtils.copyFileToDirectory(dex, outputDir);
+                        }
+
+                    }
                 }
+            }else {
+                logger.info("miss maindex dexmerge cache -> null");
+
             }
+        }catch (Exception e){
+
         }
+
+
+    }
+
+    private FileCache.Inputs getBuildCacheInputs(List<File> mainDexFiles, DexingType dexingType, DexMergerTool dexMerger, File file, int minSdkVersion, boolean isDebuggable) {
+        FileCache.Inputs.Builder inputsBuilder = new FileCache.Inputs.Builder(FileCache.Command.PREDEX_LIBRARY_TO_DEX_ARCHIVE);
+        for (int i = 0; i < mainDexFiles.size();i++) {
+            inputsBuilder.putFile(String.valueOf(i), mainDexFiles.get(i), FileCache.FileProperties.HASH);
+        }
+        inputsBuilder.putString("dexingType",dexingType.name()).putString("dexMerger",dexMerger.name());
+        if (file!= null && file.exists()) {
+            inputsBuilder.putFile("maindexlist", file, FileCache.FileProperties.HASH);
+        }
+        inputsBuilder.putLong("minSdkVersion",minSdkVersion).putBoolean("isDebuggable",isDebuggable);
+        inputsBuilder.putString("type",id).putString("version",CACHE_VERSION);
+        inputsBuilder.putString("bundleName","maindex");
+        FileCache.Inputs inputs = inputsBuilder.build();
+        return inputs;
     }
 
     /** For legacy and mono-dex we always merge all dex archives, non-incrementally. */
     @NonNull
     private List<ForkJoinTask<Void>> handleLegacyAndMonoDex(
-            @NonNull Map<QualifiedContent, List<File>> allDexFiles,
+            @NonNull List<File> allDexFiles,
             @NonNull ProcessOutput output,
-            @NonNull TransformOutputProvider outputProvider)
+            @NonNull File outputDir)
             throws IOException {
         ImmutableList.Builder<Path> dexArchiveBuilder = ImmutableList.builder();
-        for (List<File>inputs:allDexFiles.values()) {
-            inputs.stream()
+            allDexFiles.stream()
                     .map(file -> file.toPath())
                     .forEach(dexArchiveBuilder::add);
-        }
+
 
         ImmutableList<Path> dexesToMerge = dexArchiveBuilder.build();
         if (dexesToMerge.isEmpty()) {
             return ImmutableList.of();
         }
-
-        File outputDir =
-                getDexOutputLocation(outputProvider, "main", TransformManager.SCOPE_FULL_PROJECT);
-        // this deletes and creates the dir for the output
-        FileUtils.cleanOutputDir(outputDir);
 
         Path mainDexClasses;
         if (mainDexListFile == null) {
@@ -164,167 +257,18 @@ public class AtlasMainDexMerger {
      */
     @NonNull
     private List<ForkJoinTask<Void>> handleNativeMultiDex(
-            @NonNull Map<QualifiedContent, List<File>> inputs,
+            @NonNull List<File> inputs,
             @NonNull ProcessOutput output,
-            @NonNull TransformOutputProvider outputProvider,
+            @NonNull File outPutDir,
             boolean isIncremental)
             throws IOException {
         ImmutableList.Builder<ForkJoinTask<Void>> subTasks = ImmutableList.builder();
 
         throw new IOException("instantRun in AtlasPlugin is deprecared!");
 
-//        List<File> directoryInputs = new ArrayList<>();
-//        List<File> externalLibs = new ArrayList<>();
-//        List<File> nonExternalJars = new ArrayList<>();
-//        collectInputsForNativeMultiDex(inputs, directoryInputs, externalLibs, nonExternalJars);
-//
-//        boolean mergeAllInputs = shouldMergeInputsForNative(directoryInputs, nonExternalJars);
-//        subTasks.addAll(
-//                processDirectories(
-//                        output, outputProvider, isIncremental, directoryInputs, mergeAllInputs));
-//
-//        if (!nonExternalJars.isEmpty()) {
-//            if (mergeAllInputs) {
-//                subTasks.addAll(
-//                        processNonExternalJarsTogether(
-//                                output, outputProvider, isIncremental, nonExternalJars));
-//            } else {
-//                subTasks.addAll(
-//                        processNonExternalJarsSeparately(
-//                                output, outputProvider, isIncremental, nonExternalJars));
-//            }
-//        }
-//
-//        subTasks.addAll(processExternalJars(output, outputProvider, isIncremental, externalLibs));
-//        return subTasks.build();
     }
 
-    /**
-     * If all directory and non-external jar inputs should be merge individually, or we should merge
-     * them together (all directory ones together, and all non-external jar ones together).
-     *
-     * <p>In order to improve the incremental build times, we will try to merge a single directory
-     * input or non-external jar input in a single dex merger invocation i.e. a single input will
-     * produce at least one dex file.
-     *
-     * <p>However, on Android L (API levels 21 and 22) there is a 100 dex files limit that we might
-     * hit. Therefore, we might need to merge all directory inputs in a single dex merger
-     * invocation. The same applies to non-external jar inputs.
-     */
-    private boolean shouldMergeInputsForNative(
-            @NonNull Collection<DirectoryInput> directories,
-            @NonNull Collection<JarInput> nonExternalJars) {
-        if (minSdkVersion > 22) {
-            return false;
-        }
 
-        long dirInputsCount = directories.stream().filter(d -> d.getFile().exists()).count();
-        long nonExternalJarCount =
-                nonExternalJars.stream().filter(d -> d.getStatus() != Status.REMOVED).count();
-        return dirInputsCount + nonExternalJarCount
-                > ANDROID_L_MAX_DEX_FILES - EXTERNAL_DEPS_DEX_FILES;
-    }
-
-    /**
-     * Reads all inputs and adds the input to the corresponding collection. NB: this method mutates
-     * the collections in its parameters.
-     */
-    private static void collectInputsForNativeMultiDex(
-            @NonNull Map<QualifiedContent, List<File>> inputs,
-            @NonNull Collection<File> directoryInputs,
-            @NonNull Collection<File> externalLibs,
-            @NonNull Collection<File> nonExternalJars) {
-        for (Map.Entry input : inputs.entrySet()) {
-            if (((QualifiedContent)input.getKey()).getFile().isDirectory()) {
-                directoryInputs.addAll((Collection<? extends File>) input.getValue());
-            }else if (((QualifiedContent) input.getKey()).getScopes().equals(Collections.singleton(QualifiedContent.Scope.EXTERNAL_LIBRARIES))){
-                externalLibs.addAll((Collection<? extends File>) input.getValue());
-
-            }else {
-                nonExternalJars.addAll((Collection<? extends File>) input.getValue());
-            }
-        }
-    }
-
-    private List<ForkJoinTask<Void>> processNonExternalJarsSeparately(
-            @NonNull ProcessOutput output,
-            @NonNull TransformOutputProvider outputProvider,
-            boolean isIncremental,
-            @NonNull Collection<JarInput> inputs)
-            throws IOException {
-        ImmutableList.Builder<ForkJoinTask<Void>> subTasks = ImmutableList.builder();
-
-        for (JarInput jarInput : inputs) {
-            File dexOutput =
-                    getDexOutputLocation(outputProvider, jarInput.getName(), jarInput.getScopes());
-
-            if (!isIncremental || jarInput.getStatus() != Status.NOTCHANGED) {
-                FileUtils.cleanOutputDir(dexOutput);
-            }
-
-            if (!isIncremental
-                    || jarInput.getStatus() == Status.ADDED
-                    || jarInput.getStatus() == Status.CHANGED) {
-                subTasks.add(
-                        submitForMerging(
-                                output,
-                                dexOutput,
-                                ImmutableList.of(jarInput.getFile().toPath()),
-                                null));
-            }
-        }
-        return subTasks.build();
-    }
-
-    @NonNull
-    private List<ForkJoinTask<Void>> processNonExternalJarsTogether(
-            @NonNull ProcessOutput output,
-            @NonNull TransformOutputProvider outputProvider,
-            boolean isIncremental,
-            @NonNull Collection<JarInput> inputs)
-            throws IOException {
-
-        if (inputs.isEmpty()) {
-            return ImmutableList.of();
-        }
-
-        Map<Status, List<JarInput>> byStatus =
-                inputs.stream().collect(Collectors.groupingBy(JarInput::getStatus));
-
-        if (isIncremental && byStatus.keySet().equals(Collections.singleton(Status.NOTCHANGED))) {
-            return ImmutableList.of();
-        }
-
-        for (Status s : Status.values()) {
-            byStatus.putIfAbsent(s, ImmutableList.of());
-        }
-        Set<? super QualifiedContent.Scope> allScopes =
-                inputs.stream()
-                        .map(JarInput::getScopes)
-                        .flatMap(Set::stream)
-                        .collect(Collectors.toSet());
-        File mergedOutput = getDexOutputLocation(outputProvider, "nonExternalJars", allScopes);
-        FileUtils.cleanOutputDir(mergedOutput);
-
-        List<Path> toMerge =
-                new ArrayList<>(
-                        byStatus.get(Status.CHANGED).size()
-                                + byStatus.get(Status.NOTCHANGED).size()
-                                + byStatus.get(Status.ADDED).size());
-        for (JarInput input :
-                Iterables.concat(
-                        byStatus.get(Status.CHANGED),
-                        byStatus.get(Status.NOTCHANGED),
-                        byStatus.get(Status.ADDED))) {
-            toMerge.add(input.getFile().toPath());
-        }
-
-        if (!toMerge.isEmpty()) {
-            return ImmutableList.of(submitForMerging(output, mergedOutput, toMerge, null));
-        } else {
-            return ImmutableList.of();
-        }
-    }
 
 
 
@@ -365,4 +309,5 @@ public class AtlasMainDexMerger {
             @NonNull Set<? super QualifiedContent.Scope> scopes) {
         return outputProvider.getContentLocation(name, TransformManager.CONTENT_DEX, scopes, Format.DIRECTORY);
     }
+
 }

@@ -459,7 +459,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               }
 
                                                               for (final BaseVariantOutput vod : baseVariantOutputDataList) {
-
+                                                                  transformReplacer.replaceFixStackFramesTransform(vod);
+                                                                  transformReplacer.replaceDesugarTransform(vod);
                                                                   transformReplacer.replaceDexArchiveBuilderTransform(vod);
                                                                   transformReplacer.replaceDexExternalLibMerge(vod);
                                                                   transformReplacer.replaceDexMerge(vod);

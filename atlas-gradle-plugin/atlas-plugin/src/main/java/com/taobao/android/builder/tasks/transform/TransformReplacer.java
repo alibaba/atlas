@@ -28,6 +28,8 @@ import com.android.builder.core.ErrorReporter;
 import com.android.builder.dexing.DexMergerTool;
 import com.android.builder.dexing.DexingType;
 import com.android.builder.utils.FileCache;
+import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.process.JavaProcessExecutor;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.hook.dex.DexByteCodeConverterHook;
@@ -46,8 +48,10 @@ import org.gradle.api.logging.Logging;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Verify.verifyNotNull;
 
@@ -265,5 +269,39 @@ public class TransformReplacer {
                     atlasMergeJavaResourcesTransform);
         }
 
+    }
+
+    public void replaceFixStackFramesTransform(BaseVariantOutput vod) {
+        List<TransformTask> baseTransforms = TransformManager.findTransformTaskByTransformType(
+                variantContext, FixStackFramesTransform.class);
+        for (TransformTask transformTask:baseTransforms){
+            FixStackFramesTransform transform = (FixStackFramesTransform) transformTask.getTransform();
+
+            AtlasFixStackFramesTransform atlasFixStackFramesTransform = new AtlasFixStackFramesTransform(variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),(Supplier<List<File>>) ReflectUtils.getField(transform,"androidJarClasspath"),(List<Path>) ReflectUtils.getField(transform,"compilationBootclasspath"),(FileCache) ReflectUtils.getField(transform,"userCache"));
+            atlasFixStackFramesTransform.oldTransform = transform;
+            ReflectUtils.updateField(transformTask, "transform",
+                    atlasFixStackFramesTransform);
+        }
+    }
+
+    public void replaceDesugarTransform(BaseVariantOutput vod) {
+        List<TransformTask> baseTransforms = TransformManager.findTransformTaskByTransformType(
+                variantContext, DesugarTransform.class);
+        for (TransformTask transformTask:baseTransforms){
+            DesugarTransform transform = (DesugarTransform) transformTask.getTransform();
+            AtlasDesugarTransform atlasDesugarTransform = new AtlasDesugarTransform(
+                    variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),
+                    (Supplier<List<File>>) ReflectUtils.getField(transform,"androidJarClasspath"),
+                    (List) ReflectUtils.getField(transform,"compilationBootclasspath"),
+                    variantContext.getScope().getGlobalScope().getBuildCache(),
+                    (int)ReflectUtils.getField(transform,"minSdk"),
+                    (JavaProcessExecutor)ReflectUtils.getField(transform,"executor"),
+                    (boolean)ReflectUtils.getField(transform,"verbose"),
+                    (boolean)ReflectUtils.getField(transform,"enableGradleWorkers"),
+                    (Path)ReflectUtils.getField(transform,"tmpDir"));
+            atlasDesugarTransform.oldTransform = transform;
+            ReflectUtils.updateField(transformTask, "transform",
+                    atlasDesugarTransform);
+        }
     }
 }
