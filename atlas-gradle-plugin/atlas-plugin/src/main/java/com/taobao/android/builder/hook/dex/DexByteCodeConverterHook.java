@@ -184,59 +184,14 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
             for (File file : inputFile) {
 
-                String key = null;
-                String key2 = null;
-                try {
-                    key = MD5Util.getMD5(dexOptions.getJumboMode()+dexOptions.getAdditionalParameters().toString());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                try {
-                    key = MD5Util.getMD5(MD5Util.getFileMD5(file) + key);
-                    key2 = MD5Util.getMD5(MD5Util.getFileMD5(file) + key + 2);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
                 File outPutFolder = new File(tempDexFolder, FilenameUtils.getBaseName(file.getName()));
                 if (!outPutFolder.exists()) {
                     outPutFolder.mkdirs();
                 }
-                File outDexFile = new File(outPutFolder, "classes.dex");
-                File outDexFile2 = new File(outPutFolder, "classes2.dex");
 
-
-                try {
-                    FileCacheCenter.fetchFile(type, key, false, false, outDexFile);
-                    FileCacheCenter.fetchFile(type, key2, false, false, outDexFile2);
-
-                } catch (FileCacheException e) {
-                    e.printStackTrace();
-                }
-                if (outDexFile.exists()) {
-                    logger.info("hit cache dexFile:" + outDexFile.getAbsolutePath());
-                    continue;
-                }
 
                 DexByteCodeConverterHook.super.convertByteCode(Arrays.asList(file), outPutFolder, true, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
 
-                if (outDexFile.exists()) {
-                    try {
-                        logger.info("cache dexFile:" + outDexFile.getAbsolutePath());
-                        FileCacheCenter.cacheFile(type, key, outDexFile, false);
-                    } catch (FileCacheException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                if (outDexFile2.exists()) {
-                    try {
-                        logger.info("cache dexFile:" + outDexFile2.getAbsolutePath());
-                        FileCacheCenter.cacheFile(type, key2, outDexFile2, false);
-                    } catch (FileCacheException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
             try {
 
@@ -262,7 +217,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             }
 
         }
-        if (tempDexFolder!= null && tempDexFolder.exists()) {
+        if (tempDexFolder != null && tempDexFolder.exists()) {
             FileUtils.deleteDirectory(tempDexFolder);
         }
         waitableExecutor.waitForTasksWithQuickFail(true);

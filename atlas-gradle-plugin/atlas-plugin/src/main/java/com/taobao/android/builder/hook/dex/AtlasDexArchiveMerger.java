@@ -105,7 +105,7 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if (toMergeInMain.contains(entry.name)){
+            if (toMergeInMain.contains(entry.name)) {
                 continue;
             }
             if (!mergingStrategy.tryToAddForMerging(dex)) {
@@ -143,7 +143,7 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
             throws IOException {
         List<DexMergeEntry> entries = Lists.newArrayList();
         for (Path p : inputs) {
-            entries.add(new DexMergeEntry(Files.readAllBytes(p),p.toFile().getParentFile().getName()));
+            entries.add(new DexMergeEntry(Files.readAllBytes(p), p.toFile().getParentFile().getName()));
         }
         return entries;
     }
@@ -208,11 +208,11 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
     }
 
 
-    static class DexMergeEntry{
+    static class DexMergeEntry {
 
-         public byte[] dexFileContent;
+        public byte[] dexFileContent;
 
-         public String name;
+        public String name;
 
         public DexMergeEntry(byte[] dexFileContent, String name) {
             this.dexFileContent = dexFileContent;

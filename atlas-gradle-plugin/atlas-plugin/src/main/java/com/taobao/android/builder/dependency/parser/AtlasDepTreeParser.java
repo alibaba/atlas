@@ -233,6 +233,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.result.DependencyResult;
+import org.gradle.api.internal.project.DefaultProject;
 import org.gradle.api.specs.Specs;
 
 import java.util.*;
@@ -275,10 +276,10 @@ public class AtlasDepTreeParser {
         Configuration apiClasspath = variantDeps.getApiElements();
         Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
 
-        ensureConfigured(compileClasspath);
-        ensureConfigured(runtimeClasspath);
-        ensureConfigured(bundleClasspath);
-        ensureConfigured(apiClasspath);
+        ensureConfigured(compileClasspath,project);
+        ensureConfigured(runtimeClasspath,project);
+        ensureConfigured(bundleClasspath,project);
+        ensureConfigured(apiClasspath,project);
 
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
         collectArtifacts(compileClasspath, artifacts);
@@ -330,13 +331,13 @@ public class AtlasDepTreeParser {
         }
     }
 
-    private void ensureConfigured(Configuration config) {
+    private void ensureConfigured(Configuration config,Project project) {
         for (Dependency dependency : config.getAllDependencies()) {
             if (dependency instanceof ProjectDependency) {
                 ProjectDependency projectDependency = (ProjectDependency)dependency;
                 prepareProject(projectDependency,config);
-
                 project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
+
             }
         }
     }
@@ -347,7 +348,7 @@ public class AtlasDepTreeParser {
             }
         Configuration config = projectDependency.getDependencyProject().getConfigurations().findByName(configuration.getName());
         if (config!= null && config.getAllDependencies()!= null) {
-            ensureConfigured(config);
+            ensureConfigured(config,projectDependency.getDependencyProject());
         }
 
     }

@@ -236,6 +236,7 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
     @Override
     public void apply(Project project) {
+
         super.apply(project);
 
         atlasConfigurationHelper.createLibCompenents();
@@ -258,10 +259,8 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
             atlasConfigurationHelper.registAtlasStreams();
 
-            if (PluginTypeUtils.isAppProject(project1)) {
 
-                atlasConfigurationHelper.configDependencies();
-            }
+            atlasConfigurationHelper.configDependencies();
 
 
             //3. update extension

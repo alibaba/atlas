@@ -323,6 +323,9 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
         } else {
             File outputFile = getPreDexJar(transformOutputProvider, toConvert, null);
             logger.info("AtlasDexArchiveBuilder hit cache:"+toConvert.getFile().getAbsolutePath()+"->"+outputFile.getAbsolutePath());
+            if (!outputFile.getParentFile().exists()){
+                outputFile.getParentFile().mkdirs();
+            }
             Files.copy(
                     cachedVersion.toPath(),
                     outputFile.toPath(),
@@ -340,13 +343,15 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
 
         File cachedVersion = cacheHandler.getCachedVersionIfPresent(toConvert);
         if (cachedVersion == null) {
+            logger.info("AtlasDexArchiveBuilder miss cache:"+toConvert.getFile().getAbsolutePath()+"-> null");
+
             return convertAwbToDexArchive(context, toConvert, transformOutputProvider, false);
         } else {
+            logger.info("AtlasDexArchiveBuilder hit cache:"+toConvert.getFile().getAbsolutePath()+"->"+cachedVersion.getAbsolutePath());
             File outputFile = getAwbPreDexJar(transformOutputProvider, toConvert, null);
-            Files.copy(
-                    cachedVersion.toPath(),
-                    outputFile.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING);
+
+            FileUtils.copyFile(cachedVersion,outputFile);
+
             // no need to try to cache an already cached version.
             return ImmutableList.of();
         }
@@ -596,7 +601,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
             @Nullable Integer bucketId) {
 
         return output.getContentLocation(
-                qualifiedContent.getName() + (bucketId == null ? "" : ("-" + bucketId)),
+                qualifiedContent.getName().replace(":","-") + (bucketId == null ? "" : ("-" + bucketId)),
                 ImmutableSet.of(ExtendedContentType.DEX_ARCHIVE),
                 qualifiedContent.getScopes(),
                 Format.JAR);
@@ -777,7 +782,6 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 : getAwbPreDexJar(outputProvider, (JarInput) qualifiedContent, bucketId);
     }
 
-
       Map<String,Integer> dexcount = new HashMap<>();
 
 
@@ -785,8 +789,11 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
             @NonNull File output,
             @NonNull JarInput qualifiedContent,
             @Nullable Integer bucketId) {
+        if (!output.exists()){
+            output.mkdirs();
+        }
         if (bucketId == null){
-            return new File(output, qualifiedContent.getName() + (bucketId == null ? "" : ("-" + bucketId)) + ".jar");
+            return new File(output, qualifiedContent.getName().replace(":","-") + (bucketId == null ? "" : ("-" + bucketId)) + ".jar");
         }
 //        synchronized (object) {
             if (bucketId > 5) {
@@ -794,10 +801,8 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
             }
             dexcount.put(qualifiedContent.getName(), bucketId++);
 //        }
-        if (!output.exists()){
-            output.mkdirs();
-        }
-        return new File(output, qualifiedContent.getName() + (bucketId == null ? "" : ("-" + bucketId)) + ".jar");
+
+        return new File(output, qualifiedContent.getName().replace(":","-") + (bucketId == null ? "" : ("-" + bucketId)) + ".jar");
 
     }
 

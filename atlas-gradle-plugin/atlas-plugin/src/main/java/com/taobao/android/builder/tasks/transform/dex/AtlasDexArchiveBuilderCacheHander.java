@@ -165,7 +165,7 @@ public class AtlasDexArchiveBuilderCacheHander {
                 .putFile(
                         FileCacheInputParams.FILE.name(),
                         inputFile,
-                        FileCache.FileProperties.PATH_HASH)
+                        FileCache.FileProperties.HASH)
                 .putString(FileCacheInputParams.DX_VERSION.name(), Version.VERSION)
                 .putBoolean(FileCacheInputParams.JUMBO_MODE.name(), isJumboModeEnabledForDx())
                 .putBoolean(
