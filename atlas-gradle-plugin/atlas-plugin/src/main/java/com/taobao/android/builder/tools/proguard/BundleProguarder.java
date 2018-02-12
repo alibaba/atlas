@@ -518,6 +518,8 @@ public class BundleProguarder {
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
                 AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(inputLibrary,obsJar);
+
+
             }
 
             //configs.add();

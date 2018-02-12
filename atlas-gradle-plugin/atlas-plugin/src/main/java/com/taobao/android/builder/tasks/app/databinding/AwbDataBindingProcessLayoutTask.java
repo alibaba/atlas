@@ -256,20 +256,17 @@ public class AwbDataBindingProcessLayoutTask extends BaseTask {
                 continue;
             }
 
-            tasks.add(new Runnable() {
-                @Override
-                public void run() {
+            tasks.add(() -> {
 
-                    AwbDataBindingProcessLayoutsTask.AwbDataBindingProcessLayoutsConfigAction processLayoutsConfigAction =
-                        new AwbDataBindingProcessLayoutsTask.AwbDataBindingProcessLayoutsConfigAction(appVariantContext, awbBundle, dataBindingBuilder);
-                    AwbDataBindingProcessLayoutsTask dataBindingProcessLayoutsTask = TaskCreater.create(
-                        appVariantContext.getProject(), processLayoutsConfigAction.getName(),
-                        processLayoutsConfigAction.getType());
+                AwbDataBindingProcessLayoutsTask.AwbDataBindingProcessLayoutsConfigAction processLayoutsConfigAction =
+                    new AwbDataBindingProcessLayoutsTask.AwbDataBindingProcessLayoutsConfigAction(appVariantContext, awbBundle, dataBindingBuilder);
+                AwbDataBindingProcessLayoutsTask dataBindingProcessLayoutsTask = TaskCreater.create(
+                    appVariantContext.getProject(), processLayoutsConfigAction.getName(),
+                    processLayoutsConfigAction.getType());
 
-                    processLayoutsConfigAction.execute(dataBindingProcessLayoutsTask);
+                processLayoutsConfigAction.execute(dataBindingProcessLayoutsTask);
 
-                    dataBindingProcessLayoutsTask.execute();
-                }
+                dataBindingProcessLayoutsTask.execute();
             });
 
         }

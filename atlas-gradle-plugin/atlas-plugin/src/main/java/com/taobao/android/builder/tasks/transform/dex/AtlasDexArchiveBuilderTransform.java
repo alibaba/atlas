@@ -185,7 +185,6 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
         org.apache.commons.io.FileUtils.cleanDirectory(variantContext.getAwbDexAchiveOutputs());
 
 
-
         if (dexer == DexerTool.D8) {
             logger.info("D8 is used to build dex.");
         }

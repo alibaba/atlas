@@ -13,6 +13,7 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -49,6 +50,7 @@ import org.gradle.api.logging.Logging;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -92,6 +94,8 @@ public class TransformReplacer {
                     variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable());
             atlasDexArchiveBuilderTransform.setTransformTask(transformTask);
             ReflectUtils.updateField(transformTask,"transform",atlasDexArchiveBuilderTransform);
+
+
         }
 
     }
@@ -112,9 +116,9 @@ public class TransformReplacer {
 
     @Nullable
     private FileCache getUserDexCache(boolean isMinifiedEnabled, boolean preDexLibraries) {
-        if (!preDexLibraries || isMinifiedEnabled) {
-            return null;
-        }
+//        if (!preDexLibraries || isMinifiedEnabled) {
+//            return null;
+//        }
         return getUserIntermediatesCache();
     }
 
@@ -211,15 +215,20 @@ public class TransformReplacer {
 
         List<TransformTask> baseTransforms = TransformManager.findTransformTaskByTransformType(
                 variantContext, ProGuardTransform.class);
+        List<TransformTask> nextTransformTasks = TransformManager.findTransformTaskByTransformType(
+                variantContext, DexArchiveBuilderTransform.class);
 
         for (TransformTask transformTask : baseTransforms) {
-
             AtlasProguardTransform newTransform = new AtlasProguardTransform(variantContext);
-
             newTransform.oldTransform = (ProGuardTransform) transformTask.getTransform();
-
+            for (TransformTask nextTransformTask:nextTransformTasks) {
+                if (nextTransformTask.getVariantName().equals(transformTask.getVariantName())) {
+                    newTransform.nextTransformTask = nextTransformTask;
+                }
+            }
             ReflectUtils.updateField(transformTask, "transform",
                     newTransform);
+
 //
         }
     }
