@@ -211,10 +211,12 @@ package com.taobao.android.builder.tasks.app.merge;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.aapt.AaptGeneration;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.options.ProjectOptions;
 import com.android.builder.core.AtlasBuilder;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -237,7 +239,7 @@ import java.util.List;
 
 public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask> {
 
-    private AppVariantContext appVariantContext;
+    private final AppVariantContext appVariantContext;
 
     private static final String MANIFEST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
             + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
@@ -305,6 +307,9 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
         protected String versionCode;
 
         private AppVariantOutputContext appVariantOutputContext;
+
+        private AaptGeneration aaptGeneration;
+
         @Override
         protected void doFullTaskAction() {
 
@@ -313,7 +318,15 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
             String versionName = awbBundle.getResolvedCoordinates().getVersion();
 
             try {
-                mergeManifestsForBunlde(getManifestOutputFile(), awbBundle.getPackageName(),
+                String packageName;
+
+                if (aaptGeneration == AaptGeneration.AAPT_V1) {
+                    packageName = awbBundle.getPackageName();
+                } else {
+                    packageName = appVariantOutputContext.getScope().getVariantConfiguration().getApplicationId();
+                }
+
+                mergeManifestsForBunlde(getManifestOutputFile(), packageName,
                                                      getBundleVersion(), versionCode);
 
                 appVariantOutputContext.getScope().getOutputScope().save(VariantScope.TaskOutputType.MERGED_MANIFESTS, getManifestOutputFile().getParentFile());
@@ -348,7 +361,7 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
 
             private final AwbBundle awbBundle;
 
-            private AppVariantOutputContext appVariantOutputContext;
+            private final AppVariantOutputContext appVariantOutputContext;
 
             public ConfigAction(VariantScope scope,
                                 AwbBundle awbBundle,
@@ -380,6 +393,10 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
                 processManifestTask.setVariantName(variantName);
 
                 processManifestTask.awbBundle = awbBundle;
+
+                final ProjectOptions projectOptions = scope.getGlobalScope().getProjectOptions();
+
+                processManifestTask.aaptGeneration = AaptGeneration.fromProjectOptions(projectOptions);
                 processManifestTask.appVariantOutputContext = appVariantOutputContext;
 
                 processManifestTask.versionCode = String.valueOf(VersionUtils.getVersionCode(appVariantOutputContext));
