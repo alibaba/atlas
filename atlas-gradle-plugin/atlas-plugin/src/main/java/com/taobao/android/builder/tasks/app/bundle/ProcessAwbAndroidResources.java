@@ -384,7 +384,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         }
 //        libraries.addAll(mainDexSymbolFileCollection.getFiles());
 
-        addAaptOptions();
+        addAaptOptions(aaptGeneration);
         AaptPackageConfig.Builder aaptPackageCommandBuilder = new AaptPackageConfig.Builder()
                 .setManifestFile(manifestFileToPackage)
                 .setOptions(DslAdaptersKt.convert(getAaptOptions()))
@@ -455,22 +455,41 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
     }
 
     //Add special command parameters
-    private void addAaptOptions() {
+    private void addAaptOptions(AaptGeneration aaptGeneration) {
         //BUGFIX , The direct access property is written without access to the property name of the dynamic class
         List<String> options = new ArrayList<String>();
         String customPackageId = getCustomPackageId();
         if (StringUtils.isNotBlank(customPackageId)) {
             String[] split = customPackageId.split("\\.");
-            options.add("--forced-package-id");
+
+            if (aaptGeneration == AaptGeneration.AAPT_V1) {
+                options.add("--forced-package-id");
+            } else {
+                options.add("--package-id");
+            }
+
             options.add(split[0]);
             if (split.length > 1) { // After using the decimal point, one represents type idOffset position
-                options.add("--type-id-offset");
-                options.add(split[1]);
+
+                if (aaptGeneration == AaptGeneration.AAPT_V1) {
+                    options.add("--type-id-offset");
+                    options.add(split[1]);
+                } else {
+
+                }
+
             }
         }
         if (StringUtils.isNotBlank(getSktPackageName())) {
-            options.add("--main-package");
-            options.add(getSktPackageName());
+
+            if (aaptGeneration == AaptGeneration.AAPT_V1) {
+                options.add("--main-package");
+                options.add(getSktPackageName());
+            } else {
+                options.add("--rename-manifest-package");
+                options.add(getPackageForR());
+            }
+
         }
         if (getAssetsDir()!= null){
             options.add("-A");
@@ -493,8 +512,16 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             options.add("--output-text-symbols");
             options.add(getTextSymbolOutputDir().getAbsolutePath());
         }
-        if (!aaptOptions.getAdditionalParameters().contains("--non-constant-id")) {
-            aaptOptions.getAdditionalParameters().add("--non-constant-id");
+        String s;
+
+        if (aaptGeneration == AaptGeneration.AAPT_V1) {
+            s = "--non-constant-id";
+        } else {
+            s = "--non-final-ids";
+        }
+
+        if (!aaptOptions.getAdditionalParameters().contains(s)) {
+            aaptOptions.getAdditionalParameters().add(s);
         }
 
         aaptOptions.additionalParameters(options.toArray(new String[0]));
@@ -550,7 +577,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
         private final AwbBundle awbBundle;
 
         private final AndroidBuilder tAndroidBuilder;
-        private BaseVariantOutput variantOutput;
+
+        private final BaseVariantOutput variantOutput;
 
         private InstantRunBuildContext instantRunBuildContext;
 
