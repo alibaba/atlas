@@ -480,29 +480,29 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
                 public AaptOptions call() throws Exception {
                     //Set aapt parameters
                     AaptOptions aaptOptions = scope.getGlobalScope().getExtension().getAaptOptions();
-                    if (null == aaptOptions.getAdditionalParameters() || !aaptOptions.getAdditionalParameters()
-                        .contains("-B")) {
-
-                        PatchConfig patchConfig = appVariantContext.getBuildType().getPatchConfig();
-                        if (patchConfig == null || !(patchConfig.isCreateAPatch() || patchConfig.isCreateTPatch())) {
-                            return aaptOptions;
-                        }
-
-                        AaptOptions cloneAaptOptions = new AaptOptions();
-                        try {
-                            BeanUtils.copyProperties(cloneAaptOptions, aaptOptions);
-                        } catch (Throwable e) {
-                            throw new StopExecutionException(e.getMessage());
-                        }
-                        aaptOptions = cloneAaptOptions;
-
-                        List<String> additionParameters = aaptOptions.getAdditionalParameters();
-                        if (null == additionParameters) {
-                            additionParameters = new ArrayList<String>();
-                        }
-                        additionParameters.add("-B");
-                        additionParameters.add(appVariantContext.apContext.getBaseApk().getAbsolutePath());
-                    }
+                    // if (null == aaptOptions.getAdditionalParameters() || !aaptOptions.getAdditionalParameters()
+                    //     .contains("-B")) {
+                    //
+                    //     PatchConfig patchConfig = appVariantContext.getBuildType().getPatchConfig();
+                    //     if (patchConfig == null || !(patchConfig.isCreateAPatch() || patchConfig.isCreateTPatch())) {
+                    //         return aaptOptions;
+                    //     }
+                    //
+                    //     AaptOptions cloneAaptOptions = new AaptOptions();
+                    //     try {
+                    //         BeanUtils.copyProperties(cloneAaptOptions, aaptOptions);
+                    //     } catch (Throwable e) {
+                    //         throw new StopExecutionException(e.getMessage());
+                    //     }
+                    //     aaptOptions = cloneAaptOptions;
+                    //
+                    //     List<String> additionParameters = aaptOptions.getAdditionalParameters();
+                    //     if (null == additionParameters) {
+                    //         additionParameters = new ArrayList<String>();
+                    //     }
+                    //     additionParameters.add("-B");
+                    //     additionParameters.add(appVariantContext.apContext.getBaseApk().getAbsolutePath());
+                    // }
                     return aaptOptions;
                 }
             });
@@ -631,10 +631,11 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
         return AaptGradleFactory.make(
                 aaptGeneration,
                 builder,
-                processOutputHandler,
-                fileCache,
-                true,
-                null,
+            processOutputHandler,
+            fileCache,
+            true,
+            com.android.utils.FileUtils.mkdirs(new File(appVariantContext.getScope().getIncrementalDir(getName()),
+                "aapt-temp")),
                 aaptOptions.getCruncherProcesses());
     }
 
