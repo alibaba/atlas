@@ -248,20 +248,30 @@ public class PrepareAaptTask extends BaseTask {
         processAndroidResources.setAaptOptions(aaptOptions);
 
         ApContext apContext = appVariantContext.apContext;
+        if (processAndroidResources.isAapt2Enabled()) {
+            aaptOptions.getAdditionalParameters().add("--emit-ids");
+            aaptOptions.getAdditionalParameters().add(new File(getProject().getBuildDir(),
+                "outputs/public.txt").getAbsolutePath());
+        }
         if (null != apContext && apContext.getBaseApk() != null && apContext.getBaseApk().exists()) {
             File baseApk = appVariantContext.apContext.getBaseApk();
             //You need to increase the -b parameter
-            if (!aaptOptions.getAdditionalParameters().contains("-B")) {
-                aaptOptions.getAdditionalParameters().add("-B");
-                aaptOptions.getAdditionalParameters().add(baseApk.getAbsolutePath());
+            if (processAndroidResources.isAapt2Enabled()) {
+                aaptOptions.getAdditionalParameters().add("-I");
+            } else {
+                if (!aaptOptions.getAdditionalParameters().contains("-B")) {
+                    aaptOptions.getAdditionalParameters().add("-B");
+                }
             }
+            aaptOptions.getAdditionalParameters().add(baseApk.getAbsolutePath());
             if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && (
                 appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                    .getPatchConfig().isCreateTPatch())) {
+                    .getPatchConfig()
+                    .isCreateTPatch())) {
                 aaptOptions.getAdditionalParameters().add("--vm-safemode");
                 aaptOptions.getAdditionalParameters().add("--merge");
             }
-            //AndroidManifestThe file cannot be modified OR ignored when patch, so the current selection is ignored when patch
+            //AndroidManifestThe file cannot e modified OR ignored when patch, so the current selection is ignored when patch
         }
 
         //TODO update merge resource
@@ -298,7 +308,9 @@ public class PrepareAaptTask extends BaseTask {
             }
 
             prepareAaptTask.appVariantContext = appVariantContext;
-            prepareAaptTask.processAndroidResources = appVariantContext.getScope().getProcessResourcesTask().get(new TaskContainerAdaptor(scope.getGlobalScope().getProject().getTasks()));
+            prepareAaptTask.processAndroidResources = appVariantContext.getScope()
+                .getProcessResourcesTask()
+                .get(new TaskContainerAdaptor(scope.getGlobalScope().getProject().getTasks()));
 
             //prepareAaptTask.mergeResources = appVariantContext.getVariantData().mergeResourcesTask;
 
