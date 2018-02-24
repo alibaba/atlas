@@ -264,6 +264,10 @@ public class PrepareAaptTask extends BaseTask {
                 }
             }
             aaptOptions.getAdditionalParameters().add(baseApk.getAbsolutePath());
+            if (processAndroidResources.isAapt2Enabled()) {
+                aaptOptions.getAdditionalParameters().add("--stable-ids");
+                aaptOptions.getAdditionalParameters().add(apContext.getBaseStableIdsFile().getAbsolutePath());
+            }
             if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && (
                 appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
                     .getPatchConfig()
