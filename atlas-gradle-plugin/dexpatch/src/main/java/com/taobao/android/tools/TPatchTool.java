@@ -353,6 +353,9 @@ public class TPatchTool extends AbstractTool {
         if (patchFile.exists()) {
             FileUtils.deleteQuietly(patchFile);
         }
+
+        File infoFile = new File(patchTmpDir,"patchInfo");
+        FileUtils.writeStringToFile(infoFile, "patch-" + input.newApkBo.getVersionName() + "@" + input.baseApkBo.getVersionName() + ".tpatch");
         //        zipBundle(patchTmpDir, patchFile);
         CommandUtils.exec(patchTmpDir, "zip -r " + patchFile.getAbsolutePath() + " . -x */ -x .*");
         FileUtils.deleteDirectory(patchTmpDir);
