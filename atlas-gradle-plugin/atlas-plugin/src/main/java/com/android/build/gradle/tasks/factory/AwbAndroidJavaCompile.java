@@ -6,6 +6,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.utils.FileUtils;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import org.gradle.api.JavaVersion;
+import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 
 /**
@@ -13,6 +14,7 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
  * @create 2017-12-08 上午3:43
  */
 
+@CacheableTask
 public class AwbAndroidJavaCompile extends AndroidJavaCompile {
 
     private static boolean analyticsed = false;
