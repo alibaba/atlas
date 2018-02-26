@@ -321,6 +321,7 @@ public class ApBuildTask extends DefaultAndroidTask {
             addFile(getApkFiles(APFile.getParentFile().getParentFile(), appVariantContext),
                     ApContext.APK_FILE_LIST);
         }catch (Throwable e){
+            throw new RuntimeException(e);
 
         }
 
