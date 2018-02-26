@@ -185,7 +185,7 @@ publishing {
 publishing {
     publications {
         maven(MavenPublication) {
-            artifact "${project.buildDir}/outputs/apk/${project.name}-debug.ap"
+            artifact "${project.buildDir}/outputs/apk/debug/${project.name}-debug.ap"
             artifactId "AP-debug"
         }
     }
