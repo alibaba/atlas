@@ -294,9 +294,9 @@ public class ApkFileListUtils {
                 String relativePath = prefixName + File.separator + PathUtil.toRelative(folder, file.getAbsolutePath());
                 String md5;
                 if ("res".equals(prefixName)) {
-                    md5 = MD5Util.getFileMD5(file);
-                } else {
                     md5 = getResMd5(file);
+                } else {
+                    md5 = MD5Util.getFileMD5(file);
                 }
                 if (isImageFile(relativePath)) {
                     apkFiles.apkFileList.put(relativePath, md5);
@@ -321,7 +321,7 @@ public class ApkFileListUtils {
         try (InputStream is = new BufferedInputStream(new FileInputStream(file))) {
             CodedInputStream codedInputStream = CodedInputStream.newInstance(is);
             int numFiles = codedInputStream.readRawLittleEndian32();
-            Preconditions.checkState(numFiles == 1, "inline xml not implemented yet");
+            // Preconditions.checkState(numFiles == 1, "inline xml not implemented yet");
             long pbSize = codedInputStream.readRawLittleEndian64();
             codedInputStream.pushLimit((int)pbSize);
             CompiledFile compiledFile = CompiledFile.parser().parsePartialFrom(codedInputStream);
