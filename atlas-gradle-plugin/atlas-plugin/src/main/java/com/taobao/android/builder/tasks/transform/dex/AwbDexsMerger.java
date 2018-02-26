@@ -118,6 +118,7 @@ public class AwbDexsMerger extends AtlasDexMerger {
                 cacheHandler.handleQueryResult(result, outPutFolder, awbBundle.getName());
 
             } catch (Exception e) {
+                e.printStackTrace();
 
             }
         }

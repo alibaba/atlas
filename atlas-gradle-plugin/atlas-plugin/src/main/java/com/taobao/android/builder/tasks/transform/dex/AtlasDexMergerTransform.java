@@ -68,7 +68,7 @@ public class AtlasDexMergerTransform extends Transform {
                                    boolean isDebuggable
     ) {
         atlasMainDexMerger = new AtlasMainDexMerger(dexingType, mainDexListFile, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
-        awbDexMerger = new AwbDexsMerger(dexingType, mainDexListFile, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
+        awbDexMerger = new AwbDexsMerger(DexingType.MONO_DEX, null, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
         this.mainDexListFile = mainDexListFile == null? null:mainDexListFile.getSingleFile();
         this.dexingType = dexingType;
         this.dexMergerTool = dexMerger;

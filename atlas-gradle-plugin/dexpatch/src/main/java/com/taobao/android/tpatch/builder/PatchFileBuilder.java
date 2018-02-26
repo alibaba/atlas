@@ -327,6 +327,9 @@ public class PatchFileBuilder {
         if (!destTPathTmpFolder.exists()) {
             destTPathTmpFolder.mkdirs();
         }
+        File infoFile = new File(destTPathTmpFolder,"patchInfo");
+        FileUtils.writeStringToFile(infoFile, patchName);
+
         for (BundlePatch bundlePatch : bundlePatchs) {
             boolean addToPatch = true;
             String bundleName = "lib" + bundlePatch.pkgName.replace('.', '_');

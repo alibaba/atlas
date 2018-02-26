@@ -174,7 +174,6 @@ public class AtlasSymbolIo {
                         if (!table.contains(symbol)) {
                             table.add(symbol);
                         }else {
-                            logger.warning("duplicate symbol:"+symbol.getName()+":"+symbol.getValue());
                         }
                     }
 
@@ -188,7 +187,6 @@ public class AtlasSymbolIo {
                     if (!table.contains(symbol)) {
                         table.add(symbol);
                     }else {
-                        logger.warning("duplicate symbol:"+symbol.getName()+":"+symbol.getValue());
                     }
                 }
             }

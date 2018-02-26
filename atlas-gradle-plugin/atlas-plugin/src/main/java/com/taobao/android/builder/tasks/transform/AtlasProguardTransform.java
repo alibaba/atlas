@@ -466,9 +466,11 @@ public class AtlasProguardTransform extends ProGuardTransform {
                 .setFileCollection(appVariantContext.getProject().files(AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars()))
                 .build();
 
-        Collection consumedInputStreams = (Collection) ReflectUtils.getField(nextTransformTask,"consumedInputStreams");
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()) {
-            consumedInputStreams.add(originalStream);
+        if (nextTransformTask != null) {
+            Collection consumedInputStreams = (Collection) ReflectUtils.getField(nextTransformTask, "consumedInputStreams");
+            if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard() && consumedInputStreams != null) {
+                consumedInputStreams.add(originalStream);
+            }
         }
 
 
