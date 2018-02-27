@@ -209,6 +209,7 @@
 
 package com.taobao.android.builder.manager;
 
+import com.android.SdkConstants;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
@@ -249,6 +250,7 @@ import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tasks.app.GenerateAtlasSourceTask;
 import com.taobao.android.builder.tasks.app.LogDependenciesTask;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
+import com.taobao.android.builder.tasks.app.ResourcePatch;
 import com.taobao.android.builder.tasks.app.bundle.JavacAwbsTask;
 import com.taobao.android.builder.tasks.app.bundle.PackageAwbsTask;
 import com.taobao.android.builder.tasks.app.bundle.ProcessResAwbsTask;
@@ -276,6 +278,7 @@ import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
 import com.taobao.android.builder.tasks.transform.TransformReplacer;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -283,6 +286,8 @@ import org.gradle.api.Task;
 import org.gradle.api.specs.Spec;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -375,6 +380,31 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
 
+                                                              ProcessAndroidResources processAndroidResources
+                                                                  = appVariantContext.getScope()
+                                                                  .getProcessResourcesTask()
+                                                                  .get(new TaskContainerAdaptor(appVariantContext.getProject()
+                                                                      .getTasks()));
+                                                              if (processAndroidResources.isAapt2Enabled()) {
+                                                                  processAndroidResources.doLast(new Action<Task>() {
+                                                                      @Override
+                                                                      public void execute(Task task) {
+                                                                          File processResourcePackageOutputDirectory
+                                                                              = appVariantContext.getScope()
+                                                                              .getProcessResourcePackageOutputDirectory();
+                                                                          File[] files
+                                                                              = processResourcePackageOutputDirectory.listFiles(
+                                                                              (file, name) -> name.endsWith(SdkConstants.DOT_RES));
+                                                                          for (File file : files) {
+                                                                              try {
+                                                                                  ResourcePatch.makePatchable(file);
+                                                                              } catch (IOException e) {
+                                                                                  throw new UncheckedIOException(e);
+                                                                              }
+                                                                          }
+                                                                      }
+                                                                  });
+                                                              }
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessResAwbsTask.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(JavacAwbsTask.ConfigAction.class, null));
