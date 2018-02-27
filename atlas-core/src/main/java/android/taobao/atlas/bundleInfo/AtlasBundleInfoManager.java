@@ -424,6 +424,8 @@ public class AtlasBundleInfoManager {
             return info;
         }
 
+        Log.w(TAG, "Could not find info for: " + name);
+        
         return null;
     }
 
