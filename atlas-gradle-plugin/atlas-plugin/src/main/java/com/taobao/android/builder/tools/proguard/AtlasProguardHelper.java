@@ -289,7 +289,7 @@ public class AtlasProguardHelper {
 
         //Get the basic proguard configuration
         List<File> defaultProguardFiles = new ArrayList<>(
-            appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>()));
+            appVariantContext.getVariantConfiguration().getProguardFiles(true, new ArrayList<>()));
         Collections.sort(defaultProguardFiles);
 
         BaseVariantOutputData vod = appVariantContext.getVariantData().getOutputs().get(0);
