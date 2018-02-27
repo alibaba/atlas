@@ -464,8 +464,10 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
             if (aaptGeneration == AaptGeneration.AAPT_V1) {
                 options.add("--forced-package-id");
+                // options.add(String.valueOf(Integer.parseInt(split[0]) + 0x7f));
             } else {
                 options.add("--package-id");
+                // options.add(split[0]);
             }
 
             options.add(split[0]);
