@@ -280,9 +280,6 @@ public class AtlasProguardTransform extends ProGuardTransform {
     public AtlasProguardTransform(AppVariantContext appVariantContext) {
         super(appVariantContext.getScope());
         this.appVariantContext = appVariantContext;
-        defaultProguardFiles.addAll(
-                appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
-
         this.buildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
     }
 
@@ -290,6 +287,11 @@ public class AtlasProguardTransform extends ProGuardTransform {
     @Override
     public void transform(TransformInvocation invocation) throws TransformException {
 
+        ConfigurableFileCollection oldConfigurableFileCollection = (ConfigurableFileCollection) ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
+                "configurationFiles");
+//        defaultProguardFiles.addAll(
+//                appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
+        defaultProguardFiles.addAll(oldConfigurableFileCollection.getFiles());
         List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
                 appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
         if (awbBundles != null && awbBundles.size() > 0) {
@@ -323,8 +325,6 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
         try {
 
-            ConfigurableFileCollection oldConfigurableFileCollection = (ConfigurableFileCollection) ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
-                    "configurationFiles");
 
             ReflectUtils.updateField(this, "configurationFiles", oldConfigurableFileCollection);
 
