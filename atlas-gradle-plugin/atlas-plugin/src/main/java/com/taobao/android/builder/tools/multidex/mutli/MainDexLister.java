@@ -278,7 +278,7 @@ public class MainDexLister {
         TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
 
         HashSet handleList = new HashSet<String>();
-        Set<String> headClasses = new HashSet<>();
+        Set<String> headClasses = new LinkedHashSet<>();
 
         headClasses.add(applicationName);
         headClasses.add("android.taobao.atlas.bridge.BridgeApplicationDelegate");
