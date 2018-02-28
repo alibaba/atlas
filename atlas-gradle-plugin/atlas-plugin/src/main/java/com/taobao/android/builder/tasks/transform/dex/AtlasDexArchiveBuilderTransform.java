@@ -263,6 +263,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
 
     private boolean inMainDex(JarInput jarInput) {
         if (jarInput.getFile().getName().equals("desugar_try_with_resources.jar")){
+            logger.info("add desugar_try_with_resources.jar to maindex");
             AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().add(new BuildAtlasEnvTask.FileIdentity(jarInput.getFile().getName(),jarInput.getFile(),false,false));
         }
         return AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput);

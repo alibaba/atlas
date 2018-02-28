@@ -211,7 +211,7 @@ public class AtlasFixStackFramesTransform extends Transform {
                                 processJar(jarInput.getFile(), output, transformInvocation);
                             }
                         }else {
-                            throw new TransformException(jarInput.getFile().getAbsolutePath() +"is not in maindex and awb libraries in AtlasFixStackFramesTransform!");
+                            logger.warning(jarInput.getFile().getAbsolutePath() +"is not in maindex and awb libraries in AtlasFixStackFramesTransform!");
                         }
                     }
 

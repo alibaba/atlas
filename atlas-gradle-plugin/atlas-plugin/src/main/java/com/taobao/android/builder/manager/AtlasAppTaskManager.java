@@ -318,7 +318,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                           @Override
                                                           public void accept(ApplicationVariant applicationVariant) {
 
-
                                                               AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
                                                                       .getAppVariantContext(project, applicationVariant);
 

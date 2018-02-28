@@ -37,7 +37,7 @@ public class TpatchDexTool extends PatchDexTool {
     }
 
     public static void main(String []args){
-        TpatchDexTool tpatchDexTool = new TpatchDexTool(new File("/Users/lilong/Downloads/taobao-android-debug1/lib/armeabi/libcom_taobao_taolive/classes.dex"),new File("/Users/lilong/Downloads/patch-7.4.5.62173@7.4.2.48/libcom_taobao_taolive/classes.dex"),21,false);
+        TpatchDexTool tpatchDexTool = new TpatchDexTool(new File("/Users/lilong/Downloads/taobao-android-release/classes.dex"),new File("/Users/lilong/Downloads/taobao-android-release0/classes.dex"),21,false);
         File outDex = new File("/Users/lilong/Downloads/taobao-android-debug1/lib/armeabi/libcom_taobao_taolive/patch.dex");
         try {
             tpatchDexTool.createPatchDex(outDex);
