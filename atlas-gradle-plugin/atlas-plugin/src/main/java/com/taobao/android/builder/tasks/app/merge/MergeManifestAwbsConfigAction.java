@@ -247,6 +247,7 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
             + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
             + "          android:versionCode=\"${versionCode}\"\n"
             + "          android:versionName=\"${versionName}\">\n"
+        + "    <uses-sdk android:minSdkVersion=\"${minSdkVersion}\" android:targetSdkVersion=\"${targetSdkVersion}\" />\n"
             + "    <application></application>\n"
             + "</manifest>\n";
 
@@ -327,7 +328,10 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
                 }
 
                 mergeManifestsForBunlde(getManifestOutputFile(), packageName,
-                                                     getBundleVersion(), versionCode);
+                    getBundleVersion(),
+                    versionCode,
+                    appVariantOutputContext.getScope().getVariantConfiguration().getMinSdkVersion().getApiString(),
+                    appVariantOutputContext.getScope().getVariantConfiguration().getTargetSdkVersion().getApiString());
 
                 appVariantOutputContext.getScope().getOutputScope().save(VariantScope.TaskOutputType.MERGED_MANIFESTS, getManifestOutputFile().getParentFile());
 
@@ -337,11 +341,16 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
 
         }
 
-        public void mergeManifestsForBunlde(File outputFile, String packageName, String versionName, String versionCode)
+        public void mergeManifestsForBunlde(File outputFile, String packageName, String versionName, String versionCode,
+                                            String minSdkVersion, String targetSdkVersion)
                 throws IOException {
 
             String xml = MANIFEST_TEMPLATE.replace("${packageName}", packageName)
-                    .replace("${versionCode}", versionCode).replace("${versionName}", versionName);
+                .replace("${versionCode}", versionCode)
+                .replace("${versionName}", versionName)
+                .replace("${minSdkVersion}", minSdkVersion)
+                .replace("${targetSdkVersion}", targetSdkVersion);
+            ;
 
             outputFile.getParentFile().mkdirs();
             outputFile.delete();
