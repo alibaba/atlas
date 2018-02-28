@@ -527,8 +527,10 @@ public class AtlasConfigurationHelper {
 
         VariantManager variantManager = getVariantManager();
 
-        variantManager.getVariantScopes().stream().forEach(variantScope -> atlasDependencyManager.resolveDependencies(variantScope.getVariantDependencies()));
+        if (variantManager!=null) {
 
+            variantManager.getVariantScopes().stream().forEach(variantScope -> atlasDependencyManager.resolveDependencies(variantScope.getVariantDependencies()));
+        }
     }
 
     public VariantManager getVariantManager() {
