@@ -259,8 +259,6 @@ public final class Framework {
     static String containerVersion = "";
     private static ClassNotFoundInterceptorCallback classNotFoundCallback;
 
-    public static String ATLAS_DEBUG_DIRECTORY;
-
     /**
      * framework basedir.
      */
@@ -311,11 +309,6 @@ public final class Framework {
         File fileDir = RuntimeVariables.androidApplication.getFilesDir();
         if (fileDir == null || !fileDir.exists()) {
             fileDir = RuntimeVariables.androidApplication.getFilesDir();
-        }
-        try {
-            ATLAS_DEBUG_DIRECTORY = RuntimeVariables.androidApplication.getExternalFilesDir("atlas-debug").getAbsolutePath();
-        } catch (Exception e) {
-            ATLAS_DEBUG_DIRECTORY = "/sdcard/Android/data/" + RuntimeVariables.androidApplication.getPackageName() + "/files/atlas-debug";
         }
         BASEDIR = fileDir.getAbsolutePath();
         STORAGE_LOCATION = BASEDIR + File.separatorChar + "storage" + File.separatorChar;
