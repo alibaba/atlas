@@ -214,6 +214,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.DelegateResources;
+import android.taobao.atlas.startup.patch.KernalConstants;
 import android.taobao.atlas.util.WrapperUtil;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
@@ -464,7 +465,7 @@ public final class BundleImpl implements Bundle {
         Framework.notifyBundleListeners(BundleEvent.BEFORE_STARTED, this);
         Framework.notifyBundleListeners(BundleEvent.STARTED, this);
         if (Framework.DEBUG_BUNDLES) {
-            Log.i("Framework","Bundle " + toString() + " started.");
+            Log.i("Framework", "Bundle " + toString() + ", process=" + KernalConstants.PROCESS + " started.");
         }
 
 
