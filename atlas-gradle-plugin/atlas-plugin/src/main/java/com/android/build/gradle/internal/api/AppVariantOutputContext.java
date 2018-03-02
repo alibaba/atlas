@@ -231,6 +231,7 @@ import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
 import com.taobao.android.object.ArtifactBundleInfo;
 import org.gradle.api.tasks.compile.JavaCompile;
 
+import static com.android.SdkConstants.FD_ASSETS;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 /**
@@ -363,6 +364,25 @@ public class AppVariantOutputContext {
         return dataBindingProcessLayoutsTaskMap;
     }
 
+    public String getAwbPackageOutputFilePath(AwbBundle awbBundle) {
+        String awbOutputName = awbBundle.getAwbSoName();
+
+        Set<String> libSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInLibSoNames();
+
+        String file = null;
+        if (libSoNames.isEmpty() || libSoNames.contains(awbOutputName)) {
+            file = "lib/armeabi" + File.separator + awbOutputName;
+        } else {
+            file = FD_ASSETS + File.separator + awbOutputName;
+        }
+
+        Set<String> assetsSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames();
+        if (!assetsSoNames.isEmpty() && assetsSoNames.contains(awbOutputName)) {
+            file = FD_ASSETS + File.separator + awbOutputName;
+        }
+        return file;
+    }
+
     public File getAwbPackageOutputFile(AwbBundle awbBundle) {
         String awbOutputName = awbBundle.getAwbSoName();
 
@@ -370,8 +390,7 @@ public class AppVariantOutputContext {
 
         File file = null;
         if (libSoNames.isEmpty() || libSoNames.contains(awbOutputName)) {
-            file = new File(variantContext.getAwbApkOutputDir(),
-                                 "lib/armeabi" + File.separator + awbOutputName);
+            file = new File(variantContext.getAwbApkOutputDir(), "lib/armeabi" + File.separator + awbOutputName);
             file.getParentFile().mkdirs();
         }else {
             file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
