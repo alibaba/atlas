@@ -322,8 +322,12 @@ public class MtlTaskInjector {
             if (task.getName().endsWith("TestJavaWithJavac")){
                 continue;
             }
+            if (variantName.contains("-")){
+                variantName = variantName.replace("-","");
+            }
             if (task instanceof DefaultAndroidTask) {
-                if (variantName.equals(((DefaultAndroidTask)task).getVariantName())) {
+
+                if (variantName.equals(((DefaultAndroidTask)task).getVariantName().toLowerCase())) {
                     taskList.add(task);
                 }
             } else {
