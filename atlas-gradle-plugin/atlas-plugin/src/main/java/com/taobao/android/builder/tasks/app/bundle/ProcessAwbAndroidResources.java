@@ -348,10 +348,6 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
     @Override
     protected void doFullTaskAction() throws IOException {
 
-        File mainSymbolFile = getMainSymbolFile();
-        if (!mainSymbolFile.exists()){
-            throw new IOException("mainSymbolFile is not exist!"+mainSymbolFile.getAbsolutePath());
-        }
         File srcOut = getSourceOutputDir();
         aaptGeneration = AaptGeneration.fromProjectOptions(appVariantContext.getScope().getGlobalScope().getProjectOptions());
 

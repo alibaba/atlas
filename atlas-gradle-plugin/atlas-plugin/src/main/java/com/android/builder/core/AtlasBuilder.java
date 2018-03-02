@@ -377,17 +377,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
         if (aaptGeneration == AaptGeneration.AAPT_V1) {
             s = "--non-constant-id";
-            if (atlasExtension.getTBuildConfig().getUseCustomAapt() &&CURRENT_PLATFORM == PLATFORM_WINDOWS ){
-                BuildToolInfo defaultBuildToolInfo = defaultBuilder.getTargetInfo().getBuildTools();
-                try {
-                    Method method = defaultBuildToolInfo.getClass()
-                            .getDeclaredMethod("add", PathId.class, String.class);
-                    method.setAccessible(true);
-                    method.invoke(defaultBuildToolInfo, PathId.AAPT, FN_AAPT);
-                } catch (Throwable e) {
-                    throw new GradleException(e.getMessage());
-                }
-            }
+
         } else {
             s = "--non-final-ids";
         }
@@ -402,11 +392,12 @@ public class AtlasBuilder extends AndroidBuilder {
         }
         super.processResources(aapt, aaptConfigBuilder);
 
-        if (aaptGeneration == AaptGeneration.AAPT_V1) {
-            if (atlasExtension.getTBuildConfig().getUseCustomAapt()&&CURRENT_PLATFORM == PLATFORM_WINDOWS){
-                updateAapt(PathId.AAPT);
-            }
+
+        File symboFile = new File(aaptConfigBuilder.build().getSymbolOutputDir(),"R.txt");
+        if (!symboFile.exists()){
+            throw new ProcessException(symboFile.getAbsolutePath() + "is not exist!");
         }
+
 
     }
 

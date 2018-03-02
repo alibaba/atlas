@@ -241,7 +241,7 @@ public class BuildAtlasEnvTask extends BaseTask {
         FileCollection fileCollection = processAndroidResources.getSymbolListsWithPackageNames();
         Set<String>filesNames = new HashSet<>();
         for (String fileName:AtlasBuildContext.atlasMainDexHelper.getMainManifestFiles().keySet()){
-            filesNames.add(fileName.substring(fileName.lastIndexOf("/")+1));
+            filesNames.add(fileName.substring(fileName.lastIndexOf(File.separatorChar)+1));
         }
         FileCollection updateFileCollection = fileCollection.filter(element -> filesNames.contains(element.getParentFile().getParentFile().getName()));
         ReflectUtils.updateField(processAndroidResources,"symbolListsWithPackageNames",updateFileCollection);
