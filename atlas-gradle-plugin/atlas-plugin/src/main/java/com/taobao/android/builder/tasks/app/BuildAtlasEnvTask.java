@@ -2,7 +2,6 @@ package com.taobao.android.builder.tasks.app;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -10,9 +9,6 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.ide.AtlasAndroidLibraryImpl;
 import com.android.build.gradle.internal.ide.AtlasDependencyGraph;
-import com.android.build.gradle.internal.pipeline.ExtendedContentType;
-import com.android.build.gradle.internal.pipeline.OriginalStream;
-import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.publishing.AtlasAndroidArtifacts;
 import com.android.build.gradle.internal.tasks.BaseTask;
@@ -22,28 +18,28 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.builder.dependency.level2.AndroidDependency;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
-import com.taobao.android.builder.tasks.app.merge.MainDexArtifactCollection;
+import com.taobao.android.builder.tasks.app.merge.MainArtifactsCollection;
+import com.taobao.android.builder.tasks.app.merge.MainFilesCollection;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.ReflectUtils;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.ArtifactCollection;
-import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
-import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.internal.component.external.model.DefaultModuleComponentIdentifier;
 import org.gradle.internal.component.local.model.DefaultProjectComponentIdentifier;
 
@@ -51,13 +47,12 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ARTIFACT_TYPE;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.*;
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH;
 
 /**
@@ -229,13 +224,13 @@ public class BuildAtlasEnvTask extends BaseTask {
             //mergeresources
             Field field = MergeResources.class.getDeclaredField("libraries");
             field.setAccessible(true);
-            field.set(mergeResources, new MainDexArtifactCollection((ArtifactCollection) field.get(mergeResources), getProject()));
+            field.set(mergeResources, new MainArtifactsCollection((ArtifactCollection) field.get(mergeResources), getProject()));
 
             //mergeSourcesSets
             MergeSourceSetFolders mergeSourceSetFolders = appVariantContext.getScope().getMergeAssetsTask().get(new TaskContainerAdaptor(getProject().getTasks()));
             Field field1 = MergeSourceSetFolders.class.getDeclaredField("libraries");
             field1.setAccessible(true);
-            field1.set(mergeSourceSetFolders, new MainDexArtifactCollection((ArtifactCollection) field1.get(mergeSourceSetFolders), getProject()));
+            field1.set(mergeSourceSetFolders, new MainArtifactsCollection((ArtifactCollection) field1.get(mergeSourceSetFolders), getProject()));
         } catch (Exception e) {
 
         }
@@ -251,7 +246,6 @@ public class BuildAtlasEnvTask extends BaseTask {
         FileCollection updateFileCollection = fileCollection.filter(element -> filesNames.contains(element.getParentFile().getParentFile().getName()));
         ReflectUtils.updateField(processAndroidResources,"symbolListsWithPackageNames",updateFileCollection);
         appVariantContext.processResAwbsTask.mainDexSymbolFileCollection = updateFileCollection;
-
 
 
 

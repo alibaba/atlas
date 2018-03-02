@@ -254,6 +254,10 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import static com.android.SdkConstants.CURRENT_PLATFORM;
+import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.PLATFORM_WINDOWS;
+
 /**
  * 1. Custom Android BuilderTool classes that support custom aapt operations
  * 2. Cache optimization for dex , Adjust the dexOptions parameter
@@ -373,6 +377,17 @@ public class AtlasBuilder extends AndroidBuilder {
 
         if (aaptGeneration == AaptGeneration.AAPT_V1) {
             s = "--non-constant-id";
+            if (atlasExtension.getTBuildConfig().getUseCustomAapt() &&CURRENT_PLATFORM == PLATFORM_WINDOWS ){
+                BuildToolInfo defaultBuildToolInfo = defaultBuilder.getTargetInfo().getBuildTools();
+                try {
+                    Method method = defaultBuildToolInfo.getClass()
+                            .getDeclaredMethod("add", PathId.class, String.class);
+                    method.setAccessible(true);
+                    method.invoke(defaultBuildToolInfo, PathId.AAPT, FN_AAPT);
+                } catch (Throwable e) {
+                    throw new GradleException(e.getMessage());
+                }
+            }
         } else {
             s = "--non-final-ids";
         }
@@ -384,9 +399,14 @@ public class AtlasBuilder extends AndroidBuilder {
             aaptConfigBuilder.build().getOptions().getAdditionalParameters().add(s);
         } else {
             aaptConfigBuilder.build().getOptions().getAdditionalParameters().remove(s);
-
         }
         super.processResources(aapt, aaptConfigBuilder);
+
+        if (aaptGeneration == AaptGeneration.AAPT_V1) {
+            if (atlasExtension.getTBuildConfig().getUseCustomAapt()&&CURRENT_PLATFORM == PLATFORM_WINDOWS){
+                updateAapt(PathId.AAPT);
+            }
+        }
 
     }
 

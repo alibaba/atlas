@@ -283,7 +283,12 @@ import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.internal.AbstractTask;
+import org.gradle.api.internal.tasks.TaskExecuter;
+import org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter;
 import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.io.IOException;
@@ -294,6 +299,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.JAR;
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR;
 
 /**
  * MTLThe plug-in compiles apk's task management
@@ -531,11 +540,31 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               }
 
+
+
+                                                              Boolean includeCompileClasspath =
+                                                                      appVariantContext.getScope().getVariantConfiguration()
+                                                                              .getJavaCompileOptions()
+                                                                              .getAnnotationProcessorOptions()
+                                                                              .getIncludeCompileClasspath();
+
+                                                              appVariantContext.getVariantData().javaCompilerTask.doFirst(task -> {
+                                                                  JavaCompile compile = (JavaCompile) task;
+                                                                  FileCollection files = appVariantContext.getScope().getArtifactFileCollection(ANNOTATION_PROCESSOR, ALL, JAR);
+                                                                  FileCollection bootFiles = appVariantContext.getProject().files(appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(false));
+                                                                  compile.setClasspath(bootFiles.plus(new MainFilesCollection()));
+                                                                  if (Boolean.TRUE.equals(includeCompileClasspath)) {
+                                                                      compile.getOptions().setAnnotationProcessorPath(files.plus(new MainFilesCollection()));
+                                                                  }
+                                                              });
+
                                                           }
 
                                                       }
         );
     }
+
+
 
 
     private void repalceAndroidBuilder(ApplicationVariant applicationVariant) {

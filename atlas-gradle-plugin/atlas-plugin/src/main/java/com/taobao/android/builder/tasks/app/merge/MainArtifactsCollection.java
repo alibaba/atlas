@@ -15,14 +15,14 @@ import java.util.function.Consumer;
  * @create 2017-12-06 下午11:02
  */
 
-public class MainDexArtifactCollection implements ArtifactCollection {
+public class MainArtifactsCollection implements ArtifactCollection {
 
     private Set<ResolvedArtifactResult>fullArtifacts = new HashSet<>();
     private Project project;
 
     Set<ResolvedArtifactResult>mainDexs;
 
-    public MainDexArtifactCollection(ArtifactCollection fullArtifacts, Project project) {
+    public MainArtifactsCollection(ArtifactCollection fullArtifacts, Project project) {
         this.fullArtifacts = fullArtifacts.getArtifacts();
         this.project = project;
     }
