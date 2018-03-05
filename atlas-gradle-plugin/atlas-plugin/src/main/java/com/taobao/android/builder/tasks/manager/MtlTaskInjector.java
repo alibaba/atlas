@@ -327,12 +327,12 @@ public class MtlTaskInjector {
             }
             if (task instanceof DefaultAndroidTask) {
 
-                if (variantName.equals(((DefaultAndroidTask)task).getVariantName().toLowerCase())) {
+                if (variantName.toLowerCase().equals(((DefaultAndroidTask)task).getVariantName().toLowerCase())) {
                     taskList.add(task);
                 }
             } else {
                 String name = task.getName();
-                if (name.toLowerCase().contains(variantName)) {
+                if (name.toLowerCase().contains(variantName.toLowerCase())) {
                     taskList.add(task);
                 }
             }
