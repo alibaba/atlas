@@ -478,7 +478,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
                     options.add("--type-id-offset");
                     options.add(split[1]);
                 } else {
-
+                    // TODO: 2018/3/5 AAPT_V2 type-id-offset
                 }
 
             }
