@@ -226,7 +226,7 @@ sourceSets {
 }
 
 
-tasks.findByName("test").enabled=false
+tasks.findByName("test").enabled = false
 
 
 dependencies {
@@ -255,4 +255,4 @@ jar {
 }
 
 
-version = '3.0.1-rc17'
+version = '2.3.5-test-SNAPSHOT'

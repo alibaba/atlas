@@ -243,7 +243,8 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
 
     private static final String MANIFEST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
             + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-            + "          package=\"${packageName}\"\n"
+        + "          package=\"${packageName}\"\n"
+        + "          ${featureName}\n"
             + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
             + "          android:versionCode=\"${versionCode}\"\n"
             + "          android:versionName=\"${versionName}\">\n"
@@ -320,15 +321,17 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
 
             try {
                 String packageName;
+                String featureName = "";
 
                 if (aaptGeneration == AaptGeneration.AAPT_V1) {
                     packageName = awbBundle.getPackageName();
                 } else {
                     packageName = appVariantOutputContext.getScope().getVariantConfiguration().getApplicationId();
+                    featureName = awbBundle.getPackageName();
+                    featureName = "        featureSplit=\"" + featureName + "\"\n";
                 }
 
-                mergeManifestsForBunlde(getManifestOutputFile(), packageName,
-                    getBundleVersion(),
+                mergeManifestsForBunlde(getManifestOutputFile(), packageName, featureName, getBundleVersion(),
                     versionCode,
                     appVariantOutputContext.getScope().getVariantConfiguration().getMinSdkVersion().getApiString(),
                     appVariantOutputContext.getScope().getVariantConfiguration().getTargetSdkVersion().getApiString());
@@ -341,11 +344,12 @@ public class MergeManifestAwbsConfigAction extends MtlBaseTaskAction<MtlParallel
 
         }
 
-        public void mergeManifestsForBunlde(File outputFile, String packageName, String versionName, String versionCode,
+        public void mergeManifestsForBunlde(File outputFile, String packageName, CharSequence featureName,
+                                            String versionName, String versionCode,
                                             String minSdkVersion, String targetSdkVersion)
                 throws IOException {
 
-            String xml = MANIFEST_TEMPLATE.replace("${packageName}", packageName)
+            String xml = MANIFEST_TEMPLATE.replace("${packageName}", packageName).replace("${featureName}", featureName)
                 .replace("${versionCode}", versionCode)
                 .replace("${versionName}", versionName)
                 .replace("${minSdkVersion}", minSdkVersion)
