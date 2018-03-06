@@ -43,8 +43,7 @@ buildscript {
 //        }
     }
     dependencies {
-        classpath 'com.taobao.android:atlasplugin:3.0.1-rc17'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.1.51"
+        classpath 'com.taobao.android:atlasplugin:3.0.1-rc21'
 
     }
 }
