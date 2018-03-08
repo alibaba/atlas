@@ -249,12 +249,12 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.content.BroadcastReceiver;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 public class InstrumentationHook extends Instrumentation {
+	private static final String EXTRA_START_ACTIVITY_INTERNAL = "atlas_startActivityInternal";
 
     private Context     context;
     private Instrumentation mBase;
@@ -264,6 +264,22 @@ public class InstrumentationHook extends Instrumentation {
 	public static interface OnIntentRedirectListener{
 		public boolean onExternalRedirect(Intent intent,String targetPackageName,String targetActivityName,Activity sourceActivity);
 	}
+
+	public static IntentExternalDirectListener sIntentExternalDirectListener;
+
+	private static void intentExternalDirect(Intent intent,/*String targetPackageName,*/String targetActivityName/*,Activity sourceActivity*/) {
+		Log.i("InsturmentationHook",
+			"intentExternalDirect(" + "intent = [" + intent + "], targetActivityName = [" + targetActivityName + "]"
+				+ ")");
+		if (sIntentExternalDirectListener != null) {
+			sIntentExternalDirectListener.onIntentExternalDirect(intent, targetActivityName);
+		}
+	}
+
+	public interface IntentExternalDirectListener {
+		void onIntentExternalDirect(Intent intent,/*String targetPackageName,*/String targetActivityName/*,Activity sourceActivity*/);
+	}
+
 
     public InstrumentationHook(Instrumentation mBase, Context context){
         this.context = context;
@@ -363,7 +379,10 @@ public class InstrumentationHook extends Instrumentation {
 
         if(intent!=null){
             Atlas.getInstance().checkDownGradeToH5(intent);
-        }
+			if (sIntentExternalDirectListener != null) {
+				intent.putExtra(EXTRA_START_ACTIVITY_INTERNAL, true);
+			}
+		}
 		// Get package name and component name
 		String packageName = null;
 		String componentName = null;
@@ -659,7 +678,17 @@ public class InstrumentationHook extends Instrumentation {
 			launchActivityName = "com.taobao.tao.welcome.Welcome";
         }
 		if(activity.getIntent()!=null){
-			activity.getIntent().setExtrasClassLoader(RuntimeVariables.delegateClassLoader);
+			Intent intent = activity.getIntent();
+			intent.setExtrasClassLoader(RuntimeVariables.delegateClassLoader);
+			if (sIntentExternalDirectListener != null) {
+				try {
+					if (!intent.getBooleanExtra(EXTRA_START_ACTIVITY_INTERNAL, false)) {
+						intentExternalDirect(intent, activity.getClass().getName());
+					}
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
 		}
         if(activity.getClass().getName().equals(launchActivityName)){
             mBase.callActivityOnCreate(activity, null);
