@@ -231,32 +231,32 @@ public class NClassLoader extends PathClassLoader{
 
     public static void replacePathClassLoader(Context base,ClassLoader original,NClassLoader target) throws Exception {
         NClassLoader loader = target;
-        Field pathListField = findField(original, "pathList");
-        pathListField.setAccessible(true);
-        Object originPathListObject = pathListField.get(original);
-
-        Field definingContextField = findField(originPathListObject, "definingContext");
-        definingContextField.set(originPathListObject, loader);
-
-        Field loadPathList = findField(loader, "pathList");
-        //just use PathClassloader's pathList
-        loadPathList.set(loader, originPathListObject);
-
-        //we must recreate dexFile due to dexCache
-        List<File> additionalClassPathEntries = new ArrayList<File>();
-        Field dexElement = findField(originPathListObject, "dexElements");
-        Object[] originDexElements = (Object[]) dexElement.get(originPathListObject);
-        for (Object element : originDexElements) {
-            DexFile dexFile = (DexFile) findField(element, "dexFile").get(element);
-            additionalClassPathEntries.add(new File(dexFile.getName()));
-            //protect for java.lang.AssertionError: Failed to close dex file in finalizer.
-//            oldDexFiles.add(dexFile);
-        }
-        Method makePathElements = findMethod(originPathListObject, "makePathElements", List.class, File.class,
-                List.class);
-        ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
-        Object[] newDexElements = (Object[]) makePathElements.invoke(originPathListObject, additionalClassPathEntries, null, suppressedExceptions);
-        dexElement.set(originPathListObject, newDexElements);
+//        Field pathListField = findField(original, "pathList");
+//        pathListField.setAccessible(true);
+//        Object originPathListObject = pathListField.get(original);
+//
+//        Field definingContextField = findField(originPathListObject, "definingContext");
+//        definingContextField.set(originPathListObject, loader);
+//
+//        Field loadPathList = findField(loader, "pathList");
+//        //just use PathClassloader's pathList
+//        loadPathList.set(loader, originPathListObject);
+//
+//        //we must recreate dexFile due to dexCache
+//        List<File> additionalClassPathEntries = new ArrayList<File>();
+//        Field dexElement = findField(originPathListObject, "dexElements");
+//        Object[] originDexElements = (Object[]) dexElement.get(originPathListObject);
+//        for (Object element : originDexElements) {
+//            DexFile dexFile = (DexFile) findField(element, "dexFile").get(element);
+//            additionalClassPathEntries.add(new File(dexFile.getName()));
+//            //protect for java.lang.AssertionError: Failed to close dex file in finalizer.
+////            oldDexFiles.add(dexFile);
+//        }
+//        Method makePathElements = findMethod(originPathListObject, "makePathElements", List.class, File.class,
+//                List.class);
+//        ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
+//        Object[] newDexElements = (Object[]) makePathElements.invoke(originPathListObject, additionalClassPathEntries, null, suppressedExceptions);
+//        dexElement.set(originPathListObject, newDexElements);
 
         Field mPackageInfoField = base.getClass().getDeclaredField("mPackageInfo");
         mPackageInfoField.setAccessible(true);
