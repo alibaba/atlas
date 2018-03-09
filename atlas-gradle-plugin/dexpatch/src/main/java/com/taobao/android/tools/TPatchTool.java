@@ -715,8 +715,12 @@ public class TPatchTool extends AbstractTool {
                 input.baseApkBo.getVersionName() +
                 "&productIdentifier=" +
                 productionName;
+            try {
             response = HttpClientUtils.getUrl(patchHisUrl);
             historyBuildPatchInfos = JSON.parseObject(response, BuildPatchInfos.class);
+            }catch (Throwable e){
+                historyBuildPatchInfos = null;
+            }
         } else {
             File[] files = hisTpatchFolder.listFiles(new FilenameFilter() {
                 @Override
