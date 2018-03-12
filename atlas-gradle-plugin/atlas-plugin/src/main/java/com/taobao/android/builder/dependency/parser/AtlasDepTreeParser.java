@@ -233,7 +233,9 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.result.DependencyResult;
+import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
 import org.gradle.api.internal.project.DefaultProject;
+import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.specs.Specs;
 
 import java.util.*;
@@ -248,6 +250,8 @@ import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 public class AtlasDepTreeParser {
 
     private final Project project;
+
+    private String flavorName;
 
     private final ExtraModelInfo extraModelInfo;
 
@@ -270,26 +274,40 @@ public class AtlasDepTreeParser {
         if (!name.endsWith("debug") && !name.endsWith("release")) {
             return new AtlasDependencyTree(new ArrayList<>());
         }
+        if (!name.equals("debug") && name.endsWith("debug")){
+            flavorName = variantDeps.getName().substring(0,name.length()-5);
+        }
+        if (!name.equals("release") && name.endsWith("release")){
+            flavorName = variantDeps.getName().substring(0,name.length()-6);
+        }
+
 
         Configuration compileClasspath = variantDeps.getCompileClasspath();
         Configuration runtimeClasspath = variantDeps.getRuntimeClasspath();
         Configuration apiClasspath = variantDeps.getApiElements();
+        Configuration  configuration = variantDeps.getAnnotationProcessorConfiguration();
         Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
 
         ensureConfigured(compileClasspath,project);
         ensureConfigured(runtimeClasspath,project);
         ensureConfigured(bundleClasspath,project);
         ensureConfigured(apiClasspath,project);
+        ensureConfigured(configuration,project);
+
 
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
         collectArtifacts(compileClasspath, artifacts);
         collectArtifacts(runtimeClasspath, artifacts);
         collectArtifacts(apiClasspath,artifacts);
         collectArtifacts(bundleClasspath, artifacts);
+        collectArtifacts(configuration, artifacts);
+
         unEnsureConfigured(compileClasspath);
         unEnsureConfigured(runtimeClasspath);
         unEnsureConfigured(bundleClasspath);
         unEnsureConfigured(apiClasspath);
+        unEnsureConfigured(configuration);
+
 
 
         //Rely on the group
@@ -325,7 +343,19 @@ public class AtlasDepTreeParser {
         if (projectDependency.getTargetConfiguration()!= null && projectDependency.getTargetConfiguration().equals(AtlasConfigurationHelper.COMPILE_PROJECT_CONFIGURATION_NAME)){
             projectDependency.setTargetConfiguration(null);
         }
-        Configuration configuration = projectDependency.getDependencyProject().getConfigurations().findByName(config.getName());
+        String name = config.getName();
+        if (!StringUtils.isEmpty(flavorName)){
+            name = name.replace(flavorName,"");
+        }
+        if (name.startsWith("Debug")){
+            name = name.replace("Debug","debug");
+
+        }
+        if (name.startsWith("Release")){
+            name = name.replace("Release","release");
+
+        }
+        Configuration configuration = projectDependency.getDependencyProject().getConfigurations().findByName(name);
         if (configuration!= null && configuration.getAllDependencies()!= null) {
             unEnsureConfigured(configuration);
         }
@@ -343,10 +373,23 @@ public class AtlasDepTreeParser {
     }
 
     private void prepareProject(ProjectDependency projectDependency,Configuration configuration) {
+         ((ProjectInternal)((DefaultProjectDependency) projectDependency).getDependencyProject()).evaluate();
         if (projectDependency.getTargetConfiguration() == null || projectDependency.getTargetConfiguration().equals("default")){
             projectDependency.setTargetConfiguration(AtlasConfigurationHelper.COMPILE_PROJECT_CONFIGURATION_NAME);
             }
-        Configuration config = projectDependency.getDependencyProject().getConfigurations().findByName(configuration.getName());
+        String name = configuration.getName();
+        if (!StringUtils.isEmpty(flavorName)){
+            name = name.replace(flavorName,"");
+        }
+        if (name.startsWith("Debug")){
+            name = name.replace("Debug","debug");
+
+        }
+        if (name.startsWith("Release")){
+            name = name.replace("Release","release");
+
+        }
+        Configuration config = projectDependency.getDependencyProject().getConfigurations().findByName(name);
         if (config!= null && config.getAllDependencies()!= null) {
             ensureConfigured(config,projectDependency.getDependencyProject());
         }
