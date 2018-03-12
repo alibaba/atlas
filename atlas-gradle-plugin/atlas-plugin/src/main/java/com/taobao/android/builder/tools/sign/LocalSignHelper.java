@@ -209,17 +209,35 @@
 
 package com.taobao.android.builder.tools.sign;
 
+import com.android.apkzlib.zfile.ApkCreator;
+import com.android.apkzlib.zfile.ApkCreatorFactory;
+import com.android.apkzlib.zfile.ApkZFileCreatorFactory;
+import com.android.apkzlib.zfile.NativeLibrariesPackagingMode;
+import com.android.apkzlib.zip.ZFileOptions;
+import com.android.apkzlib.zip.compress.BestAndDefaultDeflateExecutorCompressor;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.builder.signing.SigningException;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import org.apache.commons.io.FileUtils;
+import org.apache.tools.ant.taskdefs.Zip;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Created by shenghua.nish on 2015-11-06 10:54 a.m.
@@ -232,50 +250,123 @@ public class LocalSignHelper {
      * @param outputFile
      * @param signingConfig
      * @return
+     *
+     *
      */
+
+
+    private static NativeLibrariesPackagingMode nativeLibrariesPackagingMode = NativeLibrariesPackagingMode.COMPRESSED;
     public static boolean sign(File inputFile,
                                File outputFile,
                                DefaultSigningConfig signingConfig,
                                String signName) throws IOException, SigningException {
-        if (!outputFile.exists()) {
-            outputFile.getParentFile().mkdirs();
-            outputFile.createNewFile();
-        }
-        try {
 
-            CertificateInfo certificateInfo = null;
-            if (signingConfig != null && signingConfig.isSigningReady()) {
-                certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
-                                                                    signingConfig.getStoreFile(),
-                                                                    signingConfig.getStorePassword(),
-                                                                    signingConfig.getKeyPassword(),
-                                                                    signingConfig.getKeyAlias());
-                if (certificateInfo == null) {
-                    throw new SigningException("Failed to read key from keystore");
+            if (outputFile.exists()) {
+                FileUtils.deleteQuietly(outputFile);
+            }else {
+                FileUtils.forceMkdir(outputFile.getParentFile());
+            }
+            LocalSignedJarBuilder signedJarBuilder = null;
+            FileInputStream inputStream = null;
+
+            try {
+
+                CertificateInfo certificateInfo = null;
+                if (signingConfig != null && signingConfig.isSigningReady()) {
+                    certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
+                            Preconditions.checkNotNull(signingConfig.getStoreFile()),
+                            Preconditions.checkNotNull(signingConfig.getStorePassword()),
+                            Preconditions.checkNotNull(signingConfig.getKeyPassword()),
+                            Preconditions.checkNotNull(signingConfig.getKeyAlias()));
+                    if (certificateInfo == null) {
+                        throw new SigningException("Failed to read key from keystore");
+                    }
+                }
+
+                Predicate<String> noCompressPredicate = getNoCompressPredicate(inputFile.getAbsolutePath());
+                        ApkCreatorFactory.CreationData creationData =
+                        new ApkCreatorFactory.CreationData(
+                                outputFile,
+                                certificateInfo.getKey(),
+                                certificateInfo.getCertificate(),
+                                signingConfig.isV1SigningEnabled(),
+                                signingConfig.isV2SigningEnabled(),
+                                null,
+                                null,
+                                14,
+                                nativeLibrariesPackagingMode,
+                                noCompressPredicate);
+
+                ApkCreatorFactory apkCreatorFactory = createFactory();
+
+                ApkCreator mApkCreator = apkCreatorFactory.make(creationData);
+
+                mApkCreator.writeZip(inputFile,null,null);
+
+                mApkCreator.hasPendingChangesWithWait();
+
+                mApkCreator.close();
+
+
+            } catch (Exception e) {
+
+                throw new SigningException(e.getMessage(), e);
+
+            } finally {
+                if (null != signedJarBuilder) {
+                    try {
+                        signedJarBuilder.close();
+                    } catch (Exception e) {
+                    }
+                }
+                if (null != inputStream) {
+                    try {
+                        inputStream.close();
+                    } catch (Exception e) {
+                    }
                 }
             }
 
-            LocalSignedJarBuilder signedJarBuilder = new LocalSignedJarBuilder(new FileOutputStream(
-                    outputFile),
-                                                                               certificateInfo !=
-                                                                                       null ? certificateInfo
-                                                                                       .getKey() : null,
-                                                                               certificateInfo !=
-                                                                                       null ? certificateInfo
-                                                                                       .getCertificate() : null,
-                                                                               null,
-                                                                               "Create By Android Gradle",
-                                                                               signName);
 
-            signedJarBuilder.writeZip(new FileInputStream(inputFile), null);
-            signedJarBuilder.close();
-        } catch (LocalSignedJarBuilder.IZipEntryFilter.ZipAbortException e) {
-            throw new SigningException(e.getMessage(), e);
-        } catch (KeytoolException e) {
-            throw new SigningException(e.getMessage(), e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new SigningException(e.getMessage(), e);
+            return true;
+
+    }
+
+
+    private static ApkCreatorFactory createFactory() {
+        ZFileOptions options = new ZFileOptions();
+        options.setNoTimestamps(true);
+        options.setCoverEmptySpaceUsingExtraField(true);
+        ThreadPoolExecutor compressionExecutor =
+                new ThreadPoolExecutor(
+                        0, /* Number of always alive threads */
+                        2,
+                        100,
+                        TimeUnit.MILLISECONDS,
+                        new LinkedBlockingDeque<>());
+        options.setCompressor(
+                new BestAndDefaultDeflateExecutorCompressor(
+                        compressionExecutor,
+                        options.getTracker(),
+                        1.0));
+        options.setAutoSortFiles(true);
+        return new ApkZFileCreatorFactory(options);
+
+    }
+
+    private static Predicate<String> getNoCompressPredicate(String srcPath) throws IOException {
+        Set<String> noCompressEntries = new HashSet<>();
+        ZipFile zipFile = new ZipFile(srcPath);
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while (entries.hasMoreElements()){
+            ZipEntry zipEntry = entries.nextElement();
+            if (zipEntry.getMethod() == 0){
+                if (zipEntry.getName().endsWith(".so")){
+                    nativeLibrariesPackagingMode = NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED;
+                }
+                noCompressEntries.add(zipEntry.getName());
+            }
         }
-        return true;
+        return s -> noCompressEntries.contains(s);
     }
 }
