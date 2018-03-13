@@ -247,6 +247,16 @@ public class PatchConfig {
 
     private boolean apForBaseFile = true;
 
+    public Set<String> getJ2cPatchClasses() {
+        return j2cPatchClasses;
+    }
+
+    public void setJ2cPatchClasses(Set<String> j2cPatchClasses) {
+        this.j2cPatchClasses = j2cPatchClasses;
+    }
+
+    private Set<String> j2cPatchClasses = new HashSet<>();
+
     private File apExploredFolder;
 
     private File finalBasePatchFile;
