@@ -208,9 +208,9 @@
 
 package android.taobao.atlas.util.log.impl;
 
-import android.taobao.atlas.util.log.IMonitor;
-
 import java.util.Map;
+
+import android.taobao.atlas.util.log.IMonitor;
 
 public class AtlasMonitor {
 
@@ -229,6 +229,8 @@ public class AtlasMonitor {
     public static final String VALIDATE_CLASSES = "validate_classes";
     public static final String INSTALL = "install";
 
+    public static final String ACTIVITY_THREAD_HOOK = "AtlasMonitor";
+    
 
 
 
