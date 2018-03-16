@@ -228,6 +228,16 @@ public class TBuildType {
 
     private PatchConfig patchConfig;
 
+    public EnhanceConfig getEnhanceConfig() {
+        return enhanceConfig;
+    }
+
+    public void setEnhanceConfig(EnhanceConfig enhanceConfig) {
+        this.enhanceConfig = enhanceConfig;
+    }
+
+    private EnhanceConfig enhanceConfig;
+
     public DexConfig getDexConfig() {
         return dexConfig;
     }
