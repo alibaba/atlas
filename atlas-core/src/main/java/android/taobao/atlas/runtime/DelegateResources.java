@@ -218,6 +218,7 @@ import android.content.res.XmlResourceParser;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.util.ApkUtils;
@@ -227,12 +228,15 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LongSparseArray;
 import android.util.TypedValue;
+import android.webkit.WebView;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -645,7 +649,7 @@ public class DelegateResources extends Resources {
                 //7.0版本 webivew 特殊path下的兜底策略
                 if(TextUtils.isEmpty(sWebviewPath)) {
                     try {
-                        PackageInfo info = (PackageInfo) Class.forName("android.webkit.WebViewFactory").getDeclaredMethod("getLoadedPackageInfo").invoke(null);
+                        PackageInfo info = getPackageInfo();
                         if (info != null && info.applicationInfo != null) {
                             sWebviewPath = info.applicationInfo.sourceDir;
                         }
@@ -710,6 +714,24 @@ public class DelegateResources extends Resources {
 
 
             return newAssetManager;
+        }
+
+        private PackageInfo getPackageInfo()
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
+            PackageInfo packageInfo;
+
+            if (VERSION.SDK_INT <= 25) {
+                packageInfo = (PackageInfo)Class.forName("android.webkit.WebViewFactory").getDeclaredMethod(
+                    "getLoadedPackageInfo").invoke(null);
+                if (packageInfo == null) {
+                    packageInfo = (PackageInfo)Class.forName("android.webkit.WebViewFactory").getDeclaredMethod(
+                        "getLoadedPackageInfo").invoke(null);
+                }
+            } else {
+                packageInfo = WebView.getCurrentWebViewPackage();
+            }
+
+            return packageInfo;
         }
 
         private boolean hasCreatedAssetsManager = false;
