@@ -233,6 +233,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -645,7 +646,7 @@ public class DelegateResources extends Resources {
                 //7.0版本 webivew 特殊path下的兜底策略
                 if(TextUtils.isEmpty(sWebviewPath)) {
                     try {
-                        PackageInfo info = (PackageInfo) Class.forName("android.webkit.WebViewFactory").getDeclaredMethod("getLoadedPackageInfo").invoke(null);
+                        PackageInfo info = getPackageInfo();
                         if (info != null && info.applicationInfo != null) {
                             sWebviewPath = info.applicationInfo.sourceDir;
                         }
@@ -710,6 +711,18 @@ public class DelegateResources extends Resources {
 
 
             return newAssetManager;
+        }
+
+        private PackageInfo getPackageInfo()
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
+            Class<?> aClass = Class.forName("android.webkit.WebViewFactory");
+            PackageInfo packageInfo = (PackageInfo)aClass.getDeclaredMethod("getLoadedPackageInfo").invoke(null);
+            if (packageInfo == null) {
+                Method getWebViewApplicationInfo = aClass.getDeclaredMethod("getWebViewApplicationInfo");
+                getWebViewApplicationInfo.setAccessible(true);
+                packageInfo = (PackageInfo)getWebViewApplicationInfo.invoke(null);
+            }
+            return packageInfo;
         }
 
         private boolean hasCreatedAssetsManager = false;
