@@ -254,8 +254,9 @@ import java.util.List;
 import java.util.Set;
 
 public class InstrumentationHook extends Instrumentation {
-	private static final String EXTRA_START_ACTIVITY_INTERNAL = "atlas_startActivityInternal";
 
+	public static final String CATEGORY_START_ACTIVITY_INTERNAL = "atlas.intent.category.START_ACTIVITY_INTERNAL";
+	
     private Context     context;
     private Instrumentation mBase;
 
@@ -380,7 +381,8 @@ public class InstrumentationHook extends Instrumentation {
         if(intent!=null){
             Atlas.getInstance().checkDownGradeToH5(intent);
 			if (sIntentExternalDirectListener != null) {
-				intent.putExtra(EXTRA_START_ACTIVITY_INTERNAL, true);
+				intent.addCategory(CATEGORY_START_ACTIVITY_INTERNAL);
+
 			}
 		}
 		// Get package name and component name
@@ -682,7 +684,7 @@ public class InstrumentationHook extends Instrumentation {
 			intent.setExtrasClassLoader(RuntimeVariables.delegateClassLoader);
 			if (sIntentExternalDirectListener != null) {
 				try {
-					if (!intent.getBooleanExtra(EXTRA_START_ACTIVITY_INTERNAL, false)) {
+					if (intent.hasCategory(CATEGORY_START_ACTIVITY_INTERNAL)) {
 						intentExternalDirect(intent, activity.getClass().getName());
 					}
 				} catch (Throwable e) {
