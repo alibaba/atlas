@@ -284,7 +284,7 @@ public final class AtlasAndroidLibraryImpl extends LibraryImpl implements Androi
 
     private int hashcode;
 
-    AtlasAndroidLibraryImpl(
+    public AtlasAndroidLibraryImpl(
             @NonNull AndroidDependency clonedLibrary,
             boolean isProvided,
             boolean isSkipped,

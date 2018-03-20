@@ -276,7 +276,7 @@ public class PostProcessManifestAction implements Action<Task> {
                 isMultiDexEnabled(),
                 false,
                 atlasExtension.getTBuildConfig()
-                    .getOutOfApkBundles());
+                    .getOutOfApkBundles(),atlasExtension.getTBuildConfig().getInsideOfApkBundles());
 
             File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
             if (AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
@@ -299,7 +299,7 @@ public class PostProcessManifestAction implements Action<Task> {
                     isMultiDexEnabled(),
                     true,
                     atlasExtension.getTBuildConfig()
-                        .getOutOfApkBundles());
+                        .getOutOfApkBundles(),atlasExtension.getTBuildConfig().getInsideOfApkBundles());
             }
 
             // manifest list check

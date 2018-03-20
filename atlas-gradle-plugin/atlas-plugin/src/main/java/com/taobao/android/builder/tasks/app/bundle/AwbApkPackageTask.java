@@ -44,6 +44,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import static com.android.build.gradle.internal.scope.TaskOutputHolder.TaskOutputType.MERGED_ASSETS;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -196,9 +197,11 @@ public class AwbApkPackageTask {
         saveData.setInputSet(updatedAndroidResources.keySet(), KnownFilesSaveData.InputSet.ANDROID_RESOURCE);
         saveData.setInputSet(updatedJniResources.keySet(), KnownFilesSaveData.InputSet.NATIVE_RESOURCE);
         saveData.saveCurrentData();
-
-        FileUtils.copyFileToDirectory(outputFile, new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi"));
-
+        if (appVariantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames().contains(outputFile.getName())){
+            FileUtils.copyFileToDirectory(outputFile, packagingScope.getOutput(MERGED_ASSETS).getSingleFile());
+        }else {
+            FileUtils.copyFileToDirectory(outputFile, new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi"));
+        }
         return new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi/"+outputFile.getName());
     }
 

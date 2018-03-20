@@ -30,6 +30,7 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.ReflectUtils;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.artifacts.ProjectDependency;
@@ -108,14 +109,16 @@ public class BuildAtlasEnvTask extends BaseTask {
             if (componentIdentifier instanceof DefaultModuleComponentIdentifier){
                 allJars.add(new FileIdentity(((DefaultModuleComponentIdentifier) componentIdentifier).getGroup()+":"+((DefaultModuleComponentIdentifier) componentIdentifier).getModule(),resolvedArtifactResult.getFile(),resolvedArtifactResult.getId().getDisplayName().startsWith("classes.jar")? false:true,false));
             }else if (componentIdentifier instanceof DefaultProjectComponentIdentifier){
-                allJars.add(new FileIdentity(componentIdentifier.getDisplayName().split(":")[1],resolvedArtifactResult.getFile(),resolvedArtifactResult.getId().getDisplayName().startsWith("classes.jar")? false:true,true));
+                String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
+                allJars.add(new FileIdentity(projectPath.substring(projectPath.lastIndexOf(":")+1),resolvedArtifactResult.getFile(),resolvedArtifactResult.getId().getDisplayName().startsWith("classes.jar")? false:true,true));
             }
         }
         for (ResolvedArtifactResult resolvedArtifactResult : compileArtifacts) {
             if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultModuleComponentIdentifier) {
                 allManifests.put(((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getGroup()+":"+((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getModule(), resolvedArtifactResult.getFile());
             } else if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultProjectComponentIdentifier) {
-                allManifests.put(((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath().substring(1), resolvedArtifactResult.getFile());
+                String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
+                allManifests.put(projectPath.substring(projectPath.lastIndexOf(":")+1), resolvedArtifactResult.getFile());
             }
         }
 
@@ -123,7 +126,8 @@ public class BuildAtlasEnvTask extends BaseTask {
             if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultModuleComponentIdentifier) {
                 allSolibs.put(((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getGroup()+":"+((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getModule(), resolvedArtifactResult.getFile());
             } else if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultProjectComponentIdentifier) {
-                allSolibs.put(((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath().substring(1), resolvedArtifactResult.getFile());
+                String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
+                allSolibs.put(projectPath.substring(projectPath.lastIndexOf(":")+1), resolvedArtifactResult.getFile());
             }
         }
 
@@ -131,7 +135,8 @@ public class BuildAtlasEnvTask extends BaseTask {
             if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultModuleComponentIdentifier) {
                 allJavaRes.put(((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getGroup()+":"+((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getModule(), resolvedArtifactResult.getFile());
             } else if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultProjectComponentIdentifier) {
-                allJavaRes.put(((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath().substring(1), resolvedArtifactResult.getFile());
+                String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
+                allJavaRes.put(projectPath.substring(projectPath.lastIndexOf(":")+1), resolvedArtifactResult.getFile());
             }
         }
 
@@ -146,6 +151,11 @@ public class BuildAtlasEnvTask extends BaseTask {
 
                 if ((id = allManifests.get(androidLibrary.getResolvedCoordinates().getGroupId()+":"+androidLibrary.getResolvedCoordinates().getArtifactId())) == null) {
                     id = allManifests.get(androidLibrary.getResolvedCoordinates().toString().split(":")[1]);
+                }
+                if (id == null){
+                    getLogger().warn("id == null---------------------"+androidLibrary.getResolvedCoordinates().getGroupId()+":"+androidLibrary.getResolvedCoordinates().getArtifactId());
+                    throw new GradleException("excute failed! ");
+
                 }
                 ReflectUtils.updateField(fakeAndroidLibrary, "extractedFolder", id.getParentFile());
                 ReflectUtils.updateField(fakeAndroidLibrary, "jarsRootFolder", id.getParentFile());

@@ -324,6 +324,16 @@ public class TBuildConfig {
     @Config(message = "put awb so in lib/armeabi , not assets dir", order = 19, advance = true, group = "atlas")
     private Set<String> keepInLibSoNames = new HashSet<>();
 
+    public Set<String> getKeepInAssetsSoNames() {
+        return keepInAssetsSoNames;
+    }
+
+    public void setKeepInAssetsSoNames(Set<String> keepInAssetsSoNames) {
+        this.keepInAssetsSoNames = keepInAssetsSoNames;
+    }
+
+    private Set<String>keepInAssetsSoNames = new HashSet<>();
+
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;
     }
@@ -401,6 +411,7 @@ public class TBuildConfig {
     }
 
     public Set<String> getOutOfApkBundles() {
+
         return outOfApkBundles;
     }
 

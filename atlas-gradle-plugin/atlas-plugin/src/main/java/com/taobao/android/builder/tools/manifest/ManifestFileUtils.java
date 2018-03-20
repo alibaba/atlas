@@ -277,7 +277,7 @@ public class ManifestFileUtils {
     public static Result postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
                                               Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
                                               ManifestOptions manifestOptions, boolean addMultiDex,
-                                              boolean isInstantRun, Set<String> remoteBundles)
+                                              boolean isInstantRun, Set<String> remoteBundles,Set<String> insideBundles)
         throws IOException, DocumentException {
 
         Result result = new Result();
@@ -289,7 +289,7 @@ public class ManifestFileUtils {
         Document document = XmlHelper.readXml(inputFile);
 
         if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists()) {
-            addApplicationMetaData(document, libManifestMap, baseBunfleInfoFile, manifestOptions, remoteBundles);
+            addApplicationMetaData(document, libManifestMap, baseBunfleInfoFile, manifestOptions, remoteBundles,insideBundles);
         }
 
         if (null != manifestOptions && manifestOptions.isAddAtlasProxyComponents()) {
@@ -365,7 +365,7 @@ public class ManifestFileUtils {
      */
     private static void addApplicationMetaData(Document document, Map<String, File> libManifestMap,
                                                File baseBunfleInfoFile, ManifestOptions manifestOptions,
-                                               Set<String> remoteBundles) throws IOException, DocumentException {
+                                               Set<String> remoteBundles,Set<String>insideBundles) throws IOException, DocumentException {
         Map<String, BundleInfo> bundleFileMap = Maps.newHashMap();
         // Parsing basic information
         if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists() && baseBunfleInfoFile.canRead()) {
@@ -411,7 +411,7 @@ public class ManifestFileUtils {
                     if (null != bundleInfo && bundleInfo.getDependency() != null) {
                         bundleDepValue = StringUtils.join(bundleInfo.getDependency(), "|");
                     }
-                    String value = libBundleInfo.applicationName + "," + !remoteBundles.contains(libBundleInfo.libName)
+                    String value = libBundleInfo.applicationName + "," + !(remoteBundles.contains(libBundleInfo.libName)||insideBundles.contains(libBundleInfo.libName))
                         + "," + bundleDepValue;
                     logger.info("[bundleInfo] add bundle value : " + value + " to manifest");
                     metaData.addAttribute("android:name", "bundle_" + bundlePackageName);

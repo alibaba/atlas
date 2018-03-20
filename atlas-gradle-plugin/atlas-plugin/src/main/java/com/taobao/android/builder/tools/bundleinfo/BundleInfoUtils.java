@@ -279,10 +279,18 @@ public class BundleInfoUtils {
             bundleInfo = awbBundle.bundleInfo;
         }
 
-        awbBundle.isRemote = appVariantContext.getAtlasExtension()
-            .getTBuildConfig()
-            .getOutOfApkBundles()
-            .contains(artifactId);
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().getOutOfApkBundles().size() > 0) {
+            awbBundle.isRemote = appVariantContext.getAtlasExtension()
+                    .getTBuildConfig()
+                    .getOutOfApkBundles()
+                    .contains(artifactId);
+        }else if (appVariantContext.getAtlasExtension().getTBuildConfig().getInsideOfApkBundles().size() > 0){
+            awbBundle.isRemote = !appVariantContext.getAtlasExtension()
+                    .getTBuildConfig()
+                    .getInsideOfApkBundles()
+                    .contains(artifactId);
+        }
+
         bundleInfo.setIsInternal(!awbBundle.isRemote);
         bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
         bundleInfo.setPkgName(awbBundle.getPackageName());
