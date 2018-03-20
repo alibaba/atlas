@@ -427,7 +427,7 @@ public class BundleProguarder {
             configuration.printConfiguration = input.printConfiguration;
         }
 
-        configuration.printSeeds = input.printSeeds;
+        configuration.printSeeds = null;
         configuration.printUsage = input.printUsage;
         configuration.printMapping = input.printMapping;
 
