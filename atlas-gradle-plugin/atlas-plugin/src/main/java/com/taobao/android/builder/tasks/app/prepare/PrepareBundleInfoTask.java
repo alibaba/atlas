@@ -250,8 +250,8 @@ public class PrepareBundleInfoTask extends BaseTask {
     }
 
     private void generateBundleListCfg(AppVariantContext appVariantContext) throws IOException {
-        List<String> bundleLists = AtlasBuildContext.awbBundleMap.keySet().stream().map(key -> {
-            return "lib/armeabi/" + key;
+        List<String> bundleLists = AtlasBuildContext.awbBundleMap.values().stream().map(awbBundle -> {
+            return appVariantOutputContext.getAwbPackageOutputFilePath(awbBundle);
         }).sorted().collect(Collectors.toList());
         File outputFile = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(), "bundleList.cfg");
         FileUtils.deleteQuietly(outputFile);

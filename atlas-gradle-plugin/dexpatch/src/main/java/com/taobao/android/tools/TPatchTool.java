@@ -500,39 +500,19 @@ public class TPatchTool extends AbstractTool {
      * @param newApkUnzipFolder
      * @param baseApkUnzipFolder
      * @param patchTmpDir
+     * @param retainFiles
      * @throws IOException
      */
-    public void copyMainBundleResources(final File newApkUnzipFolder,
-                                         final File baseApkUnzipFolder,
-                                         File patchTmpDir) throws IOException {
+    public void copyMainBundleResources(final File newApkUnzipFolder, final File baseApkUnzipFolder, File patchTmpDir,
+                                        Collection<File> retainFiles) throws IOException {
         boolean resoureModified = false;
-
-        Collection<File> retainFiles = FileUtils.listFiles(newApkUnzipFolder, new IOFileFilter() {
-
-            @Override
-            public boolean accept(File file) {
-                String relativePath = PathUtils.toRelative(newApkUnzipFolder,
-                                                           file.getAbsolutePath());
-                if (pathMatcher.match(DEFAULT_NOT_INCLUDE_RESOURCES, relativePath)) {
-                    return false;
-                }
-                if (null != ((TpatchInput)(input)).notIncludeFiles && pathMatcher.match(((TpatchInput)(input)).notIncludeFiles, relativePath)) {
-                    return false;
-                }
-                return true;
-            }
-
-            @Override
-            public boolean accept(File file, String s) {
-                return accept(new File(file, s));
-            }
-        }, TrueFileFilter.INSTANCE);
 
         for (File retainFile : retainFiles) {
             String relativePath = PathUtils.toRelative(newApkUnzipFolder,
                                                        retainFile.getAbsolutePath());
             File baseFile = new File(baseApkUnzipFolder, relativePath);
-            if (isFileModify(retainFile, baseFile)) {
+            if (isBundleFile(retainFile)) {
+            } else if (isFileModify(retainFile, baseFile)) {
                 resoureModified = true;
                 File destFile = new File(patchTmpDir, relativePath);
                 FileUtils.copyFile(retainFile, destFile);
@@ -1056,6 +1036,26 @@ public class TPatchTool extends AbstractTool {
 
         Profiler.enter("awbspatch");
 
+        Collection<File> retainFiles = FileUtils.listFiles(newApkUnzipFolder, new IOFileFilter() {
+
+            @Override
+            public boolean accept(File file) {
+                String relativePath = PathUtils.toRelative(newApkUnzipFolder, file.getAbsolutePath());
+                if (pathMatcher.match(DEFAULT_NOT_INCLUDE_RESOURCES, relativePath)) {
+                    return false;
+                }
+                if (null != ((TpatchInput)(input)).notIncludeFiles && pathMatcher
+                    .match(((TpatchInput)(input)).notIncludeFiles, relativePath)) {
+                    return false;
+                }
+                return true;
+            }
+
+            @Override
+            public boolean accept(File file, String s) {
+                return accept(new File(file, s));
+            }
+        }, TrueFileFilter.INSTANCE);
         executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -1072,7 +1072,8 @@ public class TPatchTool extends AbstractTool {
                 if (isRetainMainBundleRes()) {
                     copyMainBundleResources(newApkUnzipFolder,
                             baseApkUnzipFolder,
-                            new File(patchTmpDir, ((TpatchInput)input).mainBundleName));
+                    new File(patchTmpDir, ((TpatchInput)input).mainBundleName),
+                    retainFiles);
                 }
                 return true;
             }
