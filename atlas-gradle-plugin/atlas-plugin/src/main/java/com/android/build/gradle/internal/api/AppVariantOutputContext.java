@@ -209,6 +209,14 @@
 
 package com.android.build.gradle.internal.api;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.android.build.api.transform.JarInput;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -221,12 +229,8 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
-import com.taobao.android.builder.tasks.transform.AtlasFixStackFramesTransform;
 import com.taobao.android.object.ArtifactBundleInfo;
 import org.gradle.api.tasks.compile.JavaCompile;
-
-import java.io.File;
-import java.util.*;
 
 import static com.android.SdkConstants.FD_ASSETS;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
@@ -388,17 +392,17 @@ public class AppVariantOutputContext {
         Set<String> libSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInLibSoNames();
 
         File file = null;
-        if (libSoNames.isEmpty() || libSoNames.contains(awbOutputName)) {
+        // if (libSoNames.isEmpty() || libSoNames.contains(awbOutputName)) {
             file = new File(variantContext.getAwbApkOutputDir(), "lib/armeabi" + File.separator + awbOutputName);
             file.getParentFile().mkdirs();
-        }else {
-            file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
-        }
-
-        Set<String> assetsSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames();
-        if (!assetsSoNames.isEmpty() && assetsSoNames.contains(awbOutputName)) {
-            file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
-        }
+        // }else {
+        //     file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
+        // }
+        //
+        // Set<String> assetsSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames();
+        // if (!assetsSoNames.isEmpty() && assetsSoNames.contains(awbOutputName)) {
+        //     file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
+        // }
 
         awbBundle.outputBundleFile = file;
         return file;

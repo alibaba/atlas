@@ -1,5 +1,20 @@
 package com.taobao.android.builder.tasks.app.bundle;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -12,7 +27,12 @@ import com.android.build.gradle.internal.incremental.DexPackagingPolicy;
 import com.android.build.gradle.internal.incremental.FileType;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.packaging.IncrementalPackagerBuilder;
-import com.android.build.gradle.internal.scope.*;
+import com.android.build.gradle.internal.scope.BuildOutput;
+import com.android.build.gradle.internal.scope.BuildOutputs;
+import com.android.build.gradle.internal.scope.DefaultGradlePackagingScope;
+import com.android.build.gradle.internal.scope.OutputScope;
+import com.android.build.gradle.internal.scope.TaskOutputHolder;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.KnownFilesSaveData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.files.FileCacheByPath;
@@ -31,20 +51,9 @@ import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.zip.BetterZip;
-import com.taobao.android.builder.tools.zip.ZipUtils;
-import org.apache.commons.lang.StringUtils;
 import org.gradle.api.file.FileCollection;
 
-import java.io.*;
-import java.util.*;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
-
-import static com.android.build.gradle.internal.scope.TaskOutputHolder.TaskOutputType.MERGED_ASSETS;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -106,6 +115,24 @@ public class AwbApkPackageTask {
         this.taskName = taskName;
 
 
+    }
+
+    public static File getAwbPackageOutputFile(AppVariantContext variantContext, String awbOutputName) {
+        Set<String> libSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInLibSoNames();
+
+        File file = null;
+        if (libSoNames.isEmpty() || libSoNames.contains(awbOutputName)) {
+            file = new File(variantContext.getAwbApkOutputDir(), "lib/armeabi" + File.separator + awbOutputName);
+            file.getParentFile().mkdirs();
+        } else {
+            file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
+        }
+
+        Set<String> assetsSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames();
+        if (!assetsSoNames.isEmpty() && assetsSoNames.contains(awbOutputName)) {
+            file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
+        }
+        return file;
     }
 
     public File doFullTaskAction() throws IOException {
@@ -197,15 +224,11 @@ public class AwbApkPackageTask {
         saveData.setInputSet(updatedAndroidResources.keySet(), KnownFilesSaveData.InputSet.ANDROID_RESOURCE);
         saveData.setInputSet(updatedJniResources.keySet(), KnownFilesSaveData.InputSet.NATIVE_RESOURCE);
         saveData.saveCurrentData();
-        if (appVariantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames().contains(outputFile.getName())){
-            FileUtils.copyFileToDirectory(outputFile, packagingScope.getOutput(MERGED_ASSETS).getSingleFile());
-            return new File(packagingScope.getOutput(MERGED_ASSETS).getSingleFile(), outputFile.getName());
-
-        }else {
-            FileUtils.copyFileToDirectory(outputFile, new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi"));
-            return new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi/"+outputFile.getName());
-
-        }
+        File file;
+        String outputFileName = outputFile.getName();
+        file = getAwbPackageOutputFile(appVariantOutputContext.getVariantContext(), outputFileName);
+        FileUtils.copyFileToDirectory(outputFile, file);
+        return new File(file, outputFileName);
     }
 
     private void doTask(
