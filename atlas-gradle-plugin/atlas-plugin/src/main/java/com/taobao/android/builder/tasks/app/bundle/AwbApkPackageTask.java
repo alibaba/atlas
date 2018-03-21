@@ -227,8 +227,8 @@ public class AwbApkPackageTask {
         File file;
         String outputFileName = outputFile.getName();
         file = getAwbPackageOutputFile(appVariantOutputContext.getVariantContext(), outputFileName);
-        FileUtils.copyFileToDirectory(outputFile, file);
-        return new File(file, outputFileName);
+        FileUtils.copyFileToDirectory(outputFile, file.getParentFile());
+        return new File(file.getParentFile(), outputFileName);
     }
 
     private void doTask(
