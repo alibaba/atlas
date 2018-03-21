@@ -32,5 +32,5 @@ dependencies {
 
 group 'com.taobao.android'
 
-version "1.4.4.19"
+version "3.0.0.1"
 
