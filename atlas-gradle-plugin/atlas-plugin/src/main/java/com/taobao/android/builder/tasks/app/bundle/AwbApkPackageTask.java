@@ -199,10 +199,13 @@ public class AwbApkPackageTask {
         saveData.saveCurrentData();
         if (appVariantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames().contains(outputFile.getName())){
             FileUtils.copyFileToDirectory(outputFile, packagingScope.getOutput(MERGED_ASSETS).getSingleFile());
+            return new File(packagingScope.getOutput(MERGED_ASSETS).getSingleFile(), outputFile.getName());
+
         }else {
             FileUtils.copyFileToDirectory(outputFile, new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi"));
+            return new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi/"+outputFile.getName());
+
         }
-        return new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi/"+outputFile.getName());
     }
 
     private void doTask(

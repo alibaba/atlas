@@ -68,13 +68,13 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private ArtifactCollection compileManifests;
 
-    public static Map<String, File> allManifests = new HashMap<>();
+    public  Map<String, File> allManifests = new HashMap<>();
 
-    public static Map<String, File> allSolibs = new HashMap<>();
+    public  Map<String, File> allSolibs = new HashMap<>();
 
-    public static Map<String, File> allJavaRes = new HashMap<>();
+    public  Map<String, File> allJavaRes = new HashMap<>();
 
-    public static Set<FileIdentity>allJars = new HashSet<>();
+    public  Set<FileIdentity>allJars = new HashSet<>();
 
 
     private AppVariantContext appVariantContext;
@@ -225,9 +225,6 @@ public class BuildAtlasEnvTask extends BaseTask {
 
 
 
-        AtlasBuildContext.atlasMainDexHelper.addAwbDexJars(allJars);
-
-
         MergeResources mergeResources = appVariantContext.getScope().getMergeResourcesTask().get(new TaskContainerAdaptor(getProject().getTasks()));
 
         try {
@@ -256,6 +253,12 @@ public class BuildAtlasEnvTask extends BaseTask {
         FileCollection updateFileCollection = fileCollection.filter(element -> filesNames.contains(element.getParentFile().getParentFile().getName()));
         ReflectUtils.updateField(processAndroidResources,"symbolListsWithPackageNames",updateFileCollection);
         appVariantContext.processResAwbsTask.mainDexSymbolFileCollection = updateFileCollection;
+
+        allManifests.clear();
+        allJavaRes.clear();
+        allSolibs.clear();
+        allJars.clear();
+
 
 
 

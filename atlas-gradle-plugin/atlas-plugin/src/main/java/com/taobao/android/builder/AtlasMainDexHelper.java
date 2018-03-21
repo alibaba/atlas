@@ -18,9 +18,6 @@ public class AtlasMainDexHelper {
 
     private   LinkedHashSet<BuildAtlasEnvTask.FileIdentity> mainDexJar = new LinkedHashSet<>();
 
-    private   LinkedHashSet<BuildAtlasEnvTask.FileIdentity>awbDexJar = new LinkedHashSet<>();
-
-    private   Map<AwbBundle, Multimap<QualifiedContent, File>> awbDexFile = new HashMap<AwbBundle, Multimap<QualifiedContent, File>>();
 
     private   Map<String,Boolean>mainManifestMap = new HashMap<>();
 
@@ -43,13 +40,7 @@ public class AtlasMainDexHelper {
         }
     }
 
-    public void addAwbDexJars(Set<BuildAtlasEnvTask.FileIdentity>awbDexs){
-        awbDexJar.addAll(awbDexs);
-    }
 
-    public void addAwbDexFiles(Map awbDexFiles){
-        awbDexFile.putAll(awbDexFiles);
-    }
 
     public void addMainDexManifests(Map mainDexMap){
         mainManifestMap.putAll(mainDexMap);
@@ -63,9 +54,6 @@ public class AtlasMainDexHelper {
         mainRes.putAll(mainResMap);
     }
 
-    public Map<AwbBundle, Multimap<QualifiedContent, File>>getAwbDexFiles(){
-        return awbDexFile;
-    }
 
     public Map<String,Boolean> getMainManifestFiles(){
         return mainManifestMap;
