@@ -286,6 +286,7 @@ public class SecurityHandler implements BundleListener {
                 }
             }
             if(file!=null){
+                Log.e(TAG, "Security check File: " + file.getAbsolutePath());
                 if (!RuntimeVariables.verifyBundle(file.getAbsolutePath())) {
                     Log.e(TAG, "Security check failed. " + location);
                     Handler handler = new Handler(Looper.getMainLooper());
