@@ -117,13 +117,13 @@ public class AwbApkPackageTask {
 
     }
 
-    public static File getAwbPackageOutputFile(AppVariantContext variantContext, String awbOutputName) {
+    public File getAwbPackageOutputFile(AppVariantContext variantContext, String awbOutputName) {
         Set<String> libSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInLibSoNames();
 
         File file = null;
         if (libSoNames.isEmpty() || libSoNames.contains(awbOutputName)) {
-            file = new File(variantContext.getAwbApkOutputDir(), "lib/armeabi" + File.separator + awbOutputName);
-            file.getParentFile().mkdirs();
+            //直接移动到主apk的lib下
+            file = new File(packagingScope.getJniFolders().getSingleFile(), "lib/armeabi" + File.separator + awbOutputName);
         } else {
             file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
         }
