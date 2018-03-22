@@ -376,11 +376,12 @@ public class PrepareAPTask extends BaseTask {
                     File baseAwbsFolder = apContext.getBaseAwbsFolder();
                     String path = "lib/armeabi/" + awbSoName;
                     File extractFile = BetterZip.extractFile(baseApk, path, baseAwbsFolder);
+                    if (extractFile == null) {
+                        path = "assets/" + awbSoName;
+                        extractFile = BetterZip.extractFile(baseApk, path, baseAwbsFolder);
+                    }
                     Preconditions.checkNotNull(extractFile,
-                                               String.format("Unable to unzip '%1$s' from '%2$s' to '%3$s'",
-                                                             path,
-                                                             baseApk,
-                                                             baseAwbsFolder));
+                        String.format("Unable to unzip '%1$s' from '%2$s' to '%3$s'", path, baseApk, baseAwbsFolder));
                 }
             }
         }
@@ -404,9 +405,7 @@ public class PrepareAPTask extends BaseTask {
             Namespace toolsNamespace = root.getNamespaceForPrefix(TOOLS_PREFIX);
             QName replaceName = QName.get("replace", toolsNamespace);
             applicationElement.addAttribute(replaceName,
-                                            Joiner.on(',')
-                                                .join(Iterables.transform(applicationElement.attributes(),
-                                                                          Attribute::getQualifiedName)));
+                Joiner.on(',').join(Iterables.transform(applicationElement.attributes(), Attribute::getQualifiedName)));
             applicationElement.clearContent();
             root.add(applicationElement);
         }
@@ -443,8 +442,7 @@ public class PrepareAPTask extends BaseTask {
             variantContext.apContext.setApFile(tBuildType.getBaseApFile());
 
             variantContext.apContext.setApExploredFolder(variantContext.getProject()
-                                                             .file(scope.getGlobalScope().getIntermediatesDir()
-                                                                       + "/exploded-ap/"));
+                .file(scope.getGlobalScope().getIntermediatesDir() + "/exploded-ap/"));
 
             ConventionMappingHelper.map(prepareAPTask, "apFile", new Callable<File>() {
                 @Override
