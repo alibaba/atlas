@@ -225,22 +225,26 @@ import dalvik.system.PathClassLoader;
 
 public class NClassLoader extends PathClassLoader{
 
+    public NClassLoader(String dexPath, String libraryPath, ClassLoader parent) {
+        super(dexPath, libraryPath, parent);
+    }
+
     public NClassLoader(String dexPath, ClassLoader parent) {
         super(dexPath, parent);
     }
 
     public static void replacePathClassLoader(Context base,ClassLoader original,NClassLoader target) throws Exception {
         NClassLoader loader = target;
-//        Field pathListField = findField(original, "pathList");
-//        pathListField.setAccessible(true);
-//        Object originPathListObject = pathListField.get(original);
+        Field pathListField = findField(original, "pathList");
+        pathListField.setAccessible(true);
+        Object originPathListObject = pathListField.get(original);
 //
 //        Field definingContextField = findField(originPathListObject, "definingContext");
 //        definingContextField.set(originPathListObject, loader);
 //
-//        Field loadPathList = findField(loader, "pathList");
-//        //just use PathClassloader's pathList
-//        loadPathList.set(loader, originPathListObject);
+        Field loadPathList = findField(loader, "pathList");
+        //just use PathClassloader's pathList
+        loadPathList.set(loader, originPathListObject);
 //
 //        //we must recreate dexFile due to dexCache
 //        List<File> additionalClassPathEntries = new ArrayList<File>();
