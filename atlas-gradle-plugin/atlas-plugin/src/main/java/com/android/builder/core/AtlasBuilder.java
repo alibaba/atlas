@@ -448,12 +448,6 @@ public class AtlasBuilder extends AndroidBuilder {
             } catch (IOException e) {
                 throw new RuntimeException("Could not load file ", e);
             }
-            for (File file:aaptConfig.getLibrarySymbolTableFiles()){
-                List<String>lines = FileUtils.readLines(file);
-                if (lines.size() > 1) {
-                    FileUtils.writeLines(mergedSymbolFile, lines.subList(1, lines.size() - 1), true);
-                }
-            }
 
             SymbolTable mainSymbols =
                     mergedSymbolFile.isFile()
