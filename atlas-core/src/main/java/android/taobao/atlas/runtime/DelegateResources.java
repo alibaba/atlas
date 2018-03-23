@@ -227,6 +227,8 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LongSparseArray;
 import android.util.TypedValue;
+import android.webkit.WebView;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.ref.WeakReference;
@@ -646,6 +648,15 @@ public class DelegateResources extends Resources {
                 if(TextUtils.isEmpty(sWebviewPath)) {
                     try {
                         PackageInfo info = (PackageInfo) Class.forName("android.webkit.WebViewFactory").getDeclaredMethod("getLoadedPackageInfo").invoke(null);
+                        if(info == null){
+                            Class<WebView> clazz = (Class<WebView>) Class.forName("android.webkit.WebView");
+                            WebView webView = clazz.newInstance();
+                            Method method = clazz.getDeclaredMethod("ensureProviderCreated");
+                            method.setAccessible(true);
+                            method.invoke(webView);
+                            info = (PackageInfo) Class.forName("android.webkit.WebViewFactory").getDeclaredMethod(
+                                    "getLoadedPackageInfo").invoke(null);
+                        }
                         if (info != null && info.applicationInfo != null) {
                             sWebviewPath = info.applicationInfo.sourceDir;
                         }
