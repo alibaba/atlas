@@ -51,6 +51,9 @@ public class PrepareBaseApkTask extends IncrementalTask {
     private boolean createTPatch;
 
     private File outputPackage;
+
+    private String versionName;
+
     // ----- PRIVATE TASK API -----
 
     @Override
@@ -74,7 +77,9 @@ public class PrepareBaseApkTask extends IncrementalTask {
             // predicate = s -> !s.endsWith(DOT_DEX);
         } else {
             // 不解压签名文件
-            predicate = s -> "res/drawable/abc_wb_textfield_cdf.jpg".equals(s) || s.startsWith("META-INF/");
+            predicate = s -> ("assets/bundleInfo-" + getVersionName() + ".json").equals(s)
+                || "res/drawable/abc_wb_textfield_cdf.jpg".equals(s)
+                || s.startsWith("META-INF/");
             baseApkZip.mergeFrom(baseApApkZip, predicate);
 
             //向后移动classes.dex文件
@@ -218,6 +223,16 @@ public class PrepareBaseApkTask extends IncrementalTask {
         this.outputPackage = outputPackage;
     }
 
+    @Input
+    // @Optional
+    public String getVersionName() {
+        return versionName;
+    }
+
+    public void setVersionName(String versionName) {
+        this.versionName = versionName;
+    }
+
     @Override
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
 
@@ -288,9 +303,10 @@ public class PrepareBaseApkTask extends IncrementalTask {
                     // Preconditions.checkState(dexFolders.size() == 1,
                     //                          "There must be exactly one output");
                     for (File dexFolder : dexFolders) {
-                        dexFilesCount += scope.getGlobalScope().getProject().fileTree(
-                            ImmutableMap.of("dir", dexFolder, "includes", ImmutableList.of("classes*.dex"))).getFiles()
-                            .size();
+                        dexFilesCount += scope.getGlobalScope().getProject().fileTree(ImmutableMap.of("dir",
+                            dexFolder,
+                            "includes",
+                            ImmutableList.of("classes*.dex"))).getFiles().size();
                     }
                     return dexFilesCount;
                 }
@@ -315,6 +331,8 @@ public class PrepareBaseApkTask extends IncrementalTask {
                     return outputPackage.get();
                 }
             });
+
+            ConventionMappingHelper.map(prepareBaseApkTask, "versionName", variantConfiguration::getVersionName);
 
             // create the stream generated from this task
             scope.getTransformManager().addStream(OriginalStream.builder().addScope(Scope.PROJECT).addContentType(
