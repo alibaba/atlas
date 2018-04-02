@@ -1,16 +1,18 @@
 package com.taobao.android.builder.hook.dex;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.builder.core.*;
-import com.android.builder.dexing.DexArchiveMergerException;
-import com.android.builder.dexing.DexingType;
+import com.android.builder.dexing.*;
 import com.android.builder.internal.compiler.DexWrapper;
 import com.android.builder.sdk.TargetInfo;
+import com.android.builder.utils.FileCache;
 import com.android.builder.utils.PerformanceUtils;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
@@ -42,7 +44,9 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -85,6 +89,8 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
     private WaitableExecutor waitableExecutor = WaitableExecutor.useGlobalSharedThreadPool();
 
     ForkJoinPool mainforkJoinPool = null;
+    FileCache fileCache = null;
+
 
 
     public DexByteCodeConverterHook(VariantContext variantContext, AppVariantOutputContext variantOutputContext, ILogger logger, TargetInfo targetInfo, JavaProcessExecutor javaProcessExecutor, boolean verboseExec, ErrorReporter errorReporter) {
@@ -94,6 +100,11 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         this.logger = logger;
         this.mTargetInfo = targetInfo;
         this.mJavaProcessExecutor = javaProcessExecutor;
+        if (variantContext.getScope().getGlobalScope()
+                .getProjectOptions()
+                .get(BooleanOption.ENABLE_INTERMEDIATE_ARTIFACTS_CACHE)) {
+            fileCache =  variantContext.getScope().getGlobalScope().getBuildCache();
+        }
     }
 
 
@@ -119,7 +130,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
 
             for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-                waitableExecutor.execute((Callable<Void>) () -> {
+                    waitableExecutor.execute((Callable<Void>) () -> {
                             try {
 
                                 long start = System.currentTimeMillis();
@@ -140,13 +151,22 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                 if (null != awbTransform.getInputDir()) {
                                     inputFiles.add(awbTransform.getInputDir());
                                 }
-                                AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
-                                        .convertByteCode(inputFiles,
-                                                dexOutputFile,
-                                                false,
-                                                null,
-                                                dexOptions,
-                                                outputHandler, true);
+
+
+
+                                if (variantContext.getScope().getDexer() == DexerTool.DX) {
+                                    AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
+                                            .convertByteCode(inputFiles,
+                                                    dexOutputFile,
+                                                    false,
+                                                    null,
+                                                    dexOptions,
+                                                    outputHandler, true);
+                                }else if (variantContext.getScope().getDexer() == DexerTool.D8){
+
+
+                                    new AtlasD8Creator(inputFiles,((AppVariantContext) variantContext).getAwbDexAchiveOutput(awbBundle),multidex,mainDexList,dexOptions,minSdkVersion,fileCache,processOutputHandler,variantContext,variantOutputContext).create(awbBundle);
+                                }
 
                             } catch (Exception e) {
 
@@ -163,20 +183,28 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
         inputFile = AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
 
+        if (variantContext.getScope().getDexer() == DexerTool.D8){
+
+            AtlasD8Creator atlasD8Creator = new AtlasD8Creator(inputs,((AppVariantContext) variantContext).getMainDexAchive(),multidex,mainDexList,dexOptions,minSdkVersion,fileCache,processOutputHandler,variantContext,variantOutputContext);
+            atlasD8Creator.setMainDexOut(outDexFolder);
+            atlasD8Creator.create(new AwbBundle());
+            return;
+
+        }
+
         initDexExecutorService(dexOptions);
 
         if (!multidex) {
-            DexByteCodeConverterHook.super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
-            try {
-                for (Future future : futureList) {
-                    future.get();
+                DexByteCodeConverterHook.super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+                try {
+                    for (Future future : futureList) {
+                        future.get();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
         } else {
-
             tempDexFolder = variantOutputContext.getMainDexOutDir();
             if (tempDexFolder.exists()) {
                 FileUtils.cleanDirectory(tempDexFolder);

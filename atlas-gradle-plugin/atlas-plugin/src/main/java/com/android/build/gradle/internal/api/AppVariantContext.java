@@ -563,5 +563,10 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     }
 
+    public File getMainDexAchive() {
+        return new File(scope.getGlobalScope().getIntermediatesDir(),
+                "/mainbundle-achiveDex/" +
+                        variantData.getVariantConfiguration().getDirName());
+    }
 }
 

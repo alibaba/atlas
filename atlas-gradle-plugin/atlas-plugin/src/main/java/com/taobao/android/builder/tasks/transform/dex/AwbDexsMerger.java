@@ -7,6 +7,7 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.dexing.DexMergerTool;
+import com.android.builder.dexing.DexerTool;
 import com.android.builder.dexing.DexingType;
 import com.android.builder.utils.FileCache;
 import com.android.ide.common.process.ProcessException;
@@ -73,54 +74,60 @@ public class AwbDexsMerger extends AtlasDexMerger {
         };
     }
 
+
+
     @Override
     public void merge(TransformInvocation transformInvocation) {
 
         for (AwbTransform awbTransform : variantOutputContext.getAwbTransformMap().values()) {
-            AwbBundle awbBundle = awbTransform.getAwbBundle();
-            File file = variantOutputContext.getVariantContext().getAwbDexAchiveOutput(awbBundle);
-            List<File> awbDexFiles = new ArrayList<>();
-            awbDexFiles.addAll(org.apache.commons.io.FileUtils.listFiles(file, new String[]{"jar", "dex"}, true));
-            File[] mergeDexs = file.listFiles(pathname -> pathname.getName().endsWith(".jar") || pathname.isDirectory());
-            sort(awbDexFiles);
-            File outPutFolder = variantOutputContext.getAwbDexOutput(awbBundle.getName());
-            try {
-                FileUtils.cleanOutputDir(outPutFolder);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            FileCache.Inputs buildCacheInputs = getBuildCacheInputs(awbDexFiles, dexingType, dexMerger, null, minSdkVersion, isDebuggable, awbBundle.getName(), ID);
-            ProcessOutput output = outputHandler.createOutput();
-            FileCache fileCache = BuildCacheUtils.createBuildCacheIfEnabled(variantOutputContext.getVariantContext().getProject(), variantOutputContext.getScope().getGlobalScope().getProjectOptions());
-            try {
-                FileCache.QueryResult result = fileCache.createFileInCacheIfAbsent(
-                        buildCacheInputs,
-                        in -> {
+           merge(awbTransform.getAwbBundle());
+        }
+    }
 
-                            List<ForkJoinTask<Void>> mergeTasks = new ArrayList<ForkJoinTask<Void>>();
-                            mergeTasks.addAll(
-                                    handleLegacyAndMonoDex(
-                                            Arrays.asList(mergeDexs), output, outPutFolder, null));
-                            mergeTasks.forEach(voidForkJoinTask -> voidForkJoinTask.join());
+    public void merge(AwbBundle awbBundle){
 
-                            cacheHandler.handleMissActionResult(outPutFolder, in);
-                            if (output != null) {
-                                try {
-                                    outputHandler.handleOutput(output);
-                                } catch (ProcessException e) {
-                                    // ignore this one
-                                }
+        File file = variantOutputContext.getVariantContext().getAwbDexAchiveOutput(awbBundle);
+        List<File> awbDexFiles = new ArrayList<>();
+        awbDexFiles.addAll(org.apache.commons.io.FileUtils.listFiles(file, new String[]{"jar", "dex"}, true));
+        File[] mergeDexs = file.listFiles(pathname -> pathname.getName().endsWith(".jar") || pathname.isDirectory());
+        sort(awbDexFiles);
+        File outPutFolder = variantOutputContext.getAwbDexOutput(awbBundle.getName());
+        try {
+            FileUtils.cleanOutputDir(outPutFolder);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        FileCache.Inputs buildCacheInputs = getBuildCacheInputs(awbDexFiles, dexingType, dexMerger, null, minSdkVersion, isDebuggable, awbBundle.getName(), ID);
+        ProcessOutput output = outputHandler.createOutput();
+        FileCache fileCache = BuildCacheUtils.createBuildCacheIfEnabled(variantOutputContext.getVariantContext().getProject(), variantOutputContext.getScope().getGlobalScope().getProjectOptions());
+        try {
+            FileCache.QueryResult result = fileCache.createFileInCacheIfAbsent(
+                    buildCacheInputs,
+                    in -> {
+
+                        List<ForkJoinTask<Void>> mergeTasks = new ArrayList<ForkJoinTask<Void>>();
+                        mergeTasks.addAll(
+                                handleLegacyAndMonoDex(
+                                        Arrays.asList(mergeDexs), output, outPutFolder, null));
+                        mergeTasks.forEach(voidForkJoinTask -> voidForkJoinTask.join());
+
+                        cacheHandler.handleMissActionResult(outPutFolder, in);
+                        if (output != null) {
+                            try {
+                                outputHandler.handleOutput(output);
+                            } catch (ProcessException e) {
+                                // ignore this one
                             }
                         }
+                    }
 
-                );
+            );
 
-                cacheHandler.handleQueryResult(result, outPutFolder, awbBundle.getName());
+            cacheHandler.handleQueryResult(result, outPutFolder, awbBundle.getName());
 
-            } catch (Exception e) {
-                e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
 
-            }
         }
     }
 }

@@ -119,11 +119,15 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
         });
 
 
+        merge(mainDexFiles,outputDir,mergeDexs);
+
+    }
+
+    public void merge(List<File>mainDexFiles,File outputDir,File[][] mergeDexs) {
         sort(mainDexFiles);
         FileCache.Inputs buildCacheInputs =
                 getBuildCacheInputs(
                         mainDexFiles, dexingType, dexMerger, mainDexListFile == null ? null : mainDexListFile.getSingleFile(), minSdkVersion, isDebuggable, "maindex", ID);
-
         ProcessOutput output = outputHandler.createOutput();
         FileCache fileCache = BuildCacheUtils.createBuildCacheIfEnabled(variantOutputContext.getVariantContext().getProject(), variantOutputContext.getScope().getGlobalScope().getProjectOptions());
         try {
@@ -158,9 +162,7 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
                     });
 
             cacheHandler.handleQueryResult(result, outputDir, "maindex");
-
-
-        } catch (Exception e) {
+        }catch (Exception e){
             e.printStackTrace();
         }
     }

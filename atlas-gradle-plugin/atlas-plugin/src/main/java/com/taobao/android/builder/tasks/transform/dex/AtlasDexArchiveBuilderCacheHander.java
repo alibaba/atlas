@@ -19,10 +19,7 @@ import com.google.common.base.Verify;
 import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -51,7 +48,7 @@ public class AtlasDexArchiveBuilderCacheHander {
     @NonNull
     private final DexerTool dexer;
 
-    AtlasDexArchiveBuilderCacheHander(
+    public AtlasDexArchiveBuilderCacheHander(
             @Nullable FileCache userLevelCache,
             @NonNull DexOptions dexOptions,
             int minSdkVersion,
@@ -65,7 +62,7 @@ public class AtlasDexArchiveBuilderCacheHander {
     }
 
     @Nullable
-    File getCachedVersionIfPresent(JarInput input) throws IOException {
+    public File getCachedVersionIfPresent(JarInput input) throws IOException {
         FileCache cache =
                 getBuildCache(
                         input.getFile(), isExternalLib(input), userLevelCache);
@@ -77,6 +74,25 @@ public class AtlasDexArchiveBuilderCacheHander {
         FileCache.Inputs buildCacheInputs =
                 getBuildCacheInputs(
                         input.getFile(), dexOptions, dexer, minSdkVersion, isDebuggable);
+        return cache.cacheEntryExists(buildCacheInputs)
+                ? cache.getFileInCache(buildCacheInputs)
+                : null;
+    }
+
+    @Nullable
+    public File getCachedVersionIfPresent(File input) throws IOException {
+        assert input.isFile();
+        FileCache cache =
+                getBuildCache(
+                        input, true, userLevelCache);
+
+        if (cache == null) {
+            return null;
+        }
+
+        FileCache.Inputs buildCacheInputs =
+                getBuildCacheInputs(
+                        input, dexOptions, dexer, minSdkVersion, isDebuggable);
         return cache.cacheEntryExists(buildCacheInputs)
                 ? cache.getFileInCache(buildCacheInputs)
                 : null;
@@ -242,6 +258,42 @@ public class AtlasDexArchiveBuilderCacheHander {
             }
         }
     }
+
+    public void populateCache(File input,File out)
+            throws IOException, ExecutionException {
+
+            FileCache cache =
+                    getBuildCache(
+                            input, true, userLevelCache);
+            if (cache != null) {
+                FileCache.Inputs buildCacheInputs =
+                        AtlasDexArchiveBuilderCacheHander.getBuildCacheInputs(
+                                input, dexOptions, dexer, minSdkVersion, isDebuggable);
+                FileCache.QueryResult result =
+                        cache.createFileInCacheIfAbsent(
+                                buildCacheInputs,
+                                in -> {
+                                    Files.copy(out.toPath(),in.toPath());
+                                });
+                if (result.getQueryEvent().equals(FileCache.QueryEvent.CORRUPTED)) {
+                    Verify.verifyNotNull(result.getCauseOfCorruption());
+                    logger.info(
+                            "The build cache at '%1$s' contained an invalid cache entry.\n"
+                                    + "Cause: %2$s\n"
+                                    + "We have recreated the cache entry.\n"
+                                    + "%3$s",
+                            cache.getCacheDirectory().getAbsolutePath(),
+                            Throwables.getStackTraceAsString(result.getCauseOfCorruption()),
+                            BuildCacheUtils.BUILD_CACHE_TROUBLESHOOTING_MESSAGE);
+                }else if (result.getQueryEvent().equals(FileCache.QueryEvent.MISSED)){
+                    logger.warning("miss D8 cache:"+input.getAbsolutePath());
+                }else if (result.getQueryEvent().equals(FileCache.QueryEvent.HIT)){
+                    logger.warning("hit D8 cache:"+input.getAbsolutePath());
+
+                }
+            }
+    }
+
 
     private static void mergeJars(File out, Iterable<File> dexArchives) throws IOException {
 

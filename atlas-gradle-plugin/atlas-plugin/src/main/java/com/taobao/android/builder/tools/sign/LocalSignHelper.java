@@ -266,8 +266,6 @@ public class LocalSignHelper {
             }else {
                 FileUtils.forceMkdir(outputFile.getParentFile());
             }
-            LocalSignedJarBuilder signedJarBuilder = null;
-            FileInputStream inputStream = null;
 
             try {
 
@@ -282,6 +280,7 @@ public class LocalSignHelper {
                         throw new SigningException("Failed to read key from keystore");
                     }
                 }
+                System.err.println("LocalSign:"+signingConfig.toString());
 
                 Predicate<String> noCompressPredicate = getNoCompressPredicate(inputFile.getAbsolutePath());
                         ApkCreatorFactory.CreationData creationData =
@@ -313,18 +312,7 @@ public class LocalSignHelper {
                 throw new SigningException(e.getMessage(), e);
 
             } finally {
-                if (null != signedJarBuilder) {
-                    try {
-                        signedJarBuilder.close();
-                    } catch (Exception e) {
-                    }
-                }
-                if (null != inputStream) {
-                    try {
-                        inputStream.close();
-                    } catch (Exception e) {
-                    }
-                }
+
             }
 
 
