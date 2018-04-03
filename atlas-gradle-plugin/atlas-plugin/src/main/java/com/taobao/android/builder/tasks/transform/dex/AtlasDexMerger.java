@@ -5,7 +5,6 @@ import com.android.annotations.Nullable;
 import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.transforms.DexMergerTransformCallable;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.dexing.DexMergerTool;
 import com.android.builder.dexing.DexingType;
@@ -121,8 +120,8 @@ public abstract class AtlasDexMerger {
             @NonNull File dexOutputDir,
             @NonNull Iterable<Path> dexArchives,
             @Nullable Path mainDexList) {
-        DexMergerTransformCallable callable =
-                new DexMergerTransformCallable(
+        DexMergeTransformCallable callable =
+                new DexMergeTransformCallable(
                         dexingType,
                         output,
                         dexOutputDir,
@@ -169,6 +168,7 @@ public abstract class AtlasDexMerger {
     public abstract void merge(TransformInvocation transformInvocation);
 
 
+
     static interface CacheHandler{
 
         void handleMissActionResult(File outputDir,File in) throws IOException;
@@ -176,5 +176,7 @@ public abstract class AtlasDexMerger {
         void handleQueryResult(FileCache.QueryResult queryResult,File outDir,String bundleName) throws IOException;
 
     }
+
+
 
 }
