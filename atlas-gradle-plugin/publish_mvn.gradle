@@ -193,6 +193,7 @@ publishing {
         }
     }
 }
+//apply from: "http://gitlab.alibaba-inc.com/EMAS-Android/android-buildscript/raw/master/add-emas-publish-repository.gradle"
 
 private HashMap getAccount() {
     HashMap<String, String> accountMap = new HashMap()
