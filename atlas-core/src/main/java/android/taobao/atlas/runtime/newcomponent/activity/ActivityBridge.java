@@ -14,7 +14,9 @@ import android.taobao.atlas.runtime.newcomponent.service.ServiceBridge;
 import android.taobao.atlas.util.StringUtils;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -115,6 +117,34 @@ public class ActivityBridge {
 
     private static Intent unWrapperOriginalIntent(Intent wrapper){
         return wrapper.getParcelableExtra("originalIntent");
+    }
+
+    public static void handleNewIntent(Object newIntentData) {
+
+        try {
+            Class newIntentData_clazz = Class.forName("android.app.ActivityThread$NewIntentData");
+            Class refrenceIntent_clazz = Class.forName("com.android.internal.content.ReferrerIntent");
+            Field intent_Field = newIntentData_clazz.getDeclaredField("intents");
+            intent_Field.setAccessible(true);
+            List<Intent>oldIntents = (List<Intent>) intent_Field.get(newIntentData);
+            List<Intent>newIntents = new ArrayList<>();
+            if (oldIntents!= null && oldIntents.size() > 0){
+                for (Intent intent:oldIntents) {
+                    if (intent.getComponent() != null && intent.getComponent().getClassName().startsWith(String.format("%s%s", BridgeUtil.COMPONENT_PACKAGE, BridgeUtil.PROXY_PREFIX))) {
+                        Intent originalIntent = unWrapperOriginalIntent(intent);
+                        Constructor constructor = refrenceIntent_clazz.getDeclaredConstructor(new Class[]{Intent.class,String.class});
+                        constructor.setAccessible(true);
+                        Intent o = (Intent) constructor.newInstance(originalIntent,RuntimeVariables.androidApplication.getPackageName());
+                        newIntents.add(o);
+                       intent_Field.set(newIntentData,newIntents);
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     public interface OnIntentPreparedObserver{
