@@ -215,6 +215,7 @@ import com.android.build.gradle.internal.ide.DependencyConvertUtils;
 import com.android.builder.model.MavenCoordinates;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
+import com.google.common.base.Strings;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -433,7 +434,11 @@ public class DependencyResolver {
                         PublicationContainer publications = publishingExtension.getPublications();
                         MavenPublication mavenPublication = (MavenPublication)publications.findByName("maven");
                         if (mavenPublication != null) {
-                            resolvedDependencyInfo.setName(mavenPublication.getArtifactId());
+                            String artifactId = mavenPublication.getArtifactId();
+
+                            if (!Strings.isNullOrEmpty(artifactId)) {
+                                resolvedDependencyInfo.setName(artifactId);
+                            }
                         }
                     }
                 } else {
