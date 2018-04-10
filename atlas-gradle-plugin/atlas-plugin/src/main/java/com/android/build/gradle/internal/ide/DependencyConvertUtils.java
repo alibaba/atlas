@@ -209,10 +209,6 @@
 
 package com.android.build.gradle.internal.ide;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.dependency.level2.AndroidDependency;
 import com.android.builder.model.AndroidLibrary;
@@ -227,6 +223,10 @@ import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ResolvedArtifact;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 依赖对象转换的工具类
@@ -261,7 +261,7 @@ public class DependencyConvertUtils {
      * @return
      */
     public static AndroidLibrary toAndroidLibrary(ResolvedDependencyInfo resolvedDependencyInfo, Project project,
-                                                  boolean bundle) {
+        boolean bundle) {
 
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
         String gradlePath = resolvedDependencyInfo.getGradlePath();
@@ -274,7 +274,7 @@ public class DependencyConvertUtils {
                                                                            resolvedDependencyInfo.getExplodedDir());
         } else {
             androidDependency = AndroidDependency.createStagedAarLibrary(artifact.getFile(),
-                                                                         convert(artifact),
+                                                                         convert(resolvedDependencyInfo),
                                                                          resolvedDependencyInfo.getDependencyName(),
                                                                          gradlePath,
                                                                          resolvedDependencyInfo.getExplodedDir(),
@@ -379,5 +379,13 @@ public class DependencyConvertUtils {
                                         artifact.getModuleVersion().getId().getVersion(),
                                         artifact.getExtension(),
                                         artifact.getClassifier());
+    }
+
+    public static MavenCoordinatesImpl convert(ResolvedDependencyInfo resolvedDependencyInfo) {
+        return new MavenCoordinatesImpl(resolvedDependencyInfo.getGroup(),
+                                        resolvedDependencyInfo.getName(),
+                                        resolvedDependencyInfo.getVersion(),
+                                        resolvedDependencyInfo.getType(),
+                                        resolvedDependencyInfo.getClassifier());
     }
 }

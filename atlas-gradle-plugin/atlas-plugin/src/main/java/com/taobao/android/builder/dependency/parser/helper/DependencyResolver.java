@@ -209,16 +209,6 @@
 
 package com.taobao.android.builder.dependency.parser.helper;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
@@ -244,9 +234,22 @@ import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.ResolvedComponentResult;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
 import org.gradle.api.internal.artifacts.result.DefaultResolvedComponentResult;
+import org.gradle.api.publish.PublicationContainer;
+import org.gradle.api.publish.PublishingExtension;
+import org.gradle.api.publish.maven.MavenPublication;
 
 import static com.android.build.gradle.internal.TaskManager.DIR_BUNDLES;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by wuzhong on 2017/4/17.
@@ -279,10 +282,14 @@ public class DependencyResolver {
         this.artifacts = artifacts;
         this.bundleProvidedMap = bundleProvidedMap;
         this.apDependencies = apDependencies;
-        this.compileRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getCompileConfiguration().getIncoming()
-            .getResolutionResult().getRoot());
-        this.packageRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getPackageConfiguration().getIncoming()
-            .getResolutionResult().getRoot());
+        this.compileRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getCompileConfiguration()
+            .getIncoming()
+            .getResolutionResult()
+            .getRoot());
+        this.packageRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getPackageConfiguration()
+            .getIncoming()
+            .getResolutionResult()
+            .getRoot());
     }
 
     public List<ResolvedDependencyInfo> resolve(List<DependencyResult> dependencyResults, boolean mainBundle) {
@@ -362,8 +369,8 @@ public class DependencyResolver {
         List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
 
         ComponentIdentifier id = resolvedComponentResult.getId();
-        String gradlePath = (id instanceof ProjectComponentIdentifier) ? ((ProjectComponentIdentifier)id)
-            .getProjectPath() : null;
+        String gradlePath = (id instanceof ProjectComponentIdentifier)
+            ? ((ProjectComponentIdentifier)id).getProjectPath() : null;
 
         // 如果同时找到多个依赖，暂时没法判断是那个真正有用
         if (null != moduleArtifacts) {
@@ -388,10 +395,8 @@ public class DependencyResolver {
                                                                                            moduleVersion.getGroup(),
                                                                                            moduleVersion.getName(),
                                                                                            isAwbBundle ? "awb"
-                                                                                               : resolvedArtifact
-                                                                                                   .getType(),
-                                                                                           resolvedArtifact
-                                                                                               .getClassifier());
+                                                                                               : resolvedArtifact.getType(),
+                                                                                           resolvedArtifact.getClassifier());
 
                 resolvedDependencyInfo.setDependencyName(name);
                 resolvedDependencyInfo.setIndent(indent);
@@ -406,8 +411,8 @@ public class DependencyResolver {
 
                     // this could be a simple project wrapping an aar file, so we check the
                     // presence of the android plugin to make sure it's an android module.
-                    isSubProject = subProject.getPlugins().hasPlugin("com.android.library") || subProject.getPlugins()
-                        .hasPlugin("com.android.model.library");
+                    isSubProject = subProject.getPlugins().hasPlugin("com.android.library") ||
+                        subProject.getPlugins().hasPlugin("com.android.model.library");
                 }
 
                 if (isSubProject) {
@@ -421,6 +426,16 @@ public class DependencyResolver {
                     File stagingDir = FileUtils.join(subProject.getBuildDir(), FD_INTERMEDIATES, DIR_BUNDLES, pathLeaf);
                     resolvedDependencyInfo.setExplodedDir(stagingDir);
                     resolvedDependencyInfo.setGradlePath(gradlePath);
+
+                    final PublishingExtension publishingExtension = subProject.getExtensions().findByType(
+                        PublishingExtension.class);
+                    if (publishingExtension != null) {
+                        PublicationContainer publications = publishingExtension.getPublications();
+                        MavenPublication mavenPublication = (MavenPublication)publications.findByName("maven");
+                        if (mavenPublication != null) {
+                            resolvedDependencyInfo.setName(mavenPublication.getArtifactId());
+                        }
+                    }
                 } else {
 
                     MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
@@ -446,14 +461,14 @@ public class DependencyResolver {
                     for (DependencyResult dep : dependencies) {
 
                         if (dep instanceof ResolvedDependencyResult) {
-                            ResolvedComponentResult childResolvedComponentResult = ((ResolvedDependencyResult)dep)
-                                .getSelected();
+                            ResolvedComponentResult childResolvedComponentResult
+                                = ((ResolvedDependencyResult)dep).getSelected();
 
-                            if (isAwbBundle && providedDirectDep.contains(childResolvedComponentResult
-                                                                              .getModuleVersion().getGroup()
-                                                                              + ":"
-                                                                              + childResolvedComponentResult
-                                .getModuleVersion().getName())) {
+                            if (isAwbBundle &&
+                                providedDirectDep.contains(childResolvedComponentResult.getModuleVersion().getGroup() +
+                                                               ":" +
+                                                               childResolvedComponentResult.getModuleVersion()
+                                                                   .getName())) {
                                 continue;
                             }
 
@@ -506,8 +521,9 @@ public class DependencyResolver {
             //     return true;
             // }
             // awb忽略host的依赖
-            if (parent != null && parent.getType().equals("awb") && apDependencies.isMainLibrary(moduleVersion
-                                                                                                     .getModule())) {
+            if (parent != null &&
+                parent.getType().equals("awb") &&
+                apDependencies.isMainLibrary(moduleVersion.getModule())) {
                 /*if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                     return;
                 } else {
