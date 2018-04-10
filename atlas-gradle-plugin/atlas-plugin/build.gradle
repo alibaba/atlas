@@ -256,5 +256,5 @@ jar {
 }
 
 
-version = '3.0.1-rc35-SNAPSHOT'
+version = '3.0.1-rc36'
 

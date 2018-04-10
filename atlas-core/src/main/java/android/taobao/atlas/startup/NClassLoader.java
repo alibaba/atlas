@@ -231,16 +231,16 @@ public class NClassLoader extends PathClassLoader{
 
     public static void replacePathClassLoader(Context base,ClassLoader original,NClassLoader target) throws Exception {
         NClassLoader loader = target;
-//        Field pathListField = findField(original, "pathList");
-//        pathListField.setAccessible(true);
-//        Object originPathListObject = pathListField.get(original);
-//
-//        Field definingContextField = findField(originPathListObject, "definingContext");
-//        definingContextField.set(originPathListObject, loader);
-//
-//        Field loadPathList = findField(loader, "pathList");
-//        //just use PathClassloader's pathList
-//        loadPathList.set(loader, originPathListObject);
+        Field pathListField = findField(original, "pathList");
+        pathListField.setAccessible(true);
+        Object originPathListObject = pathListField.get(original);
+
+        Field definingContextField = findField(originPathListObject, "definingContext");
+        definingContextField.set(originPathListObject, loader);
+
+        Field loadPathList = findField(loader, "pathList");
+        //just use PathClassloader's pathList
+        loadPathList.set(loader, originPathListObject);
 //
 //        //we must recreate dexFile due to dexCache
 //        List<File> additionalClassPathEntries = new ArrayList<File>();
