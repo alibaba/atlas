@@ -354,18 +354,18 @@ public class BridgeApplicationDelegate {
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;
         }
         AtlasCrashManager.forceStopAppWhenCrashed();
-        System.out.print(SoLoader.class.getName());
-        try {
-            String preLaunchStr = (String) RuntimeVariables.getFrameworkProperty("preLaunch");
-            if (!TextUtils.isEmpty(preLaunchStr)) {
-                AtlasPreLauncher launcher = (AtlasPreLauncher) Class.forName(preLaunchStr).newInstance();
-                if (launcher != null) {
-                    launcher.initBeforeAtlas(mRawApplication.getBaseContext());
-                }
-            }
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+//        System.out.print(SoLoader.class.getName());
+//        try {
+//            String preLaunchStr = (String) RuntimeVariables.getFrameworkProperty("preLaunch");
+//            if (!TextUtils.isEmpty(preLaunchStr)) {
+//                AtlasPreLauncher launcher = (AtlasPreLauncher) Class.forName(preLaunchStr).newInstance();
+//                if (launcher != null) {
+//                    launcher.initBeforeAtlas(mRawApplication.getBaseContext());
+//                }
+//            }
+//        } catch (Throwable e) {
+//            throw new RuntimeException(e);
+//        }
 
 
         // *2 init atlas use reflect
