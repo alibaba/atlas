@@ -21,6 +21,11 @@
         <activity
             android:name=".WebViewDemoActivity"
             android:theme="@style/AppTheme.NoActionBar" />
+
+
+        <meta-data android:name="atlas.fragment.intent.action.FIRST_FRAGMENT" android:value="com.taobao.firstbundle.FirstBundleFragment"/>
+
+
     </application>
 
 </manifest>
