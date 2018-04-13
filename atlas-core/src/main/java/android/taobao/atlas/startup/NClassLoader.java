@@ -239,8 +239,8 @@ public class NClassLoader extends PathClassLoader{
         pathListField.setAccessible(true);
         Object originPathListObject = pathListField.get(original);
 //
-//        Field definingContextField = findField(originPathListObject, "definingContext");
-//        definingContextField.set(originPathListObject, loader);
+        Field definingContextField = findField(originPathListObject, "definingContext");
+        definingContextField.set(originPathListObject, loader);
 //
         Field loadPathList = findField(loader, "pathList");
         //just use PathClassloader's pathList
