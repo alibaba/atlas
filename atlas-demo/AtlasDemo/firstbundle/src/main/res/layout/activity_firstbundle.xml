@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/fragment_hello"
-        android:name="com.taobao.firstbundle.fragment.BlankFragment"
+        android:name="com.taobao.firstbundle.FirstBundleFragment"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 

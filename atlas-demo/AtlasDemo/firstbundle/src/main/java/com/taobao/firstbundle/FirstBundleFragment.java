@@ -11,7 +11,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.taobao.firstbundle.fragment.BlankFragment;
 import com.taobao.publicBundle.Tools;
 
 public class FirstBundleFragment extends Fragment implements IRemote {

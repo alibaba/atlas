@@ -6,29 +6,27 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.taobao.atlas.remote.RemoteFactory;
+import android.taobao.atlas.remote.fragment.RemoteFragment;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.middleware.dialog.Dialog;
-import com.taobao.android.ActivityGroupDelegate;
 import com.taobao.update.Updater;
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends FragmentActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
 
-    private ActivityGroupDelegate mActivityDelegate;
-    private ViewGroup mActivityGroupContainer;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -37,17 +35,14 @@ public class MainActivity extends AppCompatActivity
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
-                    switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
+                    switchToFragment("atlas.fragment.intent.action.FIRST_FRAGMENT");
                     Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
                     return true;
                 case R.id.navigation_dashboard:
-                    switchToActivity("second","com.taobao.secondbundle.SecondBundleActivity");
+                    switchToFragment("atlas.fragment.intent.action.SECOND_FRAGMENT");
                     return true;
                 case R.id.navigation_notifications:
                     new AlertDialog.Builder(MainActivity.this,R.style.Theme_AppCompat_Dialog_Alert).setPositiveButton(android.R.string.cancel, null).setCancelable(true).create().show();
-//                    Intent intent3 = new Intent();
-//                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
-//                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);
                     return true;
             }
             return false;
@@ -55,12 +50,29 @@ public class MainActivity extends AppCompatActivity
 
     };
 
+    void switchToFragment(String remoteFragmentAction){
+
+        RemoteFactory.requestRemote(RemoteFragment.class, this, new Intent(remoteFragmentAction),
+                new RemoteFactory.OnRemoteStateListener<RemoteFragment>() {
+                    @Override
+                    public void onRemotePrepared(RemoteFragment iRemote) {
+                        getSupportFragmentManager().beginTransaction().replace(R.id.fl_content,iRemote).commit();
+                    }
+
+                    @Override
+                    public void onFailed(String s) {
+                        Toast.makeText(RuntimeVariables.androidApplication,"Error:"+s, Toast.LENGTH_SHORT).show();
+                    }
+            }
+        );
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
         Log.e("ddddd","dsfsfsf");
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -72,15 +84,8 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        mActivityDelegate = new ActivityGroupDelegate(this,savedInstanceState);
-        mActivityGroupContainer = (ViewGroup) findViewById(R.id.content);
-        switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
-    }
 
-    public void switchToActivity(String key,String activityName){
-        Intent intent = new Intent();
-        intent.setClassName(getBaseContext(),activityName);
-        mActivityDelegate.startChildActivity(mActivityGroupContainer,key,intent);
+        switchToFragment("atlas.fragment.intent.action.FIRST_FRAGMENT");
     }
 
     @Override

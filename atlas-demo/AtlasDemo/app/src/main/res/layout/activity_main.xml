@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.taobao.demo.MainActivity2">
+    tools:context="com.taobao.demo.MainActivity">
 
     <FrameLayout
         android:id="@+id/content"

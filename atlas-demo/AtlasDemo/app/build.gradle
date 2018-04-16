@@ -112,7 +112,6 @@ dependencies {
 
     compile project(':middlewarelibrary')
     compile project(':splashscreen')
-    compile project(':activitygroupcompat')
 
     bundleCompile project(':firstbundle')
     bundleCompile project(':secondbundle')

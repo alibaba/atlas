@@ -1,7 +1,6 @@
 include ':middlewarelibrary'
 include ':secondbundlelibrary'
 include ':lottie'
-include ':activitygroupcompat'
 include ':firstbundle'
 include ':secondbundle'
 include ':publicbundle'
