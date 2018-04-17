@@ -429,6 +429,9 @@ public class BundleProguarder {
 
         configuration.printSeeds = null;
         configuration.dump = null;
+        configuration.optimize = true;
+        configuration.obfuscate = false;
+        configuration.shrink = true;
         configuration.printUsage = input.printUsage;
         configuration.printMapping = input.printMapping;
 
