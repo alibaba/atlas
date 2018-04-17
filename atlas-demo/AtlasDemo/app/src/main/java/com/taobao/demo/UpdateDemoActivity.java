@@ -37,7 +37,7 @@ public class UpdateDemoActivity extends AppCompatActivity {
 
                     @Override
                     protected void onPostExecute(Void aVoid) {
-                        android.os.Process.killProcess(android.os.Process.myPid());
+ //                       android.os.Process.killProcess(android.os.Process.myPid());
                     }
                 }.execute();
             }

@@ -164,7 +164,7 @@ public class MainActivity extends FragmentActivity
 
                 @Override
                 protected void onPostExecute(Void aVoid) {
-                    android.os.Process.killProcess(android.os.Process.myPid());
+//                    android.os.Process.killProcess(android.os.Process.myPid());
                 }
             }.execute();
         }else if (id == R.id.nav_databind_bundle) {
