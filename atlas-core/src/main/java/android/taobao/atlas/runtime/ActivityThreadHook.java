@@ -274,6 +274,8 @@ public class ActivityThreadHook implements Handler.Callback{
             ensureLoadedApk();
             if(msg.what == 100){
                 ActivityBridge.processActivityIntentIfNeed(msg.obj);
+            }else if (msg.what == 112){
+                ActivityBridge.handleNewIntent(msg.obj);
             }
 //            if(msg.what==113){
 //                handleReceiver(msg);
