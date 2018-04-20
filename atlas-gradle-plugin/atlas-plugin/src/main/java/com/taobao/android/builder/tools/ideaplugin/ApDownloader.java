@@ -250,8 +250,10 @@ public class ApDownloader {
 
     public File downloadAP(String mtlConfigUrl, File root) throws IOException {
         String downloadUrl = getDownloadUrl(mtlConfigUrl);
-        checkNotNull(downloadUrl, "Missing ap downloadUrl for mtlConfigUrl " + mtlConfigUrl);
-        checkState(!"null".equals(downloadUrl), "Missing ap downloadUrl for mtlConfigUrl " + mtlConfigUrl);
+        checkNotNull(downloadUrl,
+                     "Missing ap downloadUrl for mtlConfigUrl " + mtlConfigUrl + " " + "<<<<< 请确保选择的是整包ap,并且至少打出一个包");
+        checkState(!"null".equals(downloadUrl),
+                   "Missing ap downloadUrl for mtlConfigUrl " + mtlConfigUrl + " " + "<<<<< 请确保选择的是整包ap,并且至少打出一个包");
 
         File file = new File(root, MD5Util.getMD5(downloadUrl) + ".ap");
         if (file.exists()) {
@@ -273,8 +275,10 @@ public class ApDownloader {
             configId = matcher.group(1);
         }
 
-        String apiUrl = "http://" + AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl
-            + "/rpc/androidPlugin/getAp.json?buildConfigId=" + configId;
+        String apiUrl = "http://" +
+            AtlasBuildContext.sBuilderAdapter.tpatchHistoryUrl +
+            "/rpc/androidPlugin/getAp.json?buildConfigId=" +
+            configId;
 
         URL api = new URL(apiUrl);
         BufferedReader in = new BufferedReader(new InputStreamReader(api.openStream()));
