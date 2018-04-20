@@ -178,6 +178,9 @@ public class PatchFileBuilder {
         }
         File tPatchFile = new File(patchsFolder, newPatchInfo.getFileName());
         if (tPatchFile.exists()) { FileUtils.deleteQuietly(tPatchFile); }
+        if (new File(destTPathTmpFolder,"libcom_taobao_dynamic_test.so").exists()){
+            FileUtils.deleteQuietly(new File(destTPathTmpFolder,"libcom_taobao_dynamic_test.so"));
+        }
         CommandUtils.exec(destTPathTmpFolder, "zip -r " + tPatchFile.getAbsolutePath() + " . -x */ -x .*");
         if (null != logger) {
             logger.info("[TPatchFile]" + tPatchFile.getAbsolutePath());
@@ -330,6 +333,9 @@ public class PatchFileBuilder {
             destTPathTmpFolder.mkdirs();
         }
         for (BundlePatch bundlePatch : bundlePatchs) {
+            if (bundlePatch.pkgName.equals("com.taobao.dynamic.test")){
+                continue;
+            }
             boolean addToPatch = true;
             String bundleName = "lib" + bundlePatch.pkgName.replace('.', '_');
             if (bundlePatch.mainBundle) {

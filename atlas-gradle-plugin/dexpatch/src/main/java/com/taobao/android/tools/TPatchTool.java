@@ -336,6 +336,10 @@ public class TPatchTool extends AbstractTool {
         // 首先压缩主bundle,先判断主bundle里有没有文件
         File mainBundleFoder = new File(patchTmpDir, ((TpatchInput)input).mainBundleName);
         File mainBundleFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + ".so");
+        File testBundleFile = new File(patchTmpDir,"libcom_taobao_dynamic_test.so");
+        if (testBundleFile.exists()){
+            FileUtils.deleteQuietly(testBundleFile);
+        }
         if (FileUtils.listFiles(mainBundleFoder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
             .size() > 0) {
             hasMainBundle = true;
@@ -640,6 +644,9 @@ public class TPatchTool extends AbstractTool {
                 }
             } else if (DiffType.MODIFY.equals(artifactBundleInfo.getDiffType()) ||
                 DiffType.ADD.equals(artifactBundleInfo.getDiffType())) {
+                if (artifactBundleInfo.getPkgName().equals("com.taobao.dynamic.test")){
+                    continue;
+                }
                 PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
                 patchBundleInfo.setNewBundle(DiffType.ADD.equals(artifactBundleInfo.getDiffType()));
                 patchBundleInfo.setMainBundle(false);
@@ -657,7 +664,7 @@ public class TPatchTool extends AbstractTool {
                 patchBundleInfo.setDependency(artifactBundleInfo.getDependency());
                 patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                 patchInfo.getBundles().add(patchBundleInfo);
-            } else if (modifyBundles.contains(artifactBundleInfo.getPkgName().replace("_","."))) {
+            } else if (modifyBundles.contains(artifactBundleInfo.getPkgName().replace("_",".")) && !artifactBundleInfo.getPkgName().equals("com.taobao.dynamic.test")) {
                 PatchBundleInfo patchBundleInfo = new PatchBundleInfo();
                 patchBundleInfo.setNewBundle(false);
                 patchBundleInfo.setMainBundle(false);
