@@ -263,19 +263,33 @@ public class AwbGenerator {
 
         }
         bundleTask.setDestinationDir(new File(bundleTask.getDestinationDir().getParentFile(), "awb"));
+        File destDir = libVariantOutputData.getScope().getBaseBundleDir();
 
         bundleTask.doFirst(task -> {
 
             File bundleBaseInfoFile = project.file("bundleBaseInfoFile.json");
+            File customBundleIdFile = project.file("customPackageID.txt");
+
             if (bundleBaseInfoFile.exists()) {
                 project.getLogger().warn("copy " + bundleBaseInfoFile.getAbsolutePath() + " to awb");
-                File destDir = libVariantOutputData.getScope().getBaseBundleDir();
                 try {
                     FileUtils.copyFileToDirectory(bundleBaseInfoFile, destDir);
                 } catch (IOException e) {
                     throw new GradleException(e.getMessage(), e);
                 }
             }
+
+            if (customBundleIdFile.exists()){
+                try {
+                    FileUtils.copyFileToDirectory(customBundleIdFile, destDir);
+                } catch (IOException e) {
+                    throw new GradleException(e.getMessage(), e);
+                }
+            }
+
+
+
+
         });
 
         bundleTask.doLast(task -> {

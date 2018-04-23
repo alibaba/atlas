@@ -271,7 +271,7 @@ public class PreparePackageIdsTask extends BaseTask {
 
             File customPackageIDFile = new File(awbBundle.getAndroidLibrary().getFolder(), "customPackageID.txt");
             String packageId = getCustomPackageId(customPackageIDFile);
-            if (StringUtils.isNotEmpty(packageId) && StringUtils.isNumeric(packageId)) {
+            if (StringUtils.isNotEmpty(packageId)) {
                 autoConfigMap.put(key, packageId);
             } else {
                 autoConfigMap.put(key, "");
