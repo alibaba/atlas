@@ -10,6 +10,7 @@ import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.DiffType;
 import com.taobao.android.outputs.PatchFile;
 import com.taobao.android.utils.CommandUtils;
+import com.taobao.android.utils.SystemUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -195,6 +196,8 @@ public abstract class AbstractTool {
         return null;
     }
 
+
+
     /**
      * get base apkFileList
      *
@@ -214,5 +217,6 @@ public abstract class AbstractTool {
 
         return null;
     }
+
 
 }
