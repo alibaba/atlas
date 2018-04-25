@@ -12,7 +12,7 @@ buildscript {
 }
 
 group = 'com.taobao.android'
-version = '1.1.4.18'
+version = '1.1.4.18-1'
 
 
 
@@ -34,17 +34,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_7
         targetCompatibility JavaVersion.VERSION_1_7
     }
-    defaultConfig {
-        ndk {
-            abiFilters 'armeabi'// 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64', 'mips', 'mips64'
-        }
-        sourceSets {
-            main {
-                jniLibs.srcDirs = ['src/jniLibs']
 
-            }
-        }
-    }
 
 }
 
@@ -54,10 +44,9 @@ repositories {
 }
 
 dependencies {
-    compile 'com.taobao.android:atlas_core:5.0.8.5-rc6'
+    compile 'com.taobao.android:atlas_core:5.0.8.5-rc9-1'
     compile 'io.reactivex.rxjava2:rxjava:2.0.1'
     compile 'org.reactivestreams:reactive-streams:1.0.0@jar'
-//    compile 'com.taobao.android:SoPatchLibrary:1.0.0-SNAPSHOT'
 }
 
 def siteUrl = 'https://github.com/alibaba/atlas'

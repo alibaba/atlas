@@ -8,9 +8,9 @@ import android.content.pm.ResolveInfo;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
 import android.taobao.atlas.runtime.InstrumentationHook;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
 import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.runtime.newcomponent.BridgeUtil;
-import android.taobao.atlas.runtime.newcomponent.service.ServiceBridge;
 import android.taobao.atlas.util.StringUtils;
 
 import java.lang.ref.WeakReference;
@@ -34,7 +34,7 @@ public class ActivityBridge {
                 handleActivityStack(infos.get(0).activityInfo,wrappIntent);
                 return startActivityRunnable.execStartActivity(wrappIntent);
             }else{
-                ServiceBridge.handleActivityStack(wrappIntent,infos.get(0).activityInfo,new OnIntentPreparedObserver(){
+                AdditionalActivityManagerProxy.handleActivityStack(wrappIntent,infos.get(0).activityInfo,new OnIntentPreparedObserver(){
                     @Override
                     public void onPrepared(final Intent intent) {
                         startActivityRunnable.execStartActivity(intent);
@@ -136,7 +136,7 @@ public class ActivityBridge {
                         constructor.setAccessible(true);
                         Intent o = (Intent) constructor.newInstance(originalIntent,RuntimeVariables.androidApplication.getPackageName());
                         newIntents.add(o);
-                       intent_Field.set(newIntentData,newIntents);
+                        intent_Field.set(newIntentData,newIntents);
                     }
                 }
             }
@@ -146,6 +146,7 @@ public class ActivityBridge {
 
 
     }
+
 
     public interface OnIntentPreparedObserver{
         public void onPrepared(Intent intent);

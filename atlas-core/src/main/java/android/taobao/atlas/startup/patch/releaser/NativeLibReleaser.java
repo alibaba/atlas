@@ -209,8 +209,10 @@
 package android.taobao.atlas.startup.patch.releaser;
 
 import android.os.Build;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.util.Log;
+import com.alibaba.patch.utils.PatchUtils;
 
 import java.io.*;
 import java.util.Enumeration;
@@ -222,7 +224,10 @@ import java.util.zip.ZipFile;
  */
 public class NativeLibReleaser {
 
+    private static final String SO_PATCH_SUFFIX = ".patch";
+
     public static boolean releaseLibs(File apkFile, File reversionDir) throws IOException {
+        ZipFile rawZip = new ZipFile(KernalConstants.APK_PATH);
         if (new File(reversionDir,"lib").exists()&&new File(reversionDir,"lib").listFiles().length > 0){
             return true;
         }
@@ -256,18 +261,28 @@ public class NativeLibReleaser {
                             if (!fileDirFile.exists()) {
                                 fileDirFile.mkdirs();
                             }
-                            BufferedOutputStream bos = new BufferedOutputStream(
-                                    new FileOutputStream(targetPath));
+
 
                             BufferedInputStream bi = new BufferedInputStream(bundleFile.getInputStream(zipEntry));
-                            byte[] readContent = new byte[4096];
-                            int readCount = bi.read(readContent);
-                            while (readCount != -1) {
-                                bos.write(readContent, 0, readCount);
-                                readCount = bi.read(readContent);
+                            inputStreamToFile(bi,new File(targetPath));
+                            if (entryName.endsWith(SO_PATCH_SUFFIX)){
+                                File oringalSo = new File(new File(targetPath).getParentFile(),new File(targetPath).getName().replace(SO_PATCH_SUFFIX,".old"));
+                                File newSo = new File(new File(targetPath).getParentFile(),new File(targetPath).getName().replace(SO_PATCH_SUFFIX,""));
+                                inputStreamToFile(rawZip.getInputStream(rawZip.getEntry(entryName.replace(SO_PATCH_SUFFIX,""))),oringalSo);
+                                if (!new File(targetPath).exists() || !oringalSo.exists()){
+                                    throw new IOException("maindex so merge failed! because "+targetPath + " is not exits or "+oringalSo.getAbsolutePath() + " is not exits!");
+                                }
+                                PatchUtils.patch(oringalSo.getAbsolutePath(),newSo.getAbsolutePath(),targetPath);
+                                if (!newSo.exists()){
+                                    throw new IOException("maindex so merge failed! because "+newSo + " is not exits!");
+                                }
+
+                                oringalSo.delete();
+                                new File(targetPath).delete();
+
                             }
                             isExtractionSuccessful = true;
-                            bos.close();
+
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -279,10 +294,23 @@ public class NativeLibReleaser {
                         return false;
                     }
                 }
+
             }
         }
 
         return true;
+    }
+
+    private static void inputStreamToFile(InputStream inputStream, File oringalSo) throws IOException {
+        BufferedOutputStream bos = new BufferedOutputStream(
+                new FileOutputStream(oringalSo));
+        byte[] readContent = new byte[4096];
+        int readCount = inputStream.read(readContent);
+        while (readCount != -1) {
+            bos.write(readContent, 0, readCount);
+            readCount = inputStream.read(readContent);
+        }
+        bos.close();
     }
 
     private static File mappingInternalDirectory(File revisionDir){

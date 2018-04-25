@@ -225,6 +225,10 @@ import dalvik.system.PathClassLoader;
 
 public class NClassLoader extends PathClassLoader{
 
+    public NClassLoader(String dexPath, String libraryPath, ClassLoader parent) {
+        super(dexPath, libraryPath, parent);
+    }
+
     public NClassLoader(String dexPath, ClassLoader parent) {
         super(dexPath, parent);
     }
@@ -234,7 +238,7 @@ public class NClassLoader extends PathClassLoader{
         Field pathListField = findField(original, "pathList");
         pathListField.setAccessible(true);
         Object originPathListObject = pathListField.get(original);
-
+//
         Field definingContextField = findField(originPathListObject, "definingContext");
         definingContextField.set(originPathListObject, loader);
 

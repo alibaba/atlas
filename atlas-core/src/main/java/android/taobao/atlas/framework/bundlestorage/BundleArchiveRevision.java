@@ -267,7 +267,8 @@ public class BundleArchiveRevision {
     private ZipFile      zipFile;
     private DexFile      dexFile;
     private Manifest     manifest;
-    private boolean isDexOptDone = false;
+
+    private volatile boolean isDexOptDone = false;
 
     //There is no DexFile on yunos 2.x, so we use DexClassLoader;
     private ClassLoader  dexClassLoader;
@@ -565,10 +566,17 @@ public class BundleArchiveRevision {
         return odexFile.exists() && odexFile.length() > 0;
     }
 
-
-    public synchronized void optDexFile() {
+    public /*synchronized*/ void optDexFile() {
 
         if (isDexOpted()){
+            return;
+        }
+        optDexFileLocked();
+    }
+
+    public synchronized void optDexFileLocked() {
+
+        if (isDexOpted()) {
             return;
         }
         if (AtlasHacks.LexFile != null && AtlasHacks.LexFile.getmClass() != null) {
@@ -598,11 +606,19 @@ public class BundleArchiveRevision {
                     Log.e("BundleArchiveRevision","interpretOnly = "+interpretOnly);
                     //兼容7。0 动态部署过后不同classloader下对classcast
                     dexFile = (DexFile) RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex",Context.class,String.class, String.class, int.class, boolean.class).invoke(
-                            RuntimeVariables.sDexLoadBooster,RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
+                        RuntimeVariables.sDexLoadBooster,
+                        RuntimeVariables.androidApplication,
+                        bundleFile.getAbsolutePath(),
+                        odexFile.getAbsolutePath(),
+                        0,
+                        interpretOnly);
 //                    dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
                 }else{
-                    Method m=Class.forName("android.taobao.atlas.startup.DexFileCompat")
-                            .getDeclaredMethod("loadDex", Context.class,String.class,String.class,int.class);
+                    Method m = Class.forName("android.taobao.atlas.startup.DexFileCompat").getDeclaredMethod("loadDex",
+                        Context.class,
+                        String.class,
+                        String.class,
+                        int.class);
                     dexFile= (DexFile) m.invoke(null,RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
                 }
             }

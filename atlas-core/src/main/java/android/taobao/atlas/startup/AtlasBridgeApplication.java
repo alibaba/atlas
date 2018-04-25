@@ -460,8 +460,9 @@ public class AtlasBridgeApplication extends Application{
 
         File metafile = new File(context.getFilesDir(), "storage/version_meta");
         if (metafile.exists()) {
+            DataInputStream in = null;
             try {
-                DataInputStream in = new DataInputStream(new FileInputStream(metafile));
+                in = new DataInputStream(new FileInputStream(metafile));
                 String storedVersionName = in.readUTF();
                 long   storedVersionCode = in.readLong();
                 long   storedLastUpdateTime = in.readLong();
@@ -477,7 +478,13 @@ public class AtlasBridgeApplication extends Application{
                     return false;
                 }
             }catch(Throwable e){
-                throw new RuntimeException(e);
+//                throw new RuntimeException(e);
+            }finally {
+                if(in!=null){
+                    try {
+                        in.close();
+                    }catch(Throwable e){ }
+                }
             }
         }
         return true;
@@ -502,7 +509,8 @@ public class AtlasBridgeApplication extends Application{
             throw new RuntimeException(e);
         } finally {
             try{
-                out.close();
+                if(out!=null)
+                    out.close();
             }catch (Throwable e){}
         }
     }

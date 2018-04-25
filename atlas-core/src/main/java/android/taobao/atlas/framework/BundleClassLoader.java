@@ -213,8 +213,11 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -223,8 +226,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
@@ -263,14 +268,33 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @param bundle the bundle object.
      * @throws BundleException in case of IO errors.
      */
-    BundleClassLoader(final BundleImpl bundle,List<String> dependencies,String nativeLibPath) throws BundleException {
-        super(".",null,nativeLibPath,Object.class.getClassLoader());
-        Log.e("BundleClassLoader","nativeLibPath : "+nativeLibPath);
-        if(Build.VERSION.SDK_INT>=25) {
+    BundleClassLoader(final BundleImpl bundle, List<String> dependencies, String nativeLibPath) throws BundleException {
+        super(".", null, nativeLibPath, Object.class.getClassLoader());
+        Log.e("BundleClassLoader", "nativeLibPath : " + nativeLibPath);
+        if (Build.VERSION.SDK_INT >= 27) {
+            try {
+                Class PatchClassLoaderFactory = Class.forName("com.android.internal.os.ClassLoaderFactory");
+                Method method = PatchClassLoaderFactory.getDeclaredMethod("createClassloaderNamespace",
+                    ClassLoader.class,
+                    int.class,
+                    String.class,
+                    String.class,
+                    boolean.class,
+                    boolean.class);
+                method.setAccessible(true);
+                method.invoke(PatchClassLoaderFactory, this, 24, nativeLibPath, nativeLibPath, true, false);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        } else if (Build.VERSION.SDK_INT >= 25) {
             try {
                 Class PatchClassLoaderFactory = Class.forName("com.android.internal.os.PathClassLoaderFactory");
                 Method method = PatchClassLoaderFactory.getDeclaredMethod("createClassloaderNamespace",
-                        ClassLoader.class, int.class, String.class, String.class, boolean.class);
+                    ClassLoader.class,
+                    int.class,
+                    String.class,
+                    String.class,
+                    boolean.class);
                 method.setAccessible(true);
                 method.invoke(PatchClassLoaderFactory, this, 24, nativeLibPath, nativeLibPath, true);
             } catch (Throwable e) {
@@ -278,26 +302,45 @@ public final class BundleClassLoader extends BaseDexClassLoader {
             }
         }
 
-
         this.bundle = bundle;
-        this.archive = bundle.archive;
-        this.location = bundle.location;
+        archive = bundle.archive;
+        location = bundle.location;
 
         this.dependencies = dependencies;
     }
 
-    public boolean validateClasses(){
-        if(archive == null ){
+    public boolean validateClasses() {
+        if (archive == null) {
             return false;
         }
-        if(!archive.isDexOpted()){
-            Log.e("BundleClassLoader","dexopt is failed: "+location);
+        if (!archive.isDexOpted()) {
+            Log.e("BundleClassLoader", "dexopt is failed: " + location);
             return false;
         }
         List<String> dependencies = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
-        for(String bundleName : dependencies){
+        for (String bundleName : dependencies) {
             BundleImpl dependencyBundle = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
-            if(dependencyBundle==null || dependencyBundle.getArchive()==null || !dependencyBundle.getArchive().isDexOpted()){
+            if (dependencyBundle == null || dependencyBundle.getArchive() == null || !dependencyBundle.getArchive()
+                .isDexOpted()) {
+                Log.e("BundleClassLoader",
+                    "dexopt is failed: " + dependencyBundle + ", bundleName=" + bundleName + ", dependencies="
+                        + dependencies + ", this=" + this + ", thread=" + Thread.currentThread(),
+                    new Exception());
+                // Map<String, Object> detail = new HashMap<>();
+                // detail.put("location", location);
+                // detail.put("dependencies", dependencies);
+                // detail.put("bundles", Atlas.getInstance().getBundles());
+                // detail.put("bundleName", bundleName);
+                // detail.put("dependencyBundle", dependencyBundle);
+                // if (dependencyBundle != null) {
+                //     detail.put("state", dependencyBundle.getState());
+                //     detail.put("archive", dependencyBundle.getArchive());
+                //     if (dependencyBundle.getArchive() != null) {
+                //         detail.put("dexOpted", dependencyBundle.getArchive().isDexOpted());
+                //     }
+                // }
+                // Exception e = new Exception();
+                // AtlasMonitor.getInstance().report(AtlasMonitor.VALIDATE_CLASSES, detail, e);
                 return false;
             }
         }
@@ -305,7 +348,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
     }
 
     public BundleImpl getBundle() {
-        return this.bundle;
+        return bundle;
     }
 
     private void checkEE(final String[] req, final String[] having) throws BundleException {
@@ -323,6 +366,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
 
     /**
      * 解决bundle循环依赖的问题
+     *
      * @param className
      * @return
      * @throws ClassNotFoundException
@@ -364,7 +408,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         clazz = findOwnClass(classname);
         if (clazz != null) {
 
-            if(classLoadListener!=null){
+            if (classLoadListener != null) {
                 classLoadListener.onClassLoaded(clazz);
             }
             return clazz;
@@ -382,15 +426,16 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         if (dependencies != null) {
             for (String dependencyBundle : dependencies) {
                 try {
-                    BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
-                    if(impl!=null) {
-                        impl.startBundle();
-                        clazz = ((BundleClassLoader) impl.getClassLoader()).loadOwnClass(classname);
+                    BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(dependencyBundle);
+                    if (impl != null) {
+                        clazz = ((BundleClassLoader)impl.getClassLoader()).loadOwnClass(classname);
                         if (clazz != null) {
+                            impl.startBundle();
                             return clazz;
                         }
-                    }else{
-                        Log.e("BundleClassLoader",String.format("%s is not success installed by %s",""+dependencyBundle,location));
+                    } else {
+                        Log.e("BundleClassLoader",
+                            String.format("%s is not success installed by %s", "" + dependencyBundle, location));
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
@@ -398,7 +443,9 @@ public final class BundleClassLoader extends BaseDexClassLoader {
             }
         }
 
-        throw new ClassNotFoundException("Can't find class " + classname + " in BundleClassLoader: " + bundle.getLocation());
+        throw new ClassNotFoundException(
+            "Can't find class " + classname + " in BundleClassLoader: " + bundle.getLocation() + ", dependencies="
+                + dependencies + ", thread=" + Thread.currentThread());
     }
 
     /**
@@ -414,7 +461,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
             return clazz;
         } catch (Exception e) {
             if (e instanceof BundleArchiveRevision.DexLoadException) {
-                throw (BundleArchiveRevision.DexLoadException) e;
+                throw (BundleArchiveRevision.DexLoadException)e;
             }
         }
         return null;
@@ -430,7 +477,8 @@ public final class BundleClassLoader extends BaseDexClassLoader {
     private static Class<?> findDelegatedClass(final BundleClassLoader delegation, final String classname) {
         final Class<?> clazz;
         synchronized (delegation) {
-            return ((clazz = delegation.findLoadedClass(classname)) == null) ? delegation.findOwnClass(classname) : clazz;
+            return ((clazz = delegation.findLoadedClass(classname)) == null) ? delegation.findOwnClass(classname)
+                : clazz;
         }
     }
 
@@ -450,7 +498,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         }
         try {
             results = findImportedResources(name, false);
-        }catch(NullPointerException e){
+        } catch (NullPointerException e) {
             return null;
         }
         return results.size() > 0 ? results.get(0) : null;
@@ -515,7 +563,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         }
 
         try {
-            return (String) AtlasHacks.ClassLoader_findLibrary.invoke(Framework.systemClassLoader, libraryName);
+            return (String)AtlasHacks.ClassLoader_findLibrary.invoke(Framework.systemClassLoader, libraryName);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -523,11 +571,11 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         return null;
     }
 
-    public void addRuntimeDependency(String bundleName){
-        if(dependencies==null){
+    public void addRuntimeDependency(String bundleName) {
+        if (dependencies == null) {
             dependencies = new ArrayList<String>();
         }
-        if(!dependencies.contains(bundleName)){
+        if (!dependencies.contains(bundleName)) {
             AtlasBundleInfoManager.instance().getBundleInfo(location).addRuntimeDependency(bundleName);
             dependencies.add(bundleName);
         }
@@ -572,7 +620,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         }
         final StringTokenizer tokenizer = new StringTokenizer(values, ",");
         if (tokenizer.countTokens() == 0) {
-            return new String[]{values};
+            return new String[] {values};
         }
         final String[] result = new String[tokenizer.countTokens()];
         for (int i = 0; i < result.length; i++) {
@@ -612,8 +660,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         return stripTrailing(filename).replace('.', '-').replace('/', '.').replace('\\', '.');
     }
 
-    public interface ClassLoadListener{
+    public interface ClassLoadListener {
         public void onClassLoaded(Class clazz);
     }
-
 }

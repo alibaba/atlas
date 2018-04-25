@@ -33,6 +33,7 @@ import org.osgi.framework.Bundle;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
+import java.io.File;
 
 /**
  * Utility class to create {@link ViewDataBinding} from layouts.
@@ -366,7 +367,7 @@ public class AtlasDataBindingUtil {
             String assetsPath = (String)AssetManager.class.getMethod("getCookieName", new Class[] { Integer.TYPE }).invoke(resource.getAssets(), new Object[] { Integer.valueOf(cookie) });
             if (assetsPath.endsWith(".zip"))
             {
-                bundleLocation = substringBetween(assetsPath, "/storage/", "/version.");
+                bundleLocation = substringBetween(assetsPath,"/storage/","/");
                 className = String.format("%s.%s", new Object[] { bundleLocation, "DataBinderMapper" });
             }
             else if (assetsPath.endsWith(".so"))
