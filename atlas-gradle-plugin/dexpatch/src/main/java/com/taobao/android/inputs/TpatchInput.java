@@ -18,6 +18,8 @@ public class TpatchInput extends BaseInput {
 
     public boolean createAll = false;
 
+    public boolean diffNativeSo;
+
     public File baseApkFileList;
 
     public File newApkFileList;

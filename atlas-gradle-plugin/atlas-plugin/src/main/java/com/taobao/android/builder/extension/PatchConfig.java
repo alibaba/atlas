@@ -247,6 +247,16 @@ public class PatchConfig {
 
     private boolean apForBaseFile = true;
 
+    public boolean isDiffNativeSo() {
+        return diffNativeSo;
+    }
+
+    public void setDiffNativeSo(boolean diffNativeSo) {
+        this.diffNativeSo = diffNativeSo;
+    }
+
+    private boolean diffNativeSo = false;
+
     public Set<String> getJ2cPatchClasses() {
         return j2cPatchClasses;
     }

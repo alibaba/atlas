@@ -1098,7 +1098,7 @@ public class TPatchTool extends AbstractTool {
                         if (destFile.exists()){
                             FileUtils.deleteQuietly(destFile);
                         }
-                        if (!baseSoFile.exists()) {
+                        if (!baseSoFile.exists()||!((TpatchInput) input).diffNativeSo) {
                             //新增
                             FileUtils.copyFile(soFile, destFile);
                         }else {
