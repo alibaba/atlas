@@ -1,8 +1,10 @@
 package com.taobao.android.utils;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.gradle.internal.io.IoUtils;
 
-import java.io.File;
+import java.io.*;
 
 /**
  * SystemUtils
@@ -29,8 +31,33 @@ public class SystemUtils {
         }
         String diffPath = osName + "/" + fileName;
 
-        return new File(SystemUtils.class.getClassLoader().getResource(diffPath).getFile());
+        File temp = new File(new File(SystemUtils.class.getProtectionDomain().getCodeSource().getLocation().getFile()).getParentFile(),fileName);
+        FileOutputStream fileOutputStream = null;
+        InputStream inputStream = null;
+        try {
+
+            fileOutputStream = new FileOutputStream(temp);
+
+             inputStream = SystemUtils.class.getClassLoader().getResourceAsStream(diffPath);
+
+            IOUtils.copy(inputStream,fileOutputStream);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            IOUtils.closeQuietly(inputStream);
+            IOUtils.closeQuietly(fileOutputStream);
+
+        }
+
+//        File tempFile = new File(workingDir,)
+        return temp;
+
+
+
+//        return new File(SystemUtils.class.getClassLoader().getResourceAsStream(diffPath).getFile());
     }
+
 
 
     public static File getPatchFile() {
@@ -49,6 +76,28 @@ public class SystemUtils {
         }
         String diffPath = osName + "/" + fileName;
 
-        return new File(SystemUtils.class.getClassLoader().getResource(diffPath).getFile());
+        InputStream in = null;
+        FileOutputStream fileOutputStream = null;
+
+        File temp = new File(new File(SystemUtils.class.getProtectionDomain().getCodeSource().getLocation().getFile()).getParentFile(),fileName);
+
+        try {
+
+            fileOutputStream = new FileOutputStream(temp);
+
+            in = SystemUtils.class.getClassLoader().getResourceAsStream(diffPath);
+
+            IOUtils.copy(in,fileOutputStream);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            IOUtils.closeQuietly(in);
+            IOUtils.closeQuietly(fileOutputStream);
+
+        }
+
+
+        return  temp;
     }
 }

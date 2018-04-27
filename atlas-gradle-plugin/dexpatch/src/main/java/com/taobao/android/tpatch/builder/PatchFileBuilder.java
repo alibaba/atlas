@@ -504,7 +504,7 @@ public class PatchFileBuilder {
         }
     }
 
-    private void genHisSoPatch(FileDef hisFileDef, File destFile) {
+    private void genHisSoPatch(FileDef hisFileDef, File destFile) throws IOException {
         if (TPatchTool.soFileDefs.size() > 0) {
             for (SoFileDef soFileDef : TPatchTool.soFileDefs) {
                 if (soFileDef.patchFile.getName().equals(hisFileDef.file.getName())) {

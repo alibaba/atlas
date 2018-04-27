@@ -1094,7 +1094,6 @@ public class TPatchTool extends AbstractTool {
                         processBundleFiles(soFile, baseSoFile, patchTmpDir);
 
                     } else if (isFileModify(soFile, baseSoFile)) {
-                        destFile = new File(destFile.getParentFile(),destFile.getName()+".patch");
                         if (destFile.exists()){
                             FileUtils.deleteQuietly(destFile);
                         }
@@ -1102,6 +1101,7 @@ public class TPatchTool extends AbstractTool {
                             //新增
                             FileUtils.copyFile(soFile, destFile);
                         }else {
+                            destFile = new File(destFile.getParentFile(),destFile.getName()+".patch");
                             SoDiffUtils.diffSo(patchTmpDir,baseSoFile,soFile,destFile);
                             soFileDefs.add(new SoFileDef(baseSoFile,soFile,destFile));
 
@@ -1222,6 +1222,7 @@ public class TPatchTool extends AbstractTool {
     }
 
     public static void main(String[]args) throws IOException {
+        TPatchTool.class.getProtectionDomain().getCodeSource().getLocation();
         File workingDir = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3");
         File oldFile = new File("/Users/lilong/Documents/main_builder/aa/lib/armeabi/libalinnkit-v7a.so");
         File newFile = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3/libcom_taobao_maindex/lib/armeabi/libalinnkit-v7a.so");

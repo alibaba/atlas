@@ -1,4 +1,4 @@
-package com.alibaba.patch.utils;
+package com.alibaba.patch;
 
 
 public class PatchUtils {

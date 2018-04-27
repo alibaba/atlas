@@ -212,7 +212,7 @@ import android.os.Build;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.util.Log;
-import com.alibaba.patch.utils.PatchUtils;
+import com.alibaba.patch.PatchUtils;
 
 import java.io.*;
 import java.util.Enumeration;
@@ -272,9 +272,11 @@ public class NativeLibReleaser {
                                 if (!new File(targetPath).exists() || !oringalSo.exists()){
                                     throw new IOException("maindex so merge failed! because "+targetPath + " is not exits or "+oringalSo.getAbsolutePath() + " is not exits!");
                                 }
-                                PatchUtils.patch(oringalSo.getAbsolutePath(),newSo.getAbsolutePath(),targetPath);
-                                if (!newSo.exists()){
+                                int ret = PatchUtils.patch(oringalSo.getAbsolutePath(),newSo.getAbsolutePath(),targetPath);
+                                if (!newSo.exists()||ret!=0){
                                     throw new IOException("maindex so merge failed! because "+newSo + " is not exits!");
+                                }else {
+                                    Log.e("NativeLibReleaser","merge so success!"+newSo.getAbsolutePath());
                                 }
 
                                 oringalSo.delete();
