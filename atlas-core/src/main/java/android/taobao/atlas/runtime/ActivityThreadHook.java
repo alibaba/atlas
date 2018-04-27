@@ -217,9 +217,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import android.app.IActivityManager;
 import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
@@ -310,6 +313,11 @@ public class ActivityThreadHook implements Handler.Callback{
             if (e instanceof ClassNotFoundException || e.toString().contains("ClassNotFoundException")) {
                 //RECEIVER 参见ActivityThread
                 if(msg.what == 113 || msg.what==114) {
+                    handleCreateServiceException(msg, e);
+                    Map<String, Object> detail = new HashMap<>();
+                    detail.put("msg", msg);
+                    AtlasMonitor.getInstance().report(AtlasMonitor.ACTIVITY_THREAD_HOOK_CLASS_NOT_FOUND_EXCEPTION, detail, e);
+
                     return true;
                 }
                 Object loadedapk = AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,
@@ -334,7 +342,7 @@ public class ActivityThreadHook implements Handler.Callback{
 
                     Map<String, Object> detail = new HashMap<>();
                     detail.put("mActivities", mActivities);
-                    AtlasMonitor.getInstance().report(AtlasMonitor.ACTIVITY_THREAD_HOOK, detail, e);
+                    AtlasMonitor.getInstance().report(AtlasMonitor.ACTIVITY_THREAD_HOOK_BAD_TOKEN_EXCEPTION, detail, e);
 
                     // throw new RuntimeException("mActivities=" + mActivities, e);
                     return true;
@@ -360,6 +368,30 @@ public class ActivityThreadHook implements Handler.Callback{
         }
         return true;
 
+    }
+
+    private void handleCreateServiceException(final Message msg, Throwable e) {
+        if (msg.what == 114) {
+            try {
+                Object gDefault = null;
+                if (Build.VERSION.SDK_INT > 25 || (Build.VERSION.SDK_INT == 25 && Build.VERSION.PREVIEW_SDK_INT > 0)) {
+                    gDefault
+                        = AtlasHacks.ActivityManager_IActivityManagerSingleton.get(AtlasHacks.ActivityManager.getmClass());
+                } else {
+                    gDefault
+                        = AtlasHacks.ActivityManagerNative_gDefault.get(AtlasHacks.ActivityManagerNative.getmClass());
+                }
+                gDefault = AtlasHacks.Singleton_mInstance.get(gDefault);
+                IActivityManager am = (IActivityManager)gDefault;
+                Class ReceiverData = Class.forName("android.app.ActivityThread$CreateServiceData");
+                final Field token_field = ReceiverData.getDeclaredField("token");
+                token_field.setAccessible(true);
+                final IBinder token = (IBinder)token_field.get(msg.obj);
+                am.serviceDoneExecuting(token, 0, 0, 0);
+            } catch (Throwable e1) {
+                e1.printStackTrace();
+            }
+        }
     }
 
     /**
