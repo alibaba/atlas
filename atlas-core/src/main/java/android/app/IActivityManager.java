@@ -23,8 +23,7 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcel;
 import android.os.Parcelable;
-
-
+import android.os.RemoteException;
 
 public interface IActivityManager extends IInterface {
     /** Information you can retrieve about a particular application. */
@@ -72,4 +71,7 @@ public interface IActivityManager extends IInterface {
             info = ProviderInfo.CREATOR.createFromParcel(source);
         }
     }
+    /* oneway */
+    public void serviceDoneExecuting(IBinder token, int type, int startId,
+                                     int res) throws RemoteException;
 }
