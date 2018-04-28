@@ -213,6 +213,8 @@ import java.sql.Date;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.UnaryOperator;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -468,7 +470,18 @@ public class TPatchTool extends AbstractTool {
                         baseBundleResFile,
                         bundleName,
                         resPath)) { // modify resource
-                    FileUtils.copyFile(newBundleResFile, destResFile);
+                    if (baseBundleResFile.getName().endsWith(".so")){
+                        if (((TpatchInput)input).diffNativeSo && ((TpatchInput) input).diffBundleSo){
+                            destResFile = new File(destPatchBundleDir,resPath.concat(".patch"));
+                            SoDiffUtils.diffSo(baseBundleResFile.getParentFile(),baseBundleResFile,newBundleResFile,destResFile);
+
+                        }else {
+                            FileUtils.copyFile(newBundleResFile, destResFile);
+                        }
+
+                    }else {
+                        FileUtils.copyFile(newBundleResFile, destResFile);
+                    }
                 }
             } else {// new resource
                 FileUtils.copyFile(newBundleResFile, destResFile);
@@ -1222,19 +1235,21 @@ public class TPatchTool extends AbstractTool {
     }
 
     public static void main(String[]args) throws IOException {
-        TPatchTool.class.getProtectionDomain().getCodeSource().getLocation();
-        File workingDir = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3");
-        File oldFile = new File("/Users/lilong/Documents/main_builder/aa/lib/armeabi/libalinnkit-v7a.so");
-        File newFile = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3/libcom_taobao_maindex/lib/armeabi/libalinnkit-v7a.so");
-        File patchFile = new File("/Users/lilong/Downloads/libalinnkit-v7a.so.patch");
-        File new2File = new File("/Users/lilong/Downloads/libalinnkit-v7a.so");
-        File bsDiffFile = new File(TPatchTool.class.getClassLoader().getResource("mac/bsdiff").getFile());
-        File bsPatchFile = new File(TPatchTool.class.getClassLoader().getResource("mac/bspatch").getFile());
 
-        CommandUtils.exec(workingDir,bsDiffFile.getAbsolutePath()+ " "+oldFile.getAbsolutePath() + " "+newFile.getAbsolutePath()+" "+patchFile.getAbsolutePath());
-        CommandUtils.exec(workingDir,bsPatchFile.getAbsolutePath()+" "+oldFile.getAbsolutePath() + " "+new2File.getAbsolutePath()+" "+patchFile.getAbsolutePath());
 
-        assert MD5Util.getFileMD5String(new2File).equals(MD5Util.getFileMD5String(newFile));
+//        TPatchTool.class.getProtectionDomain().getCodeSource().getLocation();
+//        File workingDir = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3");
+//        File oldFile = new File("/Users/lilong/Documents/main_builder/aa/lib/armeabi/libalinnkit-v7a.so");
+//        File newFile = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3/libcom_taobao_maindex/lib/armeabi/libalinnkit-v7a.so");
+//        File patchFile = new File("/Users/lilong/Downloads/libalinnkit-v7a.so.patch");
+//        File new2File = new File("/Users/lilong/Downloads/libalinnkit-v7a.so");
+//        File bsDiffFile = new File(TPatchTool.class.getClassLoader().getResource("mac/bsdiff").getFile());
+//        File bsPatchFile = new File(TPatchTool.class.getClassLoader().getResource("mac/bspatch").getFile());
+//
+//        CommandUtils.exec(workingDir,bsDiffFile.getAbsolutePath()+ " "+oldFile.getAbsolutePath() + " "+newFile.getAbsolutePath()+" "+patchFile.getAbsolutePath());
+//        CommandUtils.exec(workingDir,bsPatchFile.getAbsolutePath()+" "+oldFile.getAbsolutePath() + " "+new2File.getAbsolutePath()+" "+patchFile.getAbsolutePath());
+//
+//        assert MD5Util.getFileMD5String(new2File).equals(MD5Util.getFileMD5String(newFile));
     }
 
 }

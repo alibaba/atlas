@@ -17,6 +17,5 @@ public class PatchUtils {
 	 * @param patchPath  示例:/sdcard/xx.patch
 	 * @return
 	 */
-	public static native int patch(String oldSoPath, String newSoPath,
-			String patchPath);
+	public static native int applyPatch(String oldSoPath, String newSoPath, String patchPath);
 }

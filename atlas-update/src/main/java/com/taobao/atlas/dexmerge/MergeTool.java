@@ -1,7 +1,7 @@
 package com.taobao.atlas.dexmerge;
 
 import android.util.Log;
-import com.alibaba.patch.utils.PatchUtils;
+import com.alibaba.patch.PatchUtils;
 import com.taobao.atlas.dex.ClassDef;
 import com.taobao.atlas.dex.Dex;
 import com.taobao.atlas.dex.ProtoId;
@@ -11,6 +11,7 @@ import com.taobao.atlas.dexmerge.dx.merge.DexMerger;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -132,10 +133,10 @@ public class MergeTool {
         return dex;
     }
 
-    private static boolean isBundleFileUpdated(ZipEntry sourceEntry, List<ZipEntry> entryList, ZipEntry patchEntry) {
+    private static boolean isBundleFileUpdated(ZipEntry sourceEntry, List<ZipEntry> entryList, AtomicReference patchEntry) {
         for (ZipEntry entry : entryList) {
             if (entry.getName().contains(sourceEntry.getName())) {
-                patchEntry = entry;
+                patchEntry.compareAndSet(null,entry);
                 return true;
             }
         }
@@ -156,7 +157,7 @@ public class MergeTool {
         ZipEntry originalDex = null;
         ZipEntry patchDex = null;
         File outDex;
-
+        AtomicReference<ZipEntry>zipEntryAtomicReference = new AtomicReference<>();
         while (e.hasMoreElements()) {
             ZipEntry zipEnt = (ZipEntry) e.nextElement();
             String name = zipEnt.getName();
@@ -169,8 +170,7 @@ public class MergeTool {
                 continue;
             }
 
-            ZipEntry zipEntry = null;
-            boolean toBeDeleted = isBundleFileUpdated(zipEnt, entryList, zipEntry);
+            boolean toBeDeleted = isBundleFileUpdated(zipEnt, entryList, zipEntryAtomicReference);
             if (!toBeDeleted) {
 
                 ZipEntry newEntry = new ZipEntry(name);
@@ -193,7 +193,7 @@ public class MergeTool {
                 bo.flush();
 
             }
-            if (toBeDeleted && zipEnt.getName().endsWith(SO_SUFFIX) && zipEntry != null) {
+            if (toBeDeleted && zipEnt.getName().endsWith(SO_SUFFIX) && zipEntryAtomicReference.get() != null && zipEntryAtomicReference.get().getName().endsWith(".patch")) {
                 File oringalOut = new File(target.getParentFile(), zipEnt.getName());
                 File patchOut = new File(target.getParentFile(), zipEnt.getName() + ".patch");
                 File newFileOut = new File(target.getParentFile(), zipEnt.getName() + ".new.so");
@@ -201,15 +201,15 @@ public class MergeTool {
                     oringalOut.getParentFile().mkdirs();
                 }
                 inputStreamToFile(source.getInputStream(zipEnt), oringalOut);
-                inputStreamToFile(MergeExcutorServices.sZipPatch.getInputStream(zipEntry), patchOut);
+                inputStreamToFile(MergeExcutorServices.sZipPatch.getInputStream(zipEntryAtomicReference.get()), patchOut);
                 errorCheck(oringalOut, patchOut);
-                PatchUtils.patch(oringalOut.getAbsolutePath(), newFileOut.getAbsolutePath(), patchOut.getAbsolutePath());
+                PatchUtils.applyPatch(oringalOut.getAbsolutePath(), newFileOut.getAbsolutePath(), patchOut.getAbsolutePath());
                 errorCheck(newFileOut);
                 if (!oringalOut.delete() || !newFileOut.renameTo(oringalOut)) {
                     throw new IOException("file deleted failed or file rename failed:" + oringalOut.getAbsolutePath() + " " + newFileOut.getAbsolutePath());
                 }
 
-                entryList.remove(zipEntry);
+                entryList.remove(zipEntryAtomicReference.getAndSet(null));
                 out.putNextEntry(new ZipEntry(zipEnt.getName()));
                 write(new BufferedInputStream(new FileInputStream(oringalOut)), out, buffer);
             }
@@ -240,6 +240,7 @@ public class MergeTool {
                 isPatchHasDex = true;
                 continue;
             }
+
             ZipEntry newEntry = null;
             if (MergeExcutorServices.os == MergeExcutorServices.OS.mac) {
                 newEntry = new ZipEntry(entry.getName().substring(entry.getName().indexOf("/") + 1));

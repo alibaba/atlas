@@ -228,23 +228,23 @@ public class NativeLibReleaser {
 
     public static boolean releaseLibs(File apkFile, File reversionDir) throws IOException {
         ZipFile rawZip = new ZipFile(KernalConstants.APK_PATH);
-        if (new File(reversionDir,"lib").exists()&&new File(reversionDir,"lib").listFiles().length > 0){
+        if (new File(reversionDir, "lib").exists() && new File(reversionDir, "lib").listFiles().length > 0) {
             return true;
         }
         ZipFile bundleFile = new ZipFile(apkFile);
         String extractTag = "lib/armeabi";
-        if(Build.CPU_ABI.contains("x86")){
-            if(bundleFile.getEntry("lib/x86/")!=null){
+        if (Build.CPU_ABI.contains("x86")) {
+            if (bundleFile.getEntry("lib/x86/") != null) {
                 extractTag = "lib/x86";
             }
         }
         for (Enumeration entries = bundleFile.entries(); entries.hasMoreElements(); ) {
-            ZipEntry zipEntry = (ZipEntry)entries.nextElement();
+            ZipEntry zipEntry = (ZipEntry) entries.nextElement();
             String entryName = zipEntry.getName();
-            if(entryName.startsWith(extractTag) && !entryName.equalsIgnoreCase("../")) {
+            if (entryName.startsWith(extractTag) && !entryName.equalsIgnoreCase("../")) {
                 int numAttempts = 0;
                 boolean isExtractionSuccessful = false;
-                while(numAttempts<3 && !isExtractionSuccessful) {
+                while (numAttempts < 3 && !isExtractionSuccessful) {
                     numAttempts++;
                     try {
                         String targetPath = String.format("%s%s%s%s%s", mappingInternalDirectory(reversionDir), File.separator, "lib", File.separator,
@@ -262,26 +262,31 @@ public class NativeLibReleaser {
                                 fileDirFile.mkdirs();
                             }
 
-
                             BufferedInputStream bi = new BufferedInputStream(bundleFile.getInputStream(zipEntry));
-                            inputStreamToFile(bi,new File(targetPath));
-                            if (entryName.endsWith(SO_PATCH_SUFFIX)){
-                                File oringalSo = new File(new File(targetPath).getParentFile(),new File(targetPath).getName().replace(SO_PATCH_SUFFIX,".old"));
-                                File newSo = new File(new File(targetPath).getParentFile(),new File(targetPath).getName().replace(SO_PATCH_SUFFIX,""));
-                                inputStreamToFile(rawZip.getInputStream(rawZip.getEntry(entryName.replace(SO_PATCH_SUFFIX,""))),oringalSo);
-                                if (!new File(targetPath).exists() || !oringalSo.exists()){
-                                    throw new IOException("maindex so merge failed! because "+targetPath + " is not exits or "+oringalSo.getAbsolutePath() + " is not exits!");
+                            inputStreamToFile(bi, new File(targetPath));
+                            if (entryName.endsWith(SO_PATCH_SUFFIX)) {
+                                String soName = new File(targetPath).getName().replace(SO_PATCH_SUFFIX, "");
+                                File oringalSo = findBaseSo(soName, entryName, rawZip, targetPath);
+                                Log.e("NativeLibReleaser", "oringal so-->" + oringalSo.getAbsolutePath());
+
+                                File newSo = new File(new File(targetPath).getParentFile(), new File(targetPath).getName().replace(SO_PATCH_SUFFIX, ""));
+                                if (!new File(targetPath).exists() || !oringalSo.exists()) {
+                                    throw new IOException("maindex so merge failed! because " + targetPath + " is not exits or " + oringalSo.getAbsolutePath() + " is not exits!");
                                 }
-                                int ret = PatchUtils.patch(oringalSo.getAbsolutePath(),newSo.getAbsolutePath(),targetPath);
-                                if (!newSo.exists()||ret!=0){
-                                    throw new IOException("maindex so merge failed! because "+newSo + " is not exits!");
-                                }else {
-                                    Log.e("NativeLibReleaser","merge so success!"+newSo.getAbsolutePath());
+                                long start = System.currentTimeMillis();
+                                int ret = PatchUtils.applyPatch(oringalSo.getAbsolutePath(), newSo.getAbsolutePath(), targetPath);
+                                Log.e("NativeLibReleaser", "merge so-->" + newSo.getAbsolutePath() + " cost:" + String.valueOf(System.currentTimeMillis() - start));
+                                if (!newSo.exists() || ret != 0) {
+                                    throw new IOException("maindex so merge failed! because " + newSo + " is not exits!");
+                                } else {
+                                    Log.e("NativeLibReleaser", "merge so success!" + newSo.getAbsolutePath());
                                 }
 
-                                oringalSo.delete();
+                                //if delete failed, it doesn't matter,so we consider success.
+                                if (oringalSo.canWrite()) {
+                                    oringalSo.delete();
+                                }
                                 new File(targetPath).delete();
-
                             }
                             isExtractionSuccessful = true;
 
@@ -291,7 +296,7 @@ public class NativeLibReleaser {
                         return false;
                     }
                 }
-                if(!zipEntry.isDirectory()) {
+                if (!zipEntry.isDirectory()) {
                     if (!isExtractionSuccessful) {
                         return false;
                     }
@@ -301,6 +306,18 @@ public class NativeLibReleaser {
         }
 
         return true;
+    }
+
+    private static File findBaseSo(String soName, String entryName, ZipFile rawZip, String targetPath) throws IOException {
+        File libDir = new File(RuntimeVariables.androidApplication.getFilesDir().getParentFile(), "lib");
+        if (new File(libDir, soName).exists() && new File(libDir,soName).canRead()) {
+            return new File(libDir, soName);
+        } else {
+            File oringalSo = new File(new File(targetPath).getParentFile(), new File(targetPath).getName().replace(SO_PATCH_SUFFIX, ".old"));
+            inputStreamToFile(rawZip.getInputStream(rawZip.getEntry(entryName.replace(SO_PATCH_SUFFIX, ""))), oringalSo);
+            return oringalSo;
+        }
+
     }
 
     private static void inputStreamToFile(InputStream inputStream, File oringalSo) throws IOException {
@@ -315,24 +332,24 @@ public class NativeLibReleaser {
         bos.close();
     }
 
-    private static File mappingInternalDirectory(File revisionDir){
-        if(!revisionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())){
-            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(),String.format("storage/com.taobao.maindex_internal/%s",revisionDir.getName()));
+    private static File mappingInternalDirectory(File revisionDir) {
+        if (!revisionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())) {
+            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(), String.format("storage/com.taobao.maindex_internal/%s", revisionDir.getName()));
             int retryCount = 2;
-            do{
-                if(!internalLibDir.exists()){
+            do {
+                if (!internalLibDir.exists()) {
                     internalLibDir.mkdirs();
                 }
-                if(internalLibDir.exists()){
+                if (internalLibDir.exists()) {
                     break;
                 }
                 retryCount--;
-            }while(retryCount>0);
-            if(!internalLibDir.exists()){
-                Log.e("BundleArchiveRevision","create internal LibDir Failed : com.taobao.maindex");
+            } while (retryCount > 0);
+            if (!internalLibDir.exists()) {
+                Log.e("BundleArchiveRevision", "create internal LibDir Failed : com.taobao.maindex");
             }
             return internalLibDir;
-        }else{
+        } else {
             return revisionDir;
         }
     }

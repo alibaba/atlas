@@ -44,7 +44,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.taobao.android:atlas_core:5.0.8.5-rc9-1'
+    compile 'com.taobao.android:atlas_core:5.0.8.5-rc9-10'
     compile 'io.reactivex.rxjava2:rxjava:2.0.1'
     compile 'org.reactivestreams:reactive-streams:1.0.0@jar'
 }
