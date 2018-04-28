@@ -66,7 +66,7 @@ public class AtlasD8DexArchiveBuilder extends DexArchiveBuilder{
             }
 
             builder.setOutputPath(output);
-            D8.run(builder.build(), MoreExecutors.newDirectExecutorService());
+            AtlasD8.run(builder.build(), MoreExecutors.newDirectExecutorService());
         } catch (Throwable e) {
             throw new DexArchiveBuilderException(e);
         }
