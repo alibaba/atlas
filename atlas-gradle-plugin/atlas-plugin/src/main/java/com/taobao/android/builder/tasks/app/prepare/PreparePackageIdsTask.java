@@ -213,7 +213,19 @@ package com.taobao.android.builder.tasks.app.prepare;
  * Created by wuzhong on 16/6/13.
  */
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
 import com.alibaba.fastjson.JSON;
+
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -227,10 +239,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
 
 /**
  * Distribution packageId
@@ -287,7 +295,7 @@ public class PreparePackageIdsTask extends BaseTask {
             for (String key : keys) {
                 if ("".equals(autoConfigMap.get(key))) {
 
-                    for (int i = minPackageId; i <= 127; i++) {
+                    for (int i = minPackageId; i </*=*/ 127; i++) {
                         if (!autoConfigMap.values().contains(String.valueOf(i))) {
                             autoConfigMap.put(key, String.valueOf(i));
                             break;

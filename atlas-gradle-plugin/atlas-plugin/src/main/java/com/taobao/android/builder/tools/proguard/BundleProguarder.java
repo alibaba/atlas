@@ -433,6 +433,7 @@ public class BundleProguarder {
         configuration.obfuscate = false;
         configuration.shrink = true;
         configuration.optimizationPasses = 1;
+
         configuration.printUsage = input.printUsage;
         configuration.printMapping = input.printMapping;
 

@@ -26,6 +26,7 @@ import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.tools.r8.AtlasD8DexArchiveBuilder;
 import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.*;
@@ -246,8 +247,13 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 cacheHandler.populateCache(cacheItems);
             }
 
+            if (variantContext.getScope().getMainDexListFile().exists()){
+                variantContext.getScope().getMainDexListFile().delete();
+            }
+
         }catch (Exception e){
             e.printStackTrace();
+            throw new IOException(e.getMessage());
         }
 
 
@@ -345,7 +351,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
         if (cachedVersion == null) {
             logger.info("AtlasDexArchiveBuilder miss cache:"+toConvert.getFile().getAbsolutePath()+"-> null");
 
-            return convertAwbToDexArchive(context, toConvert, transformOutputProvider, false);
+            return convertAwbToDexArchive(context, toConvert, transformOutputProvider, false,true);
         } else {
             logger.info("AtlasDexArchiveBuilder hit cache:"+toConvert.getFile().getAbsolutePath()+"->"+cachedVersion.getAbsolutePath());
             File outputFile = getAwbPreDexJar(transformOutputProvider, toConvert, null);
@@ -373,6 +379,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
         private final DexerTool dexer;
         private final boolean isDebuggable;
         private final boolean isIncremental;
+        private final boolean awb;
 
         public DexConversionParameters(
                 QualifiedContent input,
@@ -385,7 +392,8 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 int outBufferSize,
                 DexerTool dexer,
                 boolean isDebuggable,
-                boolean isIncremental) {
+                boolean isIncremental,
+                boolean awb) {
             this.input = input;
             this.numberOfBuckets = numberOfBuckets;
             this.buckedId = buckedId;
@@ -397,6 +405,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
             this.dexer = dexer;
             this.isDebuggable = isDebuggable;
             this.isIncremental = isIncremental;
+            this.awb = awb;
         }
 
         public boolean belongsToThisBucket(String path) {
@@ -408,32 +417,15 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
         }
     }
 
-    public static class DexConversionWorkAction implements Runnable {
 
-        private final AtlasDexArchiveBuilderTransform.DexConversionParameters dexConversionParameters;
-
-        @Inject
-        public DexConversionWorkAction(AtlasDexArchiveBuilderTransform.DexConversionParameters dexConversionParameters) {
-            this.dexConversionParameters = dexConversionParameters;
-        }
-
-        @Override
-        public void run() {
-            try {
-                launchProcessing(dexConversionParameters, System.out, System.err);
-            } catch (Exception e) {
-                throw new BuildException(e.getMessage(), e);
-            }
-        }
-    }
-
-    private static DexArchiveBuilder getDexArchiveBuilder(
+    private DexArchiveBuilder getDexArchiveBuilder(
             int minSdkVersion,
             List<String> dexAdditionalParameters,
             int inBufferSize,
             int outBufferSize,
             DexerTool dexer,
             boolean isDebuggable,
+            boolean awb,
             OutputStream outStream,
             OutputStream errStream)
             throws IOException {
@@ -457,7 +449,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 break;
             case D8:
                 dexArchiveBuilder =
-                        DexArchiveBuilder.createD8DexBuilder(minSdkVersion, isDebuggable);
+                        new AtlasD8DexArchiveBuilder(minSdkVersion,isDebuggable,AtlasDexArchiveBuilderTransform.this.variantContext.getScope().getMainDexListFile().toPath(),awb);
                 break;
             default:
                 throw new AssertionError("Unknown dexer type: " + dexer.name());
@@ -494,7 +486,8 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                             outBufferSize,
                             dexer,
                             isDebuggable,
-                            isIncremental);
+                            isIncremental,
+                            false);
 
             if (useGradleWorkers) {
                 context.getWorkerExecutor()
@@ -537,7 +530,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
     }
 
 
-    private static void launchProcessing(
+    private void launchProcessing(
             @NonNull AtlasDexArchiveBuilderTransform.DexConversionParameters dexConversionParameters,
             @NonNull OutputStream outStream,
             @NonNull OutputStream errStream)
@@ -550,6 +543,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                         dexConversionParameters.outBufferSize,
                         dexConversionParameters.dexer,
                         dexConversionParameters.isDebuggable,
+                        dexConversionParameters.awb,
                         outStream,
                         errStream);
 
@@ -624,7 +618,8 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
             @NonNull Context context,
             @NonNull QualifiedContent input,
             @NonNull File outputProvider,
-            boolean isIncremental)
+            boolean isIncremental,
+            boolean awb)
             throws Exception {
 
         int count = 0;
@@ -658,7 +653,8 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                             outBufferSize,
                             dexer,
                             isDebuggable,
-                            false);
+                            false,
+                            awb);
 
             if (useGradleWorkers) {
                 context.getWorkerExecutor()
@@ -761,7 +757,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                     convertAwbToDexArchive(
                             transformInvocation.getContext(),
                             qualifiedContent, variantContext.getAwbDexAchiveOutput(awbBundle), transformInvocation.isIncremental()
-                    );
+                    ,true);
 //                    cacheableItems.putAll(qualifiedContent, folderFiles);
 
                 } else {
