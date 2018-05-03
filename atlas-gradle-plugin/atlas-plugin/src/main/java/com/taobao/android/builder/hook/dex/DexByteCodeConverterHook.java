@@ -116,7 +116,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 //
 //    }
     @Override
-    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
+    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException{
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 variantContext.getVariantName());
 
@@ -169,6 +169,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                 }
 
                             } catch (Exception e) {
+                                throw new ProcessException(e.getMessage());
 
                             }
                             return null;
@@ -201,7 +202,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                         future.get();
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    throw new ProcessException(e.getMessage());
                 }
 
         } else {
@@ -221,14 +222,14 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                 DexByteCodeConverterHook.super.convertByteCode(Arrays.asList(file), outPutFolder, true, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
 
             }
-            try {
 
                 for (Future future : futureList) {
-                    future.get();
+                    try {
+                        future.get();
+                    } catch (ExecutionException e) {
+                        throw new ProcessException(e.getMessage());
+                    }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
 
             List<Path> dexPaths = new ArrayList<>();
@@ -241,7 +242,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             try {
                 atlasDexArchiveMerger.mergeDexArchives(dexPaths, outDexFolder.toPath(), mainDexList.toPath(), DexingType.LEGACY_MULTIDEX);
             } catch (DexArchiveMergerException e) {
-                e.printStackTrace();
+                throw new ProcessException(e.getMessage());
             }
 
         }
