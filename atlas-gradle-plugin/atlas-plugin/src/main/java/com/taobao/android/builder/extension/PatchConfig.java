@@ -298,6 +298,17 @@ public class PatchConfig {
 
     private Boolean devlopMode = false;
 
+
+    public boolean isDiffBundleSo() {
+        return diffBundleSo;
+    }
+
+    public void setDiffBundleSo(boolean diffBundleSo) {
+        this.diffBundleSo = diffBundleSo;
+    }
+
+    private boolean diffBundleSo = false;
+
     private boolean onlyIncrementInMain = true;
 
     private boolean onlyIncrementInAwb = true;
