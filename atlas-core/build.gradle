@@ -69,6 +69,8 @@ tasks.whenTaskAdded {task ->
             new File(task.getDestinationDir(),"android/app/IActivityManager\$ContentProviderHolder.class").delete();
             new File(task.getDestinationDir(),"android/app/IActivityManager\$ContentProviderHolder\$1.class").delete();
             new File(task.getDestinationDir(),"android/app/IActivityManager\$1.class").delete();
+            new File(task.getDestinationDir(), "android/app/ContentProviderHolder.class").delete();
+            new File(task.getDestinationDir(), "android/app/ContentProviderHolder\$1.class").delete();
             new File(task.getDestinationDir(),"android/app/IServiceConnection.class").delete();
             new File(task.getDestinationDir(),"android/app/IServiceConnection\$Stub.class").delete();
             new File(task.getDestinationDir(),"android/app/IServiceConnection\$Stub\$Proxy.class").delete();
