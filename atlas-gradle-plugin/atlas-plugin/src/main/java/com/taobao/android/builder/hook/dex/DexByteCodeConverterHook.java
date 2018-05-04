@@ -169,6 +169,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                 }
 
                             } catch (Exception e) {
+                                throw new ProcessException(e);
 
                             }
                             return null;
@@ -201,7 +202,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                         future.get();
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    throw new ProcessException(e);
                 }
 
         } else {
@@ -227,7 +228,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                     future.get();
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new ProcessException(e);
             }
 
 
@@ -241,7 +242,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             try {
                 atlasDexArchiveMerger.mergeDexArchives(dexPaths, outDexFolder.toPath(), mainDexList.toPath(), DexingType.LEGACY_MULTIDEX);
             } catch (DexArchiveMergerException e) {
-                e.printStackTrace();
+                throw new ProcessException(e);
             }
 
         }
