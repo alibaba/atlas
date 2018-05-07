@@ -289,9 +289,15 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
         ConfigurableFileCollection oldConfigurableFileCollection = (ConfigurableFileCollection) ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
                 "configurationFiles");
-//        defaultProguardFiles.addAll(
-//                appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
-        defaultProguardFiles.addAll(oldConfigurableFileCollection.getFiles());
+
+        //原本官方支持consumerproguardFiles,但是在手淘环境下，业务方胡乱配置优化参数，会导致各种问题，所以在fastprogaurd情况下,我们认为consumerproguardfiles无效，只能在app工程下统一配置proguard
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard()) {
+            defaultProguardFiles.addAll(
+                    appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
+        }else {
+                    defaultProguardFiles.addAll(oldConfigurableFileCollection.getFiles());
+
+        }
         List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
                 appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
         if (awbBundles != null && awbBundles.size() > 0) {
