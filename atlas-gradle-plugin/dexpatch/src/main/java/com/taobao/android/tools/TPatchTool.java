@@ -213,6 +213,8 @@ import java.sql.Date;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.UnaryOperator;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -228,13 +230,7 @@ import com.taobao.android.differ.dex.ApkDiff;
 import com.taobao.android.differ.dex.BundleDiffResult;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.inputs.TpatchInput;
-import com.taobao.android.object.ApkFileList;
-import com.taobao.android.object.ArtifactBundleInfo;
-import com.taobao.android.object.BuildPatchInfos;
-import com.taobao.android.object.DexDiffInfo;
-import com.taobao.android.object.DiffType;
-import com.taobao.android.object.PatchBundleInfo;
-import com.taobao.android.object.PatchInfo;
+import com.taobao.android.object.*;
 import com.taobao.android.outputs.PatchFile;
 import com.taobao.android.outputs.TpatchFile;
 import com.taobao.android.reader.*;
@@ -249,6 +245,7 @@ import com.taobao.android.tpatch.utils.PathUtils;
 import com.taobao.android.utils.CommandUtils;
 import com.taobao.android.utils.PathMatcher;
 import com.taobao.android.utils.Profiler;
+import com.taobao.android.utils.SoDiffUtils;
 import com.taobao.checker.Checker;
 import com.taobao.checker.PatchChecker;
 import com.taobao.update.UpdateInfo;
@@ -274,6 +271,8 @@ public class TPatchTool extends AbstractTool {
     public Map<String,Integer> bundleTypes = new HashMap<>();
 
     public ApkDiff apkPatchInfos = new ApkDiff();
+
+    public static List<SoFileDef>soFileDefs = new ArrayList<>();
 
     public List<BundleDiffResult> bundleDiffResults = Collections.synchronizedList(new ArrayList<BundleDiffResult>());
 
@@ -471,7 +470,18 @@ public class TPatchTool extends AbstractTool {
                         baseBundleResFile,
                         bundleName,
                         resPath)) { // modify resource
-                    FileUtils.copyFile(newBundleResFile, destResFile);
+                    if (baseBundleResFile.getName().endsWith(".so")){
+                        if (((TpatchInput)input).diffNativeSo && ((TpatchInput) input).diffBundleSo){
+                            destResFile = new File(destPatchBundleDir,resPath.concat(".patch"));
+                            SoDiffUtils.diffSo(baseBundleResFile.getParentFile(),baseBundleResFile,newBundleResFile,destResFile);
+
+                        }else {
+                            FileUtils.copyFile(newBundleResFile, destResFile);
+                        }
+
+                    }else {
+                        FileUtils.copyFile(newBundleResFile, destResFile);
+                    }
                 }
             } else {// new resource
                 FileUtils.copyFile(newBundleResFile, destResFile);
@@ -675,7 +685,7 @@ public class TPatchTool extends AbstractTool {
                 patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                 patchInfo.getBundles().add(patchBundleInfo);
                 if (artifactBundleInfo.getUnitTag().equals(artifactBundleInfo.getSrcUnitTag())){
-                    throw new RuntimeException(artifactBundleInfo.getPkgName()+"内容发生了变化,但是unitTag一致"+artifactBundleInfo.getUnitTag()+",请修改版本做集成");
+                    throw new RuntimeException(artifactBundleInfo.getPkgName()+"has contents change,but unitTag equals srcUnitTag"+artifactBundleInfo.getUnitTag()+",please upgrade bundle version and reintegration");
                 }
             }
         }
@@ -1096,7 +1106,20 @@ public class TPatchTool extends AbstractTool {
                     if (isBundleFile(soFile)) {
                         processBundleFiles(soFile, baseSoFile, patchTmpDir);
 
-                    } else if (isFileModify(soFile, baseSoFile)) { FileUtils.copyFile(soFile, destFile); }
+                    } else if (isFileModify(soFile, baseSoFile)) {
+                        if (destFile.exists()){
+                            FileUtils.deleteQuietly(destFile);
+                        }
+                        if (!baseSoFile.exists()||!((TpatchInput) input).diffNativeSo) {
+                            //新增
+                            FileUtils.copyFile(soFile, destFile);
+                        }else {
+                            destFile = new File(destFile.getParentFile(),destFile.getName()+".patch");
+                            SoDiffUtils.diffSo(patchTmpDir,baseSoFile,soFile,destFile);
+                            soFileDefs.add(new SoFileDef(baseSoFile,soFile,destFile));
+
+                        }
+                    }
 
                     return true;
                 }
@@ -1209,6 +1232,24 @@ public class TPatchTool extends AbstractTool {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static void main(String[]args) throws IOException {
+
+
+//        TPatchTool.class.getProtectionDomain().getCodeSource().getLocation();
+//        File workingDir = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3");
+//        File oldFile = new File("/Users/lilong/Documents/main_builder/aa/lib/armeabi/libalinnkit-v7a.so");
+//        File newFile = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3/libcom_taobao_maindex/lib/armeabi/libalinnkit-v7a.so");
+//        File patchFile = new File("/Users/lilong/Downloads/libalinnkit-v7a.so.patch");
+//        File new2File = new File("/Users/lilong/Downloads/libalinnkit-v7a.so");
+//        File bsDiffFile = new File(TPatchTool.class.getClassLoader().getResource("mac/bsdiff").getFile());
+//        File bsPatchFile = new File(TPatchTool.class.getClassLoader().getResource("mac/bspatch").getFile());
+//
+//        CommandUtils.exec(workingDir,bsDiffFile.getAbsolutePath()+ " "+oldFile.getAbsolutePath() + " "+newFile.getAbsolutePath()+" "+patchFile.getAbsolutePath());
+//        CommandUtils.exec(workingDir,bsPatchFile.getAbsolutePath()+" "+oldFile.getAbsolutePath() + " "+new2File.getAbsolutePath()+" "+patchFile.getAbsolutePath());
+//
+//        assert MD5Util.getFileMD5String(new2File).equals(MD5Util.getFileMD5String(newFile));
     }
 
 }

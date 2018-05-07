@@ -9,8 +9,8 @@ import android.content.pm.ResolveInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
 import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
-import android.taobao.atlas.runtime.newcomponent.service.ServiceBridge;
 
 import java.util.List;
 
@@ -61,7 +61,7 @@ public class ReceiverBridge {
                         postOnReceived(intent,info.activityInfo);
                     }else{
                        // remote process
-                        ServiceBridge.notifyonReceived(intent,info.activityInfo);
+                        AdditionalActivityManagerProxy.notifyonReceived(intent,info.activityInfo);
                     }
                 }
             }

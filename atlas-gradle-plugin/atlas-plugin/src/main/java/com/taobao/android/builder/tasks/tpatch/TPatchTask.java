@@ -366,6 +366,8 @@ public class TPatchTask extends BaseTask {
         }else {
             tpatchInput.patchType = PatchType.TPATCH;
             tpatchInput.createHisPatch = true;
+            tpatchInput.diffNativeSo = patchContext.diffNativeSo;
+            tpatchInput.diffBundleSo = patchContext.diffBundleSo;
             tpatchInput.bundleWhiteList = appVariantContext.bundleListCfg;
             tpatchInput.createAll = StringUtils.isEmpty(patchContext.tpatchHistoryUrl);
             tpatchInput.LAST_PATCH_URL = patchContext.LAST_PATCH_URL;
@@ -533,6 +535,8 @@ public class TPatchTask extends BaseTask {
                         .getOnlyBuildModifyAwb();
                     tPatchContext.artifactBundleInfos = appVariantOutputContext.artifactBundleInfos;
                     tPatchContext.notPatchBundles = tBuildType.getPatchConfig().getNoPatchBundles();
+                    tPatchContext.diffNativeSo = tBuildType.getPatchConfig().isDiffNativeSo();
+                    tPatchContext.diffBundleSo = tBuildType.getPatchConfig().isDiffBundleSo();
                     tPatchContext.mainBundleName = tBuildType.getPatchConfig()
                         .getTpatchMainBundleName();
                     tPatchContext.excludeFiles = tBuildType.getPatchConfig()
@@ -584,6 +588,8 @@ public class TPatchTask extends BaseTask {
 
         public String buildId;
 
+        public boolean diffNativeSo;
+
         public boolean writeBuildInfo;
 
         /**
@@ -611,6 +617,8 @@ public class TPatchTask extends BaseTask {
         public String appSignName;
 
         public File hotClassListFile;
+
+        public boolean diffBundleSo;
 
         public File getNewApkFiles(AppVariantContext appVariantContext) throws IOException {
             ApkFileList apkFileList = appVariantContext.getApkFiles().finalApkFileList;

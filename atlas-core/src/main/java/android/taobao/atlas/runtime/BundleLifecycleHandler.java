@@ -210,10 +210,15 @@ package android.taobao.atlas.runtime;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
+import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleClassLoader;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.SynchronousBundleListener;
@@ -287,6 +292,12 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
         BundleImpl b = (BundleImpl) bundle;
         if(b.getClassLoader()==null || !((BundleClassLoader)b.getClassLoader()).validateClasses()){
             Log.e("BundleLifeCycle","validateClass fail,bundle can't be started :"+b);
+            List<Bundle> bundles = Atlas.getInstance().getBundles();
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("bundle", bundle);
+            detail.put("bundles", bundles);
+            Exception e = new Exception();
+            AtlasMonitor.getInstance().report(AtlasMonitor.VALIDATE_CLASSES, detail, e);
             if(Framework.isDeubgMode()){
                 throw new RuntimeException("validateClass fail,bundle can't be started :"+b);
             }

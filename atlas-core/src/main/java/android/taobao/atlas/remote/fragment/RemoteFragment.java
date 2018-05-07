@@ -20,6 +20,7 @@ import android.taobao.atlas.remote.IRemote;
 import android.taobao.atlas.remote.IRemoteContext;
 import android.taobao.atlas.remote.IRemoteTransactor;
 import android.taobao.atlas.remote.RemoteActivityManager;
+import android.taobao.atlas.remote.Util;
 import android.taobao.atlas.runtime.BundleUtil;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -48,6 +49,8 @@ public class RemoteFragment extends Fragment implements IRemoteContext,IRemoteTr
         final BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(bundleName);
         String fragmentClazzName = bi.remoteFragments.get(key);
         remoteFragment.targetFragment = (Fragment)remoteFragment.remoteActivity.getClassLoader().loadClass(fragmentClazzName).newInstance();
+        Util.findFieldFromInterface(remoteFragment.targetFragment, "remoteContext").set(remoteFragment.targetFragment,remoteFragment);
+        Util.findFieldFromInterface(remoteFragment.targetFragment,"realHost").set(remoteFragment.targetFragment,remoteFragment.remoteActivity);
         if(!(remoteFragment.targetFragment instanceof IRemote)){
             throw new RuntimeException("Fragment for remote use must implements IRemote");
         }

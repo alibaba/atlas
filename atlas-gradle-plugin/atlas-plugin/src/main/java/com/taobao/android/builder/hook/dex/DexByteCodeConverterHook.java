@@ -116,7 +116,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 //
 //    }
     @Override
-    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
+    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException{
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 variantContext.getVariantName());
 
@@ -222,14 +222,14 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                 DexByteCodeConverterHook.super.convertByteCode(Arrays.asList(file), outPutFolder, true, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
 
             }
-            try {
 
                 for (Future future : futureList) {
-                    future.get();
+                    try {
+                        future.get();
+                    } catch (ExecutionException e) {
+                        throw new ProcessException(e);
+                    }
                 }
-            } catch (Exception e) {
-                throw new ProcessException(e);
-            }
 
 
             List<Path> dexPaths = new ArrayList<>();

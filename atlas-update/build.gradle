@@ -12,7 +12,7 @@ buildscript {
 }
 
 group = 'com.taobao.android'
-version = '1.1.4.15'
+version = '1.1.4.18-2'
 
 
 
@@ -35,6 +35,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_7
     }
 
+
 }
 
 repositories {
@@ -43,7 +44,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.taobao.android:atlas_core:5.0.7.52-rc7'
+    compile 'com.taobao.android:atlas_core:5.0.8.5-rc9-10'
     compile 'io.reactivex.rxjava2:rxjava:2.0.1'
     compile 'org.reactivestreams:reactive-streams:1.0.0@jar'
 }
