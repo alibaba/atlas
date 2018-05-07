@@ -39,7 +39,18 @@ android {
         multiDexEnabled = false
 
     }
+    flavorDimensions 'api'
+productFlavors{
+        productA{
+            applicationId "com.crazyman.product.a"
+            versionName "version-a-1.0"
+        }
 
+        productB{
+            applicationId "com.crazyman.product.b"
+            versionName "version-b-1.0"
+        }
+    }
 
     dataBinding {
         enabled = true

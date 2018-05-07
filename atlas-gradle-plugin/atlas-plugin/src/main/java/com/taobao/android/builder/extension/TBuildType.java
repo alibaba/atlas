@@ -252,6 +252,8 @@ public class TBuildType {
 
     private DefaultSigningConfig signingConfig;
 
+    private DefaultChannelConfig channelConfig;
+
     public TBuildType(String name) {
         this.name = name;
     }
@@ -303,4 +305,24 @@ public class TBuildType {
     public void setMultiDexConfig(MultiDexConfig multiDexConfig) {
         this.multiDexConfig = multiDexConfig;
     }
+
+    public DefaultChannelConfig getChannelConfig() {
+        return channelConfig;
+    }
+
+    public void setChannelConfig(DefaultChannelConfig channelConfig) {
+        this.channelConfig = channelConfig;
+    }
+
+    public EnhanceConfig getEnhanceConfig() {
+        return enhanceConfig;
+    }
+
+    public void setEnhanceConfig(EnhanceConfig enhanceConfig) {
+        this.enhanceConfig = enhanceConfig;
+    }
+
+    private EnhanceConfig enhanceConfig;
+
+
 }
