@@ -211,6 +211,7 @@ package android.taobao.atlas.framework;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.os.Environment;
 import android.os.Looper;
 import android.os.Process;
@@ -929,5 +930,9 @@ public final class Framework {
 
     public static boolean isDeubgMode() {
         return DEBUG;
+    }
+
+    public static boolean isAtLeastO() {
+        return VERSION.SDK_INT >= 26;
     }
 }

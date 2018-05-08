@@ -250,6 +250,8 @@ import android.util.Log;
 import dalvik.system.DexClassLoader;
 import dalvik.system.DexFile;
 
+import static android.taobao.atlas.framework.Framework.isAtLeastO;
+
 public class BundleArchiveRevision {
 
     final static String  BUNDLE_ODEX_FILE   = "bundle.dex";
@@ -552,7 +554,7 @@ public class BundleArchiveRevision {
     }
 
     public boolean isDexOpted() {
-        if (VERSION.SDK_INT >= 26) {
+        if (isAtLeastO()) {
             return isDexOptDone;
         } else {
             if (isDexOptDone == false) {
@@ -599,7 +601,7 @@ public class BundleArchiveRevision {
         START = System.currentTimeMillis();
 
         try {
-            if (VERSION.SDK_INT >= 26) {
+            if (isAtLeastO()) {
                 BundleImpl bundle = (BundleImpl)Framework.getBundle(location);
                 bundle.getClassLoader();
             } else {

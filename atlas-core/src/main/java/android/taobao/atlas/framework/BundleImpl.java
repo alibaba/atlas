@@ -231,6 +231,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static android.os.Build.*;
+import static android.taobao.atlas.framework.Framework.isAtLeastO;
+
 public final class BundleImpl implements Bundle {
 
     /**
@@ -350,8 +353,7 @@ public final class BundleImpl implements Bundle {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= 26) {
-        } else {
+        if (!isAtLeastO()) {
             getClassLoader();
         }
 
@@ -410,7 +412,7 @@ public final class BundleImpl implements Bundle {
                     }
                 }
             }
-            if (VERSION.SDK_INT >= 26) {
+            if (isAtLeastO()) {
                 this.classloader = new BundleClassLoader(currentRevision.getBundleFile().getAbsolutePath(),
                                                          mappingInternalDirectory,
                                                          this,

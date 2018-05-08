@@ -232,6 +232,8 @@ import android.util.Log;
 import dalvik.system.BaseDexClassLoader;
 import org.osgi.framework.BundleException;
 
+import static android.taobao.atlas.framework.Framework.isAtLeastO;
+
 public final class BundleClassLoader extends BaseDexClassLoader {
 
     /**
@@ -471,7 +473,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
     private Class<?> findOwnClass(final String classname) {
         try {
             Class<?> clazz;
-            if (VERSION.SDK_INT >= 26) {
+            if (isAtLeastO()) {
                 clazz = super.findClass(classname);
             } else {
                 clazz = archive.findClass(classname, this);
