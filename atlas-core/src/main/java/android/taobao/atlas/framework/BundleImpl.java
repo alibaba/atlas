@@ -208,13 +208,10 @@
 
 package android.taobao.atlas.framework;
 
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.DelegateResources;
-import android.taobao.atlas.util.WrapperUtil;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.util.Log;
@@ -222,32 +219,31 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkEvent;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public final class BundleImpl implements Bundle {
 
     /**
      * the bundle location.
      */
-    final String                    location;
+    final String location;
 
     /**
      * the storage location.
      */
-    File                      bundleDir;
+    File bundleDir;
 
     /**
      * the bundle archive file.
      */
-    BundleArchive                         archive;
+    BundleArchive archive;
 
     /**
      * the bundle state.
@@ -257,27 +253,29 @@ public final class BundleImpl implements Bundle {
     /**
      * the bundle classloader.
      */
-    BundleClassLoader               classloader;
+    BundleClassLoader classloader;
     boolean disabled = false;
+
     /**
      * create a new bundle object from InputStream. This is used when a new bundle is installed.
      *
      * @param location the bundle location.
-     * @param stream the input stream.
+     * @param stream   the input stream.
      * @throws BundleException if something goes wrong.
      * @throws IOException
      */
-    BundleImpl(final File bundleDir, final String location, final InputStream stream,
-               final File file, String unique_tag, boolean installForCurrentVersion, long dexPatchVersion) throws BundleException, IOException{
+    BundleImpl(final File bundleDir, final String location, final InputStream stream, final File file,
+               String unique_tag, boolean installForCurrentVersion, long dexPatchVersion)
+        throws BundleException, IOException {
         this.location = location;
         this.bundleDir = bundleDir;
-        if(installForCurrentVersion) {
+        if (installForCurrentVersion) {
             Framework.notifyBundleListeners(BundleEvent.BEFORE_INSTALL, this);
         }
         if (stream != null) {
-            this.archive = new BundleArchive(location,bundleDir, stream,unique_tag, dexPatchVersion);
+            this.archive = new BundleArchive(location, bundleDir, stream, unique_tag, dexPatchVersion);
         } else if (file != null) {
-            this.archive = new BundleArchive(location,bundleDir, file,unique_tag, dexPatchVersion);
+            this.archive = new BundleArchive(location, bundleDir, file, unique_tag, dexPatchVersion);
         }
         this.state = INSTALLED;
         if (installForCurrentVersion) {
@@ -294,35 +292,35 @@ public final class BundleImpl implements Bundle {
      * @param bcontext the bundle context.
      * @throws Exception if something goes wrong.
      */
-    BundleImpl(final BundleContext bcontext) throws Exception{
+    BundleImpl(final BundleContext bcontext) throws Exception {
         long start = System.currentTimeMillis();
         this.location = bcontext.location;
         long dexPatchVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(location);
         Framework.notifyBundleListeners(BundleEvent.BEFORE_INSTALL, this);
         this.state = Bundle.INSTALLED;
         try {
-            if(dexPatchVersion>0){
+            if (dexPatchVersion > 0) {
                 try {
                     bundleDir = bcontext.dexPatchDir;
                     this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, dexPatchVersion);
-                }catch(Throwable e){
+                } catch (Throwable e) {
                     bundleDir = bcontext.bundleDir;
                     this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, -1l);
                 }
-            }else {
+            } else {
                 bundleDir = bcontext.bundleDir;
-                this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag,-1l);
+                this.archive = new BundleArchive(location, bundleDir, bcontext.bundle_tag, -1l);
             }
         } catch (Exception e) {
             e.printStackTrace();
             Map<String, Object> detail = new HashMap<>();
             detail.put("BundleImpl", "BundleImpl create failed!");
-            if(e instanceof BundleArchive.MisMatchException){
+            if (e instanceof BundleArchive.MisMatchException) {
                 this.archive = null;
                 BaselineInfoManager.instance().rollbackHardly();
                 AtlasMonitor.getInstance().report(AtlasMonitor.DD_BUNDLE_MISMATCH, detail, e);
                 throw e;
-            }else {
+            } else {
                 AtlasMonitor.getInstance().report(AtlasMonitor.DD_BUNDLE_RESOLVEFAIL, detail, e);
                 throw new BundleException("Could not load bundle " + location, e.getCause());
             }
@@ -335,9 +333,8 @@ public final class BundleImpl implements Bundle {
         Framework.notifyBundleListeners(BundleEvent.INSTALLED, this);
 
         if (Framework.DEBUG_BUNDLES) {
-            Log.i("Framework"," Bundle " + toString() + " loaded. " + (System.currentTimeMillis() - start) + " ms");
+            Log.i("Framework", " Bundle " + toString() + " loaded. " + (System.currentTimeMillis() - start) + " ms");
         }
-
     }
 
     private synchronized void resolveBundle() throws BundleException {
@@ -346,28 +343,33 @@ public final class BundleImpl implements Bundle {
             throw new BundleException("Not a valid bundle: " + location);
         }
 
-    	if (this.state == RESOLVED){
-    		return;
-    	}
+        if (this.state == RESOLVED) {
+            return;
+        }
 
-    	if ( this.classloader == null){
-	        // create the bundle classloader
+        if (this.classloader == null) {
+            // create the bundle classloader
             List<String> dependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
-            String nativeLibDir = getArchive().getCurrentRevision().mappingInternalDirectory().getAbsolutePath()+"/lib"+":"
-                    + RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir+":"
-                    +System.getProperty("java.library.path");
-            if(dependencies!=null) {
+            String nativeLibDir = getArchive().getCurrentRevision().mappingInternalDirectory().getAbsolutePath() +
+                "/lib" +
+                ":" +
+                RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir +
+                ":" +
+                System.getProperty("java.library.path");
+            if (dependencies != null) {
                 for (String str : dependencies) {
-                    BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(str);
+                    BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(str);
                     if (impl != null) {
                         nativeLibDir += ":";
-                        File dependencyLibDir = new File(impl.getArchive().getCurrentRevision().mappingInternalDirectory(), "lib");
+                        File dependencyLibDir = new File(impl.getArchive()
+                                                             .getCurrentRevision()
+                                                             .mappingInternalDirectory(), "lib");
                         nativeLibDir += dependencyLibDir;
                     }
                 }
             }
-	        this.classloader = new BundleClassLoader(this,dependencies,nativeLibDir);
-    	}
+            this.classloader = new BundleClassLoader(".", null, this, dependencies, nativeLibDir);
+        }
         state = RESOLVED;
         // notify the listeners
         Framework.notifyBundleListeners(0 /*LOADED*/, this);
@@ -377,8 +379,8 @@ public final class BundleImpl implements Bundle {
      * get the bundle id.
      *
      * @return the bundle id.
-     * @see org.osgi.framework.Bundle#getBundleId()
      * @category Bundle
+     * @see org.osgi.framework.Bundle#getBundleId()
      */
     public long getBundleId() {
         return 0;
@@ -388,8 +390,8 @@ public final class BundleImpl implements Bundle {
      * get the bundle location.
      *
      * @return the bundle location.
-     * @see org.osgi.framework.Bundle#getLocation()
      * @category Bundle
+     * @see org.osgi.framework.Bundle#getLocation()
      */
     public String getLocation() {
         return location;
@@ -408,8 +410,8 @@ public final class BundleImpl implements Bundle {
      *
      * @param name the name of the resource.
      * @return the URL.
-     * @see org.osgi.framework.Bundle#getResource(java.lang.String)
      * @category Bundle
+     * @see org.osgi.framework.Bundle#getResource(java.lang.String)
      */
     public URL getResource(final String name) {
         if (state == UNINSTALLED) {
@@ -422,8 +424,8 @@ public final class BundleImpl implements Bundle {
      * get the state of the bundle.
      *
      * @return the state.
-     * @see org.osgi.framework.Bundle#getState()
      * @category Bundle
+     * @see org.osgi.framework.Bundle#getState()
      */
     public int getState() {
         return state;
@@ -433,8 +435,8 @@ public final class BundleImpl implements Bundle {
      * start the bundle.
      *
      * @throws BundleException if the bundle cannot be resolved or the Activator throws an exception.
-     * @see org.osgi.framework.Bundle#start()
      * @category Bundle
+     * @see org.osgi.framework.Bundle#start()
      */
     public void start() throws BundleException {
         startBundle();
@@ -451,6 +453,7 @@ public final class BundleImpl implements Bundle {
         }
         startBundleLocked();
     }
+
     /**
      * the actual starting happens here.
      *
@@ -464,10 +467,8 @@ public final class BundleImpl implements Bundle {
         Framework.notifyBundleListeners(BundleEvent.BEFORE_STARTED, this);
         Framework.notifyBundleListeners(BundleEvent.STARTED, this);
         if (Framework.DEBUG_BUNDLES) {
-            Log.i("Framework","Bundle " + toString() + " started.");
+            Log.i("Framework", "Bundle " + toString() + " started.");
         }
-
-
     }
 
     private boolean checkIsActive() {
@@ -483,38 +484,37 @@ public final class BundleImpl implements Bundle {
         return false;
     }
 
-    public void setActive(){
+    public void setActive() {
         state = ACTIVE;
     }
 
-    public boolean checkValidate(){
+    public boolean checkValidate() {
         boolean result = true;
         //check class
-        if(classloader!=null){
+        if (classloader != null) {
             long time = System.currentTimeMillis();
             result = classloader.validateClasses();
-            if(!result){
+            if (!result) {
                 return false;
             }
 
-            if(!checkResources()){
+            if (!checkResources()) {
                 return false;
             }
         }
         return true;
-
     }
 
-    public boolean checkResources(){
-        if(!DelegateResources.checkAsset(getArchive().getArchiveFile().getAbsolutePath())){
+    public boolean checkResources() {
+        if (!DelegateResources.checkAsset(getArchive().getArchiveFile().getAbsolutePath())) {
             return false;
         }
 
         List<String> dependencies = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
-        for(String bundleName : dependencies){
+        for (String bundleName : dependencies) {
             BundleImpl dependencyBundle = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
-            if(dependencyBundle==null || dependencyBundle.getArchive()==null ||
-                    !DelegateResources.checkAsset(dependencyBundle.getArchive().getArchiveFile().getAbsolutePath())){
+            if (dependencyBundle == null || dependencyBundle.getArchive() == null || !DelegateResources.checkAsset(
+                dependencyBundle.getArchive().getArchiveFile().getAbsolutePath())) {
                 return false;
             }
         }
@@ -522,41 +522,40 @@ public final class BundleImpl implements Bundle {
         return true;
     }
 
-//    public void updateValidBundleCache(){
-//        long lastUpdateTime = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).lastUpdateTime;
-//        if(lastUpdateTime>0) {
-//            SharedPreferences preferences = RuntimeVariables.androidApplication.getSharedPreferences("valid_bundle_info"+"",0);
-//            Set<String> bundles = preferences.getStringSet(""+lastUpdateTime,new HashSet<String>());
-//            if(!bundles.contains(location)){
-//                bundles.add(location);
-//                preferences.edit().putStringSet(""+lastUpdateTime,bundles).apply();
-//            }
-//        }
-//    }
-//
-//    public static boolean isBundleSuccessedInstalledBefore(String location){
-//        long lastUpdateTime = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).lastUpdateTime;
-//        if(lastUpdateTime>0) {
-//            SharedPreferences preferences = RuntimeVariables.androidApplication.getSharedPreferences("valid_bundle_info"+"",0);
-//            Set<String> bundles = preferences.getStringSet(""+lastUpdateTime,null);
-//            if(bundles!=null && bundles.contains(location)){
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
+    //    public void updateValidBundleCache(){
+    //        long lastUpdateTime = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).lastUpdateTime;
+    //        if(lastUpdateTime>0) {
+    //            SharedPreferences preferences = RuntimeVariables.androidApplication.getSharedPreferences("valid_bundle_info"+"",0);
+    //            Set<String> bundles = preferences.getStringSet(""+lastUpdateTime,new HashSet<String>());
+    //            if(!bundles.contains(location)){
+    //                bundles.add(location);
+    //                preferences.edit().putStringSet(""+lastUpdateTime,bundles).apply();
+    //            }
+    //        }
+    //    }
+    //
+    //    public static boolean isBundleSuccessedInstalledBefore(String location){
+    //        long lastUpdateTime = WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).lastUpdateTime;
+    //        if(lastUpdateTime>0) {
+    //            SharedPreferences preferences = RuntimeVariables.androidApplication.getSharedPreferences("valid_bundle_info"+"",0);
+    //            Set<String> bundles = preferences.getStringSet(""+lastUpdateTime,null);
+    //            if(bundles!=null && bundles.contains(location)){
+    //                return true;
+    //            }
+    //        }
+    //        return false;
+    //    }
 
-
-    public boolean isDisabled(){
+    public boolean isDisabled() {
         return disabled;
     }
 
     /**
      * uninstall the bundle.
-     * 
+     *
      * @throws BundleException if bundle is already uninstalled
-     * @see org.osgi.framework.Bundle#uninstall()
      * @category Bundle
+     * @see org.osgi.framework.Bundle#uninstall()
      */
     public synchronized void uninstall() throws BundleException {
 
@@ -586,7 +585,7 @@ public final class BundleImpl implements Bundle {
 
     /**
      * get a string representation of the bundle.
-     * 
+     *
      * @return the string.
      * @category Object
      */
