@@ -208,8 +208,11 @@
 
 package android.taobao.atlas.framework;
 
+import android.os.Build;
+import android.os.Build.VERSION;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
+import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.DelegateResources;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
@@ -347,29 +350,11 @@ public final class BundleImpl implements Bundle {
             return;
         }
 
-        if (this.classloader == null) {
-            // create the bundle classloader
-            List<String> dependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
-            String nativeLibDir = getArchive().getCurrentRevision().mappingInternalDirectory().getAbsolutePath() +
-                "/lib" +
-                ":" +
-                RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir +
-                ":" +
-                System.getProperty("java.library.path");
-            if (dependencies != null) {
-                for (String str : dependencies) {
-                    BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(str);
-                    if (impl != null) {
-                        nativeLibDir += ":";
-                        File dependencyLibDir = new File(impl.getArchive()
-                                                             .getCurrentRevision()
-                                                             .mappingInternalDirectory(), "lib");
-                        nativeLibDir += dependencyLibDir;
-                    }
-                }
-            }
-            this.classloader = new BundleClassLoader(".", null, this, dependencies, nativeLibDir);
+        if (Build.VERSION.SDK_INT >= 26) {
+        } else {
+            getClassLoader();
         }
+
         state = RESOLVED;
         // notify the listeners
         Framework.notifyBundleListeners(0 /*LOADED*/, this);
@@ -402,6 +387,39 @@ public final class BundleImpl implements Bundle {
     }
 
     public ClassLoader getClassLoader() {
+        if (this.classloader == null) {
+            // create the bundle classloader
+            List<String> dependencies = AtlasBundleInfoManager.instance().getDependencyForBundle(location);
+            BundleArchiveRevision currentRevision = getArchive().getCurrentRevision();
+            File mappingInternalDirectory = currentRevision.mappingInternalDirectory();
+            String nativeLibDir = mappingInternalDirectory.getAbsolutePath() +
+                "/lib" +
+                ":" +
+                RuntimeVariables.androidApplication.getApplicationInfo().nativeLibraryDir +
+                ":" +
+                System.getProperty("java.library.path");
+            if (dependencies != null) {
+                for (String str : dependencies) {
+                    BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(str);
+                    if (impl != null) {
+                        nativeLibDir += ":";
+                        File dependencyLibDir = new File(impl.getArchive()
+                                                             .getCurrentRevision()
+                                                             .mappingInternalDirectory(), "lib");
+                        nativeLibDir += dependencyLibDir;
+                    }
+                }
+            }
+            if (VERSION.SDK_INT >= 26) {
+                this.classloader = new BundleClassLoader(currentRevision.getBundleFile().getAbsolutePath(),
+                                                         mappingInternalDirectory,
+                                                         this,
+                                                         dependencies,
+                                                         nativeLibDir);
+            } else {
+                this.classloader = new BundleClassLoader(".", null, this, dependencies, nativeLibDir);
+            }
+        }
         return classloader;
     }
 

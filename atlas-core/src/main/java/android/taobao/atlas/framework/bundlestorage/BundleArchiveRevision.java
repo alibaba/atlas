@@ -233,8 +233,10 @@ import java.util.zip.ZipFile;
 import android.app.PreVerifier;
 import android.content.Context;
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.support.multidex.MultiDex;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.RuntimeVariables;
@@ -550,20 +552,24 @@ public class BundleArchiveRevision {
     }
 
     public boolean isDexOpted() {
-    	if (isDexOptDone == false){
-    		return false;
-    	}
+        if (VERSION.SDK_INT >= 26) {
+            return isDexOptDone;
+        } else {
+            if (isDexOptDone == false) {
+                return false;
+            }
 
-    	if (dexFile != null){
-    		return true;
-    	}
+            if (dexFile != null) {
+                return true;
+            }
 
-        if (AtlasHacks.LexFile != null && AtlasHacks.LexFile.getmClass() != null) {
-            File lexFile = new File(mappingInternalDirectory(), BUNDLE_LEX_FILE);
-            return lexFile.exists() && lexFile.length() > 0;
+            if (AtlasHacks.LexFile != null && AtlasHacks.LexFile.getmClass() != null) {
+                File lexFile = new File(mappingInternalDirectory(), BUNDLE_LEX_FILE);
+                return lexFile.exists() && lexFile.length() > 0;
+            }
+            File odexFile = new File(mappingInternalDirectory(), BUNDLE_ODEX_FILE);
+            return odexFile.exists() && odexFile.length() > 0;
         }
-        File odexFile = new File(mappingInternalDirectory(), BUNDLE_ODEX_FILE);
-        return odexFile.exists() && odexFile.length() > 0;
     }
 
     public /*synchronized*/ void optDexFile() {
@@ -593,41 +599,59 @@ public class BundleArchiveRevision {
         START = System.currentTimeMillis();
 
         try {
-            if (AtlasFileLock.getInstance().LockExclusive(odexFile) == false) {
-                Log.e("Framework","Failed to get file lock for " + bundleFile.getAbsolutePath());
-            }
-
-            if (dexFile == null){
-                if(!externalStorage || (externalStorage && Build.VERSION.SDK_INT>=21 && MultiDex.IS_VM_MULTIDEX_CAPABLE)) {
-                    boolean interpretOnly = externalStorage ? true : false;
-                    if(bundleFile.getUsableSpace()<5*1024*1024){
-                        interpretOnly = true;
-                    }
-                    Log.e("BundleArchiveRevision","interpretOnly = "+interpretOnly);
-                    //兼容7。0 动态部署过后不同classloader下对classcast
-                    dexFile = (DexFile) RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("loadDex",Context.class,String.class, String.class, int.class, boolean.class).invoke(
-                        RuntimeVariables.sDexLoadBooster,
-                        RuntimeVariables.androidApplication,
-                        bundleFile.getAbsolutePath(),
-                        odexFile.getAbsolutePath(),
-                        0,
-                        interpretOnly);
-//                    dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
-                }else{
-                    Method m = Class.forName("android.taobao.atlas.startup.DexFileCompat").getDeclaredMethod("loadDex",
-                        Context.class,
-                        String.class,
-                        String.class,
-                        int.class);
-                    dexFile= (DexFile) m.invoke(null,RuntimeVariables.androidApplication,bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0);
+            if (VERSION.SDK_INT >= 26) {
+                BundleImpl bundle = (BundleImpl)Framework.getBundle(location);
+                bundle.getClassLoader();
+            } else {
+                if (AtlasFileLock.getInstance().LockExclusive(odexFile) == false) {
+                    Log.e("Framework", "Failed to get file lock for " + bundleFile.getAbsolutePath());
                 }
+
+                if (dexFile == null) {
+                    if (!externalStorage ||
+                        (externalStorage && VERSION.SDK_INT >= 21 && MultiDex.IS_VM_MULTIDEX_CAPABLE)) {
+                        boolean interpretOnly = externalStorage ? true : false;
+                        if (bundleFile.getUsableSpace() < 5 * 1024 * 1024) {
+                            interpretOnly = true;
+                        }
+                        Log.e("BundleArchiveRevision", "interpretOnly = " + interpretOnly);
+                        //兼容7。0 动态部署过后不同classloader下对classcast
+                        dexFile = (DexFile)RuntimeVariables.sDexLoadBooster.getClass()
+                            .getDeclaredMethod("loadDex",
+                                               Context.class,
+                                               String.class,
+                                               String.class,
+                                               int.class,
+                                               boolean.class)
+                            .invoke(RuntimeVariables.sDexLoadBooster,
+                                    RuntimeVariables.androidApplication,
+                                    bundleFile.getAbsolutePath(),
+                                    odexFile.getAbsolutePath(),
+                                    0,
+                                    interpretOnly);
+                        //                    dexFile = AndroidRuntime.getInstance().loadDex(RuntimeVariables.androidApplication, bundleFile.getAbsolutePath(), odexFile.getAbsolutePath(), 0, interpretOnly);
+                    } else {
+                        Method m = Class.forName("android.taobao.atlas.startup.DexFileCompat").getDeclaredMethod(
+                            "loadDex",
+                            Context.class,
+                            String.class,
+                            String.class,
+                            int.class);
+                        dexFile = (DexFile)m.invoke(null,
+                                                    RuntimeVariables.androidApplication,
+                                                    bundleFile.getAbsolutePath(),
+                                                    odexFile.getAbsolutePath(),
+                                                    0);
+                    }
+                }
+                if (Framework.isDeubgMode()) {
+                    optPatchDexFile();
+                }
+                //9月份版本明天发布先不集成
+                //            isDexOptDone = checkDexValid(dexFile);
             }
-            if(Framework.isDeubgMode()){
-                optPatchDexFile();
-            }
-            //9月份版本明天发布先不集成
-//            isDexOptDone = checkDexValid(dexFile);
             isDexOptDone = true;
+
         } catch (Exception e) {
             if (odexFile.exists()) {
                 odexFile.delete();
@@ -880,5 +904,9 @@ public class BundleArchiveRevision {
         if (this.zipFile == null) {
             this.zipFile = new ZipFile(bundleFile, ZipFile.OPEN_READ);
         }
+    }
+
+    public File getBundleFile() {
+        return bundleFile;
     }
 }

@@ -223,6 +223,7 @@ import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
@@ -266,7 +267,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @throws BundleException in case of IO errors.
      */
     BundleClassLoader(String dexPath, File optimizedDirectory, final BundleImpl bundle, List<String> dependencies,
-                      String nativeLibPath) throws BundleException {
+                      String nativeLibPath) {
         super(dexPath, optimizedDirectory, nativeLibPath, Object.class.getClassLoader());
         Log.e("BundleClassLoader", "nativeLibPath : " + nativeLibPath);
         if (Build.VERSION.SDK_INT >= 27) {
@@ -469,7 +470,13 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      */
     private Class<?> findOwnClass(final String classname) {
         try {
-            Class<?> clazz = archive.findClass(classname, this);
+            Class<?> clazz;
+            if (VERSION.SDK_INT >= 26) {
+                clazz = super.findClass(classname);
+            } else {
+                clazz = archive.findClass(classname, this);
+            }
+
             return clazz;
         } catch (Exception e) {
             if (e instanceof BundleArchiveRevision.DexLoadException) {
