@@ -277,7 +277,7 @@ public class ManifestFileUtils {
     public static Result postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
                                               Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
                                               ManifestOptions manifestOptions, boolean addMultiDex,
-                                              boolean isInstantRun, Set<String> remoteBundles,Set<String> insideBundles)
+                                              boolean isInstantRun, Set<String> remoteBundles,Set<String> insideBundles,boolean pushInstall)
         throws IOException, DocumentException {
 
         Result result = new Result();
@@ -295,6 +295,8 @@ public class ManifestFileUtils {
         if (null != manifestOptions && manifestOptions.isAddAtlasProxyComponents()) {
             AtlasProxy.addAtlasProxyClazz(document, manifestOptions.getAtlasProxySkipChannels(), result);
         }
+
+            addAndroidLabel(document,pushInstall);
 
         if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
             addBundleLocationToDestManifest(document, libManifestMap, libDependenciesMaps, manifestOptions);
@@ -321,6 +323,19 @@ public class ManifestFileUtils {
         printlnPermissions(document);
 
         return result;
+    }
+
+    private static void addAndroidLabel(Document document,boolean pushInstall) {
+        Element root = document.getRootElement();// Get the root node
+        Element applicationElement = root.element("application");
+        Attribute attribute = applicationElement.attribute("android:extractNativeLibs");
+        if (attribute == null && pushInstall){
+            applicationElement.addAttribute("android:extractNativeLibs","false");
+        }else if (pushInstall){
+            attribute.setValue("false");
+        }else if (!pushInstall && attribute!= null){
+            applicationElement.remove(attribute);
+        }
     }
 
     /**

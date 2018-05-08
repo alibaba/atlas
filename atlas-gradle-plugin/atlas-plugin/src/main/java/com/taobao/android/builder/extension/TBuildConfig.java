@@ -602,4 +602,13 @@ public class TBuildConfig {
     public void setKeepJavaResAfterProguard(boolean keepJavaResAfterProguard) {
         this.keepJavaResAfterProguard = keepJavaResAfterProguard;
     }
+
+    public void setPushInstall(boolean pushInstall) {
+        this.pushInstall = pushInstall;
+    }
+
+    private boolean pushInstall;
+    public boolean isPushInstall() {
+        return pushInstall;
+    }
 }
