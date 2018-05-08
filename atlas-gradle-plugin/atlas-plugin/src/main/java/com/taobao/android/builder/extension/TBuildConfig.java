@@ -229,6 +229,16 @@ public class TBuildConfig {
     @Config(title = "Self-initiated bundle list", message = "The value is packageName", order = 1, advance = false, group = "atlas")
     private List<String> autoStartBundles = new ArrayList<String>();
 
+    public String getAppCoordinate() {
+        return appCoordinate;
+    }
+
+    public void setAppCoordinate(String appCoordinate) {
+        this.appCoordinate = appCoordinate;
+    }
+
+    private String appCoordinate;
+
     @Config(title = "Pre-launch list",
         message = "To implement the PreLaunch class, multiple classes are used , No separate", order = 1, advance = false, group = "atlas")
     private String preLaunch = "";

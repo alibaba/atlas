@@ -212,6 +212,8 @@ package com.taobao.android.builder.extension;
 import com.android.annotations.NonNull;
 import com.taobao.android.builder.extension.annotation.Config;
 import com.taobao.android.builder.extension.annotation.ConfigGroup;
+import com.taobao.android.builder.extension.factory.DefaultChannelConfigFactory;
+import com.taobao.android.builder.extension.factory.EnhanceConfigFactory;
 import com.taobao.android.builder.extension.factory.MultiDexConfigFactory;
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
@@ -233,6 +235,11 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     public NamedDomainObjectContainer<PatchConfig> patchConfigs;
 
     public NamedDomainObjectContainer<DexConfig>dexConfigs;
+
+    public NamedDomainObjectContainer<DefaultChannelConfig> channelConfigs;
+
+    public NamedDomainObjectContainer<EnhanceConfig> enhanceConfigs;
+
 
     public BundleConfig bundleConfig;
 
@@ -278,7 +285,8 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         this.buildTypes = buildTypes;
         this.multiDexConfigs = project.container(MultiDexConfig.class, new MultiDexConfigFactory(
             instantiator,project, project.getLogger()));
-
+        this.channelConfigs = project.container(DefaultChannelConfig.class, new DefaultChannelConfigFactory(instantiator, project, project.getLogger()));
+        this.enhanceConfigs = project.container(EnhanceConfig.class, new EnhanceConfigFactory(instantiator, project, project.getLogger()));
         tBuildConfig = (Z) instantiator.newInstance(TBuildConfig.class);
         manifestOptions = instantiator.newInstance(ManifestOptions.class);
         bundleConfig = instantiator.newInstance(BundleConfig.class);
@@ -362,4 +370,13 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     public Boolean getBaseFeature() {
         return false;
     }
+
+    public void channelConfigs(Action<? super NamedDomainObjectContainer<DefaultChannelConfig>> action) {
+        action.execute(channelConfigs);
+    }
+    public void setChannelConfigs(NamedDomainObjectContainer<DefaultChannelConfig> channelConfigs) {
+        this.channelConfigs = channelConfigs;
+    }
+
 }
+

@@ -329,7 +329,7 @@ public class ApBuildTask extends DefaultAndroidTask {
         if (null != proguardOut &&
             proguardOut.exists() &&
             (new File(proguardOut, "mapping.txt").exists() ||
-                new File(proguardOut, "full-mapping.txt").exists())) {
+                new File(proguardOut, "full-mapping.txt").exists()||new File(proguardOut,"j2cmap.zip").exists())) {
             File usageFile = new File(proguardOut, "usage.txt");
             File mappingFile = new File(proguardOut, "mapping.txt");
             File dexCocoMap = new File(proguardOut,"dexcocomap.zip");
