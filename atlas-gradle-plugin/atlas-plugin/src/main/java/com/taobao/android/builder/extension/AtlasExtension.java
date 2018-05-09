@@ -236,7 +236,13 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     public NamedDomainObjectContainer<DexConfig>dexConfigs;
 
-    public NamedDomainObjectContainer<DefaultChannelConfig> channelConfigs;
+
+
+    public void setAtlasChannelConfigs(NamedDomainObjectContainer<DefaultChannelConfig> atlasChannelConfigs) {
+        this.atlasChannelConfigs = atlasChannelConfigs;
+    }
+
+    public NamedDomainObjectContainer<DefaultChannelConfig> atlasChannelConfigs;
 
     public NamedDomainObjectContainer<EnhanceConfig> enhanceConfigs;
 
@@ -285,7 +291,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         this.buildTypes = buildTypes;
         this.multiDexConfigs = project.container(MultiDexConfig.class, new MultiDexConfigFactory(
             instantiator,project, project.getLogger()));
-        this.channelConfigs = project.container(DefaultChannelConfig.class, new DefaultChannelConfigFactory(instantiator, project, project.getLogger()));
+        this.atlasChannelConfigs = project.container(DefaultChannelConfig.class, new DefaultChannelConfigFactory(instantiator, project, project.getLogger()));
         this.enhanceConfigs = project.container(EnhanceConfig.class, new EnhanceConfigFactory(instantiator, project, project.getLogger()));
         tBuildConfig = (Z) instantiator.newInstance(TBuildConfig.class);
         manifestOptions = instantiator.newInstance(ManifestOptions.class);
@@ -371,12 +377,10 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         return false;
     }
 
-    public void channelConfigs(Action<? super NamedDomainObjectContainer<DefaultChannelConfig>> action) {
-        action.execute(channelConfigs);
+    public void atlasChannelConfigs(Action<? super NamedDomainObjectContainer<DefaultChannelConfig>> action) {
+        action.execute(atlasChannelConfigs);
     }
-    public void setChannelConfigs(NamedDomainObjectContainer<DefaultChannelConfig> channelConfigs) {
-        this.channelConfigs = channelConfigs;
-    }
+
 
 }
 
