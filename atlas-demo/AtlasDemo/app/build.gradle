@@ -102,33 +102,28 @@ atlas {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     compile(rootProject.ext.lib_atlas_core) {
 
         transitive = true
     }
-
-
     compile project(':middlewarelibrary')
     compile project(':splashscreen')
     compile project(':activitygroupcompat')
-
     bundleCompile project(':firstbundle')
     bundleCompile project(':secondbundle')
     bundleCompile project(':remotebundle')
     bundleCompile project(':publicbundle')
     bundleCompile project(':databindbundle')
-
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
     compile 'com.android.support:support-vector-drawable:25.1.0'
     compile 'com.android.support:support-v4:25.1.0'
     compile rootProject.ext.lib_atlas_update
-
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
     compile 'com.android.support:recyclerview-v7:25.3.0'
+    compile project(':atlas_core')
 }
 
 String getEnvValue(key, defValue) {

@@ -9,3 +9,5 @@ include ':remotebundle'
 include ':databindbundle'
 include ':splashscreen'
 include ':app'
+include ":atlas_core"
+project(":atlas_core").projectDir = file("../../atlas-core")

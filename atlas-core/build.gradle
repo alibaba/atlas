@@ -126,7 +126,7 @@ project.gradle.buildFinished{
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '23.0.1'
+    buildToolsVersion '25.0.1'
     lintOptions {
         abortOnError false
     }
