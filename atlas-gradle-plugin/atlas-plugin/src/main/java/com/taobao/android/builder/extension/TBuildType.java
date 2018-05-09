@@ -252,7 +252,15 @@ public class TBuildType {
 
     private DefaultSigningConfig signingConfig;
 
-    private DefaultChannelConfig channelConfig;
+    public DefaultChannelConfig getAtlasChannelConfig() {
+        return atlasChannelConfig;
+    }
+
+    public void setAtlasChannelConfig(DefaultChannelConfig atlasChannelConfig) {
+        this.atlasChannelConfig = atlasChannelConfig;
+    }
+
+    private DefaultChannelConfig atlasChannelConfig;
 
     public TBuildType(String name) {
         this.name = name;
@@ -306,13 +314,7 @@ public class TBuildType {
         this.multiDexConfig = multiDexConfig;
     }
 
-    public DefaultChannelConfig getChannelConfig() {
-        return channelConfig;
-    }
 
-    public void setChannelConfig(DefaultChannelConfig channelConfig) {
-        this.channelConfig = channelConfig;
-    }
 
     public EnhanceConfig getEnhanceConfig() {
         return enhanceConfig;
