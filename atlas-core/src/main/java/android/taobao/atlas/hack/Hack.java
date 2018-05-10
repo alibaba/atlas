@@ -217,7 +217,7 @@ import java.lang.reflect.Modifier;
 import android.taobao.atlas.hack.Hack.HackDeclaration.HackAssertionException;
 import android.taobao.atlas.hack.Interception.InterceptionHandler;
 import android.taobao.atlas.runtime.DelegateClassLoader;
-
+import android.util.Log;
 
 /** @author Oasis */
 public class Hack {
@@ -386,6 +386,7 @@ public class Hack {
 	}
 
 	public static class HackedMethod {
+        private static final String TAG = "HackedMethod";
 
 		public Object invoke(final Object receiver, final Object... args) throws IllegalArgumentException, InvocationTargetException {
 			Object obj = null;
@@ -407,7 +408,8 @@ public class Hack {
 					fail(new HackAssertionException(method + " does not match modifiers: " + modifiers));
 				method.setAccessible(true);
 			} catch (final NoSuchMethodException e) {
-				HackAssertionException hae = new HackAssertionException(e);
+                Log.e(TAG, "No such method: " + e.getMessage());
+                HackAssertionException hae = new HackAssertionException(e);
 				hae.setHackedClass(clazz);
 				hae.setHackedMethodName(name);
 				fail(hae);
