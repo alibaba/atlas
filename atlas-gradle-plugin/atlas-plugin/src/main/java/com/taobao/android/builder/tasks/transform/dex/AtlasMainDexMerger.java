@@ -141,7 +141,7 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
                                             Arrays.asList(mergeDexs[0]),
                                             output,
                                             outputDir,
-                                            false));
+                                            null));
                         } else {
                             mergeTasks.addAll(
                                     handleLegacyAndMonoDex(

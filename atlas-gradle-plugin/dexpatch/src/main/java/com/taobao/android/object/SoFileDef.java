@@ -1,6 +1,9 @@
 package com.taobao.android.object;
 
+import com.taobao.android.tpatch.utils.MD5Util;
+
 import java.io.File;
+import java.io.IOException;
 
 /**
  * SoFileDef
@@ -17,5 +20,6 @@ public class SoFileDef {
         this.baseSoFile = baseSoFile;
         this.newSoFile = newSoFile;
         this.patchFile = patchFile;
+
     }
 }

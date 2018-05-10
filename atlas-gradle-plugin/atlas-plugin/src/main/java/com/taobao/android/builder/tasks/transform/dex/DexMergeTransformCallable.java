@@ -78,7 +78,7 @@ public class DexMergeTransformCallable implements Callable<Void>{
                 }
                 merger = new AtlasD8Merger(
                         processOutput.getErrorOutput(),
-                        minSdkVersion,
+                        d8MinSdkVersion,
                         isDebuggable ? CompilationMode.DEBUG : CompilationMode.RELEASE);
                 break;
             default:

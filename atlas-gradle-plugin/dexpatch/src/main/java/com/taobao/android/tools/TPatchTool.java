@@ -214,6 +214,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
@@ -288,6 +289,8 @@ public class TPatchTool extends AbstractTool {
 
     public static File hisTpatchFolder;
 
+    public static final String SO_PATCH_META = "SO-PATCH-INF";
+
     private boolean hasMainBundle;
 
     public static Map<String,LinkedHashMap>bundleInfos = new HashMap<String, LinkedHashMap>();
@@ -336,6 +339,17 @@ public class TPatchTool extends AbstractTool {
     private File createTPatchFile(File outPatchDir, File patchTmpDir) throws IOException {
         // 首先压缩主bundle,先判断主bundle里有没有文件
         File mainBundleFoder = new File(patchTmpDir, ((TpatchInput)input).mainBundleName);
+        File metaFile = new File(mainBundleFoder,SO_PATCH_META);
+        if (soFileDefs.size() > 0){
+            com.taobao.android.tpatch.model.PatchFile patchFile = new com.taobao.android.tpatch.model.PatchFile(metaFile);
+            soFileDefs.stream().forEach(new Consumer<SoFileDef>() {
+                @Override
+                public void accept(SoFileDef soFileDef) {
+                    patchFile.append(soFileDef);
+                }
+            });
+            patchFile.close();
+        }
         File mainBundleFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + ".so");
         if (FileUtils.listFiles(mainBundleFoder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
             .size() > 0) {
@@ -1114,6 +1128,7 @@ public class TPatchTool extends AbstractTool {
                             //新增
                             FileUtils.copyFile(soFile, destFile);
                         }else {
+
                             destFile = new File(destFile.getParentFile(),destFile.getName()+".patch");
                             SoDiffUtils.diffSo(patchTmpDir,baseSoFile,soFile,destFile);
                             soFileDefs.add(new SoFileDef(baseSoFile,soFile,destFile));

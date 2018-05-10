@@ -140,11 +140,22 @@ public abstract class AtlasDexMerger {
             @NonNull List<File> inputs,
             @NonNull ProcessOutput output,
             @NonNull File outPutDir,
-            boolean isIncremental)
+            File mainDexList)
             throws IOException {
-        ImmutableList.Builder<ForkJoinTask<Void>> subTasks = ImmutableList.builder();
+//        ImmutableList.Builder<ForkJoinTask<Void>> subTasks = ImmutableList.builder();
+//
+//        throw new IOException("instantRun in AtlasPlugin is deprecared!");
 
-        throw new IOException("instantRun in AtlasPlugin is deprecared!");
+        ImmutableList.Builder<Path> dexArchiveBuilder = ImmutableList.builder();
+        for ( File file:inputs){
+            dexArchiveBuilder.add(file.toPath());
+        }
+        ImmutableList<Path> dexesToMerge = dexArchiveBuilder.build();
+        if (dexesToMerge.isEmpty()) {
+            return ImmutableList.of();
+        }
+
+        return ImmutableList.of(submitForMerging(output, outPutDir, dexesToMerge, null));
 
     }
 
