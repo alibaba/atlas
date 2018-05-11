@@ -364,6 +364,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
         this.printconfiguration(proguardOutFile);
 
         super.transform(invocation);
+        firstTime = true;
     }
 
     public void fastTransform(TransformInvocation invocation) throws TransformException {

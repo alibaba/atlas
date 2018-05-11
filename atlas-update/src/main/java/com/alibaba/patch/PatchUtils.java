@@ -4,7 +4,11 @@ package com.alibaba.patch;
 public class PatchUtils {
 
 	static {
-		System.loadLibrary("PatchLibrary");
+		try {
+			System.loadLibrary("PatchLibrary");
+		}catch (Throwable e){
+			e.printStackTrace();
+		}
 	}
 
 	/**

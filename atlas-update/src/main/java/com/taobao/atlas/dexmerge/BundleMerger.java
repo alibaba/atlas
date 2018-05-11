@@ -1,13 +1,16 @@
 package com.taobao.atlas.dexmerge;
 
+import android.os.Build;
 import android.util.Log;
 import com.alibaba.patch.PatchUtils;
 import com.taobao.atlas.dex.ClassDef;
 import com.taobao.atlas.dex.Dex;
 import com.taobao.atlas.dex.ProtoId;
 import com.taobao.atlas.dex.util.FileUtils;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import com.taobao.atlas.dexmerge.dx.merge.CollisionPolicy;
 import com.taobao.atlas.dexmerge.dx.merge.DexMerger;
+import com.taobao.atlas.update.util.PatchMerger;
 
 import java.io.*;
 import java.util.*;
@@ -19,8 +22,10 @@ import java.util.zip.ZipOutputStream;
 /**
  * Created by lilong on 16/7/5.
  */
-public class MergeTool {
-    private static final int BUFFEREDSIZE = 1024;
+public class BundleMerger {
+    private static final int BUFFEREDSIZE = 8192;
+
+    private static final byte[] BUFFER = new byte[BUFFEREDSIZE];
 
     private static final String MAIN_DEX = "com.taobao.maindex";
 
@@ -29,6 +34,9 @@ public class MergeTool {
     private static final String DEX_SUFFIX = ".dex";
 
     private static final String SO_SUFFIX = ".so";
+
+    private static final String SO_PATCH_SUFFIX = ".patch";
+
 
 
     public static void mergePrepare(File oldBundle, List<ZipEntry> entryList, String patchName, File targetBundle, boolean isDiff, MergeExcutorServices.PrepareCallBack prepareCallBack) throws IOException, MergeException {
@@ -61,50 +69,60 @@ public class MergeTool {
     }
 
     private static void createNewMainApkInternal(ZipFile sourceZip, List<ZipEntry> entryList, File tempFile, boolean isDiff, MergeExcutorServices.PrepareCallBack prepareCallBack) throws IOException {
-        byte[] buffer = new byte[BUFFEREDSIZE];
         ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(tempFile)));
-        BufferedOutputStream bo = new BufferedOutputStream(out);
         InputStream in;
         //先写入source中未变的文件
-        java.util.Enumeration e = sourceZip.entries();
         int i = 1;
         File mainDexFile = new File(tempFile.getParentFile(), "libcom_taobao_maindex.zip");
         inputStreamToFile(MergeExcutorServices.sZipPatch.getInputStream(entryList.get(0)), mainDexFile);
         ZipFile zipFile = new ZipFile(mainDexFile);
-        Dex patchDex = new Dex(zipFile.getInputStream(zipFile.getEntry(CLASS + DEX_SUFFIX)));
-        Iterator<ClassDef> iterators = patchDex.classDefs().iterator();
-        List<String> patchClassNames = new ArrayList<String>();
-        while (iterators.hasNext()) {
-            ClassDef classDef = iterators.next();
-            int typeIndex = classDef.getTypeIndex();
-            Log.e("MergeTool", "merge class:" + patchDex.typeNames().get(typeIndex));
-            patchClassNames.add(patchDex.typeNames().get(typeIndex));
+        if (Build.VERSION.SDK_INT < 21) {
+            //1.get all need patch classes
+            List<String> patchClassNames = getPatchClasses(zipFile);
+
+            //2.process source apk dexs,such as classes.dex,classes2.dex,classes3.dex ...
+
+            i = processSourceDexsAndWrite(sourceZip,out,patchClassNames);
+
         }
-        while (e.hasMoreElements()) {
-            ZipEntry zipEnt = (ZipEntry) e.nextElement();
-            String name = zipEnt.getName();
-            if (isDiff && name.endsWith(DEX_SUFFIX)) {
-                i++;
-                InputStream inputStream = sourceZip.getInputStream(zipEnt);
-                Dex dex = processDex(inputStream, patchClassNames);
-                ZipEntry zipEntry = new ZipEntry(name);
-                out.putNextEntry(zipEntry);
-                write(new ByteArrayInputStream(dex.getBytes()), out, buffer);
-                bo.flush();
-            }
-        }
+
         Enumeration entries = zipFile.entries();
         while (entries.hasMoreElements()) {
             ZipEntry zipEnt = (ZipEntry) entries.nextElement();
             String name = zipEnt.getName();
             if (name.endsWith(DEX_SUFFIX)) {
-                ZipEntry zipEntry = new ZipEntry(String.format("%s%s%s", CLASS, i, DEX_SUFFIX));
-                out.putNextEntry(zipEntry);
-                write(zipFile.getInputStream(zipEnt), out, buffer);
-                bo.flush();
+                writePatchDex(zipFile,zipEnt,i,out);
                 i++;
                 continue;
             }
+
+
+            if (name.endsWith(SO_PATCH_SUFFIX)){
+                File patchNativeSoFile = new File(tempFile.getParentFile(),zipEnt.getName());
+                if (!patchNativeSoFile.getParentFile().exists()){
+                    patchNativeSoFile.getParentFile().mkdirs();
+                }
+                inputStreamToFile(zipFile.getInputStream(zipEnt), patchNativeSoFile);
+                File oringalSoFile = findBaseSo(patchNativeSoFile.getName().replace(SO_PATCH_SUFFIX,""),name,sourceZip,patchNativeSoFile.getAbsolutePath());
+                File newSo = new File(patchNativeSoFile.getParentFile(),patchNativeSoFile.getName().replace(SO_PATCH_SUFFIX,""));
+                boolean result = true;
+                if (MergeExcutorServices.patchMerger!= null){
+                    result = MergeExcutorServices.patchMerger.merge(oringalSoFile,patchNativeSoFile,newSo);
+                }
+                if (!result){
+                    throw new IOException("native so merge Failed!");
+                }
+                ZipEntry newEntry = new ZipEntry(name);
+                out.putNextEntry(newEntry);
+                 in = new FileInputStream(newSo);
+                 write(in, out, BUFFER);
+                 out.flush();
+                 out.closeEntry();
+                 newSo.delete();
+                 continue;
+
+            }
+
             ZipEntry newEntry = new ZipEntry(name);
             if (name.contains("raw/") || name.contains("assets/")) {
                 newEntry.setMethod(ZipEntry.STORED);
@@ -113,14 +131,55 @@ public class MergeTool {
             }
             out.putNextEntry(newEntry);
             in = zipFile.getInputStream(zipEnt);
-            write(in, out, buffer);
-            bo.flush();
+            write(in, out, BUFFER);
+            out.flush();
+            out.closeEntry();
 
         }
         mainDexFile.delete();
         zipFile.close();
         closeQuitely(out);
-        closeQuitely(bo);
+    }
+
+    private static void writePatchDex(ZipFile zipFile, ZipEntry zipEnt, int i, ZipOutputStream out) throws IOException {
+        ZipEntry zipEntry = new ZipEntry(String.format("%s%s%s", CLASS, i == 1?"":i, DEX_SUFFIX));
+        out.putNextEntry(zipEntry);
+        write(zipFile.getInputStream(zipEnt), out, BUFFER);
+        out.flush();
+        out.closeEntry();
+    }
+
+    private static int processSourceDexsAndWrite(ZipFile sourceZip,ZipOutputStream out,List<String> patchClassNames) throws IOException {
+        int i = 1;
+        java.util.Enumeration e = sourceZip.entries();
+        while (e.hasMoreElements()) {
+            ZipEntry zipEnt = (ZipEntry) e.nextElement();
+            String name = zipEnt.getName();
+            if (name.endsWith(DEX_SUFFIX)) {
+                i++;
+                InputStream inputStream = sourceZip.getInputStream(zipEnt);
+                Dex dex = processDex(inputStream, patchClassNames);
+                ZipEntry zipEntry = new ZipEntry(name);
+                out.putNextEntry(zipEntry);
+                write(new ByteArrayInputStream(dex.getBytes()), out, BUFFER);
+                out.closeEntry();
+                out.flush();
+            }
+        }
+        return i;
+    }
+
+    private static List<String> getPatchClasses(ZipFile zipFile) throws IOException {
+        Dex patchDex = new Dex(zipFile.getInputStream(zipFile.getEntry(CLASS + DEX_SUFFIX)));
+        Iterator<ClassDef> iterators = patchDex.classDefs().iterator();
+        List<String> patchClassNames = new ArrayList<String>();
+        while (iterators.hasNext()) {
+            ClassDef classDef = iterators.next();
+            int typeIndex = classDef.getTypeIndex();
+            Log.e("BundleMerger", "merge class:" + patchDex.typeNames().get(typeIndex));
+            patchClassNames.add(patchDex.typeNames().get(typeIndex));
+        }
+        return patchClassNames;
     }
 
 
@@ -325,59 +384,29 @@ public class MergeTool {
     }
 
 
-    private static void inputStreamToFile(InputStream ins, File file) throws IOException {
-        if (file.exists()) {
-            file.delete();
+    private static void inputStreamToFile(InputStream ins, File file) {
+        OutputStream os = null;
+        try {
+            if (file.exists()) {
+                file.delete();
+            }
+            os = new FileOutputStream(file);
+            int bytesRead = 0;
+            byte[] buffer = new byte[8192];
+            while ((bytesRead = ins.read(buffer, 0, 8192)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+        }catch (Throwable e){
+            e.printStackTrace();
+
+        }finally {
+            closeQuitely(os);
+            closeQuitely(ins);
         }
-        OutputStream os = new FileOutputStream(file);
-        int bytesRead = 0;
-        byte[] buffer = new byte[8192];
-        while ((bytesRead = ins.read(buffer, 0, 8192)) != -1) {
-            os.write(buffer, 0, bytesRead);
-        }
-        os.close();
-        ins.close();
+
+
     }
 
-//    private static void zip(ZipOutputStream out, File f, String base,
-//                            BufferedOutputStream bo) throws IOException {
-//        if (f.isDirectory()) {
-//            File[] fl = f.listFiles();
-//            if (fl.length == 0) {
-//                out.putNextEntry(new ZipEntry(base + File.separator));
-//            }
-//            for (int i = 0; i < fl.length; i++) {
-//                zip(out, fl[i], base + File.separator + fl[i].getName(), bo);
-//            }
-//        } else {
-//            CRC32 crc = new CRC32();
-//            ZipEntry newEntry = new ZipEntry(base);
-//            int bytesRead;
-//            byte[] buffer = new byte[BUFFEREDSIZE];
-//            if(base.contains("raw/") || base.contains("assets/")){
-//                BufferedInputStream bis = new BufferedInputStream(
-//                        new FileInputStream(f));
-//                crc.reset();
-//                while ((bytesRead = bis.read(buffer)) != -1) {
-//                    crc.update(buffer, 0, bytesRead);
-//                }
-//                closeQuitely(bis);
-//                newEntry.setMethod(ZipEntry.STORED);
-//                newEntry.setCrc(crc.getValue());
-//                newEntry.setSize(f.length());
-//            }
-//            out.putNextEntry(newEntry);
-//            FileInputStream in = new FileInputStream(f);
-//            BufferedInputStream bi = new BufferedInputStream(in);
-//            int b;
-//            while ((b = bi.read()) != -1) {
-//                bo.write(b);
-//            }
-//            bo.flush();
-//            closeQuitely(bi);
-//            closeQuitely(in);
-//        }
-//    }
 
     private static void write(InputStream in, OutputStream out, byte[] buffer) throws IOException {
         int length = in.read(buffer);
@@ -409,6 +438,18 @@ public class MergeTool {
             }
         }
         return dir.delete();
+    }
+
+    private static File findBaseSo(String soName, String entryName, ZipFile rawZip, String targetPath) throws IOException {
+        File libDir = new File(RuntimeVariables.androidApplication.getFilesDir().getParentFile(), "lib");
+        if (new File(libDir, soName).exists() && new File(libDir, soName).canRead()) {
+            return new File(libDir, soName);
+        } else {
+            File oringalSo = new File(new File(targetPath).getParentFile(), new File(targetPath).getName().replace(SO_PATCH_SUFFIX, ".old"));
+            inputStreamToFile(rawZip.getInputStream(rawZip.getEntry(entryName.replace(SO_PATCH_SUFFIX, ""))), oringalSo);
+            return oringalSo;
+        }
+
     }
 
 }

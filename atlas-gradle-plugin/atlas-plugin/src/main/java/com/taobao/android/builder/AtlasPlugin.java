@@ -244,7 +244,7 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
         atlasConfigurationHelper.createLibCompenents();
 
-        if (PluginTypeUtils.isAppProject(project)) {
+        if (PluginTypeUtils.isAppProject(project) && atlasExtension.isAtlasEnabled()) {
 
             Map<String, String> multiDex = new HashMap<>();
             multiDex.put("group", "com.android.support");
@@ -255,7 +255,6 @@ public class AtlasPlugin extends AtlasBasePlugin {
                 project.getDependencies().add("compile", "com.taobao.android:atlasupdate:1.1.4.5");
                 project.getDependencies().add("compile", "com.taobao.android:atlas_core:5.0.6-rc21@aar");
             }
-
 
         }
 

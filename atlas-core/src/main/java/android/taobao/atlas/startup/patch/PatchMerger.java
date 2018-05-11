@@ -26,31 +26,37 @@ public abstract class PatchMerger {
 
     public abstract boolean merge(File sourceFile, File patchFile, File newFile);
 
-    public void sumitForMerge(final File sourceFile, final File patchFile, final File newFile){
+    public void sumitForMerge(final File sourceFile, final File patchFile, final File newFile) {
 
-        Future <Boolean>future = service.submit(new Callable<Boolean>() {
+        Future<Boolean> future = service.submit(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
 
-                return merge(sourceFile,patchFile,newFile);
+                return merge(sourceFile, patchFile, newFile);
             }
         });
         futures.add(future);
     }
 
-    public boolean waitForResult(){
-        for (Future future:futures){
+    public boolean waitForResult() {
+        for (Future future : futures) {
             try {
-                Boolean flag = (Boolean) future.get(5000,TimeUnit.SECONDS);
-                if (!flag){
+                Boolean flag = (Boolean) future.get(5000, TimeUnit.SECONDS);
+                if (!flag) {
                     return false;
                 }
-            } catch (Throwable e){
+            } catch (Throwable e) {
                 e.printStackTrace();
                 return false;
             }
         }
         return true;
+    }
+
+    public void shutdown() {
+        if (service != null) {
+            service.shutdownNow();
+        }
     }
 
 }

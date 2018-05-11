@@ -1,5 +1,6 @@
 package com.taobao.android.builder;
 
+import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
 import com.taobao.android.builder.tools.PluginTypeUtils;
@@ -35,6 +36,8 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
 
     protected AtlasConfigurationHelper atlasConfigurationHelper;
 
+    protected AtlasExtension atlasExtension;
+
     @Inject
     public AtlasBasePlugin(Instantiator instantiator) {
 
@@ -52,7 +55,7 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
 
         AtlasBuildContext.atlasConfigurationHelper = atlasConfigurationHelper;
 
-        atlasConfigurationHelper.createExtendsion();
+         atlasExtension = atlasConfigurationHelper.createExtendsion();
 
 
     }

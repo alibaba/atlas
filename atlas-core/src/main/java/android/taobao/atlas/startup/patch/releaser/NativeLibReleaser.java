@@ -212,7 +212,6 @@ import android.os.Build;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.patch.*;
 import android.util.Log;
-import com.alibaba.patch.PatchUtils;
 
 import java.io.*;
 import java.util.Enumeration;
@@ -224,23 +223,12 @@ import java.util.zip.ZipFile;
  */
 public class NativeLibReleaser {
 
-    private static final String SO_PATCH_SUFFIX = ".patch";
-
-    public static final String SO_PATCH_META = "SO-PATCH-INF";
-
-    private static PatchMerger patchMerger;
-
     public static boolean releaseLibs(File apkFile, File reversionDir) throws IOException {
         ZipFile rawZip = new ZipFile(KernalConstants.APK_PATH);
         if (new File(reversionDir, "lib").exists() && new File(reversionDir, "lib").listFiles().length > 0) {
             return true;
         }
         ZipFile bundleFile = new ZipFile(apkFile);
-        PatchVerifier patchVerifier = null;
-        if (bundleFile.getEntry(SO_PATCH_META) != null) {
-            patchVerifier = new NativePatchVerifier(bundleFile.getInputStream(bundleFile.getEntry(SO_PATCH_META)));
-        }
-        patchMerger = new NativePatchMerger(patchVerifier);
         String extractTag = "lib/armeabi";
         if (Build.CPU_ABI.contains("x86")) {
             if (bundleFile.getEntry("lib/x86/") != null) {
@@ -268,17 +256,6 @@ public class NativeLibReleaser {
                         }
                         BufferedInputStream bi = new BufferedInputStream(bundleFile.getInputStream(zipEntry));
                         inputStreamToFile(bi, new File(targetPath));
-                        if (entryName.endsWith(SO_PATCH_SUFFIX)) {
-                            String soName = new File(targetPath).getName().replace(SO_PATCH_SUFFIX, "");
-                            File oringalSo = findBaseSo(soName, entryName, rawZip, targetPath);
-                            Log.e("NativeLibReleaser", "oringal so-->" + oringalSo.getAbsolutePath());
-
-                            File newSo = new File(new File(targetPath).getParentFile(), new File(targetPath).getName().replace(SO_PATCH_SUFFIX, ""));
-                            if (!new File(targetPath).exists() || !oringalSo.exists()) {
-                                throw new IOException("maindex so merge failed! because " + targetPath + " is not exits or " + oringalSo.getAbsolutePath() + " is not exits!");
-                            }
-                            patchMerger.sumitForMerge(oringalSo, new File(targetPath), newSo);
-                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -287,31 +264,33 @@ public class NativeLibReleaser {
 
             }
         }
-        return patchMerger.waitForResult();
+        return true;
     }
 
-    private static File findBaseSo(String soName, String entryName, ZipFile rawZip, String targetPath) throws IOException {
-        File libDir = new File(RuntimeVariables.androidApplication.getFilesDir().getParentFile(), "lib");
-        if (new File(libDir, soName).exists() && new File(libDir, soName).canRead()) {
-            return new File(libDir, soName);
-        } else {
-            File oringalSo = new File(new File(targetPath).getParentFile(), new File(targetPath).getName().replace(SO_PATCH_SUFFIX, ".old"));
-            inputStreamToFile(rawZip.getInputStream(rawZip.getEntry(entryName.replace(SO_PATCH_SUFFIX, ""))), oringalSo);
-            return oringalSo;
+
+    private static void inputStreamToFile(InputStream inputStream, File oringalSo) {
+        BufferedOutputStream bos = null;
+        try {
+             bos = new BufferedOutputStream(
+                    new FileOutputStream(oringalSo));
+            byte[] readContent = new byte[4096];
+            int readCount = inputStream.read(readContent);
+            while (readCount != -1) {
+                bos.write(readContent, 0, readCount);
+                readCount = inputStream.read(readContent);
+            }
+        }catch (Throwable e){
+
+        }finally {
+            if (null != bos) {
+                try {
+                    bos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
-    }
-
-    private static void inputStreamToFile(InputStream inputStream, File oringalSo) throws IOException {
-        BufferedOutputStream bos = new BufferedOutputStream(
-                new FileOutputStream(oringalSo));
-        byte[] readContent = new byte[4096];
-        int readCount = inputStream.read(readContent);
-        while (readCount != -1) {
-            bos.write(readContent, 0, readCount);
-            readCount = inputStream.read(readContent);
-        }
-        bos.close();
     }
 
     private static File mappingInternalDirectory(File revisionDir) {

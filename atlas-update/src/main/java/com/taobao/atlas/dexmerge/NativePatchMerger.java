@@ -1,7 +1,9 @@
-package android.taobao.atlas.startup.patch;
+package com.taobao.atlas.dexmerge;
 
 import android.util.Log;
 import com.alibaba.patch.PatchUtils;
+import com.taobao.atlas.update.util.PatchMerger;
+
 import java.io.File;
 
 

@@ -43,6 +43,9 @@ public class PatchMerger {
     private static boolean supportMerge;
     private static String MAIN_DEX = "com.taobao.maindex";
     private boolean lowDisk = false;
+    private boolean supportNativeMerge = false;
+    public static final String SO_PATCH_META = "SO-PATCH-INF";
+
     static {
         supportMerge = Build.VERSION.SDK_INT < 21;
     }
@@ -78,6 +81,7 @@ public class PatchMerger {
                 oringnalDir.mkdirs();
             }
             ZipFile patchZip = new ZipFile(patchFile);
+            supportNativeMerge = patchZip.getEntry(SO_PATCH_META)!= null;
             Pair<File, String>[] updateBundles = new Pair[updateInfo.updateBundles.size()];
             List<MergeObject> toMergeList = new ArrayList<MergeObject>();
             //find original bundle and store in pair struct
@@ -253,7 +257,7 @@ public class PatchMerger {
 
     private boolean supportMerge(String bundleName) {
 
-        return (lowDisk || supportMerge)&&bundleName.equals(MAIN_DEX);
+        return ((lowDisk || supportMerge)&&bundleName.equals(MAIN_DEX)) || supportNativeMerge;
 
     }
 }

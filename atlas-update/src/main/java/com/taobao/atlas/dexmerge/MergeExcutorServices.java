@@ -4,6 +4,7 @@ import android.os.RemoteException;
 import com.taobao.atlas.dex.Dex;
 import com.taobao.atlas.dexmerge.dx.merge.CollisionPolicy;
 import com.taobao.atlas.dexmerge.dx.merge.DexMerger;
+import com.taobao.atlas.update.util.PatchMerger;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
@@ -12,6 +13,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
+import android.taobao.atlas.runtime.RuntimeVariables;
 
 import java.io.*;
 import java.util.*;
@@ -33,6 +35,7 @@ public class MergeExcutorServices {
 
     public static OS os = OS.mac;
 
+    public static NativePatchMerger patchMerger= null;
 
     public MergeExcutorServices(IDexMergeCallback mCallback) throws RemoteException {
         this.mCallback = mCallback;
@@ -72,6 +75,9 @@ public class MergeExcutorServices {
                             } else {
                                 bundleEntryGroup.get(key).add(entry);
                             }
+                        }else if (entry.getName().equals(PatchMerger.SO_PATCH_META)){
+                            patchMerger = new NativePatchMerger(new NativePatchVerifier(sZipPatch.getInputStream(sZipPatch.getEntry(PatchMerger.SO_PATCH_META))));
+
                         }
                     }
                 } catch (IOException e) {
@@ -227,7 +233,7 @@ public class MergeExcutorServices {
 
         @Override
         public File call() throws IOException, MergeException {
-            MergeTool.mergePrepare(sourceFile, patchEntries,patchName, outFile, diffDex, new PrepareCallBack() {
+            BundleMerger.mergePrepare(sourceFile, patchEntries,patchName, outFile, diffDex, new PrepareCallBack() {
 
                 @Override
                 public void prepareMerge(String patchBundleName,ZipFile sourceFile, ZipEntry patchDex, OutputStream newDexStream) throws IOException {
