@@ -212,6 +212,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import android.content.Context;
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.text.TextUtils;
 import android.util.Log;
 import com.taobao.android.runtime.AndroidRuntime;
@@ -231,28 +232,35 @@ public class DexLoadBooster {
     }
 
     public void init(Context context) {
-        boolean isTaobao = "com.taobao.taobao".equals(context.getPackageName());
-        if (isYunOS()) {
-            Log.d("RuntimeUtils", "- RuntimeUtils init: isYunOS. Invalid disable");
-            return;
-        } else {
-            if (isTaobao) {
-                //boolean isAppDebuggable = (context.getApplicationInfo().flags & 2) != 0;
-                //AndroidRuntime.getInstance().init(context, !isAppDebuggable);
-                Dex2OatService.setBootCompleted(false);
+        try {
+            boolean isTaobao = "com.taobao.taobao".equals(context.getPackageName());
+            if (isYunOS()) {
+                Log.d("RuntimeUtils", "- RuntimeUtils init: isYunOS. Invalid disable");
+                return;
             } else {
-                //AndroidRuntime.getInstance().init(context);
+                if (isTaobao) {
+                    //boolean isAppDebuggable = (context.getApplicationInfo().flags & 2) != 0;
+                    //AndroidRuntime.getInstance().init(context, !isAppDebuggable);
+                    Dex2OatService.setBootCompleted(false);
+                } else {
+                    //AndroidRuntime.getInstance().init(context);
+                }
             }
+            AndroidRuntime.getInstance().init(context,
+                                              isClassAvailable("com.ali.mobisecenhance.ld.startup.ConfigInfo"));
+            if (!AndroidRuntime.getInstance().isEnabled()) {
+                return;
+            }
+            Log.e("AndroidRuntime", Dex2OatService.class.toString());
+            if (VERSION.SDK_INT > 20) {
+                return;
+            }
+            DalvikPatch.patchIfPossible();
+        } catch (Throwable e) {
+            Log.e(TAG, "Couldn't initialize.", e);
         }
-        AndroidRuntime.getInstance().init(context, isClassAvailable("com.ali.mobisecenhance.ld.startup.ConfigInfo"));
-        if (!AndroidRuntime.getInstance().isEnabled()) {
-            return;
-        }
-        Log.e("AndroidRuntime",Dex2OatService.class.toString());
-        if (Build.VERSION.SDK_INT > 20) {
-            return;
-        }
-        DalvikPatch.patchIfPossible();
+
+
     }
 
     public void setVerificationEnabled(boolean enabled) {
