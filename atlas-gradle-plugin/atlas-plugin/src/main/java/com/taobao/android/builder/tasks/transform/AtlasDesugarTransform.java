@@ -46,28 +46,36 @@ import java.util.stream.Collectors;
  * @author zhayu.ll
  * @date 18/2/7
  */
-public class AtlasDesugarTransform extends Transform{
+public class AtlasDesugarTransform extends Transform {
     public Transform oldTransform;
 
     private enum FileCacheInputParams {
 
-        /** The input file. */
+        /**
+         * The input file.
+         */
         FILE,
 
-        /** Version of the plugin containing Desugar used to generate the output. */
+        /**
+         * Version of the plugin containing Desugar used to generate the output.
+         */
         PLUGIN_VERSION,
 
-        /** Minimum sdk version passed to Desugar, affects output. */
+        /**
+         * Minimum sdk version passed to Desugar, affects output.
+         */
         MIN_SDK_VERSION,
     }
 
     private static class InputEntry {
         @Nullable
         private final FileCache cache;
-        @Nullable private final FileCache.Inputs inputs;
+        @Nullable
+        private final FileCache.Inputs inputs;
         @NonNull
         private final Path inputPath;
-        @NonNull private final Path outputPath;
+        @NonNull
+        private final Path outputPath;
 
         public InputEntry(
                 @Nullable FileCache cache,
@@ -109,28 +117,35 @@ public class AtlasDesugarTransform extends Transform{
 
     private static final String DESUGAR_JAR = "desugar_deploy.jar";
 
-    @NonNull private final Supplier<List<File>> androidJarClasspath;
+    @NonNull
+    private final Supplier<List<File>> androidJarClasspath;
     private final AppVariantOutputContext appVariantOutputContext;
-    @NonNull private final List<Path> compilationBootclasspath;
-    @Nullable private final FileCache userCache;
+    @NonNull
+    private final List<Path> compilationBootclasspath;
+    @Nullable
+    private final FileCache userCache;
     private final int minSdk;
-    @NonNull private final JavaProcessExecutor executor;
-    @NonNull private final Path tmpDir;
-    @NonNull private final WaitableExecutor waitableExecutor;
+    @NonNull
+    private final JavaProcessExecutor executor;
+    @NonNull
+    private final Path tmpDir;
+    @NonNull
+    private final WaitableExecutor waitableExecutor;
     private boolean verbose;
     private final boolean enableGradleWorkers;
 
-    @NonNull private Set<AtlasDesugarTransform.InputEntry> cacheMisses = Sets.newConcurrentHashSet();
+    @NonNull
+    private Set<AtlasDesugarTransform.InputEntry> cacheMisses = Sets.newConcurrentHashSet();
 
     public AtlasDesugarTransform(AppVariantOutputContext appVariantOutputContext,
-            @NonNull Supplier<List<File>> androidJarClasspath,
-            @NonNull List<Path> compilationBootclasspath,
-            @Nullable FileCache userCache,
-            int minSdk,
-            @NonNull JavaProcessExecutor executor,
-            boolean verbose,
-            boolean enableGradleWorkers,
-            @NonNull Path tmpDir) {
+                                 @NonNull Supplier<List<File>> androidJarClasspath,
+                                 @NonNull List<Path> compilationBootclasspath,
+                                 @Nullable FileCache userCache,
+                                 int minSdk,
+                                 @NonNull JavaProcessExecutor executor,
+                                 boolean verbose,
+                                 boolean enableGradleWorkers,
+                                 @NonNull Path tmpDir) {
         this.appVariantOutputContext = appVariantOutputContext;
         this.androidJarClasspath = androidJarClasspath;
         this.compilationBootclasspath = compilationBootclasspath;
@@ -194,8 +209,9 @@ public class AtlasDesugarTransform extends Transform{
     public void transform(@NonNull TransformInvocation transformInvocation)
             throws TransformException, InterruptedException, IOException {
         try {
+            Map<JarInput, File> transformFiles = new HashMap<>();
             initDesugarJar(userCache);
-            processInputs(transformInvocation);
+            processInputs(transformInvocation, transformFiles);
             waitableExecutor.waitForTasksWithQuickFail(true);
 
             if (enableGradleWorkers) {
@@ -206,6 +222,7 @@ public class AtlasDesugarTransform extends Transform{
                 processNonCachedOnes(getClasspath(transformInvocation));
                 waitableExecutor.waitForTasksWithQuickFail(true);
             }
+            AtlasBuildContext.atlasMainDexHelper.updateMainDexFiles(transformFiles);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TransformException(e);
@@ -214,10 +231,11 @@ public class AtlasDesugarTransform extends Transform{
         }
     }
 
-    private void processInputs(@NonNull TransformInvocation transformInvocation) throws Exception {
+    private void processInputs(@NonNull TransformInvocation transformInvocation, Map<JarInput, File> transformFiles) throws Exception {
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         Preconditions.checkNotNull(outputProvider);
-            outputProvider.deleteAll();
+        outputProvider.deleteAll();
+        AtlasBuildContext.atlasMainDexHelper.getInputDirs().clear();
         for (TransformInput input : transformInvocation.getInputs()) {
             for (DirectoryInput dirInput : input.getDirectoryInputs()) {
                 Path rootFolder = dirInput.getFile().toPath();
@@ -225,6 +243,7 @@ public class AtlasDesugarTransform extends Transform{
                 if (Files.notExists(rootFolder)) {
                     PathUtils.deleteIfExists(output);
                 } else {
+                    AtlasBuildContext.atlasMainDexHelper.getInputDirs().add(output.toFile());
                     Set<Status> statuses = Sets.newHashSet(dirInput.getChangedFiles().values());
                     boolean reRun =
                             !transformInvocation.isIncremental()
@@ -238,27 +257,33 @@ public class AtlasDesugarTransform extends Transform{
                 }
             }
 
+
             for (JarInput jarInput : input.getJarInputs()) {
+                if (jarInput.getScopes().contains(QualifiedContent.Scope.SUB_PROJECTS)) {
+                    if (jarInput.getName().contains("::")) {
+                        continue;
+                    }
+                }
                 Path output = getOutputPath(outputProvider, jarInput);
-                if (inMainDex(jarInput)){
-                    AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(jarInput,output.toFile());
+                if (inMainDex(jarInput)) {
                     Files.deleteIfExists(output);
-                    logger.info("process maindex desugar:"+jarInput.getFile().getAbsolutePath());
+                    logger.info("process maindex desugar:" + jarInput.getFile().getAbsolutePath());
                     processSingle(jarInput.getFile().toPath(), output, jarInput.getScopes());
-                }else {
+                    transformFiles.put(jarInput, output.toFile());
+                } else {
                     File file = appVariantOutputContext.updateAwbDexFile(jarInput, output.toFile());
-                    if (file!= null){
-                        if (!jarInput.getFile().equals(file)){
-                            logger.info("process awb desugar:"+file.getAbsolutePath());
+                    if (file != null) {
+                        if (!jarInput.getFile().equals(file)) {
+                            logger.info("process awb desugar:" + file.getAbsolutePath());
                             Files.deleteIfExists(output);
                             processSingle(file.toPath(), output, jarInput.getScopes());
-                        }else {
-                            logger.info("process awb desugar:"+jarInput.getFile().getAbsolutePath());
+                        } else {
+                            logger.info("process awb desugar:" + jarInput.getFile().getAbsolutePath());
                             Files.deleteIfExists(output);
                             processSingle(jarInput.getFile().toPath(), output, jarInput.getScopes());
                         }
-                    }else {
-                        throw new TransformException(jarInput.getFile().getAbsolutePath() +"is not in maindex and awb libraries in AtlasdesugarTransform!");
+                    } else {
+                        throw new TransformException(jarInput.getFile().getAbsolutePath() + "is not in maindex and awb libraries in AtlasdesugarTransform!");
                     }
                 }
             }
@@ -411,7 +436,7 @@ public class AtlasDesugarTransform extends Transform{
             try {
                 FileCache.Inputs cacheKey = getBuildCacheInputs(input, minSdk);
                 if (cache.cacheEntryExists(cacheKey)) {
-                    logger.info("process desugar hit cache:"+input.toFile().getAbsolutePath());
+                    logger.info("process desugar hit cache:" + input.toFile().getAbsolutePath());
                     FileCache.QueryResult result =
                             cache.createFile(
                                     output.toFile(),
@@ -463,7 +488,7 @@ public class AtlasDesugarTransform extends Transform{
             @NonNull Path input,
             @NonNull Path output)
             throws IOException, ProcessException {
-        logger.info("process desugar miss cache:"+input.toFile().getAbsolutePath());
+        logger.info("process desugar miss cache:" + input.toFile().getAbsolutePath());
 
         // add it to the list of cache misses, that will be processed
         cacheMisses.add(new AtlasDesugarTransform.InputEntry(cache, inputs, input, output));
@@ -500,7 +525,9 @@ public class AtlasDesugarTransform extends Transform{
         return buildCacheInputs.build();
     }
 
-    /** Set this location of extracted desugar jar that is used for processing. */
+    /**
+     * Set this location of extracted desugar jar that is used for processing.
+     */
     private static void initDesugarJar(@Nullable FileCache cache) throws IOException {
         if (isDesugarJarInitialized()) {
             return;
@@ -559,7 +586,7 @@ public class AtlasDesugarTransform extends Transform{
         return desugarJar.get() != null && Files.isRegularFile(desugarJar.get());
     }
 
-    private boolean inMainDex(JarInput jarInput) {
+    private boolean inMainDex(JarInput jarInput) throws IOException {
 
         return AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput);
     }

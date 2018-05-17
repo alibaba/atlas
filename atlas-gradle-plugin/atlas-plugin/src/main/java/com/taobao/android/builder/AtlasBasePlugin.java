@@ -1,10 +1,13 @@
 package com.taobao.android.builder;
 
+import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import com.taobao.android.builder.tools.log.LogOutputListener;
 import com.taobao.android.builder.tools.process.ApkProcessor;
+import org.gradle.BuildResult;
+import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.StopExecutionException;
@@ -35,6 +38,8 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
 
     protected AtlasConfigurationHelper atlasConfigurationHelper;
 
+    protected AtlasExtension atlasExtension;
+
     @Inject
     public AtlasBasePlugin(Instantiator instantiator) {
 
@@ -52,7 +57,7 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
 
         AtlasBuildContext.atlasConfigurationHelper = atlasConfigurationHelper;
 
-        atlasConfigurationHelper.createExtendsion();
+        atlasExtension =  atlasConfigurationHelper.createExtendsion();
 
 
     }
@@ -83,6 +88,13 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
                     JDK_MIN_VERSIONS, jdkVersion);
             throw new StopExecutionException(errorMessage);
         }
+
+        project.getGradle().buildFinished(new Action<BuildResult>() {
+            @Override
+            public void execute(BuildResult buildResult) {
+                AtlasBuildContext.reset();
+            }
+        });
 
 //        if (BuildCacheUtils.isBuildCacheEnabled(project)) {
 //            //project.setProperty(AndroidGradleOptions.PROPERTY_ENABLE_BUILD_CACHE, false);

@@ -117,8 +117,16 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
 
                 // adding now should succeed
                 if (!mergingStrategy.tryToAddForMerging(dex)) {
-                    throw new DexArchiveMergerException(
-                            "A single DEX file from a dex archive has more than 64K references.");
+                    if (mergingStrategy instanceof AtlasDexMergingStrategy){
+                        ((AtlasDexMergingStrategy) mergingStrategy).forceAdd(dex);
+                         dexOutput = new File(outputDir.toFile(), getDexFileName(classesDexSuffix++)).toPath();
+                        subTasks.add(submitForMerging(mergingStrategy.getAllDexToMerge(), dexOutput));
+                        mergingStrategy.startNewDex();
+
+                    }else {
+                        throw new DexArchiveMergerException(
+                                "A single DEX file from a dex archive has more than 64K references.");
+                    }
                 }
             }
         }
@@ -193,11 +201,16 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
             return true;
         }
 
+        public void forceAdd(Dex dex){
+            currentDexesToMerge.add(dex);
+        }
+
         @Override
         public void startNewDex() {
             currentMethodIdsUsed = 0;
             currentFieldIdsUsed = 0;
             currentDexesToMerge.clear();
+
         }
 
         @NonNull

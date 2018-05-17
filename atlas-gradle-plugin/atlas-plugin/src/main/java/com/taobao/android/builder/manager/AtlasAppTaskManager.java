@@ -214,6 +214,7 @@ import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -241,7 +242,9 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.ide.common.build.ApkData;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.AtlasMainDexHelper;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.PrepareAPTask;
@@ -273,31 +276,36 @@ import com.taobao.android.builder.tasks.tpatch.DiffBundleInfoTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchDiffApkBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchDiffResAPBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchTask;
+import com.taobao.android.builder.tasks.transform.AtlasDesugarTransform;
 import com.taobao.android.builder.tasks.transform.AtlasProguardTransform;
 import com.taobao.android.builder.tasks.transform.ClassInjectTransform;
 import com.taobao.android.builder.tasks.transform.TransformReplacer;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
+import groovy.lang.Closure;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.AbstractTask;
+import org.gradle.api.internal.file.AbstractFileCollection;
 import org.gradle.api.internal.tasks.TaskExecuter;
 import org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter;
 import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.StopExecutionException;
+import org.gradle.api.tasks.TaskDependency;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
@@ -327,9 +335,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                           @Override
                                                           public void accept(ApplicationVariant applicationVariant) {
 
+
                                                               AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
                                                                       .getAppVariantContext(project, applicationVariant);
-
                                                               TransformReplacer transformReplacer = new TransformReplacer(appVariantContext);
 
                                                               repalceAndroidBuilder(applicationVariant);
@@ -352,7 +360,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
 
-                                                              if (!atlasExtension.getTBuildConfig().getClassInject()) {
+                                                              if (!atlasExtension.getTBuildConfig().getClassInject() && atlasExtension.isAtlasEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(GenerateAtlasSourceTask.ConfigAction.class, null));
                                                               }
 
@@ -389,20 +397,20 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
 
                                                               ProcessAndroidResources processAndroidResources
-                                                                  = appVariantContext.getScope()
-                                                                  .getProcessResourcesTask()
-                                                                  .get(new TaskContainerAdaptor(appVariantContext.getProject()
-                                                                      .getTasks()));
+                                                                      = appVariantContext.getScope()
+                                                                      .getProcessResourcesTask()
+                                                                      .get(new TaskContainerAdaptor(appVariantContext.getProject()
+                                                                              .getTasks()));
                                                               if (processAndroidResources.isAapt2Enabled()) {
                                                                   processAndroidResources.doLast(new Action<Task>() {
                                                                       @Override
                                                                       public void execute(Task task) {
                                                                           File processResourcePackageOutputDirectory
-                                                                              = appVariantContext.getScope()
-                                                                              .getProcessResourcePackageOutputDirectory();
+                                                                                  = appVariantContext.getScope()
+                                                                                  .getProcessResourcePackageOutputDirectory();
                                                                           File[] files
-                                                                              = processResourcePackageOutputDirectory.listFiles(
-                                                                              (file, name) -> name.endsWith(SdkConstants.DOT_RES));
+                                                                                  = processResourcePackageOutputDirectory.listFiles(
+                                                                                  (file, name) -> name.endsWith(SdkConstants.DOT_RES));
                                                                           for (File file : files) {
                                                                               try {
                                                                                   ResourcePatch.makePatchable(file);
@@ -510,9 +518,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                       InstantRunPatchingPolicy patchingPolicy = variantScope.getInstantRunBuildContext()
                                                                               .getPatchingPolicy();
                                                                       BaseVariantOutputImpl variantOutput = (BaseVariantOutputImpl) vod;
-                                                                      ApkData data = null;
+                                                                      ApkData data = ApkDataUtils.get(variantOutput);
                                                                       AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                                                                              data.getFullName());
+                                                                              variantScope.getFullVariantName());
 
 //                                                                      for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 //                                                                          AndroidTask<Dex> dexTask = androidTasks.create(tasks, new Dex.ConfigAction(
@@ -541,7 +549,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               }
 
 
-
                                                               Boolean includeCompileClasspath =
                                                                       appVariantContext.getScope().getVariantConfiguration()
                                                                               .getJavaCompileOptions()
@@ -558,13 +565,49 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   }
                                                               });
 
-                                                          }
+                                                              appVariantContext.getVariantData().javaCompilerTask.doLast(new Action<Task>() {
+                                                                  @Override
+                                                                  public void execute(Task task) {
+                                                                      JavaCompile compile = (JavaCompile) task;
+                                                                      AtlasBuildContext.atlasMainDexHelper.getInputDirs().add(compile.getDestinationDir());
+                                                                  }
+                                                              });
 
+                                                              PackageAndroidArtifact packageAndroidArtifact = appVariantContext.getVariantData().getTaskByType(PackageAndroidArtifact.class);
+                                                              if (packageAndroidArtifact != null) {
+                                                                  ReflectUtils.updateField(packageAndroidArtifact, "javaResourceFiles", new AbstractFileCollection() {
+                                                                      @Override
+                                                                      public String getDisplayName() {
+                                                                          return "java-merge-res.jar";
+                                                                      }
+
+                                                                      @Override
+                                                                      public Set<File> getFiles() {
+                                                                          if (AtlasBuildContext.atlasMainDexHelper.getMainJavaRes() == null){
+                                                                              return Sets.newHashSet();
+                                                                          }
+                                                                          return Sets.newHashSet(AtlasBuildContext.atlasMainDexHelper.getMainJavaRes());
+                                                                      }
+                                                                  });
+                                                              }
+
+                                                              List<TransformTask> transformTasks = TransformManager.findTransformTaskByTransformType(appVariantContext,AtlasDesugarTransform.class);
+                                                              for (TransformTask transformTask:transformTasks){
+                                                                  transformTask.doLast(new Action<Task>() {
+                                                                      @Override
+                                                                      public void execute(Task task) {
+                                                                          ConfigurableFileCollection fileCollection = variantScope.getTryWithResourceRuntimeSupportJar();
+                                                                          for (File file:fileCollection) {
+                                                                              AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity("runtime-deps-try-with-resources",file,false,false));
+                                                                          }
+                                                                      }
+                                                                  });
+
+                                                              }
+                                                          }
                                                       }
         );
     }
-
-
 
 
     private void repalceAndroidBuilder(ApplicationVariant applicationVariant) {

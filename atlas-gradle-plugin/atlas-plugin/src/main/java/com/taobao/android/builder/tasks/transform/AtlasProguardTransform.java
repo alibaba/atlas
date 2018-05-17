@@ -479,7 +479,6 @@ public class AtlasProguardTransform extends ProGuardTransform {
             }
         }
 
-
     }
 
 
@@ -546,10 +545,15 @@ public class AtlasProguardTransform extends ProGuardTransform {
             @NonNull ClassPath classPath, @NonNull File file, @Nullable List<String> filter) {
         if (file.isDirectory()) {
             super.inputJar(classPath, file, filter);
-        } else if (AtlasBuildContext.atlasMainDexHelper.inMainDex(file)){
-            super.inputJar(classPath, file, filter);
-        }else if (appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true).contains(file)){
-            super.inputJar(classPath, file, filter);
+        } else {
+                if (AtlasBuildContext.atlasMainDexHelper.inMainDex(file)){
+                    super.inputJar(classPath, file, filter);
+                }else if (appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(true).contains(file)){
+                    super.inputJar(classPath, file, filter);
+                }else if (AtlasBuildContext.atlasMainDexHelper.getInputDirs().contains(file)){
+                    super.inputJar(classPath, file, filter);
+
+                }
         }
     }
 }

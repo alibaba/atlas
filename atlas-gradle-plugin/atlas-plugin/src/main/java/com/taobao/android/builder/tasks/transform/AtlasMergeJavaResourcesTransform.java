@@ -240,6 +240,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                     baseOutput =
                             IncrementalFileMergerOutputs.fromAlgorithmAndWriter(
                                     mergeTransformAlgorithm, MergeOutputWriters.toZip(outputLocation));
+                    AtlasBuildContext.atlasMainDexHelper.addMainJavaRes(outputLocation);
                 } else {
                     File outputLocation =
                             outputProvider.getContentLocation(

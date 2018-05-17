@@ -1131,7 +1131,7 @@ public class TPatchTool extends AbstractTool {
 
                             destFile = new File(destFile.getParentFile(),destFile.getName()+".patch");
                             SoDiffUtils.diffSo(patchTmpDir,baseSoFile,soFile,destFile);
-                            soFileDefs.add(new SoFileDef(baseSoFile,soFile,destFile));
+                            soFileDefs.add(new SoFileDef(baseSoFile,soFile,destFile,relativePath));
 
                         }
                     }

@@ -34,7 +34,7 @@ public class PatchFile {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        patchInfo.add(soFileDef.newSoFile.getName()+":"+ newSoMd5);
+        patchInfo.add(soFileDef.relativePath+":"+ newSoMd5);
     }
 
     public void close(){

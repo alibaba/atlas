@@ -509,6 +509,17 @@ public class AppVariantOutputContext {
     }
 
     public  File updateAwbDexFile(JarInput jarInput, File output) {
+        boolean localJar = false;
+        if (jarInput.getName().startsWith("android.local.jars")){
+            localJar = true;
+        }
+        if (localJar){
+            //todo awb localJars
+            //subproject local
+
+
+        }
+
         for (AwbTransform awbTransform:awbTransformMap.values()){
             if (awbTransform.getFileTransform().containsKey(jarInput.getFile())){
                 File currentFile = awbTransform.getFileTransform().get(jarInput.getFile());

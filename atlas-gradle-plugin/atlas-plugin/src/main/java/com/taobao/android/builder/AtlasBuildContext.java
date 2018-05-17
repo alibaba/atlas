@@ -282,6 +282,11 @@ public class AtlasBuildContext {
         customPackageIdMaps.clear();
         libDependencyTrees.clear();
         androidBuilderMap.clear();
+        localLibs.clear();
+        status = STATUS.DEXARCHIVE;
+        bundleExploadDir.clear();
+        atlasMainDexHelper.release();
+
     }
 
     public enum STATUS{

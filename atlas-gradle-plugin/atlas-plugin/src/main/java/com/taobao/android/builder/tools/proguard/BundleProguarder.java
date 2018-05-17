@@ -223,6 +223,7 @@ import com.android.build.gradle.internal.api.AwbTransform;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.cache.FileCacheCenter;
@@ -508,6 +509,9 @@ public class BundleProguarder {
         File inoutConfigs = new File(proguardDir, INOUT_CFG);
         List<String> configs = new ArrayList<>();
 
+
+
+
         for (AwbTransform awbTransform : input.getAwbBundles()) {
 
             List<File> inputLibraries = Lists.newArrayList();
@@ -523,9 +527,11 @@ public class BundleProguarder {
 
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-                AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(inputLibrary,obsJar);
-
-
+                if (AtlasBuildContext.atlasMainDexHelper.inMainDex(inputLibrary)) {
+                    AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(inputLibrary, obsJar);
+                }else if (awbTransform.getAwbBundle().isMainBundle()){
+                    AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(),obsJar,false,false));
+                }
             }
 
             //configs.add();
@@ -541,6 +547,11 @@ public class BundleProguarder {
                                        name + ".jar");
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+                if (awbTransform.getAwbBundle().isMainBundle()){
+                    AtlasBuildContext.atlasMainDexHelper.getInputDirs().clear();
+                    AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(),obsJar,false,false));
+                }
+
             }
 
             awbTransform.setInputFiles(inputLibraries);

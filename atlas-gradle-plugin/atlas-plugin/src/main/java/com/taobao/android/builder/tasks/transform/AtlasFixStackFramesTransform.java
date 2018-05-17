@@ -26,10 +26,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -183,6 +180,7 @@ public class AtlasFixStackFramesTransform extends Transform {
 //        if (!incremental) {
             outputProvider.deleteAll();
 //        }
+        Map<JarInput,File> mainDexTransformFiles = new HashMap<>();
         try {
             for (TransformInput input : transformInvocation.getInputs()) {
                 for (JarInput jarInput : input.getJarInputs()) {
@@ -194,7 +192,7 @@ public class AtlasFixStackFramesTransform extends Transform {
                                     jarInput.getScopes(),
                                     Format.JAR);
                     if (flag) {
-                        AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(jarInput, output);
+                        mainDexTransformFiles.put(jarInput,output);
                         Files.deleteIfExists(output.toPath());
                         logger.info("process maindex fixStackFrames:"+jarInput.getFile().getAbsolutePath());
                         processJar(jarInput.getFile(), output, transformInvocation);
@@ -219,6 +217,7 @@ public class AtlasFixStackFramesTransform extends Transform {
             }
 
             waitableExecutor.waitForTasksWithQuickFail(true);
+            AtlasBuildContext.atlasMainDexHelper.updateMainDexFiles(mainDexTransformFiles);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
@@ -315,7 +314,7 @@ public class AtlasFixStackFramesTransform extends Transform {
         }
     }
 
-    private boolean inMainDex(JarInput jarInput) {
+    private boolean inMainDex(JarInput jarInput) throws IOException {
 
         return AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput);
     }

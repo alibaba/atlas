@@ -268,33 +268,10 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
     }
 
     private boolean inMainDex(JarInput jarInput) {
-        if (jarInput.getFile().getName().equals("desugar_try_with_resources.jar")){
-            logger.info("add desugar_try_with_resources.jar to maindex");
-            AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().add(new BuildAtlasEnvTask.FileIdentity(jarInput.getFile().getName(),jarInput.getFile(),false,false));
-        }
-        return AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput);
+        boolean flag = AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput);
+        return flag;
     }
 
-    private static void removeDeletedEntries(
-            @NonNull TransformOutputProvider outputProvider, @NonNull TransformInput transformInput)
-            throws IOException {
-        for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
-            File outputFile = getPreDexFolder(outputProvider, directoryInput);
-            try (DexArchive output = DexArchives.fromInput(outputFile.toPath())) {
-                for (Map.Entry<File, Status> fileStatusEntry :
-                        directoryInput.getChangedFiles().entrySet()) {
-                    if (fileStatusEntry.getValue() == Status.REMOVED) {
-                        Path relativePath =
-                                directoryInput
-                                        .getFile()
-                                        .toPath()
-                                        .relativize(fileStatusEntry.getKey().toPath());
-                        output.removeFile(ClassFileEntry.withDexExtension(relativePath.toString()));
-                    }
-                }
-            }
-        }
-    }
 
     private List<File> processJarInput(
             @NonNull Context context,

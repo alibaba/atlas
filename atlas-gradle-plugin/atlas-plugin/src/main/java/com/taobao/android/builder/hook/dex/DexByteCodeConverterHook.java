@@ -183,6 +183,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         File tempDexFolder = null;
 
         inputFile = AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
+        inputFile.addAll(AtlasBuildContext.atlasMainDexHelper.getInputDirs());
 
         if (variantContext.getScope().getDexer() == DexerTool.D8){
 

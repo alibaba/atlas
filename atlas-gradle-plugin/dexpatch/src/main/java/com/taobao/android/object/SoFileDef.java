@@ -15,11 +15,13 @@ public class SoFileDef {
     public File baseSoFile;
     public File newSoFile;
     public File patchFile;
+    public String relativePath;
 
-    public SoFileDef(File baseSoFile, File newSoFile, File patchFile) {
+    public SoFileDef(File baseSoFile, File newSoFile, File patchFile,String relativePath) {
         this.baseSoFile = baseSoFile;
         this.newSoFile = newSoFile;
         this.patchFile = patchFile;
+        this.relativePath = relativePath;
 
     }
 }

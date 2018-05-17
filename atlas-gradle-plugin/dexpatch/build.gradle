@@ -27,10 +27,12 @@ dependencies {
     compile 'io.reactivex.rxjava2:rxjava:2.0.1'
     compile 'org.reactivestreams:reactive-streams:1.0.0@jar'
 
+
+
 }
 
 
 group 'com.taobao.android'
 
-version "3.0.0-rc3"
+version "3.0.0-rc5"
 

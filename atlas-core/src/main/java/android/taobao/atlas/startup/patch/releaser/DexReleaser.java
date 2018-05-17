@@ -269,7 +269,7 @@ public class DexReleaser {
                 } else {
                     sourceFile = new File(KernalConstants.APK_PATH);
                 }
-                File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", sourceFile.getParentFile());
+                File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", bundleFile.getParentFile());
                 CombineDexMerger combineDexMerger = new CombineDexMerger(new CombineDexVerifier());
                 boolean result = combineDexMerger.merge(sourceFile, bundleFile, targetFile);
                 if (result && bundleFile.delete() && targetFile.renameTo(bundleFile)) {
