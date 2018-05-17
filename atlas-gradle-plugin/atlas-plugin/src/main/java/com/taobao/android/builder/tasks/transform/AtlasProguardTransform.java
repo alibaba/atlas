@@ -267,6 +267,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
     private TBuildConfig buildConfig;
 
+    static boolean firstTime = true;
+
     List<File> defaultProguardFiles = new ArrayList<>();
 
     @Override
@@ -286,7 +288,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
     @Override
     public void transform(TransformInvocation invocation) throws TransformException {
-
+        firstTime =true;
         ConfigurableFileCollection oldConfigurableFileCollection = (ConfigurableFileCollection) ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
                 "configurationFiles");
 
@@ -528,11 +530,12 @@ public class AtlasProguardTransform extends ProGuardTransform {
         }
     }
 
-    static boolean firstTime = true;
     @Override
     protected void outJar(@NonNull File file) {
         if (firstTime){
             AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().clear();
+            AtlasBuildContext.atlasMainDexHelper.getInputDirs().clear();
+
             firstTime = false;
         }
         BuildAtlasEnvTask.FileIdentity fileIdentity = new BuildAtlasEnvTask.FileIdentity("proguard-main",file,false,false);
