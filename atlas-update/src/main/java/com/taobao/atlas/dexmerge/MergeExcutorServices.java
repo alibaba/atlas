@@ -1,6 +1,7 @@
 package com.taobao.atlas.dexmerge;
 
 import android.os.RemoteException;
+import android.util.Log;
 import com.taobao.atlas.dex.Dex;
 import com.taobao.atlas.dexmerge.dx.merge.CollisionPolicy;
 import com.taobao.atlas.dexmerge.dx.merge.DexMerger;
@@ -94,9 +95,8 @@ public class MergeExcutorServices {
 
             @Override
             public void onComplete() {
-                if (bundleEntryGroup.size() != list.size()){
-                    onError(new RuntimeException("parse bundleEntryGroup failed!"));
-                }
+                Log.e("MergeExcutorServices","merge bundle size:"+bundleEntryGroup.size());
+
             }
 
             @Override

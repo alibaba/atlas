@@ -275,6 +275,9 @@ public class CodeInjectByJavassist {
             addField(pool, cc, "preLaunch", injectParam.preLaunch);
             addField(pool, cc, "group", injectParam.group);
             addField(pool, cc, "outApp", String.valueOf(injectParam.outApp));
+            addField(pool, cc, "autoStart", String.valueOf(injectParam.autoStart));
+            addField(pool, cc, "blackDialogActivity", String.valueOf(injectParam.blackDialogActivity));
+
 
             if (null != injectParam.outputFile) {
                 Map output = new HashMap();
@@ -284,6 +287,8 @@ public class CodeInjectByJavassist {
                 output.put("group", injectParam.group);
                 output.put("outApp", injectParam.outApp);
                 output.put("unit_tag", injectParam.unit_tag);
+                output.put("autoStart",injectParam.autoStart);
+                output.put("blackDialogActivity",injectParam.blackDialogActivity);
                 FileUtils.write(injectParam.outputFile, JSON.toJSONString(output, true));
             }
 

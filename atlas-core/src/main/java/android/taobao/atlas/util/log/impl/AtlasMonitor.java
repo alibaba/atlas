@@ -208,9 +208,9 @@
 
 package android.taobao.atlas.util.log.impl;
 
-import android.taobao.atlas.util.log.IMonitor;
-
 import java.util.Map;
+
+import android.taobao.atlas.util.log.IMonitor;
 
 public class AtlasMonitor {
 
@@ -224,7 +224,15 @@ public class AtlasMonitor {
     public static final String CONTAINER_DEXOPT_FAIL = "container_dexopt_fail";
     public static final String CONTAINER_APPEND_ASSETPATH_FAIL = "container_append_assetpath_fail";
     public static final String CONTAINER_BUNDLEINFO_PARSE_FAIL = "container_bundleinfo_parse_fail";
+    public static final String CONTAINER_LOADEDAPK_CHANGE = "container_loadapk_change";
     public static final String WALKROUND_GETLAYOUT = "walkround_getlayout";
+    public static final String VALIDATE_CLASSES = "validate_classes";
+    public static final String INSTALL = "install";
+
+    public static final String ACTIVITY_THREAD_HOOK_BAD_TOKEN_EXCEPTION = "activity_thread_hook_bad_token_exception";
+    public static final String ACTIVITY_THREAD_HOOK_CLASS_NOT_FOUND_EXCEPTION = "activity_thread_hook_class_not_found_exception";
+
+
 
 
     //动态部署稳定性stage

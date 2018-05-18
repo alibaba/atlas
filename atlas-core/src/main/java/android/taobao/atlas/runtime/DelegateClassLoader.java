@@ -304,15 +304,20 @@ public class DelegateClassLoader extends PathClassLoader {
             }
             bundle.startBundle();
             ClassLoader classloader = bundle.getClassLoader();
-            try {
-                if (classloader != null) {
-                    clazz = classloader.loadClass(className);
-                    if (clazz != null) {
-                        return clazz;
+            // if (bundle != null && bundle.checkValidate()) {
+                try {
+                    if (classloader != null) {
+                        clazz = classloader.loadClass(className);
+                        if (clazz != null) {
+                            return clazz;
+                        }
                     }
+                } catch (ClassNotFoundException e) {
                 }
-            } catch (ClassNotFoundException e) {
-            }
+            // } else {
+            //
+            // }
+
             if((Thread.currentThread().getId() == Looper.getMainLooper().getThread().getId())){
                 Throwable ex = new Throwable();
                 ex.fillInStackTrace();

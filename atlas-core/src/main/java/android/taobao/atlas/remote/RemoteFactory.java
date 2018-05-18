@@ -60,7 +60,7 @@ public class RemoteFactory {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    listener.onFailed(e.getCause().toString());
+                    listener.onFailed(e.getCause() == null ? e.toString() : e.getCause().toString());
                 }
             }
         }, new Runnable() {

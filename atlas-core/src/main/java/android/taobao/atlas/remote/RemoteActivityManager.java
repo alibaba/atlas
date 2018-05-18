@@ -120,7 +120,7 @@ public class RemoteActivityManager {
         intent.putExtra("bundleName",bundleName);
         ActivityInfo info = intent.resolveActivityInfo(mParent.getPackageManager(), PackageManager.GET_ACTIVITIES);
         activityRecord.activity = (EmbeddedActivity) ActivityThread_startActivityNow.invoke(AndroidHack.getActivityThread(),
-                mParent, activityRecord.id, intent, info, activityRecord.activity, null, null);
+                mParent, activityRecord.id, intent, info, activityRecord, null, null);
         activityRecord.activityInfo = info;
         return activityRecord;
     }

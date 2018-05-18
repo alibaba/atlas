@@ -221,6 +221,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -288,7 +289,7 @@ public class AtlasProguardHelper {
 
         //Get the basic proguard configuration
         List<File> defaultProguardFiles = new ArrayList<>(
-            appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>()));
+            appVariantContext.getVariantConfiguration().getProguardFiles(true, new ArrayList<>()));
         Collections.sort(defaultProguardFiles);
 
         BaseVariantOutputData vod = appVariantContext.getVariantData().getOutputs().get(0);
@@ -383,10 +384,25 @@ public class AtlasProguardHelper {
     private static void addChildDependency(BundleItem bundleItem, Input input,
                                            Map<BundleInfo, AwbTransform> bundleInfoAwbTransformMap) throws IOException {
         List<AwbTransform> childTransforms = new ArrayList<>();
+        List<String>pkgNames = new ArrayList<>();
+
+        input.getAwbBundles().forEach(awbTransform -> pkgNames.add(awbTransform.getAwbBundle().getPackageName()));
+
+        sLogger.info("combine to proguard bundles:"+pkgNames.toString());
+
         for (BundleItem child : bundleItem.children) {
-            childTransforms.add(bundleInfoAwbTransformMap.get(child.bundleInfo));
+            if (!pkgNames.contains(child.bundleInfo.getPkgName())) {
+                childTransforms.add(bundleInfoAwbTransformMap.get(child.bundleInfo));
+            }else {
+                sLogger.error(child.bundleInfo.getPkgName() +" in proguard bundles so discard from "+ bundleItem.bundleInfo.getPkgName()+"libraries...");
+            }
             for (BundleInfo sub : child.circles) {
-                childTransforms.add(bundleInfoAwbTransformMap.get(sub));
+                if (!pkgNames.contains(sub.getPkgName())) {
+                    childTransforms.add(bundleInfoAwbTransformMap.get(sub));
+                }else {
+                    sLogger.error(sub.getPkgName() +" in proguard bundles so discard from "+ bundleItem.bundleInfo.getPkgName()+" libraries...");
+
+                }
             }
         }
 

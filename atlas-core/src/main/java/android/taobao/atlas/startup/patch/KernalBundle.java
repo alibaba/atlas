@@ -392,7 +392,6 @@ public class KernalBundle{
     public void patchKernalDex(Application application) throws Exception {
         DexFile[] dexFile = archive.getOdexFile();
         if ((dexFile != null&&dexFile.length>0) || archive.getLibraryDirectory().exists()) {
-            installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive.getArchiveFile(),archive.getOdexFile(),archive.getLibraryDirectory());
             boolean needReplaceClassLoader = needReplaceClassLoader(application);
             boolean dexPatch = dexFile[dexFile.length - 1].getName().contains(KernalBundleArchive.DEXPATCH_DIR);
             int newFrameworkPropertiesDexIndex;
@@ -434,6 +433,8 @@ public class KernalBundle{
                     throw new RuntimeException(e);
                 }
             }
+            installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive.getArchiveFile(),archive.getOdexFile(),archive.getLibraryDirectory());
+
             prepareRuntimeVariables(application);
         }
     }

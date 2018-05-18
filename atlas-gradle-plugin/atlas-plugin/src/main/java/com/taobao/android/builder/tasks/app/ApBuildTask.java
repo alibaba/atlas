@@ -319,24 +319,35 @@ public class ApBuildTask extends DefaultAndroidTask {
 
         }
 
-        // If there is a proguard file, add the result information
+        getLogger().error(new File(proguardOut
+                ,"j2cmap.zip").getAbsolutePath() +"is exist "+new File(proguardOut
+                ,"j2cmap.zip").exists());
         if (null != proguardOut &&
-            proguardOut.exists() &&
-            (new File(proguardOut, "mapping.txt").exists() ||
-                new File(proguardOut, "full-mapping.txt").exists())) {
+                proguardOut.exists() &&
+                (new File(proguardOut, "mapping.txt").exists() ||
+                        new File(proguardOut, "full-mapping.txt").exists()||new File(proguardOut
+                ,"j2cmap.zip").exists())) {
             File usageFile = new File(proguardOut, "usage.txt");
             File mappingFile = new File(proguardOut, "mapping.txt");
+            File dexCocoMap = new File(proguardOut,"dexcocomap.zip");
+            File j2cMap = new File(proguardOut,"j2cmap.zip");
             addFile(usageFile, "usage.txt");
             addFile(mappingFile, "mapping.txt");
+            addFile(dexCocoMap,"dexcocomap.zip");
+            addFile(j2cMap,"j2cmap.zip");
             addFile(new File(proguardOut, "full-mapping.txt"), "full-mapping.txt");
             addFile(new File(proguardOut, "mapping.data"), "mapping.data");
         } else if (null != appVariantContext.apContext.getApExploredFolder() &&
-            appVariantContext.apContext.getApExploredFolder().exists()) {
+                appVariantContext.apContext.getApExploredFolder().exists()) {
             File lastApDir = appVariantContext.apContext.getApExploredFolder();
             File usageFile = new File(lastApDir, "usage.txt");
             File mappingFile = new File(lastApDir, "mapping.txt");
+            File dexCocoMap = new File(lastApDir,"dexcocomap.zip");
+            File j2cMap = new File(lastApDir,"j2cmap.zip");
             addFile(usageFile, "usage.txt");
             addFile(mappingFile, "mapping.txt");
+            addFile(dexCocoMap,"dexcocomap.zip");
+            addFile(j2cMap,"j2cmap.zip");
             addFile(new File(lastApDir, "full-mapping.txt"), "full-mapping.txt");
             addFile(new File(lastApDir, "mapping.data"), "mapping.data");
         }

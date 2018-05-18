@@ -283,6 +283,10 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
     private String packageForR;
 
     @OutputFile
+    public File getPackageOutputFile() {
+        return packageOutputFile;
+    }
+
     private File packageOutputFile;
 
     private VariantType type;
@@ -335,7 +339,7 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
             .setResFolder(resFolder)
             .setLibraries(libraries)
             .setPackageForR(packageForR)
-            .setResPackageOutput(packageOutputFile.getAbsolutePath())
+            .setResPackageOutput(getPackageOutputFile().getAbsolutePath())
             .setType(type)
             .setDebuggable(debuggable)
             .setPseudoLocalesEnabled(pseudoLocalesEnabled)

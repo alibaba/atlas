@@ -279,8 +279,6 @@ public class AtlasProguardTransform extends ProGuardTransform {
     public AtlasProguardTransform(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
         super(appVariantContext.getScope(), false);
         this.appVariantContext = appVariantContext;
-        defaultProguardFiles.addAll(
-            appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>()));
 
         this.buildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
     }
@@ -291,6 +289,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
     @Override
     public void transform(TransformInvocation invocation) throws TransformException {
+        defaultProguardFiles.addAll(
+                appVariantContext.getVariantConfiguration().getProguardFiles(true, new ArrayList<>()));
         List<AwbBundle> awbBundles= AtlasBuildContext.androidDependencyTrees.get(
                 appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
         if(awbBundles!=null && awbBundles.size()>0){

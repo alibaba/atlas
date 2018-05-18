@@ -1,14 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.taobao.firstbundle.UseremoteActivity">
 
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    >
+
+    <Button
+        android:id="@+id/btn_view"
+        android:layout_weight="1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="use RemoteView"
+        android:textSize="14dp"
+        tools:layout_editor_absoluteY="6dp"
+        tools:layout_editor_absoluteX="16dp" />
+
+    <Button
+        android:id="@+id/btn_frag"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:textSize="14dp"
+        android:layout_height="wrap_content"
+        android:text="use RemoteFragment"
+        tools:layout_editor_absoluteY="6dp"
+        app:layout_constraintLeft_toRightOf="@+id/button3"
+        android:layout_marginLeft="8dp" />
+
+    <Button
+        android:id="@+id/btn_tran"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:textSize="14dp"
+
+        android:layout_height="wrap_content"
+        android:text="use RemoteTransaction"
+        tools:layout_editor_absoluteY="6dp"
+        app:layout_constraintLeft_toRightOf="@+id/button4"
+        android:layout_marginLeft="8dp" />
+
+</LinearLayout>
+
+
     <FrameLayout
         android:id="@+id/fl_content"
-        android:layout_height="match_parent"
-        android:layout_width="match_parent">
-        </FrameLayout>
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="left"
+        android:layout_marginTop="100dp"></FrameLayout>
 
-</android.support.constraint.ConstraintLayout>
+    <FrameLayout
+        android:id="@+id/fl_content2"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="right"
+
+        android:layout_marginTop="100dp"></FrameLayout>
+</FrameLayout>

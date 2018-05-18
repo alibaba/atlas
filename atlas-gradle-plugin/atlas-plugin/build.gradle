@@ -228,7 +228,7 @@ tasks.findByName("test").enabled=false
 dependencies {
     compile localGroovy()
     compile gradleApi()
-    compile "com.taobao.android:dex_patch:1.4.4.15"
+    compile "com.taobao.android:dex_patch:1.4.4.22"
     compile "com.android.tools.build:gradle:2.3.3"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
@@ -246,4 +246,4 @@ dependencies {
 }
 
 
-version = '2.3.3.rc41'
+version = '2.3.3.rc62-SNAPSHOT'

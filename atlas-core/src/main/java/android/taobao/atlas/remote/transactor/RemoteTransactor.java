@@ -6,10 +6,12 @@ import android.os.Bundle;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Atlas;
+import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.remote.IRemote;
 import android.taobao.atlas.remote.IRemoteContext;
 import android.taobao.atlas.remote.IRemoteTransactor;
 import android.taobao.atlas.remote.RemoteActivityManager;
+import android.taobao.atlas.remote.Util;
 import android.taobao.atlas.runtime.BundleUtil;
 import android.text.TextUtils;
 
@@ -25,7 +27,10 @@ public class RemoteTransactor implements IRemoteContext,IRemoteTransactor{
         final BundleListing.BundleInfo bi = AtlasBundleInfoManager.instance().getBundleInfo(bundleName);
         String viewClassName = bi.remoteTransactors.get(key);
         Class transactorClass = Atlas.getInstance().getBundleClassLoader(bundleName).loadClass(viewClassName);
-        remoteTransactor.targetTransactor = (IRemote)transactorClass.newInstance();
+        IRemote remote = (IRemote)transactorClass.newInstance();
+        remoteTransactor.targetTransactor = remote;
+        Util.findFieldFromInterface(remoteTransactor.targetTransactor,"remoteContext").set(remoteTransactor.targetTransactor,remoteTransactor);
+        Util.findFieldFromInterface(remoteTransactor.targetTransactor,"realHost").set(remoteTransactor.targetTransactor,remoteTransactor.remoteActivity);
         return remoteTransactor;
     }
 

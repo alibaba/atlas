@@ -519,6 +519,9 @@ public class DexDiffer {
             if (!tpatch&&exludeClasses.contains(newClassDef.getType())){
                 continue;
             }
+            if (!tpatch && (className.endsWith(".R")||className.contains(".R$"))){
+                continue;
+            }
             DexBackedClassDef baseClassDef = baseClassDefMap.get(className);
             if (lastBundleClassMap.containsKey(newClassDef.getType())&&tpatch){
                 System.out.println("overide class:"+className);

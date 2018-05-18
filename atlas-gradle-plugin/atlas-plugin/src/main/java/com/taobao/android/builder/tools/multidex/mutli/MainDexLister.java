@@ -209,16 +209,6 @@
 
 package com.taobao.android.builder.tools.multidex.mutli;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.google.common.base.Joiner;
@@ -234,6 +224,10 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import proguard.obfuscate.MappingReader;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
@@ -284,7 +278,7 @@ public class MainDexLister {
         TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
 
         HashSet handleList = new HashSet<String>();
-        Set<String> headClasses = new HashSet<>();
+        Set<String> headClasses = new LinkedHashSet<>();
 
         headClasses.add(applicationName);
         headClasses.add("android.taobao.atlas.bridge.BridgeApplicationDelegate");
@@ -311,6 +305,10 @@ public class MainDexLister {
         for (String newLine : mainDexList) {
             newLine = newLine.replaceAll("\\.", "/") + ".class";
             maindexListClazz.add(newLine);
+        }
+        for (String className :headClasses) {
+            className = className.replaceAll("\\.", "/") + ".class";
+            maindexListClazz.add(className);
         }
 
         try {
@@ -377,7 +375,9 @@ public class MainDexLister {
                 logger.info("[MainDex] add " + clazz + " to main dex list , because of " + root);
                 classList.add(clazz);
                 handleList.add(clazz);
-
+                if (classList.size() > JarRefactor.MAX_CLASSES){
+                    return;
+                }
                 Collection<String> references = ctClass.getRefClasses();
 
                 if (null == references) {

@@ -245,7 +245,6 @@ public class ApkInjectInfoCreator {
         injectParam.removePreverify = !appVariantContext.getAtlasExtension()
             .getTBuildConfig()
             .getDoPreverify();
-
         injectParam.version = appVariantContext.getVariantConfiguration().getVersionName();
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
@@ -340,6 +339,8 @@ public class ApkInjectInfoCreator {
         //    autoStartBundles.add(0, updateConfig.getSdkPkgName());
         //}
         //
+        injectParam.group = appVariantContext.getAtlasExtension().getTBuildConfig().getGroup();
+
         injectParam.autoStartBundles = StringUtils.join(appVariantContext.getAtlasExtension()
                                                             .getTBuildConfig()
                                                             .getAutoStartBundles(), ",");
