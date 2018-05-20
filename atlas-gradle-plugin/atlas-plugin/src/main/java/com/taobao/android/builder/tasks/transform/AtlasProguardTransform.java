@@ -457,6 +457,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
         Profiler.enter("executeproguard");
         BundleProguarder.execute(appVariantContext, input);
+        transformInput(input);
+
         Profiler.release();
 
         for (File jar : unProguardJars) {
@@ -481,6 +483,14 @@ public class AtlasProguardTransform extends ProGuardTransform {
             }
         }
 
+    }
+
+    private static void transformInput(Input input) {
+        if (input.maindexFileTransform.size() == 0){
+            return;
+        }else {
+            AtlasBuildContext.atlasMainDexHelper.updateMainDexFiles2(input.maindexFileTransform);
+        }
     }
 
 

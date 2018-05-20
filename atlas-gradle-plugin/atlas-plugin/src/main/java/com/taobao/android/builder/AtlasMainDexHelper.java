@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * @author lilong
@@ -123,9 +124,35 @@ public class AtlasMainDexHelper {
     }
 
     public void updateMainDexFiles(Map<JarInput, File> fileFileMap) {
-        for (Map.Entry entry : fileFileMap.entrySet()) {
-            updateMainDexFile((JarInput) entry.getKey(), (File) entry.getValue());
+            for (Map.Entry<JarInput,File> entry : fileFileMap.entrySet()) {
+                if (entry.getKey().getFile().exists() && entry.getValue().exists()) {
+                    updateMainDexFile((JarInput) entry.getKey(), (File) entry.getValue());
+                }else {
+                    remove(entry.getKey().getFile());
+                }
+            }
+
+    }
+
+    public void updateMainDexFiles2(Map<File, File> fileFileMap) {
+        for (Map.Entry<File,File> entry : fileFileMap.entrySet()) {
+            if (entry.getKey().exists() && entry.getValue().exists()) {
+                updateMainDexFile((File) entry.getKey(), (File) entry.getValue());
+            }else {
+                remove(entry.getKey());
+            }
         }
+
+    }
+
+    private void remove(File key) {
+        mainDexJar.removeIf(new Predicate<BuildAtlasEnvTask.FileIdentity>() {
+            @Override
+            public boolean test(BuildAtlasEnvTask.FileIdentity fileIdentity) {
+                return fileIdentity.file.equals(key);
+            }
+        });
+
     }
 
 

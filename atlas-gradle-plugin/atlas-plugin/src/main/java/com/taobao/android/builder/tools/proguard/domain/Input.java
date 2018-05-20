@@ -219,6 +219,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.android.build.api.transform.JarInput;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.taobao.android.builder.tools.MD5Util;
 import org.apache.commons.io.FileUtils;
@@ -255,6 +256,8 @@ public class Input {
     public File printConfiguration;
 
     public File proguardOutputDir;
+
+    public Map<File,File>maindexFileTransform = new HashMap<>();
 
     public List<AwbTransform> getAwbBundles() {
         return awbBundles;
