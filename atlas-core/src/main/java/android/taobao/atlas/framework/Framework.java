@@ -259,8 +259,6 @@ public final class Framework {
     static String containerVersion = "";
     private static ClassNotFoundInterceptorCallback classNotFoundCallback;
 
-    public static String ATLAS_DEBUG_DIRECTORY;
-
     /**
      * framework basedir.
      */
@@ -311,11 +309,6 @@ public final class Framework {
         File fileDir = RuntimeVariables.androidApplication.getFilesDir();
         if (fileDir == null || !fileDir.exists()) {
             fileDir = RuntimeVariables.androidApplication.getFilesDir();
-        }
-        try {
-            ATLAS_DEBUG_DIRECTORY = RuntimeVariables.androidApplication.getExternalFilesDir("atlas-debug").getAbsolutePath();
-        } catch (Exception e) {
-            ATLAS_DEBUG_DIRECTORY = "/sdcard/Android/data/" + RuntimeVariables.androidApplication.getPackageName() + "/files/atlas-debug";
         }
         BASEDIR = fileDir.getAbsolutePath();
         STORAGE_LOCATION = BASEDIR + File.separatorChar + "storage" + File.separatorChar;
@@ -468,16 +461,19 @@ public final class Framework {
             bundle = new BundleImpl(bundleDir, location, null, file,info.getUnique_tag(),true,-1l);
             return bundle;
         } catch (IOException e) {
-            BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
+            BundleException e1 = new BundleException(
+                "Failed to install bundle." + FileUtils.getAvailableDisk() + ", location=" + location, e);
             if (bundleDir != null && !updateHappend) {
                 Framework.deleteDirectory(bundleDir);
             }
             if (FileUtils.getUsableSpace(Environment.getDataDirectory()) < LowDiskException.thredshold) {
                 throw new LowDiskException(FileUtils.getAvailableDisk(), e);
             }
-            throw new BundleException("Failed to install bundle.", e);
+            throw new BundleException(
+                "Failed to install bundle." + FileUtils.getAvailableDisk() + ", location=" + location, e);
         } catch (BundleException e) {
-            BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
+            BundleException e1 = new BundleException(
+                "Failed to install bundle." + FileUtils.getAvailableDisk() + ", location=" + location, e);
             if (bundleDir != null && !updateHappend) {
                 Framework.deleteDirectory(bundleDir);
             }
@@ -492,7 +488,6 @@ public final class Framework {
     }
 
     public static BundleImpl restoreFromExistedBundle(final String location) {
-        boolean lockSuccess = false;
         BundleImpl bundle = null;
         String bundleUniqueTag = AtlasBundleInfoManager.instance().getBundleInfo(location).getUnique_tag();
         long dexPatchVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(location);
@@ -553,10 +548,9 @@ public final class Framework {
                     }
                 },1000);
             }
-        }        
+        }
         if(!installingBundles.containsKey(location) && ((bundleDir!=null&&bundleDir.exists()) || dexPatchDir!=null&&dexPatchDir.exists())){
             try {
-                lockSuccess = BundleLock.ReadLock(location);
                 BundleContext bcontext = new BundleContext();
                 bcontext.bundle_tag = bundleUniqueTag;
                 bcontext.location = location;
@@ -573,12 +567,6 @@ public final class Framework {
                     }
                 }
                 Log.e("Framework","restore bundle failed" + location, e);
-            }finally {
-                if(lockSuccess) {
-                    try {
-                        BundleLock.ReadUnLock(location);
-                    }catch(Throwable e){}
-                }
             }
         }
         return bundle;
@@ -764,7 +752,11 @@ public final class Framework {
             return;
         }
 
-        final BundleListener[] asyncs = (BundleListener[]) bundleListeners.toArray(new BundleListener[bundleListeners.size()]);
+        final BundleListener[] asyncs;
+        synchronized (bundleListeners) {
+            asyncs = (BundleListener[])bundleListeners.toArray(new BundleListener[bundleListeners.size()]);
+        }
+
         for (int i = 0; i < asyncs.length; i++) {
             asyncs[i].bundleChanged(event);
         }
@@ -779,11 +771,19 @@ public final class Framework {
     }
 
     static void addBundleListener(BundleListener listener) {
-        bundleListeners.add(listener);
+        if (listener == null) {
+            Log.e("Framework", "the listener must not be null", new Exception());
+        }
+        synchronized (bundleListeners) {
+            bundleListeners.add(listener);
+        }
     }
 
     static void removeBundleListener(BundleListener listener) {
-        bundleListeners.remove(listener);
+        synchronized (bundleListeners) {
+            bundleListeners.remove(listener);
+        }
+
     }
 
     /**

@@ -214,6 +214,7 @@ import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.runtime.LowDiskException;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.ApkUtils;
+import android.taobao.atlas.util.BundleLock;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
@@ -499,7 +500,7 @@ public class BundleInstaller implements Callable{
                     synchronized (this) {
                         deliveryTask(sync);
                         Log.d("BundleInstaller", "call wait:" + this);
-                        this.wait(30000);
+                        wait(30000);
                         BundleInstallerFetcher.recycle(this);
                     }
                 }
@@ -548,9 +549,24 @@ public class BundleInstaller implements Callable{
     }
 
     public Bundle getInstalledBundle(String bundleName){
+        // boolean lockSuccess = false;
         Bundle bundle = Framework.getBundle(bundleName);
-        if(bundle==null){
-            bundle = Framework.restoreFromExistedBundle(bundleName);
+        if (bundle == null) {
+            try {
+                /*lockSuccess = */
+                BundleLock./*Read*/WriteLock(bundleName/*location*/);
+                bundle = Framework.getBundle(bundleName);
+                if (bundle == null) {
+                    bundle = Framework.restoreFromExistedBundle(bundleName);
+                }
+            } finally {
+                // if (lockSuccess) {
+                try {
+                    BundleLock./*Read*/WriteUnLock(bundleName/*location*/);
+                } catch (Throwable e) {
+                }
+                // }
+            }
         }
         if(bundle==null && (BaselineInfoManager.instance().isDexPatched(bundleName) || BaselineInfoManager.instance().isUpdated(bundleName))){
             Log.e("BundleInstaller","restore existed bundle failed : "+bundleName);
@@ -560,74 +576,92 @@ public class BundleInstaller implements Callable{
 
     @Override
     public synchronized Void call() throws Exception {
-        Bundle bundle = null;
-        if(!mTransitive) {
-            for(int x=0; x<mLocation.length; x++) {
-                if (FileUtils.getUsableSpace(Environment.getDataDirectory()) >= 5) {
-                    if (mBundleSourceInputStream != null && mBundleSourceInputStream.length>x && mBundleSourceInputStream[x]!=null) {
-                        if ((bundle = getInstalledBundle(mLocation[x])) == null) {
-                            if((BaselineInfoManager.instance().isDexPatched(mLocation[x]) || BaselineInfoManager.instance().isUpdated(mLocation[x]))){
-                                continue;
-                            }
-                            bundle = Framework.installNewBundle(mLocation[x], mBundleSourceInputStream[x]);
-                        }
-                        if (bundle != null) {
-                            ((BundleImpl) bundle).optDexFile();
-                        }
-                    } else if (mBundleSourceFile != null && mBundleSourceFile.length>x && mBundleSourceFile[x]!=null) {
-                        if ((bundle = getInstalledBundle(mLocation[x])) == null) {
-                            if((BaselineInfoManager.instance().isDexPatched(mLocation[x]) || BaselineInfoManager.instance().isUpdated(mLocation[x]))){
-                                continue;
-                            }
-                            bundle = Framework.installNewBundle(mLocation[x], mBundleSourceFile[x]);
-                        }
-                        if (bundle != null) {
-                            ((BundleImpl) bundle).optDexFile();
-                        }
-                    } else {
-                        if ((bundle = getInstalledBundle(mLocation[x])) == null && AtlasBundleInfoManager.instance().isInternalBundle(mLocation[x])) {
-                            if((BaselineInfoManager.instance().isDexPatched(mLocation[x]) || BaselineInfoManager.instance().isUpdated(mLocation[x]))){
-                                continue;
-                            }
-                            bundle = installBundleFromApk(mLocation[x]);
-                            if (bundle != null) {
-                                ((BundleImpl) bundle).optDexFile();
-                            }
-                        }
-                    }
-                } else {
-                    throw new LowDiskException("no enough space");
-                }
-            }
-        }else{
-            for(int x=0; x<mLocation.length; x++) {
-                List<String> bundlesForInstall = AtlasBundleInfoManager.instance().getBundleInfo(mLocation[x]).getTotalDependency();
-                Log.e("BundleInstaller",mLocation[x]+"-->"+bundlesForInstall.toString());
-                for (String bundleName : bundlesForInstall) {
-                    if ((bundle = getInstalledBundle(bundleName)) == null) {
-                        if((BaselineInfoManager.instance().isDexPatched(bundleName) || BaselineInfoManager.instance().isUpdated(bundleName))){
-                            continue;
-                        }
-                        if (FileUtils.getUsableSpace(Environment.getDataDirectory()) >= 5) {
-                            //has enough space
-                            if(AtlasBundleInfoManager.instance().isInternalBundle(bundleName)) {
-                                bundle = installBundleFromApk(bundleName);
-                                if (bundle != null) {
-                                    ((BundleImpl) bundle).optDexFile();
+        try {
+            Bundle bundle = null;
+            if (!mTransitive) {
+                for (int x = 0; x < mLocation.length; x++) {
+                    if (FileUtils.getUsableSpace(Environment.getDataDirectory()) >= 5) {
+                        if (mBundleSourceInputStream != null && mBundleSourceInputStream.length > x
+                            && mBundleSourceInputStream[x] != null) {
+                            if ((bundle = getInstalledBundle(mLocation[x])) == null) {
+                                if ((BaselineInfoManager.instance().isDexPatched(mLocation[x]) || BaselineInfoManager
+                                    .instance().isUpdated(mLocation[x]))) {
+                                    continue;
                                 }
+                                bundle = Framework.installNewBundle(mLocation[x], mBundleSourceInputStream[x]);
+                            }
+                            if (bundle != null) {
+                                ((BundleImpl)bundle).optDexFile();
+                            }
+                        } else if (mBundleSourceFile != null && mBundleSourceFile.length > x
+                            && mBundleSourceFile[x] != null) {
+                            if ((bundle = getInstalledBundle(mLocation[x])) == null) {
+                                if ((BaselineInfoManager.instance().isDexPatched(mLocation[x]) || BaselineInfoManager
+                                    .instance().isUpdated(mLocation[x]))) {
+                                    continue;
+                                }
+                                bundle = Framework.installNewBundle(mLocation[x], mBundleSourceFile[x]);
+                            }
+                            if (bundle != null) {
+                                ((BundleImpl)bundle).optDexFile();
                             }
                         } else {
-                            throw new LowDiskException("no enough space");
+                            if ((bundle = getInstalledBundle(mLocation[x])) == null && AtlasBundleInfoManager.instance()
+                                .isInternalBundle(mLocation[x])) {
+                                if ((BaselineInfoManager.instance().isDexPatched(mLocation[x]) || BaselineInfoManager
+                                    .instance().isUpdated(mLocation[x]))) {
+                                    continue;
+                                }
+                                bundle = installBundleFromApk(mLocation[x]);
+                                if (bundle != null) {
+                                    ((BundleImpl)bundle).optDexFile();
+                                }
+                            }
                         }
                     } else {
-                        if (bundle!=null && ((BundleImpl) bundle).getArchive()!=null && !((BundleImpl) bundle).getArchive().isDexOpted()) {
-                            ((BundleImpl) bundle).optDexFile();
+                        throw new LowDiskException("no enough space");
+                    }
+                }
+            } else {
+                for (int x = 0; x < mLocation.length; x++) {
+                    List<String> bundlesForInstall = AtlasBundleInfoManager.instance().getBundleInfo(mLocation[x])
+                        .getTotalDependency();
+                    Log.e("BundleInstaller",
+                        mLocation[x] + "-->" + bundlesForInstall.toString() + ", thread=" + Thread.currentThread());
+                    for (String bundleName : bundlesForInstall) {
+                        if ((bundle = getInstalledBundle(bundleName)) == null) {
+                            if ((BaselineInfoManager.instance().isDexPatched(bundleName) || BaselineInfoManager
+                                .instance().isUpdated(bundleName))) {
+                                continue;
+                            }
+                            if (FileUtils.getUsableSpace(Environment.getDataDirectory()) >= 5) {
+                                //has enough space
+                                if (AtlasBundleInfoManager.instance().isInternalBundle(bundleName)) {
+                                    bundle = installBundleFromApk(bundleName);
+                                    if (bundle != null) {
+                                        ((BundleImpl)bundle).optDexFile();
+                                    }
+                                }
+                            } else {
+                                throw new LowDiskException("no enough space");
+                            }
+                        } else {
+                            if (bundle != null && ((BundleImpl)bundle).getArchive() != null && !((BundleImpl)bundle)
+                                .getArchive().isDexOpted()) {
+                                ((BundleImpl)bundle).optDexFile();
+                            }
                         }
                     }
                 }
             }
+            return null;
+        } catch (Exception e) {
+            // e.printStackTrace();
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("mLocation", mLocation);
+            AtlasMonitor.getInstance().report(AtlasMonitor.INSTALL, detail, e);
+            throw e;
         }
-        return null;
     }
 
     /////////////////////////////util/////////////////

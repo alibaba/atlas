@@ -19,7 +19,7 @@ buildscript {
 }
 
 ext {
-    lib_atlas_core = "com.taobao.android:atlas_core:5.0.7.55@aar"
+    lib_atlas_core = "com.taobao.android:atlas_core:5.0.8.0-rc7@aar"
     lib_atlas_update = "com.taobao.android:atlasupdate:1.1.4.14@aar"
 }
 

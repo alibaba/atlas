@@ -2,6 +2,7 @@ package android.taobao.atlas.remote;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.View;
 import java.util.HashMap;
@@ -18,22 +19,26 @@ public class HostTransactor implements IRemoteTransactor {
         if(sHostTransactors.containsKey(remoteItem)){
             return sHostTransactors.get(remoteItem);
         }
-        RemoteActivityManager.EmbeddedActivity activity = (RemoteActivityManager.EmbeddedActivity) ((View)remoteItem).getContext();
-        if(activity.mBoundRemoteItems!=null){
-            for(int x=0; x<activity.mBoundRemoteItems.size(); x++){
-                IRemoteContext delegator = activity.mBoundRemoteItems.get(x);
-                if(delegator.getRemoteTarget() == remoteItem){
-                    if(delegator.getHostTransactor()==null){
-                        Log.e("HostTransactor","no host-transactor,maybe has not been registered");
-                    }
-                    HostTransactor transactor =  new HostTransactor(delegator.getHostTransactor(),activity);
-                    sHostTransactors.put(remoteItem,transactor);
-                    return transactor;
-                }
-            }
+        IRemoteContext context = remoteItem.remoteContext;
+        if(context.getHostTransactor()==null){
+            Log.e("HostTransactor","no host-transactor,maybe has not been registered");
         }
-        Log.e("HostTransactor","impossible error");
-        return null;
+        HostTransactor transactor =  new HostTransactor(context.getHostTransactor(),remoteItem.realHost);
+        sHostTransactors.put(remoteItem,transactor);
+        return transactor;
+//        if(activity.mBoundRemoteItems!=null){
+//            for(int x=0; x<activity.mBoundRemoteItems.size(); x++){
+//                IRemoteContext delegator = activity.mBoundRemoteItems.get(x);
+//                if(delegator.getRemoteTarget() == remoteItem){
+//                    if(delegator.getHostTransactor()==null){
+//                        Log.e("HostTransactor","no host-transactor,maybe has not been registered");
+//                    }
+//                    HostTransactor transactor =  new HostTransactor(delegator.getHostTransactor(),activity);
+//                    sHostTransactors.put(remoteItem,transactor);
+//                    return transactor;
+//                }
+//            }
+//        }
     }
 
 

@@ -237,7 +237,7 @@ public class JarRefactor {
     private MultiDexConfig multiDexConfig;
     private boolean splitJar = false;
 
-    private static final int MAX_CLASSES = 1000;
+    public static final int MAX_CLASSES = 3000;
 
     public JarRefactor(AppVariantContext appVariantContext,
                        MultiDexConfig multiDexConfig) {
@@ -324,7 +324,7 @@ public class JarRefactor {
             if (pathList.isEmpty()) {
                 FileUtils.copyFile(jar, outJar);
             }
-            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard() && outJar.getName().equals("main.jar")){
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard() && files.size() == 1){
                 splitMainJar(result,outJar,1);
             }
         }

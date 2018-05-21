@@ -1,25 +1,21 @@
 package com.taobao.demo;
 
-import android.content.ContentResolver;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
@@ -48,6 +44,7 @@ public class MainActivity extends AppCompatActivity
                     switchToActivity("second","com.taobao.secondbundle.SecondBundleActivity");
                     return true;
                 case R.id.navigation_notifications:
+                    new AlertDialog.Builder(MainActivity.this,R.style.Theme_AppCompat_Dialog_Alert).setPositiveButton(android.R.string.cancel, null).setCancelable(true).create().show();
 //                    Intent intent3 = new Intent();
 //                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
 //                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);

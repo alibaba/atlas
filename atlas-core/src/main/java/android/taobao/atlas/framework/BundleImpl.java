@@ -252,7 +252,7 @@ public final class BundleImpl implements Bundle {
     /**
      * the bundle state.
      */
-    int                             state;
+    volatile int state;
 
     /**
      * the bundle classloader.
@@ -445,20 +445,20 @@ public final class BundleImpl implements Bundle {
         throw new IllegalStateException("Cannot stop bundle now");
     }
 
+    public /*synchronized*/ void startBundle() {
+        if (checkIsActive()) {
+            return;
+        }
+        startBundleLocked();
+    }
     /**
      * the actual starting happens here.
      *
      * @throws BundleException if the bundle cannot be resolved or the Activator throws an exception.
      */
-    public synchronized void startBundle() {
-        if (state == UNINSTALLED) {
-            throw new IllegalStateException("Cannot start uninstalled bundle " + toString());
-        }
-        if (state == ACTIVE) {
+    public synchronized void startBundleLocked() {
+        if (checkIsActive()) {
             return;
-        }
-        if (state == INSTALLED) {
-            throw new RuntimeException("can not start bundle which is not resolved");
         }
         state = STARTING;
         Framework.notifyBundleListeners(BundleEvent.BEFORE_STARTED, this);
@@ -468,6 +468,19 @@ public final class BundleImpl implements Bundle {
         }
 
 
+    }
+
+    private boolean checkIsActive() {
+        if (state == UNINSTALLED) {
+            throw new IllegalStateException("Cannot start uninstalled bundle " + toString());
+        }
+        if (state == ACTIVE) {
+            return true;
+        }
+        if (state == INSTALLED) {
+            throw new RuntimeException("can not start bundle which is not resolved");
+        }
+        return false;
     }
 
     public void setActive(){
@@ -566,9 +579,9 @@ public final class BundleImpl implements Bundle {
         Framework.bundles.remove(getLocation());
         Framework.notifyBundleListeners(BundleEvent.UNINSTALLED, this);
     }
-    
-    public synchronized void optDexFile() {
-    	this.getArchive().optDexFile();
+
+    public /*synchronized*/ void optDexFile() {
+        this.getArchive().optDexFile();
     }
 
     /**

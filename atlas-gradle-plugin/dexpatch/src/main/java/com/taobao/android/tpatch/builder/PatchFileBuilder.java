@@ -136,6 +136,8 @@ public class PatchFileBuilder {
         String patchName = "patch-" + currentBuildPatchInfo.getPatchVersion() + "@" + hisPatchInfo.getPatchVersion();
         File destTPathTmpFolder = new File(tPatchTmpFolder, patchName);
         destTPathTmpFolder.mkdirs();
+        File infoFile = new File(destTPathTmpFolder,"patchInfo");
+        FileUtils.writeStringToFile(infoFile, patchName);
         File curTPatchUnzipFolder = unzipCurTPatchFolder(patchName);
         // 处理awb的更新
         List<BundlePatch> bundlePatches = diffPatch(hisPatchInfo, currentBuildPatchInfo);

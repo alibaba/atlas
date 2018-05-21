@@ -258,6 +258,8 @@ public class AdditionalActivityManagerNative {
     private IBinder.DeathRecipient mBinderPoolDeathRecipient = new IBinder.DeathRecipient() {
         @Override
         public void binderDied() {
+            Log.w("ServiceBridge", "DelegateService " + mRemoteDelegate + " died unexpectedly");
+
             mRemoteDelegate.asBinder().unlinkToDeath(mBinderPoolDeathRecipient, 0);
             mRemoteDelegate = null;
             connectDelegateService(processName);

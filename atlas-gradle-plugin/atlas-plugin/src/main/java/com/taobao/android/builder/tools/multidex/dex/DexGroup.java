@@ -219,36 +219,36 @@ import java.util.*;
 public class DexGroup {
 
     public static final int MAX_FIELD_IDS = 65500;
-    public static final int MAX_METHOD_IDS = 65500;
-    public static final int MAX_METHOD_IDS_FIRSTDEX = 65500;
+    public static final int MAX_METHOD_IDS = 64400;
+    public static final int MAX_METHOD_IDS_FIRSTDEX = 64400;
 
     public boolean firstDex;
 
     public List<Dex> dexs = new ArrayList<>();
 
-    private TreeMap<MethodId,List<Dex>>methodTreeMap = new TreeMap<>();
-    private TreeMap<FieldId,List<Dex>>fieldTreeMap = new TreeMap<>();
+    private Map<String,List<Dex>>methodTreeMap = new HashMap<>();
+    private Map<String,List<Dex>>fieldTreeMap = new HashMap<>();
 
     public boolean addDex(Dex dex) {
-         TreeMap<MethodId,List<Dex>>tempMethodTreeMap = new TreeMap<>(methodTreeMap);
-         TreeMap<FieldId,List<Dex>>tempFieldTreeMap = new TreeMap<>(fieldTreeMap);
+         Map<String,List<Dex>>tempMethodTreeMap = new HashMap<>(methodTreeMap);
+         Map<String,List<Dex>>tempFieldTreeMap = new HashMap<>(fieldTreeMap);
         for (MethodId methodId:dex.methodIds()){
-            if (tempMethodTreeMap.containsKey(methodId)){
-                tempMethodTreeMap.get(methodId).add(dex);
+            if (tempMethodTreeMap.containsKey(methodId.toString())){
+                tempMethodTreeMap.get(methodId.toString()).add(dex);
             }else {
                 List<Dex>dexes = new ArrayList<>();
                 dexes.add(dex);
-                tempMethodTreeMap.put(methodId,dexes);
+                tempMethodTreeMap.put(methodId.toString(),dexes);
             }
         }
 
         for (FieldId fieldId:dex.fieldIds()){
-            if (tempFieldTreeMap.containsKey(fieldId)){
-                tempFieldTreeMap.get(fieldId).add(dex);
+            if (tempFieldTreeMap.containsKey(fieldId.toString())){
+                tempFieldTreeMap.get(fieldId.toString()).add(dex);
             }else {
                 List<Dex>dexes = new ArrayList<>();
                 dexes.add(dex);
-                tempFieldTreeMap.put(fieldId,dexes);
+                tempFieldTreeMap.put(fieldId.toString(),dexes);
             }
         }
 
@@ -268,8 +268,8 @@ public class DexGroup {
         if (tempMethodTreeMap.size() > MAX_METHOD_IDS||tempFieldTreeMap.size() > MAX_FIELD_IDS){
             return false;
         }
-        fieldTreeMap = new TreeMap<>(tempFieldTreeMap);
-        methodTreeMap = new TreeMap<>(tempMethodTreeMap);
+        fieldTreeMap = new HashMap<>(tempFieldTreeMap);
+        methodTreeMap = new HashMap<>(tempMethodTreeMap);
         dexs.add(dex);
         tempFieldTreeMap.clear();
         tempMethodTreeMap.clear();

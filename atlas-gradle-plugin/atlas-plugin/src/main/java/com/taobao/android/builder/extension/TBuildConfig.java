@@ -226,6 +226,30 @@ public class TBuildConfig {
     @Config(message = "Remote bundle list, artifactId", advance = false, order = 1, group = "atlas")
     private Set<String> outOfApkBundles = Sets.newHashSet();
 
+    public String getAppCoordinate() {
+        return appCoordinate;
+    }
+
+    public void setAppCoordinate(String appCoordinate) {
+        this.appCoordinate = appCoordinate;
+    }
+
+    @Config(message = "appCoordinate groupId:artifactId", advance = false, order = 1, group = "atlas")
+    private String appCoordinate = "";
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    @Config(message = "group", advance = false, order = 1, group = "atlas")
+
+    private String group = "";
+
+
     @Config(title = "Self-initiated bundle list", message = "The value is packageName", order = 1, advance = false, group = "atlas")
     private List<String> autoStartBundles = new ArrayList<String>();
 
@@ -320,6 +344,9 @@ public class TBuildConfig {
     private boolean dexNetworkCacheEnabled = false;
 
     private int proguardParallelCount = 8;
+
+    @Config(message = "put awb so in assets, not  lib/armeabi dir", order = 19, advance = true, group = "atlas")
+    private Set<String> keepInAssetsSoNames = new HashSet<>();
 
     @Config(message = "put awb so in lib/armeabi , not assets dir", order = 19, advance = true, group = "atlas")
     private Set<String> keepInLibSoNames = new HashSet<>();
@@ -574,6 +601,14 @@ public class TBuildConfig {
 
     public void setDexNetworkCacheEnabled(boolean dexNetworkCacheEnabled) {
         this.dexNetworkCacheEnabled = dexNetworkCacheEnabled;
+    }
+
+    public Set<String> getKeepInAssetsSoNames() {
+        return keepInAssetsSoNames;
+    }
+
+    public void setKeepInAssetsSoNames(Set<String> keepInAssetsSoNames) {
+        this.keepInAssetsSoNames = keepInAssetsSoNames;
     }
 
     public Set<String> getKeepInLibSoNames() {

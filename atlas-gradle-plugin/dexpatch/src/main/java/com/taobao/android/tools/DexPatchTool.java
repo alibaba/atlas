@@ -128,6 +128,7 @@ public class DexPatchTool extends TPatchTool {
         }
         PatchInfo curPatchInfo = createBasePatchInfo(patchFile);
 
+
         Profiler.release();
         
 
