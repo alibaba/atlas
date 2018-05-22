@@ -310,6 +310,15 @@ public class AppVariantOutputContext {
                         ".ap_");
     }
 
+    public File getAwbCompressResourcePackageOutputFile(AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "res/" +
+                        awbBundle.getName() +
+                        "/resources-" +
+                        variantData.getVariantConfiguration().getBaseName() +
+                        "-stripped.ap_");
+    }
+
     public Map<String, ProcessAwbAndroidResources> getAwbAndroidResourcesMap() {
         return awbAndroidResourcesMap;
     }

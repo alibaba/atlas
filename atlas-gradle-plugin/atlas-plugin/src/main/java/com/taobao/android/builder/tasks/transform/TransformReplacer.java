@@ -8,10 +8,12 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.aapt.AaptGeneration;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
+import com.android.build.gradle.internal.scope.TaskOutputHolder;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingMergeArtifactsTransform;
 import com.android.build.gradle.internal.transforms.*;
@@ -25,6 +27,7 @@ import com.android.builder.dexing.DexMergerTool;
 import com.android.builder.dexing.DexingType;
 import com.android.builder.utils.FileCache;
 import com.android.ide.common.process.JavaProcessExecutor;
+import com.android.utils.FileUtils;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.hook.dex.DexByteCodeConverterHook;
 import com.taobao.android.builder.tasks.manager.transform.TransformManager;
@@ -299,5 +302,30 @@ public class TransformReplacer {
             ReflectUtils.updateField(transformTask, "transform",
                     atlasDesugarTransform);
         }
+    }
+
+    public void replaceShrinkResourcesTransform() {
+        File shrinkerOutput =
+                FileUtils.join(
+                        variantContext.getScope().getGlobalScope().getIntermediatesDir(),
+                        "res_stripped",
+                        variantContext.getScope().getVariantConfiguration().getDirName());
+        List<TransformTask> baseTransforms = TransformManager.findTransformTaskByTransformType(
+                variantContext, ShrinkResourcesTransform.class);
+        for (TransformTask transform:baseTransforms){
+            ShrinkResourcesTransform oldTransform = (ShrinkResourcesTransform) transform.getTransform();
+            ResourcesShrinker resourcesShrinker = new ResourcesShrinker(oldTransform,variantContext.getVariantData(),
+                    variantContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.PROCESSED_RES),
+                    shrinkerOutput,
+                    AaptGeneration.fromProjectOptions(variantContext.getScope().getGlobalScope().getProjectOptions()),
+                    variantContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.SPLIT_LIST),
+                    variantContext.getProject().getLogger(),
+                    variantContext);
+            ReflectUtils.updateField(transform, "transform",
+                    resourcesShrinker);
+
+        }
+
+
     }
 }

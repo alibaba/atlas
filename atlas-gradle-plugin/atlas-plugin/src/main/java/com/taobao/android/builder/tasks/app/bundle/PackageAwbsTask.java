@@ -333,9 +333,15 @@ public class PackageAwbsTask extends BaseTask {
                     long endDex = System.currentTimeMillis();
 
                     //PACKAGE APP:
-                    File resourceFile = appVariantOutputContext.getAwbAndroidResourcesMap()
-                            .get(awbBundle.getName())
-                            .getPackageOutputFile();
+                    File resourceFile = null;
+                   if (!appVariantContext.getScope().useResourceShrinker()) {
+                       resourceFile = appVariantOutputContext.getAwbCompressResourcePackageOutputFile(awbBundle);
+
+                   }else {
+                       resourceFile = appVariantOutputContext.getAwbAndroidResourcesMap()
+                               .get(awbBundle.getName())
+                               .getPackageOutputFile();
+                   }
 
                     Set<File> dexFolders = new HashSet<File>();
                     dexFolders.add(dexOutputFile);
