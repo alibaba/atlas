@@ -382,7 +382,14 @@ public class DelegateResources extends Resources {
         }
     }
 
-    public static void addApkpatchResources(String assetPath) throws Exception{
+    /**
+     * 主dex资源动态部署
+     *
+     * @param assetPath
+     * @throws Exception
+     */
+    @SuppressWarnings("unused")
+    public static void addApkpatchResources(String assetPath) throws Exception {
         AtlasHacks.defineAndVerify();
         sKernalPathPath = assetPath;
         synchronized (DelegateResources.class) {

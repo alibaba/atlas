@@ -472,11 +472,18 @@ public class KernalBundle{
         }
     }
 
+    /**
+     * 主dex动态资源部署
+     * See {@link android.taobao.atlas.runtime.DelegateResources#addApkpatchResources}
+     *
+     * @param application
+     * @throws Exception
+     */
     public void patchKernalResource(Application application) throws Exception{
         if(!patchWithApk) {
             Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
             DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
-                    .invoke(DelegateResourcesClazz, archive.getArchiveFile().getAbsolutePath());
+                .invoke(DelegateResourcesClazz, archive.getArchiveFile().getAbsolutePath());
         }
     }
 
