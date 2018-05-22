@@ -28,7 +28,7 @@
 
 package com.taobao.android.baksmali.adaptors;
 
-import org.jf.baksmali.baksmaliOptions;
+import org.jf.baksmali.BaksmaliOptions;
 import org.jf.dexlib2.analysis.AnalyzedInstruction;
 import org.jf.dexlib2.analysis.RegisterType;
 import org.jf.util.IndentingWriter;
@@ -61,12 +61,12 @@ public class PostInstructionRegisterInfoMethodItem extends MethodItem {
         int registerCount = analyzedInstruction.getRegisterCount();
         BitSet registers = new BitSet(registerCount);
 
-        if ((registerInfo & baksmaliOptions.ALL) != 0) {
+        if ((registerInfo & BaksmaliOptions.ALL) != 0) {
             registers.set(0, registerCount);
         } else {
-            if ((registerInfo & baksmaliOptions.ALLPOST) != 0) {
+            if ((registerInfo & BaksmaliOptions.ALLPOST) != 0) {
                 registers.set(0, registerCount);
-            } else if ((registerInfo & baksmaliOptions.DEST) != 0) {
+            } else if ((registerInfo & BaksmaliOptions.DEST) != 0) {
                 addDestRegs(registers, registerCount);
             }
         }

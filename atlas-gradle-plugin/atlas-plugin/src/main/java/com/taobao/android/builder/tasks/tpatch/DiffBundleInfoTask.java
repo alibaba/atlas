@@ -209,26 +209,15 @@
 
 package com.taobao.android.builder.tasks.tpatch;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.diff.DependencyDiff;
@@ -240,18 +229,16 @@ import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.DiffType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.dom4j.Attribute;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.Node;
+import org.dom4j.*;
 import org.dom4j.io.SAXReader;
 import org.gradle.api.GradleException;
-import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  * Created by wuzhong on 16/6/24.
@@ -455,7 +442,7 @@ public class DiffBundleInfoTask extends BaseTask {
         private AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+                            BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -490,14 +477,13 @@ public class DiffBundleInfoTask extends BaseTask {
                 diffBundleInfoTask.setEnabled(false);
             }
 
-            final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope.getVariantOutputData();
-            final GradleVariantConfiguration config = scope.getVariantScope()
+            final GradleVariantConfiguration config = scope
                     .getVariantConfiguration();
 
             ConventionMappingHelper.map(diffBundleInfoTask, "outJsonFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    File file = scope.getVariantScope().getGlobalScope().getOutputsDir();
+                    File file = scope.getGlobalScope().getOutputsDir();
                     if (!file.exists()) {
                         file.mkdirs();
                     }
@@ -508,7 +494,7 @@ public class DiffBundleInfoTask extends BaseTask {
             ConventionMappingHelper.map(diffBundleInfoTask, "manifestFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return variantOutputData.manifestProcessorTask.getManifestOutputFile();
+                    return new File(baseVariantOutput.getProcessManifest().getManifestOutputDirectory(),"AndroidManifest.xml");
                 }
             });
 

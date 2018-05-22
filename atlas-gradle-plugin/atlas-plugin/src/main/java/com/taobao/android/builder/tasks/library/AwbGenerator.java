@@ -209,13 +209,11 @@
 
 package com.taobao.android.builder.tasks.library;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.ide.DependencyConvertUtils;
-import com.android.build.gradle.internal.variant.LibVariantOutputData;
+import com.android.build.gradle.options.ProjectOptions;
+import com.android.build.gradle.tasks.AndroidZip;
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.model.MavenCoordinates;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -231,6 +229,9 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.bundling.Zip;
+
+import java.io.File;
+import java.io.IOException;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -250,53 +251,63 @@ public class AwbGenerator {
     /**
      * Create a basic AWB task
      */
-    public void generateAwbArtifict(final Zip bundleTask, LibVariantOutputData libVariantOutputData) {
+    public void generateAwbArtifict(final Zip bundleTask, LibVariantContext libVariantOutputData) {
 
         Project project = bundleTask.getProject();
 
         bundleTask.setExtension("awb");
 
-        bundleTask.setArchiveName(FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".awb");
+        if (bundleTask instanceof AndroidZip) {
+            String fileName = FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".awb";
+            ((AndroidZip) bundleTask).setArchiveNameSupplier(() -> fileName);
 
+        }
         bundleTask.setDestinationDir(new File(bundleTask.getDestinationDir().getParentFile(), "awb"));
+        File destDir = libVariantOutputData.getScope().getBaseBundleDir();
 
-        bundleTask.doFirst(new Action<Task>() {
-            @Override
-            public void execute(Task task) {
+        bundleTask.doFirst(task -> {
 
-                File bundleBaseInfoFile = project.file("bundleBaseInfoFile.json");
-                if (bundleBaseInfoFile.exists()) {
-                    project.getLogger().warn("copy " + bundleBaseInfoFile.getAbsolutePath() + " to awb");
-                    File destDir = libVariantOutputData.getScope().getVariantScope().getBaseBundleDir();
-                    try {
-                        FileUtils.copyFileToDirectory(bundleBaseInfoFile, destDir);
-                    } catch (IOException e) {
-                        throw new GradleException(e.getMessage(), e);
-                    }
+            File bundleBaseInfoFile = project.file("bundleBaseInfoFile.json");
+            File customBundleIdFile = project.file("customPackageID.txt");
+
+            if (bundleBaseInfoFile.exists()) {
+                project.getLogger().warn("copy " + bundleBaseInfoFile.getAbsolutePath() + " to awb");
+                try {
+                    FileUtils.copyFileToDirectory(bundleBaseInfoFile, destDir);
+                } catch (IOException e) {
+                    throw new GradleException(e.getMessage(), e);
                 }
             }
+
+            if (customBundleIdFile.exists()){
+                try {
+                    FileUtils.copyFileToDirectory(customBundleIdFile, destDir);
+                } catch (IOException e) {
+                    throw new GradleException(e.getMessage(), e);
+                }
+            }
+
+
+
+
         });
 
-        bundleTask.doLast(new Action<Task>() {
+        bundleTask.doLast(task -> {
 
-            @Override
-            public void execute(Task task) {
+            File outputFile = new File(bundleTask.getDestinationDir(), bundleTask.getArchiveName());
 
-                File outputFile = new File(bundleTask.getDestinationDir(), bundleTask.getArchiveName());
+            if (!outputFile.exists()) {
+                return;
+            }
 
-                if (!outputFile.exists()) {
-                    return;
-                }
-
-                //Regenerating aar
-                if (atlasExtension.getBundleConfig().isAwbBundle()) {
-                    try {
-                        FileUtils.copyFile(outputFile,
-                                           new File(new File(bundleTask.getDestinationDir().getParentFile(), "aar"),
-                                                    FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".aar"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+            //Regenerating aar
+            if (atlasExtension.getBundleConfig().isAwbBundle()) {
+                try {
+                    FileUtils.copyFile(outputFile,
+                                       new File(new File(bundleTask.getDestinationDir().getParentFile(), "aar"),
+                                                FilenameUtils.getBaseName(bundleTask.getArchiveName()) + ".aar"));
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         });
@@ -312,7 +323,7 @@ public class AwbGenerator {
         if (null == libDependencyTree) {
 
             libDependencyTree = new AtlasDepTreeParser(libVariantContext.getProject(),
-                                                       new ExtraModelInfo(libVariantContext.getProject()), null)
+                                                       new ExtraModelInfo(new ProjectOptions(libVariantContext.getProject()),null))
                 .parseDependencyTree(libVariantContext.getVariantDependency());
             AtlasBuildContext.libDependencyTrees.put(variantName, libDependencyTree);
         }

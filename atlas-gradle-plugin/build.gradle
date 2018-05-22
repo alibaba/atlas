@@ -215,6 +215,7 @@ buildscript {
         mavenLocal()
 
         jcenter()
+        google()
     }
 
     dependencies {
@@ -229,8 +230,8 @@ description = """atlas gradle plugin"""
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.12'
-    distributionUrl = 'http://services.gradle.org/distributions/gradle-2.12-all.zip'
+    gradleVersion = '4.2.1'
+    distributionUrl = 'http://services.gradle.org/distributions/gradle-4.2.1-all.zip'
 }
 
 subprojects {
@@ -251,6 +252,7 @@ subprojects {
         //本地库，local repository(${user.home}/.m2/repository)
         mavenLocal()
         jcenter()
+        google()
     }
 
     group = 'com.taobao.android'

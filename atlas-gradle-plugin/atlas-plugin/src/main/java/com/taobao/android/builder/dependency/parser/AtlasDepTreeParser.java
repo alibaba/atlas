@@ -209,15 +209,7 @@
 
 package com.taobao.android.builder.dependency.parser;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.alibaba.fastjson.JSON;
-
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -235,18 +227,18 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.dependency.parser.helper.DependencyGroup;
 import com.taobao.android.builder.dependency.parser.helper.DependencyResolver;
-import com.taobao.android.builder.tasks.incremental.ApDependencies;
+import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.ModuleIdentifier;
-import org.gradle.api.artifacts.ModuleVersionIdentifier;
-import org.gradle.api.artifacts.ProjectDependency;
-import org.gradle.api.artifacts.ResolvedArtifact;
+import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.result.DependencyResult;
+import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import org.gradle.api.internal.project.DefaultProject;
+import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.specs.Specs;
+
+import java.util.*;
 
 import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 
@@ -259,20 +251,22 @@ public class AtlasDepTreeParser {
 
     private final Project project;
 
+    private String flavorName;
+
     private final ExtraModelInfo extraModelInfo;
 
     private final List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
 
-    private final ApDependencies apDependencies;
+//    private final ApDependencies apDependencies;
 
     private final ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
 
-    public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo,
-                              ApDependencies apDependencies) {
+    public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
         this.project = project;
         this.extraModelInfo = extraModelInfo;
-        this.apDependencies = apDependencies;
+//        this.apDependencies = apDependencies;
     }
+
 
     public AtlasDependencyTree parseDependencyTree(@NonNull VariantDependencies variantDeps) {
 
@@ -280,26 +274,47 @@ public class AtlasDepTreeParser {
         if (!name.endsWith("debug") && !name.endsWith("release")) {
             return new AtlasDependencyTree(new ArrayList<>());
         }
+        if (!name.equals("debug") && name.endsWith("debug")){
+            flavorName = variantDeps.getName().substring(0,name.length()-5);
+        }
+        if (!name.equals("release") && name.endsWith("release")){
+            flavorName = variantDeps.getName().substring(0,name.length()-6);
+        }
 
-        Configuration compileClasspath = variantDeps.getCompileConfiguration();
-        Configuration packageClasspath = variantDeps.getPackageConfiguration();
+
+        Configuration compileClasspath = variantDeps.getCompileClasspath();
+        Configuration runtimeClasspath = variantDeps.getRuntimeClasspath();
+        Configuration apiClasspath = variantDeps.getApiElements();
+        Configuration  configuration = variantDeps.getAnnotationProcessorConfiguration();
         Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
 
-        ensureConfigured(compileClasspath);
-        ensureConfigured(packageClasspath);
-        ensureConfigured(bundleClasspath);
+        ensureConfigured(compileClasspath,project);
+        ensureConfigured(runtimeClasspath,project);
+        ensureConfigured(bundleClasspath,project);
+        ensureConfigured(apiClasspath,project);
+        ensureConfigured(configuration,project);
+
 
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
         collectArtifacts(compileClasspath, artifacts);
-        collectArtifacts(packageClasspath, artifacts);
+        collectArtifacts(runtimeClasspath, artifacts);
+        collectArtifacts(apiClasspath,artifacts);
         collectArtifacts(bundleClasspath, artifacts);
+        collectArtifacts(configuration, artifacts);
+
+        unEnsureConfigured(compileClasspath);
+        unEnsureConfigured(runtimeClasspath);
+        unEnsureConfigured(bundleClasspath);
+        unEnsureConfigured(apiClasspath);
+        unEnsureConfigured(configuration);
+
+
 
         //Rely on the group
         DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath,artifacts);
 
         DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts,
-                                                                       dependencyGroup.bundleProvidedMap,
-                                                                       apDependencies);
+                                                                       dependencyGroup.bundleProvidedMap,dependencyGroup.bundleCompileMap);
 
         mResolvedDependencies.addAll(dependencyResolver.resolve(dependencyGroup.compileDependencies, true));
 
@@ -314,26 +329,86 @@ public class AtlasDepTreeParser {
         return atlasDependencyTree;
     }
 
-    private void ensureConfigured(Configuration config) {
+    private void unEnsureConfigured(Configuration config) {
         for (Dependency dependency : config.getAllDependencies()) {
             if (dependency instanceof ProjectDependency) {
                 ProjectDependency projectDependency = (ProjectDependency)dependency;
-                project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
+                unPrepareProject(projectDependency,config);
+
             }
         }
+    }
+
+    private void unPrepareProject(ProjectDependency projectDependency, Configuration config) {
+        if (projectDependency.getTargetConfiguration()!= null && projectDependency.getTargetConfiguration().equals(AtlasConfigurationHelper.COMPILE_PROJECT_CONFIGURATION_NAME)){
+            projectDependency.setTargetConfiguration(null);
+        }
+        String name = config.getName();
+        if (!StringUtils.isEmpty(flavorName)){
+            name = name.replace(flavorName,"");
+        }
+        if (name.startsWith("Debug")){
+            name = name.replace("Debug","debug");
+
+        }
+        if (name.startsWith("Release")){
+            name = name.replace("Release","release");
+
+        }
+        Configuration configuration = projectDependency.getDependencyProject().getConfigurations().findByName(name);
+        if (configuration!= null && configuration.getAllDependencies()!= null) {
+            unEnsureConfigured(configuration);
+        }
+    }
+
+    private void ensureConfigured(Configuration config,Project project) {
+        for (Dependency dependency : config.getAllDependencies()) {
+            if (dependency instanceof ProjectDependency) {
+                ProjectDependency projectDependency = (ProjectDependency)dependency;
+                prepareProject(projectDependency,config);
+                project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
+
+            }
+        }
+    }
+
+    private void prepareProject(ProjectDependency projectDependency,Configuration configuration) {
+         ((ProjectInternal)((DefaultProjectDependency) projectDependency).getDependencyProject()).evaluate();
+        if (projectDependency.getTargetConfiguration() == null || projectDependency.getTargetConfiguration().equals("default")){
+            projectDependency.setTargetConfiguration(AtlasConfigurationHelper.COMPILE_PROJECT_CONFIGURATION_NAME);
+            }
+        String name = configuration.getName();
+        if (!StringUtils.isEmpty(flavorName)){
+            name = name.replace(flavorName,"");
+        }
+        if (name.startsWith("Debug")){
+            name = name.replace("Debug","debug");
+
+        }
+        if (name.startsWith("Release")){
+            name = name.replace("Release","release");
+
+        }
+        Configuration config = projectDependency.getDependencyProject().getConfigurations().findByName(name);
+        if (config!= null && config.getAllDependencies()!= null) {
+            ensureConfigured(config,projectDependency.getDependencyProject());
+        }
+
     }
 
     private void collectArtifacts(Configuration configuration,
                                   Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
 
         Set<ResolvedArtifact> allArtifacts;
+        if (configuration.getState().equals(Configuration.State.UNRESOLVED) && !configuration.getName().equals(AtlasPlugin.BUNDLE_COMPILE)) {
+            configuration.setCanBeResolved(true);
+        }
         if (!extraModelInfo.getMode().equals(STANDARD)) {
             allArtifacts = configuration.getResolvedConfiguration().getLenientConfiguration().getArtifacts(
                 Specs.satisfyAll());
         } else {
             allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
         }
-
         for (ResolvedArtifact artifact : allArtifacts) {
             ModuleVersionIdentifier id = artifact.getModuleVersion().getId();
             List<ResolvedArtifact> moduleArtifacts = artifacts.get(id);
@@ -359,11 +434,11 @@ public class AtlasDepTreeParser {
             if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
 
                 AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo, project);
-                if (apDependencies != null) {
-                    Map<ModuleIdentifier, String> awbDependencies = apDependencies.getAwbDependencies(
-                        dependencyInfo.getGroup(), dependencyInfo.getName());
-                    bundle.setBaseAwbDependencies(awbDependencies);
-                }
+//                if (apDependencies != null) {
+//                    Map<ModuleIdentifier, String> awbDependencies = apDependencies.getAwbDependencies(
+//                        dependencyInfo.getGroup(), dependencyInfo.getName());
+//                    bundle.setBaseAwbDependencies(awbDependencies);
+//                }
                 atlasDependencyTree.getAwbBundles().add(bundle);
 
                 collect(dependencyInfo, bundle);
@@ -378,16 +453,16 @@ public class AtlasDepTreeParser {
 
     private void collect(ResolvedDependencyInfo dependencyInfo, AwbBundle awbBundle) {
 
-        if (apDependencies != null && !awbBundle.isMainBundle()) {
-            if (apDependencies.isMainLibrary(dependencyInfo)) {
-                return;
-            }
-        }
+//        if (apDependencies != null && !awbBundle.isMainBundle()) {
+//            if (apDependencies.isMainLibrary(dependencyInfo)) {
+//                return;
+//            }
+//        }
         switch (DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
             case AAR:
                 //Add it to the main dex
                 awbBundle.getAndroidLibraries().add(
-                    DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
+                    DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project, false));
                 break;
             case JAR:
                 awbBundle.getJavaLibraries().add(DependencyConvertUtils.toJavaLib(dependencyInfo));

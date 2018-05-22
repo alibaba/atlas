@@ -322,16 +322,16 @@ public class InjectTransformManager {
                     .create(configAction.getName(), configAction.getType());
             oprTransformTask.dependsOn(injectTransformTask);
             for (TransformStream transformStream : transformTaskParam.consumedInputStreams) {
-                if (null != transformStream.getDependencies()) {
-                    injectTransformTask.dependsOn(transformStream.getDependencies());
+                if (null != transformStream.getFileCollection()) {
+                    injectTransformTask.dependsOn(transformStream.getFileCollection());
                 }
             }
 
-            for (TransformStream transformStream : transformTaskParam.referencedInputStreams) {
-                if (null != transformStream.getDependencies()) {
-                    injectTransformTask.dependsOn(transformStream.getDependencies());
-                }
-            }
+//            for (TransformStream transformStream : transformTaskParam.referencedInputStreams) {
+//                if (null != transformStream.getDependencies()) {
+//                    injectTransformTask.dependsOn(transformStream.getDependencies());
+//                }
+//            }
 
             if (transformTaskList.size() > 0) {
                 injectTransformTask.dependsOn(transformTaskList.get(transformTaskList.size() - 1));
@@ -377,12 +377,12 @@ public class InjectTransformManager {
         Set<? super Scope> requestedScopes = injectTransform.getScopes();
 
         // create the output
-        return IntermediateStream.builder()
+        return IntermediateStream.builder(project,injectTransform.getName())
                 .addContentTypes(injectTransform.getOutputTypes())
                 .addScopes(requestedScopes)
-                .setRootLocation(outRootFolder)
-                .setDependency(taskName)
-                .build();
+                .setTaskName(taskName)
+                .setRootLocation(outRootFolder).build();
+
     }
 
     /**

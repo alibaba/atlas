@@ -11,9 +11,11 @@ buildscript {
     repositories {
         mavenCentral()
         jcenter()
+        google()
     }
+
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.0'
+        classpath "com.taobao.android:atlasplugin:3.0.1-rc55"
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         classpath "com.github.dcendents:android-maven-gradle-plugin:1.4.1"
     }
@@ -24,10 +26,18 @@ repositories {
 
 }
 
+ allprojects{
+
+     configurations {
+         compileProject.extendsFrom compile, archives
+         runtimeProject.extendsFrom runtime, archives
+     }
+}
+
 group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
-version "5.0.8.6${postFix}"
+version "5.0.8.5${postFix}-interpret-rc18"
 
 String getEnvValue(key, defValue) {
     def val = System.getProperty(key);
@@ -126,7 +136,7 @@ project.gradle.buildFinished{
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '25.0.1'
+    buildToolsVersion '26.0.2'
     lintOptions {
         abortOnError false
     }

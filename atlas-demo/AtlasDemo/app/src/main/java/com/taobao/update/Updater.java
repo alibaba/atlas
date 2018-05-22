@@ -262,12 +262,7 @@ public class Updater {
 
 
     private static void toast(final String msg, final Context context) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-            }
-        });
+        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show());
     }
 
     public static void dexPatchUpdate(Context context) {

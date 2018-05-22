@@ -3,7 +3,6 @@ package com.taobao.demo;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -31,29 +30,24 @@ public class MainActivity extends AppCompatActivity
     private ViewGroup mActivityGroupContainer;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
 
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
-                    Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
-                    return true;
-                case R.id.navigation_dashboard:
-                    switchToActivity("second","com.taobao.secondbundle.SecondBundleActivity");
-                    return true;
-                case R.id.navigation_notifications:
-                    new AlertDialog.Builder(MainActivity.this,R.style.Theme_AppCompat_Dialog_Alert).setPositiveButton(android.R.string.cancel, null).setCancelable(true).create().show();
-//                    Intent intent3 = new Intent();
-//                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
-//                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);
-                    return true;
-            }
-            return false;
-        }
-
-    };
+            = item -> {
+                switch (item.getItemId()) {
+                    case R.id.navigation_home:
+                        switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
+                        Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
+                        return true;
+                    case R.id.navigation_dashboard:
+                        switchToActivity("second","com.taobao.secondbundle.SecondBundleActivity");
+                        return true;
+                    case R.id.navigation_notifications:
+    //                    Intent intent3 = new Intent();
+    //                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
+    //                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);
+                        return true;
+                }
+                return false;
+            };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,12 +55,13 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_navigation);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        Log.e("ddddd","dsfsfsf");
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
+        Log.e("aa","bbb");
+
 
         ((BottomNavigationView)findViewById(R.id.navigation)).setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 

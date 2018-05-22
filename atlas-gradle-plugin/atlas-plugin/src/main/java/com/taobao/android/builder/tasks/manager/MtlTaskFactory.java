@@ -209,8 +209,8 @@
 
 package com.taobao.android.builder.tasks.manager;
 
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import org.gradle.api.Task;
 
 /**
@@ -218,5 +218,5 @@ import org.gradle.api.Task;
  */
 public interface MtlTaskFactory {
 
-    Task createTask(VariantContext variantContext, BaseVariantOutputData vod, Class<? extends MtlBaseTaskAction> baseTaskAction);
+    Task createTask(VariantContext variantContext, BaseVariantOutput vod, Class<? extends MtlBaseTaskAction> baseTaskAction);
 }

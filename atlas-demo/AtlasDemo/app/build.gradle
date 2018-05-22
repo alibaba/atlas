@@ -4,7 +4,7 @@ def apVersion = getEnvValue("apVersion", "");
 
 apply plugin: 'com.android.application'
 apply plugin: 'com.taobao.atlas'
-apply plugin: 'com.taobao.atlas.dexpatch'
+//apply plugin: 'com.taobao.atlas.dexpatch'
 apply from: 'dexPatchWraper.gradle'
 
 //通过增加判断逻辑，打出不同类型的定制包
@@ -36,11 +36,29 @@ android {
         }else{
         	buildConfigField "boolean", "API_ENV", "false"
         }
-    }
+        multiDexEnabled = false
 
+    }
+    flavorDimensions 'api'
+        productFlavors{
+                productA{
+                    applicationId "com.crazyman.product.a"
+                    versionName "version-a-1.0"
+                }
+
+                productB{
+                    applicationId "com.crazyman.product.b"
+                    versionName "version-b-1.0"
+                }
+            }
 
     dataBinding {
         enabled = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
 
@@ -69,13 +87,14 @@ android {
 }
 
 atlas {
-
+    instantAppEnabled true
     atlasEnabled true
     tBuildConfig {
         autoStartBundles = ['com.taobao.firstbundle'] //自启动bundle配置
         outOfApkBundles = ['remotebundle']
         preLaunch = 'com.taobao.demo.DemoPreLaunch'
         classInject false
+        aaptConstantId true
         dataBindingBundles = ['com.taobao.databindbundle']
     }
 
@@ -101,14 +120,18 @@ atlas {
     }
 }
 
+
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile(rootProject.ext.lib_atlas_core) {
+
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile('com.taobao.android:atlas_core:5.0.8.1-rc1@aar') {
 
         transitive = true
     }
     compile project(':middlewarelibrary')
     compile project(':splashscreen')
+    compile project(':databindinglibrary')
     compile project(':activitygroupcompat')
     bundleCompile project(':firstbundle')
     bundleCompile project(':secondbundle')
@@ -123,7 +146,8 @@ dependencies {
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
     compile 'com.android.support:recyclerview-v7:25.3.0'
-    compile project(':atlas_core')
+    compile 'com.taobao.android:atlas_core:5.0.8.5-interpret-rc18'
+//    compile project(':atlas_core')
 }
 
 String getEnvValue(key, defValue) {
@@ -174,7 +198,7 @@ publishing {
 publishing {
     publications {
         maven(MavenPublication) {
-            artifact "${project.buildDir}/outputs/apk/${project.name}-debug.ap"
+            artifact "${project.buildDir}/outputs/apk/debug/${project.name}-debug.ap"
             artifactId "AP-debug"
         }
     }

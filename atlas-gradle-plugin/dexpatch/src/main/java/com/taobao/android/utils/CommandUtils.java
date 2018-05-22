@@ -1,8 +1,11 @@
 package com.taobao.android.utils;
 
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.util.logging.Logger;
 
 /**
  * @author lilong
@@ -11,7 +14,12 @@ import java.io.InputStreamReader;
 
 public class CommandUtils {
 
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(CommandUtils.class);
+
     public static void exec(File workingDir,String command) {
+
+        logger.info("start excute commond:"+command);
+
         String[]commands = command.split(" ");
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(commands);

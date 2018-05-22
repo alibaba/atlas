@@ -209,18 +209,12 @@
 
 package com.taobao.android.builder.tasks.app.manifest;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
+import com.android.build.gradle.api.ApkVariantOutput;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.MergeManifests;
 import com.android.builder.core.DefaultManifestParser;
@@ -238,6 +232,12 @@ import org.gradle.api.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 /**
  * Set the awb The bundle of depend on
  *
@@ -249,11 +249,11 @@ public class PreProcessManifestAction implements Action<Task> {
 
     private final AppVariantContext appVariantContext;
 
-    private final BaseVariantOutputData baseVariantOutputData;
+    private final BaseVariantOutput baseVariantOutput;
 
-    public PreProcessManifestAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+    public PreProcessManifestAction(AppVariantContext appVariantContext, BaseVariantOutput baseVariantOutput) {
         this.appVariantContext = appVariantContext;
-        this.baseVariantOutputData = baseVariantOutputData;
+        this.baseVariantOutput = baseVariantOutput;
     }
 
     @Override
@@ -261,7 +261,7 @@ public class PreProcessManifestAction implements Action<Task> {
 
         AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
 
-        ManifestProcessorTask manifestProcessorTask = baseVariantOutputData.manifestProcessorTask;
+        ManifestProcessorTask manifestProcessorTask = baseVariantOutput.getProcessManifest();
 
         Set<String> notMergedArtifacts = Sets.newHashSet();
 
@@ -281,11 +281,18 @@ public class PreProcessManifestAction implements Action<Task> {
             List<ManifestProvider> bundleProviders = ManifestHelper.getBundleManifest(appVariantContext, dependencyTree,
                                                                                       atlasExtension);
 
+            List<ManifestProvider> mainDexProviders = ManifestHelper.getMainDexManifest(appVariantContext, dependencyTree,
+                    atlasExtension);
+
             List<ManifestProvider> allManifest = new ArrayList<>();
             modifyForIncremental(mergeManifests, allManifest);
-            allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
+//            allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
             allManifest.addAll(bundleProviders);
+            allManifest.addAll(mainDexProviders);
 
+            AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).manifestProviders = allManifest;
+
+            mergeManifests.setAndroidBuilder(AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()));
             //if (sLogger.isInfoEnabled()) {
             //    for (ManifestProvider manifestProvider : allManifest) {
             //        sLogger.warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());
@@ -293,7 +300,7 @@ public class PreProcessManifestAction implements Action<Task> {
             //}
 
             // Without this step, each time getLibraries It's going to be recomputed from the mapping
-            mergeManifests.setProviders(allManifest);
+//            mergeManifests.(allManifest);
         }
     }
 
@@ -308,9 +315,9 @@ public class PreProcessManifestAction implements Action<Task> {
                     return baseManifest;
                 }
             });
-            if (baseVariantOutputData instanceof ApkVariantOutputData) {
+            if (baseVariantOutput instanceof ApkVariantOutput) {
                 // TODO Improve performance
-                ApkVariantOutputData variantOutputData = (ApkVariantOutputData)baseVariantOutputData;
+                ApkVariantOutput variantOutputData = (ApkVariantOutput)baseVariantOutput;
                 DefaultManifestParser manifestParser = new DefaultManifestParser(baseManifest);
                 String versionNameOverride = variantOutputData.getVersionNameOverride();
                 if (Strings.isNullOrEmpty(versionNameOverride)) {

@@ -219,22 +219,51 @@ import java.lang.reflect.Field;
  */
 public class ReflectUtils {
 
-    public static Object getField(Object obj, String fieldName) throws Exception {
-        Field t = obj.getClass().getDeclaredField(fieldName);
-        t.setAccessible(true);
-        return t.get(obj);
+    public static Object getField(Object obj, String fieldName) {
+        Class<?>clazz = obj.getClass();
+        while (clazz!=Object.class){
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                return field.get(obj);
+            }catch (Exception e){
+                clazz = clazz.getSuperclass();
+            }
+
+
+        }
+
+        return null;
     }
 
-    public static Object getField(Class clazz,  Object obj, String fieldName) throws Exception {
-        Field t = clazz.getDeclaredField(fieldName);
-        t.setAccessible(true);
-        return t.get(obj);
+    public static Object getField(Class clazz,  Object obj, String fieldName) {
+        while (clazz!=Object.class){
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                return field.get(obj);
+            }catch (Exception e){
+                clazz = clazz.getSuperclass();
+            }
+
+
+        }
+
+        return null;
     }
 
-    public static void updateField(Object obj, String fieldName, Object value) throws Exception {
-        Field t = obj.getClass().getDeclaredField(fieldName);
-        t.setAccessible(true);
-        t.set(obj, value);
+    public static void updateField(Object obj, String fieldName, Object value) {
+        for(Class<?> clazz = obj.getClass() ; clazz != Object.class ; clazz = clazz.getSuperclass()) {
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(obj,value);
+                return;
+                }
+                catch (Exception e) {
+
+            }
+        }
     }
 
     public static void updateField(Class clazz,

@@ -11,6 +11,8 @@ import android.widget.TextView;
 import com.taobao.databindbundle.R;
 import com.taobao.databindbundle.databinding.BundleDatabindMainBinding;
 
+import static com.taobao.databindbundle.R.layout.bundle_databind_main;
+
 
 public class DataBundleSampleActivity extends Activity {
     /**
@@ -21,11 +23,11 @@ public class DataBundleSampleActivity extends Activity {
 
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.bundle_databind_main);
+        setContentView(bundle_databind_main);
 
         TextView textView = (TextView) findViewById(R.id.xxxxx);
 
-        BundleDatabindMainBinding binding = DataBindingUtil.setContentView(this, R.layout.bundle_databind_main);
+        BundleDatabindMainBinding binding = DataBindingUtil.setContentView(this, bundle_databind_main);
         final User user = new User("Test", "User");
         binding.setUser(user);
 

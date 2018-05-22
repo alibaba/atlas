@@ -223,6 +223,7 @@ import com.android.build.gradle.internal.api.AwbTransform;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.cache.FileCacheCenter;
@@ -259,7 +260,9 @@ public class BundleProguarder {
     private static FileLogger fileLogger = FileLogger.getInstance("proguard");
 
     public static void execute(AppVariantContext appVariantContext, Input input) throws Exception {
-
+        if (input.proguardOutputDir != null && input.proguardOutputDir.exists()) {
+            FileUtils.cleanDirectory(input.proguardOutputDir);
+        }
         if (!appVariantContext.getAtlasExtension().getTBuildConfig().isProguardCacheEnabled()) {
             doProguard(appVariantContext, input);
             return;
@@ -319,6 +322,7 @@ public class BundleProguarder {
         Map<String,File> md5Map = input.getMd5Files();
 
         if (input.getAwbBundles().get(0).getAwbBundle().isMainBundle()) {
+            AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().clear();
 
             for (File file : cacheDir.listFiles()) {
                 if (file.getName().endsWith("jar") && ZipUtils.isZipFile(file)) {
@@ -328,9 +332,13 @@ public class BundleProguarder {
 
                     if ( null != srcFile && srcFile.exists()){
                         FileUtils.copyFile(file,new File(input.proguardOutputDir, FileNameUtils.getUniqueJarName(srcFile) + ".jar"));
+                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(FileNameUtils.getUniqueJarName(srcFile),new File(input.proguardOutputDir, FileNameUtils.getUniqueJarName(srcFile) + ".jar"),false,false));
                     }else {
                         FileUtils.copyFileToDirectory(file, input.proguardOutputDir);
+                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(FileNameUtils.getUniqueJarName(file),new File(input.proguardOutputDir, file.getName()),false,false));
+
                     }
+
                 }
             }
 
@@ -417,7 +425,6 @@ public class BundleProguarder {
         throws Exception {
 
         Configuration configuration = parseConfiguration(appVariantContext, input);
-
         configuration.dump = input.dump;
         if (null == input.printConfiguration) {
             configuration.printConfiguration = new File(
@@ -426,7 +433,13 @@ public class BundleProguarder {
             configuration.printConfiguration = input.printConfiguration;
         }
 
-        configuration.printSeeds = input.printSeeds;
+        configuration.printSeeds = null;
+        configuration.dump = null;
+        configuration.optimize = true;
+        configuration.obfuscate = false;
+        configuration.shrink = true;
+        configuration.optimizationPasses = 1;
+
         configuration.printUsage = input.printUsage;
         configuration.printMapping = input.printMapping;
 
@@ -436,13 +449,13 @@ public class BundleProguarder {
         System.out.println(">>> start to do proguard");
 
         proGuard.execute();
-
         System.out.println("<<< end proguard");
 
         ClassPool classPool = (ClassPool)ReflectUtils.getField(proGuard, "programClassPool");
 
         Map<String, ClazzRefInfo> clazzRefInfoMap = BundleProguardDumper.dump(proGuard,
                                                                               input.getDefaultLibraryClasses());
+
 
         //Fileoutputs
         for (AwbTransform awbTransform : input.getAwbBundles()) {
@@ -457,6 +470,7 @@ public class BundleProguarder {
         }
 
     }
+
 
     @NotNull
     private static Configuration parseConfiguration(AppVariantContext appVariantContext, Input input)
@@ -501,6 +515,9 @@ public class BundleProguarder {
         File inoutConfigs = new File(proguardDir, INOUT_CFG);
         List<String> configs = new ArrayList<>();
 
+
+
+
         for (AwbTransform awbTransform : input.getAwbBundles()) {
 
             List<File> inputLibraries = Lists.newArrayList();
@@ -516,6 +533,12 @@ public class BundleProguarder {
 
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+                if (AtlasBuildContext.atlasMainDexHelper.inMainDex(inputLibrary)) {
+                    input.maindexFileTransform.put(inputLibrary,obsJar);
+//                    AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(inputLibrary, obsJar);
+                }else if (awbTransform.getAwbBundle().isMainBundle()){
+                    AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(),obsJar,false,false));
+                }
             }
 
             //configs.add();
@@ -531,6 +554,11 @@ public class BundleProguarder {
                                        name + ".jar");
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+                if (awbTransform.getAwbBundle().isMainBundle()){
+                    AtlasBuildContext.atlasMainDexHelper.getInputDirs().clear();
+                    AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(),obsJar,false,false));
+                }
+
             }
 
             awbTransform.setInputFiles(inputLibraries);

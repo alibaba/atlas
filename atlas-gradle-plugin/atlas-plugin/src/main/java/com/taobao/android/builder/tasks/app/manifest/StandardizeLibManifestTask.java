@@ -209,17 +209,11 @@
 
 package com.taobao.android.builder.tasks.app.manifest;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -235,10 +229,17 @@ import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputFiles;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.Task;
+import org.gradle.api.artifacts.ArtifactCollection;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * The task of preprocessing the manifest file
@@ -256,8 +257,15 @@ public class StandardizeLibManifestTask extends DefaultTask {
     @InputFile
     File mainManifestFile;
 
+
+    ArtifactCollection libraryManifests;
     @InputFiles
-    Set<File> libraryManifests;
+    @PathSensitive(PathSensitivity.NAME_ONLY)
+    public FileCollection getCompileManifests() {
+
+        return libraryManifests.getArtifactFiles();
+    }
+
 
     @OutputFiles
     private Collection<File> getOutputFiles() {
@@ -270,6 +278,10 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
     @TaskAction
     public void preProcess() throws IOException, DocumentException, InterruptedException {
+
+        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getVariantName());
+        androidLibraries = dependencyTree.getAllAndroidLibrarys();
+
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("StandardizeLibManifestTask",
                                                                                    getLogger(), 0);
@@ -369,8 +381,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
         private final AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
-            super(variantContext, baseVariantOutputData);
+        public ConfigAction(AppVariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            super(variantContext, baseVariantOutput);
             this.appVariantContext = variantContext;
         }
 
@@ -389,27 +401,25 @@ public class StandardizeLibManifestTask extends DefaultTask {
             VariantScope variantScope = appVariantContext.getScope();
             final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
 
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
-
             task.mainManifestFile = config.getMainManifest();
-            task.libraryManifests = dependencyTree.getAllLibraryManifests();
-            task.androidLibraries = dependencyTree.getAllAndroidLibrarys();
+            task.libraryManifests = variantScope.getArtifactCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.MANIFEST);
             task.appVariantContext = appVariantContext;
 
-            for (AndroidLibrary androidLibrary : task.androidLibraries) {
-                appVariantContext.manifestMap.put(androidLibrary.getManifest().getAbsolutePath(),
-                                                  appVariantContext.getModifyManifest(androidLibrary));
-            }
 
-            baseVariantOutputData.manifestProcessorTask.doFirst(
-                new PreProcessManifestAction(appVariantContext, baseVariantOutputData));
+            baseVariantOutput.getProcessManifest().doFirst(
+                new PreProcessManifestAction(appVariantContext, baseVariantOutput));
 
-            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                baseVariantOutputData.manifestProcessorTask.doLast(
-                    new PostProcessManifestAction(appVariantContext, baseVariantOutputData));
-            }
+//            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+            baseVariantOutput.getProcessManifest().doLast(
+                    new PostProcessManifestAction(appVariantContext, baseVariantOutput));
+
+            File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
+            appVariantContext.getVariantData().javacTask.source(proxySrcDir);
 
         }
+
+
+//        }
 
     }
 }

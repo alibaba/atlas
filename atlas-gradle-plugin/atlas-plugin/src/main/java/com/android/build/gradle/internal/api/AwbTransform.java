@@ -210,6 +210,7 @@
 package com.android.build.gradle.internal.api;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -229,6 +230,46 @@ public class AwbTransform {
     private File              outDexFile;
     private Map<String, File> inputLibrariesMap = Maps.newHashMap();
     private File              javaResourcesInputDir;
+
+    public Map<File, File> getFileTransform() {
+        return fileTransform;
+    }
+
+    public void setFileTransform(Map<File, File> fileTransform) {
+        this.fileTransform = fileTransform;
+    }
+
+    private Map<File,File>    fileTransform = new HashMap<>();
+
+    public List<File> getLibraryResourcesInutDir() {
+        return libraryResourcesInutDir;
+    }
+
+    public void setLibraryResourcesInutDir(List<File> libraryResourcesInutDir) {
+        this.libraryResourcesInutDir = libraryResourcesInutDir;
+    }
+
+    private List<File>        libraryResourcesInutDir = Lists.newArrayList();
+
+    public List<File> getLibraryJniLibsInputDir() {
+        return libraryJniLibsInputDir;
+    }
+
+    public void setLibraryJniLibsInputDir(List<File> libraryJniLibsInputDir) {
+        this.libraryJniLibsInputDir = libraryJniLibsInputDir;
+    }
+
+    private List<File>        libraryJniLibsInputDir = Lists.newArrayList();
+
+    public File getInputLib() {
+        return inputLib;
+    }
+
+    public void setInputLib(File inputLib) {
+        this.inputLib = inputLib;
+    }
+
+    private File              inputLib;
     private File              inputDir;
 
     public AwbTransform(AwbBundle awbBundle){

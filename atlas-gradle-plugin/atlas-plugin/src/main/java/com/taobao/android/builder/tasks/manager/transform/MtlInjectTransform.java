@@ -215,10 +215,9 @@ import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.pipeline.InjectTransform;
-import com.android.build.gradle.internal.scope.VariantOutputScope;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.ide.common.build.ApkData;
 import com.taobao.android.builder.tools.FileNameUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -231,14 +230,14 @@ public abstract class MtlInjectTransform extends InjectTransform {
 
     private static Logger logger = LoggerFactory.getLogger(MtlInjectTransform.class);
 
-    protected VariantOutputScope scope;
+    protected VariantScope scope;
     protected AppVariantContext appVariantContext;
-    protected BaseVariantOutputData baseVariantOutputData;
+    protected ApkData apkData;
 
-    public MtlInjectTransform(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+    public MtlInjectTransform(AppVariantContext appVariantContext, ApkData apkData) {
         this.appVariantContext = appVariantContext;
-        this.baseVariantOutputData = baseVariantOutputData;
-        this.scope = baseVariantOutputData.getScope();
+        this.apkData= apkData;
+        this.scope = appVariantContext.getScope();
     }
 
     @Override
@@ -249,13 +248,13 @@ public abstract class MtlInjectTransform extends InjectTransform {
     protected AppVariantOutputContext getAppVariantOutputContext() {
 
         AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)appVariantContext
-            .getOutputContextMap().get(baseVariantOutputData.getFullName());
+            .getOutputContextMap().get(apkData.getFullName());
 
         if (null == appVariantOutputContext) {
             appVariantOutputContext =
-                new AppVariantOutputContext(baseVariantOutputData.getFullName(), appVariantContext,
-                                            baseVariantOutputData.getScope(), baseVariantOutputData.variantData);
-            appVariantContext.getOutputContextMap().put(baseVariantOutputData.getFullName(), appVariantOutputContext);
+                new AppVariantOutputContext(apkData.getFullName(), appVariantContext,
+                        apkData, scope.getVariantData());
+            appVariantContext.getOutputContextMap().put(apkData.getFullName(), appVariantOutputContext);
         }
 
         return appVariantOutputContext;

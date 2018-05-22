@@ -226,10 +226,10 @@ import java.util.Map;
 
 import com.alibaba.fastjson.JSON;
 
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -279,7 +279,7 @@ public class PreparePackageIdsTask extends BaseTask {
 
             File customPackageIDFile = new File(awbBundle.getAndroidLibrary().getFolder(), "customPackageID.txt");
             String packageId = getCustomPackageId(customPackageIDFile);
-            if (StringUtils.isNotEmpty(packageId) && StringUtils.isNumeric(packageId)) {
+            if (StringUtils.isNotEmpty(packageId)) {
                 autoConfigMap.put(key, packageId);
             } else {
                 autoConfigMap.put(key, "");
@@ -295,7 +295,7 @@ public class PreparePackageIdsTask extends BaseTask {
             for (String key : keys) {
                 if ("".equals(autoConfigMap.get(key))) {
 
-                    for (int i = minPackageId; i <= 127; i++) {
+                    for (int i = minPackageId; i </*=*/ 127; i++) {
                         if (!autoConfigMap.values().contains(String.valueOf(i))) {
                             autoConfigMap.put(key, String.valueOf(i));
                             break;
@@ -416,8 +416,8 @@ public class PreparePackageIdsTask extends BaseTask {
 
         private AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
-            super(appVariantContext, baseVariantOutputData);
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutput baseVariantOutput) {
+            super(appVariantContext, baseVariantOutput);
             this.appVariantContext = appVariantContext;
         }
 

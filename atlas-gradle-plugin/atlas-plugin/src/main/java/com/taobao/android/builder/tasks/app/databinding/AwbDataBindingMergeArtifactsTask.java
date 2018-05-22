@@ -209,26 +209,16 @@
 
 package com.taobao.android.builder.tasks.app.databinding;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 import android.databinding.tool.DataBindingBuilder;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
@@ -240,9 +230,18 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class AwbDataBindingMergeArtifactsTask extends BaseTask {
 
@@ -252,7 +251,7 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
     private AppVariantContext appVariantContext;
     private AppVariantOutputContext appVariantOutputContext;
     private GradleVariantConfiguration config;
-    private ApkVariantOutputData variantOutputData;
+    private BaseVariantOutput variantOutputData;
 
     /**
      * Directory of so
@@ -265,6 +264,7 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
         if (null == atlasDependencyTree) {
             return;
         }
+
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName, getLogger(), 0);
         List<Runnable> runnables = new ArrayList<>();
@@ -280,10 +280,9 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
                 public void run() {
 
                     try {
-
-                        fullCopy(new File(appVariantContext.getAwbDataBindingMergeArtifacts(awbBundle),
-                                          DataBindingBuilder.ARTIFACT_FILES_DIR_FROM_LIBS),
+                        fullCopy(appVariantContext.getAwbDataBindingMergeArtifacts(awbBundle),
                                  awbBundle);
+
 
                     } catch (Throwable e) {
                         e.printStackTrace();
@@ -300,8 +299,25 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
     }
 
     private void fullCopy(File outFolder, AwbBundle awbBundle) throws IOException {
-        FileUtils.deleteQuietly(outFolder);
-        FileUtils.forceMkdir(outFolder);
+        if (outFolder.exists()) {
+            FileUtils.deleteDirectoryContents(outFolder);
+        }else {
+            FileUtils.mkdirs(outFolder);
+        }
+        AndroidLibrary awbAndroidLibrary = awbBundle.getAndroidLibrary();
+        File awbDataBindingDir = new File(awbAndroidLibrary.getFolder(), "data-binding");
+        File awbArtifactFolder = new File(awbDataBindingDir,
+                DataBindingBuilder.INCREMENTAL_BIN_AAR_DIR);
+        if (awbArtifactFolder.exists()) {
+        //noinspection ConstantConditions
+        for (String artifactName : awbArtifactFolder.list()) {
+            if (isResource(artifactName)) {
+                FileUtils.copyFile(new File(awbArtifactFolder, artifactName),
+                        new File(outFolder, artifactName));
+            }
+        }
+        }
+        extractBinFilesFromJar(outFolder, awbAndroidLibrary.getJarFile());
 
         for (AndroidLibrary androidLibrary : awbBundle.getAllLibraryAars()) {
             File dataBindingDir = new File(androidLibrary.getFolder(), "data-binding");
@@ -333,7 +349,6 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
                 break;
             }
         }
-
     }
 
     private static boolean isResource(String fileName) {
@@ -347,8 +362,11 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
 
     private void extractBinFilesFromJar(File outFolder, File jarFile) throws IOException {
         File jarOutFolder = getOutFolderForJarFile(outFolder, jarFile);
-        FileUtils.deleteQuietly(jarOutFolder);
-        FileUtils.forceMkdir(jarOutFolder);
+        if (jarOutFolder.exists()) {
+            FileUtils.deleteDirectoryContents(jarOutFolder);
+        }else {
+            FileUtils.mkdirs(jarOutFolder);
+        }
 
         try (Closer localCloser = Closer.create()) {
             FileInputStream fis = localCloser.register(new FileInputStream(jarFile));
@@ -406,7 +424,7 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
 
         private AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -429,8 +447,8 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
             packageAwbsTask.androidConfig = appVariantContext.getAppExtension();
             packageAwbsTask.appVariantContext = appVariantContext;
             packageAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
-            packageAwbsTask.config = scope.getVariantScope().getVariantConfiguration();
-            packageAwbsTask.variantOutputData = (ApkVariantOutputData)scope.getVariantOutputData();
+            packageAwbsTask.config = scope.getVariantConfiguration();
+            packageAwbsTask.variantOutputData = baseVariantOutput;
 
         }
     }

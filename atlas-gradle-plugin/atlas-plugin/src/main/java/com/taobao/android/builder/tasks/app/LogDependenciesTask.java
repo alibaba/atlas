@@ -214,10 +214,10 @@ package com.taobao.android.builder.tasks.app;
  */
 
 import com.alibaba.fastjson.JSON;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.output.DependencyJson;
@@ -251,7 +251,6 @@ public class LogDependenciesTask extends BaseTask {
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
             getVariantName());
-
         if (null == atlasDependencyTree) {
             return;
         }
@@ -385,7 +384,7 @@ public class LogDependenciesTask extends BaseTask {
         private AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+                            BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }

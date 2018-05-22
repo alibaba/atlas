@@ -205,7 +205,7 @@
  *
  *
  */
-package com.taobao.android;
+package com.taobao.android.tools;
 /*
  *
  *
@@ -434,6 +434,7 @@ import com.taobao.android.tpatch.utils.SmaliUtils;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.io.FileUtils;
 import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.jf.dexlib2.dexbacked.DexBackedMethod;
 import org.jf.dexlib2.iface.ClassDef;
@@ -511,7 +512,7 @@ public class FastPatchTool {
             ArrayList<Method> methods = new ArrayList<Method>();
 
             for (File dexFile : fastPatchObject.DexFiles) {
-                DexFile dFile = DexFileFactory.loadDexFile(dexFile.getAbsolutePath(), 19, true);
+                DexFile dFile = DexFileFactory.loadDexFile(dexFile.getAbsolutePath(), Opcodes.getDefault());
                 classes.addAll(dFile.getClasses());
             }
             final Set<ClassDef> newClasses = new HashSet<ClassDef>();
@@ -577,9 +578,9 @@ public class FastPatchTool {
                 System.out.println("modify class:"+classDef.getType());
             }
             if (newClassDef.size() > 0) {
-                DexFileFactory.writeDexFile(patchDexFile.getAbsolutePath(), new ImmutableDexFile(newClassDef.keySet()));
+                DexFileFactory.writeDexFile(patchDexFile.getAbsolutePath(), new ImmutableDexFile(Opcodes.getDefault(),newClassDef.keySet()));
             } else if (patchClassDefs.size() > 0) {
-                DexFileFactory.writeDexFile(patchDexFile.getAbsolutePath(), new ImmutableDexFile(patchClassDefs.keySet()));
+                DexFileFactory.writeDexFile(patchDexFile.getAbsolutePath(), new ImmutableDexFile(Opcodes.getDefault(),patchClassDefs.keySet()));
             }
 
             File tempDexFile = new File(outDir, "temp.dex");
@@ -601,9 +602,15 @@ public class FastPatchTool {
                             }
                         };
                     }
+
+                    @Nonnull
+                    @Override
+                    public Opcodes getOpcodes() {
+                        return Opcodes.getDefault();
+                    }
                 });
             } else if (classes.size() > 0) {
-                DexFileFactory.writeDexFile(tempDexFile.getAbsolutePath(), new ImmutableDexFile(classes));
+                DexFileFactory.writeDexFile(tempDexFile.getAbsolutePath(), new ImmutableDexFile(Opcodes.getDefault(),classes));
 
             }
 
@@ -611,8 +618,8 @@ public class FastPatchTool {
 
 
 
-            DexFile patchDex = DexFileFactory.loadDexFile(patchDexFile.getAbsolutePath(), 19, true);
-            DexFile tempDex = DexFileFactory.loadDexFile(tempDexFile.getAbsolutePath(), 19, true);
+            DexFile patchDex = DexFileFactory.loadDexFile(patchDexFile.getAbsolutePath(), Opcodes.getDefault());
+            DexFile tempDex = DexFileFactory.loadDexFile(tempDexFile.getAbsolutePath(), Opcodes.getDefault());
             Set<? extends ClassDef> patchClasses = patchDex.getClasses();
             DexDiffInfo dexDiffInfo = new DexDiffInfo();
             for (ClassDef patchClassDef : patchClasses) {

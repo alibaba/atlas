@@ -11,7 +11,8 @@ import org.gradle.internal.reflect.Instantiator;
  * EnhanceConfigFactory
  *
  * @author zhayu.ll
- * @date 18/3/14
+
+ * @date 18/5/7
  */
 public class EnhanceConfigFactory implements NamedDomainObjectFactory<EnhanceConfig> {
 

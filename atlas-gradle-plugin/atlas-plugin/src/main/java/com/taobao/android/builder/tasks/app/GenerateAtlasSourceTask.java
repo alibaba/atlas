@@ -210,12 +210,11 @@
 package com.taobao.android.builder.tasks.app;
 
 import com.alibaba.fastjson.JSON;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.MavenCoordinates;
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.app.prepare.BundleInfoSourceCreator;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
@@ -228,6 +227,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.internal.impldep.org.codehaus.plexus.util.Base64;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -361,7 +361,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
             gzip.flush();
             IOUtils.closeQuietly(gzip);
             byte[] result = cc.toByteArray();
-            return Base64.encode(result);
+            return org.apache.commons.codec.binary.Base64.encodeBase64String(result);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -384,7 +384,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
         private AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+                            BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }

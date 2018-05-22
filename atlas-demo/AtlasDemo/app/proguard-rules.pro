@@ -24,3 +24,8 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 -dontwarn **
+-dontshrink
+-dontoptimize
+-dontobfuscate
+-ignorewarnings
+

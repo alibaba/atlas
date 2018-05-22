@@ -247,6 +247,19 @@ public class PatchConfig {
 
     private boolean apForBaseFile = true;
 
+    public boolean isDiffNativeSo() {
+        return diffNativeSo;
+    }
+
+    public void setDiffNativeSo(boolean diffNativeSo) {
+        this.diffNativeSo = diffNativeSo;
+    }
+
+    private boolean diffNativeSo = false;
+
+
+    private Set<String> j2cPatchClasses = new HashSet<>();
+
     private File apExploredFolder;
 
     private File finalBasePatchFile;
@@ -285,7 +298,17 @@ public class PatchConfig {
         this.j2cPatchClasses = j2cPatchClasses;
     }
 
-    private Set<String> j2cPatchClasses = new HashSet<>();
+
+
+    public boolean isDiffBundleSo() {
+        return diffBundleSo;
+    }
+
+    public void setDiffBundleSo(boolean diffBundleSo) {
+        this.diffBundleSo = diffBundleSo;
+    }
+
+    private boolean diffBundleSo = false;
 
     private boolean onlyIncrementInMain = true;
 

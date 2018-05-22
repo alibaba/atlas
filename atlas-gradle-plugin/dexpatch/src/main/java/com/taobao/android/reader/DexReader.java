@@ -1,6 +1,7 @@
 package com.taobao.android.reader;
 
 import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.iface.DexFile;
 
 import java.io.File;
@@ -19,13 +20,13 @@ public class DexReader implements Reader {
 
     public DexReader(File file) throws IOException {
         if (file.exists()){
-            org.jf.dexlib2.iface.DexFile dexFile = DexFileFactory.loadDexFile(file,19,true);
+            org.jf.dexlib2.iface.DexFile dexFile = DexFileFactory.loadDexFile(file,Opcodes.getDefault());
             this.classDefs = dexFile.getClasses();
         }
     }
     public DexReader(List<File>files) throws IOException {
         for (File file:files){
-            DexFile dexFile =DexFileFactory.loadDexFile(file,19,true);
+            DexFile dexFile =DexFileFactory.loadDexFile(file, Opcodes.getDefault());
             classDefs.addAll(dexFile.getClasses());
         }
     }

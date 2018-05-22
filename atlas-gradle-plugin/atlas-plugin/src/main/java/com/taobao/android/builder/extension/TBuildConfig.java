@@ -253,6 +253,7 @@ public class TBuildConfig {
     @Config(title = "Self-initiated bundle list", message = "The value is packageName", order = 1, advance = false, group = "atlas")
     private List<String> autoStartBundles = new ArrayList<String>();
 
+
     @Config(title = "Pre-launch list",
         message = "To implement the PreLaunch class, multiple classes are used , No separate", order = 1, advance = false, group = "atlas")
     private String preLaunch = "";
@@ -351,6 +352,7 @@ public class TBuildConfig {
     @Config(message = "put awb so in lib/armeabi , not assets dir", order = 19, advance = true, group = "atlas")
     private Set<String> keepInLibSoNames = new HashSet<>();
 
+
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;
     }
@@ -428,6 +430,7 @@ public class TBuildConfig {
     }
 
     public Set<String> getOutOfApkBundles() {
+
         return outOfApkBundles;
     }
 
@@ -625,5 +628,14 @@ public class TBuildConfig {
 
     public void setKeepJavaResAfterProguard(boolean keepJavaResAfterProguard) {
         this.keepJavaResAfterProguard = keepJavaResAfterProguard;
+    }
+
+    public void setPushInstall(boolean pushInstall) {
+        this.pushInstall = pushInstall;
+    }
+
+    private boolean pushInstall;
+    public boolean isPushInstall() {
+        return pushInstall;
     }
 }

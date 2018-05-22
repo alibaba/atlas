@@ -463,7 +463,7 @@ public abstract class AbIClassDef implements IClassDef {
         Iterable<? extends Field> fields = classDef.getFields();
         LinkedHashSet<Field>newFields = new LinkedHashSet<Field>();
         Set<? extends Annotation> annotations = classDef.getAnnotations();
-        Set<String>interfaces = classDef.getInterfaces();
+        List<String>interfaces = classDef.getInterfaces();
         Set<String>newInterfaces = new HashSet<String>();
         Set<Annotation>immutableAnnotations = new HashSet<Annotation>();
         String type = classDef.getType();

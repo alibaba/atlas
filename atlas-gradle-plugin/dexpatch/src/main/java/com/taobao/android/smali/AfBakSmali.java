@@ -417,7 +417,7 @@
 import com.taobao.android.apatch.utils.TypeGenUtil;
 import com.taobao.android.baksmali.adaptors.ClassDefinition;
 
-import org.jf.baksmali.baksmaliOptions;
+import org.jf.baksmali.BaksmaliOptions;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.util.ClassFileNameHandler;
 import org.jf.util.IndentingWriter;
@@ -442,7 +442,7 @@ public class AfBakSmali {
      * @return
      */
     public static boolean disassembleClass(ClassDef classDef, ClassFileNameHandler fileNameHandler,
-                                           baksmaliOptions options, boolean isScan, boolean fullMethod) {
+                                           BaksmaliOptions options, boolean isScan, boolean fullMethod) {
         /**
          * The path for the disassembly file is based on the package name
          * The class descriptor will look something like:
