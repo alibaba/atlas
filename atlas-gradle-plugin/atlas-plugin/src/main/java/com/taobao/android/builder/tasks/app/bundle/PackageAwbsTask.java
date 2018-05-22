@@ -334,7 +334,7 @@ public class PackageAwbsTask extends BaseTask {
 
                     //PACKAGE APP:
                     File resourceFile = null;
-                   if (!appVariantContext.getScope().useResourceShrinker()) {
+                   if (appVariantContext.getScope().useResourceShrinker()) {
                        resourceFile = appVariantOutputContext.getAwbCompressResourcePackageOutputFile(awbBundle);
 
                    }else {
