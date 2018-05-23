@@ -1088,6 +1088,8 @@ public class TPatchTool extends AbstractTool {
                 return accept(new File(file, s));
             }
         }, TrueFileFilter.INSTANCE);
+
+
         executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -1110,30 +1112,9 @@ public class TPatchTool extends AbstractTool {
                 return true;
             }
 
-            @Override
-            public boolean accept(File file, String s) {
-                return accept(new File(file, s));
-            }
-        }, TrueFileFilter.INSTANCE);
-        executorServicesHelper.submitTask(taskName, () -> {
-            // 得到主bundle的dex diff文件
-            File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
-            File tmpDexFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + "-dex");
-            createBundleDexPatch(newApkUnzipFolder,
-                    baseApkUnzipFolder,
-                    mianDiffDestDex,
-                    tmpDexFile,
-                    true);
+        }
+        );
 
-            // 是否保留主bundle的资源文件
-            if (isRetainMainBundleRes()) {
-                copyMainBundleResources(newApkUnzipFolder,
-                    baseApkUnzipFolder,
-                    new File(patchTmpDir, ((TpatchInput)input).mainBundleName),
-                    retainFiles);
-            }
-            return true;
-        });
 
         for (final File soFile : soFiles) {
             System.out.println("do patch:" + soFile.getAbsolutePath());
