@@ -6,6 +6,7 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.utils.ILogger;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.transform.AtlasMergeJavaResourcesTransform;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.bundleinfo.DynamicBundleInfo;
 import org.apache.commons.lang.StringUtils;
@@ -14,6 +15,7 @@ import org.gradle.api.Task;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -41,7 +43,22 @@ public class LastBundleAction implements Action<Task> {
 
     @Override
     public void execute(Task o) {
-        if (appVariantOutputContext.getVariantData().getName().equals("debug")) {
+
+        if (appVariantOutputContext.getSoMap().size() > 0) {
+            File nativeBundleInfo = new File(appVariantOutputContext.getScope().getGlobalScope().getOutputsDir(),
+                    "nativeInfo-" +
+                            appVariantOutputContext.getVariantContext().getVariantConfiguration()
+                                    .getVersionName() +
+                            ".json");
+
+            try {
+                org.apache.commons.io.FileUtils.write(nativeBundleInfo, JSON.toJSONString(appVariantOutputContext.getSoMap().values()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (appVariantOutputContext.getVariantData().getName().endsWith("debug")) {
             if (awbBundles != null) {
                 for (Map.Entry<AwbBundle, File> entry : awbBundles.entrySet()) {
                     String url = AtlasBuildContext.atlasApkProcessor.uploadBundle(appVariantOutputContext.getVariantContext().getProject(), entry.getValue(), entry.getKey(), appVariantOutputContext.getVariantContext().getBuildType());
@@ -67,8 +84,8 @@ public class LastBundleAction implements Action<Task> {
                 e.printStackTrace();
             }
 
-        }else {
-            logger.info("do nothing when packageAwbs done in "+appVariantOutputContext.getVariantData().getName()+" build!");
+        } else {
+            logger.info("do nothing when packageAwbs done in " + appVariantOutputContext.getVariantData().getName() + " build!");
         }
     }
 }

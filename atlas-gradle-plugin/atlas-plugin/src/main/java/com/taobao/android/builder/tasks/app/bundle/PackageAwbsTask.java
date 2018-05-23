@@ -223,8 +223,10 @@ import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.TaskOutputHolder;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.dex.DexException;
 import com.android.dx.command.dexer.DxContext;
@@ -241,6 +243,8 @@ import com.taobao.android.builder.tasks.app.bundle.actions.FirstApkAction;
 import com.taobao.android.builder.tasks.app.bundle.actions.LastApkAction;
 import com.taobao.android.builder.tasks.app.bundle.actions.LastBundleAction;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tasks.manager.transform.TransformManager;
+import com.taobao.android.builder.tasks.transform.AtlasMergeJavaResourcesTransform;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import com.taobao.android.builder.tools.log.FileLogger;
 import com.taobao.android.builder.tools.zip.BetterZip;
@@ -252,6 +256,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -307,28 +312,6 @@ public class PackageAwbsTask extends BaseTask {
                     long start = System.currentTimeMillis();
                     //create dex
                     File dexOutputFile = appVariantContext.getAwbDexOutput(awbBundle.getName());
-//                        emptyFolder(dexOutputFile);
-//
-//                        // if some of our .jar input files exist, just reset the inputDir to null
-//                        AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap()
-//                                .get(awbBundle.getName());
-//                        List<File> inputFiles = new ArrayList<File>();
-//                        inputFiles.addAll(awbTransform.getInputFiles());
-//                        inputFiles.addAll(awbTransform.getInputLibraries());
-//                        if (null != awbTransform.getInputDir()) {
-//                            inputFiles.add(awbTransform.getInputDir());
-//                        }
-//
-//                        AtlasBuildContext.androidBuilderMap.get(getProject())
-//                                .convertByteCode(inputFiles,
-//                                                 dexOutputFile,
-//                                                 appVariantContext.getVariantData()
-//                                                         .getVariantConfiguration()
-//                                                         .isMultiDexEnabled(),
-//                                                 null,
-//                                                 dexOptions,
-//                                                 outputHandler, true);
-//                        //create package
 
                     long endDex = System.currentTimeMillis();
 
@@ -491,7 +474,8 @@ public class PackageAwbsTask extends BaseTask {
             packageAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
             packageAwbsTask.config = scope.getVariantConfiguration();
             packageAwbsTask.variantOutputData = baseVariantOutput;
-            packageAwbsTask.doLast(new LastBundleAction(packageAwbsTask.getAwbMap(),getAppVariantOutputContext()));
+            LastBundleAction lastBundleAction = new LastBundleAction(packageAwbsTask.getAwbMap(),getAppVariantOutputContext());
+            packageAwbsTask.doLast(lastBundleAction);
 
         }
     }

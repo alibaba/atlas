@@ -233,7 +233,7 @@ dependencies {
     compile localGroovy()
     compile gradleApi()
 
-    compile "com.taobao.android:dex_patch:3.0.0-rc4"
+    compile "com.taobao.android:dex_patch:3.0.0-rc5"
     compile "com.android.tools.build:gradle:3.0.1"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
@@ -257,5 +257,5 @@ jar {
 }
 
 
-version = '3.0.1-rc55'
+version = '3.0.1-rc56-light-SNAPSHOT'
 

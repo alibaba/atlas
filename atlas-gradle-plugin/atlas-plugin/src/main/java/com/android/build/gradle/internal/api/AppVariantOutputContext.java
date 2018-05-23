@@ -229,6 +229,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
+import com.taobao.android.builder.tasks.transform.AtlasMergeJavaResourcesTransform;
 import com.taobao.android.object.ArtifactBundleInfo;
 import org.gradle.api.tasks.compile.JavaCompile;
 
@@ -253,6 +254,12 @@ public class AppVariantOutputContext {
     private final Map<String, ProcessAwbAndroidResources> awbAndroidResourcesMap = Maps.newHashMap();
 
     private final Map<String, AwbTransform> awbTransformMap = Maps.newHashMap();
+
+    public Map<String, AtlasMergeJavaResourcesTransform.NativeInfo> getSoMap() {
+        return soMap;
+    }
+
+    private Map<String, AtlasMergeJavaResourcesTransform.NativeInfo> soMap = new HashMap<>();
 
     private final Map<String, PackageApplication> awbPackageMap = Maps.newHashMap();
 
@@ -498,6 +505,11 @@ public class AppVariantOutputContext {
                         "tpatch-" + variantContext.getVariantName());
     }
 
+    public File getRemoteNativeSoFolder(String bundleName) {
+         File file = new File(variantContext.getScope().getGlobalScope().getOutputsDir(),
+                "remote-nativeSos-"+variantData.getVariantConfiguration().getDirName()+File.separator+bundleName);
+         return file;
+    }
     public File getAPatchFolder() {
         return new File(variantContext.getScope().getGlobalScope().getOutputsDir(),
                         "apatch-" + variantContext.getVariantName());

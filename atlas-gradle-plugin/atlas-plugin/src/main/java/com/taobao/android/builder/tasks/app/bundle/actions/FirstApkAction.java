@@ -40,6 +40,12 @@ public class FirstApkAction implements Action<Task> {
                         appVariantOutputContext.getVariantContext().getVariantConfiguration()
                                 .getVersionName() +
                         ".json");
+
+        File nativeInfoFile = new File(appVariantOutputContext.getScope().getGlobalScope().getOutputsDir(),
+                "nativeInfo-" +
+                        appVariantOutputContext.getVariantContext().getVariantConfiguration()
+                                .getVersionName() +
+                        ".json");
         File resOutBaseNameFile =
                 new File(
                         packageApplication.getResourceFiles().getSingleFile(),
@@ -62,6 +68,14 @@ public class FirstApkAction implements Action<Task> {
         if (bundleInfoFile.exists()){
             try {
                 BetterZip.addFile(resOutBaseNameFile, "assets/".concat(bundleInfoFile.getName()), bundleInfoFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (nativeInfoFile.exists()){
+            try {
+                BetterZip.addFile(resOutBaseNameFile, "assets/".concat(nativeInfoFile.getName()), nativeInfoFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }

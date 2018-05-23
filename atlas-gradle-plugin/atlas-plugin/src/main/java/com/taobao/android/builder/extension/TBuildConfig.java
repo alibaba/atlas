@@ -325,6 +325,16 @@ public class TBuildConfig {
     @Deprecated
     private Set<String> insideOfApkBundles = Sets.newHashSet();
 
+    public Set<String> getOutOfApkNativeSos() {
+        return outOfApkNativeSos;
+    }
+
+    public void setOutOfApkNativeSos(Set<String> outOfApkNativeSos) {
+        this.outOfApkNativeSos = outOfApkNativeSos;
+    }
+
+    private Set<String>outOfApkNativeSos = Sets.newHashSet();
+
     private boolean incremental = false;
 
     @Config(message = "Whether to use fast proguard", order = 16, advance = true, group = "atlas")

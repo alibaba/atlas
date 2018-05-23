@@ -32,7 +32,10 @@ public interface ApkProcessor {
 
     String uploadBundle(Project project,File apkFile, AwbBundle awbBundle, TBuildType buildType);
 
-    void removeBundle(AppVariantOutputContext appVariantOutputContext,AwbBundle awbBundle,File bundleFile);
+     String uploadNativeSo(Project project,File apkFile, TBuildType buildType);
+
+
+        void removeBundle(AppVariantOutputContext appVariantOutputContext,AwbBundle awbBundle,File bundleFile);
 
     List<DynamicBundleInfo> generateAllBundleInfo(Collection<AwbBundle> awbBundles);
 
@@ -51,6 +54,11 @@ public interface ApkProcessor {
 
         @Override
         public String uploadBundle(Project project,File apkFile,AwbBundle awbBundle,TBuildType buildType) {
+            return null;
+        }
+
+        @Override
+        public String uploadNativeSo(Project project, File apkFile, TBuildType buildType) {
             return null;
         }
 

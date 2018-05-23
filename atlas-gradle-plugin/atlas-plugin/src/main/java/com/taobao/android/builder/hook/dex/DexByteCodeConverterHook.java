@@ -169,7 +169,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                 }
 
                             } catch (Exception e) {
-                                throw new ProcessException(e);
+                                throw new ProcessException(awbBundle.getName(),e);
 
                             }
                             return null;
