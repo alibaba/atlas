@@ -735,11 +735,15 @@ public final class Framework {
      * @param bundle the bundle.
      */
     static void notifyBundleListeners(final int state, final Bundle bundle) {
+        notifyBundleListeners(state, bundle, null, null, null);
+    }
+
+    static void notifyBundleListeners(final int state, final Bundle bundle, String tag, String msg, Throwable tr) {
         if (syncBundleListeners.isEmpty() && bundleListeners.isEmpty()) {
             return;
         }
 
-        final BundleEvent event = new BundleEvent(state, bundle);
+        final BundleEvent event = new BundleEvent(state, bundle, tag, msg, tr);
 
         // inform the synchrounous bundle listeners first ...
         final BundleListener[] syncs = (BundleListener[]) syncBundleListeners.toArray(new BundleListener[syncBundleListeners.size()]);

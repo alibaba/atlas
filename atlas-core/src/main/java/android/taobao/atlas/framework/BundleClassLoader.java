@@ -430,7 +430,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                     if (impl != null) {
                         clazz = ((BundleClassLoader)impl.getClassLoader()).loadOwnClass(classname);
                         if (clazz != null) {
-                            impl.startBundle();
+                            impl.startBundle("findClass", classname);
                             return clazz;
                         }
                     } else {

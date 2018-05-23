@@ -4,6 +4,8 @@ package org.osgi.framework;
 
 import java.util.EventObject;
 
+import android.util.Log;
+
 /**
  * A Framework event describing a bundle lifecycle change.
  * <p><tt>BundleEvent</tt> objects are delivered to <tt>BundleListener</tt> objects when a change
@@ -28,6 +30,11 @@ public class BundleEvent extends EventObject
      */
     private transient int type;
 
+    private String tag;
+
+    private String msg;
+
+    private Throwable tr;
     /**
      * This bundle has been installed.
      * <p>The value of <tt>INSTALLED</tt> is 0x00000001.
@@ -85,6 +92,15 @@ public class BundleEvent extends EventObject
         this.type = type;
     }
 
+    public BundleEvent(int type, Bundle bundle, String tag, String msg, Throwable tr) {
+        super(bundle);
+        this.bundle = bundle;
+        this.type = type;
+        this.tag = tag;
+        this.msg = msg;
+        this.tr = tr;
+    }
+
     /**
      * Returns the bundle which had a lifecycle change.
      * This bundle is the source of the event.
@@ -113,6 +129,28 @@ public class BundleEvent extends EventObject
     public int getType()
     {
         return type;
+    }
+
+    @Override
+    public String toString() {
+        return "BundleEvent{" +
+            "bundle=" +
+            bundle +
+            ", type=" +
+            type + ", tag='" + tag + '\'' + ", msg='" + msg + '\'' + ", tr=" + Log.getStackTraceString(tr) +
+            '}';
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public Throwable getTr() {
+        return tr;
     }
 }
 

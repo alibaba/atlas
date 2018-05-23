@@ -222,7 +222,9 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Looper;
+import android.taobao.atlas.BuildConfig;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
+import android.taobao.atlas.runtime.DebugBundleListener;
 import android.taobao.atlas.runtime.DelegateResources;
 import android.taobao.atlas.runtime.SecurityHandler;
 import android.taobao.atlas.util.ApkUtils;
@@ -320,6 +322,10 @@ public class Atlas {
         if(!RuntimeVariables.safeMode) {
             if (!WrapperUtil.isDebugMode(application) && ApkUtils.isRootSystem()) {
                 Atlas.getInstance().addBundleListener(new SecurityHandler());
+            }
+
+            if (BuildConfig.DEBUG) {
+                Atlas.getInstance().addBundleListener(new DebugBundleListener());
             }
             try {
                 Framework.startup(isUpdated);
