@@ -1,5 +1,6 @@
 package com.taobao.android.builder;
 
+import com.android.tools.r8.AtlasD8;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
@@ -93,6 +94,7 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
             @Override
             public void execute(BuildResult buildResult) {
                 AtlasBuildContext.reset();
+                AtlasD8.deepShrink = false;
             }
         });
 

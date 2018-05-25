@@ -1,10 +1,15 @@
 package com.android.tools.r8.dex;
 
+import com.android.tools.r8.AtlasD8;
 import com.android.tools.r8.errors.CompilationError;
 import com.android.tools.r8.graph.*;
 import com.android.tools.r8.naming.MinifiedNameMapPrinter;
 import com.android.tools.r8.naming.NamingLens;
 import com.android.tools.r8.utils.*;
+import com.taobao.android.builder.tools.ReflectUtils;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 
 import java.io.*;
 import java.util.Iterator;
@@ -21,6 +26,8 @@ import java.util.concurrent.Future;
  * @date 18/4/3
  */
 public class AtlasApplicationWriter extends ApplicationWriter{
+
+
 
     public AtlasApplicationWriter(DexApplication application, AppInfo appInfo, InternalOptions options, Marker marker, byte[] deadCode, NamingLens namingLens, byte[] proguardSeedsData) {
         super(application, appInfo, options, marker, deadCode, namingLens, proguardSeedsData);
@@ -119,7 +126,30 @@ public class AtlasApplicationWriter extends ApplicationWriter{
         FileWriter fileWriter = new FileWriter(vfile.computeMapping(this.application), this.application, this.appInfo, this.options, this.namingLens);
         fileWriter.rewriteCodeWithJumboStrings(vfile.classes());
         fileWriter.collect();
+        processFileWriter(fileWriter);
         return fileWriter.generate();
+    }
+
+    private void processFileWriter(FileWriter fileWriter) {
+        if (AtlasD8.deepShrink) {
+            System.out.println("start to deepShrink of dx");
+            Object mixedSectionOffsets = ReflectUtils.getField(fileWriter, "mixedSectionOffsets");
+            ObjectToOffsetMapping mapping = (ObjectToOffsetMapping) ReflectUtils.getField(fileWriter, "mapping");
+
+            Object2IntMap<DexDebugInfo> debugInfoObject2IntMap = (Object2IntMap<DexDebugInfo>) ReflectUtils.getField(mixedSectionOffsets, "debugInfos");
+            Reference2IntMap<DexCode> codesObject2IntMap = (Reference2IntMap<DexCode>) ReflectUtils.getField(mixedSectionOffsets, "codes");
+
+            debugInfoObject2IntMap.clear();
+            for (DexProgramClass dexProgramClass:mapping.getClasses()){
+                ReflectUtils.updateField(dexProgramClass,"sourceFile",null);
+            }
+            for (DexCode dexCode:codesObject2IntMap.keySet()){
+                dexCode.setDebugInfo(null);
+            }
+            System.out.println("end to deepShrink of dx");
+        }
+
+
     }
 
     private byte[] writeProguardMapFile() throws IOException {

@@ -13,11 +13,13 @@ import com.android.builder.core.DexOptions;
 import com.android.builder.dexing.DexerTool;
 import com.android.builder.utils.FileCache;
 import com.android.dx.Version;
+import com.android.tools.r8.AtlasD8;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.base.Verify;
 import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
+import org.gradle.api.Project;
 
 import java.nio.file.*;
 import java.io.*;
@@ -48,12 +50,15 @@ public class AtlasDexArchiveBuilderCacheHander {
     @NonNull
     private final DexerTool dexer;
 
-    public AtlasDexArchiveBuilderCacheHander(
+    private static Project project;
+
+    public AtlasDexArchiveBuilderCacheHander(Project p,
             @Nullable FileCache userLevelCache,
             @NonNull DexOptions dexOptions,
             int minSdkVersion,
             boolean isDebuggable,
             @NonNull DexerTool dexer) {
+        project = p;
         this.userLevelCache = userLevelCache;
         this.dexOptions = dexOptions;
         this.minSdkVersion = minSdkVersion;
@@ -191,7 +196,9 @@ public class AtlasDexArchiveBuilderCacheHander {
                 .putLong(FileCacheInputParams.CACHE_KEY_VERSION.name(), CACHE_KEY_VERSION)
                 .putLong(FileCacheInputParams.MIN_SDK_VERSION.name(), minSdkVersion)
                 .putBoolean(FileCacheInputParams.IS_DEBUGGABLE.name(), isDebuggable);
-
+       if (project.hasProperty("light") && project.hasProperty("deepShrink")){
+            buildCacheInputs.putBoolean("deepShrink",AtlasD8.deepShrink);
+        }
         return buildCacheInputs.build();
     }
 

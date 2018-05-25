@@ -15,6 +15,7 @@ import com.android.ide.common.blame.parser.DexParser;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.tools.r8.AtlasD8;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import org.gradle.api.file.FileCollection;
@@ -96,6 +97,10 @@ public abstract class AtlasDexMerger {
         inputsBuilder.putLong("minSdkVersion",minSdkVersion).putBoolean("isDebuggable",isDebuggable);
         inputsBuilder.putString("type",id).putString("version",CACHE_VERSION);
         inputsBuilder.putString("bundleName",bundleName);
+        if (AtlasD8.deepShrink) {
+            inputsBuilder.putBoolean("deepShrink", AtlasD8.deepShrink);
+        }
+
         FileCache.Inputs inputs = inputsBuilder.build();
         return inputs;
     }

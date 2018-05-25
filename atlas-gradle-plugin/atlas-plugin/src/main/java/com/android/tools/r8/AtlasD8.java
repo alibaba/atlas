@@ -30,7 +30,10 @@ public class AtlasD8 {
     private static final String VERSION = "v0.1.14";
     private static final int STATUS_ERROR = 1;
 
+    public static boolean deepShrink = false;
+
     private AtlasD8() {
+
     }
 
     public static D8Output run(D8Command command) throws IOException {

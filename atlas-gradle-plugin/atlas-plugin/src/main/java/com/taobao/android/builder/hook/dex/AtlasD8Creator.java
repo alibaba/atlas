@@ -89,7 +89,7 @@ public class AtlasD8Creator {
         this.miniSdk = minSdkVersion;
         this.isDebuggable = ((AppVariantContext) variantContext).getVariantData().getVariantConfiguration().getBuildType().isDebuggable();
        this.cacheHander =
-                new AtlasDexArchiveBuilderCacheHander(
+                new AtlasDexArchiveBuilderCacheHander(variantContext.getProject(),
                         fileCache, dexOptions, minSdkVersion, isDebuggable, DexerTool.D8);
         this.variantContext = variantContext;
         this.appVariantOutputContext = variantOutputContext;

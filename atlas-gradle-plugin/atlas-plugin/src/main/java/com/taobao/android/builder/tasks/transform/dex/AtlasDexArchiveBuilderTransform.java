@@ -117,7 +117,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
         this.dexer = dexer;
         this.executor = WaitableExecutor.useGlobalSharedThreadPool();
         this.cacheHandler =
-                new AtlasDexArchiveBuilderCacheHander(
+                new AtlasDexArchiveBuilderCacheHander(variantContext.getProject(),
                         userLevelCache, dexOptions, minSdkVersion, isDebuggable, dexer);
         this.useGradleWorkers = useGradleWorkers;
         this.inBufferSize =

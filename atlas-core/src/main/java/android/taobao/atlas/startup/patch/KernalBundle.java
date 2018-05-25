@@ -253,7 +253,7 @@ public class KernalBundle {
     private Class FrameworkPropertiesClazz;
     private NClassLoader replaceClassLoader;
 
-    private static boolean nativeLibPatched;
+    public static boolean nativeLibPatched;
     public static String KERNAL_BUNDLE_NAME = "com.taobao.maindex";
 
     public static KernalBundle kernalBundle = null;

@@ -23,6 +23,7 @@ import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.tools.r8.AtlasD8;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.*;
@@ -58,6 +59,7 @@ public class AtlasDexMergerTransform extends Transform {
     private File mainDexListFile;
     private DexingType dexingType;
     private DexMergerTool dexMergerTool;
+    private AppVariantOutputContext variantOutputContext;
 
     public AtlasDexMergerTransform(AppVariantOutputContext appVariantOutputContext,
                                    @NonNull DexingType dexingType,
@@ -67,11 +69,13 @@ public class AtlasDexMergerTransform extends Transform {
                                    int minSdkVersion,
                                    boolean isDebuggable
     ) {
+        this.variantOutputContext = appVariantOutputContext;
         atlasMainDexMerger = new AtlasMainDexMerger(dexingType, mainDexListFile, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
         awbDexMerger = new AwbDexsMerger(DexingType.MONO_DEX, null, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
         this.mainDexListFile = mainDexListFile == null? null:mainDexListFile.getSingleFile();
         this.dexingType = dexingType;
         this.dexMergerTool = dexMerger;
+
 
     }
 
@@ -124,13 +128,14 @@ public class AtlasDexMergerTransform extends Transform {
 
     @Override
     public void transform(TransformInvocation transformInvocation) throws TransformException, IOException, InterruptedException {
-
+        if (variantOutputContext.getVariantContext().getProject().hasProperty("light") &&variantOutputContext.getVariantContext().getProject().hasProperty("deepShrink") ){
+            AtlasD8.deepShrink = true;
+        }
         super.transform(transformInvocation);
         TransformOutputProvider transformOutputProvider = transformInvocation.getOutputProvider();
         transformOutputProvider.deleteAll();
         atlasMainDexMerger.merge(transformInvocation);
         awbDexMerger.merge(transformInvocation);
-
 
     }
 }
