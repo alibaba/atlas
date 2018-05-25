@@ -407,7 +407,10 @@ public class InstrumentationHook extends Instrumentation {
 			BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
 			if(impl!=null&&impl.checkValidate()) {
 				return callback.execStartActivity();
-			}else {
+			}else if (Atlas.getInstance().getBundle(bundleName) == null && !AtlasBundleInfoManager.instance().getBundleInfo(bundleName).isInternal() && Framework.getInstalledBundle(bundleName,AtlasBundleInfoManager.instance().getBundleInfo(bundleName).unique_tag) == null) {
+				fallBackToClassNotFoundCallback(context,intent,bundleName);
+				return null;
+			} else {
 				if(ActivityTaskMgr.getInstance().peekTopActivity()!=null && Looper.getMainLooper().getThread().getId()==Thread.currentThread().getId()) {
 					final String component = componentName;
 					asyncStartActivity(context, bundleName, intent, requestCode, component,callback);

@@ -309,6 +309,10 @@ public class AtlasBridgeApplication extends Application{
             }
         }
 
+        if (KernalBundle.hasNativeLibPatch(this)){
+            KernalBundle.patchNativeLib(this);
+        }
+
         try {
             //初始化baselineinfomanager
             Class BaselineInfoManagerClazz = getBaseContext().getClassLoader().loadClass("android.taobao.atlas.versionInfo.BaselineInfoManager");
