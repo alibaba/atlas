@@ -9,10 +9,12 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.hack.Hack;
@@ -23,6 +25,8 @@ import android.taobao.atlas.runtime.newcomponent.receiver.ReceiverBridge;
 import android.util.Log;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,7 +37,8 @@ import java.util.Map;
  */
 
 public class BaseDelegateService extends Service{
-
+    private static final String TAG = "BaseDelegateService";
+    
     private ServiceDispatcherImpl dispatcher = new ServiceDispatcherImpl();
 
     @Override
@@ -92,8 +97,9 @@ public class BaseDelegateService extends Service{
                             record.activeConnections.add(conn);
                         }
                         try {
-                            conn.connected(record.component,binder);
-                        } catch (RemoteException e) {
+                            /*.*/
+                            connected(conn, record.component, binder, false);
+                        } catch (/*Remote*/Exception e) {
                             e.printStackTrace();
                         }
                     }
@@ -239,6 +245,50 @@ public class BaseDelegateService extends Service{
 
         public AdditionalServiceRecord(ComponentName componentName){
             this.component = componentName;
+        }
+    }
+
+    private static Method sConnectedMethod;
+
+    private static boolean sConnectedMethodFetched;
+
+    public static void connected(/*@NonNull*/ IServiceConnection iServiceConnection, /*@NonNull*/ ComponentName name,
+                                              IBinder service, boolean dead) {
+        fetchConnectedMethod();
+        if (sConnectedMethod != null) {
+            try {
+                if (VERSION.SDK_INT >= 26) {
+                    sConnectedMethod.invoke(iServiceConnection, name, service, dead);
+                } else {
+                    sConnectedMethod.invoke(iServiceConnection, name, service/*, dead*/);
+                }
+            } catch (IllegalAccessException e) {
+                // Do nothing
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e.getCause());
+            }
+        }
+    }
+
+    private static void fetchConnectedMethod() {
+        if (!sConnectedMethodFetched) {
+            try {
+                if (VERSION.SDK_INT >= 26) {
+                    sConnectedMethod = IServiceConnection.class.getDeclaredMethod("connected",
+                                                                                  ComponentName.class,
+                                                                                  IBinder.class,
+                                                                                  boolean.class);
+                } else {
+                    sConnectedMethod = IServiceConnection.class.getDeclaredMethod("connected",
+                                                                                  ComponentName.class,
+                                                                                  IBinder.class);
+                }
+
+                sConnectedMethod.setAccessible(true);
+            } catch (NoSuchMethodException e) {
+                Log.i(TAG, "Failed to retrieve connected method", e);
+            }
+            sConnectedMethodFetched = true;
         }
     }
 }
