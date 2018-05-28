@@ -22,6 +22,7 @@ import android.taobao.atlas.runtime.ContextImplHook;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.taobao.atlas.runtime.newcomponent.receiver.ReceiverBridge;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
 
 import java.lang.reflect.Constructor;
@@ -101,6 +102,9 @@ public class BaseDelegateService extends Service{
                             connected(conn, record.component, binder, false);
                         } catch (/*Remote*/Exception e) {
                             e.printStackTrace();
+                            Map<String, Object> detail = new HashMap<>();
+                            detail.put("serviceIntent", serviceIntent);
+                            AtlasMonitor.getInstance().report(AtlasMonitor.NEWCOMPONENT_SERVICE, detail, e);
                         }
                     }
                 }
