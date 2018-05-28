@@ -355,7 +355,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
 
-                if (!atlasExtension.getTBuildConfig().getClassInject()) {
+                if (!atlasExtension.getTBuildConfig().getClassInject() && atlasExtension.isAtlasEnabled()) {
                     mtlTaskContextList.add(new MtlTaskContext(GenerateAtlasSourceTask.ConfigAction.class, null));
                 }
 
@@ -473,7 +473,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                 List<MtlTransformContext> mtlTransformContextList = new ArrayList<MtlTransformContext>();
 
-                if (atlasExtension.getTBuildConfig().getClassInject()) {
+                if (atlasExtension.getTBuildConfig().getClassInject() && atlasExtension.isAtlasEnabled()) {
                     mtlTransformContextList.add(
                         new MtlTransformContext(ClassInjectTransform.class, ProGuardTransform.class,
                                                 DexTransform.class));

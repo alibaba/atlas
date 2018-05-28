@@ -3,6 +3,7 @@ package com.taobao.android.builder;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.AtlasDependencyManager;
 import com.android.build.gradle.internal.DependencyManager;
+import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
 import com.taobao.android.builder.tools.PathUtil;
@@ -34,6 +35,9 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
     public static final String JDK_MIN_VERSIONS = "1.8";
 
     protected Instantiator instantiator;
+
+    protected AtlasExtension atlasExtension;
+
     public static String creator = "AtlasPlugin" + Version.ANDROID_GRADLE_PLUGIN_VERSION;
 
     protected AtlasConfigurationHelper atlasConfigurationHelper;
@@ -52,7 +56,7 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
         checkPluginSetup();
 
         atlasConfigurationHelper = getConfigurationHelper(project);
-        atlasConfigurationHelper.createExtendsion();
+        atlasExtension = atlasConfigurationHelper.createExtendsion();
 
     }
 

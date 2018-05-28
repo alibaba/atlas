@@ -240,7 +240,7 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
         atlasConfigurationHelper.createLibCompenents();
 
-        if (PluginTypeUtils.isAppProject(project)) {
+        if (PluginTypeUtils.isAppProject(project) && atlasExtension.isAtlasEnabled()) {
 
             Map<String, String> multiDex = new HashMap<>();
             multiDex.put("group", "com.android.support");
