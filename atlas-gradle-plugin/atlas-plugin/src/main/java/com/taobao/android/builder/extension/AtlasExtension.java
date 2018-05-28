@@ -247,7 +247,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     @ConfigGroup(order = 4, advance = false)
     public NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs;
 
-    public NamedDomainObjectContainer<DefaultChannelConfig> channelConfigs;
+    public NamedDomainObjectContainer<DefaultChannelConfig> atlasChannelConfigs;
 
     //If the atlas switch is switched on, the default switch will be opened automatically
     @Config(title = "Enable atlas", message = "Enable atlas , true/false", order = 0, group = "atlas")
@@ -275,7 +275,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         this.multiDexConfigs = project.container(MultiDexConfig.class, new MultiDexConfigFactory(
                 instantiator, project, project.getLogger()));
         this.enhanceConfigs = project.container(EnhanceConfig.class, new EnhanceConfigFactory(instantiator, project, project.getLogger()));
-        this.channelConfigs = project.container(DefaultChannelConfig.class, new DefaultChannelConfigFactory(instantiator, project, project.getLogger()));
+        this.atlasChannelConfigs = project.container(DefaultChannelConfig.class, new DefaultChannelConfigFactory(instantiator, project, project.getLogger()));
         tBuildConfig = (Z) instantiator.newInstance(TBuildConfig.class);
         manifestOptions = instantiator.newInstance(ManifestOptions.class);
         bundleConfig = instantiator.newInstance(BundleConfig.class);
@@ -313,8 +313,8 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         action.execute(enhanceConfigs);
     }
 
-    public void channelConfigs(Action<? super NamedDomainObjectContainer<DefaultChannelConfig>> action) {
-        action.execute(channelConfigs);
+    public void atlasChannelConfigs(Action<? super NamedDomainObjectContainer<DefaultChannelConfig>> action) {
+        action.execute(atlasChannelConfigs);
     }
 
 
@@ -372,7 +372,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         this.enhanceConfigs = enhanceConfigs;
     }
 
-    public void setChannelConfigs(NamedDomainObjectContainer<DefaultChannelConfig> channelConfigs) {
-        this.channelConfigs = channelConfigs;
+    public void setAtlasChannelConfigs(NamedDomainObjectContainer<DefaultChannelConfig> channelConfigs) {
+        this.atlasChannelConfigs = channelConfigs;
     }
 }
