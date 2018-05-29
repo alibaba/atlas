@@ -289,7 +289,7 @@ public class TBuildConfig {
     private Boolean preProcessManifest = true;
 
     @Config(title = "Use a custom aapt", message = "If atlas is turned on, it must be true", order = 8, advance = true, group = "atlas")
-    private Boolean useCustomAapt = false;
+    private Boolean useCustomAapt = true;
 
     @Config(title = "aaptThe output R is constant", message = "The recommended value is set to false, You can reduce the amount of patch packages that are dynamically deployed", order = 9, advance = true,
         group = "atlas")
