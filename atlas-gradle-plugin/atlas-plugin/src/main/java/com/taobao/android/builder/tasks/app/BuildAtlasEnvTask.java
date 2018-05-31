@@ -238,6 +238,9 @@ public class BuildAtlasEnvTask extends BaseTask {
             Field field1 = MergeSourceSetFolders.class.getDeclaredField("libraries");
             field1.setAccessible(true);
             field1.set(mergeSourceSetFolders, new MainArtifactsCollection((ArtifactCollection) field1.get(mergeSourceSetFolders), getProject()));
+
+            AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().put(appVariantContext.getScope().getMergeNativeLibsOutputDir().getAbsolutePath(),true);
+
         } catch (Exception e) {
 
         }
