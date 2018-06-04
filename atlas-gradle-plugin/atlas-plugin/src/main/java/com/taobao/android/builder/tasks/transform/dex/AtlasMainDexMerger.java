@@ -16,6 +16,7 @@ import com.android.builder.utils.FileCache;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.prefs.AndroidLocation;
 import com.android.utils.FileUtils;
 import com.taobao.android.builder.tools.ReflectUtils;
 import org.gradle.api.Project;
@@ -130,6 +131,13 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
                         mainDexFiles, dexingType, dexMerger, mainDexListFile == null ? null : mainDexListFile.getSingleFile(), minSdkVersion, isDebuggable, "maindex", ID);
         ProcessOutput output = outputHandler.createOutput();
         FileCache fileCache = BuildCacheUtils.createBuildCacheIfEnabled(variantOutputContext.getVariantContext().getProject(), variantOutputContext.getScope().getGlobalScope().getProjectOptions());
+        if (fileCache == null){
+            try {
+                fileCache = FileCache.getInstanceWithMultiProcessLocking(new File(AndroidLocation.getFolder(),"atlas-buildCache"));
+            } catch (AndroidLocation.AndroidLocationException e) {
+                e.printStackTrace();
+            }
+        }
         try {
             FileCache.QueryResult result = fileCache.createFileInCacheIfAbsent(
                     buildCacheInputs,

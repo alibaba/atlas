@@ -13,6 +13,7 @@ import com.android.builder.utils.FileCache;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.prefs.AndroidLocation;
 import com.android.utils.FileUtils;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import org.gradle.api.file.FileCollection;
@@ -100,6 +101,13 @@ public class AwbDexsMerger extends AtlasDexMerger {
         FileCache.Inputs buildCacheInputs = getBuildCacheInputs(awbDexFiles, dexingType, dexMerger, null, minSdkVersion, isDebuggable, awbBundle.getName(), ID);
         ProcessOutput output = outputHandler.createOutput();
         FileCache fileCache = BuildCacheUtils.createBuildCacheIfEnabled(variantOutputContext.getVariantContext().getProject(), variantOutputContext.getScope().getGlobalScope().getProjectOptions());
+        if (fileCache == null){
+            try {
+                fileCache = FileCache.getInstanceWithMultiProcessLocking(new File(AndroidLocation.getFolder(),"atlas-buildCache"));
+            } catch (AndroidLocation.AndroidLocationException e) {
+                e.printStackTrace();
+            }
+        }
         try {
             FileCache.QueryResult result = fileCache.createFileInCacheIfAbsent(
                     buildCacheInputs,
