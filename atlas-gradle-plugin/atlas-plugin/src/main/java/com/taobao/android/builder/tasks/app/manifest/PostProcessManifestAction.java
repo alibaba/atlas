@@ -274,7 +274,7 @@ public class PostProcessManifestAction implements Action<Task> {
                     .getOutOfApkBundles());
 
             File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
-            if (AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
+            if ( atlasExtension.isAtlasEnabled()&& AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
                 appVariantContext.getVariantData().javacTask.source(proxySrcDir);
             }
 
