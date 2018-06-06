@@ -288,6 +288,11 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
 
     @Override
+    public boolean isCacheable() {
+        return false;
+    }
+
+    @Override
     public void transform(TransformInvocation invocation) throws TransformException {
 
         firstTime =true;

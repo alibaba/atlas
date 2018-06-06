@@ -86,11 +86,14 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
     Pattern pattern = Pattern.compile("\\d+.dex");
 
+    private AtomicInteger atomicInteger = new AtomicInteger();
+
+    private Set<AwbBundle> sets = new HashSet<>();
+
     private WaitableExecutor waitableExecutor = WaitableExecutor.useGlobalSharedThreadPool();
 
     ForkJoinPool mainforkJoinPool = null;
     FileCache fileCache = null;
-
 
 
     public DexByteCodeConverterHook(VariantContext variantContext, AppVariantOutputContext variantOutputContext, ILogger logger, TargetInfo targetInfo, JavaProcessExecutor javaProcessExecutor, boolean verboseExec, ErrorReporter errorReporter) {
@@ -103,7 +106,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         if (variantContext.getScope().getGlobalScope()
                 .getProjectOptions()
                 .get(BooleanOption.ENABLE_INTERMEDIATE_ARTIFACTS_CACHE)) {
-            fileCache =  variantContext.getScope().getGlobalScope().getBuildCache();
+            fileCache = variantContext.getScope().getGlobalScope().getBuildCache();
         }
     }
 
@@ -116,7 +119,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 //
 //    }
     @Override
-    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException{
+    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 variantContext.getVariantName());
 
@@ -130,7 +133,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
 
             for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-                    waitableExecutor.execute((Callable<Void>) () -> {
+                waitableExecutor.execute((Callable<Void>) () -> {
                             try {
 
                                 long start = System.currentTimeMillis();
@@ -153,7 +156,6 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                 }
 
 
-
                                 if (variantContext.getScope().getDexer() == DexerTool.DX) {
                                     AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
                                             .convertByteCode(inputFiles,
@@ -162,14 +164,18 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                                     null,
                                                     dexOptions,
                                                     outputHandler, true);
-                                }else if (variantContext.getScope().getDexer() == DexerTool.D8){
+                                } else if (variantContext.getScope().getDexer() == DexerTool.D8) {
 
 
-                                    new AtlasD8Creator(inputFiles,((AppVariantContext) variantContext).getAwbDexAchiveOutput(awbBundle),multidex,mainDexList,dexOptions,minSdkVersion,fileCache,processOutputHandler,variantContext,variantOutputContext).create(awbBundle);
+                                    new AtlasD8Creator(inputFiles, ((AppVariantContext) variantContext).getAwbDexAchiveOutput(awbBundle), multidex, mainDexList, dexOptions, minSdkVersion, fileCache, processOutputHandler, variantContext, variantOutputContext).create(awbBundle);
+                                }
+
+                                if (awbBundle.mBundle) {
+                                    sets.add(awbBundle);
                                 }
 
                             } catch (Exception e) {
-                                throw new ProcessException(awbBundle.getName(),e);
+                                throw new ProcessException(awbBundle.getName(), e);
 
                             }
                             return null;
@@ -185,9 +191,11 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         inputFile = AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
         inputFile.addAll(AtlasBuildContext.atlasMainDexHelper.getInputDirs());
 
-        if (variantContext.getScope().getDexer() == DexerTool.D8){
+        logger.warning("maindex inputFile size :" + inputFile.size());
 
-            AtlasD8Creator atlasD8Creator = new AtlasD8Creator(inputs,((AppVariantContext) variantContext).getMainDexAchive(),multidex,mainDexList,dexOptions,minSdkVersion,fileCache,processOutputHandler,variantContext,variantOutputContext);
+        if (variantContext.getScope().getDexer() == DexerTool.D8) {
+
+            AtlasD8Creator atlasD8Creator = new AtlasD8Creator(inputs, ((AppVariantContext) variantContext).getMainDexAchive(), multidex, mainDexList, dexOptions, minSdkVersion, fileCache, processOutputHandler, variantContext, variantOutputContext);
             atlasD8Creator.setMainDexOut(outDexFolder);
             atlasD8Creator.create(new AwbBundle());
             return;
@@ -197,14 +205,14 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         initDexExecutorService(dexOptions);
 
         if (!multidex) {
-                DexByteCodeConverterHook.super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
-                try {
-                    for (Future future : futureList) {
-                        future.get();
-                    }
-                } catch (Exception e) {
-                    throw new ProcessException(e);
+            DexByteCodeConverterHook.super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+            try {
+                for (Future future : futureList) {
+                    future.get();
                 }
+            } catch (Exception e) {
+                throw new ProcessException(e);
+            }
 
         } else {
             tempDexFolder = variantOutputContext.getMainDexOutDir();
@@ -213,6 +221,8 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             }
 
             for (File file : inputFile) {
+
+                logger.warning("maindex inputFile:" + file.getAbsolutePath());
 
                 File outPutFolder = new File(tempDexFolder, FilenameUtils.getBaseName(file.getName()));
                 if (!outPutFolder.exists()) {
@@ -224,18 +234,19 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
             }
 
-                for (Future future : futureList) {
-                    try {
-                        future.get();
-                    } catch (ExecutionException e) {
-                        throw new ProcessException(e);
-                    }
+            for (Future future : futureList) {
+                try {
+                    future.get();
+                } catch (ExecutionException e) {
+                    throw new ProcessException(e);
                 }
+            }
 
 
             List<Path> dexPaths = new ArrayList<>();
             Collection<File> dexFiles = FileUtils.listFiles(tempDexFolder, new String[]{"dex"}, true);
             if (dexFiles != null) {
+                logger.warning("maindex outDexFiles size:" + dexFiles.size());
                 dexPaths = dexFiles.stream().map(file -> file.toPath()).collect(Collectors.toList());
             }
             mainforkJoinPool = new ForkJoinPool();
@@ -251,6 +262,20 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             FileUtils.deleteDirectory(tempDexFolder);
         }
         waitableExecutor.waitForTasksWithQuickFail(true);
+
+        atomicInteger.set(FileUtils.listFiles(outDexFolder, new String[]{"dex"}, true).size());
+
+        logger.warning("maindex final dexs size:" + atomicInteger.get());
+
+
+        sets.stream().forEach(awbBundle -> {
+            try {
+                FileUtils.moveFile(new File(((AppVariantContext) variantContext).getAwbDexOutput(awbBundle.getName()), "classes.dex"), new File(outDexFolder, "classes" + atomicInteger.getAndIncrement() + ".dex"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
 
     }
 

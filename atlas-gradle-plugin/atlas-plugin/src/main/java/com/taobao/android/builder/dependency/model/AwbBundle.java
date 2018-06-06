@@ -352,6 +352,8 @@ public class AwbBundle {
 
     public boolean isRemote;
 
+    public boolean mBundle;
+
     private String soFileName;
 
     public BundleInfo bundleInfo = new BundleInfo();

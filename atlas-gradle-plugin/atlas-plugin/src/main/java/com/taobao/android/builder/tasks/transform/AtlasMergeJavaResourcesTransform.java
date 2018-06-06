@@ -23,6 +23,8 @@ import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.MD5Util;
+import com.taobao.android.builder.tools.zip.ZipUtils;
+import org.gradle.internal.impldep.org.apache.tools.zip.ZipUtil;
 
 import java.io.*;
 import java.util.*;
@@ -544,7 +546,24 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                 }
             });
 
+            if (awbTransform.getAwbBundle().mBundle){
+                if (mergedType.contains(ExtendedContentType.NATIVE_LIBS)){
+                    File bundleOutputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
+                    org.apache.commons.io.FileUtils.moveDirectoryToDirectory(bundleOutputLocation,outputLocation,true);
+
+                }else {
+                    File bundleOutputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
+                    try {
+                        mergeZipToZip(bundleOutputLocation,outputLocation);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+
         }
+
 
         try {
             waitableExecutor.waitForTasksWithQuickFail(false);
@@ -557,6 +576,25 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
 
 
 
+    }
+
+    private void mergeZipToZip(File bundleOutputLocation, File outputLocation) throws Exception {
+        if (bundleOutputLocation == null || !bundleOutputLocation.exists()){
+            return;
+        }
+
+        File tempDir = new File(bundleOutputLocation.getParentFile(),"unzip");
+
+        ZipUtils.unzip(bundleOutputLocation,tempDir.getAbsolutePath());
+
+        if (outputLocation != null && outputLocation.exists()){
+            ZipUtils.unzip(outputLocation,tempDir.getAbsolutePath());
+            FileUtils.deleteIfExists(outputLocation);
+        }
+
+        ZipUtils.rezip(outputLocation,tempDir,null);
+
+        org.apache.commons.io.FileUtils.deleteDirectory(tempDir);
     }
 
 

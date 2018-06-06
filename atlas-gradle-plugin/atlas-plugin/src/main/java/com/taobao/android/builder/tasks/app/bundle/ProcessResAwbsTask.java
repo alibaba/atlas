@@ -263,6 +263,9 @@ public class ProcessResAwbsTask extends BaseTask {
         List<Runnable> runnables = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            if (awbBundle.mBundle){
+                continue;
+            }
 
             runnables.add(new Runnable() {
                 @Override

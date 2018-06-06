@@ -54,8 +54,10 @@ public class FirstApkAction implements Action<Task> {
                                 + appVariantOutputContext.getVariantContext().getVariantName()
                                 + SdkConstants.DOT_RES);
 
+
+
         File[]dexs = packageApplication.getDexFolders().getSingleFile().listFiles(pathname -> pathname.getName().equals("classes.dex"));
-        if (dexs!= null) {
+        if (dexs!= null && dexs.length == 1) {
             File file = AtlasBuildContext.atlasApkProcessor.securitySignApk(dexs[0], new File(appVariantOutputContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).getSingleFile(),"AndroidManifest.xml"),appVariantOutputContext.getVariantContext().getBuildType(),false);
             if (file!= null && file.exists()){
                 try {

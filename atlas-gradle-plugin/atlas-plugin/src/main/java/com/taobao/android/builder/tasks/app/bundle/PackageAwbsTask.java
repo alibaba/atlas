@@ -305,6 +305,9 @@ public class PackageAwbsTask extends BaseTask {
         final Map<String, Long[]> monitors = new HashMap<String, Long[]>();
         long startTime = System.currentTimeMillis();
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            if (awbBundle.mBundle){
+                continue;
+            }
             runnables.add(() -> {
 
                 try {

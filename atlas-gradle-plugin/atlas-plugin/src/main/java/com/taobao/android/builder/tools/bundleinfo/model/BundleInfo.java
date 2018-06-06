@@ -226,6 +226,17 @@ public class BundleInfo extends BasicBundleInfo {
 
     private String md5;
 
+
+    public boolean ismBundle() {
+        return mBundle;
+    }
+
+    public void setmBundle(boolean mBundle) {
+        this.mBundle = mBundle;
+    }
+
+    private boolean mBundle;
+
     public String getName() {
         return name;
     }

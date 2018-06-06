@@ -229,6 +229,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by wuzhong on 2016/11/24.
@@ -278,7 +279,7 @@ public class BundleInfoUtils {
         } else {
             bundleInfo = awbBundle.bundleInfo;
         }
-
+        bundleInfo.setmBundle(awbBundle.mBundle);
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getInsideOfApkBundles().size() > 0){
             awbBundle.isRemote = !appVariantContext.getAtlasExtension()
                     .getTBuildConfig()
@@ -315,6 +316,10 @@ public class BundleInfoUtils {
                                                .getProjectDir(), "bundleBaseInfoFile.json");
 
         //Use the file replacement in the plug-in
+
+
+
+
         Map<String, BundleInfo> bundleFileMap = Maps.newHashMap();
         if (null != baseBunfleInfoFile &&
             baseBunfleInfoFile.exists() &&
@@ -330,12 +335,14 @@ public class BundleInfoUtils {
 
         List<String> duplicatedBundleInfo = new ArrayList<>();
         for (AwbBundle awbBundle : awbBundles) {
+            if (bundleNeedMoveToMdex(awbBundle,appVariantContext)){
+                awbBundle.mBundle = true;
+            }
             String name = awbBundle.getResolvedCoordinates().getArtifactId();
             File bundleBaseInfoFile = new File(awbBundle.getAndroidLibrary().getFolder(), "bundleBaseInfoFile.json");
             if (bundleBaseInfoFile.exists()) {
                 String json = FileUtils.readFileToString(bundleBaseInfoFile, "utf-8");
                 BundleInfo bundleInfo = JSON.parseObject(json, BundleInfo.class);
-
                 if (bundleFileMap.containsKey(name)) {
                     appVariantContext.getProject().getLogger().error(
                         "bundleBaseInfoFile>>>" + name + " has declared bundleBaseInfoFile");
@@ -358,6 +365,12 @@ public class BundleInfoUtils {
         }
 
         return bundleFileMap;
+    }
+
+    private static boolean bundleNeedMoveToMdex(AwbBundle awbBundle,AppVariantContext appVariantContext) {
+        Set<String>bundlesToMdex = appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex();
+        boolean allBundlesToMdex =appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex();
+        return allBundlesToMdex||bundlesToMdex.contains(awbBundle.getPackageName());
     }
 
     public static File writeBundleInfo(AppVariantContext appVariantContext) throws IOException, DocumentException {

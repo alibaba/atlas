@@ -176,13 +176,7 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
     }
 
 
-    @NonNull
-    private File getDexOutputLocation(
-            @NonNull TransformOutputProvider outputProvider,
-            @NonNull String name,
-            @NonNull Set<? super QualifiedContent.Scope> scopes) {
-        return outputProvider.getContentLocation(name, TransformManager.CONTENT_DEX, scopes, Format.DIRECTORY);
-    }
+
 
 
 }

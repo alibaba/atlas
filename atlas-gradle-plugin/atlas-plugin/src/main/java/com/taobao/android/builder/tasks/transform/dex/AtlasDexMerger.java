@@ -2,9 +2,13 @@ package com.taobao.android.builder.tasks.transform.dex;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.Format;
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.TransformInvocation;
+import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.dexing.DexMergerTool;
 import com.android.builder.dexing.DexingType;
@@ -24,10 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 
@@ -40,6 +41,8 @@ import java.util.concurrent.ForkJoinTask;
 public abstract class AtlasDexMerger {
     @NonNull
     protected final DexingType dexingType;
+
+
 
     protected LoggerWrapper logger;
 
@@ -183,6 +186,14 @@ public abstract class AtlasDexMerger {
 
     public abstract void merge(TransformInvocation transformInvocation);
 
+
+    @NonNull
+    protected File getDexOutputLocation(
+            @NonNull TransformOutputProvider outputProvider,
+            @NonNull String name,
+            @NonNull Set<? super QualifiedContent.Scope> scopes) {
+        return outputProvider.getContentLocation(name, TransformManager.CONTENT_DEX, scopes, Format.DIRECTORY);
+    }
 
 
     static interface CacheHandler{

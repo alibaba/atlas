@@ -15,6 +15,7 @@ import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.tasks.TaskInputHelper;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.options.BooleanOption;
+import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.ResourceException;
 import com.android.build.gradle.tasks.WorkerExecutorAdapter;
 import com.android.builder.core.AndroidBuilder;
@@ -42,8 +43,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.Optional;
@@ -251,6 +254,15 @@ public class MergeAwbResource extends IncrementalTask {
             throw new ResourceException(e.getMessage(), e);
         } finally {
             cleanup();
+        }
+        if(awbBundle.mBundle){
+            variantScope.getVariantData().mergeResourcesTask.doLast(task -> {
+                try {
+                    org.apache.commons.io.FileUtils.moveDirectoryToDirectory(getOutputDir(),((MergeResources)task).getOutputDir(),true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 
@@ -871,6 +883,7 @@ public class MergeAwbResource extends IncrementalTask {
                             .getVariantConfiguration()
                             .getBuildType()
                             .isPseudoLocalesEnabled();
+
         }
     }
 

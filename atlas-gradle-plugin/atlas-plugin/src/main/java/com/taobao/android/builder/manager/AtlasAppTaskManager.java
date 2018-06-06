@@ -495,6 +495,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               if (atlasExtension.getTBuildConfig().isAtlasMultiDex() && multiDexEnabled) {
                                                                   transformReplacer.replaceMultiDexListTransform();
+                                                              } else {
+                                                                  transformReplacer.disableCache();
                                                               }
 
                                                               transformReplacer.replaceProguardTransform();
@@ -584,7 +586,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                       @Override
                                                                       public Set<File> getFiles() {
-                                                                          if (AtlasBuildContext.atlasMainDexHelper.getMainJavaRes() == null){
+                                                                          if (AtlasBuildContext.atlasMainDexHelper.getMainJavaRes() == null) {
                                                                               return Sets.newHashSet();
                                                                           }
                                                                           return Sets.newHashSet(AtlasBuildContext.atlasMainDexHelper.getMainJavaRes());
@@ -592,14 +594,14 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   });
                                                               }
 
-                                                              List<TransformTask> transformTasks = TransformManager.findTransformTaskByTransformType(appVariantContext,AtlasDesugarTransform.class);
-                                                              for (TransformTask transformTask:transformTasks){
+                                                              List<TransformTask> transformTasks = TransformManager.findTransformTaskByTransformType(appVariantContext, AtlasDesugarTransform.class);
+                                                              for (TransformTask transformTask : transformTasks) {
                                                                   transformTask.doLast(new Action<Task>() {
                                                                       @Override
                                                                       public void execute(Task task) {
                                                                           ConfigurableFileCollection fileCollection = variantScope.getTryWithResourceRuntimeSupportJar();
-                                                                          for (File file:fileCollection) {
-                                                                              AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity("runtime-deps-try-with-resources",file,false,false));
+                                                                          for (File file : fileCollection) {
+                                                                              AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity("runtime-deps-try-with-resources", file, false, false));
                                                                           }
                                                                       }
                                                                   });
