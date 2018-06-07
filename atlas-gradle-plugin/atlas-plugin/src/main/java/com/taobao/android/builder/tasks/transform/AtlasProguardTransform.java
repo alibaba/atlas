@@ -270,6 +270,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
     static boolean firstTime = true;
 
     List<File> defaultProguardFiles = new ArrayList<>();
+    private List<File> nonConsumerProguardFiles = new ArrayList<>();
 
     @Override
     public Set<ContentType> getOutputTypes() {
@@ -305,6 +306,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
                     appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
         }else {
                     defaultProguardFiles.addAll(oldConfigurableFileCollection.getFiles());
+            nonConsumerProguardFiles.addAll(
+                appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
 
         }
         List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
@@ -504,7 +507,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
     @Override
     public void applyConfigurationFile(File file) throws IOException, ParseException {
         //appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>());
-        if (!defaultProguardFiles.contains(file) && buildConfig.isLibraryProguardKeepOnly()) {
+        if (buildConfig.isLibraryProguardKeepOnly() && !nonConsumerProguardFiles.contains(file)) {
             appVariantContext.getProject().getLogger().info("applyConfigurationFile keep only :" + file);
             applyLibConfigurationFile(file);
             return;
