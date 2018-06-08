@@ -407,6 +407,8 @@ public class PatchFileBuilder {
                     break;
                 case MERGE:
                     File hisBundleFolder = new File(hisTPatchUnzipFolder, bundleName);
+                    File hisBundle = new File(hisTPatchUnzipFolder, "lib" + bundlePatch.pkgName.replace(".", "_") + ".so"));
+
                     if (!hisTPatchFile.exists()) {
                         if (StringUtils.isBlank(hisPatchInfo.getDownloadUrl()) && new File(TPatchTool.hisTpatchFolder,
                                 hisPatchInfo.getFileName())
@@ -438,9 +440,9 @@ public class PatchFileBuilder {
 //                            }
                         }
                     }
-                    if (!hisBundleFolder.exists() && !bundlePatch.newBundle) {
+                    if (!hisBundleFolder.exists() && !hisBundle.exists()) {
                         throw new IOException(hisBundleFolder.getAbsolutePath() + " is not exist in history bundle!");
-                    } else if (bundlePatch.newBundle) {
+                    } else if (hisBundle.exists() && bundlePatch.bundlePolicy == BundlePolicy.MERGE) {
                         File currentBundle = new File(curTPatchUnzipFolder,
                                 "lib" + bundlePatch.pkgName.replace(".", "_") + ".so");
                         if (currentBundle.exists() && awbMaps.get(bundlePatch.artifactId).exists()) {
