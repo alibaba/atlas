@@ -334,7 +334,6 @@ public class TransformReplacer {
 
     public void disableCache() {
         List<TransformTask> list = null;
-        FastMultiDexer fastMultiDexer = new FastMultiDexer(variantContext);
         if (usingIncrementalDexing(variantContext.getScope())) {
             list = TransformManager.findTransformTaskByTransformType(variantContext,
                     MainDexListTransform.class);
@@ -342,6 +341,16 @@ public class TransformReplacer {
             list = TransformManager.findTransformTaskByTransformType(variantContext,
                     MultiDexTransform.class);
         }
+        if (list != null){
+            for (TransformTask transformTask:list){
+                List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
+                list1.clear();
+
+            }
+        }
+
+        list = TransformManager.findTransformTaskByTransformType(variantContext,
+                AtlasProguardTransform.class);
         if (list != null){
             for (TransformTask transformTask:list){
                 List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");

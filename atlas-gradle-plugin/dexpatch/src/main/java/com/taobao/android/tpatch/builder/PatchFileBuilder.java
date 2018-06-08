@@ -138,7 +138,7 @@ public class PatchFileBuilder {
         String patchName = "patch-" + currentBuildPatchInfo.getPatchVersion() + "@" + hisPatchInfo.getPatchVersion();
         File destTPathTmpFolder = new File(tPatchTmpFolder, patchName);
         destTPathTmpFolder.mkdirs();
-        File infoFile = new File(destTPathTmpFolder,"patchInfo");
+        File infoFile = new File(destTPathTmpFolder, "patchInfo");
         FileUtils.writeStringToFile(infoFile, patchName);
         File curTPatchUnzipFolder = unzipCurTPatchFolder(patchName);
         // 处理awb的更新
@@ -245,13 +245,19 @@ public class PatchFileBuilder {
             bundlePatch.hisPatchUrl = hisPatchInfo.getDownloadUrl();
             bundlePatch.mainBundle = curBundleInfo.getMainBundle();
             //            bundlePatch.baseVersion = curBundleInfo.getBaseVersion();
-            if (hisBundles.containsKey(bundleName) && !hisBundles.get(bundleName)
-                    .getNewBundle()) { // 如果之前的patch版本也包含这个bundle的patch
+            if (hisBundles.containsKey(bundleName)) { // 如果之前的patch版本也包含这个bundle的patch
+                bundlePatch.newBundle = false;
                 PatchBundleInfo hisBundleInfo = hisBundles.get(bundleName);
                 bundlePatch.baseVersion = hisBundleInfo.getVersion();
                 bundlePatch.srcUnitTag = hisBundleInfo.getUnitTag();
                 if (curBundleInfo.getVersion().equalsIgnoreCase(hisBundleInfo.getVersion())) { // 如果2个patch版本没变化
                     // 说明:为了防止虽然版本号没变化但是文件内容也有变化的情况，直接也做merge操作
+
+                    if (curBundleInfo.getNewBundle()) {
+                        hisBundles.remove(bundleName);
+                        continue;
+                    }
+
                     bundlePatch.bundlePolicy = BundlePolicy.MERGE;
                 } else {// 如果版本有变化，进行merge操作
                     bundlePatch.bundlePolicy = BundlePolicy.MERGE;
@@ -384,8 +390,15 @@ public class PatchFileBuilder {
             patchBundleInfo.setDependency(bundlePatch.dependency);
             switch (bundlePatch.bundlePolicy) {
                 case ADD:
-                    bundleDestFolder.mkdirs();
-                    FileUtils.copyDirectory(curBundleFolder, bundleDestFolder);
+                    if (bundlePatch.newBundle){
+                        File currentBundle = new File(curTPatchUnzipFolder,
+                                "lib" + bundlePatch.pkgName.replace(".", "_") + ".so");
+                        FileUtils.copyFileToDirectory(currentBundle, tPatchTmpFolder);
+
+                    }else {
+                        bundleDestFolder.mkdirs();
+                        FileUtils.copyDirectory(curBundleFolder, bundleDestFolder);
+                    }
                     break;
                 case REMOVE:
                     addToPatch = false;
@@ -425,8 +438,14 @@ public class PatchFileBuilder {
 //                            }
                         }
                     }
-                    if (!hisBundleFolder.exists()) {
+                    if (!hisBundleFolder.exists() && !bundlePatch.newBundle) {
                         throw new IOException(hisBundleFolder.getAbsolutePath() + " is not exist in history bundle!");
+                    } else if (bundlePatch.newBundle) {
+                        File currentBundle = new File(curTPatchUnzipFolder,
+                                "lib" + bundlePatch.pkgName.replace(".", "_") + ".so");
+                        if (currentBundle.exists() && awbMaps.get(bundlePatch.artifactId).exists()) {
+                            FileUtils.copyFileToDirectory(awbMaps.get(bundlePatch.artifactId), destTPathTmpFolder);
+                        }
                     } else {
                         File fullAwbFile = awbMaps.get(bundlePatch.artifactId);
                         if (fullAwbFile == null) {

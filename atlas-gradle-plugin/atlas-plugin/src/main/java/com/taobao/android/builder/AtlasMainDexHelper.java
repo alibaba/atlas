@@ -93,7 +93,7 @@ public class AtlasMainDexHelper {
     public void updateMainDexFile(File oldFile, File newFile) {
         for (BuildAtlasEnvTask.FileIdentity id : mainDexJar) {
             try {
-                if (Files.isSameFile(oldFile.toPath(), id.file.toPath()) || MD5Util.getFileMD5(oldFile).equals(MD5Util.getFileMD5(id.file))) {
+                if (Files.isSameFile(oldFile.toPath(), id.file.toPath())) {
                     id.file = newFile;
                     break;
                 }
@@ -107,7 +107,7 @@ public class AtlasMainDexHelper {
     public void updateMainDexFile(JarInput oldFile, File newFile) {
         for (BuildAtlasEnvTask.FileIdentity id : mainDexJar) {
             try {
-                if (Files.isSameFile(oldFile.getFile().toPath(), id.file.toPath()) || MD5Util.getFileMD5(oldFile.getFile()).equals(MD5Util.getFileMD5(id.file))) {
+                if (Files.isSameFile(oldFile.getFile().toPath(), id.file.toPath())) {
                     id.file = newFile;
                     break;
                 } else if (oldFile.getName().startsWith("android.local.jars")) {
@@ -180,7 +180,7 @@ public class AtlasMainDexHelper {
     public boolean inMainDex(File jarFile)  {
         for (BuildAtlasEnvTask.FileIdentity fileIdentity : mainDexJar) {
             try {
-                if (Files.isSameFile(fileIdentity.file.toPath(), jarFile.toPath()) || MD5Util.getFileMD5(fileIdentity.file).equals(MD5Util.getFileMD5(jarFile))) {
+                if (Files.isSameFile(fileIdentity.file.toPath(), jarFile.toPath())) {
                     return true;
                 }
             } catch (IOException e) {
@@ -199,7 +199,7 @@ public class AtlasMainDexHelper {
     public BuildAtlasEnvTask.FileIdentity get(File jarFile) {
         for (BuildAtlasEnvTask.FileIdentity fileIdentity : mainDexJar) {
             try {
-                if (Files.isSameFile(fileIdentity.file.toPath(), jarFile.toPath()) || MD5Util.getFileMD5(jarFile).equals(MD5Util.getFileMD5(fileIdentity.file))) {
+                if (Files.isSameFile(fileIdentity.file.toPath(), jarFile.toPath())) {
                     return fileIdentity;
                 }
             } catch (IOException e) {

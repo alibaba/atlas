@@ -495,11 +495,13 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               if (atlasExtension.getTBuildConfig().isAtlasMultiDex() && multiDexEnabled) {
                                                                   transformReplacer.replaceMultiDexListTransform();
-                                                              } else {
-                                                                  transformReplacer.disableCache();
                                                               }
 
+
                                                               transformReplacer.replaceProguardTransform();
+
+                                                              transformReplacer.disableCache();
+
 
 
                                                               if (variantScope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
@@ -600,8 +602,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                       @Override
                                                                       public void execute(Task task) {
                                                                           ConfigurableFileCollection fileCollection = variantScope.getTryWithResourceRuntimeSupportJar();
-                                                                          for (File file : fileCollection) {
-                                                                              AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity("runtime-deps-try-with-resources", file, false, false));
+                                                                          for (File file : fileCollection.getFiles()) {
+                                                                              if (file.exists()) {
+                                                                                  AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity("runtime-deps-try-with-resources", file, false, false));
+                                                                              }
                                                                           }
                                                                       }
                                                                   });
