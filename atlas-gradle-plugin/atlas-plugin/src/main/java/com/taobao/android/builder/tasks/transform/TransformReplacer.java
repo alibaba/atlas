@@ -358,5 +358,27 @@ public class TransformReplacer {
 
             }
         }
+
+        list = TransformManager.findTransformTaskByTransformType(variantContext,
+                DexTransform.class);
+        if (list != null){
+            for (TransformTask transformTask:list){
+                List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
+                list1.clear();
+
+            }
+        }
+
+        list = TransformManager.findTransformTaskByTransformType(variantContext,
+                AtlasMultiDexListTransform.class);
+        if (list != null){
+            for (TransformTask transformTask:list){
+                List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
+                list1.clear();
+
+            }
+        }
+
+
     }
 }

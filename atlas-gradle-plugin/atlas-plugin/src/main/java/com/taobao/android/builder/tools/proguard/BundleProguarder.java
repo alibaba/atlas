@@ -323,6 +323,7 @@ public class BundleProguarder {
 
         if (input.getAwbBundles().get(0).getAwbBundle().isMainBundle()) {
             AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().clear();
+            AtlasBuildContext.atlasMainDexHelper.getInputDirs().clear();
 
             for (File file : cacheDir.listFiles()) {
                 if (file.getName().endsWith("jar") && ZipUtils.isZipFile(file)) {
@@ -331,11 +332,12 @@ public class BundleProguarder {
                     File srcFile = md5Map.get(jarMd5);
 
                     if ( null != srcFile && srcFile.exists()){
-                        FileUtils.copyFile(file,new File(input.proguardOutputDir, FileNameUtils.getUniqueJarName(srcFile) + ".jar"));
-                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(FileNameUtils.getUniqueJarName(srcFile),new File(input.proguardOutputDir, FileNameUtils.getUniqueJarName(srcFile) + ".jar"),false,false));
+                        String fileName = FileNameUtils.getUniqueJarName(srcFile);
+                        FileUtils.copyFile(file,new File(input.proguardOutputDir,   fileName+".jar"));
+                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(fileName,new File(input.proguardOutputDir, fileName + ".jar"),false,false));
                     }else {
                         FileUtils.copyFileToDirectory(file, input.proguardOutputDir);
-                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(FileNameUtils.getUniqueJarName(file),new File(input.proguardOutputDir, file.getName()),false,false));
+                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(),new File(input.proguardOutputDir, file.getName()),false,false));
 
                     }
 

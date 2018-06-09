@@ -387,7 +387,9 @@ public class AtlasProguardTransform extends ProGuardTransform {
             List<File> mainJars = new ArrayList<>();
             for (TransformInput transformInput : invocation.getInputs()) {
                 for (JarInput jarInput : transformInput.getJarInputs()) {
-                    mainJars.add(jarInput.getFile());
+                    if (AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput)) {
+                        mainJars.add(jarInput.getFile());
+                    }
                 }
             }
 
@@ -433,12 +435,14 @@ public class AtlasProguardTransform extends ProGuardTransform {
                 File file = jarInput.getFile();
                 if (file.getName().startsWith("combined-rmerge")) {
                     unProguardJars.add(file);
-                } else {
+                } else if (AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput)){
                     awbTransform.getInputLibraries().add(file);
                 }
             }
             for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
-                awbTransform.getInputLibraries().add(directoryInput.getFile());
+                if (AtlasBuildContext.atlasMainDexHelper.getInputDirs().contains(directoryInput.getFile())) {
+                    awbTransform.getInputLibraries().add(directoryInput.getFile());
+                }
             }
         }
 

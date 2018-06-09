@@ -407,7 +407,7 @@ public class PatchFileBuilder {
                     break;
                 case MERGE:
                     File hisBundleFolder = new File(hisTPatchUnzipFolder, bundleName);
-                    File hisBundle = new File(hisTPatchUnzipFolder, "lib" + bundlePatch.pkgName.replace(".", "_") + ".so"));
+                    File hisBundle = new File(hisTPatchUnzipFolder, "lib" + bundlePatch.pkgName.replace(".", "_") + ".so");
 
                     if (!hisTPatchFile.exists()) {
                         if (StringUtils.isBlank(hisPatchInfo.getDownloadUrl()) && new File(TPatchTool.hisTpatchFolder,

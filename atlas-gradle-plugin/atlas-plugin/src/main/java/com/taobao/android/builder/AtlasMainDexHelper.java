@@ -146,12 +146,7 @@ public class AtlasMainDexHelper {
     }
 
     private void remove(File key) {
-        mainDexJar.removeIf(new Predicate<BuildAtlasEnvTask.FileIdentity>() {
-            @Override
-            public boolean test(BuildAtlasEnvTask.FileIdentity fileIdentity) {
-                return fileIdentity.file.equals(key);
-            }
-        });
+        mainDexJar.removeIf(fileIdentity -> fileIdentity.file.equals(key));
 
     }
 
