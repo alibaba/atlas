@@ -41,6 +41,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
     private static final Pattern VERSION_NAME_PATTERN = Pattern.compile("versionName=([^']*)$");
 
     private Collection<File> apkFiles;
+
     /*private*/ AtlasDependencyTree atlasDependencyTree;
 
     static boolean hasBinary(IDevice device, String path) {
@@ -101,13 +102,17 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
             String appPackageName = getAppPackageName();
             VersionNameReceiver versionNameReceiver = new VersionNameReceiver();
             device.executeShellCommand("dumpsys package " + appPackageName,//$NON-NLS-1$
-                versionNameReceiver);
+                                       versionNameReceiver);
             String versionName = getVersionName();
             String versionName1 = versionNameReceiver.getVersionName();
             if (!versionName.equals(versionName1)) {
-                getLogger().warn(String.format(
-                    "versionName declared at project %1$s value=(%2$s)\n" + "\thas a different value=(%3$s) "
-                        + "declared at device %4$s\n", projectName, versionName, versionName1, device));
+                getLogger().warn(String.format("versionName declared at project %1$s value=(%2$s)\n" +
+                                                   "\thas a different value=(%3$s) " +
+                                                   "declared at device %4$s\n",
+                                               projectName,
+                                               versionName,
+                                               versionName1,
+                                               device));
             }
             install(projectName, variantName, appPackageName, device, apkFiles);
         } catch (Exception e) {
@@ -127,6 +132,7 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
                 case CHANGED:
                     if (MAINDEX_FILE_NAME.equals(file.getName())) {
                         maindexFile = file;
+                    } else if (getAdbExe().equals(file)) {
                     } else {
                         builder.add(file);
                     }
@@ -167,8 +173,8 @@ abstract class BaseIncrementalInstallVariantTask extends DeviceTask {
             super.execute(deviceTask);
             AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
                 baseVariantOutputData);
-            AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                deviceTask.getVariantName());
+            AtlasDependencyTree atlasDependencyTree
+                = AtlasBuildContext.androidDependencyTrees.get(deviceTask.getVariantName());
             //TODO 先根据依赖判断
             ConventionMappingHelper.map(deviceTask, "apkFiles", new Callable<ImmutableList<File>>() {
 
