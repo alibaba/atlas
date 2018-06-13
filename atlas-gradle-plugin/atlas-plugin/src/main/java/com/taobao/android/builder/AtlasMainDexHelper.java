@@ -182,6 +182,7 @@ public class AtlasMainDexHelper {
                 e.printStackTrace();
             }
         }
+
         return false;
     }
 

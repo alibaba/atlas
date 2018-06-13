@@ -58,7 +58,13 @@ public class FirstApkAction implements Action<Task> {
 
         File[]dexs = packageApplication.getDexFolders().getSingleFile().listFiles(pathname -> pathname.getName().equals("classes.dex"));
         if (dexs!= null && dexs.length == 1) {
-            File file = AtlasBuildContext.atlasApkProcessor.securitySignApk(dexs[0], new File(appVariantOutputContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).getSingleFile(),"AndroidManifest.xml"),appVariantOutputContext.getVariantContext().getBuildType(),false);
+            File androidManifest = null;
+            if (appVariantOutputContext.getApkData().getFilterName() == null){
+                androidManifest = com.android.utils.FileUtils.join(appVariantOutputContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).getSingleFile(),"AndroidManifest.xml");
+            }else {
+                androidManifest = com.android.utils.FileUtils.join(appVariantOutputContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).getSingleFile(),appVariantOutputContext.getApkData().getDirName(),"AndroidManifest.xml");
+            }
+            File file = AtlasBuildContext.atlasApkProcessor.securitySignApk(dexs[0], androidManifest,appVariantOutputContext.getVariantContext().getBuildType(),false);
             if (file!= null && file.exists()){
                 try {
                     BetterZip.addFile(resOutBaseNameFile, "res/drawable/".concat(file.getName()), file);

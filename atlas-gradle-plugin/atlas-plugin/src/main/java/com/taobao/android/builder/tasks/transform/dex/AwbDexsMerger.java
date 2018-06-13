@@ -141,7 +141,7 @@ public class AwbDexsMerger extends AtlasDexMerger {
             cacheHandler.handleQueryResult(result, outPutFolder, awbBundle.getName());
 
             if (awbBundle.mBundle){
-                org.apache.commons.io.FileUtils.moveFile(new File(outPutFolder, CLASSES_DEX),new File(mainDexOut,"classes"+atomicInteger.getAndIncrement()+".dex"));
+                org.apache.commons.io.FileUtils.moveFile(new File(outPutFolder, CLASSES_DEX),new File(mainDexOut,"classes"+atomicInteger.incrementAndGet()+".dex"));
             }
 
         } catch (Exception e) {

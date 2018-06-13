@@ -255,7 +255,7 @@ public class MtlTaskInjector {
                         tasks.add(mtlTaskContext.getSysTask());
                     } else if (null != mtlTaskContext.getSysTaskClazz()) {
                         Class taskClazz = mtlTaskContext.getSysTaskClazz();
-                        tasks.addAll(findTask(taskClazz, vod.getName() ));
+                        tasks.addAll(findTask(taskClazz, variantContext.getVariantName() ));
                     } else {
                         Task task = project.getTasks().findByName(
                             variantContext.getBaseVariantData().getTaskName(mtlTaskContext.getTaskName(),""));

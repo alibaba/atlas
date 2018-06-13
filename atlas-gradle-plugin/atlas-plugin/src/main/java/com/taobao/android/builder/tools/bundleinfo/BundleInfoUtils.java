@@ -216,6 +216,7 @@ import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
@@ -292,6 +293,10 @@ public class BundleInfoUtils {
                     .contains(artifactId);
         }
 
+       if (bundleInfo.getDependency()!= null){
+            removeDependency(bundleInfo.getDependency(),appVariantContext.getAtlasExtension().getTBuildConfig());
+        }
+
         bundleInfo.setIsInternal(!awbBundle.isRemote);
         bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
         bundleInfo.setPkgName(awbBundle.getPackageName());
@@ -307,6 +312,16 @@ public class BundleInfoUtils {
         ManifestHelper.collectBundleInfo(appVariantContext, bundleInfo, awbBundle.getManifest(),
                                          awbBundle.getAndroidLibraries());
 
+    }
+
+    private static void removeDependency(List<String> dependency, TBuildConfig tBuildConfig) {
+        if (tBuildConfig.getAllBundlesToMdex()){
+            dependency.clear();
+            return;
+        }
+        for (String bundleName:tBuildConfig.getBundleToMdex()){
+            dependency.remove(bundleName);
+        }
     }
 
     private static Map<String, BundleInfo> getBundleInfoMap(AppVariantContext appVariantContext) throws IOException {
@@ -335,9 +350,6 @@ public class BundleInfoUtils {
 
         List<String> duplicatedBundleInfo = new ArrayList<>();
         for (AwbBundle awbBundle : awbBundles) {
-            if (bundleNeedMoveToMdex(awbBundle,appVariantContext)){
-                awbBundle.mBundle = true;
-            }
             String name = awbBundle.getResolvedCoordinates().getArtifactId();
             File bundleBaseInfoFile = new File(awbBundle.getAndroidLibrary().getFolder(), "bundleBaseInfoFile.json");
             if (bundleBaseInfoFile.exists()) {
@@ -367,11 +379,6 @@ public class BundleInfoUtils {
         return bundleFileMap;
     }
 
-    private static boolean bundleNeedMoveToMdex(AwbBundle awbBundle,AppVariantContext appVariantContext) {
-        Set<String>bundlesToMdex = appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex();
-        boolean allBundlesToMdex =appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex();
-        return allBundlesToMdex||bundlesToMdex.contains(awbBundle.getPackageName());
-    }
 
     public static File writeBundleInfo(AppVariantContext appVariantContext) throws IOException, DocumentException {
 

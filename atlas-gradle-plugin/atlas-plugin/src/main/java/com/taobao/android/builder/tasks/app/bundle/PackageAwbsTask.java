@@ -328,6 +328,11 @@ public class PackageAwbsTask extends BaseTask {
                                .get(awbBundle.getName())
                                .getPackageOutputFile();
                    }
+                   if (!resourceFile.exists()){
+                       resourceFile = appVariantOutputContext.getAwbAndroidResourcesMap()
+                               .get(awbBundle.getName())
+                               .getPackageOutputFile();
+                   }
 
                     Set<File> dexFolders = new HashSet<File>();
                     dexFolders.add(dexOutputFile);

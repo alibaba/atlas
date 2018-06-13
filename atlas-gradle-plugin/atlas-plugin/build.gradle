@@ -247,7 +247,7 @@ dependencies {
     compile "com.taobao.android:aapt:2.3.1.rc4"
     compile "com.google.inject:guice:4.0"
     compile "com.google.auto.value:auto-value:1.0"
-    compile "org.jetbrains.kotlin:kotlin-gradle-plugin:1.1.4-3"
+    compile "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.41"
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
     testCompile "junit:junit:4.11"
@@ -257,5 +257,5 @@ jar {
 }
 
 
-version = '3.0.1-rc64'
+version = '3.0.1-rc65-1'
 

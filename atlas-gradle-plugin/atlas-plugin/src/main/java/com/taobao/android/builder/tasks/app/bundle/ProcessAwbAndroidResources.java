@@ -749,7 +749,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             });
 
             // TODO: unify with generateBuilderConfig, compileAidl, and library packaging somehow?
-            processResources.setSourceOutputDir(appVariantOutputContext.getAwbRClassSourceOutputDir(
+                processResources.setSourceOutputDir(appVariantOutputContext.getAwbRClassSourceOutputDir(
                     config,
                     awbBundle));
             processResources.setTextSymbolOutputDir(symbolLocation);

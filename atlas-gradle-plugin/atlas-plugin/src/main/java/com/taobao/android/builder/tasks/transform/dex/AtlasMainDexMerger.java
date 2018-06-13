@@ -51,12 +51,15 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
             public void handleMissActionResult(File outputDir, File in) throws IOException {
                 File[] dexs = outputDir.listFiles((dir, name) -> name.endsWith(".dex"));
                 if (dexs != null && dexs.length > 1) {
-                    for (File file : dexs) {
-                        org.apache.commons.io.FileUtils.copyFileToDirectory(file, in.getParentFile());
-                    }
+                    org.apache.commons.io.FileUtils.copyDirectory(outputDir,in);
+//                    for (File file : dexs) {
+//                        org.apache.commons.io.FileUtils.copyFileToDirectory(file, in.getParentFile());
+//                    }
 
                 } else if (dexs.length == 1) {
-
+                    if (!in.getParentFile().exists()){
+                        in.getParentFile().mkdirs();
+                    }
                     Files.copy(dexs[0].toPath(), in.toPath());
                 } else {
                     throw new IOException("no dex file merge out");
@@ -67,18 +70,18 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
             public void handleQueryResult(FileCache.QueryResult result, File outputDir, String bundleName) throws IOException {
 
                 if (result.getQueryEvent().equals(FileCache.QueryEvent.HIT)) {
-                    if (result.getCachedFile().exists()) {
+                    if (result.getCachedFile().exists() && result.getCachedFile().isDirectory()) {
                         logger.info("hit maindex dexmerge cache ->" + result.getCachedFile().getAbsolutePath());
-                        org.apache.commons.io.FileUtils.copyFile(result.getCachedFile(), new File(outputDir, CLASSES_DEX));
-                    } else if (!result.getCachedFile().exists()) {
-                        File[] dexs = result.getCachedFile().getParentFile().listFiles((dir, name) -> name.endsWith(".dex"));
-                        if (dexs != null && dexs.length > 0) {
-                            for (File dex : dexs) {
-                                logger.info("hit maindex dexmerge cache ->" + dex.getAbsolutePath());
-                                org.apache.commons.io.FileUtils.copyFileToDirectory(dex, outputDir);
-                            }
+                        org.apache.commons.io.FileUtils.copyDirectory(result.getCachedFile(), outputDir);
+                    } else if (result.getCachedFile().exists() && result.getCachedFile().isFile()) {
+//                        File[] dexs = result.getCachedFile().getParentFile().listFiles((dir, name) -> name.endsWith(".dex"));
+//                        if (dexs != null && dexs.length > 0) {
+//                            for (File dex : dexs) {
+                                logger.info("hit maindex dexmerge cache ->" + result.getCachedFile().getAbsolutePath());
+                                org.apache.commons.io.FileUtils.copyFile(result.getCachedFile(), new File(outputDir,CLASSES_DEX));
+//                            }
 
-                        }
+//                        }
                     }
                 } else {
                     logger.info("miss maindex dexmerge cache -> null");

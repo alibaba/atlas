@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.MD5Util;
+import com.taobao.android.builder.tools.zip.BetterZip;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.gradle.internal.impldep.org.apache.tools.zip.ZipUtil;
 
@@ -546,21 +547,6 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                 }
             });
 
-            if (awbTransform.getAwbBundle().mBundle){
-                if (mergedType.contains(ExtendedContentType.NATIVE_LIBS)){
-                    File bundleOutputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
-                    org.apache.commons.io.FileUtils.moveDirectoryToDirectory(bundleOutputLocation,outputLocation,true);
-
-                }else {
-                    File bundleOutputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
-                    try {
-                        mergeZipToZip(bundleOutputLocation,outputLocation);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            }
 
         }
 
@@ -570,6 +556,29 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        appVariantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
+            if (awbTransform.getAwbBundle().mBundle){
+                    if (mergedType.contains(ExtendedContentType.NATIVE_LIBS)){
+                        File bundleOutputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
+                        try {
+                            org.apache.commons.io.FileUtils.copyDirectory(bundleOutputLocation,outputLocation);
+                            org.apache.commons.io.FileUtils.deleteDirectory(bundleOutputLocation);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }else {
+                        File bundleOutputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
+                        try {
+                            mergeZipToZip(bundleOutputLocation,outputLocation);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+            }
+        });
 
 
         paths.parallelStream().forEach(s -> processAtlasNativeSo(s));
@@ -583,16 +592,18 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
             return;
         }
 
-        File tempDir = new File(bundleOutputLocation.getParentFile(),"unzip");
+        File tempDir = new File(outputLocation.getParentFile(),"unzip");
 
-        ZipUtils.unzip(bundleOutputLocation,tempDir.getAbsolutePath());
+        BetterZip.unzipDirectory(bundleOutputLocation,tempDir);
 
         if (outputLocation != null && outputLocation.exists()){
-            ZipUtils.unzip(outputLocation,tempDir.getAbsolutePath());
-            FileUtils.deleteIfExists(outputLocation);
+            BetterZip.unzipDirectory(outputLocation,tempDir);
         }
 
-        ZipUtils.rezip(outputLocation,tempDir,null);
+        if (tempDir.listFiles()!= null) {
+            FileUtils.deleteIfExists(outputLocation);
+            BetterZip.zipDirectory(tempDir, outputLocation);
+        }
 
         org.apache.commons.io.FileUtils.deleteDirectory(tempDir);
     }

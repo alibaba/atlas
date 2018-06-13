@@ -104,14 +104,15 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
         while (entries.hasNext()) {
             DexMergeEntry entry = entries.next();
             Dex dex = null;
+            if (toMergeInMain.contains(entry.name)) {
+                continue;
+            }
             try {
                 dex = new Dex(entry.dexFileContent);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if (toMergeInMain.contains(entry.name)) {
-                continue;
-            }
+
             if (!mergingStrategy.tryToAddForMerging(dex)) {
                 Path dexOutput = new File(outputDir.toFile(), getDexFileName(classesDexSuffix++)).toPath();
                 logger.warning("dexOutput 0 :"+dexOutput.toString());

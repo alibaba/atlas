@@ -494,7 +494,7 @@ public class DiffBundleInfoTask extends BaseTask {
             ConventionMappingHelper.map(diffBundleInfoTask, "manifestFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return new File(baseVariantOutput.getProcessManifest().getManifestOutputDirectory(),"AndroidManifest.xml");
+                    return com.android.utils.FileUtils.join(baseVariantOutput.getProcessManifest().getManifestOutputDirectory(), new String[]{baseVariantOutput.getDirName(), "AndroidManifest.xml"});
                 }
             });
 

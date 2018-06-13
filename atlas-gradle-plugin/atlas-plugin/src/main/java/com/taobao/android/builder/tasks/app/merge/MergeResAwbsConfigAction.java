@@ -263,6 +263,9 @@ public class MergeResAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask>
         List<DefaultTask> tasks = new ArrayList<DefaultTask>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            if (awbBundle.mBundle){
+                continue;
+            }
 
             MergeAwbResource.MergeAwbResourceConfigAction mergeAwbResourceConfigAction = new MergeAwbResource.MergeAwbResourceConfigAction(
                     appVariantContext,

@@ -533,7 +533,10 @@ public class BundleProguarder {
 
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-                if (AtlasBuildContext.atlasMainDexHelper.inMainDex(inputLibrary)) {
+
+                if (inputLibrary.isDirectory() && AtlasBuildContext.atlasMainDexHelper.getInputDirs().contains(inputLibrary)){
+                    input.maindexFolderTransform.put(inputLibrary,obsJar);
+                }else if (AtlasBuildContext.atlasMainDexHelper.inMainDex(inputLibrary)) {
                     input.maindexFileTransform.put(inputLibrary,obsJar);
 //                    AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(inputLibrary, obsJar);
                 }else if (awbTransform.getAwbBundle().isMainBundle()){

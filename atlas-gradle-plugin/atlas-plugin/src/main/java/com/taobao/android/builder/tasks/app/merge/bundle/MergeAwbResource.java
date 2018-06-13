@@ -56,6 +56,7 @@ import org.jaxen.JaxenException;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
@@ -254,15 +255,6 @@ public class MergeAwbResource extends IncrementalTask {
             throw new ResourceException(e.getMessage(), e);
         } finally {
             cleanup();
-        }
-        if(awbBundle.mBundle){
-            variantScope.getVariantData().mergeResourcesTask.doLast(task -> {
-                try {
-                    org.apache.commons.io.FileUtils.moveDirectoryToDirectory(getOutputDir(),((MergeResources)task).getOutputDir(),true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
         }
     }
 
@@ -884,7 +876,12 @@ public class MergeAwbResource extends IncrementalTask {
                             .getBuildType()
                             .isPseudoLocalesEnabled();
 
+
+
+
         }
+
+
     }
 
     // Workaround for https://issuetracker.google.com/67418335

@@ -196,7 +196,7 @@ public abstract class AtlasDexMerger {
     }
 
 
-    static interface CacheHandler{
+    public static interface CacheHandler{
 
         void handleMissActionResult(File outputDir,File in) throws IOException;
 

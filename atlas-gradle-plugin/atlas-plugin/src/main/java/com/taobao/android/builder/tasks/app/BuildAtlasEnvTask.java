@@ -24,6 +24,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
+import com.taobao.android.builder.tasks.app.merge.AppendMainArtifactsCollection;
 import com.taobao.android.builder.tasks.app.merge.MainArtifactsCollection;
 import com.taobao.android.builder.tasks.app.merge.MainFilesCollection;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
@@ -48,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -72,6 +74,12 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     public  Map<String, File> allSolibs = new HashMap<>();
 
+
+    public  Map<String, ResolvedArtifactResult> allAndroidRes = new HashMap<>();
+
+    public  Map<String, ResolvedArtifactResult> allAndroidAssets = new HashMap<>();
+
+
     public  Map<String, File> allJavaRes = new HashMap<>();
 
     public  Set<FileIdentity>allJars = new HashSet<>();
@@ -85,6 +93,8 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private ArtifactCollection javaResources;
     private ArtifactCollection nativeLibs2;
+    private ArtifactCollection res;
+    private ArtifactCollection assets;
 
 
     @TaskAction
@@ -94,6 +104,10 @@ public class BuildAtlasEnvTask extends BaseTask {
         Set<ResolvedArtifactResult> jarArtifacts = compileJars.getArtifacts();
         Set<ResolvedArtifactResult> nativeLibsArtifacts = nativeLibs.getArtifacts();
         Set<ResolvedArtifactResult> javaResourcesArtifacts = javaResources.getArtifacts();
+        Set<ResolvedArtifactResult> androidRes = res.getArtifacts();
+        Set<ResolvedArtifactResult> androidAssets = assets.getArtifacts();
+
+
 
         //this is no used ,if used in future add to transform!
 
@@ -139,6 +153,25 @@ public class BuildAtlasEnvTask extends BaseTask {
                 allJavaRes.put(projectPath.substring(projectPath.lastIndexOf(":")+1), resolvedArtifactResult.getFile());
             }
         }
+
+        for (ResolvedArtifactResult resolvedArtifactResult : androidRes) {
+            if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultModuleComponentIdentifier) {
+                allAndroidRes.put(((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getGroup()+":"+((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getModule(), resolvedArtifactResult);
+            } else if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultProjectComponentIdentifier) {
+                String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
+                allAndroidRes.put(projectPath.substring(projectPath.lastIndexOf(":")+1), resolvedArtifactResult);
+            }
+        }
+
+        for (ResolvedArtifactResult resolvedArtifactResult : androidAssets) {
+            if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultModuleComponentIdentifier) {
+                allAndroidAssets.put(((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getGroup()+":"+((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getModule(), resolvedArtifactResult);
+            } else if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultProjectComponentIdentifier) {
+                String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
+                allAndroidAssets.put(projectPath.substring(projectPath.lastIndexOf(":")+1), resolvedArtifactResult);
+            }
+        }
+
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
@@ -203,6 +236,8 @@ public class BuildAtlasEnvTask extends BaseTask {
                 fillAwbJar(name, moudleName,awbBundle);
                 fillAwbAllJavaRes(name, moudleName,awbBundle);
                 fillAwbSolibs(name, moudleName,awbBundle);
+                fillAwbAndroidRes(name,moudleName,awbBundle);
+                fillAwbAndroidAssets(name,moudleName,awbBundle);
             }
             for (JavaLibrary jarLibrary:awbJarLibraries){
                 String moudleName = jarLibrary.getName().split(":")[1];
@@ -220,6 +255,9 @@ public class BuildAtlasEnvTask extends BaseTask {
             fillAwbJar(name, moudleName,awbBundle);
             fillAwbAllJavaRes(name, moudleName,awbBundle);
             fillAwbSolibs(name, moudleName,awbBundle);
+            fillAwbAndroidRes(name,moudleName,awbBundle);
+            fillAwbAndroidAssets(name,moudleName,awbBundle);
+
         }
 
 
@@ -232,13 +270,33 @@ public class BuildAtlasEnvTask extends BaseTask {
             Field field = MergeResources.class.getDeclaredField("libraries");
             field.setAccessible(true);
             field.set(mergeResources, new MainArtifactsCollection((ArtifactCollection) field.get(mergeResources), getProject()));
+            appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
+                if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(awbTransform.getAwbBundle().getPackageName())){
+                    try {
+                        awbTransform.getAwbBundle().mBundle = true;
+                        field.set(mergeResources,new AppendMainArtifactsCollection(appVariantContext.getProject(),(ArtifactCollection) field.get(mergeResources),awbTransform.getAwbBundle(),ANDROID_RES));
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
 
             //mergeSourcesSets
             MergeSourceSetFolders mergeSourceSetFolders = appVariantContext.getScope().getMergeAssetsTask().get(new TaskContainerAdaptor(getProject().getTasks()));
-            Field field1 = MergeSourceSetFolders.class.getDeclaredField("libraries");
-            field1.setAccessible(true);
-            field1.set(mergeSourceSetFolders, new MainArtifactsCollection((ArtifactCollection) field1.get(mergeSourceSetFolders), getProject()));
-
+            Field assetsField = MergeSourceSetFolders.class.getDeclaredField("libraries");
+            assetsField.setAccessible(true);
+            assetsField.set(mergeSourceSetFolders, new MainArtifactsCollection((ArtifactCollection) assetsField.get(mergeSourceSetFolders), getProject()));
+            appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
+                if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(awbTransform.getAwbBundle().getPackageName())){
+                    try {
+                        awbTransform.getAwbBundle().mBundle = true;
+                        assetsField.set(mergeSourceSetFolders,new AppendMainArtifactsCollection(appVariantContext.getProject(),(ArtifactCollection) assetsField.get(mergeSourceSetFolders),awbTransform.getAwbBundle(),ASSETS));
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
             AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().put(appVariantContext.getScope().getMergeNativeLibsOutputDir().getAbsolutePath(),true);
 
         } catch (Exception e) {
@@ -261,6 +319,8 @@ public class BuildAtlasEnvTask extends BaseTask {
         allJavaRes.clear();
         allSolibs.clear();
         allJars.clear();
+        allAndroidAssets.clear();
+        allAndroidRes.clear();
 
 
 
@@ -274,6 +334,16 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     }
 
+    private void fillAwbAndroidAssets(String name, String moudleName, AwbBundle awbBundle) {
+        ResolvedArtifactResult id = null;
+        if ((id = allAndroidAssets.get(name)) == null) {
+            id = allAndroidAssets.get(moudleName);
+        }
+        if (id!= null) {
+            awbBundle.getResolvedAssetsArtifactResults().add(id);
+        }
+    }
+
     private void fillAwbJar(String name, String moudleName, AwbBundle awbBundle) {
         AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName());
 
@@ -281,6 +351,17 @@ public class BuildAtlasEnvTask extends BaseTask {
     }
 
     private void fillAwbManifest(String name, String moudleName, AwbBundle awbBundle) {
+
+    }
+
+    private void fillAwbAndroidRes(String name, String moudleName, AwbBundle awbBundle) {
+        ResolvedArtifactResult id = null;
+        if ((id = allAndroidRes.get(name)) == null) {
+            id = allAndroidRes.get(moudleName);
+        }
+        if (id!= null) {
+            awbBundle.getResolvedResArtifactResults().add(id);
+        }
 
     }
 
@@ -417,6 +498,11 @@ public class BuildAtlasEnvTask extends BaseTask {
             updateDependenciesTask.nativeLibs2 = AtlasDependencyGraph.computeArtifactCollection(variantContext.getScope(), AtlasAndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,ALL,AtlasAndroidArtifacts.AtlasArtifactType.LIBS);
 
             updateDependenciesTask.javaResources = appVariantContext.getScope().getArtifactCollection(COMPILE_CLASSPATH,ALL,JAVA_RES);
+
+            updateDependenciesTask.res = appVariantContext.getScope().getArtifactCollection(COMPILE_CLASSPATH,ALL,ANDROID_RES);
+
+            updateDependenciesTask.assets = appVariantContext.getScope().getArtifactCollection(COMPILE_CLASSPATH,ALL,ASSETS);
+
 
             List<ProjectDependency>projectDependencies = new ArrayList<>();
             appVariantContext.getScope().getVariantDependencies().getCompileClasspath().getAllDependencies().forEach(dependency -> {

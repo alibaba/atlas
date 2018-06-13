@@ -121,9 +121,9 @@ public class MergeAwbAssets extends IncrementalTask{
             merger.cleanBlob(getIncrementalFolder());
             throw new ResourceException(e.getMessage(), e);
         }
-        if (awbBundle.mBundle){
-            org.apache.commons.io.FileUtils.moveDirectoryToDirectory(destinationDir,variantContext.getVariantData().mergeAssetsTask.getOutputDir(),true);
-        }
+//        if (awbBundle.mBundle){
+//            org.apache.commons.io.FileUtils.moveDirectoryToDirectory(destinationDir,variantContext.getVariantData().mergeAssetsTask.getOutputDir(),true);
+//        }
     }
 
     @Override

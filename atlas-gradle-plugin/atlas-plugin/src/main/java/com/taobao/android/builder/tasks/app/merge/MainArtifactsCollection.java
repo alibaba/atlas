@@ -38,6 +38,7 @@ public class MainArtifactsCollection implements ArtifactCollection {
             getArtifacts();
             getArtifactFiles();
         }
+
         return project.files(mainDexFiles);
     }
 

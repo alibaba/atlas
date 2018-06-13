@@ -255,10 +255,10 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
 
         AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) appVariantContext
                 .getOutputContextMap()
-                .get(baseVariantData.getVariantConfiguration().getFullName());
+                .get(ApkDataUtils.get(baseVariantOutput).getFullName());
 
         if (null == appVariantOutputContext) {
-            appVariantOutputContext = new AppVariantOutputContext(baseVariantData.getVariantConfiguration().getFullName(),
+            appVariantOutputContext = new AppVariantOutputContext(ApkDataUtils.get(baseVariantOutput).getFullName(),
                                                                   appVariantContext,
                     ApkDataUtils.get(baseVariantOutput),
                                                                   baseVariantData);

@@ -181,6 +181,8 @@ public class AwbApkPackageTask {
 
         Set<File> androidResources = getAndroidResources(apkData, processedResources);
 
+        appVariantOutputContext.getVariantContext().getProject().getLogger().warn(awbBundle.getName()+" androidResources File:"+androidResources.iterator().next().getAbsolutePath());
+
         FileUtils.mkdirs(outputDirectory);
 
         File outputFile = getOutputFile(awbBundle);
