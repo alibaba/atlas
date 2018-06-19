@@ -155,6 +155,7 @@ public class RemoteFragment extends Fragment implements IRemoteContext,IRemoteTr
             Field mOriginalHost = getClass().getSuperclass().getDeclaredField("mHost");
             mOriginalHost.setAccessible(true);
             mHost.set(targetFragment,getFragmentHostCallback((FragmentHostCallback) mOriginalHost.get(this)));
+            mHost.set(this, getFragmentHostCallback((FragmentHostCallback) mOriginalHost.get(this)));
             Field mFragmentManager = AndroidHack.findField(targetFragment,"mFragmentManager");
             mFragmentManager.set(targetFragment,getFragmentManager());
             Field mCalled = AndroidHack.findField(targetFragment,"mCalled");
