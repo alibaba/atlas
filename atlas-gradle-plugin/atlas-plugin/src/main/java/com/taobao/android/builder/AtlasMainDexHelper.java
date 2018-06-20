@@ -92,6 +92,9 @@ public class AtlasMainDexHelper {
 
     public void updateMainDexFile(File oldFile, File newFile) {
         for (BuildAtlasEnvTask.FileIdentity id : mainDexJar) {
+            if (!id.file.exists()){
+                continue;
+            }
             try {
                 if (Files.isSameFile(oldFile.toPath(), id.file.toPath())) {
                     id.file = newFile;
@@ -106,6 +109,9 @@ public class AtlasMainDexHelper {
 
     public void updateMainDexFile(JarInput oldFile, File newFile) {
         for (BuildAtlasEnvTask.FileIdentity id : mainDexJar) {
+            if (!id.file.exists()){
+                continue;
+            }
             try {
                 if (Files.isSameFile(oldFile.getFile().toPath(), id.file.toPath())) {
                     id.file = newFile;
@@ -174,6 +180,9 @@ public class AtlasMainDexHelper {
 
     public boolean inMainDex(File jarFile)  {
         for (BuildAtlasEnvTask.FileIdentity fileIdentity : mainDexJar) {
+            if (!fileIdentity.file.exists()){
+                continue;
+            }
             try {
                 if (Files.isSameFile(fileIdentity.file.toPath(), jarFile.toPath())) {
                     return true;

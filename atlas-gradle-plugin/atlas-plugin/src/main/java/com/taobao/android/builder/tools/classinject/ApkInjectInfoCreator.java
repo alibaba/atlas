@@ -228,6 +228,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.diff.DependencyDiff;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
@@ -297,6 +298,9 @@ public class ApkInjectInfoCreator {
             if (!bundleInfo.getIsInternal()) {
                 basicBundleInfo.setIsInternal(false);
             }
+            if (bundleInfo.isMBundle()){
+                basicBundleInfo.setMBundle(true);
+            }
             if (!bundleInfo.getActivities().isEmpty()) {
                 basicBundleInfo.setActivities(bundleInfo.getActivities());
             }
@@ -304,7 +308,7 @@ public class ApkInjectInfoCreator {
                 basicBundleInfo.setContentProviders(bundleInfo.getContentProviders());
             }
             if (!bundleInfo.getDependency().isEmpty()) {
-                basicBundleInfo.setDependency(bundleInfo.getDependency());
+                basicBundleInfo.setDependency(newDependency(bundleInfo.getDependency(),appVariantContext));
             }
             if (!bundleInfo.getReceivers().isEmpty()) {
                 basicBundleInfo.setReceivers(bundleInfo.getReceivers());
@@ -350,6 +354,21 @@ public class ApkInjectInfoCreator {
         mergeBundleInfos(appVariantContext, injectParam, basicBundleInfos, basicBundleInfoMap);
         return injectParam;
     }
+
+    private List<String> newDependency(List<String> dependency,AppVariantContext appVariantContext) {
+        List<String>dependencies = new ArrayList<>();
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||dependency == null ||dependency.size() == 0){
+            return dependencies;
+        }
+        for (String s:dependency){
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(s)){
+                dependencies.add(s);
+            }
+        }
+       return dependencies;
+
+    }
+
 
 
     private void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam,

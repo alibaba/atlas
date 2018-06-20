@@ -280,7 +280,7 @@ public class BundleInfoUtils {
         } else {
             bundleInfo = awbBundle.bundleInfo;
         }
-        bundleInfo.setmBundle(awbBundle.mBundle);
+        bundleInfo.setMBundle(awbBundle.isMBundle);
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getInsideOfApkBundles().size() > 0){
             awbBundle.isRemote = !appVariantContext.getAtlasExtension()
                     .getTBuildConfig()
@@ -293,9 +293,7 @@ public class BundleInfoUtils {
                     .contains(artifactId);
         }
 
-       if (bundleInfo.getDependency()!= null){
-            removeDependency(bundleInfo.getDependency(),appVariantContext.getAtlasExtension().getTBuildConfig());
-        }
+
 
         bundleInfo.setIsInternal(!awbBundle.isRemote);
         bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
@@ -314,15 +312,7 @@ public class BundleInfoUtils {
 
     }
 
-    private static void removeDependency(List<String> dependency, TBuildConfig tBuildConfig) {
-        if (tBuildConfig.getAllBundlesToMdex()){
-            dependency.clear();
-            return;
-        }
-        for (String bundleName:tBuildConfig.getBundleToMdex()){
-            dependency.remove(bundleName);
-        }
-    }
+
 
     private static Map<String, BundleInfo> getBundleInfoMap(AppVariantContext appVariantContext) throws IOException {
         File baseBunfleInfoFile = new File(appVariantContext.getScope()

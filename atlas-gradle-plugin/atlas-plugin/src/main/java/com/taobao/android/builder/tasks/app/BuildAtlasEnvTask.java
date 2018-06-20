@@ -273,7 +273,8 @@ public class BuildAtlasEnvTask extends BaseTask {
             appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
                 if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(awbTransform.getAwbBundle().getPackageName())){
                     try {
-                        awbTransform.getAwbBundle().mBundle = true;
+                        awbTransform.getAwbBundle().isMBundle = true;
+                        awbTransform.getAwbBundle().bundleInfo.setMBundle(true);
                         field.set(mergeResources,new AppendMainArtifactsCollection(appVariantContext.getProject(),(ArtifactCollection) field.get(mergeResources),awbTransform.getAwbBundle(),ANDROID_RES));
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();
@@ -290,7 +291,8 @@ public class BuildAtlasEnvTask extends BaseTask {
             appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
                 if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(awbTransform.getAwbBundle().getPackageName())){
                     try {
-                        awbTransform.getAwbBundle().mBundle = true;
+                        awbTransform.getAwbBundle().isMBundle = true;
+                        awbTransform.getAwbBundle().bundleInfo.setMBundle(true);
                         assetsField.set(mergeSourceSetFolders,new AppendMainArtifactsCollection(appVariantContext.getProject(),(ArtifactCollection) assetsField.get(mergeSourceSetFolders),awbTransform.getAwbBundle(),ASSETS));
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();

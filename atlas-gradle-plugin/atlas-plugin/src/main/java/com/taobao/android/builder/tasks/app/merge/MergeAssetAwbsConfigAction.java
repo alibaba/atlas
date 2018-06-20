@@ -257,7 +257,7 @@ public class MergeAssetAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTas
         List<DefaultTask> tasks = new ArrayList<DefaultTask>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-            if (awbBundle.mBundle){
+            if (awbBundle.isMBundle){
                 continue;
             }
 

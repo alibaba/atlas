@@ -367,7 +367,7 @@ public class AwbBundle {
 
     public boolean isRemote;
 
-    public boolean mBundle;
+    public boolean isMBundle;
 
     private String soFileName;
 

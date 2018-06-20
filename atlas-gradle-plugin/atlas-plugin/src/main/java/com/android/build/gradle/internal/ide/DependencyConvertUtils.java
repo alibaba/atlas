@@ -387,7 +387,7 @@ public class DependencyConvertUtils {
             ModuleVersionIdentifier moduleVersionIdentifier = resolvedDependencyResult.getSelected().getModuleVersion();
             List<ResolvedArtifact> resolvedArtifacts = artifacts.get(moduleVersionIdentifier);
 
-            if (resolvedArtifacts.size() > 0) {
+            if (resolvedArtifacts != null && resolvedArtifacts.size() > 0) {
                 ResolvedArtifact resolvedArtifact = resolvedArtifacts.get(0);
                 return ("awb".equals(resolvedArtifact.getType()));
             }

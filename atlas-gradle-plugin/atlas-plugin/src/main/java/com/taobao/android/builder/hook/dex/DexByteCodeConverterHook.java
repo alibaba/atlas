@@ -180,7 +180,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                     new AtlasD8Creator(inputFiles, ((AppVariantContext) variantContext).getAwbDexAchiveOutput(awbBundle), multidex, mainDexList, dexOptions, minSdkVersion, fileCache, processOutputHandler, variantContext, variantOutputContext).create(awbBundle);
                                 }
 
-                                if (awbBundle.mBundle) {
+                                if (awbBundle.isMBundle) {
                                     sets.add(awbBundle);
                                 }
 

@@ -558,7 +558,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
         }
 
         appVariantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
-            if (awbTransform.getAwbBundle().mBundle){
+            if (awbTransform.getAwbBundle().isMBundle){
                     if (mergedType.contains(ExtendedContentType.NATIVE_LIBS)){
                         File bundleOutputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
                         try {
