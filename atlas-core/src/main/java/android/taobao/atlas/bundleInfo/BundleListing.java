@@ -240,6 +240,7 @@ public class BundleListing implements Serializable{
         public String url;
         public String md5;
         public boolean isInternal = true;
+        public boolean isMBundle = false;
         public List<String> dependency;
         public List<String> totalDependency;
         public HashMap<String,Boolean> activities;
@@ -256,6 +257,9 @@ public class BundleListing implements Serializable{
             return size;
         }
 
+        public boolean isMBundle() {
+            return isMBundle;
+        }
 
         public boolean isInternal() {
             return isInternal;

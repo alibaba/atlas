@@ -243,6 +243,9 @@ public class BundleListingUtil {
             if (object.has("isInternal")) {
                 info.isInternal = object.optBoolean("isInternal");
             }
+            if (object.has("isMBundle")) {
+                info.isMBundle = object.optBoolean("isMBundle");
+            }
 
             JSONArray dependency = object.optJSONArray("dependency");
             if(dependency!=null && dependency.length()>0){
