@@ -230,6 +230,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class PrepareBundleInfoTask extends BaseTask {
@@ -250,7 +251,7 @@ public class PrepareBundleInfoTask extends BaseTask {
     }
 
     private void generateBundleListCfg(AppVariantContext appVariantContext) throws IOException {
-        List<String> bundleLists = AtlasBuildContext.awbBundleMap.values().stream().map(awbBundle -> {
+        List<String> bundleLists = AtlasBuildContext.awbBundleMap.values().stream().filter(awbBundle -> !awbBundle.isMBundle).map(awbBundle -> {
             return appVariantOutputContext.getAwbPackageOutputFilePath(awbBundle);
         }).sorted().collect(Collectors.toList());
         File outputFile = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(), "bundleList.cfg");
@@ -262,12 +263,7 @@ public class PrepareBundleInfoTask extends BaseTask {
         //Set the bundle dependencies
 
         List<BundleInfo> bundleInfos = new ArrayList<>();
-        AtlasBuildContext.awbBundleMap.values().stream().forEach(new Consumer<AwbBundle>() {
-            @Override
-            public void accept(AwbBundle awbBundle) {
-                bundleInfos.add(awbBundle.bundleInfo);
-            }
-        });
+        AtlasBuildContext.awbBundleMap.values().stream().forEach(awbBundle -> bundleInfos.add(awbBundle.bundleInfo));
 
     }
 

@@ -44,6 +44,7 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.internal.component.external.model.DefaultModuleComponentIdentifier;
 import org.gradle.internal.component.local.model.DefaultProjectComponentIdentifier;
+import org.gradle.internal.component.local.model.OpaqueComponentArtifactIdentifier;
 
 import java.io.File;
 import java.io.IOException;
@@ -83,6 +84,9 @@ public class BuildAtlasEnvTask extends BaseTask {
     public  Map<String, File> allJavaRes = new HashMap<>();
 
     public  Set<FileIdentity>allJars = new HashSet<>();
+
+    public  Set<FileIdentity>appLocalJars = new HashSet<>();
+
 
 
     private AppVariantContext appVariantContext;
@@ -125,6 +129,8 @@ public class BuildAtlasEnvTask extends BaseTask {
             }else if (componentIdentifier instanceof DefaultProjectComponentIdentifier){
                 String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
                 allJars.add(new FileIdentity(projectPath.substring(projectPath.lastIndexOf(":")+1),resolvedArtifactResult.getFile(),resolvedArtifactResult.getId().getDisplayName().startsWith("classes.jar")? false:true,true));
+            }else if (componentIdentifier instanceof OpaqueComponentArtifactIdentifier){
+                appLocalJars.add(new FileIdentity(componentIdentifier.getDisplayName(),resolvedArtifactResult.getFile(),true,false));
             }
         }
         for (ResolvedArtifactResult resolvedArtifactResult : compileArtifacts) {
@@ -172,6 +178,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             }
         }
 
+        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelper.addMainDex(fileIdentity));
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
@@ -274,7 +281,7 @@ public class BuildAtlasEnvTask extends BaseTask {
                 if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(awbTransform.getAwbBundle().getPackageName())){
                     try {
                         awbTransform.getAwbBundle().isMBundle = true;
-                        awbTransform.getAwbBundle().bundleInfo.setMBundle(true);
+                        awbTransform.getAwbBundle().bundleInfo.setIsMBundle(true);
                         field.set(mergeResources,new AppendMainArtifactsCollection(appVariantContext.getProject(),(ArtifactCollection) field.get(mergeResources),awbTransform.getAwbBundle(),ANDROID_RES));
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();
@@ -292,7 +299,7 @@ public class BuildAtlasEnvTask extends BaseTask {
                 if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(awbTransform.getAwbBundle().getPackageName())){
                     try {
                         awbTransform.getAwbBundle().isMBundle = true;
-                        awbTransform.getAwbBundle().bundleInfo.setMBundle(true);
+                        awbTransform.getAwbBundle().bundleInfo.setIsMBundle(true);
                         assetsField.set(mergeSourceSetFolders,new AppendMainArtifactsCollection(appVariantContext.getProject(),(ArtifactCollection) assetsField.get(mergeSourceSetFolders),awbTransform.getAwbBundle(),ASSETS));
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();

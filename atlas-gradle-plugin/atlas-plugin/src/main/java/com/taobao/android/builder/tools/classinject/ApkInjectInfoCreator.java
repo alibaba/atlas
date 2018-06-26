@@ -271,6 +271,9 @@ public class ApkInjectInfoCreator {
         Map<String, String> baseTagMap = appVariantContext.getBaseUnitTagMap();
 
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            if (awbBundle.isMBundle){
+                continue;
+            }
 
             BundleInfo bundleInfo = awbBundle.bundleInfo;
 
@@ -298,8 +301,8 @@ public class ApkInjectInfoCreator {
             if (!bundleInfo.getIsInternal()) {
                 basicBundleInfo.setIsInternal(false);
             }
-            if (bundleInfo.isMBundle()){
-                basicBundleInfo.setMBundle(true);
+            if (bundleInfo.getIsMBundle()){
+                basicBundleInfo.setIsMBundle(true);
             }
             if (!bundleInfo.getActivities().isEmpty()) {
                 basicBundleInfo.setActivities(bundleInfo.getActivities());

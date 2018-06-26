@@ -280,7 +280,7 @@ public class BundleInfoUtils {
         } else {
             bundleInfo = awbBundle.bundleInfo;
         }
-        bundleInfo.setMBundle(awbBundle.isMBundle);
+        bundleInfo.setIsMBundle(awbBundle.isMBundle);
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getInsideOfApkBundles().size() > 0){
             awbBundle.isRemote = !appVariantContext.getAtlasExtension()
                     .getTBuildConfig()
