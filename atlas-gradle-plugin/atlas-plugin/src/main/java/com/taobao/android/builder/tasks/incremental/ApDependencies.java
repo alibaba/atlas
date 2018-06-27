@@ -242,6 +242,7 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.internal.artifacts.ivyservice.ivyresolve.strategy.DefaultVersionComparator;
@@ -252,6 +253,7 @@ import org.gradle.api.logging.Logging;
 
 import static com.android.build.gradle.internal.api.ApContext.DEPENDENCIES_FILENAME;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.taobao.android.builder.dependency.parser.helper.DependencyResolver.getArtifactId;
 
 /**
  * @author chenhjohn
@@ -519,8 +521,20 @@ public class ApDependencies /*extends BaseTask*/ {
         DependencySet dependencies = configuration.getAllDependencies();
         for (Dependency dependency : dependencies) {
             //所属的Awb
+            String name = dependency.getName();
+
+            if (dependency instanceof ProjectDependency) {
+                ProjectDependency projectDependency = (ProjectDependency) dependency;
+
+                Project project = projectDependency.getDependencyProject();
+                String artifactId = getArtifactId(project);
+                if (!Strings.isNullOrEmpty(artifactId)) {
+                    name = artifactId;
+                }
+            }
+
             ParsedModuleStringNotation awbParsedNotation = getAwb(DefaultModuleIdentifier
-                .newId(dependency.getGroup(), dependency.getName()));
+                    .newId(dependency.getGroup(), name));
             //所属的Awb依赖不存在
             if (awbParsedNotation != null && awbParsedNotation != MAIN_DEX && !containsDependency(dependencies,
                 awbParsedNotation)) {

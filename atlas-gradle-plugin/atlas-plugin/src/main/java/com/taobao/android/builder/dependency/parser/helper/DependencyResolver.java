@@ -428,18 +428,9 @@ public class DependencyResolver {
                     resolvedDependencyInfo.setExplodedDir(stagingDir);
                     resolvedDependencyInfo.setGradlePath(gradlePath);
 
-                    final PublishingExtension publishingExtension = subProject.getExtensions().findByType(
-                        PublishingExtension.class);
-                    if (publishingExtension != null) {
-                        PublicationContainer publications = publishingExtension.getPublications();
-                        MavenPublication mavenPublication = (MavenPublication)publications.findByName("maven");
-                        if (mavenPublication != null) {
-                            String artifactId = mavenPublication.getArtifactId();
-
-                            if (!Strings.isNullOrEmpty(artifactId)) {
-                                resolvedDependencyInfo.setName(artifactId);
-                            }
-                        }
+                    String artifactId = getArtifactId(subProject);
+                    if (!Strings.isNullOrEmpty(artifactId)) {
+                        resolvedDependencyInfo.setName(artifactId);
                     }
                 } else {
 
@@ -503,6 +494,21 @@ public class DependencyResolver {
                 addDependencyInfo(resolvedDependencyInfo, null, dependenciesMap);
             }
         }
+    }
+
+    public static String getArtifactId(Project project) {
+        String artifactId = null;
+        final PublishingExtension publishingExtension = project.getExtensions().findByType(
+                PublishingExtension.class);
+        if (publishingExtension != null) {
+            PublicationContainer publications = publishingExtension.getPublications();
+            MavenPublication mavenPublication = (MavenPublication) publications.findByName("maven");
+            if (mavenPublication != null) {
+                artifactId = mavenPublication.getArtifactId();
+
+            }
+        }
+        return artifactId;
     }
 
     // 尽量忽略原则
