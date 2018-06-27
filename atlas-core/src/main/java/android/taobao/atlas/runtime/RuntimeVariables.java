@@ -211,12 +211,15 @@ package android.taobao.atlas.runtime;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Dialog;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.taobao.atlas.R;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.FrameworkProperties;
 import android.taobao.atlas.runtime.dialog.DefaultProgress;
+import android.text.TextUtils;
 import android.view.ViewGroup;
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -256,6 +259,7 @@ public class RuntimeVariables implements Serializable{
      */
     public static ClassLoader sRawClassLoader;
     public static Object      sDexLoadBooster;
+    private static String launchActivityName;
 
     public static Dialog alertDialogUntilBundleProcessed(Activity activity,String bundleName){
         if (activity != null) {
@@ -321,6 +325,21 @@ public class RuntimeVariables implements Serializable{
         }else{
             return RuntimeVariables.class.getClassLoader();
         }
+    }
+
+    public static String getLauncherClassName() {
+        if (!TextUtils.isEmpty(launchActivityName)){
+            return launchActivityName;
+        }
+        if (androidApplication == null){
+            return null;
+        }
+        Intent launchIntentForPackage = RuntimeVariables.androidApplication.getPackageManager().getLaunchIntentForPackage(RuntimeVariables.androidApplication.getPackageName());
+        if (launchIntentForPackage != null) {
+            ComponentName componentName = launchIntentForPackage.resolveActivity(RuntimeVariables.androidApplication.getPackageManager());
+            launchActivityName = componentName.getClassName();
+        }
+        return launchActivityName;
     }
 
 
