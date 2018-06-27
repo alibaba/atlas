@@ -407,6 +407,7 @@ public class AtlasDepTreeParser {
         //移除主dex包含Awb间接依赖
         mainBundle.getAndroidLibraries().removeAll(librariesToRemove);
 
+        //扫描主dex依赖
         librariesToRemove.clear();
         for (Library library : mainBundle.getJavaLibraries()) {
             ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
@@ -419,8 +420,10 @@ public class AtlasDepTreeParser {
                 }
             }
         }
+        //移除主dex包含Awb间接依赖
         mainBundle.getJavaLibraries().removeAll(librariesToRemove);
 
+        //扫描主dex依赖
         librariesToRemove.clear();
         for (Library library : mainBundle.getSoLibraries()) {
             ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
@@ -433,6 +436,7 @@ public class AtlasDepTreeParser {
                 }
             }
         }
+        //移除主dex包含Awb间接依赖
         mainBundle.getSoLibraries().removeAll(librariesToRemove);
     }
 
