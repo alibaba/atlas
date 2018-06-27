@@ -335,7 +335,7 @@ public class ActivityThreadHook implements Handler.Callback{
                     throw new RuntimeException(appVersion+"avalialbeSpace = " + avliableSpace  + 
                     		"rootSize = " + rootSize + " filesSize = " + filesSize + " databasesSize =  " + databasesSize + " prefSize =" + prefSize + "From Atlas:classNotFound ---", e);
                 }
-            } else if (e instanceof BadTokenException) {
+            } /*else if (e instanceof BadTokenException) {
                 try {
                     HackedField<Object, Object> ActivityThread_mActivities = AtlasHacks.ActivityThread.field(
                         "mActivities").ofGenericType(Map.class);
@@ -351,7 +351,8 @@ public class ActivityThreadHook implements Handler.Callback{
                     e1.printStackTrace();
                 }
                 throw new RuntimeException(appVersion, e);
-            } else if (e.toString().contains("android.content.res.Resources") && !e.toString().contains(
+            } */ else if (e.toString().contains("android.content.res.Resources") && !e.toString()
+                .contains(
                 "OutOfMemoryError")) {
                 Object loadedapk = AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,
                         mActivityThread,RuntimeVariables.androidApplication.getPackageName());
