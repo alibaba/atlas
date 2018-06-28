@@ -521,17 +521,7 @@ public class ApDependencies /*extends BaseTask*/ {
         DependencySet dependencies = configuration.getAllDependencies();
         for (Dependency dependency : dependencies) {
             //所属的Awb
-            String name = dependency.getName();
-
-            if (dependency instanceof ProjectDependency) {
-                ProjectDependency projectDependency = (ProjectDependency) dependency;
-
-                Project project = projectDependency.getDependencyProject();
-                String artifactId = getArtifactId(project);
-                if (!Strings.isNullOrEmpty(artifactId)) {
-                    name = artifactId;
-                }
-            }
+            String name = getName(dependency);
 
             ParsedModuleStringNotation awbParsedNotation = getAwb(DefaultModuleIdentifier
                     .newId(dependency.getGroup(), name));
@@ -545,6 +535,21 @@ public class ApDependencies /*extends BaseTask*/ {
             configuration.getDependencies().add(project.getDependencies()
                 .create(dependency.getGroup() + ":" + dependency.getName() + ":" + dependency.getVersion() + "@awb"));
         }
+    }
+
+    private static String getName(Dependency dependency) {
+        String name = dependency.getName();
+
+        if (dependency instanceof ProjectDependency) {
+            ProjectDependency projectDependency = (ProjectDependency) dependency;
+
+            Project project = projectDependency.getDependencyProject();
+            String artifactId = getArtifactId(project);
+            if (!Strings.isNullOrEmpty(artifactId)) {
+                name = artifactId;
+            }
+        }
+        return name;
     }
 
     private static boolean containsDependency(DependencySet dependencies, ParsedModuleStringNotation parsedNotation) {
