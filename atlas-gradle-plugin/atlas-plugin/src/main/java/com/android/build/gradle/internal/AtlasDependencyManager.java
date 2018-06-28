@@ -229,6 +229,7 @@ import com.taobao.android.builder.tools.ideaplugin.AwoPropHandler;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.result.ResolvedComponentResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -331,8 +332,10 @@ public class AtlasDependencyManager extends DependencyManager {
 
     @Override
     protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
-                                        ModuleVersionIdentifier moduleVersion) {
-        if (super.checkForExclusion(configDependencies, moduleVersion)) {
+            @NonNull ResolvedComponentResult resolvedComponentResult,
+            ModuleVersionIdentifier moduleVersion) {
+        if (super.checkForExclusion(configDependencies, resolvedComponentResult,
+                moduleVersion)) {
             return true;
         }
         if (apDependencies != null) {

@@ -728,7 +728,8 @@ public class DependencyManager {
 
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
         List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
-        if (checkForExclusion(configDependencies, moduleVersion)) {
+        if (checkForExclusion(configDependencies, resolvedComponentResult,
+                moduleVersion)) {
             return;
         }
 
@@ -1097,6 +1098,7 @@ public class DependencyManager {
     }
 
     protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
+            ResolvedComponentResult resolvedComponentResult,
                                         ModuleVersionIdentifier moduleVersion) {
         return configDependencies.getChecker().checkForExclusion(moduleVersion);
     }
