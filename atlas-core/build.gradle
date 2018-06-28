@@ -26,13 +26,6 @@ repositories {
 
 }
 
- allprojects{
-
-     configurations {
-         compileProject.extendsFrom compile, archives
-         runtimeProject.extendsFrom runtime, archives
-     }
-}
 
 group = 'com.taobao.android'
 description = """atlas_core"""
@@ -208,16 +201,16 @@ install {
     }
 }
 
-task sourcesJar(type: Jar) {
-    from('src/main/java') {
-        include '**'
-    }
-    classifier = 'sources'
-}
+//task sourcesJar(type: Jar) {
+//    from('src/main/java') {
+//        include '**'
+//    }
+//    classifier = 'sources'
+//}
 
-artifacts {
-    archives sourcesJar
-}
+//artifacts {
+//    archives sourcesJar
+//}
 
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
