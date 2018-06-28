@@ -231,7 +231,6 @@ import com.taobao.android.builder.tasks.incremental.ParsedModuleStringNotation;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.artifacts.ModuleIdentifier;
-import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 
 /**
@@ -546,28 +545,28 @@ public class AwbBundle {
         return false;
     }
 
-    public boolean containsDependency(ModuleVersionIdentifier moduleVersion) {
+    public boolean containsDependency(ModuleIdentifier moduleIdentifier) {
         for (AndroidLibrary androidL : getAllLibraryAars()) {
-            if (compareWithoutVersion(moduleVersion, androidL.getResolvedCoordinates())) {
+            if (compareWithoutVersion(moduleIdentifier, androidL.getResolvedCoordinates())) {
                 return true;
             }
         }
         for (JavaLibrary javaLibrary : getJavaLibraries()) {
-            if (compareWithoutVersion(moduleVersion, javaLibrary.getResolvedCoordinates())) {
+            if (compareWithoutVersion(moduleIdentifier, javaLibrary.getResolvedCoordinates())) {
                 return true;
             }
         }
         for (SoLibrary soLibrary : getSoLibraries()) {
-            if (compareWithoutVersion(moduleVersion, soLibrary.getResolvedCoordinates())) {
+            if (compareWithoutVersion(moduleIdentifier, soLibrary.getResolvedCoordinates())) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean compareWithoutVersion(ModuleVersionIdentifier moduleVersion, MavenCoordinates coordinates) {
-        return Objects.equal(moduleVersion.getGroup(), coordinates.getGroupId()) && Objects.equal(
-            moduleVersion.getName(), coordinates.getArtifactId());
+    private static boolean compareWithoutVersion(ModuleIdentifier moduleIdentifier, MavenCoordinates coordinates) {
+        return Objects.equal(moduleIdentifier.getGroup(), coordinates.getGroupId()) && Objects.equal(
+            moduleIdentifier.getName(), coordinates.getArtifactId());
     }
 
     public Collection<File> getJniLibFolders() {

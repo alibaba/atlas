@@ -218,9 +218,12 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.builder.dependency.level2.AndroidDependency;
+
+import com.google.common.base.Strings;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.parser.AtlasDepTreeParser;
+import com.taobao.android.builder.dependency.parser.helper.DependencyResolver;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.incremental.ApDependencies;
@@ -228,8 +231,12 @@ import com.taobao.android.builder.tools.PluginTypeUtils;
 import com.taobao.android.builder.tools.ideaplugin.AwoPropHandler;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.component.ComponentIdentifier;
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedComponentResult;
+import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -338,12 +345,39 @@ public class AtlasDependencyManager extends DependencyManager {
                 moduleVersion)) {
             return true;
         }
+
+        ModuleIdentifier module = moduleVersion.getModule();
+        String artifactId = getArtifactId(resolvedComponentResult);
+
+        if (!Strings.isNullOrEmpty(artifactId)) {
+            module = DefaultModuleIdentifier.newId(moduleVersion.getGroup(), artifactId);
+        }
+
+
         if (apDependencies != null) {
             // AtlasDependencyTree同步
-            if (!atlasDependencyTree.getMainBundle().containsDependency(moduleVersion)) {
+            if (!atlasDependencyTree.getMainBundle().containsDependency(module)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private String getArtifactId(@NonNull ResolvedComponentResult resolvedComponentResult) {
+        // get the associated gradlepath
+        ComponentIdentifier id = resolvedComponentResult.getId();
+        String gradlePath =
+                (id instanceof ProjectComponentIdentifier) ? ((ProjectComponentIdentifier) id)
+                        .getProjectPath() : null;
+        Project subProject = null;
+        String artifactId = null;
+
+        if (gradlePath != null) {
+            // this is a sub-module. Get the matching object file
+            // to query its build output;
+            subProject = project.findProject(gradlePath);
+            artifactId = DependencyResolver.getArtifactId(subProject);
+        }
+        return artifactId;
     }
 }
