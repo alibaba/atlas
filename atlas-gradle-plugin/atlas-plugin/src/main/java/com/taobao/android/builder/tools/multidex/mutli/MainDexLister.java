@@ -258,7 +258,7 @@ public class MainDexLister {
         //Confusion of the map
         //Map<String, String> classMap = getClassObfMap(config);
         Collection<BaseVariantOutput> collection = appVariantContext.getVariantOutputData();
-        File manifest = new File(collection.iterator().next().getProcessManifest().getManifestOutputDirectory(),"AndroidManifest.xml");
+        File manifest = com.android.utils.FileUtils.join(collection.iterator().next().getProcessManifest().getManifestOutputDirectory(),new String[]{collection.iterator().next().getDirName(),"AndroidManifest.xml"});
 
         String applicationName = ManifestFileUtils.getApplicationName(manifest);
 

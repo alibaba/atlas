@@ -5,6 +5,7 @@ import com.android.build.gradle.internal.BuildCacheUtils;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.dexing.DexMergerTool;
 import com.android.builder.dexing.DexerTool;
@@ -13,6 +14,7 @@ import com.android.builder.utils.FileCache;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.prefs.AndroidLocation;
 import com.android.utils.FileUtils;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import org.gradle.api.file.FileCollection;
@@ -25,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -37,6 +40,9 @@ public class AwbDexsMerger extends AtlasDexMerger {
 
     private static final String ID = "atlasbundledexmerge";
 
+    private AtomicInteger atomicInteger = new AtomicInteger();
+
+    private File mainDexOut = null;
 
 
     public AwbDexsMerger(DexingType dexingType, FileCollection mainDexListFile, ErrorReporter errorReporter, DexMergerTool dexMerger, int minSdkVersion, boolean isDebuggable, AppVariantOutputContext appVariantOutputContext) {
@@ -79,6 +85,8 @@ public class AwbDexsMerger extends AtlasDexMerger {
     @Override
     public void merge(TransformInvocation transformInvocation) {
 
+        mainDexOut = getDexOutputLocation(transformInvocation.getOutputProvider(),"main", TransformManager.SCOPE_FULL_PROJECT);
+        atomicInteger.set(org.apache.commons.io.FileUtils.listFiles(mainDexOut,new String[]{"dex"},true).size());
         for (AwbTransform awbTransform : variantOutputContext.getAwbTransformMap().values()) {
            merge(awbTransform.getAwbBundle());
         }
@@ -100,6 +108,13 @@ public class AwbDexsMerger extends AtlasDexMerger {
         FileCache.Inputs buildCacheInputs = getBuildCacheInputs(awbDexFiles, dexingType, dexMerger, null, minSdkVersion, isDebuggable, awbBundle.getName(), ID);
         ProcessOutput output = outputHandler.createOutput();
         FileCache fileCache = BuildCacheUtils.createBuildCacheIfEnabled(variantOutputContext.getVariantContext().getProject(), variantOutputContext.getScope().getGlobalScope().getProjectOptions());
+        if (fileCache == null){
+            try {
+                fileCache = FileCache.getInstanceWithMultiProcessLocking(new File(AndroidLocation.getFolder(),"atlas-buildCache"));
+            } catch (AndroidLocation.AndroidLocationException e) {
+                e.printStackTrace();
+            }
+        }
         try {
             FileCache.QueryResult result = fileCache.createFileInCacheIfAbsent(
                     buildCacheInputs,
@@ -124,6 +139,10 @@ public class AwbDexsMerger extends AtlasDexMerger {
             );
 
             cacheHandler.handleQueryResult(result, outPutFolder, awbBundle.getName());
+
+            if (awbBundle.isMBundle){
+                org.apache.commons.io.FileUtils.moveFile(new File(outPutFolder, CLASSES_DEX),new File(mainDexOut,"classes"+atomicInteger.incrementAndGet()+".dex"));
+            }
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -227,6 +227,7 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.ExtractProguardFiles;
+import com.android.build.gradle.internal.tasks.ExtractTryWithResourcesSupportJar;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
@@ -297,6 +298,7 @@ import org.gradle.api.internal.tasks.TaskExecuter;
 import org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.StopExecutionException;
+import org.gradle.api.tasks.TaskCollection;
 import org.gradle.api.tasks.TaskDependency;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.jetbrains.annotations.NotNull;
@@ -497,7 +499,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   transformReplacer.replaceMultiDexListTransform();
                                                               }
 
+
                                                               transformReplacer.replaceProguardTransform();
+
+                                                              transformReplacer.disableCache();
 
 
                                                               if (variantScope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
@@ -558,11 +563,23 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               appVariantContext.getVariantData().javaCompilerTask.doFirst(task -> {
                                                                   JavaCompile compile = (JavaCompile) task;
+                                                                  Set<File> mainDexFiles = new MainFilesCollection().getFiles();
+                                                                  FileCollection mainFiles = appVariantContext.getProject().files(mainDexFiles);
                                                                   FileCollection files = appVariantContext.getScope().getArtifactFileCollection(ANNOTATION_PROCESSOR, ALL, JAR);
                                                                   FileCollection bootFiles = appVariantContext.getProject().files(appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(false));
-                                                                  compile.setClasspath(bootFiles.plus(new MainFilesCollection()));
+                                                                  mainFiles = mainFiles.plus(bootFiles);
+                                                                  FileCollection fileCollection = compile.getClasspath();
+                                                                  File kotlinClasses = null;
+                                                                  for (File file : fileCollection) {
+                                                                      if (file.getAbsolutePath().contains("kotlin-classes")) {
+                                                                          mainFiles = mainFiles.plus(appVariantContext.getProject().files(file));
+                                                                          kotlinClasses = file;
+                                                                          break;
+                                                                      }
+                                                                  }
+                                                                  compile.setClasspath(mainFiles);
                                                                   if (Boolean.TRUE.equals(includeCompileClasspath)) {
-                                                                      compile.getOptions().setAnnotationProcessorPath(files.plus(new MainFilesCollection()));
+                                                                      compile.getOptions().setAnnotationProcessorPath(files.plus(mainFiles));
                                                                   }
                                                               });
 
@@ -584,7 +601,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                       @Override
                                                                       public Set<File> getFiles() {
-                                                                          if (AtlasBuildContext.atlasMainDexHelper.getMainJavaRes() == null){
+                                                                          if (AtlasBuildContext.atlasMainDexHelper.getMainJavaRes() == null) {
                                                                               return Sets.newHashSet();
                                                                           }
                                                                           return Sets.newHashSet(AtlasBuildContext.atlasMainDexHelper.getMainJavaRes());
@@ -592,14 +609,16 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   });
                                                               }
 
-                                                              List<TransformTask> transformTasks = TransformManager.findTransformTaskByTransformType(appVariantContext,AtlasDesugarTransform.class);
-                                                              for (TransformTask transformTask:transformTasks){
-                                                                  transformTask.doLast(new Action<Task>() {
+                                                              TaskCollection<ExtractTryWithResourcesSupportJar>taskCollection = appVariantContext.getProject().getTasks().withType(ExtractTryWithResourcesSupportJar.class);
+                                                              for (ExtractTryWithResourcesSupportJar task : taskCollection) {
+                                                                  task.doLast(new Action<Task>() {
                                                                       @Override
                                                                       public void execute(Task task) {
                                                                           ConfigurableFileCollection fileCollection = variantScope.getTryWithResourceRuntimeSupportJar();
-                                                                          for (File file:fileCollection) {
-                                                                              AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity("runtime-deps-try-with-resources",file,false,false));
+                                                                          for (File file : fileCollection.getFiles()) {
+                                                                              if (file.exists()) {
+                                                                                  AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity("runtime-deps-try-with-resources", file, false, false));
+                                                                              }
                                                                           }
                                                                       }
                                                                   });

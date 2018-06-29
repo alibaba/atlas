@@ -210,6 +210,7 @@
 package com.android.build.gradle.internal.api;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -217,6 +218,7 @@ import java.util.Map;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 
 /**
  * AwbThe transmission of dependent files

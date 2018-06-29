@@ -779,8 +779,15 @@ public class TPatchTool extends AbstractTool {
                             "armeabi" +
                             "/" +
                             bundleFileSoName);
+            File assetsBundleFile = new File(newApkUnzipFolder,
+                    "assets" +
+                            "/" +
+                            bundleFileSoName);
             if (bundleFile.exists()) {
                 awbBundleMap.put(artifactBundleInfo.getArtifactId(), bundleFile);
+            }else if (assetsBundleFile.exists()){
+                awbBundleMap.put(artifactBundleInfo.getArtifactId(), assetsBundleFile);
+
             }
         }
         if (((TpatchInput)input).splitDiffBundle != null) {

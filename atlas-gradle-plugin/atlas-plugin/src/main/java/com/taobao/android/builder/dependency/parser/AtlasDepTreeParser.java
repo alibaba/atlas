@@ -269,7 +269,7 @@ public class AtlasDepTreeParser {
 
 
     public AtlasDependencyTree parseDependencyTree(@NonNull VariantDependencies variantDeps) {
-
+//
         String name = variantDeps.getName().toLowerCase();
         if (!name.endsWith("debug") && !name.endsWith("release")) {
             return new AtlasDependencyTree(new ArrayList<>());
@@ -344,18 +344,10 @@ public class AtlasDepTreeParser {
             projectDependency.setTargetConfiguration(null);
         }
         String name = config.getName();
-        if (!StringUtils.isEmpty(flavorName)){
-            name = name.replace(flavorName,"");
-        }
-        if (name.startsWith("Debug")){
-            name = name.replace("Debug","debug");
-
-        }
-        if (name.startsWith("Release")){
-            name = name.replace("Release","release");
-
-        }
         Configuration configuration = projectDependency.getDependencyProject().getConfigurations().findByName(name);
+        if (configuration == null) {
+            configuration = projectDependency.getDependencyProject().getConfigurations().findByName(newName(name));
+            }
         if (configuration!= null && configuration.getAllDependencies()!= null) {
             unEnsureConfigured(configuration);
         }
@@ -373,23 +365,16 @@ public class AtlasDepTreeParser {
     }
 
     private void prepareProject(ProjectDependency projectDependency,Configuration configuration) {
-         ((ProjectInternal)((DefaultProjectDependency) projectDependency).getDependencyProject()).evaluate();
         if (projectDependency.getTargetConfiguration() == null || projectDependency.getTargetConfiguration().equals("default")){
             projectDependency.setTargetConfiguration(AtlasConfigurationHelper.COMPILE_PROJECT_CONFIGURATION_NAME);
-            }
+        }
+         ((ProjectInternal)((DefaultProjectDependency) projectDependency).getDependencyProject()).evaluate();
+
         String name = configuration.getName();
-        if (!StringUtils.isEmpty(flavorName)){
-            name = name.replace(flavorName,"");
-        }
-        if (name.startsWith("Debug")){
-            name = name.replace("Debug","debug");
-
-        }
-        if (name.startsWith("Release")){
-            name = name.replace("Release","release");
-
-        }
         Configuration config = projectDependency.getDependencyProject().getConfigurations().findByName(name);
+        if (config == null) {
+            config = projectDependency.getDependencyProject().getConfigurations().findByName(newName(name));
+       }
         if (config!= null && config.getAllDependencies()!= null) {
             ensureConfigured(config,projectDependency.getDependencyProject());
         }
@@ -398,6 +383,7 @@ public class AtlasDepTreeParser {
 
     private void collectArtifacts(Configuration configuration,
                                   Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
+
 
         Set<ResolvedArtifact> allArtifacts;
         if (configuration.getState().equals(Configuration.State.UNRESOLVED) && !configuration.getName().equals(AtlasPlugin.BUNDLE_COMPILE)) {
@@ -422,6 +408,21 @@ public class AtlasDepTreeParser {
                 moduleArtifacts.add(artifact);
             }
         }
+    }
+
+    private String newName(String name) {
+        if (!StringUtils.isEmpty(flavorName)) {
+            name = name.replace(flavorName, "");
+        }
+        if (name.startsWith("Debug")) {
+            name = name.replace("Debug", "debug");
+
+        }
+        if (name.startsWith("Release")) {
+            name = name.replace("Release", "release");
+
+        }
+        return name;
     }
 
     private AtlasDependencyTree toAtlasDependencyTree() {

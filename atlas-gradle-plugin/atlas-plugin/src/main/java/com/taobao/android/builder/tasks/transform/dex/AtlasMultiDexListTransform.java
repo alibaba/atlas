@@ -85,7 +85,7 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
 
     @Override
     public boolean isIncremental() {
-        return true;
+        return false;
     }
 
     public void transform(@NonNull TransformInvocation transformInvocation)

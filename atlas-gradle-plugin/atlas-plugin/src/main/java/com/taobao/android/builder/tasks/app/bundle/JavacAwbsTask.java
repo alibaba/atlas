@@ -260,7 +260,9 @@ public class JavacAwbsTask extends BaseTask {
         List<Runnable> runnables2 = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-
+            if (awbBundle.isMBundle){
+                continue;
+            }
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {

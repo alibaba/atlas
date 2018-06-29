@@ -216,6 +216,7 @@ import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
@@ -229,6 +230,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by wuzhong on 2016/11/24.
@@ -278,7 +280,7 @@ public class BundleInfoUtils {
         } else {
             bundleInfo = awbBundle.bundleInfo;
         }
-
+        bundleInfo.setMBundle(awbBundle.isMBundle);
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getInsideOfApkBundles().size() > 0){
             awbBundle.isRemote = !appVariantContext.getAtlasExtension()
                     .getTBuildConfig()
@@ -290,6 +292,8 @@ public class BundleInfoUtils {
                     .getOutOfApkBundles()
                     .contains(artifactId);
         }
+
+
 
         bundleInfo.setIsInternal(!awbBundle.isRemote);
         bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
@@ -308,6 +312,8 @@ public class BundleInfoUtils {
 
     }
 
+
+
     private static Map<String, BundleInfo> getBundleInfoMap(AppVariantContext appVariantContext) throws IOException {
         File baseBunfleInfoFile = new File(appVariantContext.getScope()
                                                .getGlobalScope()
@@ -315,6 +321,10 @@ public class BundleInfoUtils {
                                                .getProjectDir(), "bundleBaseInfoFile.json");
 
         //Use the file replacement in the plug-in
+
+
+
+
         Map<String, BundleInfo> bundleFileMap = Maps.newHashMap();
         if (null != baseBunfleInfoFile &&
             baseBunfleInfoFile.exists() &&
@@ -335,7 +345,6 @@ public class BundleInfoUtils {
             if (bundleBaseInfoFile.exists()) {
                 String json = FileUtils.readFileToString(bundleBaseInfoFile, "utf-8");
                 BundleInfo bundleInfo = JSON.parseObject(json, BundleInfo.class);
-
                 if (bundleFileMap.containsKey(name)) {
                     appVariantContext.getProject().getLogger().error(
                         "bundleBaseInfoFile>>>" + name + " has declared bundleBaseInfoFile");
@@ -359,6 +368,7 @@ public class BundleInfoUtils {
 
         return bundleFileMap;
     }
+
 
     public static File writeBundleInfo(AppVariantContext appVariantContext) throws IOException, DocumentException {
 

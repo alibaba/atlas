@@ -323,6 +323,7 @@ public class BundleProguarder {
 
         if (input.getAwbBundles().get(0).getAwbBundle().isMainBundle()) {
             AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().clear();
+            AtlasBuildContext.atlasMainDexHelper.getInputDirs().clear();
 
             for (File file : cacheDir.listFiles()) {
                 if (file.getName().endsWith("jar") && ZipUtils.isZipFile(file)) {
@@ -331,11 +332,12 @@ public class BundleProguarder {
                     File srcFile = md5Map.get(jarMd5);
 
                     if ( null != srcFile && srcFile.exists()){
-                        FileUtils.copyFile(file,new File(input.proguardOutputDir, FileNameUtils.getUniqueJarName(srcFile) + ".jar"));
-                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(FileNameUtils.getUniqueJarName(srcFile),new File(input.proguardOutputDir, FileNameUtils.getUniqueJarName(srcFile) + ".jar"),false,false));
+                        String fileName = FileNameUtils.getUniqueJarName(srcFile);
+                        FileUtils.copyFile(file,new File(input.proguardOutputDir,   fileName+".jar"));
+                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(fileName,new File(input.proguardOutputDir, fileName + ".jar"),false,false));
                     }else {
                         FileUtils.copyFileToDirectory(file, input.proguardOutputDir);
-                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(FileNameUtils.getUniqueJarName(file),new File(input.proguardOutputDir, file.getName()),false,false));
+                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(),new File(input.proguardOutputDir, file.getName()),false,false));
 
                     }
 
@@ -435,10 +437,8 @@ public class BundleProguarder {
 
         configuration.printSeeds = null;
         configuration.dump = null;
-        configuration.optimize = true;
         configuration.obfuscate = false;
-        configuration.shrink = true;
-        configuration.optimizationPasses = 1;
+//        configuration.optimizationPasses = 1;
 
         configuration.printUsage = input.printUsage;
         configuration.printMapping = input.printMapping;
@@ -533,7 +533,10 @@ public class BundleProguarder {
 
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-                if (AtlasBuildContext.atlasMainDexHelper.inMainDex(inputLibrary)) {
+
+                if (inputLibrary.isDirectory() && AtlasBuildContext.atlasMainDexHelper.getInputDirs().contains(inputLibrary)){
+                    input.maindexFolderTransform.put(inputLibrary,obsJar);
+                }else if (AtlasBuildContext.atlasMainDexHelper.inMainDex(inputLibrary)) {
                     input.maindexFileTransform.put(inputLibrary,obsJar);
 //                    AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(inputLibrary, obsJar);
                 }else if (awbTransform.getAwbBundle().isMainBundle()){

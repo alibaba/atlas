@@ -92,8 +92,11 @@ public class AtlasMainDexHelper {
 
     public void updateMainDexFile(File oldFile, File newFile) {
         for (BuildAtlasEnvTask.FileIdentity id : mainDexJar) {
+            if (!id.file.exists()){
+                continue;
+            }
             try {
-                if (Files.isSameFile(oldFile.toPath(), id.file.toPath()) || MD5Util.getFileMD5(oldFile).equals(MD5Util.getFileMD5(id.file))) {
+                if (Files.isSameFile(oldFile.toPath(), id.file.toPath())) {
                     id.file = newFile;
                     break;
                 }
@@ -106,8 +109,11 @@ public class AtlasMainDexHelper {
 
     public void updateMainDexFile(JarInput oldFile, File newFile) {
         for (BuildAtlasEnvTask.FileIdentity id : mainDexJar) {
+            if (!id.file.exists()){
+                continue;
+            }
             try {
-                if (Files.isSameFile(oldFile.getFile().toPath(), id.file.toPath()) || MD5Util.getFileMD5(oldFile.getFile()).equals(MD5Util.getFileMD5(id.file))) {
+                if (Files.isSameFile(oldFile.getFile().toPath(), id.file.toPath())) {
                     id.file = newFile;
                     break;
                 } else if (oldFile.getName().startsWith("android.local.jars")) {
@@ -146,12 +152,7 @@ public class AtlasMainDexHelper {
     }
 
     private void remove(File key) {
-        mainDexJar.removeIf(new Predicate<BuildAtlasEnvTask.FileIdentity>() {
-            @Override
-            public boolean test(BuildAtlasEnvTask.FileIdentity fileIdentity) {
-                return fileIdentity.file.equals(key);
-            }
-        });
+        mainDexJar.removeIf(fileIdentity -> fileIdentity.file.equals(key));
 
     }
 
@@ -179,14 +180,18 @@ public class AtlasMainDexHelper {
 
     public boolean inMainDex(File jarFile)  {
         for (BuildAtlasEnvTask.FileIdentity fileIdentity : mainDexJar) {
+            if (!fileIdentity.file.exists()){
+                continue;
+            }
             try {
-                if (Files.isSameFile(fileIdentity.file.toPath(), jarFile.toPath()) || MD5Util.getFileMD5(fileIdentity.file).equals(MD5Util.getFileMD5(jarFile))) {
+                if (Files.isSameFile(fileIdentity.file.toPath(), jarFile.toPath())) {
                     return true;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
         return false;
     }
 
@@ -199,7 +204,7 @@ public class AtlasMainDexHelper {
     public BuildAtlasEnvTask.FileIdentity get(File jarFile) {
         for (BuildAtlasEnvTask.FileIdentity fileIdentity : mainDexJar) {
             try {
-                if (Files.isSameFile(fileIdentity.file.toPath(), jarFile.toPath()) || MD5Util.getFileMD5(jarFile).equals(MD5Util.getFileMD5(fileIdentity.file))) {
+                if (Files.isSameFile(fileIdentity.file.toPath(), jarFile.toPath())) {
                     return fileIdentity;
                 }
             } catch (IOException e) {

@@ -36,8 +36,11 @@ import com.taobao.android.builder.tasks.transform.dex.AtlasDexMergerTransform;
 import com.taobao.android.builder.tasks.transform.dex.AtlasMultiDexListTransform;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
+import org.gradle.api.Task;
+import org.gradle.api.internal.tasks.DefaultTaskOutputs;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.specs.Spec;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -324,6 +327,56 @@ public class TransformReplacer {
             ReflectUtils.updateField(transform, "transform",
                     resourcesShrinker);
 
+        }
+
+
+    }
+
+    public void disableCache() {
+        List<TransformTask> list = null;
+        if (usingIncrementalDexing(variantContext.getScope())) {
+            list = TransformManager.findTransformTaskByTransformType(variantContext,
+                    MainDexListTransform.class);
+        }else {
+            list = TransformManager.findTransformTaskByTransformType(variantContext,
+                    MultiDexTransform.class);
+        }
+        if (list != null){
+            for (TransformTask transformTask:list){
+                List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
+                list1.clear();
+
+            }
+        }
+
+        list = TransformManager.findTransformTaskByTransformType(variantContext,
+                AtlasProguardTransform.class);
+        if (list != null){
+            for (TransformTask transformTask:list){
+                List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
+                list1.clear();
+
+            }
+        }
+
+        list = TransformManager.findTransformTaskByTransformType(variantContext,
+                DexTransform.class);
+        if (list != null){
+            for (TransformTask transformTask:list){
+                List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
+                list1.clear();
+
+            }
+        }
+
+        list = TransformManager.findTransformTaskByTransformType(variantContext,
+                AtlasMultiDexListTransform.class);
+        if (list != null){
+            for (TransformTask transformTask:list){
+                List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
+                list1.clear();
+
+            }
         }
 
 

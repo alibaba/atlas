@@ -123,7 +123,7 @@ public class AtlasDexMergerTransform extends Transform {
 
     @Override
     public boolean isCacheable() {
-        return true;
+        return false;
     }
 
     @Override
@@ -135,6 +135,7 @@ public class AtlasDexMergerTransform extends Transform {
         TransformOutputProvider transformOutputProvider = transformInvocation.getOutputProvider();
         transformOutputProvider.deleteAll();
         atlasMainDexMerger.merge(transformInvocation);
+
         awbDexMerger.merge(transformInvocation);
 
     }

@@ -350,10 +350,13 @@ public class DiffBundleInfoTask extends BaseTask {
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
             BundleInfo bundleInfo = awbBundle.bundleInfo;
+            if (awbBundle.isMBundle){
+                continue;
+            }
 
             ArtifactBundleInfo awbBundleInfo = new ArtifactBundleInfo();
             awbBundleInfo.setMainBundle(false);
-            awbBundleInfo.setDependency(bundleInfo.getDependency());
+            awbBundleInfo.setDependency(newDependency(bundleInfo.getDependency(),appVariantOutputContext.getVariantContext()));
             awbBundleInfo.setPkgName(bundleInfo.getPkgName());
             awbBundleInfo.setApplicationName(bundleInfo.getApplicationName());
             awbBundleInfo.setArtifactId(awbBundle.getResolvedCoordinates().getArtifactId());
@@ -385,6 +388,20 @@ public class DiffBundleInfoTask extends BaseTask {
             artifactBundleInfos.add(awbBundleInfo);
         }
         return artifactBundleInfos;
+    }
+
+    private List<String> newDependency(List<String> dependency,AppVariantContext appVariantContext) {
+        List<String>dependencies = new ArrayList<>();
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||dependency == null ||dependency.size() == 0){
+            return dependencies;
+        }
+        for (String s:dependency){
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(s)){
+                dependencies.add(s);
+            }
+        }
+        return dependencies;
+
     }
 
     private String getBundleName(AwbBundle libraryDependency) {
@@ -494,7 +511,7 @@ public class DiffBundleInfoTask extends BaseTask {
             ConventionMappingHelper.map(diffBundleInfoTask, "manifestFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return new File(baseVariantOutput.getProcessManifest().getManifestOutputDirectory(),"AndroidManifest.xml");
+                    return com.android.utils.FileUtils.join(baseVariantOutput.getProcessManifest().getManifestOutputDirectory(), new String[]{baseVariantOutput.getDirName(), "AndroidManifest.xml"});
                 }
             });
 

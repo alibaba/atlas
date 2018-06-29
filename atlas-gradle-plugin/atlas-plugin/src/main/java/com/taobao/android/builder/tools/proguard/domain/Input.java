@@ -259,6 +259,9 @@ public class Input {
 
     public Map<File,File>maindexFileTransform = new HashMap<>();
 
+    public Map<File,File>maindexFolderTransform = new HashMap<>();
+
+
     public List<AwbTransform> getAwbBundles() {
         return awbBundles;
     }

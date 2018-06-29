@@ -47,6 +47,10 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
     public void mergeDexArchives(Iterable<Path> inputs, Path outputDir, Path mainDexClasses, DexingType dexingType) throws DexArchiveMergerException {
 
         List<Path> inputPaths = Ordering.natural().sortedCopy(inputs);
+
+        for (Path path:inputPaths){
+            logger.warning("input dexmerge path:"+path.toString());
+        }
 //        Set<String> mainClasses = null;
 //        try {
 //            mainClasses = Sets.newHashSet(readAllLines(mainDexClasses));
@@ -100,18 +104,23 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
         while (entries.hasNext()) {
             DexMergeEntry entry = entries.next();
             Dex dex = null;
+            if (toMergeInMain.contains(entry.name)) {
+                continue;
+            }
             try {
                 dex = new Dex(entry.dexFileContent);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if (toMergeInMain.contains(entry.name)) {
-                continue;
-            }
+
             if (!mergingStrategy.tryToAddForMerging(dex)) {
                 Path dexOutput = new File(outputDir.toFile(), getDexFileName(classesDexSuffix++)).toPath();
+                logger.warning("dexOutput 0 :"+dexOutput.toString());
+
                 if (mergingStrategy.getAllDexToMerge().size() > 0) {
                     subTasks.add(submitForMerging(mergingStrategy.getAllDexToMerge(), dexOutput));
+                }else {
+                    classesDexSuffix --;
                 }
                 mergingStrategy.startNewDex();
 
@@ -120,6 +129,7 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
                     if (mergingStrategy instanceof AtlasDexMergingStrategy){
                         ((AtlasDexMergingStrategy) mergingStrategy).forceAdd(dex);
                          dexOutput = new File(outputDir.toFile(), getDexFileName(classesDexSuffix++)).toPath();
+                        logger.warning("dexOutput 1:"+dexOutput.toString());
                         subTasks.add(submitForMerging(mergingStrategy.getAllDexToMerge(), dexOutput));
                         mergingStrategy.startNewDex();
 
@@ -135,6 +145,8 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
         // if there are some remaining unprocessed dex files, merge them
         if (!mergingStrategy.getAllDexToMerge().isEmpty()) {
             Path dexOutput = new File(outputDir.toFile(), getDexFileName(classesDexSuffix)).toPath();
+            logger.warning("dexOutput 2:"+dexOutput.toString());
+
             if (mergingStrategy.getAllDexToMerge().size() > 0) {
                 subTasks.add(submitForMerging(mergingStrategy.getAllDexToMerge(), dexOutput));
             }

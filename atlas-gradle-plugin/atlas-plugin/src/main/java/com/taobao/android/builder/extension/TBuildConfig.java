@@ -226,6 +226,27 @@ public class TBuildConfig {
     @Config(message = "Remote bundle list, artifactId", advance = false, order = 1, group = "atlas")
     private Set<String> outOfApkBundles = Sets.newHashSet();
 
+    public Set<String> getBundleToMdex() {
+        return bundleToMdex;
+    }
+
+    public void setBundleToMdex(Set<String> bundleToMdex) {
+        this.bundleToMdex = bundleToMdex;
+    }
+
+    private Set<String>bundleToMdex = Sets.newHashSet();
+
+
+    public Boolean getAllBundlesToMdex() {
+        return allBundlesToMdex;
+    }
+
+    public void setAllBundlesToMdex(Boolean allBundlesToMdex) {
+        this.allBundlesToMdex = allBundlesToMdex;
+    }
+
+    private Boolean allBundlesToMdex = false;
+
     public String getAppCoordinate() {
         return appCoordinate;
     }

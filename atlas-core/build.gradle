@@ -1,8 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
-apply from: 'http://gitlab.alibaba-inc.com/android-build-system/buildscript/raw/master/mtl-publish.gradle'
-
 
 
 def mini = getEnvValue("mini", 'false')
@@ -28,18 +26,11 @@ repositories {
 
 }
 
- allprojects{
-
-     configurations {
-         compileProject.extendsFrom compile, archives
-         runtimeProject.extendsFrom runtime, archives
-     }
-}
 
 group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
-version "5.1.0.3-SNAPSHOT"
+version "5.0.8.7-rc1"
 
 String getEnvValue(key, defValue) {
     def val = System.getProperty(key);
@@ -210,16 +201,16 @@ install {
     }
 }
 
-task sourcesJar(type: Jar) {
-    from('src/main/java') {
-        include '**'
-    }
-    classifier = 'sources'
-}
+//task sourcesJar(type: Jar) {
+//    from('src/main/java') {
+//        include '**'
+//    }
+//    classifier = 'sources'
+//}
 
-artifacts {
-    archives sourcesJar
-}
+//artifacts {
+//    archives sourcesJar
+//}
 
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())

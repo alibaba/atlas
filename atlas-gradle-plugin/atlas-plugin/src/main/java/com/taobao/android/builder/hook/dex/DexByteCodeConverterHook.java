@@ -2,6 +2,7 @@ package com.taobao.android.builder.hook.dex;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.BuildCacheUtils;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -12,6 +13,7 @@ import com.android.builder.core.*;
 import com.android.builder.dexing.*;
 import com.android.builder.internal.compiler.DexWrapper;
 import com.android.builder.sdk.TargetInfo;
+import com.android.builder.utils.ExceptionRunnable;
 import com.android.builder.utils.FileCache;
 import com.android.builder.utils.PerformanceUtils;
 import com.android.ide.common.blame.Message;
@@ -28,17 +30,22 @@ import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.transform.dex.AtlasDexMerger;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.cache.FileCacheCenter;
 import com.taobao.android.builder.tools.cache.FileCacheException;
+import com.taobao.android.builder.tools.multidex.FastMultiDexer;
+import it.unimi.dsi.fastutil.Hash;
 import org.apache.commons.compress.compressors.FileNameUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.gradle.caching.configuration.BuildCache;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
@@ -86,11 +93,17 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
     Pattern pattern = Pattern.compile("\\d+.dex");
 
+    private AtomicInteger atomicInteger = new AtomicInteger();
+
+    private Set<AwbBundle> sets = new HashSet<>();
+
     private WaitableExecutor waitableExecutor = WaitableExecutor.useGlobalSharedThreadPool();
 
     ForkJoinPool mainforkJoinPool = null;
     FileCache fileCache = null;
+    FileCache.Inputs.Builder globalCacheBuilder = null;
 
+    private List<Throwable> failures = new ArrayList<>();
 
 
     public DexByteCodeConverterHook(VariantContext variantContext, AppVariantOutputContext variantOutputContext, ILogger logger, TargetInfo targetInfo, JavaProcessExecutor javaProcessExecutor, boolean verboseExec, ErrorReporter errorReporter) {
@@ -103,7 +116,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         if (variantContext.getScope().getGlobalScope()
                 .getProjectOptions()
                 .get(BooleanOption.ENABLE_INTERMEDIATE_ARTIFACTS_CACHE)) {
-            fileCache =  variantContext.getScope().getGlobalScope().getBuildCache();
+            fileCache = variantContext.getScope().getGlobalScope().getBuildCache();
         }
     }
 
@@ -116,7 +129,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 //
 //    }
     @Override
-    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException{
+    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 variantContext.getVariantName());
 
@@ -130,7 +143,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
 
             for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-                    waitableExecutor.execute((Callable<Void>) () -> {
+                waitableExecutor.execute((Callable<Void>) () -> {
                             try {
 
                                 long start = System.currentTimeMillis();
@@ -153,7 +166,6 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                 }
 
 
-
                                 if (variantContext.getScope().getDexer() == DexerTool.DX) {
                                     AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
                                             .convertByteCode(inputFiles,
@@ -162,14 +174,18 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                                     null,
                                                     dexOptions,
                                                     outputHandler, true);
-                                }else if (variantContext.getScope().getDexer() == DexerTool.D8){
+                                } else if (variantContext.getScope().getDexer() == DexerTool.D8) {
 
 
-                                    new AtlasD8Creator(inputFiles,((AppVariantContext) variantContext).getAwbDexAchiveOutput(awbBundle),multidex,mainDexList,dexOptions,minSdkVersion,fileCache,processOutputHandler,variantContext,variantOutputContext).create(awbBundle);
+                                    new AtlasD8Creator(inputFiles, ((AppVariantContext) variantContext).getAwbDexAchiveOutput(awbBundle), multidex, mainDexList, dexOptions, minSdkVersion, fileCache, processOutputHandler, variantContext, variantOutputContext).create(awbBundle);
+                                }
+
+                                if (awbBundle.isMBundle) {
+                                    sets.add(awbBundle);
                                 }
 
                             } catch (Exception e) {
-                                throw new ProcessException(awbBundle.getName(),e);
+                                throw new ProcessException(awbBundle.getName(), e);
 
                             }
                             return null;
@@ -185,9 +201,11 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         inputFile = AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
         inputFile.addAll(AtlasBuildContext.atlasMainDexHelper.getInputDirs());
 
-        if (variantContext.getScope().getDexer() == DexerTool.D8){
+        logger.warning("maindex inputFile size :" + inputFile.size());
 
-            AtlasD8Creator atlasD8Creator = new AtlasD8Creator(inputs,((AppVariantContext) variantContext).getMainDexAchive(),multidex,mainDexList,dexOptions,minSdkVersion,fileCache,processOutputHandler,variantContext,variantOutputContext);
+        if (variantContext.getScope().getDexer() == DexerTool.D8) {
+
+            AtlasD8Creator atlasD8Creator = new AtlasD8Creator(inputs, ((AppVariantContext) variantContext).getMainDexAchive(), multidex, mainDexList, dexOptions, minSdkVersion, fileCache, processOutputHandler, variantContext, variantOutputContext);
             atlasD8Creator.setMainDexOut(outDexFolder);
             atlasD8Creator.create(new AwbBundle());
             return;
@@ -197,45 +215,121 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         initDexExecutorService(dexOptions);
 
         if (!multidex) {
-                DexByteCodeConverterHook.super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+
+            if (fileCache != null && globalCacheBuilder == null) {
+                globalCacheBuilder = new FileCache.Inputs.Builder(FileCache.Command.PREDEX_LIBRARY)
+                        .putBoolean("multidex", false)
+                        .putLong("minisdk", minSdkVersion)
+                        .putString("dexoptions", dexOptions.getAdditionalParameters().toString())
+                        .putBoolean("jumbomode", dexOptions.getJumboMode())
+                        .putString("type", type);
+
+                Collections.sort((List<File>) inputFile);
+                FileCache.Inputs inputsKey = globalCacheBuilder.putString("md5", MD5Util.getFileMd5(inputFile)).build();
+
                 try {
-                    for (Future future : futureList) {
-                        future.get();
-                    }
-                } catch (Exception e) {
-                    throw new ProcessException(e);
+                    fileCache.createFile(outDexFolder, inputsKey, () -> DexByteCodeConverterHook.super.convertByteCode(inputFile, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion));
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                    failures.add(e);
                 }
 
+            } else {
+
+                DexByteCodeConverterHook.super.convertByteCode(inputFile, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+            }
+//            try {
+//                for (Future future : futureList) {
+//                    future.get();
+//                }
+//            } catch (Exception e) {
+//                throw new ProcessException(e);
+//            }
+
         } else {
+
+            if (mainDexList != null && !mainDexList.exists()){
+                generateMainDexList(mainDexList);
+            }
+
             tempDexFolder = variantOutputContext.getMainDexOutDir();
             if (tempDexFolder.exists()) {
                 FileUtils.cleanDirectory(tempDexFolder);
             }
 
-            for (File file : inputFile) {
-
-                File outPutFolder = new File(tempDexFolder, FilenameUtils.getBaseName(file.getName()));
-                if (!outPutFolder.exists()) {
-                    outPutFolder.mkdirs();
-                }
-
-
-                DexByteCodeConverterHook.super.convertByteCode(Arrays.asList(file), outPutFolder, true, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+            File finalTempDexFolder = tempDexFolder;
+            if (fileCache != null && globalCacheBuilder == null) {
+                globalCacheBuilder = new FileCache.Inputs.Builder(FileCache.Command.PREDEX_LIBRARY)
+                        .putBoolean("multidex", true)
+                        .putFile("multidexlist", mainDexList, FileCache.FileProperties.HASH)
+                        .putLong("minisdk", minSdkVersion)
+                        .putString("dexoptions", dexOptions.getAdditionalParameters().toString())
+                        .putBoolean("jumbomode", dexOptions.getJumboMode())
+                        .putString("type", type);
 
             }
-
-                for (Future future : futureList) {
+            inputFile.parallelStream().forEach(file -> {
+                File outPutFolder = new File(finalTempDexFolder, FilenameUtils.getBaseName(file.getName()));
+                if (globalCacheBuilder != null && file.isFile()) {
+                    FileCache.Inputs.Builder builder = copyOf(globalCacheBuilder);
+                    FileCache.Inputs cacheInputs = null;
+                    if (file.isFile()) {
+                         cacheInputs = builder.putFile("hash", file, FileCache.FileProperties.HASH).build();
+                    }else {
+                        Collection<File>files = FileUtils.listFiles(file,new String[]{"class"},true);
+                        Collections.sort((List<File>) files);
+                        cacheInputs = builder.putString("hash",MD5Util.getFileMd5(files)).build();
+                    }
                     try {
-                        future.get();
-                    } catch (ExecutionException e) {
-                        throw new ProcessException(e);
+                        fileCache.createFile(outPutFolder, cacheInputs, () -> {
+                            logger.warning("maindex inputFile missCache:" + file.getAbsolutePath());
+                            outPutFolder.mkdirs();
+                            DexByteCodeConverterHook.super.convertByteCode(Arrays.asList(file), outPutFolder, true, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+                        });
+                    } catch (Exception e) {
+                        failures.add(e);
+                        e.printStackTrace();
+                    }
+
+                } else {
+                    logger.warning("maindex inputFile:" + file.getAbsolutePath());
+                    outPutFolder.mkdirs();
+                    try {
+                        DexByteCodeConverterHook.super.convertByteCode(Arrays.asList(file), outPutFolder, true, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        failures.add(e);
                     }
                 }
+
+
+            });
+
+            if (failures.size() > 0){
+                throw new ProcessException(failures.get(0));
+            }
+
+
+//            for (Future future : futureList) {
+//                try {
+//                    future.get();
+//                } catch (ExecutionException e) {
+//                    throw new ProcessException(e);
+//                }
+//            }
+//
+//            inputFile.stream().parallel().forEach(new Consumer<File>() {
+//                @Override
+//                public void accept(File file) {
+//                    fileCache.createFile()fileCacheMap.get(file)
+//                }
+//            });
 
 
             List<Path> dexPaths = new ArrayList<>();
             Collection<File> dexFiles = FileUtils.listFiles(tempDexFolder, new String[]{"dex"}, true);
             if (dexFiles != null) {
+                logger.warning("maindex outDexFiles size:" + dexFiles.size());
                 dexPaths = dexFiles.stream().map(file -> file.toPath()).collect(Collectors.toList());
             }
             mainforkJoinPool = new ForkJoinPool();
@@ -252,6 +346,44 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         }
         waitableExecutor.waitForTasksWithQuickFail(true);
 
+        atomicInteger.set(FileUtils.listFiles(outDexFolder, new String[]{"dex"}, true).size());
+
+        logger.warning("maindex final dexs size:" + atomicInteger.get());
+
+
+        sets.stream().forEach(awbBundle -> {
+            try {
+                FileUtils.moveFile(new File(((AppVariantContext) variantContext).getAwbDexOutput(awbBundle.getName()), "classes.dex"), new File(outDexFolder, "classes" + atomicInteger.incrementAndGet() + ".dex"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+
+    }
+
+    private FileCache.Inputs.Builder copyOf(FileCache.Inputs.Builder globalCacheBuilder) {
+        FileCache.Inputs.Builder builder = new FileCache.Inputs.Builder(FileCache.Command.PREDEX_LIBRARY).putString("globalCacheBuilder",globalCacheBuilder.build().toString());
+        return builder;
+    }
+
+    private void generateMainDexList(File mainDexListFile) {
+        Collection<File> inputs =AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
+        inputs.addAll(AtlasBuildContext.atlasMainDexHelper.getInputDirs());
+        FastMultiDexer fastMultiDexer = (FastMultiDexer) AtlasBuildContext.androidBuilderMap.get(variantContext.getScope().getGlobalScope().getProject()).multiDexer;
+        if (fastMultiDexer == null){
+            fastMultiDexer = new FastMultiDexer((AppVariantContext) variantContext);
+        }
+        Collection<File>files = null;
+        try {
+            files = fastMultiDexer.repackageJarList(inputs, mainDexListFile,variantContext.getScope().getVariantData().getName().toLowerCase().endsWith("release"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (files!= null && files.size() > 0){
+            AtlasBuildContext.atlasMainDexHelper.addAllMainDexJars(files);
+
+        }
     }
 
     @Override
@@ -259,19 +391,16 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         if (builder.getInputs() == null || builder.getInputs().size() == 0) {
             return;
         }
+
+
         if (dexOptions.getAdditionalParameters().contains("--no-optimize")) {
             logger.warning(DefaultDexOptions.OPTIMIZE_WARNING);
         }
 
-        Future future = null;
         if (shouldDexInProcess(dexOptions)) {
-            future = dexInProcess(builder, dexOptions, processOutputHandler);
+            dexInProcess(builder, dexOptions, processOutputHandler);
         } else {
-            future = dexOutOfProcess(builder, dexOptions, processOutputHandler);
-        }
-
-        if (future != null) {
-            futureList.add(future);
+            dexOutOfProcess(builder, dexOptions, processOutputHandler);
         }
 
     }
@@ -362,7 +491,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
     }
 
-    private Future dexInProcess(
+    private void dexInProcess(
             @NonNull final DexProcessBuilder builder,
             @NonNull final DexOptions dexOptions,
             @NonNull final ProcessOutputHandler outputHandler)
@@ -371,7 +500,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         logger.verbose("Dexing in-process : %1$s", submission);
         try {
             //noinspection FieldAccessNotGuarded
-            return sDexExecutorService
+            sDexExecutorService
                     .submit(
                             () -> {
                                 Stopwatch stopwatch = Stopwatch.createStarted();
@@ -381,14 +510,14 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                 logger.verbose(
                                         "Dexing %1$s took %2$s.", submission, stopwatch.toString());
                                 return null;
-                            })
-                    ;
+                            }).get()
+            ;
         } catch (Exception e) {
             throw new ProcessException(e);
         }
     }
 
-    private Future dexOutOfProcess(
+    private void dexOutOfProcess(
             @NonNull final DexProcessBuilder builder,
             @NonNull final DexOptions dexOptions,
             @NonNull final ProcessOutputHandler processOutputHandler)
@@ -411,7 +540,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                 task.call();
             } else {
                 //noinspection FieldAccessNotGuarded
-                return sDexExecutorService.submit(task);
+                sDexExecutorService.submit(task).get();
             }
         } catch (Exception e) {
             if (builder.getMinSdkVersion() >= 24
@@ -427,6 +556,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             }
             throw new ProcessException(e);
         }
-        return null;
     }
+
+
 }

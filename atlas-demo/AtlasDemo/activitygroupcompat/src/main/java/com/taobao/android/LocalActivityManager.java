@@ -79,7 +79,7 @@ public class LocalActivityManager {
             = new ArrayList<LocalActivityRecord>();
 
     /** True if only one activity can be resumed at a time */
-    private boolean mSingleMode;
+    private final boolean mSingleMode;
 
     /** Set to true once we find out the container is finishing. */
     private boolean mFinishing;
@@ -120,8 +120,25 @@ public class LocalActivityManager {
         NonConfigurationInstances = Hack.into("android.app.Activity$NonConfigurationInstances");
         ActivityThread_startActivityNow = AtlasHacks.ActivityThread.method("startActivityNow",Activity.class,String.class,
                 Intent.class,ActivityInfo.class, IBinder.class,Bundle.class,NonConfigurationInstances.getmClass());
-        ActivityThread_performRestartActivity = AtlasHacks.ActivityThread.method("performRestartActivity",IBinder.class);
-        ActivityThread_performDestroyActivity = AtlasHacks.ActivityThread.method("performDestroyActivity",IBinder.class,boolean.class);
+        if (Build.VERSION.SDK_INT >= 28) {
+            ActivityThread_performRestartActivity = AtlasHacks.ActivityThread.method(
+                    "performRestartActivity", IBinder.class, boolean.class);
+        } else {
+            ActivityThread_performRestartActivity = AtlasHacks.ActivityThread.method(
+                    "performRestartActivity", IBinder.class);
+
+        }
+
+        if (Build.VERSION.SDK_INT >= 28) {
+            ActivityThread_performDestroyActivity = AtlasHacks.ActivityThread.method(
+                    "performDestroyActivity", IBinder.class, boolean.class, int.class,
+                    boolean.class, String.class);
+
+        } else {
+            ActivityThread_performDestroyActivity = AtlasHacks.ActivityThread.method(
+                    "performDestroyActivity", IBinder.class, boolean.class);
+
+        }
         Activity_performSaveInstanceState = Hack.into(Activity.class).method("performSaveInstanceState",Bundle.class);
         Activity_onStart = Hack.into(Activity.class).method("onStart");
         Activity_onStop = Hack.into(Activity.class).method("onStop");
@@ -137,8 +154,27 @@ public class LocalActivityManager {
                     IBinder.class,boolean.class,String.class);
             ActivityThread_performStopActivity = AtlasHacks.ActivityThread.method("performStopActivity",
                     IBinder.class,boolean.class,String.class);
-            ActivityThread_performPauseActivity = AtlasHacks.ActivityThread.method("performPauseActivity",
-                    IBinder.class,boolean.class,boolean.class,String.class);
+            if (Build.VERSION.SDK_INT >= 28) {
+
+                try {
+
+
+                    ActivityThread_performPauseActivity = AtlasHacks.ActivityThread.method(
+                            "performPauseActivity",
+                            IBinder.class, boolean.class, /*boolean.class,*/ String.class,
+                            Class.forName(
+                                    "android.app.servertransaction.PendingTransactionActions"));
+                    ;
+                } catch (Exception e) {
+                    throw new IllegalStateException(e);
+                }
+
+            } else {
+                ActivityThread_performPauseActivity = AtlasHacks.ActivityThread.method(
+                        "performPauseActivity",
+                        IBinder.class, boolean.class, boolean.class, String.class);
+
+            }
         }
     }
 
@@ -206,7 +242,13 @@ public class LocalActivityManager {
                 if (desiredState == RESUMED) {
                     if (localLOGV) Log.v(TAG, r.id + ": restarting and resuming");
                     try {
-                        ActivityThread_performRestartActivity.invoke(mActivityThread, r);
+                        if (Build.VERSION.SDK_INT >= 28) {
+                            ActivityThread_performRestartActivity.invoke(mActivityThread, r, false);
+                        } else {
+                            ActivityThread_performRestartActivity.invoke(mActivityThread, r);
+
+                        }
+
                         if(ActivityThread_performResumeActivity.getMethod().getParameterTypes().length==2){
                             ActivityThread_performResumeActivity.invoke(mActivityThread,r,true);
                         }else{
@@ -288,7 +330,16 @@ public class LocalActivityManager {
             if(ActivityThread_performPauseActivity.getMethod().getParameterTypes().length==3){
                 instanceState = (Bundle) ActivityThread_performPauseActivity.invoke(mActivityThread,r,finishing,needState);
             }else{
-                instanceState = (Bundle) ActivityThread_performPauseActivity.invoke(mActivityThread,r,finishing,needState,"moveToState-RESUMED");
+                if (Build.VERSION.SDK_INT >= 28) {
+                    instanceState = (Bundle) ActivityThread_performPauseActivity.invoke(
+                            mActivityThread, r, finishing,/*needState,*/"moveToState-RESUMED",
+                            null);
+                } else {
+                    instanceState = (Bundle) ActivityThread_performPauseActivity.invoke(
+                            mActivityThread, r, finishing, needState, "moveToState-RESUMED");
+
+                }
+
             }
         }catch (InvocationTargetException e){
             throw new RuntimeException(e.getTargetException());
@@ -452,7 +503,14 @@ public class LocalActivityManager {
         }
         if (localLOGV) Log.v(TAG, r.id + ": destroying");
         try {
-            ActivityThread_performDestroyActivity.invoke(mActivityThread, r,finish);
+            if (Build.VERSION.SDK_INT >= 28) {
+                ActivityThread_performDestroyActivity.invoke(mActivityThread, r, finish, 0, false,
+                        "destroy");
+            } else {
+                ActivityThread_performDestroyActivity.invoke(mActivityThread, r, finish);
+
+            }
+
         }catch (InvocationTargetException e){
             throw new RuntimeException(e.getTargetException());
         }
@@ -768,7 +826,14 @@ public class LocalActivityManager {
             if (localLOGV) Log.v(TAG, r.id + ": destroying");
 //            mActivityThread.performDestroyActivity(r, finishing);
             try {
-                ActivityThread_performDestroyActivity.invoke(mActivityThread, r,finishing);
+                if (Build.VERSION.SDK_INT >= 28) {
+                    ActivityThread_performDestroyActivity.invoke(mActivityThread, r, finishing, 0,
+                            false, "destroy");
+                } else {
+                    ActivityThread_performDestroyActivity.invoke(mActivityThread, r, finishing);
+
+                }
+
             }catch (InvocationTargetException e){
                 throw new RuntimeException(e.getTargetException());
             }

@@ -272,6 +272,10 @@ public class AppVariantOutputContext {
 
     public AppBuildInfo appBuildInfo = new AppBuildInfo();
 
+    public ApkData getApkData() {
+        return apkData;
+    }
+
     private ApkData apkData;
 
     public Map<String, JavaCompile> getAwbJavacTasks() {

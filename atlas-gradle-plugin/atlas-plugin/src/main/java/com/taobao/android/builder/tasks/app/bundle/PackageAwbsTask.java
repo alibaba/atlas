@@ -305,6 +305,9 @@ public class PackageAwbsTask extends BaseTask {
         final Map<String, Long[]> monitors = new HashMap<String, Long[]>();
         long startTime = System.currentTimeMillis();
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            if (awbBundle.isMBundle){
+                continue;
+            }
             runnables.add(() -> {
 
                 try {
@@ -321,6 +324,11 @@ public class PackageAwbsTask extends BaseTask {
                        resourceFile = appVariantOutputContext.getAwbCompressResourcePackageOutputFile(awbBundle);
 
                    }else {
+                       resourceFile = appVariantOutputContext.getAwbAndroidResourcesMap()
+                               .get(awbBundle.getName())
+                               .getPackageOutputFile();
+                   }
+                   if (!resourceFile.exists()){
                        resourceFile = appVariantOutputContext.getAwbAndroidResourcesMap()
                                .get(awbBundle.getName())
                                .getPackageOutputFile();

@@ -3,6 +3,7 @@ package com.taobao.android.builder.tasks.app.merge.bundle;
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -48,6 +49,8 @@ public class MergeAwbAssets extends IncrementalTask{
 
     private File outputDir;
     private AwbBundle awbBundle;
+
+    private AppVariantContext variantContext;
 
     @OutputDirectory
     public File getOutputDir() {
@@ -118,6 +121,9 @@ public class MergeAwbAssets extends IncrementalTask{
             merger.cleanBlob(getIncrementalFolder());
             throw new ResourceException(e.getMessage(), e);
         }
+//        if (awbBundle.mBundle){
+//            org.apache.commons.io.FileUtils.moveDirectoryToDirectory(destinationDir,variantContext.getVariantData().mergeAssetsTask.getOutputDir(),true);
+//        }
     }
 
     @Override
@@ -402,6 +408,7 @@ public class MergeAwbAssets extends IncrementalTask{
             }
 
             mergeAssetsTask.awbBundle = awbBundle;
+            mergeAssetsTask.variantContext = (AppVariantContext) this.variantContext;
             mergeAssetsTask.setOutputDir(outputDir);
         }
     }

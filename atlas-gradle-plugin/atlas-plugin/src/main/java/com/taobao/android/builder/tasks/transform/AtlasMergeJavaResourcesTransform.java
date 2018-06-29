@@ -23,6 +23,9 @@ import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.MD5Util;
+import com.taobao.android.builder.tools.zip.BetterZip;
+import com.taobao.android.builder.tools.zip.ZipUtils;
+import org.gradle.internal.impldep.org.apache.tools.zip.ZipUtil;
 
 import java.io.*;
 import java.util.*;
@@ -544,7 +547,9 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                 }
             });
 
+
         }
+
 
         try {
             waitableExecutor.waitForTasksWithQuickFail(false);
@@ -552,11 +557,55 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
             e.printStackTrace();
         }
 
+        appVariantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
+            if (awbTransform.getAwbBundle().isMBundle){
+                    if (mergedType.contains(ExtendedContentType.NATIVE_LIBS)){
+                        File bundleOutputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
+                        try {
+                            org.apache.commons.io.FileUtils.copyDirectory(bundleOutputLocation,outputLocation);
+                            org.apache.commons.io.FileUtils.deleteDirectory(bundleOutputLocation);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }else {
+                        File bundleOutputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
+                        try {
+                            mergeZipToZip(bundleOutputLocation,outputLocation);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+            }
+        });
+
 
         paths.parallelStream().forEach(s -> processAtlasNativeSo(s));
 
 
 
+    }
+
+    private void mergeZipToZip(File bundleOutputLocation, File outputLocation) throws Exception {
+        if (bundleOutputLocation == null || !bundleOutputLocation.exists()){
+            return;
+        }
+
+        File tempDir = new File(outputLocation.getParentFile(),"unzip");
+
+        BetterZip.unzipDirectory(bundleOutputLocation,tempDir);
+
+        if (outputLocation != null && outputLocation.exists()){
+            BetterZip.unzipDirectory(outputLocation,tempDir);
+        }
+
+        if (tempDir.listFiles()!= null) {
+            FileUtils.deleteIfExists(outputLocation);
+            BetterZip.zipDirectory(tempDir, outputLocation);
+        }
+
+        org.apache.commons.io.FileUtils.deleteDirectory(tempDir);
     }
 
 
