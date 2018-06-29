@@ -213,9 +213,8 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
-import org.osgi.framework.Bundle;
+
 import org.osgi.framework.BundleException;
 
 import java.io.File;
@@ -226,10 +225,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
@@ -387,6 +384,31 @@ public final class BundleClassLoader extends BaseDexClassLoader {
     void cleanup(final boolean full) {
     }
 
+    @Override
+    protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
+        Class<?> clazz = findLoadedClass(className);
+
+        if (clazz == null) {
+//            ClassNotFoundException suppressed = null;
+//            try {
+//                clazz = this.parent.loadClass(className, false);
+//            } catch (ClassNotFoundException e) {
+//                suppressed = e;
+//            }
+
+            if (clazz == null) {
+                try {
+                    clazz = findClass(className);
+                } catch (ClassNotFoundException e) {
+//                    e.addSuppressed(suppressed);
+                    throw e;
+                }
+            }
+        }
+
+        return clazz;
+    }
+
     /**
      * find a class. The following order has to be used for loading classes:
      * <ol>
@@ -401,6 +423,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category ClassLoader
      * @see java.lang.ClassLoader#findClass(java.lang.String)
      */
+    @Override
     protected Class<?> findClass(final String classname) throws ClassNotFoundException {
 
         Class<?> clazz;
@@ -490,6 +513,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category ClassLoader
      * @see java.lang.ClassLoader#findResource(java.lang.String)
      */
+    @Override
     protected URL findResource(final String filename) {
         final String name = stripTrailing(filename);
         List<URL> results = findOwnResources(name, false);
@@ -512,6 +536,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category ClassLoader
      * @see java.lang.ClassLoader#findResources(java.lang.String)
      */
+    @Override
     protected Enumeration<URL> findResources(final String filename) {
         final String name = stripTrailing(filename);
         final List<URL> results = findOwnResources(name, true);
@@ -554,6 +579,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category ClassLoader
      * @see java.lang.ClassLoader#findLibrary(java.lang.String)
      */
+    @Override
     public String findLibrary(final String libraryName) {
         String fileName = System.mapLibraryName(libraryName);
 
@@ -588,6 +614,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category Object
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
         return "BundleClassLoader[Bundle" + bundle + "]";
     }
