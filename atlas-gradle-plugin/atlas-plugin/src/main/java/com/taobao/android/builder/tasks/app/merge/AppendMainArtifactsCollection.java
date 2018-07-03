@@ -2,17 +2,21 @@ package com.taobao.android.builder.tasks.app.merge;
 
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import org.apache.commons.io.FileUtils;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.io.SAXReader;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ArtifactCollection;
+import org.gradle.api.artifacts.component.ComponentArtifactIdentifier;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.FileCollection;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * AppendMainArtifactsCollection
@@ -25,6 +29,9 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
     private ArtifactCollection artifactResults;
 
     private Set<ResolvedArtifactResult> allResults = new HashSet<>();
+
+    public static Map<String,String> bundle2Map = new HashMap<>();
+
     private FileCollection allFiles = null;
 
 
@@ -33,7 +40,7 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
 
     private AndroidArtifacts.ArtifactType artifactType;
 
-    public AppendMainArtifactsCollection(Project project, ArtifactCollection artifactResults, AwbBundle awbBundle,AndroidArtifacts.ArtifactType artifactType) {
+    public AppendMainArtifactsCollection(Project project, ArtifactCollection artifactResults, AwbBundle awbBundle, AndroidArtifacts.ArtifactType artifactType) {
         this.artifactResults = artifactResults;
         this.awbBundle = awbBundle;
         this.project = project;
@@ -48,10 +55,10 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
         FileCollection files = artifactResults.getArtifactFiles();
         Set<File> fileSet = new HashSet<>();
 
-        switch (artifactType){
+        switch (artifactType) {
             case ANDROID_RES:
                 for (ResolvedArtifactResult resolvedArtifactResult : awbBundle.getResolvedResArtifactResults()) {
-                    fileSet.add(resolvedArtifactResult.getFile());
+                    fileSet.add(correctFile(resolvedArtifactResult.getFile()));
                 }
                 allFiles = files.plus(project.files(fileSet));
                 return allFiles;
@@ -59,11 +66,11 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
                 for (ResolvedArtifactResult resolvedArtifactResult : awbBundle.getResolvedAssetsArtifactResults()) {
                     fileSet.add(resolvedArtifactResult.getFile());
                 }
-                allFiles=files.plus(project.files(fileSet));
+                allFiles = files.plus(project.files(fileSet));
                 return allFiles;
         }
 
-       return null;
+        return null;
     }
 
     @Override
@@ -71,7 +78,7 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
         if (allResults.size() == 0) {
             allResults.addAll(artifactResults.getArtifacts());
 
-            switch (artifactType){
+            switch (artifactType) {
                 case ASSETS:
                     allResults.addAll(awbBundle.getResolvedAssetsArtifactResults());
                     break;
@@ -99,4 +106,30 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
         }
         return allResults.iterator();
     }
+
+    private File correctFile(File file) {
+            Collection<File> files = FileUtils.listFiles(file, new String[]{"xml"}, true);
+            files.parallelStream().forEach(file1 -> {
+                List<String> lines = null;
+                try {
+                    lines = FileUtils.readLines(file1);
+                    lines.forEach(new Consumer<String>() {
+                        @Override
+                        public void accept(String s) {
+                            if (s.contains("http://schemas.android.com/apk/res/" + awbBundle.getPackageName())){
+                                bundle2Map.put(file1.getName(),awbBundle.getPackageName());
+                            }
+//                            String s1 = s.replace("http://schemas.android.com/apk/res/" + awbBundle.getPackageName(), "http://schemas.android.com/apk/res-auto");
+//                            newLines.add(s1);
+                        }
+                    });
+//                    FileUtils.writeLines(file1, newLines);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        return file;
+
+    }
+
 }
