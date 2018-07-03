@@ -308,7 +308,7 @@ public class DelegateClassLoader extends PathClassLoader {
                 try {
                     if (classloader != null) {
                         clazz = classloader.loadClass(className);
-                        if (clazz != null) {
+                        if (clazz != null&& bundle.checkValidate()) {
                             return clazz;
                         }
                     }
@@ -348,7 +348,7 @@ public class DelegateClassLoader extends PathClassLoader {
                 if(bundle.getArchive().isDexOpted()){
                     ClassLoader classloader = bundle.getClassLoader();
                     try {
-                        if (classloader != null) {
+                        if (classloader != null && bundle.checkValidate()) {
                             clazz = classloader.loadClass(className);
                             if (clazz != null) {
                                 return clazz;

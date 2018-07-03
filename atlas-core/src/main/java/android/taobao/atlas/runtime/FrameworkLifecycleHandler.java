@@ -213,6 +213,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Looper;
+import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.BundleInstaller;
@@ -231,6 +233,8 @@ import android.taobao.atlas.startup.patch.KernalConstants;
 import android.taobao.atlas.util.StringUtils;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
+
+import java.util.List;
 
 
 public class FrameworkLifecycleHandler implements FrameworkListener {
@@ -307,6 +311,19 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
 
             }
         });
+
+        List<BundleListing.BundleInfo> allMbundleInfos = AtlasBundleInfoManager.instance().getAllMBundleInfo();
+
+        for (BundleListing.BundleInfo bundleInfo:allMbundleInfos){
+            try {
+                Application app = BundleLifecycleHandler.newApplication(bundleInfo.applicationName,
+                        Framework.getSystemClassLoader());
+                app.onCreate();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+        }
 
 //        try {
 //            if (RuntimeVariables.androidApplication.getPackageName().equals(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication))) {

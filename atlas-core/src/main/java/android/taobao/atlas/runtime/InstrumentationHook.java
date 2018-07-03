@@ -582,23 +582,18 @@ public class InstrumentationHook extends Instrumentation {
 			// }
 			activity = mBase.newActivity(cl, className, intent);
 		} catch (ClassNotFoundException e) {
-			String launchActivityName = "";
-			Intent launchIntentForPackage = RuntimeVariables.androidApplication.getPackageManager().getLaunchIntentForPackage(RuntimeVariables.androidApplication.getPackageName());
-			if (launchIntentForPackage != null) {
-				ComponentName componentName = launchIntentForPackage.resolveActivity(RuntimeVariables.androidApplication.getPackageManager());
-				launchActivityName = componentName.getClassName();
-			}
+			String launchActivityName = RuntimeVariables.getLauncherClassName();
             if (TextUtils.isEmpty(launchActivityName)) {
                 throw e;
             }
+
             ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
             List<RunningTaskInfo> runningTaskInfos = manager.getRunningTasks(1);
             if (runningTaskInfos != null && runningTaskInfos.size() > 0) {
-                if (runningTaskInfos.get(0).numActivities > 1) {
+                if (runningTaskInfos.get(0).numActivities > 0) {
                 	if(Framework.getClassNotFoundCallback()!=null){
                 		if(intent.getComponent() ==null){
             			intent.setClassName(context,className);
-
             		}
                         try {
                             Framework.getClassNotFoundCallback().returnIntent(intent);

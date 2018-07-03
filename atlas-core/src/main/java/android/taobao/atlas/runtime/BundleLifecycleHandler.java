@@ -298,9 +298,9 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
             detail.put("bundles", bundles);
             Exception e = new Exception();
             AtlasMonitor.getInstance().report(AtlasMonitor.VALIDATE_CLASSES, detail, e);
-            if(Framework.isDeubgMode()){
-                throw new RuntimeException("validateClass fail,bundle can't be started :"+b);
-            }
+//            if(Framework.isDeubgMode()){
+//                throw new RuntimeException("validateClass fail,bundle can't be started :"+b);
+//            }
             return;
         }
         long time = System.currentTimeMillis();
