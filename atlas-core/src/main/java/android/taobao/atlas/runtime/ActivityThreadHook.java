@@ -292,6 +292,10 @@ public class ActivityThreadHook implements Handler.Callback{
             ensureLoadedApk();
         } catch (Throwable e) {
             e.printStackTrace();
+            handleCreateServiceException(msg, e);
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("msg", msg);
+            AtlasMonitor.getInstance().report(AtlasMonitor.ACTIVITY_THREAD_EXCEPTION, detail, e);
             String appVersion = null;
             String avliableSpace = "";
             long filesSize = 0;
@@ -313,12 +317,6 @@ public class ActivityThreadHook implements Handler.Callback{
             if (e instanceof ClassNotFoundException || e.toString().contains("ClassNotFoundException")) {
                 //RECEIVER 参见ActivityThread
                 if(msg.what == 113 || msg.what==114) {
-                    handleCreateServiceException(msg, e);
-                    Map<String, Object> detail = new HashMap<>();
-                    detail.put("msg", msg);
-                    AtlasMonitor.getInstance().report(AtlasMonitor.ACTIVITY_THREAD_HOOK_CLASS_NOT_FOUND_EXCEPTION,
-                                                      detail,
-                                                      e);
                     return true;
                 }
                 Object loadedapk = AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,

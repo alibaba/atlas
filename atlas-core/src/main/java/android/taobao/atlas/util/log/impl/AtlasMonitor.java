@@ -230,6 +230,7 @@ public class AtlasMonitor {
     public static final String INSTALL = "install";
 
     public static final String ACTIVITY_THREAD_HOOK_BAD_TOKEN_EXCEPTION = "activity_thread_hook_bad_token_exception";
+    public static final String ACTIVITY_THREAD_EXCEPTION = "activity_thread_hook_exception";
     public static final String ACTIVITY_THREAD_HOOK_CLASS_NOT_FOUND_EXCEPTION = "activity_thread_hook_class_not_found_exception";
 
     public static final String NEWCOMPONENT_SERVICE = "newcomponent_service";
