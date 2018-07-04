@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
+apply from: 'http://gitlab.alibaba-inc.com/android-build-system/buildscript/raw/master/mtl-publish.gradle'
 
 
 def mini = getEnvValue("mini", 'false')
@@ -30,7 +31,7 @@ repositories {
 group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
-version "5.0.8.7-rc1"
+version "5.1.0.3-SNAPSHOT"
 
 String getEnvValue(key, defValue) {
     def val = System.getProperty(key);

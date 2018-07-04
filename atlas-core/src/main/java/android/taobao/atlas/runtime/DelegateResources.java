@@ -246,11 +246,11 @@ public class DelegateResources extends Resources {
     private static AssetManagerProcessor sAssetManagerProcessor;
     private static ResourcesProcessor    sResourcesProcessor;
     private static ResourceIdFetcher     sResourcesFetcher;
-    private static ArrayList<String> sFailedAsssetPath = new ArrayList<String>();
+    private static final ArrayList<String> sFailedAsssetPath = new ArrayList<String>();
 
     private static String sKernalPathPath = null;
     private static String sAssetsPatchDir = null;
-    private HashMap<String,Resources> bundleResourceWalkRound = new HashMap<>();
+    private final HashMap<String, Resources> bundleResourceWalkRound = new HashMap<>();
     private static ColorStateList walkroundStateList;
 
 
@@ -303,7 +303,7 @@ public class DelegateResources extends Resources {
         return result;
     }
 
-    public Drawable getDrawable(int id, Theme theme) throws NotFoundException {
+    @Override public Drawable getDrawable(int id, Theme theme) throws NotFoundException {
         Drawable result = null;
         NotFoundException exception = null;
         try{
@@ -576,50 +576,70 @@ public class DelegateResources extends Resources {
                         appendAssetPath(manager, sAssetsPatchDir, false);
                     }
                 }else{
-                    int retryCount = 2;
-                    int cookie = 0;
-                    do {
-                        retryCount--;
-                        //1. add native path
-                        if (AtlasHacks.AssetManager_addAssetPathNative!=null && AtlasHacks.AssetManager_addAssetPathNative.getMethod()!=null) {
-                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNative.invoke(manager, newAssetPath);
-                        } else if(AtlasHacks.AssetManager_addAssetPathNative24!=null && AtlasHacks.AssetManager_addAssetPathNative24.getMethod()!=null){
-                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNative24.invoke(manager, newAssetPath, false);
-                        } else if(AtlasHacks.AssetManager_addAssetPathNativeSamSung!=null && AtlasHacks.AssetManager_addAssetPathNativeSamSung.getMethod()!=null){
-                            cookie = (int)AtlasHacks.AssetManager_addAssetPathNativeSamSung.invoke(manager, newAssetPath, 0);
-                        } else{
-                            throw new RuntimeException("no valid addassetpathnative method");
-                        }
-                        if(cookie>0){
-                            break;
-                        }
-                    }while(retryCount>0);
-                    if(cookie>0) {
-                        //2. getSeedNum
-                        Object[] mStringBlocks = (Object[]) AtlasHacks.AssetManager_mStringBlocks.get(manager);
-                        int seedNum = mStringBlocks.length;
-
-                        //3. getStringBlockCount
-                        int num = (int) AtlasHacks.AssetManager_getStringBlockCount.invoke(manager);
-
-                        //4. init newStringBlockList
-                        Object newStringBlockList = Array.newInstance(AtlasHacks.StringBlock.getmClass(), num);
-                        for (int i = 0; i < num; i++) {
-                            if (i < seedNum) {
-                                Array.set(newStringBlockList, i, mStringBlocks[i]);
+                    if (Build.VERSION.SDK_INT >= 28) {
+                        appendAssetPath(manager, newAssetPath, false);
+                    } else {
+                        int retryCount = 2;
+                        int cookie = 0;
+                        do {
+                            retryCount--;
+                            //1. add native path
+                            if (AtlasHacks.AssetManager_addAssetPathNative != null
+                                && AtlasHacks.AssetManager_addAssetPathNative.getMethod() != null) {
+                                cookie =
+                                    (int) AtlasHacks.AssetManager_addAssetPathNative.invoke(manager,
+                                        newAssetPath);
+                            } else if (AtlasHacks.AssetManager_addAssetPathNative24 != null
+                                && AtlasHacks.AssetManager_addAssetPathNative24.getMethod()
+                                != null) {
+                                cookie = (int) AtlasHacks.AssetManager_addAssetPathNative24.invoke(
+                                    manager, newAssetPath, false);
+                            } else if (AtlasHacks.AssetManager_addAssetPathNativeSamSung != null
+                                && AtlasHacks.AssetManager_addAssetPathNativeSamSung.getMethod()
+                                != null) {
+                                cookie =
+                                    (int) AtlasHacks.AssetManager_addAssetPathNativeSamSung.invoke(
+                                        manager, newAssetPath, 0);
                             } else {
-                                Array.set(newStringBlockList, i, AtlasHacks.StringBlock_constructor.getInstance(
-                                        AtlasHacks.AssetManager_getNativeStringBlock.invoke(manager, i), true
-                                ));
+                                throw new RuntimeException("no valid addassetpathnative method");
                             }
+                            if (cookie > 0) {
+                                break;
+                            }
+                        } while (retryCount > 0);
+                        if (cookie > 0) {
+                            //2. getSeedNum
+                            Object[] mStringBlocks =
+                                (Object[]) AtlasHacks.AssetManager_mStringBlocks.get(manager);
+                            int seedNum = mStringBlocks.length;
+
+                            //3. getStringBlockCount
+                            int num =
+                                (int) AtlasHacks.AssetManager_getStringBlockCount.invoke(manager);
+
+                            //4. init newStringBlockList
+                            Object newStringBlockList =
+                                Array.newInstance(AtlasHacks.StringBlock.getmClass(), num);
+                            for (int i = 0; i < num; i++) {
+                                if (i < seedNum) {
+                                    Array.set(newStringBlockList, i, mStringBlocks[i]);
+                                } else {
+                                    Array.set(newStringBlockList, i,
+                                        AtlasHacks.StringBlock_constructor.getInstance(
+                                            AtlasHacks.AssetManager_getNativeStringBlock.invoke(
+                                                manager, i), true));
+                                }
+                            }
+                            //5. replace AssetManager.mStringBlocks
+                            AtlasHacks.AssetManager_mStringBlocks.set(manager, newStringBlockList);
+                        } else {
+                            sFailedAsssetPath.add(newAssetPath);
+                            Map<String, Object> detail = new HashMap<>();
+                            detail.put("appendAssetPath", newAssetPath);
+                            AtlasMonitor.getInstance()
+                                .report(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL, detail,
+                                    new RuntimeException());
                         }
-                        //5. replace AssetManager.mStringBlocks
-                        AtlasHacks.AssetManager_mStringBlocks.set(manager, newStringBlockList);
-                    }else{
-                        sFailedAsssetPath.add(newAssetPath);
-                        Map<String, Object> detail = new HashMap<>();
-                        detail.put("appendAssetPath", newAssetPath);
-                        AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_APPEND_ASSETPATH_FAIL, detail, new RuntimeException());
                     }
                 }
             }
@@ -799,14 +819,33 @@ public class DelegateResources extends Resources {
         public static ArrayList<String> getAssetPath(AssetManager manager){
             ArrayList<String> assetPaths = new ArrayList<String>();
             try {
-                Method method = manager.getClass().getDeclaredMethod("getStringBlockCount");
-                method.setAccessible(true);
-                int assetsPathCount = (Integer) method.invoke(manager);
-                for (int x = 0; x < assetsPathCount; x++) {
-                    // Cookies map to string blocks starting at 1
-                    String assetsPath = (String) manager.getClass().getMethod("getCookieName", int.class).invoke(manager, x + 1);
-                    if ((sDefaultAssetPathList== null)||(!TextUtils.isEmpty(assetsPath) && !sDefaultAssetPathList.containsKey(assetsPath))) {
-                        assetPaths.add(assetsPath);
+                if (Build.VERSION.SDK_INT >= 28) {
+                    Method method = manager.getClass().getDeclaredMethod("getApkAssets");
+                    method.setAccessible(true);
+                    final Object/*ApkAssets*/[] apkAssets = ((Object[]) method.invoke(manager));
+                    int assetsPathCount = apkAssets.length;
+                    for (int x = 0; x < assetsPathCount; x++) {
+                        String assetsPath = (String) apkAssets[x].getClass()
+                            .getMethod("getAssetPath")
+                            .invoke(apkAssets[x]);
+                        if ((sDefaultAssetPathList == null) || (!TextUtils.isEmpty(assetsPath)
+                            && !sDefaultAssetPathList.containsKey(assetsPath))) {
+                            assetPaths.add(assetsPath);
+                        }
+                    }
+                } else {
+                    Method method = manager.getClass().getDeclaredMethod("getStringBlockCount");
+                    method.setAccessible(true);
+                    int assetsPathCount = (Integer) method.invoke(manager);
+                    for (int x = 0; x < assetsPathCount; x++) {
+                        // Cookies map to string blocks starting at 1
+                        String assetsPath = (String) manager.getClass()
+                            .getMethod("getCookieName", int.class)
+                            .invoke(manager, x + 1);
+                        if ((sDefaultAssetPathList == null) || (!TextUtils.isEmpty(assetsPath)
+                            && !sDefaultAssetPathList.containsKey(assetsPath))) {
+                            assetPaths.add(assetsPath);
+                        }
                     }
                 }
             } catch (Throwable e) {
