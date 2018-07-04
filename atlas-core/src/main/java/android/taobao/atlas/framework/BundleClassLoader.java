@@ -396,14 +396,14 @@ public final class BundleClassLoader extends BaseDexClassLoader {
 //                suppressed = e;
 //            }
 
-            if (clazz == null) {
+            //if (clazz == null) {
                 try {
                     clazz = findClass(className);
                 } catch (ClassNotFoundException e) {
 //                    e.addSuppressed(suppressed);
                     throw e;
                 }
-            }
+            //}
         }
 
         return clazz;
