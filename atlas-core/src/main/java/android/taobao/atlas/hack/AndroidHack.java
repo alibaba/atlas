@@ -220,6 +220,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.taobao.atlas.framework.Atlas;
+import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
 import android.taobao.atlas.runtime.ActivityThreadHook;
 import android.taobao.atlas.runtime.DelegateClassLoader;
@@ -366,7 +367,23 @@ public class AndroidHack {
      * @param classLoader
      * @throws Exception
      */
-    public static void injectClassLoader(String packageName, ClassLoader classLoader) throws Exception {
+    public static void injectClassLoader(String packageName, ClassLoader classLoader)
+        throws Exception {
+        try {
+            Object oApplicationLoaders = AtlasHacks.ApplicationLoaders_getDefault.invoke(null);
+            Map<String, ClassLoader> mLoaders =
+                AtlasHacks.ApplicationLoaders_mLoaders.get(oApplicationLoaders);
+            for (Map.Entry<String, ClassLoader> e : mLoaders.entrySet()) {
+                //log.v(TAG, "loader: " + e.getKey() + " -> " + e.getValue());
+                if (e.getValue() == Framework.getSystemClassLoader()) {
+                    //log.v(TAG, " YES, that is we want!");
+                    e.setValue(classLoader);
+                }
+            }
+        } catch (Exception ex) {
+            //log.e(TAG, "fail to replace ApplicationLoaders.mLoaders[PKG]", ex);
+            ex.printStackTrace();
+        }
         Object activityThread = getActivityThread();
         if (activityThread == null) {
             throw new Exception("Failed to get ActivityThread.sCurrentActivityThread");
