@@ -269,21 +269,26 @@ public class GenerateAtlasSourceTask extends BaseTask {
     void generate() {
 
         InjectParam injectParam = getInput();
-        boolean supportRemoteComponent = true;
-        List<AndroidLibrary> libraries = AtlasBuildContext.androidDependencyTrees.get("debug").getMainBundle().getAndroidLibraries();
-        if(libraries.size()>0){
-            for(AndroidLibrary library : libraries){
-                MavenCoordinates coordinates = library.getResolvedCoordinates();
-                if(coordinates.getArtifactId().equals("atlas_core") && coordinates.getGroupId().equals("com.taobao.android")){
-                    if(coordinates.getVersion().compareTo("5.0.8")<0){
-                        supportRemoteComponent = false;
-                    }
-                }
+      boolean supportRemoteComponent = true;
+      List<AndroidLibrary> libraries = AtlasBuildContext.androidDependencyTrees.get("debug")
+          .getMainBundle()
+          .getAndroidLibraries();
+      if (libraries.size() > 0) {
+        for (AndroidLibrary library : libraries) {
+          MavenCoordinates coordinates = library.getResolvedCoordinates();
+          if (coordinates.getArtifactId().equals("atlas_core") && coordinates.getGroupId()
+              .equals("com.taobao.android")) {
+            if (coordinates.getVersion().compareTo("5.0.8") < 0) {
+              supportRemoteComponent = false;
             }
+          }
         }
-        List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
-        File outputSourceGeneratorFile = new File(outputDir,"android/taobao/atlas/framework/AtlasBundleInfoGenerator.java");
-        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info,supportRemoteComponent);
+      }
+      List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo, BasicBundleInfo.class);
+      File outputSourceGeneratorFile =
+          new File(outputDir, "android/taobao/atlas/framework/AtlasBundleInfoGenerator.java");
+      StringBuffer infoGeneratorSourceStr =
+          new BundleInfoSourceCreator().createBundleInfoSourceStr(info, supportRemoteComponent);
         outputSourceGeneratorFile.getParentFile().mkdirs();
         try {
             FileUtils.writeStringToFile(outputSourceGeneratorFile, infoGeneratorSourceStr.toString());
@@ -372,7 +377,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<GenerateAtlasSourceTask> {
 
-        private AppVariantContext appVariantContext;
+      private final AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);

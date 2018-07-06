@@ -209,6 +209,7 @@
 
 package com.taobao.android.builder.tools.bundleinfo.model;
 
+import java.util.HashMap;
 import java.util.Set;
 
 import com.google.common.collect.Sets;
@@ -239,9 +240,10 @@ public class BasicBundleInfo {
 
     private Set<String> contentProviders = Sets.newHashSet();
 
-    private HashMap<String,String> remoteViews = new HashMap<String,String>();
+    private HashMap<String, String> remoteFragments = new HashMap<String, String>();
+    private HashMap<String, String> remoteViews = new HashMap<String, String>();
 
-    private HashMap<String,String> remoteTransactors = new HashMap<String,String>();
+    private HashMap<String, String> remoteTransactors = new HashMap<String, String>();
 
     private Boolean isInternal = true;
 

@@ -355,14 +355,16 @@ public class ApkInjectInfoCreator {
                 basicBundleInfo.getReceivers().addAll(baseBasicBundleInfo.getReceivers());
                 basicBundleInfo.getServices().addAll(baseBasicBundleInfo.getServices());
 
-                if(!baseBundleInfo.getRemoteFragments().isEmpty()){
-                    basicBundleInfo.getRemoteFragments().putAll(baseBundleInfo.getRemoteFragments());
+                if (!baseBasicBundleInfo.getRemoteFragments().isEmpty()) {
+                    basicBundleInfo.getRemoteFragments().putAll(
+                            baseBasicBundleInfo.getRemoteFragments());
                 }
-                if(!baseBundleInfo.getRemoteViews().isEmpty()){
-                    basicBundleInfo.getRemoteViews().putAll(baseBundleInfo.getRemoteViews());
+                if (!baseBasicBundleInfo.getRemoteViews().isEmpty()) {
+                    basicBundleInfo.getRemoteViews().putAll(baseBasicBundleInfo.getRemoteViews());
                 }
-                if(!baseBundleInfo.getRemoteTransactors().isEmpty()){
-                    basicBundleInfo.getRemoteTransactors().putAll(baseBundleInfo.getRemoteTransactors());
+                if (!baseBasicBundleInfo.getRemoteTransactors().isEmpty()) {
+                    basicBundleInfo.getRemoteTransactors()
+                            .putAll(baseBasicBundleInfo.getRemoteTransactors());
                 }
                 mergeBasicBundleInfos.remove(baseBasicBundleInfo);
                 mergeBasicBundleInfos.add(basicBundleInfo);
