@@ -208,13 +208,10 @@
 
 package android.taobao.atlas.framework;
 
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.DelegateResources;
-import android.taobao.atlas.util.WrapperUtil;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.util.Log;
@@ -227,10 +224,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public final class BundleImpl implements Bundle {
 
@@ -262,13 +257,15 @@ public final class BundleImpl implements Bundle {
     /**
      * create a new bundle object from InputStream. This is used when a new bundle is installed.
      *
+     * @param bundles
      * @param location the bundle location.
      * @param stream the input stream.
      * @throws BundleException if something goes wrong.
      * @throws IOException
      */
     BundleImpl(final File bundleDir, final String location, final InputStream stream,
-               final File file, String unique_tag, boolean installForCurrentVersion, long dexPatchVersion) throws BundleException, IOException{
+            final File file, String unique_tag, boolean installForCurrentVersion,
+            long dexPatchVersion, Map<String, Bundle> bundles) throws BundleException, IOException {
         this.location = location;
         this.bundleDir = bundleDir;
         if(installForCurrentVersion) {
@@ -282,7 +279,7 @@ public final class BundleImpl implements Bundle {
         this.state = INSTALLED;
         if (installForCurrentVersion) {
             resolveBundle();
-            Framework.bundles.put(location, this);
+            bundles.put(location, this);
             // notify the listeners
             Framework.notifyBundleListeners(BundleEvent.INSTALLED, this);
         }
@@ -292,9 +289,10 @@ public final class BundleImpl implements Bundle {
      * reload a new bundle object from a storage location. Used after framework restarts.
      *
      * @param bcontext the bundle context.
+     * @param bundles
      * @throws Exception if something goes wrong.
      */
-    BundleImpl(final BundleContext bcontext) throws Exception{
+    BundleImpl(final BundleContext bcontext, Map<String, Bundle> bundles) throws Exception {
         long start = System.currentTimeMillis();
         this.location = bcontext.location;
         long dexPatchVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(location);
@@ -329,7 +327,7 @@ public final class BundleImpl implements Bundle {
         }
 
         resolveBundle();
-        Framework.bundles.put(location, this);
+        bundles.put(location, this);
 
         // notify the listeners
         Framework.notifyBundleListeners(BundleEvent.INSTALLED, this);
@@ -380,6 +378,7 @@ public final class BundleImpl implements Bundle {
      * @see org.osgi.framework.Bundle#getBundleId()
      * @category Bundle
      */
+    @Override
     public long getBundleId() {
         return 0;
     }
@@ -391,6 +390,7 @@ public final class BundleImpl implements Bundle {
      * @see org.osgi.framework.Bundle#getLocation()
      * @category Bundle
      */
+    @Override
     public String getLocation() {
         return location;
     }
@@ -411,6 +411,7 @@ public final class BundleImpl implements Bundle {
      * @see org.osgi.framework.Bundle#getResource(java.lang.String)
      * @category Bundle
      */
+    @Override
     public URL getResource(final String name) {
         if (state == UNINSTALLED) {
             throw new IllegalStateException("Bundle " + toString() + " has been uninstalled");
@@ -425,6 +426,7 @@ public final class BundleImpl implements Bundle {
      * @see org.osgi.framework.Bundle#getState()
      * @category Bundle
      */
+    @Override
     public int getState() {
         return state;
     }
@@ -436,6 +438,7 @@ public final class BundleImpl implements Bundle {
      * @see org.osgi.framework.Bundle#start()
      * @category Bundle
      */
+    @Override
     public void start() throws BundleException {
         startBundle();
     }
@@ -558,6 +561,7 @@ public final class BundleImpl implements Bundle {
      * @see org.osgi.framework.Bundle#uninstall()
      * @category Bundle
      */
+    @Override
     public synchronized void uninstall() throws BundleException {
 
         if (state == UNINSTALLED) {
@@ -590,6 +594,7 @@ public final class BundleImpl implements Bundle {
      * @return the string.
      * @category Object
      */
+    @Override
     public String toString() {
         return location;
     }

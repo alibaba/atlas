@@ -231,6 +231,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -548,7 +549,7 @@ public class BundleInstaller implements Callable{
 
     }
 
-    public Bundle getInstalledBundle(String bundleName){
+    public Bundle getInstalledBundle(String bundleName, Map<String, Bundle> bundles) {
         // boolean lockSuccess = false;
         Bundle bundle = Framework.getBundle(bundleName);
         if (bundle == null) {
@@ -557,7 +558,7 @@ public class BundleInstaller implements Callable{
                 BundleLock./*Read*/WriteLock(bundleName/*location*/);
                 bundle = Framework.getBundle(bundleName);
                 if (bundle == null) {
-                    bundle = Framework.restoreFromExistedBundle(bundleName);
+                    bundle = Framework.restoreFromExistedBundle(bundleName, bundles);
                 }
             } finally {
                 // if (lockSuccess) {
@@ -576,6 +577,7 @@ public class BundleInstaller implements Callable{
 
     @Override
     public synchronized Void call() throws Exception {
+        Map<String, Bundle> bundles = new ConcurrentHashMap<String, Bundle>();
         try {
             Bundle bundle = null;
             if (!mTransitive) {
@@ -583,36 +585,44 @@ public class BundleInstaller implements Callable{
                     if (FileUtils.getUsableSpace(Environment.getDataDirectory()) >= 5) {
                         if (mBundleSourceInputStream != null && mBundleSourceInputStream.length > x
                             && mBundleSourceInputStream[x] != null) {
-                            if ((bundle = getInstalledBundle(mLocation[x])) == null) {
+                            if ((bundle = getInstalledBundle(mLocation[x], bundles)) == null) {
                                 if ((BaselineInfoManager.instance().isDexPatched(mLocation[x]) || BaselineInfoManager
                                     .instance().isUpdated(mLocation[x]))) {
                                     continue;
                                 }
-                                bundle = Framework.installNewBundle(mLocation[x], mBundleSourceInputStream[x]);
+                                bundle = Framework.installNewBundle(mLocation[x],
+                                        mBundleSourceInputStream[x],
+
+
+                                        bundles);
                             }
                             if (bundle != null) {
                                 ((BundleImpl)bundle).optDexFile();
                             }
                         } else if (mBundleSourceFile != null && mBundleSourceFile.length > x
                             && mBundleSourceFile[x] != null) {
-                            if ((bundle = getInstalledBundle(mLocation[x])) == null) {
+                            if ((bundle = getInstalledBundle(mLocation[x], bundles)) == null) {
                                 if ((BaselineInfoManager.instance().isDexPatched(mLocation[x]) || BaselineInfoManager
                                     .instance().isUpdated(mLocation[x]))) {
                                     continue;
                                 }
-                                bundle = Framework.installNewBundle(mLocation[x], mBundleSourceFile[x]);
+                                bundle = Framework.installNewBundle(mLocation[x],
+                                        mBundleSourceFile[x],
+
+                                        bundles);
                             }
                             if (bundle != null) {
                                 ((BundleImpl)bundle).optDexFile();
                             }
                         } else {
-                            if ((bundle = getInstalledBundle(mLocation[x])) == null && AtlasBundleInfoManager.instance()
+                            if ((bundle = getInstalledBundle(mLocation[x], bundles)) == null
+                                    && AtlasBundleInfoManager.instance()
                                 .isInternalBundle(mLocation[x])) {
                                 if ((BaselineInfoManager.instance().isDexPatched(mLocation[x]) || BaselineInfoManager
                                     .instance().isUpdated(mLocation[x]))) {
                                     continue;
                                 }
-                                bundle = installBundleFromApk(mLocation[x]);
+                                bundle = installBundleFromApk(mLocation[x], bundles);
                                 if (bundle != null) {
                                     ((BundleImpl)bundle).optDexFile();
                                 }
@@ -629,15 +639,16 @@ public class BundleInstaller implements Callable{
                     Log.e("BundleInstaller",
                         mLocation[x] + "-->" + bundlesForInstall.toString() + ", thread=" + Thread.currentThread());
                     for (String bundleName : bundlesForInstall) {
-                        if ((bundle = getInstalledBundle(bundleName)) == null) {
+                        if ((bundle = getInstalledBundle(bundleName, bundles)) == null) {
                             if ((BaselineInfoManager.instance().isDexPatched(bundleName) || BaselineInfoManager
                                 .instance().isUpdated(bundleName))) {
                                 continue;
                             }
                             if (FileUtils.getUsableSpace(Environment.getDataDirectory()) >= 5) {
                                 //has enough space
-                                if (AtlasBundleInfoManager.instance().isInternalBundle(bundleName)) {
-                                    bundle = installBundleFromApk(bundleName);
+                                if (AtlasBundleInfoManager.instance().isInternalBundle
+                                        (bundleName)) {
+                                    bundle = installBundleFromApk(bundleName, bundles);
                                     if (bundle != null) {
                                         ((BundleImpl)bundle).optDexFile();
                                     }
@@ -661,6 +672,8 @@ public class BundleInstaller implements Callable{
             detail.put("mLocation", mLocation);
             AtlasMonitor.getInstance().report(AtlasMonitor.INSTALL, detail, e);
             throw e;
+        } finally {
+            Framework.bundles.putAll(bundles);
         }
     }
 
@@ -729,13 +742,15 @@ public class BundleInstaller implements Callable{
         return true;
     }
 
-    private Bundle installBundleFromApk(String bundleName) throws Exception{
+    private Bundle installBundleFromApk(String bundleName, Map<String, Bundle> bundles)
+            throws Exception {
         Bundle bundle = null;
         findBundleSource(bundleName);
         if(mTmpBundleSourceFile!=null){
-            bundle = Framework.installNewBundle(bundleName,mTmpBundleSourceFile);
+            bundle = Framework.installNewBundle(bundleName, mTmpBundleSourceFile, bundles);
         }else if(mTmpBundleSourceInputStream!=null){
-            bundle = Framework.installNewBundle(bundleName,mTmpBundleSourceInputStream);
+            bundle = Framework.installNewBundle(bundleName, mTmpBundleSourceInputStream,
+                    Framework.bundles);
         }else{
             IOException e = new IOException("can not find bundle source file");
             Map<String, Object> detail = new HashMap<>();

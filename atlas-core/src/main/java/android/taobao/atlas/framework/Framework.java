@@ -238,18 +238,14 @@ import org.osgi.framework.FrameworkListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import android.os.*;
 import android.widget.Toast;
-
-import java.util.zip.ZipEntry;
 
 import static android.os.Environment.MEDIA_UNKNOWN;
 
@@ -384,10 +380,12 @@ public final class Framework {
      *
      * @param location the bundle location.
      * @param in       the input stream.
+     * @param bundles
      * @return a Bundle object.
      * @throws BundleException if the installation failed.
      */
-     static BundleImpl installNewBundle(final String location, final InputStream in)throws BundleException {
+    static BundleImpl installNewBundle(final String location, final InputStream in,
+            Map<String, Bundle> bundles) throws BundleException {
         File bundleDir = null;
         try{
             BundleLock.WriteLock(location);
@@ -404,7 +402,8 @@ public final class Framework {
 
             BundleImpl bundle = null;
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            bundle = new BundleImpl(bundleDir, location, in, null, info.getUnique_tag(),true,-1l);
+            bundle = new BundleImpl(bundleDir, location, in, null, info.getUnique_tag(), true, -1l,
+                    bundles);
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
@@ -435,11 +434,13 @@ public final class Framework {
      *
      * @param location the bundle location.
      * @param file     the input file.
+     * @param bundles
      * @return a Bundle object.
      * @throws BundleException if the installation failed.
      * @throws
      */
-     static BundleImpl installNewBundle(final String location, final File file) throws BundleException {
+    static BundleImpl installNewBundle(final String location, final File file,
+            Map<String, Bundle> bundles) throws BundleException {
         File bundleDir = null;
 
         try {
@@ -458,7 +459,9 @@ public final class Framework {
             BundleImpl bundle = null;
 
             BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            bundle = new BundleImpl(bundleDir, location, null, file,info.getUnique_tag(),true,-1l);
+            bundle = new BundleImpl(bundleDir, location, null, file, info.getUnique_tag(), true,
+                    -1l,
+                    bundles);
             return bundle;
         } catch (IOException e) {
             BundleException e1 = new BundleException(
@@ -487,7 +490,8 @@ public final class Framework {
         }
     }
 
-    public static BundleImpl restoreFromExistedBundle(final String location) {
+    public static BundleImpl restoreFromExistedBundle(final String location,
+            Map<String, Bundle> bundles) {
         BundleImpl bundle = null;
         String bundleUniqueTag = AtlasBundleInfoManager.instance().getBundleInfo(location).getUnique_tag();
         long dexPatchVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(location);
@@ -556,7 +560,7 @@ public final class Framework {
                 bcontext.location = location;
                 bcontext.bundleDir = bundleDir;
                 bcontext.dexPatchDir = dexPatchDir;
-                bundle = new BundleImpl(bcontext);
+                bundle = new BundleImpl(bcontext, bundles);
                 if (bundle != null) {
                     bundle.optDexFile();
                 }
@@ -659,13 +663,17 @@ public final class Framework {
                         }else {
                             BundleLock.WriteLock(locations[i]);
                             AtlasFileLock.getInstance().LockExclusive(bundleDir);
-                            new BundleImpl(bundleDir, locations[i], null, files[i], newBundleTag[i], false, -1l);
+                            new BundleImpl(bundleDir, locations[i], null, files[i], newBundleTag[i],
+                                    false, -1l,
+                                    bundles);
                         }
 
                     }else{
                         BundleLock.WriteLock(locations[i]);
                         AtlasFileLock.getInstance().LockExclusive(bundleDir);
-                        new BundleImpl(bundleDir, locations[i], null, files[i],null, false,dexPatchVersions[i]);
+                        new BundleImpl(bundleDir, locations[i], null, files[i], null, false,
+                                dexPatchVersions[i],
+                                bundles);
                     }
 //                    Log.e("Framework","info of "+bundleDir+"newTag: "+newBundleTag[i]);
 //                    String[] list = bundleDir.list();
