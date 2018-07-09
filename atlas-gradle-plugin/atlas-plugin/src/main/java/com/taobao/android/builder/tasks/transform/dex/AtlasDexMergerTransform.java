@@ -72,7 +72,7 @@ public class AtlasDexMergerTransform extends Transform {
         this.variantOutputContext = appVariantOutputContext;
         atlasMainDexMerger = new AtlasMainDexMerger(dexingType, mainDexListFile, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
         awbDexMerger = new AwbDexsMerger(DexingType.MONO_DEX, null, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
-        this.mainDexListFile = mainDexListFile == null? null:mainDexListFile.getSingleFile();
+        this.mainDexListFile = mainDexListFile == null ? null : mainDexListFile.getSingleFile();
         this.dexingType = dexingType;
         this.dexMergerTool = dexMerger;
 
@@ -128,15 +128,19 @@ public class AtlasDexMergerTransform extends Transform {
 
     @Override
     public void transform(TransformInvocation transformInvocation) throws TransformException, IOException, InterruptedException {
-        if (variantOutputContext.getVariantContext().getProject().hasProperty("light") &&variantOutputContext.getVariantContext().getProject().hasProperty("deepShrink") ){
+        if (variantOutputContext.getVariantContext().getProject().hasProperty("light") && variantOutputContext.getVariantContext().getProject().hasProperty("deepShrink")) {
             AtlasD8.deepShrink = true;
         }
         super.transform(transformInvocation);
         TransformOutputProvider transformOutputProvider = transformInvocation.getOutputProvider();
         transformOutputProvider.deleteAll();
         atlasMainDexMerger.merge(transformInvocation);
-
         awbDexMerger.merge(transformInvocation);
+        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
+            atlasMainDexMerger.getAllDexsArchives().addAll(awbDexMerger.getAllDexsArchives());
+            atlasMainDexMerger.mergeAll(transformInvocation);
+        }
 
     }
+
 }

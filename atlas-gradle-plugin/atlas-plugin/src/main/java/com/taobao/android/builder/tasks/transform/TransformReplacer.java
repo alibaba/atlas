@@ -40,6 +40,7 @@ import org.gradle.api.Task;
 import org.gradle.api.internal.tasks.DefaultTaskOutputs;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.specs.AndSpec;
 import org.gradle.api.specs.Spec;
 
 import java.io.File;
@@ -345,6 +346,8 @@ public class TransformReplacer {
             for (TransformTask transformTask:list){
                 List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
                 list1.clear();
+                ReflectUtils.updateField(transformTask.getOutputs(),"upToDateSpec",AndSpec.empty());
+
 
             }
         }
@@ -355,6 +358,7 @@ public class TransformReplacer {
             for (TransformTask transformTask:list){
                 List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
                 list1.clear();
+                ReflectUtils.updateField(transformTask.getOutputs(),"upToDateSpec",AndSpec.empty());
 
             }
         }
@@ -365,6 +369,7 @@ public class TransformReplacer {
             for (TransformTask transformTask:list){
                 List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
                 list1.clear();
+                ReflectUtils.updateField(transformTask.getOutputs(),"upToDateSpec",AndSpec.empty());
 
             }
         }
@@ -375,6 +380,8 @@ public class TransformReplacer {
             for (TransformTask transformTask:list){
                 List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
                 list1.clear();
+                ReflectUtils.updateField(transformTask.getOutputs(),"upToDateSpec",AndSpec.empty());
+
 
             }
         }

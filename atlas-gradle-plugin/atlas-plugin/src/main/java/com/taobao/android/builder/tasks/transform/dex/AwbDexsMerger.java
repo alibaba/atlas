@@ -90,6 +90,7 @@ public class AwbDexsMerger extends AtlasDexMerger {
         for (AwbTransform awbTransform : variantOutputContext.getAwbTransformMap().values()) {
            merge(awbTransform.getAwbBundle());
         }
+
     }
 
     public void merge(AwbBundle awbBundle){
@@ -115,11 +116,14 @@ public class AwbDexsMerger extends AtlasDexMerger {
                 e.printStackTrace();
             }
         }
+        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex()){
+            allDexsArchives.addAll(Arrays.asList(mergeDexs));
+            return;
+        }
         try {
             FileCache.QueryResult result = fileCache.createFileInCacheIfAbsent(
                     buildCacheInputs,
                     in -> {
-
                         List<ForkJoinTask<Void>> mergeTasks = new ArrayList<ForkJoinTask<Void>>();
                         mergeTasks.addAll(
                                 handleLegacyAndMonoDex(
@@ -139,6 +143,8 @@ public class AwbDexsMerger extends AtlasDexMerger {
             );
 
             cacheHandler.handleQueryResult(result, outPutFolder, awbBundle.getName());
+
+
 
             if (awbBundle.isMBundle){
                 org.apache.commons.io.FileUtils.moveFile(new File(outPutFolder, CLASSES_DEX),new File(mainDexOut,"classes"+atomicInteger.incrementAndGet()+".dex"));

@@ -22,6 +22,7 @@ import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.tools.r8.AtlasD8;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.file.FileCollection;
 
 import java.io.File;
@@ -43,7 +44,6 @@ public abstract class AtlasDexMerger {
     protected final DexingType dexingType;
 
 
-
     protected LoggerWrapper logger;
 
     public CacheHandler cacheHandler;
@@ -60,6 +60,13 @@ public abstract class AtlasDexMerger {
     protected final int minSdkVersion;
     protected final boolean isDebuggable;
     @NonNull protected final ErrorReporter errorReporter;
+
+    public List<File> getAllDexsArchives() {
+        return allDexsArchives;
+    }
+
+    protected List<File>allDexsArchives = new ArrayList<>();
+
     @NonNull private final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     protected AppVariantOutputContext variantOutputContext;
@@ -193,6 +200,38 @@ public abstract class AtlasDexMerger {
             @NonNull String name,
             @NonNull Set<? super QualifiedContent.Scope> scopes) {
         return outputProvider.getContentLocation(name, TransformManager.CONTENT_DEX, scopes, Format.DIRECTORY);
+    }
+
+    public void mergeAll(TransformInvocation transformInvocation) throws IOException {
+        ProcessOutput output = outputHandler.createOutput();
+        for (File file:allDexsArchives){
+            logger.warning("mergeAll File:"+file.getAbsolutePath());
+        }
+        TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
+        File outputDir =
+                getDexOutputLocation(outputProvider, "main", TransformManager.SCOPE_FULL_PROJECT);
+
+        File finalDexDir = new File(outputDir.getParentFile(),"temp");
+        finalDexDir.mkdirs();
+        List<ForkJoinTask<Void>> mergeTasks = new ArrayList();
+        if (dexingType == DexingType.NATIVE_MULTIDEX) {
+            mergeTasks.addAll(
+                    handleNativeMultiDex(
+                            allDexsArchives,
+                            output,
+                            outputDir,
+                            null));
+        } else {
+            mergeTasks.addAll(
+                    handleLegacyAndMonoDex(
+                            allDexsArchives, output, finalDexDir, mainDexListFile == null ? null : mainDexListFile.getSingleFile()));
+        }
+
+        mergeTasks.forEach(voidForkJoinTask -> voidForkJoinTask.join());
+
+        FileUtils.deleteDirectory(outputDir);
+        FileUtils.moveDirectory(finalDexDir,outputDir);
+
     }
 
 

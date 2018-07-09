@@ -9,6 +9,7 @@ import com.android.dx.command.dexer.DxContext;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.tools.r8.AtlasD8Merger;
 import com.android.tools.r8.CompilationMode;
+import sun.security.krb5.internal.PAData;
 
 import java.io.File;
 import java.nio.file.Path;

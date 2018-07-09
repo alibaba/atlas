@@ -141,6 +141,12 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
                 e.printStackTrace();
             }
         }
+
+        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex()){
+            allDexsArchives.addAll(Arrays.asList(mergeDexs[0]));
+            return;
+        }
+
         try {
             FileCache.QueryResult result = fileCache.createFileInCacheIfAbsent(
                     buildCacheInputs,
@@ -173,6 +179,8 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
                     });
 
             cacheHandler.handleQueryResult(result, outputDir, "maindex");
+
+
         }catch (Exception e){
             e.printStackTrace();
         }

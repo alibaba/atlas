@@ -9,6 +9,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.BaseProguardAction;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.TransformInputUtil;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
@@ -81,6 +82,11 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
                 .filter(Objects::nonNull)
                 .map(SecondaryFile::nonIncremental)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<File> getSecondaryFileOutputs() {
+        return ImmutableList.of(mainDexListFile);
     }
 
     @Override

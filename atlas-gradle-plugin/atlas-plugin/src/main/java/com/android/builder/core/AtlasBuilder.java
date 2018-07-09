@@ -553,7 +553,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
         Profiler.start();
 
-        if (atlasExtension.getTBuildConfig().isDexCacheEnabled() && inputs.size() > 1) {
+        if (atlasExtension.getTBuildConfig().isDexCacheEnabled() && inputs.size() > 0) {
 
             Profiler.enter("jar2dex");
 
