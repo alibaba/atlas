@@ -294,7 +294,7 @@ public class ApDependencies /*extends BaseTask*/ {
 
     public ApDependencies(Project project, File baseApFile) {
         this.project = project;
-        this.dependencies = project.getDependencies();
+        dependencies = project.getDependencies();
 
         //获取baseAp文件
         apDependencyJson = getDependencyJson(baseApFile);
@@ -307,6 +307,14 @@ public class ApDependencies /*extends BaseTask*/ {
         for (Map.Entry<String, ArrayList<String>> entry : apDependencyJson.getAwbs().entrySet()) {
             String awb = entry.getKey();
             ParsedModuleStringNotation parsedAwbModuleStringNotation = new ParsedModuleStringNotation(awb);
+
+            if ("taobao_android_homepage".equals(parsedAwbModuleStringNotation.getName())
+                    && versionStringComparator.compare(
+
+                    parsedAwbModuleStringNotation.getVersion(), "6.0.18") >= 0) {
+                parsedAwbModuleStringNotation = ApDependencies.MAIN_DEX;
+            }
+
             addDependency(awb, parsedAwbModuleStringNotation);
             ArrayList<String> dependenciesString = entry.getValue();
             for (String dependencyString : dependenciesString) {
