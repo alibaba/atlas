@@ -342,7 +342,7 @@ public  class BundleImpl implements Bundle {
 
     public BundleImpl(String location) {
         this.location = location;
-        this.state = INSTALLED;
+        this.state = RESOLVED;
 
     }
 

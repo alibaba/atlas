@@ -606,7 +606,7 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private boolean isMBundle(AppVariantContext appVariantContext,AwbBundle awbBundle){
 
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().getOutOfApkBundles().contains(awbBundle.getPackageName())){
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().getOutOfApkBundles().contains(awbBundle.getResolvedCoordinates().getArtifactId())){
             return false;
         }
 

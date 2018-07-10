@@ -551,20 +551,18 @@ public class Atlas {
      * @param resourceDependencyNeed 是否需要使用被依赖bundle的资源
      */
     public void requestRuntimeDependency(ClassLoader source, ClassLoader dependency,boolean resourceDependencyNeed){
-        if(source == getClass().getClassLoader()){
+        if(source == getClass().getClassLoader() && dependency instanceof BundleClassLoader){
             throw new IllegalArgumentException("PathClassLoader can not have bundle dependency");
         }
-        if(dependency == getClass().getClassLoader()){
-            //bundle can use main dex class by default
+        if (source == getClass().getClassLoader() && dependency == getClass().getClassLoader()){
+            throw new IllegalArgumentException("PathClassLoader can not have runtime PathClassLoader dependency");
+
+        }
+        if (source instanceof BundleClassLoader && dependency == getClass().getClassLoader()){
             return;
         }
-        if(!(source instanceof BundleClassLoader)){
-            throw new IllegalArgumentException("source must be bundleclassloader");
-        }
-        if(!(dependency instanceof BundleClassLoader)){
-            throw new IllegalArgumentException("dependency must be bundleclassloader");
-        }
         String dependencyLocation = ((BundleClassLoader)dependency).location;
+
         ((BundleClassLoader)source).addRuntimeDependency(dependencyLocation);
 
         if(resourceDependencyNeed) {
@@ -589,7 +587,15 @@ public class Atlas {
         if(impl==null){
             throw new BundleException("failed install deppendencyBundle : " +dependencyBundle);
         }else{
-            requestRuntimeDependency(source,impl.getClassLoader(),resourceDependencyNeed);
+            if(source instanceof BundleClassLoader && impl.getClassLoader() instanceof BundleClassLoader){
+                requestRuntimeDependency(source,impl.getClassLoader(),resourceDependencyNeed);
+            }else if (source instanceof BundleClassLoader && impl.getClassLoader() == Framework.getSystemClassLoader()){
+                ((BundleClassLoader)source).addRuntimeDependency(dependencyBundle);
+            }else if (source  == Framework.getSystemClassLoader() && impl.getClassLoader() instanceof BundleClassLoader){
+                throw new IllegalArgumentException(" PathClassLoader can not have bundle dependency "+dependencyBundle);
+            }else {
+                throw new IllegalArgumentException(" PathClassLoader can not have runtime dependency of pathClassloader"+dependencyBundle);
+            }
         }
     }
 

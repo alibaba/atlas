@@ -2,6 +2,7 @@ package android.taobao.atlas.framework;
 
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
+import android.util.Log;
 
 import java.util.List;
 
@@ -30,6 +31,14 @@ public class MbundleImpl extends BundleImpl{
 
     @Override
     public boolean checkValidate() {
+        List<String>bundles = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
+        for (String location:bundles) {
+            if (!AtlasBundleInfoManager.instance().getBundleInfo(location).isMBundle()){
+                Log.e("MbundleImpl",this.location+" Mbundle can not dependent bundleImpl "+location);
+
+            }
+        }
+
         return true;
     }
 
