@@ -395,7 +395,6 @@ public class AtlasBundleInfoManager {
             Map.Entry<String, BundleListing.BundleInfo> entry = iterator.next();
             BundleListing.BundleInfo bundleInfo = entry.getValue();
             if(bundleInfo!=null && bundleInfo.getActivities()!=null && bundleInfo.getActivities().containsKey(componentName) && !bundleInfo.isMBundle()) {
-
                 return bundleInfo.getPkgName();
             }
 
@@ -429,8 +428,15 @@ public class AtlasBundleInfoManager {
             }
         }
 
-
         return mBundleInfos;
+    }
+
+    public boolean isMbundle(String location){
+        BundleListing.BundleInfo bundleInfo = getBundleInfo(location);
+        if (bundleInfo!= null){
+            return bundleInfo.isMBundle();
+        }
+        return false;
     }
 
     public BundleListing.BundleInfo getBundleInfo(String name){

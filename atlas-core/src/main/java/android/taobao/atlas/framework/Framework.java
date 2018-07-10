@@ -277,7 +277,7 @@ public final class Framework {
     /**
      * location -> bundle.
      */
-    static Map<String, Bundle> bundles = new ConcurrentHashMap<String, Bundle>();
+    public static Map<String, Bundle> bundles = new ConcurrentHashMap<String, Bundle>();
 
     /**
      * bundle listeners.

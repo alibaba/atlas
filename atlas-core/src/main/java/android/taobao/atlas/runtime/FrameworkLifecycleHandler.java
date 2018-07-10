@@ -312,18 +312,6 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
             }
         });
 
-        List<BundleListing.BundleInfo> allMbundleInfos = AtlasBundleInfoManager.instance().getAllMBundleInfo();
-
-        for (BundleListing.BundleInfo bundleInfo:allMbundleInfos){
-            try {
-                Application app = BundleLifecycleHandler.newApplication(bundleInfo.applicationName,
-                        Framework.getSystemClassLoader());
-                app.onCreate();
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-
-        }
 
 //        try {
 //            if (RuntimeVariables.androidApplication.getPackageName().equals(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication))) {

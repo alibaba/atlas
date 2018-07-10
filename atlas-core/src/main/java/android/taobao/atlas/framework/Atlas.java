@@ -210,6 +210,7 @@ package android.taobao.atlas.framework;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -222,6 +223,7 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Looper;
+import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
 import android.taobao.atlas.runtime.DelegateResources;
 import android.taobao.atlas.runtime.SecurityHandler;
@@ -377,6 +379,7 @@ public class Atlas {
             Log.e("Atlas","empty location");
             return;
         }
+
         if (Framework.getBundle(location) == null){
             checkingThread(false);
             BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{location});
@@ -388,6 +391,7 @@ public class Atlas {
         if (TextUtils.isEmpty(location)){
             Log.e("Atlas","empty location");
         }
+
         if (Framework.getBundle(location) == null) {
             checkingThread(false);
             BundleInstallerFetcher.obtainInstaller().installSync(new String[]{location}, new InputStream[]{input});
@@ -399,6 +403,7 @@ public class Atlas {
         if (TextUtils.isEmpty(location)){
             Log.e("Atlas","empty location");
         }
+
         if (Framework.getBundle(location) == null) {
             checkingThread(false);
             BundleInstallerFetcher.obtainInstaller().installSync(new String[]{location}, new File[]{file});
@@ -452,6 +457,7 @@ public class Atlas {
     public void installBundleTransitivelyAsync(String[] locations,BundleInstaller.InstallListener listener){
         BundleInstallerFetcher.obtainInstaller().installTransitivelyAsync(locations,listener);
     }
+
 
     /**
      * idle时候安装一批低优先级的apk内部的bundle

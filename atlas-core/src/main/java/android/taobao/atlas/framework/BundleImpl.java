@@ -232,7 +232,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public final class BundleImpl implements Bundle {
+public  class BundleImpl implements Bundle {
 
     /**
      * the bundle location.
@@ -337,6 +337,12 @@ public final class BundleImpl implements Bundle {
         if (Framework.DEBUG_BUNDLES) {
             Log.i("Framework"," Bundle " + toString() + " loaded. " + (System.currentTimeMillis() - start) + " ms");
         }
+
+    }
+
+    public BundleImpl(String location) {
+        this.location = location;
+        this.state = INSTALLED;
 
     }
 

@@ -290,7 +290,7 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
 
     private void started(Bundle bundle){
         BundleImpl b = (BundleImpl) bundle;
-        if(b.getClassLoader()==null || !((BundleClassLoader)b.getClassLoader()).validateClasses()){
+        if(b.getClassLoader()==null || (b.getClassLoader() instanceof BundleClassLoader && !((BundleClassLoader)b.getClassLoader()).validateClasses())){
             Log.e("BundleLifeCycle","validateClass fail,bundle can't be started :"+b);
             List<Bundle> bundles = Atlas.getInstance().getBundles();
             Map<String, Object> detail = new HashMap<>();

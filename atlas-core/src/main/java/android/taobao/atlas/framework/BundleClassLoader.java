@@ -428,6 +428,11 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                 try {
                     BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(dependencyBundle);
                     if (impl != null) {
+                        if (AtlasBundleInfoManager.instance().isMbundle(dependencyBundle)){
+                            impl.startBundle();
+                            continue;
+                        }
+
                         clazz = ((BundleClassLoader)impl.getClassLoader()).loadOwnClass(classname);
                         if (clazz != null) {
                             impl.startBundle();

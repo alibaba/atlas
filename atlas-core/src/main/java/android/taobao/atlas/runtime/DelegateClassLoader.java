@@ -219,6 +219,7 @@ import android.os.Looper;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
+import android.taobao.atlas.framework.MbundleImpl;
 import android.taobao.atlas.util.FileUtils;
 import org.osgi.framework.Bundle;
 
@@ -226,18 +227,19 @@ import android.taobao.atlas.framework.Framework;
 import android.util.Log;
 
 import dalvik.system.PathClassLoader;
+import org.osgi.framework.BundleException;
 
 public class DelegateClassLoader extends PathClassLoader {
-    
-    public DelegateClassLoader(ClassLoader cl){
-        super(".",cl);
+
+    public DelegateClassLoader(ClassLoader cl) {
+        super(".", cl);
     }
 
     public void addDexPath(String dexPath) {
         try {
-            Method addDexMethod = findMethod(getParent(),"addDexPath",new Class[]{String.class});
+            Method addDexMethod = findMethod(getParent(), "addDexPath", new Class[]{String.class});
             addDexMethod.setAccessible(true);
-            addDexMethod.invoke(getParent(),dexPath);
+            addDexMethod.invoke(getParent(), dexPath);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -245,7 +247,28 @@ public class DelegateClassLoader extends PathClassLoader {
 
     @Override
     public Class<?> loadClass(String className) throws ClassNotFoundException {
+        String location;
+        if ((location = AtlasBundleInfoManager.instance().getBundleForComponet(className)) == null) {
+            return super.loadClass(className);
+        }
+        if (AtlasBundleInfoManager.instance().isMbundle(location)) {
+            List<String> bundles = AtlasBundleInfoManager.instance().getBundleInfo(location).getDependency();
+            for (String bundle : bundles) {
+                if (!AtlasBundleInfoManager.instance().getBundleInfo(bundle).isMBundle()){
+                    throw new ClassNotFoundException(location+" Mbundle can not dependent bundleImpl "+bundle);
+                }
+                try {
+                    if (Framework.getBundle(bundle) == null) {
+                        Framework.bundles.put(bundle, new MbundleImpl(bundle));
+                    }
+                    Framework.getBundle(bundle).start();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         return super.loadClass(className);
+
     }
 
     @Override
@@ -260,71 +283,71 @@ public class DelegateClassLoader extends PathClassLoader {
         if (clazz != null)
             return clazz;
 
-        ComponentName comp = new ComponentName(RuntimeVariables.androidApplication.getPackageName(),className);
-        if (isProvider(comp)){
+        ComponentName comp = new ComponentName(RuntimeVariables.androidApplication.getPackageName(), className);
+        if (isProvider(comp)) {
             return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeProvider");
-        }else if(isReceiver(comp)){
+        } else if (isReceiver(comp)) {
             return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeReceiver");
         }
 
         throw new ClassNotFoundException("Can't find class " + className + printExceptionInfo());
     }
-    
-    private String printExceptionInfo(){
-    	StringBuilder sb = new StringBuilder("installed bundles: ");
-    	List<Bundle> bundles = Framework.getBundles();
-    	if (bundles != null && !bundles.isEmpty()) {
-    		for (Bundle b : Framework.getBundles()) {
-    			/*
-    			 *  As the UTCrash handle would filter "com.ut", we do a small trick
-    			 *  here to translate them to upper case to avoid "com.ut" bundle
-    			 *  not found info missed.
-    			 */
-    			if (b.getLocation().contains("com.ut")){
-    				sb.append(b.getLocation().toUpperCase());
-    			}else{
-    				sb.append(b.getLocation());
-    			}
-    			
-    			sb.append(":");
-    		}
-    	}
-    	return sb.toString();
+
+    private String printExceptionInfo() {
+        StringBuilder sb = new StringBuilder("installed bundles: ");
+        List<Bundle> bundles = Framework.getBundles();
+        if (bundles != null && !bundles.isEmpty()) {
+            for (Bundle b : Framework.getBundles()) {
+                /*
+                 *  As the UTCrash handle would filter "com.ut", we do a small trick
+                 *  here to translate them to upper case to avoid "com.ut" bundle
+                 *  not found info missed.
+                 */
+                if (b.getLocation().contains("com.ut")) {
+                    sb.append(b.getLocation().toUpperCase());
+                } else {
+                    sb.append(b.getLocation());
+                }
+
+                sb.append(":");
+            }
+        }
+        return sb.toString();
     }
 
-    static Class<?> loadFromInstalledBundles(String className,boolean safe)
+    static Class<?> loadFromInstalledBundles(String className, boolean safe)
             throws ClassNotFoundException {
         Class<?> clazz = null;
         List<Bundle> bundles = Framework.getBundles();
         String bundleName = AtlasBundleInfoManager.instance().getBundleForComponet(className);
         BundleImpl bundle = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
-        if(bundle!=null){
-            if(!Framework.isDeubgMode()) {
+        if (bundle != null) {
+            if (!Framework.isDeubgMode()) {
                 bundle.optDexFile();
             }
             bundle.startBundle();
             ClassLoader classloader = bundle.getClassLoader();
             // if (bundle != null && bundle.checkValidate()) {
-                try {
-                    if (classloader != null) {
-                        clazz = classloader.loadClass(className);
-                        if (clazz != null&& bundle.checkValidate()) {
-                            return clazz;
-                        }
+            try {
+                if (classloader != null) {
+                    clazz = classloader.loadClass(className);
+                    if (clazz != null && bundle.checkValidate()) {
+                        return clazz;
                     }
-                } catch (ClassNotFoundException e) {
                 }
+            } catch (ClassNotFoundException e) {
+            }
             // } else {
             //
             // }
 
-            if((Thread.currentThread().getId() == Looper.getMainLooper().getThread().getId())){
+            if ((Thread.currentThread().getId() == Looper.getMainLooper().getThread().getId())) {
                 Throwable ex = new Throwable();
                 ex.fillInStackTrace();
                 Log.e("MainThreadFindClass", String.format("can not findClass %s from %s in UI thread ", className, bundle));
                 ex.printStackTrace();
             }
-            if(safe) {
+            if (safe) {
                 ComponentName component = new ComponentName(RuntimeVariables.androidApplication.getPackageName(), className);
                 if (isProvider(component)) {
                     return Atlas.class.getClassLoader().loadClass("android.taobao.atlas.util.FakeProvider");
@@ -345,7 +368,7 @@ public class DelegateClassLoader extends PathClassLoader {
         if (bundles != null && !bundles.isEmpty()) {
             for (Bundle b : Framework.getBundles()) {
                 bundle = (BundleImpl) b;
-                if(bundle.getArchive().isDexOpted()){
+                if (bundle.getArchive().isDexOpted()) {
                     ClassLoader classloader = bundle.getClassLoader();
                     try {
                         if (classloader != null && bundle.checkValidate()) {
@@ -362,13 +385,13 @@ public class DelegateClassLoader extends PathClassLoader {
         return clazz;
     }
 
-    private static int getPackageVersion(){
+    private static int getPackageVersion() {
         PackageInfo packageInfo = null;
         // 获取当前的版本号
         try {
             PackageManager packageManager = RuntimeVariables.androidApplication.getPackageManager();
             packageInfo = packageManager.getPackageInfo(RuntimeVariables.androidApplication.getPackageName(), 0);
-        }catch (Exception e) {
+        } catch (Exception e) {
             // 不可能发生
             packageInfo = new PackageInfo();
         }
@@ -376,9 +399,9 @@ public class DelegateClassLoader extends PathClassLoader {
         return packageInfo.versionCode;
     }
 
-    private static boolean isReceiver(ComponentName component){
+    private static boolean isReceiver(ComponentName component) {
         try {
-            if(RuntimeVariables.androidApplication.getPackageManager().getReceiverInfo(component,PackageManager.GET_RECEIVERS)!=null){
+            if (RuntimeVariables.androidApplication.getPackageManager().getReceiverInfo(component, PackageManager.GET_RECEIVERS) != null) {
                 return true;
             }
         } catch (PackageManager.NameNotFoundException e) {
@@ -387,9 +410,9 @@ public class DelegateClassLoader extends PathClassLoader {
         return false;
     }
 
-    private static boolean isProvider(ComponentName component){
+    private static boolean isProvider(ComponentName component) {
         try {
-            if(RuntimeVariables.androidApplication.getPackageManager().getProviderInfo(component,PackageManager.GET_PROVIDERS)!=null){
+            if (RuntimeVariables.androidApplication.getPackageManager().getProviderInfo(component, PackageManager.GET_PROVIDERS) != null) {
                 return true;
             }
         } catch (PackageManager.NameNotFoundException e) {
@@ -399,10 +422,10 @@ public class DelegateClassLoader extends PathClassLoader {
         return false;
     }
 
-    public static Method findMethod(Object instance, String methodName,Class[] args) throws NoSuchMethodException {
+    public static Method findMethod(Object instance, String methodName, Class[] args) throws NoSuchMethodException {
         for (Class<?> clazz = instance.getClass(); clazz != null; clazz = clazz.getSuperclass()) {
             try {
-                Method method = clazz.getDeclaredMethod(methodName,args);
+                Method method = clazz.getDeclaredMethod(methodName, args);
                 if (!method.isAccessible()) {
                     method.setAccessible(true);
                 }
