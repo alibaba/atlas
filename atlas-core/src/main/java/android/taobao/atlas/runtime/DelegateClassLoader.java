@@ -258,10 +258,12 @@ public class DelegateClassLoader extends PathClassLoader {
                     throw new ClassNotFoundException(location+" Mbundle can not dependent bundleImpl "+bundle);
                 }
                 try {
-                    if (Framework.getBundle(bundle) == null) {
-                        Framework.bundles.put(bundle, new MbundleImpl(bundle));
+                    Bundle mBundle = null;
+                    if ((mBundle = Framework.getBundle(bundle)) == null) {
+                         mBundle= new MbundleImpl(bundle);
+                        Framework.bundles.put(bundle, mBundle);
                     }
-                    Framework.getBundle(bundle).start();
+                    mBundle.start();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

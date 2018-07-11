@@ -394,19 +394,19 @@ public class AtlasBundleInfoManager {
         while (iterator.hasNext()) {
             Map.Entry<String, BundleListing.BundleInfo> entry = iterator.next();
             BundleListing.BundleInfo bundleInfo = entry.getValue();
-            if(bundleInfo!=null && bundleInfo.getActivities()!=null && bundleInfo.getActivities().containsKey(componentName) && !bundleInfo.isMBundle()) {
+            if(bundleInfo!=null && bundleInfo.getActivities()!=null && bundleInfo.getActivities().containsKey(componentName)) {
                 return bundleInfo.getPkgName();
             }
 
-            if(bundleInfo!=null && bundleInfo.getServices()!=null && bundleInfo.getServices().containsKey(componentName)&& !bundleInfo.isMBundle()) {
+            if(bundleInfo!=null && bundleInfo.getServices()!=null && bundleInfo.getServices().containsKey(componentName)) {
                 return bundleInfo.getPkgName();
             }
 
-            if(bundleInfo!=null && bundleInfo.getReceivers()!=null && bundleInfo.getReceivers().containsKey(componentName) && !bundleInfo.isMBundle()) {
+            if(bundleInfo!=null && bundleInfo.getReceivers()!=null && bundleInfo.getReceivers().containsKey(componentName) ) {
                 return bundleInfo.getPkgName();
             }
 
-            if(bundleInfo!=null && bundleInfo.getContentProviders()!=null && bundleInfo.getContentProviders().containsKey(componentName) && !bundleInfo.isMBundle) {
+            if(bundleInfo!=null && bundleInfo.getContentProviders()!=null && bundleInfo.getContentProviders().containsKey(componentName)) {
                 return bundleInfo.getPkgName();
             }
 
@@ -415,21 +415,6 @@ public class AtlasBundleInfoManager {
         return null;
     }
 
-    public List<BundleListing.BundleInfo> getAllMBundleInfo(){
-        List<BundleListing.BundleInfo> mBundleInfos = new ArrayList<>();
-        if(mCurrentBundleListing==null || mCurrentBundleListing.getBundles()==null){
-            return mBundleInfos;
-        }
-        Iterator<Map.Entry<String, BundleListing.BundleInfo>> iterator = mCurrentBundleListing.getBundles().entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, BundleListing.BundleInfo> entry = iterator.next();
-            if (entry.getValue().isMBundle){
-                mBundleInfos.add(entry.getValue());
-            }
-        }
-
-        return mBundleInfos;
-    }
 
     public boolean isMbundle(String location){
         BundleListing.BundleInfo bundleInfo = getBundleInfo(location);
