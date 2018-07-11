@@ -308,10 +308,7 @@ public class ApDependencies /*extends BaseTask*/ {
             String awb = entry.getKey();
             ParsedModuleStringNotation parsedAwbModuleStringNotation = new ParsedModuleStringNotation(awb);
 
-            if ("taobao_android_homepage".equals(parsedAwbModuleStringNotation.getName())
-                    && versionStringComparator.compare(
-
-                    parsedAwbModuleStringNotation.getVersion(), "6.0.18") >= 0) {
+            if (isMainDexAwb(parsedAwbModuleStringNotation)) {
                 parsedAwbModuleStringNotation = ApDependencies.MAIN_DEX;
             }
 
@@ -321,6 +318,15 @@ public class ApDependencies /*extends BaseTask*/ {
                 addDependency(dependencyString, parsedAwbModuleStringNotation);
             }
         }
+    }
+
+    private boolean isMainDexAwb(ParsedModuleStringNotation parsedAwbModuleStringNotation) {
+        if ("taobao_android_homepage".equals(parsedAwbModuleStringNotation.getName())
+                && versionStringComparator.compare(parsedAwbModuleStringNotation.getVersion(),
+                "6.0.18") >= 0) {
+            return true;
+        }
+        return false;
     }
 
     public static File getBaseApFile(Project project, TBuildType tBuildType) {
