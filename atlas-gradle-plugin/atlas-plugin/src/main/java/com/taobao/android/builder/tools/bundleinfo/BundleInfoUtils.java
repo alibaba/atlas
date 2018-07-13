@@ -294,7 +294,6 @@ public class BundleInfoUtils {
         }
 
 
-
         bundleInfo.setIsInternal(!awbBundle.isRemote);
         bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
         bundleInfo.setPkgName(awbBundle.getPackageName());

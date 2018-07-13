@@ -365,7 +365,7 @@ public  class BundleImpl implements Bundle {
             if(dependencies!=null) {
                 for (String str : dependencies) {
                     BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(str);
-                    if (impl != null) {
+                    if (impl != null && !AtlasBundleInfoManager.instance().isMbundle(str)) {
                         nativeLibDir += ":";
                         File dependencyLibDir = new File(impl.getArchive().getCurrentRevision().mappingInternalDirectory(), "lib");
                         nativeLibDir += dependencyLibDir;

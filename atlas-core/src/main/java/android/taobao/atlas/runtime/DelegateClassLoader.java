@@ -254,6 +254,9 @@ public class DelegateClassLoader extends PathClassLoader {
         if (AtlasBundleInfoManager.instance().isMbundle(location)) {
             List<String> bundles = AtlasBundleInfoManager.instance().getBundleInfo(location).getDependency();
             for (String bundle : bundles) {
+                if (bundle == null || AtlasBundleInfoManager.instance().getBundleInfo(bundle) == null){
+                    continue;
+                }
                 if (!AtlasBundleInfoManager.instance().getBundleInfo(bundle).isMBundle()){
                     throw new ClassNotFoundException(location+" Mbundle can not dependent bundleImpl "+bundle);
                 }
