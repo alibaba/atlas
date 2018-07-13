@@ -217,6 +217,7 @@ import android.app.IActivityManager;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.IContentProvider;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ProviderInfo;
 import android.content.res.Resources;
@@ -497,10 +498,12 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
             ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, android.app.ContentProviderHolder.class,
                     ProviderInfo.class, boolean.class, boolean.class, boolean.class);
         }else if(Build.VERSION.SDK_INT==14){
-            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, android.app.ContentProviderHolder.class,
+            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class,
+                    IContentProvider.class,
                     ProviderInfo.class, boolean.class);
         }else if(Build.VERSION.SDK_INT==15){
-            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, android.app.ContentProviderHolder.class,
+            ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class,
+                    IContentProvider.class,
                     ProviderInfo.class, boolean.class,boolean.class);
         }else{
             ActivityThread_installProvider = ActivityThread.method("installProvider", Context.class, IActivityManager.ContentProviderHolder.class,
