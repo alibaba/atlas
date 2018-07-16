@@ -262,7 +262,7 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
             }
 
-            Plugin plugin = project.getPlugins().findPlugin("kotlin-android");
+            Plugin plugin = project.getPlugins()ManifestHelper.java.findPlugin("kotlin-android");
             if (plugin != null) {
                 project.getDependencies().add("compile", "org.jetbrains.kotlin:kotlin-stdlib:1.2.41");
             }

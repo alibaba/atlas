@@ -442,7 +442,8 @@ public class TPatchTask extends BaseTask {
         }
     }
 
-    @OutputDirectory
+//    @OutputDirectory
+
     public File getOutPatchFolder() {
         return outPatchFolder;
     }
