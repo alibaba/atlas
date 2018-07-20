@@ -320,6 +320,16 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         List<String> dependencies = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
         for (String bundleName : dependencies) {
             BundleImpl dependencyBundle = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
+            if (dependencyBundle == null && AtlasBundleInfoManager.instance().isMbundle(bundleName)){
+                try {
+                    BundleImpl bundle = new MbundleImpl(location);
+                    Framework.bundles.put(bundleName,bundle);
+                    bundle.start();
+                    continue;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             if (dependencyBundle == null || dependencyBundle.getArchive() == null || !dependencyBundle.getArchive()
                 .isDexOpted()) {
                 Log.e("BundleClassLoader",

@@ -518,6 +518,9 @@ public  class BundleImpl implements Bundle {
 
         List<String> dependencies = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
         for(String bundleName : dependencies){
+            if (AtlasBundleInfoManager.instance().isMbundle(bundleName)){
+                continue;
+            }
             BundleImpl dependencyBundle = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
             if(dependencyBundle==null || dependencyBundle.getArchive()==null ||
                     !DelegateResources.checkAsset(dependencyBundle.getArchive().getArchiveFile().getAbsolutePath())){

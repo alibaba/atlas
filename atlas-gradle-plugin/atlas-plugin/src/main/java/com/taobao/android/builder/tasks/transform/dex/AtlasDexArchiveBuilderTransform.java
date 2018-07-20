@@ -200,6 +200,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
 //        }
 
         List<QualifiedContent> listFiles = new ArrayList<>();
+        Set<File>mainJars = new HashSet<>();
 
         try {
             for (TransformInput input : transformInvocation.getInputs()) {
@@ -217,9 +218,11 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                         listFiles.add(jarInput);
                         continue;
                     }
+                    mainJars.add(jarInput.getFile());
                     if (!validJar(jarInput)){
                         continue;
                     }
+
                     logger.verbose("Jar input %s", jarInput.getFile().toString());
                     List<File> dexArchives =
                             processJarInput(
@@ -229,7 +232,22 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                                     outputProvider);
                     cacheItems.putAll(jarInput,dexArchives);
 
+                }
 
+            }
+
+            for (File file:AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars()){
+                if (mainJars.contains(file)){
+                    continue;
+                }else {
+                    JarInput jarInput = makeJarInput(file);
+                    List<File> dexArchives =
+                            processJarInput(
+                                    transformInvocation.getContext(),
+                                    false,
+                                    jarInput,
+                                    outputProvider);
+                    cacheItems.putAll(jarInput,dexArchives);
                 }
             }
 

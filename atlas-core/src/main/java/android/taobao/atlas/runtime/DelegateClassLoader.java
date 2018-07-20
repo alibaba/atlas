@@ -251,6 +251,13 @@ public class DelegateClassLoader extends PathClassLoader {
         if ((location = AtlasBundleInfoManager.instance().getBundleForComponet(className)) == null) {
             return super.loadClass(className);
         }
+
+        installMbundles(location);
+        return super.loadClass(className);
+
+    }
+
+    private void installMbundles(String location) throws ClassNotFoundException {
         if (AtlasBundleInfoManager.instance().isMbundle(location)) {
             List<String> bundles = AtlasBundleInfoManager.instance().getBundleInfo(location).getDependency();
             for (String bundle : bundles) {
@@ -263,7 +270,7 @@ public class DelegateClassLoader extends PathClassLoader {
                 try {
                     Bundle mBundle = null;
                     if ((mBundle = Framework.getBundle(bundle)) == null) {
-                         mBundle= new MbundleImpl(bundle);
+                        mBundle= new MbundleImpl(bundle);
                         Framework.bundles.put(bundle, mBundle);
                     }
                     mBundle.start();
@@ -272,7 +279,6 @@ public class DelegateClassLoader extends PathClassLoader {
                 }
             }
         }
-        return super.loadClass(className);
 
     }
 
