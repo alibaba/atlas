@@ -228,6 +228,7 @@ public class AtlasMonitor {
     public static final String WALKROUND_GETLAYOUT = "walkround_getlayout";
     public static final String VALIDATE_CLASSES = "validate_classes";
     public static final String INSTALL = "install";
+    public static final String LOCK_EXCLUSIVE_FAIL = "lock_exclusive_fail";
 
     public static final String ACTIVITY_THREAD_HOOK_BAD_TOKEN_EXCEPTION = "activity_thread_hook_bad_token_exception";
     public static final String ACTIVITY_THREAD_HOOK_EXCEPTION = "activity_thread_hook_exception";
