@@ -259,7 +259,7 @@ public class DelegateClassLoader extends PathClassLoader {
 
     private void installMbundles(String location) throws ClassNotFoundException {
         if (AtlasBundleInfoManager.instance().isMbundle(location)) {
-            List<String> bundles = AtlasBundleInfoManager.instance().getBundleInfo(location).getDependency();
+            List<String> bundles = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
             for (String bundle : bundles) {
                 if (bundle == null || AtlasBundleInfoManager.instance().getBundleInfo(bundle) == null){
                     continue;

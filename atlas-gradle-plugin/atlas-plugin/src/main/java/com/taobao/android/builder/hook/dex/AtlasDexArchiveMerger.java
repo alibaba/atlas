@@ -13,8 +13,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-import com.taobao.android.builder.tasks.transform.dex.Atlas_AutoValue_ReferenceCountMergingStrategy_FieldEvaluated;
-import com.taobao.android.builder.tasks.transform.dex.Atlas_AutoValue_ReferenceCountMergingStrategy_MethodEvaluated;
 
 import java.io.File;
 import java.io.IOException;
@@ -308,7 +306,7 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
             @NonNull
             public static AtlasDexRefMergingStrategy.FieldEvaluated create(@NonNull FieldId fieldId, @NonNull Dex dex) {
 
-                    return new Atlas_AutoValue_ReferenceCountMergingStrategy_FieldEvaluated(
+                    return new AutoValue_AtlasDexArchiveMerger_AtlasDexRefMergingStrategy_FieldEvaluated(
                             dex.typeNames().get(fieldId.getDeclaringClassIndex()),
                             dex.typeNames().get(fieldId.getTypeIndex()),
                             dex.strings().get(fieldId.getNameIndex()));
@@ -337,7 +335,7 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
                 String protoShorty = dex.strings().get(protoId.getShortyIndex());
                 String protoReturnType = dex.typeNames().get(protoId.getReturnTypeIndex());
                 String protoParameterTypes = dex.readTypeList(protoId.getParametersOffset()).toString();
-                return new Atlas_AutoValue_ReferenceCountMergingStrategy_MethodEvaluated(declaringClass,name,protoShorty,protoReturnType,protoParameterTypes);
+                return new AutoValue_AtlasDexArchiveMerger_AtlasDexRefMergingStrategy_MethodEvaluated(declaringClass,name,protoShorty,protoReturnType,protoParameterTypes);
             }
 
             @NonNull
