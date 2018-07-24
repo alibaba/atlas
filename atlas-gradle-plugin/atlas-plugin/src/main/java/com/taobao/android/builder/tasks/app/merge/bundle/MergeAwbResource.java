@@ -171,7 +171,7 @@ public class MergeAwbResource extends IncrementalTask {
 
     @Override
     protected boolean isIncremental() {
-        return true;
+        return false;
     }
 
     @OutputDirectory

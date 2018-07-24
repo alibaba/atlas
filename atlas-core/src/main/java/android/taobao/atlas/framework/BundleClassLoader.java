@@ -213,6 +213,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
 import org.osgi.framework.Bundle;
@@ -321,14 +322,10 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         for (String bundleName : dependencies) {
             BundleImpl dependencyBundle = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
             if (dependencyBundle == null && AtlasBundleInfoManager.instance().isMbundle(bundleName)){
-                try {
-                    BundleImpl bundle = new MbundleImpl(location);
-                    Framework.bundles.put(bundleName,bundle);
-                    bundle.start();
-                    continue;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                RuntimeVariables.delegateClassLoader.installMbundle(bundleName);
+                continue;
+
+
             }
             if (dependencyBundle == null || dependencyBundle.getArchive() == null || !dependencyBundle.getArchive()
                 .isDexOpted()) {

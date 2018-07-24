@@ -582,7 +582,7 @@ public class BundleInstaller implements Callable{
                 for (int x = 0; x < mLocation.length; x++) {
                     if (AtlasBundleInfoManager.instance().isMbundle(mLocation[x])){
                         if (Framework.getBundle(mLocation[x]) == null) {
-                            Framework.bundles.put(mLocation[x], new MbundleImpl(mLocation[x]));
+                            RuntimeVariables.delegateClassLoader.installMbundle(mLocation[x]);
                         }
                         continue;
                     }
@@ -637,7 +637,7 @@ public class BundleInstaller implements Callable{
                     for (String bundleName : bundlesForInstall) {
                         if (AtlasBundleInfoManager.instance().isMbundle(bundleName)){
                             if (Framework.getBundle(bundleName) == null){
-                                Framework.bundles.put(bundleName,new MbundleImpl(bundleName));
+                                RuntimeVariables.delegateClassLoader.installMbundle(bundleName);
                             }
                             continue;
                         }
