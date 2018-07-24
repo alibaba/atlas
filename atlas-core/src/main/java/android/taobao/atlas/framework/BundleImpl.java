@@ -466,6 +466,9 @@ public  class BundleImpl implements Bundle {
         if (checkIsActive()) {
             return;
         }
+        if (checkActing()){
+            return;
+        }
         state = STARTING;
         Framework.notifyBundleListeners(BundleEvent.BEFORE_STARTED, this);
         Framework.notifyBundleListeners(BundleEvent.STARTED, this);
@@ -474,6 +477,13 @@ public  class BundleImpl implements Bundle {
         }
 
 
+    }
+
+    private boolean checkActing() {
+        if (state == STARTING){
+            return true;
+        }
+        return false;
     }
 
     private boolean checkIsActive() {

@@ -325,7 +325,6 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                 RuntimeVariables.delegateClassLoader.installMbundle(bundleName);
                 continue;
 
-
             }
             if (dependencyBundle == null || dependencyBundle.getArchive() == null || !dependencyBundle.getArchive()
                 .isDexOpted()) {

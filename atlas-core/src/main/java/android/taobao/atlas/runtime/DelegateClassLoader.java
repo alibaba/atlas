@@ -282,7 +282,7 @@ public class DelegateClassLoader extends PathClassLoader {
     public void installMbundle(String location) {
         try {
             BundleLock.WriteLock(location);
-            if (Atlas.getInstance().getBundle(location) == null) {
+                if (Atlas.getInstance().getBundle(location) == null) {
                 BundleImpl bundle = new MbundleImpl(location);
                 bundle.start();
             }

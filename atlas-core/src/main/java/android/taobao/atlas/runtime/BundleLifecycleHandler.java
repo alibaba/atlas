@@ -309,10 +309,10 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
             String appClassName = info.getApplicationName();
             if (StringUtils.isNotEmpty(appClassName)) {
                 try {
-                    Log.e("BundleLifeCycle","start "+appClassName);
+                    Log.e("BundleLifeCycle","start "+appClassName +"@"+Thread.currentThread().toString());
                     Application app = newApplication(appClassName, b.getClassLoader());
                     app.onCreate();
-                    Log.e("BundleLifeCycle","start finish"+appClassName);
+                    Log.e("BundleLifeCycle","start finish"+appClassName+"@"+Thread.currentThread().toString());
                     ((BundleImpl) bundle).setActive();
                 }catch(ApplicationInitException e){
                     if(b.getArchive()!=null && b.getArchive().isDexOpted()){

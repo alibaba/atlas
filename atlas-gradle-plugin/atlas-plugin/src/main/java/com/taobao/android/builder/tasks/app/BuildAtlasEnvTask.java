@@ -380,7 +380,7 @@ public class BuildAtlasEnvTask extends BaseTask {
     private void fillAwbManifest(String name, String moudleName, AwbBundle awbBundle) {
 
     }
-B
+
     private void fillAwbAndroidRes(String name, String moudleName, AwbBundle awbBundle) {
         ResolvedArtifactResult id = null;
         if ((id = allAndroidRes.get(name)) == null) {
