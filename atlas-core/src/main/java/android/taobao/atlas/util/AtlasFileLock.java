@@ -221,6 +221,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
 
 public class AtlasFileLock {
@@ -302,12 +303,12 @@ public class AtlasFileLock {
 	public boolean LockExclusive(File orgFile) {  
     	RandomAccessFile fOs = null;
     	FileChannel fChannel = null;
-        try {
-        	if (orgFile == null){
-        		return false;
-        	}
-        	
-        	File file ;
+		File file = null;
+		try {
+			if (orgFile == null) {
+				return false;
+			}
+
 			if(orgFile.exists() && orgFile.isDirectory()){
 				file = new File(orgFile.getAbsolutePath().concat("/lock"));
 			}else{
@@ -327,6 +328,10 @@ public class AtlasFileLock {
             }          	
         }catch (Exception e) {  
             e.printStackTrace();
+			Map<String, Object> detail = new HashMap<>();
+			detail.put("orgFile", orgFile);
+			detail.put("file", file);
+			AtlasMonitor.getInstance().report(AtlasMonitor.ACTIVITY_THREAD_HOOK_EXCEPTION, detail, e);
          }
 		return false;  
     }  

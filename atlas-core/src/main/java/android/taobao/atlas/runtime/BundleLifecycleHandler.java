@@ -208,8 +208,10 @@
 
 package android.taobao.atlas.runtime;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -329,8 +331,9 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
     }
 
     protected static Application newApplication(String applicationClassName, ClassLoader cl) throws ApplicationInitException {
+        Class<?> applicationClass = null;
         try {
-            final Class<?> applicationClass = cl.loadClass(applicationClassName);
+            applicationClass = cl.loadClass(applicationClassName);
             if (applicationClass == null) {
                 throw new ApplicationInitException(String.format("can not find class: %s",applicationClassName));
             }
@@ -345,7 +348,11 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
         }catch(InvocationTargetException e3){
             throw new ApplicationInitException(e3);
         }catch(InstantiationException e4){
-            throw new ApplicationInitException(e4);
+            Method[] methods = applicationClass.getDeclaredMethods();
+            Field[] fields = applicationClass.getDeclaredFields();
+            String message = String.format("newApplication: methods=%s, fields=%s", Arrays.toString(methods),
+                Arrays.toString(fields));
+            throw new ApplicationInitException(message, e4);
         }
     }
 
