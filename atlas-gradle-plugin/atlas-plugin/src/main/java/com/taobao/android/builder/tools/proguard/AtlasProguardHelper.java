@@ -265,6 +265,8 @@ public class AtlasProguardHelper {
 
     private static Logger sLogger = LoggerFactory.getLogger(AtlasProguardHelper.class);
 
+    public static List<File>configs = new ArrayList<>();
+
     public static void doBundleProguard(final AppVariantContext appVariantContext, List<File> mainDexJars)
         throws Exception {
 
@@ -563,7 +565,7 @@ public class AtlasProguardHelper {
                 appVariantOutputContext.getAwbTransformMap().values(), awbObfuscatedDir, appVariantOutputContext);
 
             try {
-                awbProguardConfiguration.printConfigFile(awbInOutConfig);
+                configs = awbProguardConfiguration.printConfigFile(awbInOutConfig);
             } catch (IOException e) {
                 throw new GradleException("", e);
             }

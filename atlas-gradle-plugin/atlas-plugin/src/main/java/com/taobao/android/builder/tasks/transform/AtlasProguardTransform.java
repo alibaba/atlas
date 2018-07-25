@@ -209,35 +209,34 @@
 
 package com.taobao.android.builder.tasks.transform;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.DirectoryInput;
-import com.android.build.api.transform.Format;
-import com.android.build.api.transform.JarInput;
-import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.*;
 import com.android.build.api.transform.QualifiedContent.ContentType;
-import com.android.build.api.transform.TransformException;
-import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformInvocation;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.BaseProguardAction;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.tasks.SimpleWorkQueue;
+import com.android.builder.tasks.Job;
+import com.android.builder.tasks.JobContext;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.SettableFuture;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
@@ -253,8 +252,15 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
 import proguard.ClassPath;
+import proguard.ClassPathEntry;
 import proguard.Configuration;
 import proguard.ParseException;
+
+import static com.android.SdkConstants.DOT_JAR;
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+import static com.android.utils.FileUtils.mkdirs;
+import static com.android.utils.FileUtils.renameTo;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Created by wuzhong on 2017/4/25.
@@ -265,8 +271,18 @@ public class AtlasProguardTransform extends ProGuardTransform {
     public ProGuardTransform oldTransform;
 
     private TBuildConfig buildConfig;
+    private final File printMapping;
+    private final File dump;
+    private final File printSeeds;
+    private final File printUsage;
+    private final ImmutableList<File> secondaryFileOutputs;
+    private File testedMappingFile = null;
+    private org.gradle.api.artifacts.Configuration testMappingConfiguration = null;
 
     List<File> defaultProguardFiles = new ArrayList<>();
+
+    private File proguardOut;
+    private List configList;
 
     @Override
     public Set<ContentType> getOutputTypes() {
@@ -281,10 +297,33 @@ public class AtlasProguardTransform extends ProGuardTransform {
         this.appVariantContext = appVariantContext;
 
         this.buildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
+        proguardOut = new File(Joiner.on(File.separatorChar).join(
+                String.valueOf(appVariantContext.getScope().getGlobalScope().getBuildDir()),
+                FD_OUTPUTS,
+                "mapping",
+                appVariantContext.getScope().getVariantConfiguration().getDirName()));
+
+        printMapping = new File(proguardOut, "mapping.txt");
+        dump = new File(proguardOut, "dump.txt");
+        printSeeds = new File(proguardOut, "seeds.txt");
+        printUsage = new File(proguardOut, "usage.txt");
+        secondaryFileOutputs = ImmutableList.of(printMapping, dump, printSeeds, printUsage);
+
     }
 
     public AtlasProguardTransform(VariantScope variantScope, boolean asJar) {
         super(variantScope, asJar);
+        proguardOut = new File(Joiner.on(File.separatorChar).join(
+                String.valueOf(variantScope.getGlobalScope().getBuildDir()),
+                FD_OUTPUTS,
+                "mapping",
+                variantScope.getVariantConfiguration().getDirName()));
+
+        printMapping = new File(proguardOut, "mapping.txt");
+        dump = new File(proguardOut, "dump.txt");
+        printSeeds = new File(proguardOut, "seeds.txt");
+        printUsage = new File(proguardOut, "usage.txt");
+        secondaryFileOutputs = ImmutableList.of(printMapping, dump, printSeeds, printUsage);
     }
 
     @Override
@@ -327,7 +366,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
             List oldConfigList = (List)ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
                                                              "configurationFiles");
 
-            List configList = (List)ReflectUtils.getField(ProguardConfigurable.class, this, "configurationFiles");
+             configList = (List)ReflectUtils.getField(ProguardConfigurable.class, this, "configurationFiles");
 
             configList.addAll(oldConfigList);
 
@@ -359,7 +398,167 @@ public class AtlasProguardTransform extends ProGuardTransform {
         File proguardOutFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
         this.printconfiguration(proguardOutFile);
 
-        super.transform(invocation);
+        doTransform(invocation);
+    }
+
+    private void doTransform(TransformInvocation invocation) {
+        SettableFuture<TransformOutputProvider> resultFuture = SettableFuture.create();
+        final Job<Void> job = new Job<>(getName(),
+                new com.android.builder.tasks.Task<Void>() {
+                    @Override
+                    public void run(@NonNull Job<Void> job,
+                                    @NonNull JobContext<Void> context) throws IOException {
+                        doMinification(
+                                invocation.getInputs(),
+                                invocation.getReferencedInputs(),
+                                invocation.getOutputProvider());
+                    }
+
+                    @Override
+                    public void finished() {
+                        resultFuture.set(invocation.getOutputProvider());
+                    }
+
+                    @Override
+                    public void error(Exception e) {
+                        resultFuture.setException(e);
+                    }
+                }, resultFuture);
+        try {
+            SimpleWorkQueue.push(job);
+
+            // wait for the task completion.
+            try {
+                job.awaitRethrowExceptions();
+            } catch (ExecutionException e) {
+                throw new RuntimeException("Job failed, see logs for details", e.getCause());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private void doMinification(
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
+            @Nullable TransformOutputProvider output) throws IOException {
+        checkNotNull(output, "Missing output object for transform " + getName());
+        Set<ContentType> outputTypes = getOutputTypes();
+        Set<QualifiedContent.Scope> scopes = getScopes();
+        File outFile = output.getContentLocation("main", outputTypes, scopes,
+                Format.JAR);
+            mkdirs(outFile.getParentFile());
+
+        try {
+            GlobalScope globalScope = appVariantContext.getScope().getGlobalScope();
+
+            // set the mapping file if there is one.
+            File testedMappingFile = computeMappingFile();
+            if (testedMappingFile != null) {
+                applyMapping(testedMappingFile);
+            }
+
+            // --- InJars / LibraryJars ---
+            addInputsToConfiguration(inputs, false);
+            addInputsToConfiguration(referencedInputs, true);
+
+            // libraryJars: the runtime jars, with all optional libraries.
+            for (File runtimeJar : globalScope.getAndroidBuilder().getBootClasspath(true)) {
+                libraryJar(runtimeJar);
+            }
+
+            // --- Out files ---
+            outJar(outFile);
+
+            // proguard doesn't verify that the seed/mapping/usage folders exist and will fail
+            // if they don't so create them.
+            mkdirs(proguardOut);
+
+
+            for (Object configFile : configList) {
+                for (File file:(Collection<File>)((Supplier)configFile).get()){
+                    applyConfigurationFile(file);
+                }
+            }
+
+            configuration.printMapping = printMapping;
+            configuration.dump = dump;
+            configuration.printSeeds = printSeeds;
+            configuration.printUsage = printUsage;
+
+            forceprocessing();
+            runProguard();
+
+
+        } catch (Exception e) {
+            if (e instanceof IOException) {
+                throw (IOException) e;
+            }
+
+            throw new IOException(e);
+        }
+    }
+
+    private void addInputsToConfiguration(
+            @NonNull Collection<TransformInput> inputs,
+            boolean referencedOnly) {
+        ClassPath classPath;
+        List<String> baseFilter;
+
+        if (referencedOnly) {
+            classPath = configuration.libraryJars;
+            baseFilter = JAR_FILTER;
+        } else {
+            classPath = configuration.programJars;
+            baseFilter = null;
+        }
+
+        for (TransformInput transformInput : inputs) {
+            for (JarInput jarInput : transformInput.getJarInputs()) {
+                handleQualifiedContent(classPath, jarInput, baseFilter);
+            }
+
+            for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
+                handleQualifiedContent(classPath, directoryInput, baseFilter);
+            }
+        }
+    }
+
+    private static void handleQualifiedContent(
+            @NonNull ClassPath classPath,
+            @NonNull QualifiedContent content,
+            @Nullable List<String> baseFilter) {
+        List<String> filter = baseFilter;
+
+        if (!content.getContentTypes().contains(QualifiedContent.DefaultContentType.CLASSES)) {
+            // if the content is not meant to contain classes, we ignore them
+            // in case they are present.
+            ImmutableList.Builder<String> builder = ImmutableList.builder();
+            if (filter != null) {
+                builder.addAll(filter);
+            }
+            builder.add("!**.class");
+            filter = builder.build();
+        } else if (!content.getContentTypes().contains(QualifiedContent.DefaultContentType.RESOURCES)) {
+            // if the content is not meant to contain resources, we ignore them
+            // in case they are present (by accepting only classes.)
+            filter = ImmutableList.of("**.class");
+        }
+
+        inputJar(classPath, content.getFile(), filter);
+    }
+
+    @Nullable
+    private File computeMappingFile() {
+        if (testedMappingFile != null && testedMappingFile.isFile()) {
+            return testedMappingFile;
+        } else if (testMappingConfiguration != null && testMappingConfiguration.getSingleFile().isFile()) {
+            return testMappingConfiguration.getSingleFile();
+        }
+
+        return null;
     }
 
     public void fastTransform(TransformInvocation invocation) throws TransformException {
@@ -480,29 +679,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
         super.applyConfigurationFile(file);
     }
 
-    private static void handleQualifiedContent(
-        @NonNull ClassPath classPath,
-        @NonNull QualifiedContent content,
-        @Nullable List<String> baseFilter) {
-        List<String> filter = baseFilter;
 
-        if (!content.getContentTypes().contains(QualifiedContent.DefaultContentType.CLASSES)) {
-            // if the content is not meant to contain classes, we ignore them
-            // in case they are present.
-            ImmutableList.Builder<String> builder = ImmutableList.builder();
-            if (filter != null) {
-                builder.addAll(filter);
-            }
-            builder.add("!**.class");
-            filter = builder.build();
-        } else if (!content.getContentTypes().contains(QualifiedContent.DefaultContentType.RESOURCES)) {
-            // if the content is not meant to contain resources, we ignore them
-            // in case they are present (by accepting only classes.)
-            filter = ImmutableList.of("**.class");
-        }
-
-        inputJar(classPath, content.getFile(), filter);
-    }
 
     public void applyLibConfigurationFile(@NonNull File file) throws IOException, ParseException {
         KeepOnlyConfigurationParser parser =
@@ -512,5 +689,21 @@ public class AtlasProguardTransform extends ProGuardTransform {
         } finally {
             parser.close();
         }
+    }
+
+    protected static void inputJar(
+            @NonNull ClassPath classPath,
+            @NonNull File file,
+            @Nullable List<String> filter) {
+        if (AtlasProguardHelper.configs.contains(file)){
+            return;
+        }
+        ClassPathEntry classPathEntry = new ClassPathEntry(file, false /*output*/);
+
+        if (filter != null) {
+            classPathEntry.setFilter(filter);
+        }
+
+        classPath.add(classPathEntry);
     }
 }

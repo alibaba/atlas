@@ -253,8 +253,10 @@ public class AwbProguardConfiguration {
      *
      * @param outConfigFile
      */
-    public void printConfigFile(File outConfigFile) throws IOException {
+    public List<File> printConfigFile(File outConfigFile) throws IOException {
         List<String> configs = Lists.newArrayList();
+        List<File> bundleFiles = Lists.newArrayList();
+
         //awbProguard for no lib, convenient for predex
         for (AwbTransform awbTransform : awbTransforms) {
 
@@ -267,6 +269,7 @@ public class AwbProguardConfiguration {
             //configs.add();
             if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
                 configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
+                bundleFiles.add(awbTransform.getInputDir());
                 File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
@@ -275,7 +278,7 @@ public class AwbProguardConfiguration {
             Set<String> classNames = new HashSet<>();
             for (File inputLibrary : awbTransform.getInputLibraries()) {
                 configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
-
+                bundleFiles.add(inputLibrary);
                 String fileName = inputLibrary.getName();
 
                 if (classNames.contains(fileName)) {
@@ -297,5 +300,6 @@ public class AwbProguardConfiguration {
             appVariantOutputContext.getAwbTransformMap().put(name, awbTransform);
         }
         FileUtils.writeLines(outConfigFile, configs);
+        return bundleFiles;
     }
 }
