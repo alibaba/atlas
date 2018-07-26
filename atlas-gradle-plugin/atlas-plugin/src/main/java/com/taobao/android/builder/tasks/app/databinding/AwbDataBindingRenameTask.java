@@ -312,7 +312,7 @@ public class AwbDataBindingRenameTask extends BaseTask {
                                 packageName.replace(".", "/") +
                                         "/dataBindDynamicUtils", dataBindDynamicUtilsClazz);
 
-                        FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "com/android/databinding"));
+                        FileUtils.deleteDirectory(new File(dataBindingClazzFolder, "android/databinding"));
 
 
                         //FileUtils.deleteDirectory(new File(dataBindingClazzFolder, packageName.replace(".", "/") +

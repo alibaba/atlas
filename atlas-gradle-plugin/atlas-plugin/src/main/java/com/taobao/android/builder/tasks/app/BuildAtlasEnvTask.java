@@ -180,7 +180,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             }
         }
 
-        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelper.addMainDex(fileIdentity));
+        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(fileIdentity));
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
@@ -224,6 +224,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             String moudleName = jarLibrary.getName().split(":")[1];
             String name = jarLibrary.getResolvedCoordinates().getGroupId() + ":" + jarLibrary.getResolvedCoordinates().getArtifactId();
             fillMainJar(name, moudleName);
+            fillAllJavaRes(name, moudleName);
         }
 
         for (SoLibrary soLibrary : mainSoLibraries) {
@@ -276,7 +277,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             //mergeresources
             Field field = MergeResources.class.getDeclaredField("libraries");
             field.setAccessible(true);
-            field.set(mergeResources, new MainArtifactsCollection((ArtifactCollection) field.get(mergeResources), getProject()));
+            field.set(mergeResources, new MainArtifactsCollection((ArtifactCollection) field.get(mergeResources), getProject(),mergeResources.getVariantName()));
             appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
                 if (isMBundle(appVariantContext,awbTransform.getAwbBundle())) {
                     try {
@@ -314,7 +315,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             MergeSourceSetFolders mergeSourceSetFolders = appVariantContext.getScope().getMergeAssetsTask().get(new TaskContainerAdaptor(getProject().getTasks()));
             Field assetsField = MergeSourceSetFolders.class.getDeclaredField("libraries");
             assetsField.setAccessible(true);
-            assetsField.set(mergeSourceSetFolders, new MainArtifactsCollection((ArtifactCollection) assetsField.get(mergeSourceSetFolders), getProject()));
+            assetsField.set(mergeSourceSetFolders, new MainArtifactsCollection((ArtifactCollection) assetsField.get(mergeSourceSetFolders), getProject(),mergeSourceSetFolders.getVariantName()));
             appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
                 if (isMBundle(appVariantContext,awbTransform.getAwbBundle())) {
                     try {
@@ -326,7 +327,7 @@ public class BuildAtlasEnvTask extends BaseTask {
                     }
                 }
             });
-            AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().put(appVariantContext.getScope().getMergeNativeLibsOutputDir().getAbsolutePath(), true);
+            AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainSoFiles().put(appVariantContext.getScope().getMergeNativeLibsOutputDir().getAbsolutePath(), true);
 
         } catch (Exception e) {
 
@@ -337,7 +338,7 @@ public class BuildAtlasEnvTask extends BaseTask {
         ProcessAndroidResources processAndroidResources = appVariantContext.getScope().getProcessResourcesTask().get(new TaskContainerAdaptor(appVariantContext.getProject().getTasks()));
         FileCollection fileCollection = processAndroidResources.getSymbolListsWithPackageNames();
         Set<String> filesNames = new HashSet<>();
-        for (String fileName : AtlasBuildContext.atlasMainDexHelper.getMainManifestFiles().keySet()) {
+        for (String fileName : AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainManifestFiles().keySet()) {
             filesNames.add(fileName.substring(fileName.lastIndexOf(File.separatorChar) + 1));
         }
         FileCollection updateFileCollection = fileCollection.filter(element -> filesNames.contains(element.getParentFile().getParentFile().getName()));
@@ -450,7 +451,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             id = allManifests.get(moudleName);
         }
         if (id != null) {
-            AtlasBuildContext.atlasMainDexHelper.getMainManifestFiles().put(id.getParentFile().getAbsolutePath(), true);
+            AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainManifestFiles().put(id.getParentFile().getAbsolutePath(), true);
         }
     }
 
@@ -460,7 +461,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             id = allSolibs.get(moudleName);
         }
         if (id != null) {
-            AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().put(id.getAbsolutePath(), true);
+            AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainSoFiles().put(id.getAbsolutePath(), true);
         }
     }
 
@@ -470,7 +471,7 @@ public class BuildAtlasEnvTask extends BaseTask {
             id = allJavaRes.get(moudleName);
         }
         if (id != null) {
-            AtlasBuildContext.atlasMainDexHelper.getMainResFiles().put(id.getAbsolutePath(), true);
+            AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainResFiles().put(id.getAbsolutePath(), true);
         }
     }
 
@@ -480,7 +481,7 @@ public class BuildAtlasEnvTask extends BaseTask {
         while (identities.hasNext()) {
             FileIdentity fileIdentity = identities.next();
             if (fileIdentity.name.equals(name) || fileIdentity.name.equals(moudleName)) {
-                AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().add(fileIdentity);
+                AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainDexFiles().add(fileIdentity);
                 identities.remove();
             }
         }
@@ -605,6 +606,10 @@ public class BuildAtlasEnvTask extends BaseTask {
     }
 
     private boolean isMBundle(AppVariantContext appVariantContext,AwbBundle awbBundle){
+
+        if (awbBundle.getResolvedCoordinates().getArtifactId().equals("custom-detail-android")){
+            return false;
+        }
 
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getOutOfApkBundles().contains(awbBundle.getResolvedCoordinates().getArtifactId())){
             return false;

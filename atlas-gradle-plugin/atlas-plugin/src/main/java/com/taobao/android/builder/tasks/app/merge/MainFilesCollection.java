@@ -25,6 +25,11 @@ import java.util.Set;
 public class MainFilesCollection extends AbstractFileCollection{
 
     private Set<File>mainJars = new HashSet<>();
+    private String name;
+
+    public MainFilesCollection(String name) {
+        this.name = name;
+    }
 
 
     @Override
@@ -37,7 +42,7 @@ public class MainFilesCollection extends AbstractFileCollection{
         if (mainJars.size() > 0){
             return mainJars;
         }else {
-            mainJars.addAll(AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars());
+            mainJars.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(name).getAllMainDexJars());
         }
         return mainJars;
     }

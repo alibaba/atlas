@@ -247,7 +247,10 @@ public class AtlasBuildContext {
 
     public static Map<String, AwbBundle> awbBundleMap = new HashMap<String, AwbBundle>();
 
-    public static AtlasMainDexHelper atlasMainDexHelper = new AtlasMainDexHelper();
+//    public static AtlasMainDexHelper atlasMainDexHelper = new AtlasMainDexHelper();
+
+    public static Map<String,AtlasMainDexHelper> atlasMainDexHelperMap = new HashMap<>();
+
 
     public static ApkProcessor atlasApkProcessor = new ApkProcessor.AtlasApkProcessor();
 
@@ -285,7 +288,7 @@ public class AtlasBuildContext {
         localLibs.clear();
         status = STATUS.DEXARCHIVE;
         bundleExploadDir.clear();
-        atlasMainDexHelper.release();
+        atlasMainDexHelperMap.clear();
 
     }
 

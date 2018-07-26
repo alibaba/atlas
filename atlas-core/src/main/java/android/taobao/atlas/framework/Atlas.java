@@ -579,6 +579,7 @@ public class Atlas {
      * @param resourceDependencyNeed 是否需要使用被依赖bundle的资源
      * @throws BundleException
      */
+    @Deprecated
     public void requestRuntimeDependency(ClassLoader source,String dependencyBundle,boolean resourceDependencyNeed) throws BundleException{
         checkingThread(true);
         BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
@@ -597,6 +598,30 @@ public class Atlas {
                 throw new IllegalArgumentException(" PathClassLoader can not have bundle dependency "+dependencyBundle);
             }else {
                 throw new IllegalArgumentException(" PathClassLoader can not have runtime dependency of pathClassloader"+dependencyBundle);
+            }
+        }
+    }
+
+    public void requestRuntimeDependency(String bundleName,String dependencyBundle,boolean resourceDependencyNeed) throws BundleException{
+        checkingThread(true);
+        BundleImpl dependecyBundleImpl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
+        BundleImpl bundle = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
+
+        if(dependecyBundleImpl==null||dependecyBundleImpl ==null){
+            BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{dependencyBundle,bundleName});
+        }
+
+        if(dependecyBundleImpl==null || bundle == null){
+            throw new BundleException("failed install deppendencyBundle : " +dependencyBundle);
+        }else{
+            if(bundle.getClassLoader() instanceof BundleClassLoader && dependecyBundleImpl.getClassLoader() instanceof BundleClassLoader){
+                requestRuntimeDependency(bundle.getClassLoader(),dependecyBundleImpl.getClassLoader(),resourceDependencyNeed);
+            }else if (bundle.getClassLoader() instanceof BundleClassLoader && dependecyBundleImpl.getClassLoader() == Framework.getSystemClassLoader()){
+                ((BundleClassLoader)bundle.getClassLoader()).addRuntimeDependency(dependencyBundle);
+            }else if (bundle.getClassLoader()  == Framework.getSystemClassLoader() && dependecyBundleImpl.getClassLoader() instanceof BundleClassLoader){
+                throw new IllegalArgumentException(" PathClassLoader can not have bundle dependency "+dependencyBundle);
+            }else {
+                AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getTotalDependency().add(dependencyBundle);
             }
         }
     }

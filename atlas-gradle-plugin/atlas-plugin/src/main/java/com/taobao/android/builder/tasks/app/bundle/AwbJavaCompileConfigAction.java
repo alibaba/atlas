@@ -422,16 +422,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
                 && appVariantOutputContext.getVariantContext().isDataBindEnabled(awbBundle)) {
             File file = appVariantOutputContext.getVariantContext().getAwbDataBindingMergeArtifacts(awbBundle);
             ReflectUtils.updateField(javacTask, "dataBindingDependencyArtifacts", scope.getGlobalScope().getProject().files(file));
-              javacTask.doLast(new Action<Task>() {
-                  @Override
-                  public void execute(Task task) {
-                      try {
-                          org.apache.commons.io.FileUtils.deleteDirectory(new File(appVariantOutputContext.getJAwbavaOutputDir(awbBundle),"android/databinding"));
-                      } catch (IOException e) {
-                          e.printStackTrace();
-                      }
-                  }
-              });
+
 
 
 //            FileCollection files =

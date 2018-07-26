@@ -201,8 +201,8 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
         File tempDexFolder = null;
 
-        inputFile = AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
-        inputFile.addAll(AtlasBuildContext.atlasMainDexHelper.getInputDirs());
+        inputFile = AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars();
+        inputFile.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs());
 
         logger.warning("maindex inputFile size :" + inputFile.size());
 
@@ -387,8 +387,8 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
     }
 
     private void generateMainDexList(File mainDexListFile) {
-        Collection<File> inputs = AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
-        inputs.addAll(AtlasBuildContext.atlasMainDexHelper.getInputDirs());
+        Collection<File> inputs = AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars();
+        inputs.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs());
         FastMultiDexer fastMultiDexer = (FastMultiDexer) AtlasBuildContext.androidBuilderMap.get(variantContext.getScope().getGlobalScope().getProject()).multiDexer;
         if (fastMultiDexer == null) {
             fastMultiDexer = new FastMultiDexer((AppVariantContext) variantContext);
@@ -400,7 +400,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             e.printStackTrace();
         }
         if (files != null && files.size() > 0) {
-            AtlasBuildContext.atlasMainDexHelper.addAllMainDexJars(files);
+            AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).addAllMainDexJars(files);
 
         }
     }

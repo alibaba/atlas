@@ -337,9 +337,12 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                           @Override
                                                           public void accept(ApplicationVariant applicationVariant) {
 
-
                                                               AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
                                                                       .getAppVariantContext(project, applicationVariant);
+                                                              if (!AtlasBuildContext.atlasMainDexHelperMap.containsKey(appVariantContext.getVariantName())){
+                                                                  AtlasBuildContext.atlasMainDexHelperMap.put(appVariantContext.getVariantName(),new AtlasMainDexHelper());
+                                                              }
+
                                                               TransformReplacer transformReplacer = new TransformReplacer(appVariantContext);
 
                                                               repalceAndroidBuilder(applicationVariant);
@@ -563,7 +566,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               appVariantContext.getVariantData().javaCompilerTask.doFirst(task -> {
                                                                   JavaCompile compile = (JavaCompile) task;
-                                                                  Set<File> mainDexFiles = new MainFilesCollection().getFiles();
+                                                                  Set<File> mainDexFiles = new MainFilesCollection(appVariantContext.getVariantName()).getFiles();
                                                                   FileCollection mainFiles = appVariantContext.getProject().files(mainDexFiles);
                                                                   FileCollection files = appVariantContext.getScope().getArtifactFileCollection(ANNOTATION_PROCESSOR, ALL, JAR);
                                                                   FileCollection bootFiles = appVariantContext.getProject().files(appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(false));
@@ -587,7 +590,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   @Override
                                                                   public void execute(Task task) {
                                                                       JavaCompile compile = (JavaCompile) task;
-                                                                      AtlasBuildContext.atlasMainDexHelper.getInputDirs().add(compile.getDestinationDir());
+                                                                      AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().add(compile.getDestinationDir());
                                                                   }
                                                               });
 
@@ -601,10 +604,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                       @Override
                                                                       public Set<File> getFiles() {
-                                                                          if (AtlasBuildContext.atlasMainDexHelper.getMainJavaRes() == null) {
+                                                                          if (AtlasBuildContext.atlasMainDexHelperMap.get(packageAndroidArtifact.getVariantName()).getMainJavaRes() == null) {
                                                                               return Sets.newHashSet();
                                                                           }
-                                                                          return Sets.newHashSet(AtlasBuildContext.atlasMainDexHelper.getMainJavaRes());
+                                                                          return Sets.newHashSet(AtlasBuildContext.atlasMainDexHelperMap.get(packageAndroidArtifact.getVariantName()).getMainJavaRes());
                                                                       }
                                                                   });
                                                               }
@@ -617,7 +620,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                           ConfigurableFileCollection fileCollection = variantScope.getTryWithResourceRuntimeSupportJar();
                                                                           for (File file : fileCollection.getFiles()) {
                                                                               if (file.exists()) {
-                                                                                  AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity("runtime-deps-try-with-resources", file, false, false));
+                                                                                  AtlasBuildContext.atlasMainDexHelperMap.get(variantScope.getFullVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity("runtime-deps-try-with-resources", file, false, false));
+                                                                                  break;
                                                                               }
                                                                           }
                                                                       }

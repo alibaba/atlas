@@ -177,7 +177,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                                         zipCache,
                                         cacheUpdates,
                                         full,
-                                        contentMap, null));
+                                        contentMap, null,appVariantOutputContext.getVariantContext().getVariantName()));
 
 
 
@@ -277,7 +277,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                     baseOutput =
                             IncrementalFileMergerOutputs.fromAlgorithmAndWriter(
                                     mergeTransformAlgorithm, MergeOutputWriters.toZip(outputLocation));
-                    AtlasBuildContext.atlasMainDexHelper.addMainJavaRes(outputLocation);
+                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).addMainJavaRes(outputLocation);
                 } else {
                     outputLocation =
                             outputProvider.getContentLocation(
@@ -380,7 +380,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                                             zipCache,
                                             cacheUpdates,
                                             full,
-                                            contentMap, awbTransform));
+                                            contentMap, awbTransform,appVariantOutputContext.getVariantContext().getVariantName()));
 
 
 

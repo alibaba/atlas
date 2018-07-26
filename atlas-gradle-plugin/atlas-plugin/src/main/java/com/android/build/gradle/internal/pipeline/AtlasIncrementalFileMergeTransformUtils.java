@@ -278,13 +278,13 @@ public class AtlasIncrementalFileMergeTransformUtils {
             @NonNull TransformInput transformInput,
             @NonNull FileCacheByPath zipCache,
             @NonNull List<Runnable> cacheUpdates,
-            @Nullable Map<IncrementalFileMergerInput, QualifiedContent> contentMap, AwbTransform awbTransform) {
+            @Nullable Map<IncrementalFileMergerInput, QualifiedContent> contentMap, AwbTransform awbTransform,String name) {
         ImmutableList.Builder<IncrementalFileMergerInput> builder = ImmutableList.builder();
 
         for (JarInput jarInput : transformInput.getJarInputs()) {
 
             if (awbTransform == null) {
-                if (!AtlasBuildContext.atlasMainDexHelper.getMainResFiles().containsKey(jarInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelperMap.get(name).getMainResFiles().containsKey(jarInput.getFile().getAbsolutePath())) {
                     continue;
                 }
             } else {
@@ -298,7 +298,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
 
         for (DirectoryInput dirInput : transformInput.getDirectoryInputs()) {
             if (awbTransform == null) {
-                if (!AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelperMap.get(name).getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
                     continue;
                 }
 
@@ -313,7 +313,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
 
         for (DirectoryInput dirInput : buildLocalDirInput()) {
             if (awbTransform == null) {
-                if (!AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelperMap.get(name).getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
                     continue;
                 }
 
@@ -353,12 +353,12 @@ public class AtlasIncrementalFileMergeTransformUtils {
             @NonNull TransformInput transformInput,
             @NonNull FileCacheByPath zipCache,
             @NonNull List<Runnable> cacheUpdates,
-            @Nullable Map<IncrementalFileMergerInput, QualifiedContent> contentMap, AwbTransform awbTransform) {
+            @Nullable Map<IncrementalFileMergerInput, QualifiedContent> contentMap, AwbTransform awbTransform,String name) {
         ImmutableList.Builder<IncrementalFileMergerInput> builder = ImmutableList.builder();
 
         for (JarInput jarInput : transformInput.getJarInputs()) {
             if (awbTransform == null) {
-                if (!AtlasBuildContext.atlasMainDexHelper.getMainResFiles().containsKey(jarInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelperMap.get(name).getMainResFiles().containsKey(jarInput.getFile().getAbsolutePath())) {
                     continue;
                 }
             } else {
@@ -377,7 +377,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
 
         for (DirectoryInput dirInput : transformInput.getDirectoryInputs()) {
             if (awbTransform == null) {
-                if (!AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelperMap.get(name).getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
                     continue;
                 }
 
@@ -420,7 +420,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
             @NonNull FileCacheByPath zipCache,
             @NonNull List<Runnable> cacheUpdates,
             boolean full,
-            @Nullable Map<IncrementalFileMergerInput, QualifiedContent> contentMap, AwbTransform awbBundle) {
+            @Nullable Map<IncrementalFileMergerInput, QualifiedContent> contentMap, AwbTransform awbBundle,String name) {
         if (!full) {
             Preconditions.checkArgument(transformInvocation.isIncremental());
         }
@@ -432,15 +432,15 @@ public class AtlasIncrementalFileMergeTransformUtils {
         ImmutableList.Builder<IncrementalFileMergerInput> builder = ImmutableList.builder();
         for (TransformInput input : transformInvocation.getInputs()) {
             if (full) {
-                builder.addAll(toNonIncrementalInput(input, zipCache, cacheUpdates, contentMap,awbBundle));
+                builder.addAll(toNonIncrementalInput(input, zipCache, cacheUpdates, contentMap,awbBundle,name));
             } else {
-                builder.addAll(toIncrementalInput(input, zipCache, cacheUpdates, contentMap,awbBundle));
+                builder.addAll(toIncrementalInput(input, zipCache, cacheUpdates, contentMap,awbBundle,name));
             }
         }
 
         for (DirectoryInput dirInput : buildLocalDirInput()) {
             if (awbBundle == null) {
-                if (!AtlasBuildContext.atlasMainDexHelper.getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
+                if (!AtlasBuildContext.atlasMainDexHelperMap.get(name).getMainSoFiles().containsKey(dirInput.getFile().getAbsolutePath())) {
                     continue;
                 }
 
