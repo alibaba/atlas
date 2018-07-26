@@ -19,7 +19,7 @@ public class ParsedModuleStringNotation {
             assignValuesFromMtlModuleNotation(moduleNotation);
         } else {
             assignValuesFromModuleNotation(moduleNotation);
-            this.artifactType = moduleNotation.substring(idx + 1);
+            artifactType = moduleNotation.substring(idx + 1);
         }
     }
 
@@ -118,5 +118,17 @@ public class ParsedModuleStringNotation {
 
     public String getArtifactType() {
         return artifactType;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("ParsedModuleStringNotation{");
+        sb.append("group='").append(group).append('\'');
+        sb.append(", name='").append(name).append('\'');
+        sb.append(", version='").append(version).append('\'');
+        sb.append(", classifier='").append(classifier).append('\'');
+        sb.append(", artifactType='").append(artifactType).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 }
