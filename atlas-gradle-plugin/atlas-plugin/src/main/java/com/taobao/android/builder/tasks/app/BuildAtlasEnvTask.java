@@ -180,7 +180,9 @@ public class BuildAtlasEnvTask extends BaseTask {
             }
         }
 
-        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(fileIdentity));
+
+         //app localJar is not support , this may course duplicate localjars
+//        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(fileIdentity));
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
@@ -481,6 +483,10 @@ public class BuildAtlasEnvTask extends BaseTask {
         while (identities.hasNext()) {
             FileIdentity fileIdentity = identities.next();
             if (fileIdentity.name.equals(name) || fileIdentity.name.equals(moudleName)) {
+                if (fileIdentity.localJar && fileIdentity.name.equals(fileIdentity.file.getName())){
+                    identities.remove();
+                    continue;
+                }
                 AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainDexFiles().add(fileIdentity);
                 identities.remove();
             }

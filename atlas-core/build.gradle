@@ -25,18 +25,11 @@ repositories {
 
 }
 
- allprojects{
-
-     configurations {
-         compileProject.extendsFrom compile, archives
-         runtimeProject.extendsFrom runtime, archives
-     }
-}
 
 group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
-version "5.0.8.7-rc5"
+version "5.0.8.7-rc5-1"
 
 String getEnvValue(key, defValue) {
     def val = System.getProperty(key);
@@ -207,13 +200,16 @@ install {
     }
 }
 
-task sourcesJar(type: Jar) {
-    from('src/main/java') {
-        include '**'
-    }
-    classifier = 'sources'
-}
+//task sourcesJar(type: Jar) {
+//    from('src/main/java') {
+//        include '**'
+//    }
+//    classifier = 'sources'
+//}
 
+//artifacts {
+//    archives sourcesJar
+//}
 
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())

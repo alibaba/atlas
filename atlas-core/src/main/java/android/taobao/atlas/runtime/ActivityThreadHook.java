@@ -230,12 +230,10 @@ import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.hack.Hack.HackDeclaration.HackAssertionException;
-import android.taobao.atlas.hack.Hack.HackedField;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
-import android.view.WindowManager.BadTokenException;
+import android.util.Log;
 
 /**
  * Created by guanjie on 15/8/28.
@@ -292,6 +290,11 @@ public class ActivityThreadHook implements Handler.Callback{
             ensureLoadedApk();
         } catch (Throwable e) {
             e.printStackTrace();
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("msg", msg);
+            AtlasMonitor.getInstance().report(AtlasMonitor.ACTIVITY_THREAD_HOOK_EXCEPTION,
+                    detail,
+                    e);
             String appVersion = null;
             String avliableSpace = "";
             long filesSize = 0;
@@ -314,11 +317,6 @@ public class ActivityThreadHook implements Handler.Callback{
                 //RECEIVER 参见ActivityThread
                 if(msg.what == 113 || msg.what==114) {
                     handleCreateServiceException(msg, e);
-                    Map<String, Object> detail = new HashMap<>();
-                    detail.put("msg", msg);
-                    AtlasMonitor.getInstance().report(AtlasMonitor.ACTIVITY_THREAD_HOOK_CLASS_NOT_FOUND_EXCEPTION,
-                                                      detail,
-                                                      e);
                     return true;
                 }
                 Object loadedapk = AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,
@@ -335,7 +333,7 @@ public class ActivityThreadHook implements Handler.Callback{
                     throw new RuntimeException(appVersion+"avalialbeSpace = " + avliableSpace  + 
                     		"rootSize = " + rootSize + " filesSize = " + filesSize + " databasesSize =  " + databasesSize + " prefSize =" + prefSize + "From Atlas:classNotFound ---", e);
                 }
-            } else if (e instanceof BadTokenException) {
+            } /*else if (e instanceof BadTokenException) {
                 try {
                     HackedField<Object, Object> ActivityThread_mActivities = AtlasHacks.ActivityThread.field(
                         "mActivities").ofGenericType(Map.class);
@@ -351,7 +349,8 @@ public class ActivityThreadHook implements Handler.Callback{
                     e1.printStackTrace();
                 }
                 throw new RuntimeException(appVersion, e);
-            } else if (e.toString().contains("android.content.res.Resources") && !e.toString().contains(
+            } */ else if (e.toString().contains("android.content.res.Resources")
+                    && !e.toString().contains(
                 "OutOfMemoryError")) {
                 Object loadedapk = AndroidHack.getLoadedApk(RuntimeVariables.androidApplication,
                         mActivityThread,RuntimeVariables.androidApplication.getPackageName());
@@ -375,23 +374,28 @@ public class ActivityThreadHook implements Handler.Callback{
         if (msg.what == 114) {
             try {
                 Object gDefault = null;
-                if (Build.VERSION.SDK_INT > 25 || (Build.VERSION.SDK_INT == 25 && Build.VERSION.PREVIEW_SDK_INT > 0)) {
+                if (Build.VERSION.SDK_INT > 25 || (Build.VERSION.SDK_INT == 25
+                        && Build.VERSION.PREVIEW_SDK_INT > 0)) {
                     gDefault
-                        = AtlasHacks.ActivityManager_IActivityManagerSingleton.get(AtlasHacks.ActivityManager.getmClass());
+                            = AtlasHacks.ActivityManager_IActivityManagerSingleton.get(
+                            AtlasHacks.ActivityManager.getmClass());
                 } else {
                     gDefault
-                        = AtlasHacks.ActivityManagerNative_gDefault.get(AtlasHacks.ActivityManagerNative.getmClass());
+                            = AtlasHacks.ActivityManagerNative_gDefault.get(
+                            AtlasHacks.ActivityManagerNative.getmClass());
                 }
                 gDefault = AtlasHacks.Singleton_mInstance.get(gDefault);
-                IActivityManager am = (IActivityManager)gDefault;
+                IActivityManager am = (IActivityManager) gDefault;
                 Class ReceiverData = Class.forName("android.app.ActivityThread$CreateServiceData");
                 final Field token_field = ReceiverData.getDeclaredField("token");
                 token_field.setAccessible(true);
-                final IBinder token = (IBinder)token_field.get(msg.obj);
+                final IBinder token = (IBinder) token_field.get(msg.obj);
                 am.serviceDoneExecuting(token, 0, 0, 0);
-            } catch (Throwable e1) {
-                e1.printStackTrace();
+            } catch (Throwable t) {
+                Log.w("ActivityThreadHook", "Error serviceDoneExecuting  t: " + t, t);
+                throw new RuntimeException(t);
             }
+
         }
     }
 

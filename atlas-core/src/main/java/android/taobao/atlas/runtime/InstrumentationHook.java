@@ -243,6 +243,7 @@ import android.taobao.atlas.hack.Hack;
 import android.taobao.atlas.runtime.newcomponent.activity.ActivityBridge;
 import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.StringUtils;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -251,7 +252,9 @@ import android.content.BroadcastReceiver;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class InstrumentationHook extends Instrumentation {
@@ -568,7 +571,8 @@ public class InstrumentationHook extends Instrumentation {
 	        	intent.putExtra("android.taobao.atlas.mainAct.wait", false);
 	        }
         }catch (Exception e){
-        }
+			e.printStackTrace();
+		}
 
         try {
 			// BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(AtlasBundleInfoManager
@@ -582,6 +586,11 @@ public class InstrumentationHook extends Instrumentation {
 			// }
 			activity = mBase.newActivity(cl, className, intent);
 		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			Map<String, Object> detail = new HashMap<>();
+			detail.put("className", className);
+			AtlasMonitor.getInstance().report(AtlasMonitor.INSTRUMENTATION_HOOK_CLASS_NOT_FOUND_EXCEPTION, detail, e);
+
 			String launchActivityName = RuntimeVariables.getLauncherClassName();
             if (TextUtils.isEmpty(launchActivityName)) {
                 throw e;

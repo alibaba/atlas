@@ -22,7 +22,7 @@ repositories {
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.0'
+    buildToolsVersion '26.0.2'
     defaultConfig {
         applicationId appId
         minSdkVersion minVersion
@@ -125,10 +125,6 @@ dependencies {
 
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile('com.taobao.android:atlas_core:5.0.8.1-rc1@aar') {
-
-        transitive = true
-    }
     compile project(':middlewarelibrary')
     compile project(':splashscreen')
     compile project(':databindinglibrary')
@@ -147,8 +143,8 @@ dependencies {
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
     compile 'com.android.support:recyclerview-v7:25.3.0'
-   compile rootProject.ext.lib_atlas_core
-//    compile project(':atlas_core')
+//    compile 'com.taobao.android:atlas_core:5.0.8.5-interpret-rc18'
+    compile project(':atlas_core')
 }
 
 String getEnvValue(key, defValue) {
