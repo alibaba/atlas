@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class AtlasProfile
 {
-    private static Map<String, AtlasProfile> cacheMap = new HashMap();
+    private static final Map<String, AtlasProfile> cacheMap = new HashMap();
     private String tag;
     private long start;
 
@@ -19,13 +19,15 @@ public class AtlasProfile
         this.tag = tag;
     }
 
-    public static synchronized AtlasProfile profile(String tag) {
-        if (cacheMap.containsKey(tag)) {
-            return (AtlasProfile)cacheMap.get(tag);
+    public static  AtlasProfile profile(String tag) {
+        synchronized (cacheMap) {
+            if (cacheMap.containsKey(tag)) {
+                return (AtlasProfile) cacheMap.get(tag);
+            }
+            AtlasProfile atlasProfile = new AtlasProfile(tag);
+            cacheMap.put(tag, atlasProfile);
+            return atlasProfile;
         }
-        AtlasProfile atlasProfile = new AtlasProfile(tag);
-        cacheMap.put(tag, atlasProfile);
-        return atlasProfile;
     }
 
     public void start()

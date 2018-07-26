@@ -218,6 +218,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleClassLoader;
+import android.taobao.atlas.profile.AtlasProfile;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
@@ -309,10 +310,11 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
             String appClassName = info.getApplicationName();
             if (StringUtils.isNotEmpty(appClassName)) {
                 try {
-                    Log.e("BundleLifeCycle","start "+appClassName +"@"+Thread.currentThread().toString());
+                    AtlasProfile ap = AtlasProfile.profile(appClassName);
+                    ap.start();
                     Application app = newApplication(appClassName, b.getClassLoader());
                     app.onCreate();
-                    Log.e("BundleLifeCycle","start finish"+appClassName+"@"+Thread.currentThread().toString());
+                    Log.e("BundleLifeCycle","start finish"+appClassName+"@"+ap.stop()+"@"+Thread.currentThread().toString());
                     ((BundleImpl) bundle).setActive();
                 }catch(ApplicationInitException e){
                     if(b.getArchive()!=null && b.getArchive().isDexOpted()){
