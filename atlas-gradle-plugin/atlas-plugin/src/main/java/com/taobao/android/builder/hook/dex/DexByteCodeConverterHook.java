@@ -532,7 +532,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                             }).get()
             ;
         } catch (Exception e) {
-            throw new ProcessException(e);
+            throw new ProcessException(new ArrayList<>(builder.getInputs()).toString(),e);
         }
     }
 
