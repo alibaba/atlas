@@ -8,7 +8,6 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.taobao.atlas.remote.RemoteFactory;
@@ -21,7 +20,6 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.middleware.dialog.Dialog;
-import com.taobao.android.ActivityGroupDelegate;
 import com.taobao.update.Updater;
 
 public class MainActivity extends AppCompatActivity
@@ -168,16 +166,18 @@ public class MainActivity extends AppCompatActivity
 
 
         } else if (id == R.id.nav_dex_patch) {
-            new AsyncTask<Void, Void, Void>() {
+            new AsyncTask<Void, Void, Boolean>() {
                 @Override
-                protected Void doInBackground(Void... voids) {
-                    Updater.dexPatchUpdate(getBaseContext());
-                    return null;
+                protected Boolean doInBackground(Void... voids) {
+                    boolean update = Updater.dexPatchUpdate(getBaseContext());
+                    return update;
                 }
 
                 @Override
-                protected void onPostExecute(Void aVoid) {
-                    android.os.Process.killProcess(android.os.Process.myPid());
+                protected void onPostExecute(Boolean aVoid) {
+                    if (aVoid) {
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                    }
                 }
             }.execute();
         }else if (id == R.id.nav_databind_bundle) {

@@ -216,6 +216,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
+
 import com.taobao.atlas.dex.util.FileUtils;
 import com.taobao.atlas.update.AtlasUpdater;
 import com.taobao.atlas.update.model.UpdateInfo;
@@ -250,7 +251,7 @@ public class Updater {
             UpdateInfo info = JSON.parseObject(jsonStr, UpdateInfo.class);
 
             File patchFile = new File(context.getExternalCacheDir(),
-                    "patch-" + info.updateVersion + "@" + info.baseVersion + ".tpatch");
+                "patch-" + info.updateVersion + "@" + info.baseVersion + ".tpatch");
             AtlasUpdater.update(info, patchFile);
             Log.e("update", "update success");
             toast("更新成功，请重启app", context);
@@ -260,16 +261,18 @@ public class Updater {
         }
     }
 
-
     private static void toast(final String msg, final Context context) {
         new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show());
     }
 
-    public static void dexPatchUpdate(Context context) {
+    public static boolean dexPatchUpdate(Context context) {
+
+        boolean success = false;
+
         UpdateInfo info = loadDexPatchInfo(context);
         if (null == info) {
             toast("dexpatch 失败，请检查log，按照文档步骤操作", context);
-            return;
+            return success;
         }
         File patchFile = new File(context.getExternalCacheDir(), info.baseVersion + "@" + info.baseVersion + ".tpatch");
         try {
@@ -285,9 +288,11 @@ public class Updater {
                 }
             });
             Log.d("update", "update success");
+            success = true;
         } catch (Exception e) {
             Log.e("update", "更新失败", e);
         }
+        return success;
     }
 
     private static UpdateInfo loadDexPatchInfo(Context context) {
@@ -319,7 +324,9 @@ public class Updater {
     }
 
     private static UpdateInfo parseDexPatchJson(JSONObject data) throws JSONException {
-        if (null == data) return null;
+        if (null == data) {
+            return null;
+        }
         JSONObject updateJson = data.getJSONArray("patches").getJSONObject(0);
         JSONArray bundles = updateJson.getJSONArray("bundles");
         if (null == bundles || bundles.length() < 1) {
@@ -335,7 +342,7 @@ public class Updater {
             List<String> dep = new ArrayList<>();
             if (dependencies != null && dependencies.length() > 0) {
                 for (int j = 0; j < dependencies.length(); j++) {
-                    dep.add((String) dependencies.get(j));
+                    dep.add((String)dependencies.get(j));
                 }
             }
             UpdateInfo.Item item = new UpdateInfo.Item();
