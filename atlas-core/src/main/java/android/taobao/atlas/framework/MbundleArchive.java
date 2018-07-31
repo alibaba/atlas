@@ -3,6 +3,7 @@ package android.taobao.atlas.framework;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.Hack;
+import android.taobao.atlas.runtime.RuntimeVariables;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,11 +68,11 @@ public class MbundleArchive extends BundleArchive {
 
     @Override
     public File getArchiveFile() {
-        return null;
+        return new File(RuntimeVariables.sApkPath);
     }
 
     @Override
     public File getBundleDir() {
-        return null;
+        return new File(RuntimeVariables.sApkPath).getParentFile();
     }
 }
