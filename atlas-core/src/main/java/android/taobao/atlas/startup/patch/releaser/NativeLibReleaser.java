@@ -240,8 +240,9 @@ public class NativeLibReleaser {
         PatchVerifier patchVerifier = null;
         if (bundleFile.getEntry(SO_PATCH_META) != null) {
             patchVerifier = new NativePatchVerifier(bundleFile.getInputStream(bundleFile.getEntry(SO_PATCH_META)));
+            patchMerger = new NativePatchMerger(patchVerifier);
+
         }
-        patchMerger = new NativePatchMerger(patchVerifier);
         String extractTag = "lib/armeabi";
         if (Build.CPU_ABI.contains("x86")) {
             if (bundleFile.getEntry("lib/x86/") != null) {
@@ -289,7 +290,7 @@ public class NativeLibReleaser {
 
             }
         }
-        return patchMerger.waitForResult();
+        return true;
     }
 
     private static File findBaseSo(String soName, String entryName, ZipFile rawZip, String targetPath) throws IOException {
