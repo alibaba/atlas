@@ -209,6 +209,7 @@
 package android.taobao.atlas.framework;
 
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.DelegateResources;
@@ -266,9 +267,10 @@ public final class BundleImpl implements Bundle {
      */
     BundleImpl(final File bundleDir, final String location, final InputStream stream,
                final File file, String unique_tag, boolean installForCurrentVersion, long dexPatchVersion) throws BundleException, IOException{
+        long start = System.currentTimeMillis();
         this.location = location;
         this.bundleDir = bundleDir;
-        if(installForCurrentVersion) {
+        if (installForCurrentVersion) {
             Framework.notifyBundleListeners(BundleEvent.BEFORE_INSTALL, this);
         }
         if (stream != null) {
@@ -277,11 +279,14 @@ public final class BundleImpl implements Bundle {
             archive = new BundleArchive(location, bundleDir, file, unique_tag, dexPatchVersion);
         }
         state = INSTALLED;
+        long elapsed = System.currentTimeMillis() - start;
+        Log.i("BundleImpl", "BundleImpl " + this + " in " + elapsed + "ms.");
+
         if (installForCurrentVersion) {
             resolveBundle();
             Framework.bundles.put(location, this);
             // notify the listeners
-            Framework.notifyBundleListeners(BundleEvent.INSTALLED, this);
+            Framework.notifyBundleListeners(BundleEvent.INSTALLED, this, elapsed);
         }
     }
 
@@ -329,7 +334,7 @@ public final class BundleImpl implements Bundle {
         Framework.bundles.put(location, this);
 
         // notify the listeners
-        Framework.notifyBundleListeners(BundleEvent.INSTALLED, this);
+        Framework.notifyBundleListeners(BundleEvent.INSTALLED, this, System.currentTimeMillis() - start);
 
         if (Framework.DEBUG_BUNDLES) {
             Log.i("Framework"," Bundle " + toString() + " loaded. " + (System.currentTimeMillis() - start) + " ms");
@@ -443,6 +448,10 @@ public final class BundleImpl implements Bundle {
     }
 
     public /*synchronized*/ void startBundle() {
+        startBundle(null);
+    }
+
+    public /*synchronized*/ void startBundle(String classname) {
         if (checkIsActive()) {
             return;
         }
@@ -455,14 +464,30 @@ public final class BundleImpl implements Bundle {
                 "startBundle (location=" + location + ")," + " exception=" + Log.getStackTraceString(exception)
                     + ", callingThrowable=" + Log.getStackTraceString(callingThrowable));
         }
-        startBundleLocked();
+        long start = System.currentTimeMillis();
+        startBundleLocked(classname);
+        long elapsed = System.currentTimeMillis() - start;
+        BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
+        String appClassName = info.getApplicationName();
+        Log.i("BundleImpl",
+            "startBundleLocked " + this + ", appClassName=" + appClassName + ", classname=" + classname + " in "
+                + elapsed + "ms.", new Exception());
+        Map<String, Object> detail = new HashMap<>();
+        if (classname != null) {
+            detail.put("classname", classname);
+        }
+        if (appClassName != null) {
+            detail.put("appClassName", appClassName);
+        }
+        Framework.notifyBundleListeners(BundleEvent.ACTIVEED, this, elapsed, detail);
     }
     /**
      * the actual starting happens here.
      *
      * @throws BundleException if the bundle cannot be resolved or the Activator throws an exception.
+     * @param classname
      */
-    public synchronized void startBundleLocked() {
+    public synchronized void startBundleLocked(String classname) {
         if (checkIsActive()) {
             return;
         }
@@ -474,6 +499,7 @@ public final class BundleImpl implements Bundle {
             if (Framework.DEBUG_BUNDLES) {
                 Log.i("Framework", "Bundle " + toString() + " started.");
             }
+
         } finally {
             // Makes sure this doesn't get reused.
             callingThrowable = null;
@@ -594,7 +620,18 @@ public final class BundleImpl implements Bundle {
     }
 
     public /*synchronized*/ void optDexFile() {
+        if (getArchive().isDexOpted()) {
+            return;
+        }
+        long start = System.currentTimeMillis();
         getArchive().optDexFile();
+        long elapsed = System.currentTimeMillis() - start;
+        Log.i("BundleImpl", "optDexFile " + this + " in " + elapsed + "ms.");
+
+        // notify the listeners
+        Framework.notifyBundleListeners(BundleEvent.DEXOPTED, this, elapsed);
+
+
     }
 
     /**

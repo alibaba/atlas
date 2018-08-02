@@ -728,18 +728,26 @@ public final class Framework {
         return location.equals("com.taobao.maindex");
     }
 
+    static void notifyBundleListeners(final int state, final Bundle bundle) {
+        notifyBundleListeners(state, bundle, -1);
+    }
+
     /**
      * notify all bundle listeners.
      *
      * @param state the new state.
      * @param bundle the bundle.
      */
-    static void notifyBundleListeners(final int state, final Bundle bundle) {
+    static void notifyBundleListeners(final int state, final Bundle bundle, long elapsed) {
+        notifyBundleListeners(state, bundle, elapsed, null);
+    }
+
+    static void notifyBundleListeners(final int state, final Bundle bundle, long elapsed, Map<String, Object> detail) {
         if (syncBundleListeners.isEmpty() && bundleListeners.isEmpty()) {
             return;
         }
 
-        final BundleEvent event = new BundleEvent(state, bundle);
+        final BundleEvent event = new BundleEvent(state, bundle, elapsed, detail);
 
         // inform the synchrounous bundle listeners first ...
         final BundleListener[] syncs = (BundleListener[]) syncBundleListeners.toArray(new BundleListener[syncBundleListeners.size()]);

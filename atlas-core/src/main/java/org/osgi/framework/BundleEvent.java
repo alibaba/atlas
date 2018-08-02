@@ -3,6 +3,7 @@
 package org.osgi.framework;
 
 import java.util.EventObject;
+import java.util.Map;
 
 /**
  * A Framework event describing a bundle lifecycle change.
@@ -27,6 +28,9 @@ public class BundleEvent extends EventObject
      * Type of bundle lifecycle change.
      */
     private transient int type;
+
+    private long elapsed;
+    private Map<String, Object> detail;
 
     /**
      * This bundle has been installed.
@@ -70,6 +74,9 @@ public class BundleEvent extends EventObject
 
     public final static int BEFORE_INSTALL = 10086;
     public final static int BEFORE_STARTED = 10087;
+    public final static int DEXOPTED = 10088;
+    public final static int ALL_DEXOPTED = 10089;
+    public final static int ACTIVEED = 10090;
 
     /**
      * Creates a bundle event of the specified type.
@@ -83,6 +90,14 @@ public class BundleEvent extends EventObject
         super(bundle);
         this.bundle = bundle;
         this.type = type;
+    }
+
+    public BundleEvent(int type, Bundle bundle, long elapsed, Map<String, Object> detail) {
+        super(bundle);
+        this.bundle = bundle;
+        this.type = type;
+        this.elapsed = elapsed;
+        this.detail = detail;
     }
 
     /**
@@ -113,6 +128,53 @@ public class BundleEvent extends EventObject
     public int getType()
     {
         return type;
+    }
+
+    public long getElapsed() {
+        return elapsed;
+    }
+
+    public Map<String, Object> getDetail() {
+        return detail;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("BundleEvent{");
+        sb.append("bundle=").append(bundle);
+        sb.append(", type=").append(typeToString());
+        sb.append(", elapsed=").append(elapsed);
+        sb.append(", detail=").append(detail);
+        sb.append('}');
+        return sb.toString();
+    }
+
+    private String typeToString() {
+        switch (type) {
+            case INSTALLED:
+                return "INSTALLED";
+            case STARTED:
+                return "STARTED";
+            case STOPPED:
+                return "STOPPED";
+            case UPDATED:
+                return "UPDATED";
+            case UNINSTALLED:
+                return "UNINSTALLED";
+            case BEFORE_INSTALL:
+                return "BEFORE_INSTALL";
+            case BEFORE_STARTED:
+                return "BEFORE_STARTED";
+            case DEXOPTED:
+                return "DEXOPTED";
+            case ALL_DEXOPTED:
+                return "ALL_DEXOPTED";
+            case ACTIVEED:
+                return "ACTIVEED";
+
+            default:
+                return "UNKNOWN=" + type;
+        }
     }
 }
 

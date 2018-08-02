@@ -221,6 +221,7 @@ import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.util.Log;
 import android.util.Pair;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleEvent;
 
 import java.io.File;
 import java.io.IOException;
@@ -577,6 +578,7 @@ public class BundleInstaller implements Callable{
     @Override
     public synchronized Void call() throws Exception {
         try {
+            long start = System.currentTimeMillis();
             Bundle bundle = null;
             if (!mTransitive) {
                 for (int x = 0; x < mLocation.length; x++) {
@@ -654,6 +656,11 @@ public class BundleInstaller implements Callable{
                     }
                 }
             }
+            long elapsed = System.currentTimeMillis() - start;
+            Log.i("BundleInstaller",
+                "call " + mLocation + " in " + elapsed + "ms." + ". Thread: " + Thread.currentThread());
+            Framework.notifyBundleListeners(BundleEvent.ALL_DEXOPTED, bundle, elapsed);
+
             return null;
         } catch (Exception e) {
             // e.printStackTrace();

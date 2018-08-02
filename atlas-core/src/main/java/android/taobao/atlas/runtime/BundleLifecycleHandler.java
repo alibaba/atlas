@@ -227,15 +227,17 @@ import android.annotation.SuppressLint;
 import android.app.Application;
 import android.os.Looper;
 import android.taobao.atlas.framework.BundleImpl;
-import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.util.FileUtils;
 import android.taobao.atlas.util.StringUtils;
 import android.util.Log;
 
 public class BundleLifecycleHandler implements SynchronousBundleListener {
     @SuppressLint("NewApi") @Override
     public void bundleChanged(final BundleEvent event){
+        if (event != null && event.getElapsed() > 0) {
+            Log.d("BundleLifecycleHandler", "bundleChanged() - event=" + event);
+        }
+
         switch (event.getType()) {
             case 0:/* LOADED */
                 loaded(event.getBundle());
