@@ -219,6 +219,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
@@ -364,6 +366,7 @@ public class ApkUtils {
     }
     
     public static void copyInputStreamToFile(InputStream input, File file) throws IOException {
+        int available = input.available();
         FileOutputStream os = null;
         FileChannel channel = null;
         try {
@@ -393,6 +396,16 @@ public class ApkUtils {
                 os.close();
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+            long actualLength = file.length();
+
+            if (actualLength != available) {
+                Map<String, Object> detail = new HashMap<>();
+                detail.put("file", file);
+                detail.put("actualLength", actualLength);
+                detail.put("available", available);
+                AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLE_SOURCE_MISMATCH, detail,
+                    new Throwable());
             }
         }
     }
