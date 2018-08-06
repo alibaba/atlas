@@ -292,6 +292,8 @@ public class DelegateClassLoader extends PathClassLoader {
     	return sb.toString();
     }
 
+    private static final String TAG = "DelegateClassLoader";
+    
     static Class<?> loadFromInstalledBundles(String className,boolean safe)
             throws ClassNotFoundException {
         Class<?> clazz = null;
@@ -307,7 +309,13 @@ public class DelegateClassLoader extends PathClassLoader {
             // if (bundle != null && bundle.checkValidate()) {
                 try {
                     if (classloader != null) {
+                        final long startNanos;
+                        startNanos = System.nanoTime();
                         clazz = classloader.loadClass(className);
+                        final long endNanos = System.nanoTime();
+                        Log.e(TAG, "loadFromInstalledBundles " + className + ": Finished, took "
+                            + (endNanos - startNanos) * 0.000001f + " ms.");
+                                
                         if (clazz != null&& bundle.checkValidate()) {
                             return clazz;
                         }
@@ -382,7 +390,6 @@ public class DelegateClassLoader extends PathClassLoader {
                 return true;
             }
         } catch (PackageManager.NameNotFoundException e) {
-            ;
         }
         return false;
     }
@@ -393,7 +400,6 @@ public class DelegateClassLoader extends PathClassLoader {
                 return true;
             }
         } catch (PackageManager.NameNotFoundException e) {
-            ;
         }
 
         return false;

@@ -332,10 +332,19 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
         }
     }
 
+    private static final String TAG = "BundleLifecycleHandler";
+    
     protected static Application newApplication(String applicationClassName, ClassLoader cl) throws ApplicationInitException {
         Class<?> applicationClass = null;
         try {
+            final long startNanos;
+            startNanos = System.nanoTime();
             applicationClass = cl.loadClass(applicationClassName);
+            final long endNanos = System.nanoTime();
+            Log.e(TAG,
+                "newApplication " + applicationClassName + ": Finished, took " + (endNanos - startNanos) * 0.000001f
+                    + " ms.");
+                    
             if (applicationClass == null) {
                 throw new ApplicationInitException(String.format("can not find class: %s",applicationClassName));
             }
