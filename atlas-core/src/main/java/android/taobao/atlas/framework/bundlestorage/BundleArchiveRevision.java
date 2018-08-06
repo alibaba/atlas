@@ -786,7 +786,7 @@ public class BundleArchiveRevision {
             if (dexFile == null){
                 optDexFile();
             }
-            if(Framework.isDeubgMode()){
+            if (Framework.DEBUG) {
                 clazz = findPatchClass(className,cl);
                 if(clazz!=null){
                     return clazz;

@@ -213,9 +213,8 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
-import org.osgi.framework.Bundle;
+import dalvik.system.PathClassLoader;
 import org.osgi.framework.BundleException;
 
 import java.io.File;
@@ -226,10 +225,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.jar.Attributes;
@@ -237,6 +234,33 @@ import java.util.jar.Attributes;
 import dalvik.system.BaseDexClassLoader;
 
 public final class BundleClassLoader extends BaseDexClassLoader {
+
+    private static Method sFindLoadedClassMethod;
+
+    static {
+
+        try {
+            sFindLoadedClassMethod = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+            if (!sFindLoadedClassMethod.isAccessible()) {
+                sFindLoadedClassMethod.setAccessible(true);
+            }
+        } catch (NoSuchMethodException e) {
+            Log.d("BundleClassLoader", "Could not find method findLoadedClass. Oh well.");
+        }
+    }
+
+    private final ClassLoader parent;
+
+    public static Class findLoadedClass(ClassLoader classLoader, String s) {
+        if (sFindLoadedClassMethod != null) {
+            try {
+                return (Class)sFindLoadedClassMethod.invoke(classLoader, s);
+            } catch (Exception e) {
+                Log.d("BundleClassLoader", "Could not invoke findLoadedClass", e);
+            }
+        }
+        return null;
+    }
 
     /**
      * the archive file.
@@ -269,18 +293,14 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @throws BundleException in case of IO errors.
      */
     BundleClassLoader(final BundleImpl bundle, List<String> dependencies, String nativeLibPath) throws BundleException {
-        super(".", null, nativeLibPath, Object.class.getClassLoader());
+        super(".", null, nativeLibPath, BundleClassLoader.class.getClassLoader());
+        parent = getPathClassLoaderParent(getParent());
         Log.e("BundleClassLoader", "nativeLibPath : " + nativeLibPath);
         if (Build.VERSION.SDK_INT >= 27) {
             try {
                 Class PatchClassLoaderFactory = Class.forName("com.android.internal.os.ClassLoaderFactory");
                 Method method = PatchClassLoaderFactory.getDeclaredMethod("createClassloaderNamespace",
-                    ClassLoader.class,
-                    int.class,
-                    String.class,
-                    String.class,
-                    boolean.class,
-                    boolean.class);
+                    ClassLoader.class, int.class, String.class, String.class, boolean.class, boolean.class);
                 method.setAccessible(true);
                 method.invoke(PatchClassLoaderFactory, this, 24, nativeLibPath, nativeLibPath, true, false);
             } catch (Throwable e) {
@@ -290,11 +310,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
             try {
                 Class PatchClassLoaderFactory = Class.forName("com.android.internal.os.PathClassLoaderFactory");
                 Method method = PatchClassLoaderFactory.getDeclaredMethod("createClassloaderNamespace",
-                    ClassLoader.class,
-                    int.class,
-                    String.class,
-                    String.class,
-                    boolean.class);
+                    ClassLoader.class, int.class, String.class, String.class, boolean.class);
                 method.setAccessible(true);
                 method.invoke(PatchClassLoaderFactory, this, 24, nativeLibPath, nativeLibPath, true);
             } catch (Throwable e) {
@@ -307,6 +323,17 @@ public final class BundleClassLoader extends BaseDexClassLoader {
         location = bundle.location;
 
         this.dependencies = dependencies;
+    }
+
+    private ClassLoader getPathClassLoaderParent(ClassLoader node) {
+        ClassLoader parent = node;
+        while (parent != null) {
+            if (parent != null && parent.getClass().equals(PathClassLoader.class)) {
+                return parent;
+            }
+            parent = parent.getParent();
+        }
+        return node;
     }
 
     public boolean validateClasses() {
@@ -324,8 +351,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                 .isDexOpted()) {
                 Log.e("BundleClassLoader",
                     "dexopt is failed: " + dependencyBundle + ", bundleName=" + bundleName + ", dependencies="
-                        + dependencies + ", this=" + this + ", thread=" + Thread.currentThread(),
-                    new Exception());
+                        + dependencies + ", this=" + this + ", thread=" + Thread.currentThread(), new Exception());
                 // Map<String, Object> detail = new HashMap<>();
                 // detail.put("location", location);
                 // detail.put("dependencies", dependencies);
@@ -387,6 +413,26 @@ public final class BundleClassLoader extends BaseDexClassLoader {
     void cleanup(final boolean full) {
     }
 
+    @Override
+    protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
+        Class<?> clazz = findLoadedClass(className);
+
+        if (clazz == null) {
+            clazz = findLoadedClass(parent, className);/*this.getParent().loadClass(false)*/
+
+            if (clazz == null) {
+                //try {
+                    clazz = findClass(className);
+                //} catch (ClassNotFoundException e) {
+                //    //e.addSuppressed(suppressed);
+                //    throw e;
+                //}
+            }
+        }
+
+        return clazz;
+    }
+
     /**
      * find a class. The following order has to be used for loading classes:
      * <ol>
@@ -401,6 +447,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category ClassLoader
      * @see java.lang.ClassLoader#findClass(java.lang.String)
      */
+    @Override
     protected Class<?> findClass(final String classname) throws ClassNotFoundException {
 
         Class<?> clazz;
@@ -412,14 +459,6 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                 classLoadListener.onClassLoaded(clazz);
             }
             return clazz;
-        }
-        // find class in PathClassLoader
-        try {
-            clazz = Framework.systemClassLoader.loadClass(classname);
-            if (clazz != null) {
-                return clazz;
-            }
-        } catch (Exception e) {
         }
 
         // find class in dependency bundle
@@ -441,6 +480,14 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                     e.printStackTrace();
                 }
             }
+        }
+        // find class in PathClassLoader
+        try {
+            clazz = Framework.systemClassLoader.loadClass(classname);
+            if (clazz != null) {
+                return clazz;
+            }
+        } catch (Exception e) {
         }
 
         throw new ClassNotFoundException(
@@ -490,6 +537,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category ClassLoader
      * @see java.lang.ClassLoader#findResource(java.lang.String)
      */
+    @Override
     protected URL findResource(final String filename) {
         final String name = stripTrailing(filename);
         List<URL> results = findOwnResources(name, false);
@@ -512,6 +560,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category ClassLoader
      * @see java.lang.ClassLoader#findResources(java.lang.String)
      */
+    @Override
     protected Enumeration<URL> findResources(final String filename) {
         final String name = stripTrailing(filename);
         final List<URL> results = findOwnResources(name, true);
@@ -554,6 +603,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category ClassLoader
      * @see java.lang.ClassLoader#findLibrary(java.lang.String)
      */
+    @Override
     public String findLibrary(final String libraryName) {
         String fileName = System.mapLibraryName(libraryName);
 
@@ -588,6 +638,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
      * @category Object
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
         return "BundleClassLoader[Bundle" + bundle + "]";
     }
