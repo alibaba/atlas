@@ -275,15 +275,16 @@ public class AtlasDependencyManager extends DependencyManager {
     @Override
     public Set<AndroidDependency> resolveDependencies(@NonNull VariantDependencies variantDeps,
                                                       @Nullable String testedProjectPath) {
-        this.apDependencies = resolveApDependencies(project, variantDeps.getName());
+        apDependencies = resolveApDependencies(project, variantDeps.getName());
 
 
-        atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo, this.apDependencies).parseDependencyTree(
+        atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo,
+                apDependencies).parseDependencyTree(
             variantDeps);
 
         AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
 
-        if (atlasExtension.getTBuildConfig().isIncremental() && this.apDependencies != null) {
+        if (atlasExtension.getTBuildConfig().isIncremental() && apDependencies != null) {
             sLogger.warn("[dependencyTree" + variantDeps.getName() + "] {}",
                          JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
         } else {
@@ -355,6 +356,9 @@ public class AtlasDependencyManager extends DependencyManager {
 
 
         if (apDependencies != null) {
+            if (!apDependencies.containsDependency(module)) {
+                return false;
+            }
             // AtlasDependencyTree同步
             if (!atlasDependencyTree.getMainBundle().containsDependency(module)) {
                 return true;

@@ -435,6 +435,10 @@ public class ApDependencies /*extends BaseTask*/ {
         }
     }
 
+    public boolean containsDependency(
+            @javax.annotation.Nullable ModuleIdentifier moduleIdentifier) {
+        return mDependenciesTable.containsRow(moduleIdentifier);
+    }
     //public boolean isMainLibrary(Library library) {
     //    MavenCoordinates coordinates = library.getResolvedCoordinates();
     //    return isMainLibrary(coordinates.getGroupId(), coordinates.getArtifactId());
