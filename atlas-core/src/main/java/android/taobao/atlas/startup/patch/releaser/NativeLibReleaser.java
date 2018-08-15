@@ -208,6 +208,7 @@
 
 package android.taobao.atlas.startup.patch.releaser;
 
+import android.app.PreVerifier;
 import android.os.Build;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.patch.*;
@@ -230,6 +231,13 @@ public class NativeLibReleaser {
     public static final String SO_PATCH_META = "SO-PATCH-INF";
 
     private static PatchMerger patchMerger;
+
+    public NativeLibReleaser() {
+        if(Boolean.FALSE.booleanValue()){
+            String.valueOf(PreVerifier.class);
+        }
+    }
+
 
     public static boolean releaseLibs(File apkFile, File reversionDir) throws IOException {
         ZipFile rawZip = new ZipFile(KernalConstants.APK_PATH);

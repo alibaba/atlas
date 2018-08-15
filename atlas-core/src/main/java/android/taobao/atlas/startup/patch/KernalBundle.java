@@ -401,7 +401,7 @@ public class KernalBundle {
     public static void patchNativeLib(Context base) {
         try {
             File dir = new File(base.getFilesDir(), String.format("nativeLib-%s", base.getPackageManager().getPackageInfo(base.getPackageName(), 0).versionName));
-            ClassLoader loader = Atlas.class.getClassLoader();
+            ClassLoader loader = KernalBundle.class.getClassLoader();
             Field pathListField = findField(loader, "pathList");
             Object dexPathList = pathListField.get(loader);
             patchLibrary(dexPathList, dir);
