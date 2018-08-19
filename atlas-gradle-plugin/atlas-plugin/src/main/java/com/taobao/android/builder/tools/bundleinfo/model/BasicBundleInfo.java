@@ -219,135 +219,146 @@ import com.google.common.collect.Sets;
  */
 public class BasicBundleInfo {
 
-    private String pkgName;
+  private String pkgName;
 
-    /**
-     * 主dex依赖+当前依赖的md5
-     */
-    private String unique_tag;
+  /**
+   * 主dex依赖+当前依赖的md5
+   */
+  private String unique_tag;
 
-    private String applicationName;
+  private String applicationName;
 
-    private String version;
+  private String version;
 
-    private Set<String> dependency = Sets.newHashSet();
+  private Set<String> dependency = Sets.newHashSet();
 
-    private Set<String> activities = Sets.newHashSet();
+  private Set<String> activities = Sets.newHashSet();
 
-    private Set<String> services = Sets.newHashSet();
+  private Set<String> services = Sets.newHashSet();
 
-    private Set<String> receivers = Sets.newHashSet();
+  private Set<String> receivers = Sets.newHashSet();
 
-    private Set<String> contentProviders = Sets.newHashSet();
+  private Set<String> contentProviders = Sets.newHashSet();
 
-    private HashMap<String, String> remoteFragments = new HashMap<String, String>();
-    private HashMap<String, String> remoteViews = new HashMap<String, String>();
+  private HashMap<String, String> remoteFragments = new HashMap<String, String>();
+  private HashMap<String, String> remoteViews = new HashMap<String, String>();
 
-    private HashMap<String, String> remoteTransactors = new HashMap<String, String>();
+  private HashMap<String, String> remoteTransactors = new HashMap<String, String>();
 
-    private Boolean isInternal = true;
+  private Boolean isInternal = true;
 
-    public HashMap<String, String> getRemoteViews() {
-        return remoteViews;
-    }
+  private boolean mIsMBundle;
 
-    public void setRemoteViews(HashMap<String, String> remoteViews) {
-        this.remoteViews = remoteViews;
-    }
 
-    public HashMap<String, String> getRemoteTransactors() {
-        return remoteTransactors;
-    }
+  public HashMap<String, String> getRemoteViews() {
+    return remoteViews;
+  }
 
-    public void setRemoteTransactors(HashMap<String, String> remoteTransactors) {
-        this.remoteTransactors = remoteTransactors;
-    }
+  public void setRemoteViews(HashMap<String, String> remoteViews) {
+    this.remoteViews = remoteViews;
+  }
 
-    public HashMap<String, String> getRemoteFragments() {
-        return remoteFragments;
-    }
+  public HashMap<String, String> getRemoteTransactors() {
+    return remoteTransactors;
+  }
 
-    public void setRemoteFragments(HashMap<String, String> remoteFragments) {
-        this.remoteFragments = remoteFragments;
-    }
+  public void setRemoteTransactors(HashMap<String, String> remoteTransactors) {
+    this.remoteTransactors = remoteTransactors;
+  }
 
-    public String getPkgName() {
-        return pkgName;
-    }
+  public HashMap<String, String> getRemoteFragments() {
+    return remoteFragments;
+  }
 
-    public void setPkgName(String pkgName) {
-        this.pkgName = pkgName;
-    }
+  public void setRemoteFragments(HashMap<String, String> remoteFragments) {
+    this.remoteFragments = remoteFragments;
+  }
 
-    public String getApplicationName() {
-        return applicationName;
-    }
+  public String getPkgName() {
+    return pkgName;
+  }
 
-    public void setApplicationName(String applicationName) {
-        this.applicationName = applicationName;
-    }
+  public void setPkgName(String pkgName) {
+    this.pkgName = pkgName;
+  }
 
-    public String getVersion() {
-        return version;
-    }
+  public String getApplicationName() {
+    return applicationName;
+  }
 
-    public void setVersion(String version) {
-        this.version = version;
-    }
+  public void setApplicationName(String applicationName) {
+    this.applicationName = applicationName;
+  }
 
-    public Set<String> getDependency() {
-        return dependency;
-    }
+  public String getVersion() {
+    return version;
+  }
 
-    public void setDependency(Set<String> dependency) {
-        this.dependency = dependency;
-    }
+  public void setVersion(String version) {
+    this.version = version;
+  }
 
-    public Set<String> getActivities() {
-        return activities;
-    }
+  public Set<String> getDependency() {
+    return dependency;
+  }
 
-    public void setActivities(Set<String> activities) {
-        this.activities = activities;
-    }
+  public void setDependency(Set<String> dependency) {
+    this.dependency = dependency;
+  }
 
-    public Set<String> getServices() {
-        return services;
-    }
+  public Set<String> getActivities() {
+    return activities;
+  }
 
-    public void setServices(Set<String> services) {
-        this.services = services;
-    }
+  public void setActivities(Set<String> activities) {
+    this.activities = activities;
+  }
 
-    public Set<String> getReceivers() {
-        return receivers;
-    }
+  public Set<String> getServices() {
+    return services;
+  }
 
-    public void setReceivers(Set<String> receivers) {
-        this.receivers = receivers;
-    }
+  public void setServices(Set<String> services) {
+    this.services = services;
+  }
 
-    public Set<String> getContentProviders() {
-        return contentProviders;
-    }
+  public Set<String> getReceivers() {
+    return receivers;
+  }
 
-    public void setContentProviders(Set<String> contentProviders) {
-        this.contentProviders = contentProviders;
-    }
+  public void setReceivers(Set<String> receivers) {
+    this.receivers = receivers;
+  }
 
-    public boolean getIsInternal() {
-        return isInternal;
-    }
+  public Set<String> getContentProviders() {
+    return contentProviders;
+  }
 
-    public void setIsInternal(boolean internal) {
-        isInternal = internal;
-    }
+  public void setContentProviders(Set<String> contentProviders) {
+    this.contentProviders = contentProviders;
+  }
 
-    public String getUnique_tag() {
-        return unique_tag;
-    }
+  public boolean getIsInternal() {
+    return isInternal;
+  }
 
-    public void setUnique_tag(String unique_tag) {
-        this.unique_tag = unique_tag;
-    }
+  public void setIsInternal(boolean internal) {
+    isInternal = internal;
+  }
+
+  public void setIsMBundle(boolean isMBundle) {
+    mIsMBundle = isMBundle;
+  }
+
+  public boolean isMBundle() {
+    return mIsMBundle;
+  }
+
+  public String getUnique_tag() {
+    return unique_tag;
+  }
+
+  public void setUnique_tag(String unique_tag) {
+    this.unique_tag = unique_tag;
+  }
 }

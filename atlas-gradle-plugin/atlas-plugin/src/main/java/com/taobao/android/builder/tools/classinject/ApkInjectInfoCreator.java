@@ -237,151 +237,155 @@ import org.gradle.api.UncheckedIOException;
  */
 public class ApkInjectInfoCreator {
 
-    public InjectParam creteInjectParam(AppVariantContext appVariantContext) {
-        InjectParam injectParam = new InjectParam();
+  public InjectParam creteInjectParam(AppVariantContext appVariantContext) {
+    InjectParam injectParam = new InjectParam();
 
-        injectParam.removePreverify = !appVariantContext.getAtlasExtension().getTBuildConfig().getDoPreverify();
+    injectParam.removePreverify = !appVariantContext.getAtlasExtension().getTBuildConfig().getDoPreverify();
 
-        injectParam.version = appVariantContext.getVariantConfiguration().getVersionName();
+    injectParam.version = appVariantContext.getVariantConfiguration().getVersionName();
 
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext
-            .getScope().
-                getVariantConfiguration().getFullName());
+    AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext
+                                                                                             .getScope().
+        getVariantConfiguration().getFullName());
 
-        List<BasicBundleInfo> basicBundleInfos = new ArrayList<BasicBundleInfo>();
+    List<BasicBundleInfo> basicBundleInfos = new ArrayList<BasicBundleInfo>();
 
-        String mainMd5 = MD5Util.getMD5(StringUtils.join(atlasDependencyTree.getMainBundle().getAllDependencies()));
-        injectParam.unit_tag = mainMd5;
-        appVariantContext.unit_tag = mainMd5;
+    String mainMd5 = MD5Util.getMD5(StringUtils.join(atlasDependencyTree.getMainBundle().getAllDependencies()));
+    injectParam.unit_tag = mainMd5;
+    appVariantContext.unit_tag = mainMd5;
 
-        for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+    for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
-            BundleInfo bundleInfo = awbBundle.bundleInfo;
+      BundleInfo bundleInfo = awbBundle.bundleInfo;
 
-            BasicBundleInfo basicBundleInfo = new BasicBundleInfo();
+      BasicBundleInfo basicBundleInfo = new BasicBundleInfo();
 
-            basicBundleInfo.setApplicationName(bundleInfo.getApplicationName());
-            basicBundleInfo.setVersion(bundleInfo.getVersion());
-            basicBundleInfo.setPkgName(bundleInfo.getPkgName());
+      basicBundleInfo.setApplicationName(bundleInfo.getApplicationName());
+      basicBundleInfo.setVersion(bundleInfo.getVersion());
+      basicBundleInfo.setPkgName(bundleInfo.getPkgName());
 
-            //set unique_tag
-            String bundleMd5 = MD5Util.getMD5(StringUtils.join(awbBundle.getAllDependencies()));
-            basicBundleInfo.setUnique_tag(MD5Util.getMD5(mainMd5 + bundleMd5));
-            bundleInfo.setUnique_tag(basicBundleInfo.getUnique_tag());
+      //set unique_tag
+      String bundleMd5 = MD5Util.getMD5(StringUtils.join(awbBundle.getAllDependencies()));
+      basicBundleInfo.setUnique_tag(MD5Util.getMD5(mainMd5 + bundleMd5));
+      bundleInfo.setUnique_tag(basicBundleInfo.getUnique_tag());
 
-            if (!bundleInfo.getIsInternal()) {
-                basicBundleInfo.setIsInternal(false);
-            }
-            if (!bundleInfo.getActivities().isEmpty()) {
-                basicBundleInfo.setActivities(bundleInfo.getActivities());
-            }
-            if (!bundleInfo.getContentProviders().isEmpty()) {
-                basicBundleInfo.setContentProviders(bundleInfo.getContentProviders());
-            }
-            if (!bundleInfo.getDependency().isEmpty()) {
-                basicBundleInfo.setDependency(bundleInfo.getDependency());
-            }
-            if (!bundleInfo.getReceivers().isEmpty()) {
-                basicBundleInfo.setReceivers(bundleInfo.getReceivers());
-            }
-            if (!bundleInfo.getServices().isEmpty()) {
-                basicBundleInfo.setServices(bundleInfo.getServices());
-            }
-            if (!bundleInfo.getRemoteFragments().isEmpty()) {
-                basicBundleInfo.setRemoteFragments(bundleInfo.getRemoteFragments());
-            }
-            if (!bundleInfo.getRemoteViews().isEmpty()) {
-                basicBundleInfo.setRemoteViews(bundleInfo.getRemoteViews());
-            }
-            if (!bundleInfo.getRemoteTransactors().isEmpty()) {
-                basicBundleInfo.setRemoteTransactors(bundleInfo.getRemoteTransactors());
-            }
+      if (!bundleInfo.getIsInternal()) {
+        basicBundleInfo.setIsInternal(false);
+      }
+      if (!bundleInfo.getActivities().isEmpty()) {
+        basicBundleInfo.setActivities(bundleInfo.getActivities());
+      }
+      if (!bundleInfo.getContentProviders().isEmpty()) {
+        basicBundleInfo.setContentProviders(bundleInfo.getContentProviders());
+      }
+      if (!bundleInfo.getDependency().isEmpty()) {
+        basicBundleInfo.setDependency(bundleInfo.getDependency());
+      }
+      if (!bundleInfo.getReceivers().isEmpty()) {
+        basicBundleInfo.setReceivers(bundleInfo.getReceivers());
+      }
+      if (!bundleInfo.getServices().isEmpty()) {
+        basicBundleInfo.setServices(bundleInfo.getServices());
+      }
+      if (!bundleInfo.getRemoteFragments().isEmpty()) {
+        basicBundleInfo.setRemoteFragments(bundleInfo.getRemoteFragments());
+      }
+      if (!bundleInfo.getRemoteViews().isEmpty()) {
+        basicBundleInfo.setRemoteViews(bundleInfo.getRemoteViews());
+      }
+      if (!bundleInfo.getRemoteTransactors().isEmpty()) {
+        basicBundleInfo.setRemoteTransactors(bundleInfo.getRemoteTransactors());
+      }
 
-            basicBundleInfos.add(basicBundleInfo);
-        }
-
-        injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
-
-        //FIXME MOVE TO MTL-PLUGIN
-        //List<String> autoStartBundles = new ArrayList<String>(appVariantContext.getAtlasExtension().getTBuildConfig
-        // ().getAutoStartBundles());
-        //
-        //UpdateConfig updateConfig = appVariantContext.getAtlasExtension().getUpdateConfig();
-        //if (updateConfig.enabled) {
-        //    injectParam.group = updateConfig.getProductName();
-        //    injectParam.outApp = updateConfig.isOutApp();
-        //    autoStartBundles.add(0, updateConfig.getSdkPkgName());
-        //}
-        //
-        injectParam.autoStartBundles = StringUtils.join(appVariantContext.getAtlasExtension().getTBuildConfig()
-            .getAutoStartBundles(), ",");
-        injectParam.preLaunch = appVariantContext.getAtlasExtension().getTBuildConfig().getPreLaunch();
-        mergeBundleInfos(appVariantContext, injectParam);
-        return injectParam;
+      basicBundleInfos.add(basicBundleInfo);
     }
 
-    // 增量编译atlasFrameworkProperties.json基线包合并
-    public void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam) {
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-            File atlasFrameworkPropertiesFile = new File(appVariantContext.apContext.getApExploredFolder(),
-                "atlasFrameworkProperties.json");
-            if (!atlasFrameworkPropertiesFile.exists()) {
-                return;
-            }
-            List<BasicBundleInfo> basicBundleInfos = JSON.parseObject(injectParam.bundleInfo,
-                new TypeReference<List<BasicBundleInfo>>() {
-                });
-            FrameworkProperties atlasFrameworkProperties;
-            try {
-                atlasFrameworkProperties = JSON.parseObject(Files
-                    .toString(atlasFrameworkPropertiesFile, Charsets.UTF_8), FrameworkProperties.class);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+    injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
 
-            List<BasicBundleInfo> baseBundleInfos = atlasFrameworkProperties.bundleInfo;
-            List<BasicBundleInfo> mergeBasicBundleInfos = Lists.newArrayList(baseBundleInfos);
-            for (BasicBundleInfo basicBundleInfo : basicBundleInfos) {
-                BasicBundleInfo baseBasicBundleInfo = Iterables.find(baseBundleInfos,
-                    input -> basicBundleInfo.getPkgName().equals(input.getPkgName()));
+    //FIXME MOVE TO MTL-PLUGIN
+    //List<String> autoStartBundles = new ArrayList<String>(appVariantContext.getAtlasExtension().getTBuildConfig
+    // ().getAutoStartBundles());
+    //
+    //UpdateConfig updateConfig = appVariantContext.getAtlasExtension().getUpdateConfig();
+    //if (updateConfig.enabled) {
+    //    injectParam.group = updateConfig.getProductName();
+    //    injectParam.outApp = updateConfig.isOutApp();
+    //    autoStartBundles.add(0, updateConfig.getSdkPkgName());
+    //}
+    //
+    injectParam.autoStartBundles = StringUtils.join(appVariantContext.getAtlasExtension().getTBuildConfig()
+                                                      .getAutoStartBundles(), ",");
+    injectParam.preLaunch = appVariantContext.getAtlasExtension().getTBuildConfig().getPreLaunch();
+    mergeBundleInfos(appVariantContext, injectParam);
+    return injectParam;
+  }
 
-                if (baseBasicBundleInfo == null) {
-                    mergeBasicBundleInfos.add(basicBundleInfo);
-                    continue;
-                }
-                basicBundleInfo.getActivities().addAll(baseBasicBundleInfo.getActivities());
-                basicBundleInfo.getContentProviders().addAll(baseBasicBundleInfo.getContentProviders());
-                basicBundleInfo.getDependency().addAll(baseBasicBundleInfo.getDependency());
-                basicBundleInfo.getReceivers().addAll(baseBasicBundleInfo.getReceivers());
-                basicBundleInfo.getServices().addAll(baseBasicBundleInfo.getServices());
+  // 增量编译atlasFrameworkProperties.json基线包合并
+  public void mergeBundleInfos(AppVariantContext appVariantContext, InjectParam injectParam) {
+    if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+      File atlasFrameworkPropertiesFile = new File(appVariantContext.apContext.getApExploredFolder(),
+                                                   "atlasFrameworkProperties.json");
+      if (!atlasFrameworkPropertiesFile.exists()) {
+        return;
+      }
+      List<BasicBundleInfo> basicBundleInfos = JSON.parseObject(injectParam.bundleInfo,
+                                                                new TypeReference<List<BasicBundleInfo>>() {
+                                                                });
+      FrameworkProperties atlasFrameworkProperties;
+      try {
+        atlasFrameworkProperties = JSON.parseObject(Files
+                                                      .toString(atlasFrameworkPropertiesFile, Charsets.UTF_8), FrameworkProperties.class);
+      }
+      catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
 
-                if (!baseBasicBundleInfo.getRemoteFragments().isEmpty()) {
-                    basicBundleInfo.getRemoteFragments().putAll(
-                            baseBasicBundleInfo.getRemoteFragments());
-                }
-                if (!baseBasicBundleInfo.getRemoteViews().isEmpty()) {
-                    basicBundleInfo.getRemoteViews().putAll(baseBasicBundleInfo.getRemoteViews());
-                }
-                if (!baseBasicBundleInfo.getRemoteTransactors().isEmpty()) {
-                    basicBundleInfo.getRemoteTransactors()
-                            .putAll(baseBasicBundleInfo.getRemoteTransactors());
-                }
-                mergeBasicBundleInfos.remove(baseBasicBundleInfo);
-                mergeBasicBundleInfos.add(basicBundleInfo);
-            }
+      List<BasicBundleInfo> baseBundleInfos = atlasFrameworkProperties.bundleInfo;
+      List<BasicBundleInfo> mergeBasicBundleInfos = Lists.newArrayList(baseBundleInfos);
+      for (BasicBundleInfo basicBundleInfo : basicBundleInfos) {
+        BasicBundleInfo baseBasicBundleInfo = Iterables.find(baseBundleInfos,
+                                                             input -> basicBundleInfo.getPkgName().equals(input.getPkgName()));
 
-            injectParam.bundleInfo = JSON.toJSONString(mergeBasicBundleInfos);
-
-            if (Strings.isNullOrEmpty(injectParam.autoStartBundles)) {
-                injectParam.autoStartBundles = atlasFrameworkProperties.autoStartBundles;
-            } else {
-                if (!Strings.isNullOrEmpty(atlasFrameworkProperties.autoStartBundles)) {
-                    injectParam.autoStartBundles = injectParam.autoStartBundles + ","
-                        + atlasFrameworkProperties.autoStartBundles;
-                }
-            }
-
-            injectParam.preLaunch = atlasFrameworkProperties.preLaunch;
+        if (baseBasicBundleInfo == null) {
+          mergeBasicBundleInfos.add(basicBundleInfo);
+          continue;
         }
+        basicBundleInfo.setIsMBundle(baseBasicBundleInfo./*get*/isMBundle());
+
+        basicBundleInfo.getActivities().addAll(baseBasicBundleInfo.getActivities());
+        basicBundleInfo.getContentProviders().addAll(baseBasicBundleInfo.getContentProviders());
+        basicBundleInfo.getDependency().addAll(baseBasicBundleInfo.getDependency());
+        basicBundleInfo.getReceivers().addAll(baseBasicBundleInfo.getReceivers());
+        basicBundleInfo.getServices().addAll(baseBasicBundleInfo.getServices());
+
+        if (!baseBasicBundleInfo.getRemoteFragments().isEmpty()) {
+          basicBundleInfo.getRemoteFragments().putAll(
+            baseBasicBundleInfo.getRemoteFragments());
+        }
+        if (!baseBasicBundleInfo.getRemoteViews().isEmpty()) {
+          basicBundleInfo.getRemoteViews().putAll(baseBasicBundleInfo.getRemoteViews());
+        }
+        if (!baseBasicBundleInfo.getRemoteTransactors().isEmpty()) {
+          basicBundleInfo.getRemoteTransactors()
+            .putAll(baseBasicBundleInfo.getRemoteTransactors());
+        }
+        mergeBasicBundleInfos.remove(baseBasicBundleInfo);
+        mergeBasicBundleInfos.add(basicBundleInfo);
+      }
+
+      injectParam.bundleInfo = JSON.toJSONString(mergeBasicBundleInfos);
+
+      if (Strings.isNullOrEmpty(injectParam.autoStartBundles)) {
+        injectParam.autoStartBundles = atlasFrameworkProperties.autoStartBundles;
+      }
+      else {
+        if (!Strings.isNullOrEmpty(atlasFrameworkProperties.autoStartBundles)) {
+          injectParam.autoStartBundles = injectParam.autoStartBundles + ","
+                                         + atlasFrameworkProperties.autoStartBundles;
+        }
+      }
+
+      injectParam.preLaunch = atlasFrameworkProperties.preLaunch;
     }
+  }
 }
