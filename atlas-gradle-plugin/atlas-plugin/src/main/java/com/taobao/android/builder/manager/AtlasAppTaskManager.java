@@ -247,14 +247,11 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.AtlasMainDexHelper;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.PrepareAPTask;
-import com.taobao.android.builder.tasks.app.ApBuildTask;
+import com.taobao.android.builder.tasks.app.*;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
-import com.taobao.android.builder.tasks.app.GenerateAtlasSourceTask;
-import com.taobao.android.builder.tasks.app.LogDependenciesTask;
-import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
-import com.taobao.android.builder.tasks.app.ResourcePatch;
 import com.taobao.android.builder.tasks.app.bundle.JavacAwbsTask;
 import com.taobao.android.builder.tasks.app.bundle.PackageAwbsTask;
 import com.taobao.android.builder.tasks.app.bundle.ProcessResAwbsTask;
@@ -337,6 +334,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                           @Override
                                                           public void accept(ApplicationVariant applicationVariant) {
 
+
                                                               AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
                                                                       .getAppVariantContext(project, applicationVariant);
                                                               if (!AtlasBuildContext.atlasMainDexHelperMap.containsKey(appVariantContext.getVariantName())){
@@ -352,6 +350,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(appVariantContext.getVariantData().preBuildTask));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(BuildAtlasEnvTask.ConfigAction.class, null));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(ScanDupResTask.ConfigActon.class,null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(LogDependenciesTask.ConfigAction.class, null));
 
@@ -632,6 +632,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                       }
         );
     }
+
+
+
+
 
 
     private void repalceAndroidBuilder(ApplicationVariant applicationVariant) {

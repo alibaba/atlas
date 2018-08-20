@@ -241,6 +241,8 @@ public class AtlasMonitor {
     //动态部署稳定性stage
     public static final String DD_BUNDLE_MISMATCH = "dd_bundle_mismatch";
     public static final String DD_BUNDLE_RESOLVEFAIL = "bundle_resolve_fail";
+    public static final String BUNDLE_DEPENDENCY_ERROR = "bundle_dependency_error";
+
 
 
 

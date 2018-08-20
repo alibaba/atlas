@@ -218,10 +218,7 @@ import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.builder.internal.aapt.AaptPackageConfig.Builder;
 import com.android.builder.sdk.SdkInfo;
-import com.android.builder.symbols.RGeneration;
-import com.android.builder.symbols.SymbolIo;
-import com.android.builder.symbols.SymbolTable;
-import com.android.builder.symbols.SymbolUtils;
+import com.android.builder.symbols.*;
 import com.android.dex.Dex;
 import com.android.dx.command.dexer.DxContext;
 import com.android.dx.merge.CollisionPolicy;
@@ -233,6 +230,7 @@ import com.android.manifmerger.MergingReport;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.BuildToolInfo.PathId;
 import com.android.utils.ILogger;
+import com.google.common.collect.ImmutableTable;
 import com.taobao.android.AaptLib;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
@@ -253,6 +251,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static com.android.SdkConstants.CURRENT_PLATFORM;
 import static com.android.SdkConstants.FN_AAPT;
@@ -388,8 +387,11 @@ public class AtlasBuilder extends AndroidBuilder {
             .contains(s)) {
             aaptConfigBuilder.build().getOptions().getAdditionalParameters().add(s);
         } else {
-            aaptConfigBuilder.build().getOptions().getAdditionalParameters().remove(s);
+            while (aaptConfigBuilder.build().getOptions().getAdditionalParameters().contains(s)){
+                aaptConfigBuilder.build().getOptions().getAdditionalParameters().remove(s);
+            }
         }
+
         super.processResources(aapt, aaptConfigBuilder);
 
 
@@ -412,8 +414,7 @@ public class AtlasBuilder extends AndroidBuilder {
      * @param mainSymbolFile
      */
     public void processAwbResources(Aapt aapt,AaptPackageConfig.Builder aaptConfigBuilder,
-                                    boolean enforceUniquePackageName,
-                                    File mainSymbolFile) throws IOException, InterruptedException, ProcessException {
+                                    File mainSymbolFile,File awbSymbolFile,String pacakgeName) throws IOException, ProcessException {
         aaptConfigBuilder.setBuildToolInfo(getTargetInfo().getBuildTools());
         aaptConfigBuilder.setAndroidTarget(getTargetInfo().getTarget());
         aaptConfigBuilder.setLogger(logger);
@@ -441,10 +442,17 @@ public class AtlasBuilder extends AndroidBuilder {
                 sLogger.info("awbSymbolFile:" + mainRTxt);
                 if (null != mainRTxt && mainRTxt.exists()) {
                     FileUtils.copyFile(mainRTxt, mergedSymbolFile);
+                }else {
+                    throw new ProcessException(mainRTxt.getAbsolutePath() + "is not exist, maybe no resources in this bundle! ");
+                }
+
+                SymbolTable awbSymbols = build(awbSymbolFile,mainPackageName,mainRTxt,mainSymbolFile,pacakgeName);
+                if (awbSymbols!= null) {
+                    AtlasSymbolIo.write(awbSymbols, mergedSymbolFile);
                 }
 
                 //why do this?
-                FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(mainSymbolFile), true);
+//                FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(mainSymbolFile), true);
             } catch (IOException e) {
                 throw new RuntimeException("Could not load file ", e);
             }
@@ -464,6 +472,7 @@ public class AtlasBuilder extends AndroidBuilder {
             if (aaptConfig.getVariantType() == VariantType.LIBRARY) {
                 finalIds = false;
             }
+
 
             SymbolIo.exportToJava(mainSymbols, sourceOut, finalIds);
 
@@ -806,6 +815,62 @@ public class AtlasBuilder extends AndroidBuilder {
 
         public void dexMerge(Map<File, Dex> fileDexMap, File outDexFolder) throws IOException;
 
+    }
+
+
+    private SymbolTable build(File awbSymbolFile, String mainPackageName,File mainRTxt,File mainSymbolFile,String pacakgeName) throws IOException {
+        SymbolTable.Builder builder = new SymbolTable.Builder();
+        Map<String,String>resMap = new HashMap<>();
+        SymbolTable awbSymbols = null;
+        if (awbSymbolFile.exists()){
+            awbSymbols = AtlasSymbolIo.readFromAapt(awbSymbolFile, mainPackageName);
+            awbSymbols.getSymbols().values().forEach(new Consumer<Symbol>() {
+                @Override
+                public void accept(Symbol symbol) {
+                    builder.add(symbol);
+                    resMap.put(symbol.getResourceType().getName()+"->"+symbol.getName(),symbol.getValue());
+                }
+            });
+        };
+
+        if (mainRTxt.exists()) {
+            SymbolTable generateAwbSymbols = AtlasSymbolIo.readFromAapt(mainRTxt, mainPackageName);
+            generateAwbSymbols.getSymbols().values().forEach(new Consumer<Symbol>() {
+                @Override
+                public void accept(Symbol symbol) {
+                    if (!resMap.containsKey(symbol.getResourceType().getName() + "->" + symbol.getName())) {
+                        builder.add(symbol);
+                    }
+                    resMap.put(symbol.getResourceType().getName() + "->" + symbol.getName(), symbol.getValue());
+
+                }
+            });
+
+        }
+
+
+        awbSymbols = builder.build();
+        SymbolTable mainSymbols = AtlasSymbolIo.readFromAapt(mainSymbolFile, pacakgeName);
+        mainSymbols.getSymbols().values().forEach(new Consumer<Symbol>() {
+            @Override
+            public void accept(Symbol symbol) {
+                if (resMap.containsKey(symbol.getResourceType().getName()+"->"+symbol.getName())){
+                    resMap.put(symbol.getResourceType().getName()+"->"+symbol.getName(),symbol.getValue());
+
+                }
+            }
+        });
+
+
+        if (awbSymbols!= null) {
+            awbSymbols.getSymbols().values().forEach(new Consumer<Symbol>() {
+                @Override
+                public void accept(Symbol symbol) {
+                    ReflectUtils.updateField(symbol,"value",resMap.get(symbol.getResourceType().getName()+"->"+symbol.getName()));
+                }
+            });
+        }
+        return awbSymbols;
     }
 
 

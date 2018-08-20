@@ -260,6 +260,12 @@ public class PatchConfig {
 
     private Set<String> j2cPatchClasses = new HashSet<>();
 
+    public void setPatchClasses(Set<String> patchClasses) {
+        this.patchClasses = patchClasses;
+    }
+
+    private Set<String> patchClasses = new HashSet<>();
+
     private File apExploredFolder;
 
     private File finalBasePatchFile;
@@ -542,5 +548,9 @@ public class PatchConfig {
 
     public void setFullResValues(boolean fullResValues) {
         this.fullResValues = fullResValues;
+    }
+
+    public Set<String> getPatchClasses() {
+        return patchClasses;
     }
 }

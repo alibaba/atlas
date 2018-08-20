@@ -265,6 +265,13 @@ public class AwbBundle {
 
     private final List<ResolvedArtifactResult>resolvedAssetsArtifactResults = new ArrayList<>();
 
+    public List<ResolvedArtifactResult> getResolvedSymbolListWithPackageNameArtifactResults() {
+        return resolvedSymbolListWithPackageNameArtifactResults;
+    }
+
+    private final List<ResolvedArtifactResult>resolvedSymbolListWithPackageNameArtifactResults = new ArrayList<>();
+
+
 
     //Compatible with old patterns, gradually discarded androidLibrary
     private final List<SoLibrary> soLibraries = new ArrayList<>();

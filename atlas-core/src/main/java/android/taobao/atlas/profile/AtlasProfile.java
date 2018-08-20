@@ -37,6 +37,6 @@ public class AtlasProfile
 
     public String stop()
     {
-        return this.tag + " cost:" + String.valueOf(System.currentTimeMillis() - this.start);
+        return String.format("%s |cost: %sms",this.tag,String.valueOf(System.currentTimeMillis() - this.start));
     }
 }

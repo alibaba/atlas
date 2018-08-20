@@ -222,9 +222,7 @@ public class BundleUtil {
         if (TextUtils.isEmpty(bundleName = AtlasBundleInfoManager.instance().getBundleForComponet(className))) {
             return false;
         }
-        if (AtlasBundleInfoManager.instance().isMbundle(bundleName)){
-            return true;
-        }
+
         BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
         if(impl==null || !impl.checkValidate()){
             BundleInstaller installer = BundleInstallerFetcher.obtainInstaller();
@@ -238,9 +236,7 @@ public class BundleUtil {
         if (TextUtils.isEmpty(bundleName = AtlasBundleInfoManager.instance().getBundleForComponet(className))) {
             return false;
         }
-        if (AtlasBundleInfoManager.instance().isMbundle(bundleName)){
-            return true;
-        }
+
         BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
         if(impl==null || !impl.checkValidate()){
             BundleInstaller installer = BundleInstallerFetcher.obtainInstaller();

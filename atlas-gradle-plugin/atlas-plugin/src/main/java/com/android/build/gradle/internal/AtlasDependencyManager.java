@@ -211,11 +211,13 @@ package com.android.build.gradle.internal;
 
 import com.alibaba.fastjson.JSON;
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.builder.dependency.level2.AndroidDependency;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.ap.ApDependency;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.parser.AtlasDepTreeParser;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.TBuildType;
@@ -271,6 +273,9 @@ public class AtlasDependencyManager {
             AtlasBuildContext.libDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
         }
 
+
+
+
 //        Set<AndroidDependency> libsToExplode = super.resolveDependencies(variantDeps, testedProjectPath);
         //return libsToExplode;
         return new HashSet<>(0);
@@ -289,5 +294,7 @@ public class AtlasDependencyManager {
 
         return new ApDependency(project, tBuildType);
     }
+
+
 
 }

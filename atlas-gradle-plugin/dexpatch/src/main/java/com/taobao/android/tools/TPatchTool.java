@@ -260,7 +260,10 @@ import org.jf.dexlib2.iface.ClassDef;
 /**
  * generate atlas dynamic tpatch
  * <p/>
+ *
+ * Created by lilong on 16/6/17.
  */
+
 public class TPatchTool extends AbstractTool {
 
     public ApkDiff apkDiff = new ApkDiff();
@@ -287,6 +290,10 @@ public class TPatchTool extends AbstractTool {
     public static File hisTpatchFolder;
 
     public static final String SO_PATCH_META = "SO-PATCH-INF";
+
+
+    public static final String DEX_PATCH_META = "DEX-PATCH-INF";
+
 
     private boolean hasMainBundle;
 
@@ -507,12 +514,11 @@ public class TPatchTool extends AbstractTool {
                 "unzip " + newBundleFile.getAbsolutePath() + " -d " + newBundleUnzipFolder.getAbsolutePath());
         CommandUtils.exec(patchTmpDir, "unzip " + baseBundleFile.getAbsolutePath() + " -d " + baseBundleUnzipFolder
                 .getAbsolutePath());
-        File destDex = new File(destPatchBundleDir, DEX_NAME);
-        File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
+//        File destDex = new File(destPatchBundleDir, DEX_NAME);
+//        File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
         createBundleDexPatch(newBundleUnzipFolder,
                 baseBundleUnzipFolder,
-                destDex,
-                tmpDexFolder,
+                destPatchBundleDir,
                 false);
 
     }
@@ -559,30 +565,25 @@ public class TPatchTool extends AbstractTool {
      * @throws IOException
      * @throws RecognitionException
      */
-    public File createBundleDexPatch(File newApkUnzipFolder,
+    public List<File> createBundleDexPatch(File newApkUnzipFolder,
                                       File baseApkUnzipFolder,
-                                      File destDex,
-                                      File tmpDexFile,
+                                      File diffDexFolder,
                                       boolean mainDex) throws Exception {
         List<File> dexs = Lists.newArrayList();
         // 比较主bundle的dex
-        if (!tmpDexFile.exists()) {
-            tmpDexFile.mkdirs();
-        }
+//        if (!tmpDexFile.exists()) {
+//            tmpDexFile.mkdirs();
+//        }
         List<File> baseDexFiles = getFolderDexFiles(baseApkUnzipFolder);
         List<File> newDexFiles = getFolderDexFiles(newApkUnzipFolder);
-        File dexDiffFile = new File(tmpDexFile, "diff.dex");
         PatchDexTool dexTool = new TpatchDexTool(baseDexFiles,
                                                   newDexFiles,
                                                   DEFAULT_API_LEVEL,
-                                                  bundleClassMap.get(tmpDexFile.getName().substring(0,
-                                                                                                    tmpDexFile.getName()
-                                                                                                        .length() -
-                                                                                                        4)),
+                                                  bundleClassMap.get(diffDexFolder.getName()),
                                                   mainDex);
-        DexDiffInfo dexDiffInfo = dexTool.createPatchDex(dexDiffFile);
-        if (dexDiffFile.exists()) {
-            dexs.add(dexDiffFile);
+        DexDiffInfo dexDiffInfo = dexTool.createPatchDex(diffDexFolder);
+        if (diffDexFolder.listFiles()!= null && diffDexFolder.listFiles().length > 0) {
+            dexs.addAll(FileUtils.listFiles(diffDexFolder,new String[]{"dex"},true));
             BundleDiffResult bundleDiffResult = new BundleDiffResult();
             if (mainDex) {
                 bundleDiffResult.setBundleName("com.taobao.maindex");
@@ -594,11 +595,12 @@ public class TPatchTool extends AbstractTool {
             diffPatchInfos.add(bundleDiffResult);
             dexDiffInfo.save(bundleDiffResult);
         }
-        if (dexs.size() > 0) {
-            FileUtils.copyFile(dexs.get(0), destDex);
-        }
-
-        FileUtils.deleteDirectory(tmpDexFile);
+//        if (dexs.size() > 0) {
+//
+//            FileUtils.copyFile(dexs.get(0), destDex);
+//        }
+//
+//        FileUtils.deleteDirectory(tmpDexFile);
 //        if (mainDex){
 //            try {
 //
@@ -616,7 +618,7 @@ public class TPatchTool extends AbstractTool {
 //
 //            }
 
-        return destDex;
+        return dexs;
     }
 
     /**
@@ -1101,12 +1103,12 @@ public class TPatchTool extends AbstractTool {
             @Override
             public Boolean call() throws Exception {
                 // 得到主bundle的dex diff文件
-                File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
-                File tmpDexFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + "-dex");
+//                File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
+//                File tmpDexFolder = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + "-dex");
                 createBundleDexPatch(newApkUnzipFolder,
                         baseApkUnzipFolder,
-                        mianDiffDestDex,
-                        tmpDexFile,
+                        mainDiffFolder,
+//                        tmpDexFolder,
                         true);
 
                 // 是否保留主bundle的资源文件

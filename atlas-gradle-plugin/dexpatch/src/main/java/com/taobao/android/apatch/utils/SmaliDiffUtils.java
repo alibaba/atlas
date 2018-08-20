@@ -258,7 +258,7 @@ public class SmaliDiffUtils {
         if (!newTemp.exists()) {
             newTemp.mkdirs();
         }
-        for (DexBackedClassDef dexBackedClassDef : diffInfo.getOldClasses()) {
+        for (DexBackedClassDef dexBackedClassDef : diffInfo.getOldClasses().keySet()) {
             if (DexDiffer.getDalvikClassName(dexBackedClassDef.getType()).equals(outterClassName)) {
                 oldDexBackClassDef = dexBackedClassDef;
             }

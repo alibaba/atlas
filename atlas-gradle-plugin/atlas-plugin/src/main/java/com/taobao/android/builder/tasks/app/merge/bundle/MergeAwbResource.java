@@ -191,6 +191,9 @@ public class MergeAwbResource extends IncrementalTask {
 
     @Override
     protected void doFullTaskAction() throws IOException, ExecutionException {
+        if (awbBundle.isMBundle){
+            return;
+        }
         ResourcePreprocessor preprocessor = getPreprocessor();
 
         // this is full run, clean the previous output

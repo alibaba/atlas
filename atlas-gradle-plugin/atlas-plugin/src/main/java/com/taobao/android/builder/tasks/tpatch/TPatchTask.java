@@ -249,6 +249,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -360,6 +361,7 @@ public class TPatchTask extends BaseTask {
 
             }else {
                 tpatchInput.patchType = PatchType.DEXPATCH;
+                ((DexPatchInput)tpatchInput).patchClasses= patchContext.patchClasses;
                 ((DexPatchInput)tpatchInput).excludeClasses = patchContext.excludeClasses;
             }
             tpatchInput.mainBundleName = "com.taobao.maindex";
@@ -553,6 +555,10 @@ public class TPatchTask extends BaseTask {
                         .isOnlyIncrementInMain();
                     tPatchContext.excludeClasses = tBuildType.getPatchConfig()
                             .getExcludeClasses();
+
+                    tPatchContext.patchClasses = tBuildType.getPatchConfig()
+                            .getPatchClasses();
+
                     tPatchContext.appSignName = tBuildType.getPatchConfig().getAppSignName();
 
                     tPatchContext.patchVersions = tBuildType.getPatchConfig().getPatchVersions();
@@ -607,6 +613,8 @@ public class TPatchTask extends BaseTask {
         public List<String> patchVersions;
 
         public Set<ArtifactBundleInfo> artifactBundleInfos;
+
+        public Set<String>patchClasses = new HashSet<>();
 
         /**
          * patchDirectories that need to be excluded

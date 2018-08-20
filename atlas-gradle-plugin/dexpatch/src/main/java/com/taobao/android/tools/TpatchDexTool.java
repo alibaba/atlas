@@ -36,6 +36,11 @@ public class TpatchDexTool extends PatchDexTool {
 
     }
 
+    @Override
+    public void setPatchClasses(Set<String> classes) {
+
+    }
+
     public static void main(String []args){
         TpatchDexTool tpatchDexTool = new TpatchDexTool(new File("/Users/lilong/Downloads/taobao-android-release/classes.dex"),new File("/Users/lilong/Downloads/taobao-android-release0/classes.dex"),21,false);
         File outDex = new File("/Users/lilong/Downloads/taobao-android-debug1/lib/armeabi/libcom_taobao_taolive/patch.dex");

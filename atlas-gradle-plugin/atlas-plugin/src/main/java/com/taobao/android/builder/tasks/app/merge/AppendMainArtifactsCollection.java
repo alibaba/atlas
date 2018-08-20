@@ -28,6 +28,10 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
 
     private ArtifactCollection artifactResults;
 
+    private FileCollection filesResults;
+
+
+
     private Set<ResolvedArtifactResult> allResults = new HashSet<>();
 
     public static Map<String,String> bundle2Map = new HashMap<>();
@@ -47,12 +51,24 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
         this.artifactType = artifactType;
     }
 
+    public AppendMainArtifactsCollection(Project project, FileCollection filesResults, AwbBundle awbBundle, AndroidArtifacts.ArtifactType artifactType) {
+        this.filesResults = filesResults;
+        this.awbBundle = awbBundle;
+        this.project = project;
+        this.artifactType = artifactType;
+    }
+
     @Override
     public FileCollection getArtifactFiles() {
         if (allFiles != null) {
             return allFiles;
         }
-        FileCollection files = artifactResults.getArtifactFiles();
+        FileCollection files = null;
+        if (artifactResults!= null) {
+            files = artifactResults.getArtifactFiles();
+        }else {
+            files = filesResults;
+        }
         Set<File> fileSet = new HashSet<>();
 
         switch (artifactType) {
@@ -68,6 +84,13 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
                 }
                 allFiles = files.plus(project.files(fileSet));
                 return allFiles;
+            case SYMBOL_LIST_WITH_PACKAGE_NAME:
+                for (ResolvedArtifactResult resolvedArtifactResult : awbBundle.getResolvedSymbolListWithPackageNameArtifactResults()) {
+                    fileSet.add(resolvedArtifactResult.getFile());
+                }
+                allFiles = files.plus(project.files(fileSet));
+                return allFiles;
+
         }
 
         return null;
@@ -86,6 +109,9 @@ public class AppendMainArtifactsCollection implements ArtifactCollection {
                 case ANDROID_RES:
                     allResults.addAll(awbBundle.getResolvedResArtifactResults());
                     break;
+
+                case SYMBOL_LIST_WITH_PACKAGE_NAME:
+                    allResults.addAll(awbBundle.getResolvedSymbolListWithPackageNameArtifactResults());
 
             }
 

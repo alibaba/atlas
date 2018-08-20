@@ -228,6 +228,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.taobao.atlas.framework.Atlas;
+import android.taobao.atlas.framework.FrameworkProperties;
 import android.taobao.atlas.startup.AtlasBridgeApplication;
 import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.NClassLoader;
@@ -427,7 +428,7 @@ public class KernalBundle {
             boolean dexPatch = dexFile[dexFile.length - 1].getName().contains(KernalBundleArchive.DEXPATCH_DIR);
             int newFrameworkPropertiesDexIndex;
             if (dexPatch) {
-                newFrameworkPropertiesDexIndex = dexFile.length > 1 ? dexFile.length - 2 : dexFile.length - 1;
+                    newFrameworkPropertiesDexIndex = 0;
             } else {
                 newFrameworkPropertiesDexIndex = dexFile.length - 1;
             }
@@ -443,6 +444,11 @@ public class KernalBundle {
                 replaceClassLoader = new NClassLoader(".", KernalBundle.class.getClassLoader().getParent());
                 FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", replaceClassLoader);
             }
+
+            if (FrameworkPropertiesClazz == null && Build.VERSION.SDK_INT < 21){
+                FrameworkPropertiesClazz = Class.forName("android.taobao.atlas.framework.FrameworkProperties");
+            }
+
             if (FrameworkPropertiesClazz == null && isDeubgMode()) {
                 Log.e("KernalBundle", "main dex is not match, library awo test?");
                 return;

@@ -8,32 +8,40 @@ import com.taobao.android.object.ClassDiffInfo;
 import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.object.DiffType;
 import org.antlr.runtime.RecognitionException;
+import org.apache.commons.io.FileUtils;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.DexFile;
+import org.jf.dexlib2.writer.io.FileDataStore;
+import org.jf.dexlib2.writer.pool.BasePool;
+import org.jf.dexlib2.writer.pool.DexPool;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * tpatch diff tool
+ *
+ /**
+ * Created by lilong on 16/6/17.
  */
+
 public abstract class PatchDexTool {
 
     private List<File> baseDexFiles;
     private List<File> newDexFiles;
-    private File outDexFile;
     private int apiLevel;
     public DexDiffer dexDiffer;
     private DexDiffFilter dexDiffFilter;
     public Set<String>hotClassList;
     DexDiffInfo dexDiffInfo = null;
     private boolean mainBundle;
+    private static final int MAX_COUNT = 64000;
     private Map<String, ClassDef>lastBundleClassMap = new HashMap<String, ClassDef>();
-    private boolean removeDupStrings;
 
     public void setTPatch(boolean tpatch) {
         this.tpatch = tpatch;
@@ -93,40 +101,96 @@ public abstract class PatchDexTool {
 
     }
 
-    public DexDiffInfo createPatchDex(File outDexFile) throws IOException, RecognitionException, PatchException {
+    public DexDiffInfo createPatchDex(File outDexFolder) throws IOException, RecognitionException, PatchException {
          Set<ClassDef>modifyClasses = createModifyClasses();
             if (modifyClasses.size() > 0) {
-                writeDex(outDexFile,modifyClasses);
+                writeDex(outDexFolder,modifyClasses);
+                writePatchInfo(outDexFolder);
+
             }
         return dexDiffInfo;
     }
 
-    public void writeDex(File outDexFile,Set<ClassDef>classDefs) throws IOException {
-
-        DexFileFactory.writeDexFile(outDexFile.getAbsolutePath(), new DexFile() {
-            @Nonnull
-            @Override
-            public Set<? extends ClassDef> getClasses() {
-                return new AbstractSet<ClassDef>() {
-                    @Nonnull
-                    @Override
-                    public Iterator<ClassDef> iterator() {
-                        return classDefs.iterator();
+    public void writeDex(File outDexFolder,Set<ClassDef>classDefs) throws IOException {
+        int i = 0 ;
+        File outDexFile = getDexFile(outDexFolder,i);
+        if (!outDexFile.getParentFile().exists()){
+            outDexFile.getParentFile().mkdirs();
+        }
+        if (mainBundle){
+            List<ClassDef> sortClassDefs = sort(classDefs);
+            DexPool dexPool = new DexPool(Opcodes.getDefault());
+            Iterator<ClassDef>iterator = sortClassDefs.iterator();
+            while (iterator.hasNext()) {
+                ClassDef classDef = iterator.next();
+                    dexPool.internClass(classDef);
+                    if (((BasePool)dexPool.methodSection).getItemCount() > MAX_COUNT||((BasePool)dexPool.fieldSection).getItemCount() > MAX_COUNT){
+                        dexPool.writeTo(new FileDataStore(outDexFile));
+                        outDexFile = getDexFile(outDexFolder,++i);
+                        dexPool = new DexPool(Opcodes.getDefault());
                     }
-
-                    @Override
-                    public int size() {
-                        return classDefs.size();
-                    }
-                };
             }
+            dexPool.writeTo(new FileDataStore(outDexFile));
 
-            @Nonnull
-            @Override
-            public Opcodes getOpcodes() {
-                return Opcodes.getDefault();
+
+        }else {
+            DexFileFactory.writeDexFile(outDexFile.getAbsolutePath(), new DexFile() {
+                @Nonnull
+                @Override
+                public Set<? extends ClassDef> getClasses() {
+                    return new AbstractSet<ClassDef>() {
+                        @Nonnull
+                        @Override
+                        public Iterator<ClassDef> iterator() {
+                            return classDefs.iterator();
+                        }
+
+                        @Override
+                        public int size() {
+                            return classDefs.size();
+                        }
+                    };
+                }
+
+                @Nonnull
+                @Override
+                public Opcodes getOpcodes() {
+                    return Opcodes.getDefault();
+                }
+            });
+        }
+
+    }
+
+    private void writePatchInfo(File outDexFolder) {
+        File patchInfo = new File(outDexFolder,TPatchTool.DEX_PATCH_META);
+        Collections.sort(dexDiffer.getDiffClasses());
+        try {
+            FileUtils.writeLines(patchInfo,dexDiffer.getDiffClasses());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    private List<ClassDef> sort(Set<ClassDef> classDefs){
+        List<ClassDef>lastDexClasses = new ArrayList<>();
+        classDefs.forEach(classDef -> {
+            if (classDef.getType().equals("Landroid/taobao/atlas/framework/FrameworkProperties;")||classDef.getType().equals("Landroid/taobao/atlas/bundleInfo/AtlasBundleInfoGenerator;")){
+                lastDexClasses.add(classDef);
             }
         });
+        classDefs.removeAll(lastDexClasses);
+
+        classDefs.forEach(classDef -> lastDexClasses.add(0,classDef));
+
+        return lastDexClasses;
+    }
+
+    private File getDexFile(File dexFolder,int i) {
+
+        return new File(dexFolder,TPatchTool.CLASSES+(i==0?"":i)+TPatchTool.DEX_SUFFIX);
     }
 
     public void setPatchClassList(Set<String> hotClassList){
@@ -134,5 +198,9 @@ public abstract class PatchDexTool {
     }
 
     public abstract void setExculdeClasses(Set<String>classes);
+
+    public abstract void setPatchClasses(Set<String>classes);
+
+
 
 }

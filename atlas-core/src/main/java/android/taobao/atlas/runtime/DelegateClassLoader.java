@@ -208,12 +208,6 @@
 
 package android.taobao.atlas.runtime;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import android.content.ComponentName;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -221,16 +215,23 @@ import android.os.Looper;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
+import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.framework.MbundleImpl;
 import android.taobao.atlas.util.BundleLock;
 import android.taobao.atlas.util.FileUtils;
-import org.osgi.framework.Bundle;
-
-import android.taobao.atlas.framework.Framework;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
 
+import org.osgi.framework.Bundle;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import dalvik.system.PathClassLoader;
-import org.osgi.framework.BundleException;
 
 public class DelegateClassLoader extends PathClassLoader {
 
@@ -263,7 +264,7 @@ public class DelegateClassLoader extends PathClassLoader {
 
     }
 
-    public void installMbundleWithDependency(String location) throws ClassNotFoundException {
+    public void installMbundleWithDependency(String location)  {
         if (AtlasBundleInfoManager.instance().isMbundle(location)) {
             List<String> bundles = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
             for (String bundle : bundles) {
@@ -271,7 +272,12 @@ public class DelegateClassLoader extends PathClassLoader {
                     continue;
                 }
                 if (!AtlasBundleInfoManager.instance().getBundleInfo(bundle).isMBundle()) {
-                    throw new ClassNotFoundException(location + " Mbundle can not has dependency bundle--> " + bundle);
+                    Map<String,Object> detailMap = new HashMap<>();
+                    detailMap.put("source",location);
+                    detailMap.put("dependency",bundle);
+                    detailMap.put("method","installMbundleWithDependency()");
+                    AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
+                    Log.e("Atlas",location + " Mbundle can not has dependency bundle--> " + bundle);
                 }
                 installMbundle(bundle);
             }
@@ -394,9 +400,9 @@ public class DelegateClassLoader extends PathClassLoader {
                 if (bundle.getArchive().isDexOpted()) {
                     ClassLoader classloader = bundle.getClassLoader();
                     try {
-                        if (classloader != null && bundle.checkValidate()) {
+                        if (classloader != null ) {
                             clazz = classloader.loadClass(className);
-                            if (clazz != null) {
+                            if (clazz != null&&bundle.checkValidate()) {
                                 return clazz;
                             }
                         }

@@ -409,15 +409,25 @@ public class InstrumentationHook extends Instrumentation {
 		if(!TextUtils.isEmpty(bundleName) && !Atlas.isDisableBundle(bundleName)){
 			BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
 			if(impl!=null&&impl.checkValidate()) {
+
 				return callback.execStartActivity();
+
+
 			}else if (Atlas.getInstance().getBundle(bundleName) == null && !AtlasBundleInfoManager.instance().getBundleInfo(bundleName).isInternal() && Framework.getInstalledBundle(bundleName,AtlasBundleInfoManager.instance().getBundleInfo(bundleName).unique_tag) == null) {
+
 				fallBackToClassNotFoundCallback(context,intent,bundleName);
 				return null;
+
+
 			} else {
-				if(ActivityTaskMgr.getInstance().peekTopActivity()!=null && Looper.getMainLooper().getThread().getId()==Thread.currentThread().getId()) {
+
+				if(ActivityTaskMgr.getInstance().peekTopActivity()!=null && Looper.getMainLooper().getThread().getId()==Thread.currentThread().getId() && !AtlasBundleInfoManager.instance().getBundleInfo(bundleName).isMBundle) {
 					final String component = componentName;
 					asyncStartActivity(context, bundleName, intent, requestCode, component,callback);
+
 				}else{
+
+					RuntimeVariables.delegateClassLoader.installMbundleWithDependency(bundleName);
 					callback.execStartActivity();
 					Log.e("InsturmentationHook","patch execStartActivity finish");
 				}

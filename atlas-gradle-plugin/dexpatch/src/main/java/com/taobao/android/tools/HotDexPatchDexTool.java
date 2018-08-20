@@ -1,5 +1,6 @@
 package com.taobao.android.tools;
 
+import com.taobao.android.dex.util.FileUtils;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.tpatch.utils.SmaliUtils;
@@ -8,6 +9,7 @@ import org.jf.dexlib2.iface.ClassDef;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 
 /**
@@ -50,11 +52,18 @@ public class HotDexPatchDexTool extends DexPatchDexTool {
     }
 
     @Override
-    public DexDiffInfo createPatchDex(File outDexFile) throws IOException, RecognitionException, PatchException {
-        DexDiffInfo dexDiffInfo = super.createPatchDex(outDexFile);
+    public DexDiffInfo createPatchDex(File outDexFolder) throws IOException, RecognitionException, PatchException {
+        DexDiffInfo dexDiffInfo = super.createPatchDex(outDexFolder);
+        File hotDex = new File(outDexFolder,"hot.dex");
         if (hotClassDefs!= null && hotClassDefs.size() > 0){
-            File hotDexFile = new File(outDexFile.getParentFile(),HOT_DEXNAME);
-            writeDex(hotDexFile,hotClassDefs);
+            File hotDexFolder = new File(outDexFolder,"hot");
+            hotDexFolder.mkdirs();
+            writeDex(hotDexFolder,hotClassDefs);
+            if (new File(hotDexFolder,TPatchTool.DEX_NAME).exists()){
+                new File(hotDexFolder,TPatchTool.DEX_NAME).renameTo(hotDex);
+                org.apache.commons.io.FileUtils.deleteDirectory(hotDexFolder);
+            }
+
         }
         return dexDiffInfo;
 

@@ -132,7 +132,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 //
 //    }
     @Override
-    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
+    public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, final File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 variantContext.getVariantName());
 
@@ -262,13 +262,22 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
             File finalTempDexFolder = tempDexFolder;
             if (fileCache != null && globalCacheBuilder == null) {
-                globalCacheBuilder = new FileCache.Inputs.Builder(FileCache.Command.PREDEX_LIBRARY)
-                        .putBoolean("multidex", true)
-                        .putFile("multidexlist", mainDexList, FileCache.FileProperties.HASH)
-                        .putLong("minisdk", minSdkVersion)
-                        .putString("dexoptions", dexOptions.getAdditionalParameters().toString())
-                        .putBoolean("jumbomode", dexOptions.getJumboMode())
-                        .putString("type", type);
+                if (mainDexList!= null) {
+                    globalCacheBuilder = new FileCache.Inputs.Builder(FileCache.Command.PREDEX_LIBRARY)
+                            .putBoolean("multidex", true)
+                            .putFile("multidexlist", mainDexList, FileCache.FileProperties.HASH)
+                            .putLong("minisdk", minSdkVersion)
+                            .putString("dexoptions", dexOptions.getAdditionalParameters().toString())
+                            .putBoolean("jumbomode", dexOptions.getJumboMode())
+                            .putString("type", type);
+                }else {
+                    globalCacheBuilder = new FileCache.Inputs.Builder(FileCache.Command.PREDEX_LIBRARY)
+                            .putBoolean("multidex", true)
+                            .putLong("minisdk", minSdkVersion)
+                            .putString("dexoptions", dexOptions.getAdditionalParameters().toString())
+                            .putBoolean("jumbomode", dexOptions.getJumboMode())
+                            .putString("type", type);
+                }
 
             }
             inputFile.parallelStream().forEach(file -> {
@@ -338,7 +347,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             atlasDexArchiveMerger = new AtlasDexArchiveMerger(mainforkJoinPool);
             if (!variantContext.getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
                 try {
-                    atlasDexArchiveMerger.mergeDexArchives(dexPaths, outDexFolder.toPath(), mainDexList.toPath(), DexingType.LEGACY_MULTIDEX);
+                    atlasDexArchiveMerger.mergeDexArchives(dexPaths, outDexFolder.toPath(), mainDexList ==null? null:mainDexList.toPath(), DexingType.LEGACY_MULTIDEX);
                 } catch (DexArchiveMergerException e) {
                     throw new ProcessException(e);
                 }
@@ -379,6 +388,14 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         }
 
 
+    }
+
+    private void generateEmptyMainDexList(File mainDexList) {
+        try {
+            mainDexList.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private FileCache.Inputs.Builder copyOf(FileCache.Inputs.Builder globalCacheBuilder) {

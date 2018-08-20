@@ -305,6 +305,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
             defaultProguardFiles.addAll(
                     appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
         } else {
+
             defaultProguardFiles.addAll(oldConfigurableFileCollection.getFiles());
             nonConsumerProguardFiles.addAll(
                     appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
@@ -343,6 +344,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
         try {
 
+            oldConfigurableFileCollection = appVariantContext.getProject().files().from(nonConsumerProguardFiles);
 
             ReflectUtils.updateField(this, "configurationFiles", oldConfigurableFileCollection);
 

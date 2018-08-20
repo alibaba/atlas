@@ -257,6 +257,15 @@ public class TBuildConfig {
 
     private Boolean mergeBundlesDex = false;
 
+    public Boolean getScanDupRes() {
+        return scanDupRes;
+    }
+
+    public void setScanDupRes(Boolean scanDupRes) {
+        this.scanDupRes = scanDupRes;
+    }
+
+    private Boolean scanDupRes = false;
 
     public String getAppCoordinate() {
         return appCoordinate;
