@@ -302,7 +302,7 @@ public class AtlasProxy {
 
         processNames.removeAll(nonProxyChannels);
 
-        List<String> elementNames = Lists.newArrayList("activity", "service", "provider");
+        List<String> elementNames = Lists.newArrayList("activity");
 
         Element applicationElement = root.element("application");
 
