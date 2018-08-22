@@ -212,18 +212,16 @@ package com.taobao.android.builder.tasks.incremental;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import com.alibaba.fastjson.JSON;
 
+import com.alibaba.fastjson.TypeReference;
 import com.android.annotations.Nullable;
 import com.android.builder.model.Library;
 import com.android.builder.model.MavenCoordinates;
@@ -252,6 +250,7 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 
 import static com.android.build.gradle.internal.api.ApContext.DEPENDENCIES_FILENAME;
+import static com.android.build.gradle.internal.api.ApContext.MUPP_BUNDLE_INFO_FILENAME;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.taobao.android.builder.dependency.parser.helper.DependencyResolver.getArtifactId;
 
@@ -273,6 +272,12 @@ public class ApDependencies /*extends BaseTask*/ {
   //不适用Ap依赖解析
 
   private final DependencyHandler dependencies;
+
+  final static Type type = new TypeReference<List<MuppBundleInfo>>() {
+  }.getType();
+
+  private List<MuppBundleInfo> mMuppBundleInfos;
+
 
   private final Comparator<Version> versionComparator = new DefaultVersionComparator().asVersionComparator();
 
@@ -321,10 +326,20 @@ public class ApDependencies /*extends BaseTask*/ {
   }
 
   private boolean isMainDexAwb(ParsedModuleStringNotation parsedAwbModuleStringNotation) {
-    if ("taobao_android_homepage".equals(parsedAwbModuleStringNotation.getName())
-        && versionStringComparator.compare(parsedAwbModuleStringNotation.getVersion(),
-                                           "6.0.18") >= 0) {
-      return true;
+    //if ("taobao_android_homepage".equals(parsedAwbModuleStringNotation.getName())
+    //    && versionStringComparator.compare(parsedAwbModuleStringNotation.getVersion(),
+    //                                       "6.0.18") >= 0) {
+    //  return true;
+    //}
+    return isMainDexAwb(parsedAwbModuleStringNotation.getName());
+  }
+
+  public boolean isMainDexAwb(String name) {
+    if (mMuppBundleInfos != null) {
+      MuppBundleInfo info = getInfo(name);
+      if (info != null) {
+        return info.isIsMBundle();
+      }
     }
     //if ("".equals(parsedAwbModuleStringNotation.getName())
     //    && versionStringComparator.compare(parsedAwbModuleStringNotation.getVersion(),
@@ -333,6 +348,17 @@ public class ApDependencies /*extends BaseTask*/ {
     //}
     return false;
   }
+
+  public MuppBundleInfo getInfo(String artifactId) {
+    for (MuppBundleInfo info : mMuppBundleInfos) {
+      if (info.getArtifactId().equals(artifactId)) {
+        return info;
+      }
+    }
+
+    return null;
+  }
+
 
   public static File getBaseApFile(Project project, TBuildType tBuildType) {
     //重用上一次构建baseAp文件
@@ -393,21 +419,34 @@ public class ApDependencies /*extends BaseTask*/ {
     return new ApDependencies(project, baseApFile);
   }
 
+
   private DependencyJson getDependencyJson(File apBaseFile) {
     DependencyJson apDependencyJson;
     try (ZipFile zip = new ZipFile(apBaseFile)) {
-      ZipEntry entry = zip.getEntry(DEPENDENCIES_FILENAME);
-      if (entry == null) {
-        throw new IllegalStateException("dependencies.txt is missing from location: " + apBaseFile);
+      apDependencyJson = getJson(apBaseFile, zip, DEPENDENCIES_FILENAME, DependencyJson.class);
+      try {
+        mMuppBundleInfos = getJson(apBaseFile, zip, MUPP_BUNDLE_INFO_FILENAME, type);
       }
-      try (InputStream in = zip.getInputStream(entry)) {
-        apDependencyJson = JSON.parseObject(IOUtils.toString(in, StandardCharsets.UTF_8), DependencyJson.class);
+      catch (IOException e) {
+        e.printStackTrace();
       }
     }
     catch (IOException e) {
       apBaseFile.delete();
 
       throw new RuntimeException("Unable to read dependencies.txt from " + apBaseFile.getAbsolutePath(), e);
+    }
+    return apDependencyJson;
+  }
+
+  private <T> T getJson(File apBaseFile, ZipFile zip, String name, Type jsonClass) throws IOException {
+    T apDependencyJson;
+    ZipEntry entry = zip.getEntry(name);
+    if (entry == null) {
+      throw new IllegalStateException("dependencies.txt is missing from location: " + apBaseFile);
+    }
+    try (InputStream in = zip.getInputStream(entry)) {
+      apDependencyJson = JSON.parseObject(IOUtils.toString(in, StandardCharsets.UTF_8), jsonClass);
     }
     return apDependencyJson;
   }
