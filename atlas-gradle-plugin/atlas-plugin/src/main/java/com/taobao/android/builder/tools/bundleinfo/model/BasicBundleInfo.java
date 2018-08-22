@@ -247,7 +247,7 @@ public class BasicBundleInfo {
 
   private Boolean isInternal = true;
 
-  private boolean mIsMBundle;
+  private boolean isMBundle;
 
 
   public HashMap<String, String> getRemoteViews() {
@@ -347,11 +347,11 @@ public class BasicBundleInfo {
   }
 
   public void setIsMBundle(boolean isMBundle) {
-    mIsMBundle = isMBundle;
+    this.isMBundle = isMBundle;
   }
 
-  public boolean isMBundle() {
-    return mIsMBundle;
+  public boolean getIsMBundle() {
+    return isMBundle;
   }
 
   public String getUnique_tag() {

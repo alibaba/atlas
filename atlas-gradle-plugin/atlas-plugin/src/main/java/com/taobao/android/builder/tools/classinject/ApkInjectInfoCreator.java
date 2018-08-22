@@ -350,7 +350,7 @@ public class ApkInjectInfoCreator {
           mergeBasicBundleInfos.add(basicBundleInfo);
           continue;
         }
-        basicBundleInfo.setIsMBundle(baseBasicBundleInfo./*get*/isMBundle());
+        basicBundleInfo.setIsMBundle(baseBasicBundleInfo./*get*/getIsMBundle());
 
         basicBundleInfo.getActivities().addAll(baseBasicBundleInfo.getActivities());
         basicBundleInfo.getContentProviders().addAll(baseBasicBundleInfo.getContentProviders());
