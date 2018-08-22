@@ -429,8 +429,8 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
             options.add("--forced-package-id");
             options.add(split[0]);
             if (split.length > 1) { // 使用小数点的后一位代表type id的偏移位置
-                options.add("--type-id-offset");
-                options.add(split[1]);
+                //options.add("--type-id-offset");
+                //options.add(split[1]);
             }
         }
         if (StringUtils.isNotBlank(getSktPackageName())) {
