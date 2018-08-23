@@ -562,7 +562,7 @@ public class TPatchDiffResAPBuildTask extends BaseTask {
                     if (null != newFiles) {
                         for (Map.Entry<String, String> entry : newFiles.entrySet()) {
                             String name = entry.getKey();
-                            if (name.startsWith("res/")) {
+                            if (name.replace("\\", "/").startsWith("res/")) {
                                 String md5 = entry.getValue();
                                 String baseMd5 = baseFiles.get(name);
                                 if (null == baseMd5 || !baseMd5.equals(md5)) {

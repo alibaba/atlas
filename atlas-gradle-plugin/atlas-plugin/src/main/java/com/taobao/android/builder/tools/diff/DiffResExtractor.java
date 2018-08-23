@@ -277,7 +277,7 @@ public class DiffResExtractor {
 
             String relativePath = file.getAbsolutePath().substring(basePathLength);
 
-            if (!relativePath.startsWith("/assets/")) {
+            if (!relativePath.replace("\\", "/").startsWith("/assets/")) {
                 continue;
             }
 
