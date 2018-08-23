@@ -279,22 +279,24 @@ public class AtlasDependencyManager extends DependencyManager {
 
 
         atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo,
-                apDependencies).parseDependencyTree(
-            variantDeps);
+                                                     apDependencies).parseDependencyTree(
+          variantDeps);
 
         AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
 
         if (atlasExtension.getTBuildConfig().isIncremental() && apDependencies != null) {
             sLogger.warn("[dependencyTree" + variantDeps.getName() + "] {}",
                          JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
-        } else {
+        }
+        else {
             sLogger.info("[dependencyTree" + variantDeps.getName() + "] {}",
                          JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
         }
 
         if (PluginTypeUtils.isAppProject(project)) {
             AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
-        } else {
+        }
+        else {
             AtlasBuildContext.libDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
         }
 
@@ -325,7 +327,8 @@ public class AtlasDependencyManager extends DependencyManager {
         // 下载Ap
         try {
             new AwoPropHandler(project).process(tBuildType, atlasExtension.getBundleConfig());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new GradleException("process awo exception", e);
         }
         // ConfigAction configAction = new ConfigAction(tBuildType);
@@ -340,10 +343,10 @@ public class AtlasDependencyManager extends DependencyManager {
 
     @Override
     protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
-            @NonNull ResolvedComponentResult resolvedComponentResult,
-            ModuleVersionIdentifier moduleVersion) {
+                                        @NonNull ResolvedComponentResult resolvedComponentResult,
+                                        ModuleVersionIdentifier moduleVersion) {
         if (super.checkForExclusion(configDependencies, resolvedComponentResult,
-                moduleVersion)) {
+                                    moduleVersion)) {
             return true;
         }
 
@@ -356,6 +359,10 @@ public class AtlasDependencyManager extends DependencyManager {
 
 
         if (apDependencies != null) {
+            if (apDependencies.isMainDexAwb(moduleVersion.getName())) {
+                return true;
+            }
+
             if (!apDependencies.containsDependency(module)) {
                 return false;
             }
@@ -371,8 +378,8 @@ public class AtlasDependencyManager extends DependencyManager {
         // get the associated gradlepath
         ComponentIdentifier id = resolvedComponentResult.getId();
         String gradlePath =
-                (id instanceof ProjectComponentIdentifier) ? ((ProjectComponentIdentifier) id)
-                        .getProjectPath() : null;
+          (id instanceof ProjectComponentIdentifier) ? ((ProjectComponentIdentifier)id)
+            .getProjectPath() : null;
         Project subProject = null;
         String artifactId = null;
 
