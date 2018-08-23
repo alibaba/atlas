@@ -566,6 +566,11 @@ public class ApDependencies /*extends BaseTask*/ {
     }
     String mainVersion = Iterables.getOnlyElement(row.entrySet()).getValue().getVersion();
 
+    if (mainVersion.endsWith("-SNAPSHOT") && mainVersion.equals(moduleVersion.getVersion())) {
+      return false;
+    }
+
+
     if (versionStringComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
       LOGGER.info("{} apVersion({}) is larger than yourVersion({}), skipping",
                   moduleVersion.getModule(),

@@ -257,400 +257,403 @@ import java.util.Set;
  */
 public class DependencyResolver {
 
-    private static final ILogger LOGGER = LoggerWrapper.getLogger(DependencyResolver.class);
+  private static final ILogger LOGGER = LoggerWrapper.getLogger(DependencyResolver.class);
 
-    private final ApDependencies apDependencies;
+  private final ApDependencies apDependencies;
 
-    private final Project project;
+  private final Project project;
 
-    private final VariantDependencies variantDeps;
+  private final VariantDependencies variantDeps;
 
-    private final Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts;
+  private final Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts;
 
-    private final Map<String, Set<String>> bundleProvidedMap;
+  private final Map<String, Set<String>> bundleProvidedMap;
 
-    private final Set<String> mainDependencies = new HashSet<>();
+  private final Set<String> mainDependencies = new HashSet<>();
 
-    private final DefaultResolvedComponentResult compileRootClasspath;
+  private final DefaultResolvedComponentResult compileRootClasspath;
 
-    private final DefaultResolvedComponentResult packageRootClasspath;
+  private final DefaultResolvedComponentResult packageRootClasspath;
 
-    public DependencyResolver(Project project, VariantDependencies variantDeps,
-                              Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-                              Map<String, Set<String>> bundleProvidedMap, ApDependencies apDependencies) {
-        this.project = project;
-        this.variantDeps = variantDeps;
-        this.artifacts = artifacts;
-        this.bundleProvidedMap = bundleProvidedMap;
-        this.apDependencies = apDependencies;
-        this.compileRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getCompileConfiguration()
-            .getIncoming()
-            .getResolutionResult()
-            .getRoot());
-        this.packageRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getPackageConfiguration()
-            .getIncoming()
-            .getResolutionResult()
-            .getRoot());
+  public DependencyResolver(Project project, VariantDependencies variantDeps,
+                            Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
+                            Map<String, Set<String>> bundleProvidedMap, ApDependencies apDependencies) {
+    this.project = project;
+    this.variantDeps = variantDeps;
+    this.artifacts = artifacts;
+    this.bundleProvidedMap = bundleProvidedMap;
+    this.apDependencies = apDependencies;
+    compileRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getCompileConfiguration()
+      .getIncoming()
+      .getResolutionResult()
+      .getRoot());
+    packageRootClasspath = ((DefaultResolvedComponentResult)variantDeps.getPackageConfiguration()
+      .getIncoming()
+      .getResolutionResult()
+      .getRoot());
+  }
+
+  public List<ResolvedDependencyInfo> resolve(List<DependencyResult> dependencyResults, boolean mainBundle) {
+    Multimap<String, ResolvedDependencyInfo> dependenciesMap = LinkedHashMultimap.create();
+    // 不使用官方的扁平化的依赖处理，改用自己处理树状的依赖关系;对于application的依赖，我们只取compile的依赖
+    Set<ModuleVersionIdentifier> directDependencies = new HashSet<ModuleVersionIdentifier>();
+    Set<String> resolveSets = new HashSet<>();
+    for (DependencyResult dependencyResult : dependencyResults) {
+      if (dependencyResult instanceof ResolvedDependencyResult) {
+        ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult)dependencyResult).getSelected()
+          .getModuleVersion();
+        CircleDependencyCheck circleDependencyCheck = new CircleDependencyCheck(moduleVersion);
+
+        if (!directDependencies.contains(moduleVersion)) {
+          directDependencies.add(moduleVersion);
+          resolveDependency(null,
+                            dependencyResult,
+                            ((ResolvedDependencyResult)dependencyResult).getSelected(),
+                            artifacts,
+                            variantDeps,
+                            0,
+                            circleDependencyCheck,
+                            circleDependencyCheck.getRootDependencyNode(),
+                            dependenciesMap,
+                            resolveSets);
+        }
+      }
     }
 
-    public List<ResolvedDependencyInfo> resolve(List<DependencyResult> dependencyResults, boolean mainBundle) {
-        Multimap<String, ResolvedDependencyInfo> dependenciesMap = LinkedHashMultimap.create();
-        // 不使用官方的扁平化的依赖处理，改用自己处理树状的依赖关系;对于application的依赖，我们只取compile的依赖
-        Set<ModuleVersionIdentifier> directDependencies = new HashSet<ModuleVersionIdentifier>();
-        Set<String> resolveSets = new HashSet<>();
-        for (DependencyResult dependencyResult : dependencyResults) {
-            if (dependencyResult instanceof ResolvedDependencyResult) {
-                ModuleVersionIdentifier moduleVersion = ((ResolvedDependencyResult)dependencyResult).getSelected()
-                    .getModuleVersion();
-                CircleDependencyCheck circleDependencyCheck = new CircleDependencyCheck(moduleVersion);
+    List<ResolvedDependencyInfo> mainResolvdInfo = resolveAllDependencies(dependenciesMap);
+    if (mainBundle) {
+      for (ResolvedDependencyInfo resolvedDependencyInfo : mainResolvdInfo) {
+        addMainDependencyInfo(resolvedDependencyInfo);
+      }
+    }
+    return mainResolvdInfo;
+  }
 
-                if (!directDependencies.contains(moduleVersion)) {
-                    directDependencies.add(moduleVersion);
-                    resolveDependency(null,
-                                      dependencyResult,
-                                      ((ResolvedDependencyResult)dependencyResult).getSelected(),
-                                      artifacts,
-                                      variantDeps,
-                                      0,
-                                      circleDependencyCheck,
-                                      circleDependencyCheck.getRootDependencyNode(),
-                                      dependenciesMap,
-                                      resolveSets);
-                }
-            }
-        }
+  private void addMainDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo) {
 
-        List<ResolvedDependencyInfo> mainResolvdInfo = resolveAllDependencies(dependenciesMap);
-        if (mainBundle) {
-            for (ResolvedDependencyInfo resolvedDependencyInfo : mainResolvdInfo) {
-                addMainDependencyInfo(resolvedDependencyInfo);
-            }
-        }
-        return mainResolvdInfo;
+    mainDependencies.add(resolvedDependencyInfo.getGroup() + ":" + resolvedDependencyInfo.getName());
+
+    for (ResolvedDependencyInfo child : resolvedDependencyInfo.getChildren()) {
+      addMainDependencyInfo(child);
+    }
+  }
+
+  /**
+   * 解析依赖
+   *
+   * @param parent
+   * @param dependencyResult
+   * @param resolvedComponentResult
+   * @param artifacts
+   * @param configDependencies
+   * @param indent
+   */
+  private void resolveDependency(ResolvedDependencyInfo parent, DependencyResult dependencyResult,
+                                 ResolvedComponentResult resolvedComponentResult,
+                                 Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
+                                 VariantDependencies configDependencies, int indent,
+                                 CircleDependencyCheck circleDependencyCheck, DependencyNode node,
+                                 Multimap<String, ResolvedDependencyInfo> dependenciesMap,
+                                 Set<String> resolvedDependencies) {
+    ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
+
+    if (checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult, parent)) {
+      return;
     }
 
-    private void addMainDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo) {
-
-        this.mainDependencies.add(resolvedDependencyInfo.getGroup() + ":" + resolvedDependencyInfo.getName());
-
-        for (ResolvedDependencyInfo child : resolvedDependencyInfo.getChildren()) {
-            addMainDependencyInfo(child);
-        }
+    if (moduleVersion.getName().equals("support-annotations") && moduleVersion.getGroup().equals(
+      "com.android.support")) {
+      configDependencies.setAnnotationsPresent(true);
     }
 
-    /**
-     * 解析依赖
-     *
-     * @param parent
-     * @param dependencyResult
-     * @param resolvedComponentResult
-     * @param artifacts
-     * @param configDependencies
-     * @param indent
-     */
-    private void resolveDependency(ResolvedDependencyInfo parent, DependencyResult dependencyResult,
-                                   ResolvedComponentResult resolvedComponentResult,
-                                   Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-                                   VariantDependencies configDependencies, int indent,
-                                   CircleDependencyCheck circleDependencyCheck, DependencyNode node,
-                                   Multimap<String, ResolvedDependencyInfo> dependenciesMap,
-                                   Set<String> resolvedDependencies) {
-        ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
+    // now loop on all the artifact for this modules.
+    List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
 
-        if (checkForExclusion(configDependencies, moduleVersion, resolvedComponentResult, parent)) {
-            return;
+    ComponentIdentifier id = resolvedComponentResult.getId();
+    String gradlePath = (id instanceof ProjectComponentIdentifier)
+                        ? ((ProjectComponentIdentifier)id).getProjectPath() : null;
+
+    // 如果同时找到多个依赖，暂时没法判断是那个真正有用
+    if (null != moduleArtifacts) {
+      for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
+        String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
+        if (mainDependencies.contains(key)) {
+          continue;
         }
-
-        if (moduleVersion.getName().equals("support-annotations") && moduleVersion.getGroup().equals(
-            "com.android.support")) {
-            configDependencies.setAnnotationsPresent(true);
+        if (resolvedDependencies.contains(key)) {
+          continue;
         }
+        resolvedDependencies.add(key);
+        boolean isAwbBundle = bundleProvidedMap.containsKey(key);
+        Set<String> providedDirectDep = bundleProvidedMap.get(key);
 
-        // now loop on all the artifact for this modules.
-        List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
+        String path = AtlasDepHelper.computeArtifactPath(moduleVersion, resolvedArtifact);
+        String name = AtlasDepHelper.computeArtifactName(moduleVersion, resolvedArtifact);
 
-        ComponentIdentifier id = resolvedComponentResult.getId();
-        String gradlePath = (id instanceof ProjectComponentIdentifier)
-            ? ((ProjectComponentIdentifier)id).getProjectPath() : null;
+        final String variantName = resolvedArtifact.getClassifier();
 
-        // 如果同时找到多个依赖，暂时没法判断是那个真正有用
-        if (null != moduleArtifacts) {
-            for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
-                String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
-                if (mainDependencies.contains(key)) {
-                    continue;
-                }
-                if (resolvedDependencies.contains(key)) {
-                    continue;
-                }
-                resolvedDependencies.add(key);
-                boolean isAwbBundle = bundleProvidedMap.containsKey(key);
-                Set<String> providedDirectDep = bundleProvidedMap.get(key);
-
-                String path = AtlasDepHelper.computeArtifactPath(moduleVersion, resolvedArtifact);
-                String name = AtlasDepHelper.computeArtifactName(moduleVersion, resolvedArtifact);
-
-                final String variantName = resolvedArtifact.getClassifier();
-
-                ResolvedDependencyInfo resolvedDependencyInfo = new ResolvedDependencyInfo(moduleVersion.getVersion(),
-                                                                                           moduleVersion.getGroup(),
-                                                                                           moduleVersion.getName(),
-                                                                                           isAwbBundle ? "awb"
+        ResolvedDependencyInfo resolvedDependencyInfo = new ResolvedDependencyInfo(moduleVersion.getVersion(),
+                                                                                   moduleVersion.getGroup(),
+                                                                                   moduleVersion.getName(),
+                                                                                   isAwbBundle ? "awb"
                                                                                                : resolvedArtifact.getType(),
-                                                                                           resolvedArtifact.getClassifier());
+                                                                                   resolvedArtifact.getClassifier());
 
-                resolvedDependencyInfo.setDependencyName(name);
-                resolvedDependencyInfo.setIndent(indent);
-                resolvedDependencyInfo.setResolvedArtifact(resolvedArtifact);
-                Project subProject = null;
+        resolvedDependencyInfo.setDependencyName(name);
+        resolvedDependencyInfo.setIndent(indent);
+        resolvedDependencyInfo.setResolvedArtifact(resolvedArtifact);
+        Project subProject = null;
 
-                boolean isSubProject = false;
-                if (gradlePath != null) {
-                    // this is a sub-module. Get the matching object file
-                    // to query its build output;
-                    subProject = project.findProject(gradlePath);
+        boolean isSubProject = false;
+        if (gradlePath != null) {
+          // this is a sub-module. Get the matching object file
+          // to query its build output;
+          subProject = project.findProject(gradlePath);
 
-                    // this could be a simple project wrapping an aar file, so we check the
-                    // presence of the android plugin to make sure it's an android module.
-                    isSubProject = subProject.getPlugins().hasPlugin("com.android.library") ||
-                        subProject.getPlugins().hasPlugin("com.android.model.library");
-                }
-
-                if (isSubProject) {
-                    // if there is a variant name then we use it for the leaf
-                    // (this means the subproject is publishing all its variants and each
-                    // artifact has a classifier that is the variant Name).
-                    // Otherwise the subproject only outputs a single artifact
-                    // and the location was set to default.
-                    String pathLeaf = variantName != null ? variantName : "default";
-
-                    File stagingDir = FileUtils.join(subProject.getBuildDir(), FD_INTERMEDIATES, DIR_BUNDLES, pathLeaf);
-                    resolvedDependencyInfo.setExplodedDir(stagingDir);
-                    resolvedDependencyInfo.setGradlePath(gradlePath);
-
-                    String artifactId = getArtifactId(subProject);
-                    if (!Strings.isNullOrEmpty(artifactId)) {
-                        resolvedDependencyInfo.setName(artifactId);
-                    }
-                } else {
-
-                    MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
-
-                    File explodedDir = DependencyLocationManager.getExploreDir(project,
-                                                                               mavenCoordinates,
-                                                                               resolvedArtifact.getFile(),
-                                                                               resolvedArtifact.getType().toLowerCase(),
-                                                                               path);
-
-                    resolvedDependencyInfo.setExplodedDir(explodedDir);
-                }
-
-                if (null == parent) {
-                    parent = resolvedDependencyInfo;
-                } else {
-                    resolvedDependencyInfo.setParent(parent);
-                    parent.getChildren().add(resolvedDependencyInfo);
-                }
-
-                Set<? extends DependencyResult> dependencies = resolvedComponentResult.getDependencies();
-                if (null != dependencies) {
-                    for (DependencyResult dep : dependencies) {
-
-                        if (dep instanceof ResolvedDependencyResult) {
-                            ResolvedComponentResult childResolvedComponentResult
-                                = ((ResolvedDependencyResult)dep).getSelected();
-
-                            if (isAwbBundle &&
-                                providedDirectDep.contains(childResolvedComponentResult.getModuleVersion().getGroup() +
-                                                               ":" +
-                                                               childResolvedComponentResult.getModuleVersion()
-                                                                   .getName())) {
-                                continue;
-                            }
-
-                            CircleDependencyCheck.DependencyNode childNode = circleDependencyCheck.addDependency(
-                                childResolvedComponentResult.getModuleVersion(),
-                                node,
-                                indent + 1);
-                            CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(LOGGER);
-                            if (circleResult.hasCircle) {
-                                LOGGER.warning("[CircleDependency]" + StringUtils.join(circleResult.detail, ";"));
-                            } else {
-                                resolveDependency(parent,
-                                                  dep,
-                                                  ((ResolvedDependencyResult)dep).getSelected(),
-                                                  artifacts,
-                                                  configDependencies,
-                                                  indent + 1,
-                                                  circleDependencyCheck,
-                                                  childNode,
-                                                  dependenciesMap,
-                                                  resolvedDependencies);
-                            }
-                        }
-                    }
-                }
-
-                addDependencyInfo(resolvedDependencyInfo, null, dependenciesMap);
-            }
+          // this could be a simple project wrapping an aar file, so we check the
+          // presence of the android plugin to make sure it's an android module.
+          isSubProject = subProject.getPlugins().hasPlugin("com.android.library") ||
+                         subProject.getPlugins().hasPlugin("com.android.model.library");
         }
+
+        if (isSubProject) {
+          // if there is a variant name then we use it for the leaf
+          // (this means the subproject is publishing all its variants and each
+          // artifact has a classifier that is the variant Name).
+          // Otherwise the subproject only outputs a single artifact
+          // and the location was set to default.
+          String pathLeaf = variantName != null ? variantName : "default";
+
+          File stagingDir = FileUtils.join(subProject.getBuildDir(), FD_INTERMEDIATES, DIR_BUNDLES, pathLeaf);
+          resolvedDependencyInfo.setExplodedDir(stagingDir);
+          resolvedDependencyInfo.setGradlePath(gradlePath);
+
+          String artifactId = getArtifactId(subProject);
+          if (!Strings.isNullOrEmpty(artifactId)) {
+            resolvedDependencyInfo.setName(artifactId);
+          }
+        }
+        else {
+
+          MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
+
+          File explodedDir = DependencyLocationManager.getExploreDir(project,
+                                                                     mavenCoordinates,
+                                                                     resolvedArtifact.getFile(),
+                                                                     resolvedArtifact.getType().toLowerCase(),
+                                                                     path);
+
+          resolvedDependencyInfo.setExplodedDir(explodedDir);
+        }
+
+        if (null == parent) {
+          parent = resolvedDependencyInfo;
+        }
+        else {
+          resolvedDependencyInfo.setParent(parent);
+          parent.getChildren().add(resolvedDependencyInfo);
+        }
+
+        Set<? extends DependencyResult> dependencies = resolvedComponentResult.getDependencies();
+        if (null != dependencies) {
+          for (DependencyResult dep : dependencies) {
+
+            if (dep instanceof ResolvedDependencyResult) {
+              ResolvedComponentResult childResolvedComponentResult
+                = ((ResolvedDependencyResult)dep).getSelected();
+
+              if (isAwbBundle &&
+                  providedDirectDep.contains(childResolvedComponentResult.getModuleVersion().getGroup() +
+                                             ":" +
+                                             childResolvedComponentResult.getModuleVersion()
+                                               .getName())) {
+                continue;
+              }
+
+              CircleDependencyCheck.DependencyNode childNode = circleDependencyCheck.addDependency(
+                childResolvedComponentResult.getModuleVersion(),
+                node,
+                indent + 1);
+              CircleDependencyCheck.CircleResult circleResult = circleDependencyCheck.checkCircle(LOGGER);
+              if (circleResult.hasCircle) {
+                LOGGER.warning("[CircleDependency]" + StringUtils.join(circleResult.detail, ";"));
+              }
+              else {
+                resolveDependency(parent,
+                                  dep,
+                                  ((ResolvedDependencyResult)dep).getSelected(),
+                                  artifacts,
+                                  configDependencies,
+                                  indent + 1,
+                                  circleDependencyCheck,
+                                  childNode,
+                                  dependenciesMap,
+                                  resolvedDependencies);
+              }
+            }
+          }
+        }
+
+        addDependencyInfo(resolvedDependencyInfo, null, dependenciesMap);
+      }
     }
+  }
 
-    public static String getArtifactId(Project project) {
-        String artifactId = null;
-        final PublishingExtension publishingExtension = project.getExtensions().findByType(
-                PublishingExtension.class);
-        if (publishingExtension != null) {
-            PublicationContainer publications = publishingExtension.getPublications();
-            MavenPublication mavenPublication = (MavenPublication) publications.findByName("maven");
-            if (mavenPublication != null) {
-                artifactId = mavenPublication.getArtifactId();
-
-            }
-        }
-        return artifactId;
+  public static String getArtifactId(Project project) {
+    String artifactId = null;
+    final PublishingExtension publishingExtension = project.getExtensions().findByType(
+      PublishingExtension.class);
+    if (publishingExtension != null) {
+      PublicationContainer publications = publishingExtension.getPublications();
+      MavenPublication mavenPublication = (MavenPublication)publications.findByName("maven");
+      if (mavenPublication != null) {
+        artifactId = mavenPublication.getArtifactId();
+      }
     }
+    return artifactId;
+  }
 
-    // 尽量忽略原则
+  // 尽量忽略原则
 
-    private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion,
-                                      ResolvedComponentResult resolvedComponentResult, ResolvedDependencyInfo parent) {
-        if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
-            return true;
-        }
-        if (apDependencies != null) {
-            // 工程依赖不忽略
-            if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
-                return false;
-            }
-            // awb依赖不忽略
-            if (parent == null && apDependencies.isAwb(moduleVersion.getModule())) {
-                return false;
-            }
-            // // host依赖awb间接依赖忽略
-            // if (parent == null && apDependencies.isAwbLibrary(moduleVersion.getModule())) {
-            //     return true;
-            // }
-            // awb忽略host的依赖
-            if (parent != null &&
-                parent.getType().equals("awb") &&
-                apDependencies.isMainLibrary(moduleVersion.getModule())) {
+  private boolean checkForExclusion(VariantDependencies configDependencies, ModuleVersionIdentifier moduleVersion,
+                                    ResolvedComponentResult resolvedComponentResult, ResolvedDependencyInfo parent) {
+    if (configDependencies.getChecker().checkForExclusion(moduleVersion)) {
+      return true;
+    }
+    if (apDependencies != null) {
+      // 工程依赖不忽略
+      if (resolvedComponentResult.getId() instanceof ProjectComponentIdentifier) {
+        return false;
+      }
+      // awb依赖不忽略
+      if (parent == null && apDependencies.isAwb(moduleVersion.getModule())) {
+        return false;
+      }
+      // // host依赖awb间接依赖忽略
+      // if (parent == null && apDependencies.isAwbLibrary(moduleVersion.getModule())) {
+      //     return true;
+      // }
+      // awb忽略host的依赖
+      if (parent != null &&
+          parent.getType().equals("awb") && !apDependencies.isMainDexAwb(parent.getName()) &&
+          apDependencies.isMainLibrary(moduleVersion.getModule())) {
                 /*if (apDependencies.hasSameResolvedDependency(moduleVersion)) {
                     return;
                 } else {
                     addDependencyToRoot(dependencyResult);
                     parent = null;
                 }*/
-                return true;
-            }
-            // TODO: 强制不忽略
-            // 一级依赖不忽略
-            // 版本号太低忽略
-            if (parent != null && apDependencies.hasSameResolvedDependency(moduleVersion)) {
-                return true;
-            }
-        }
-        return false;
+        return true;
+      }
+      // TODO: 强制不忽略
+      // 一级依赖不忽略
+      // 版本号太低忽略
+      if (parent != null && apDependencies.hasSameResolvedDependency(moduleVersion)) {
+        return true;
+      }
     }
+    return false;
+  }
 
-    private void addDependencyToRoot(DependencyResult dependencyResult) {
-        compileRootClasspath.addDependency(dependencyResult);
-        packageRootClasspath.addDependency(dependencyResult);
+  private void addDependencyToRoot(DependencyResult dependencyResult) {
+    compileRootClasspath.addDependency(dependencyResult);
+    packageRootClasspath.addDependency(dependencyResult);
+  }
+
+  /**
+   * 增加dependency
+   *
+   * @param resolvedDependencyInfo
+   * @param parent                 这个parent为一级依赖
+   */
+  private void addDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo, ResolvedDependencyInfo parent,
+                                 Multimap<String, ResolvedDependencyInfo> dependenciesMap) {
+
+    dependenciesMap.put(resolvedDependencyInfo.toString(), resolvedDependencyInfo);
+
+    if (null != parent) {
+      resolvedDependencyInfo.setParent(parent);
     }
+    List<ResolvedDependencyInfo> children = resolvedDependencyInfo.getChildren();
+    if (null != children && children.size() > 0) {
 
-    /**
-     * 增加dependency
-     *
-     * @param resolvedDependencyInfo
-     * @param parent                 这个parent为一级依赖
-     */
-    private void addDependencyInfo(ResolvedDependencyInfo resolvedDependencyInfo, ResolvedDependencyInfo parent,
-                                   Multimap<String, ResolvedDependencyInfo> dependenciesMap) {
+      for (ResolvedDependencyInfo child : children) {
+        addDependencyInfo(child, resolvedDependencyInfo, dependenciesMap);
+      }
+    }
+  }
 
-        dependenciesMap.put(resolvedDependencyInfo.toString(), resolvedDependencyInfo);
+  /**
+   * 进行依赖仲裁
+   */
+  private List<ResolvedDependencyInfo> resolveAllDependencies(
+    Multimap<String, ResolvedDependencyInfo> dependenciesMap) {
 
+    List<ResolvedDependencyInfo> allResolvedDependencyInfos = new ArrayList<>();
+
+    // 仲裁后的依赖关系.结构为父类-子类
+    Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap = LinkedHashMultimap.create();
+    Map<ModuleVersionIdentifier, ResolvedDependencyInfo> directDependencies
+      = new HashMap<ModuleVersionIdentifier, ResolvedDependencyInfo>();
+
+    for (String key : dependenciesMap.keySet()) {
+      Collection<ResolvedDependencyInfo> dependencyLevels = dependenciesMap.get(key);
+
+      if (dependencyLevels.size() > 0) {
+
+        List<ResolvedDependencyInfo> resolvedDependencyInfos = Lists.newArrayList();
+        resolvedDependencyInfos.addAll(dependencyLevels);
+        Collections.sort(resolvedDependencyInfos);
+        ResolvedDependencyInfo resolvedDependencyInfo = resolvedDependencyInfos.get(0);
+        ResolvedDependencyInfo parent = resolvedDependencyInfo.getParent();
+        //对于放入resolvedDependenciesMap中的信息不需要加入children
+        resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo>newArrayList());
         if (null != parent) {
-            resolvedDependencyInfo.setParent(parent);
+          //如果存在的父依赖,就把当前依赖加入到父依赖的子依赖中
+          resolvedDependenciesMap.put(parent.getModuleVersionIdentifier(), resolvedDependencyInfo);
         }
-        List<ResolvedDependencyInfo> children = resolvedDependencyInfo.getChildren();
-        if (null != children && children.size() > 0) {
-
-            for (ResolvedDependencyInfo child : children) {
-                addDependencyInfo(child, resolvedDependencyInfo, dependenciesMap);
-            }
+        else {
+          //如果没有父依赖,就是一级依赖
+          directDependencies.put(resolvedDependencyInfo.getModuleVersionIdentifier(), resolvedDependencyInfo);
         }
+      }
     }
 
-    /**
-     * 进行依赖仲裁
-     */
-    private List<ResolvedDependencyInfo> resolveAllDependencies(
-        Multimap<String, ResolvedDependencyInfo> dependenciesMap) {
+    // 开始构建依赖树
 
-        List<ResolvedDependencyInfo> allResolvedDependencyInfos = new ArrayList<>();
-
-        // 仲裁后的依赖关系.结构为父类-子类
-        Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap = LinkedHashMultimap.create();
-        Map<ModuleVersionIdentifier, ResolvedDependencyInfo> directDependencies
-            = new HashMap<ModuleVersionIdentifier, ResolvedDependencyInfo>();
-
-        for (String key : dependenciesMap.keySet()) {
-            Collection<ResolvedDependencyInfo> dependencyLevels = dependenciesMap.get(key);
-
-            if (dependencyLevels.size() > 0) {
-
-                List<ResolvedDependencyInfo> resolvedDependencyInfos = Lists.newArrayList();
-                resolvedDependencyInfos.addAll(dependencyLevels);
-                Collections.sort(resolvedDependencyInfos);
-                ResolvedDependencyInfo resolvedDependencyInfo = resolvedDependencyInfos.get(0);
-                ResolvedDependencyInfo parent = resolvedDependencyInfo.getParent();
-                //对于放入resolvedDependenciesMap中的信息不需要加入children
-                resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo>newArrayList());
-                if (null != parent) {
-                    //如果存在的父依赖,就把当前依赖加入到父依赖的子依赖中
-                    resolvedDependenciesMap.put(parent.getModuleVersionIdentifier(), resolvedDependencyInfo);
-                } else {
-                    //如果没有父依赖,就是一级依赖
-                    directDependencies.put(resolvedDependencyInfo.getModuleVersionIdentifier(), resolvedDependencyInfo);
-                }
-            }
-        }
-
-        // 开始构建依赖树
-
-        for (ModuleVersionIdentifier key : directDependencies.keySet()) {
-            ResolvedDependencyInfo resolvedDependencyInfo = directDependencies.get(key);
-            //清空children
-            resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo>newArrayList());
-            addResolvedDependencyInfo(resolvedDependencyInfo, resolvedDependenciesMap);
-            allResolvedDependencyInfos.add(resolvedDependencyInfo);
-        }
-
-        return allResolvedDependencyInfos;
+    for (ModuleVersionIdentifier key : directDependencies.keySet()) {
+      ResolvedDependencyInfo resolvedDependencyInfo = directDependencies.get(key);
+      //清空children
+      resolvedDependencyInfo.setChildren(Lists.<ResolvedDependencyInfo>newArrayList());
+      addResolvedDependencyInfo(resolvedDependencyInfo, resolvedDependenciesMap);
+      allResolvedDependencyInfos.add(resolvedDependencyInfo);
     }
 
-    /**
-     * 通过递归的方式进行依赖的解析
-     *
-     * @param parentDependency
-     * @param resolvedDependenciesMap
-     */
-    private void addResolvedDependencyInfo(ResolvedDependencyInfo parentDependency,
-                                           Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap) {
-        int indent = parentDependency.getIndent();
-        ModuleVersionIdentifier identifier = parentDependency.getModuleVersionIdentifier();
-        Collection<ResolvedDependencyInfo> childDependencies = resolvedDependenciesMap.get(identifier);
+    return allResolvedDependencyInfos;
+  }
 
-        //TODO here
-        for (ResolvedDependencyInfo childDependency : childDependencies) {
-            if (childDependency.getIndent() > indent) {
-                //                System.out.println(parentDependency + " indent " + indent + "->" + childDependency
-                // +  " indent " + childDependency.getIndent());
-                parentDependency.getChildren().add(childDependency);
-                if (childDependency.getIndent() <= 1) {
-                    addResolvedDependencyInfo(childDependency, resolvedDependenciesMap);
-                }
-            }
+  /**
+   * 通过递归的方式进行依赖的解析
+   *
+   * @param parentDependency
+   * @param resolvedDependenciesMap
+   */
+  private void addResolvedDependencyInfo(ResolvedDependencyInfo parentDependency,
+                                         Multimap<ModuleVersionIdentifier, ResolvedDependencyInfo> resolvedDependenciesMap) {
+    int indent = parentDependency.getIndent();
+    ModuleVersionIdentifier identifier = parentDependency.getModuleVersionIdentifier();
+    Collection<ResolvedDependencyInfo> childDependencies = resolvedDependenciesMap.get(identifier);
+
+    //TODO here
+    for (ResolvedDependencyInfo childDependency : childDependencies) {
+      if (childDependency.getIndent() > indent) {
+        //                System.out.println(parentDependency + " indent " + indent + "->" + childDependency
+        // +  " indent " + childDependency.getIndent());
+        parentDependency.getChildren().add(childDependency);
+        if (childDependency.getIndent() <= 1) {
+          addResolvedDependencyInfo(childDependency, resolvedDependenciesMap);
         }
+      }
     }
+  }
 }
