@@ -361,7 +361,7 @@ public class AtlasDependencyManager extends DependencyManager {
 
     if (apDependencies != null) {
       if (apDependencies.isMainDexAwb(moduleVersion.getName())) {
-        return true;
+        return false;
       }
 
       if (!apDependencies.containsDependency(module)) {
