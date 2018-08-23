@@ -455,7 +455,7 @@ public class AtlasDepTreeParser {
   private void collect(ResolvedDependencyInfo dependencyInfo, AwbBundle awbBundle) {
     switch (DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
       case AAR:
-      case AWB:
+        //case AWB:
         //添加到主dex中去
         awbBundle.getAndroidLibraries().add(
           DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
@@ -466,8 +466,14 @@ public class AtlasDepTreeParser {
       case SOLIB:
         awbBundle.getSoLibraries().add(new SoLibrary(dependencyInfo));
         return;
-      //case AWB:
-      //  break;
+      case AWB:
+
+        if (awbBundle.isMainBundle()) {
+          awbBundle.getAndroidLibraries().add(
+            DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
+        }
+
+        break;
       default:
         return;
     }
