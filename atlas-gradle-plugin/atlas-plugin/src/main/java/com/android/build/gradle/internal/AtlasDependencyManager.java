@@ -233,6 +233,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedComponentResult;
@@ -247,148 +248,153 @@ import org.slf4j.LoggerFactory;
  */
 public class AtlasDependencyManager extends DependencyManager {
 
-    private static final Logger sLogger = LoggerFactory.getLogger(AtlasDependencyManager.class);
+  private static final Logger sLogger = LoggerFactory.getLogger(AtlasDependencyManager.class);
 
-    private final Project project;
+  private final Project project;
 
-    private final ExtraModelInfo extraModelInfo;
+  private final ExtraModelInfo extraModelInfo;
 
-    private ApDependencies apDependencies;
+  private ApDependencies apDependencies;
 
-    private AtlasDependencyTree atlasDependencyTree;
+  private AtlasDependencyTree atlasDependencyTree;
 
-    public AtlasDependencyManager(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo,
-                                  @NonNull SdkHandler sdkHandler) {
-        super(project, extraModelInfo, sdkHandler);
-        this.project = project;
-        this.extraModelInfo = extraModelInfo;
+  public AtlasDependencyManager(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo,
+                                @NonNull SdkHandler sdkHandler) {
+    super(project, extraModelInfo, sdkHandler);
+    this.project = project;
+    this.extraModelInfo = extraModelInfo;
+  }
+
+  /**
+   * 1 . detect if has awb dependency
+   * <p>
+   * yes : special process
+   * no  : default process
+   * <p>
+   * 2.  parse to AtlasDependencyTree
+   */
+  @Override
+  public Set<AndroidDependency> resolveDependencies(@NonNull VariantDependencies variantDeps,
+                                                    @Nullable String testedProjectPath) {
+    apDependencies = resolveApDependencies(project, variantDeps.getName());
+
+
+    atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo,
+                                                 apDependencies).parseDependencyTree(
+      variantDeps);
+
+    AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
+
+    if (atlasExtension.getTBuildConfig().isIncremental() && apDependencies != null) {
+      sLogger.warn("[dependencyTree" + variantDeps.getName() + "] {}",
+                   JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
+    }
+    else {
+      sLogger.info("[dependencyTree" + variantDeps.getName() + "] {}",
+                   JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
     }
 
-    /**
-     * 1 . detect if has awb dependency
-     * <p>
-     * yes : special process
-     * no  : default process
-     * <p>
-     * 2.  parse to AtlasDependencyTree
-     */
-    @Override
-    public Set<AndroidDependency> resolveDependencies(@NonNull VariantDependencies variantDeps,
-                                                      @Nullable String testedProjectPath) {
-        apDependencies = resolveApDependencies(project, variantDeps.getName());
-
-
-        atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo,
-                                                     apDependencies).parseDependencyTree(
-          variantDeps);
-
-        AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
-
-        if (atlasExtension.getTBuildConfig().isIncremental() && apDependencies != null) {
-            sLogger.warn("[dependencyTree" + variantDeps.getName() + "] {}",
-                         JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
-        }
-        else {
-            sLogger.info("[dependencyTree" + variantDeps.getName() + "] {}",
-                         JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
-        }
-
-        if (PluginTypeUtils.isAppProject(project)) {
-            AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
-        }
-        else {
-            AtlasBuildContext.libDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
-        }
-
-        Set<AndroidDependency> libsToExplode = super.resolveDependencies(variantDeps, testedProjectPath);
-        //return libsToExplode;
-        return new HashSet<>(0);
+    if (PluginTypeUtils.isAppProject(project)) {
+      AtlasBuildContext.androidDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
+    }
+    else {
+      AtlasBuildContext.libDependencyTrees.put(variantDeps.getName(), atlasDependencyTree);
     }
 
-    // 增量编译修剪依赖
-    private static ApDependencies resolveApDependencies(Project project, String variantDepsName) {
-        AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
-        if (!atlasExtension.getTBuildConfig().isIncremental()) {
-            return null;
-        }
+    Set<AndroidDependency> libsToExplode = super.resolveDependencies(variantDeps, testedProjectPath);
+    //return libsToExplode;
+    return new HashSet<>(0);
+  }
 
-        // Ap配置
-        TBuildType tBuildType = (TBuildType)atlasExtension.getBuildTypes().findByName(variantDepsName);
-        if (tBuildType == null) {
-            return null;
-        }
-        downloadAp(project, atlasExtension, tBuildType);
-
-        return ApDependencies.getApDependencies(project, tBuildType);
+  // 增量编译修剪依赖
+  private static ApDependencies resolveApDependencies(Project project, String variantDepsName) {
+    AtlasExtension atlasExtension = project.getExtensions().getByType(AtlasExtension.class);
+    if (!atlasExtension.getTBuildConfig().isIncremental()) {
+      return null;
     }
 
-    private static void downloadAp(Project project, AtlasExtension atlasExtension, TBuildType tBuildType) {
-        //TODO 最开始下载Ap
-        // 下载Ap
-        try {
-            new AwoPropHandler(project).process(tBuildType, atlasExtension.getBundleConfig());
-        }
-        catch (Exception e) {
-            throw new GradleException("process awo exception", e);
-        }
-        // ConfigAction configAction = new ConfigAction(tBuildType);
-        // String name = configAction.getName();
-        // Task task = project.getTasks().findByName(name);
-        // if (task == null) {
-        //     ApDownloadTask apDownloadTask = project.getTasks().create(name, ApDownloadTask.class);
-        //     configAction.execute(apDownloadTask);
-        //     apDownloadTask.execute();
-        // }
+    // Ap配置
+    TBuildType tBuildType = (TBuildType)atlasExtension.getBuildTypes().findByName(variantDepsName);
+    if (tBuildType == null) {
+      return null;
+    }
+    downloadAp(project, atlasExtension, tBuildType);
+
+    return ApDependencies.getApDependencies(project, tBuildType);
+  }
+
+  private static void downloadAp(Project project, AtlasExtension atlasExtension, TBuildType tBuildType) {
+    //TODO 最开始下载Ap
+    // 下载Ap
+    try {
+      new AwoPropHandler(project).process(tBuildType, atlasExtension.getBundleConfig());
+    }
+    catch (Exception e) {
+      throw new GradleException("process awo exception", e);
+    }
+    // ConfigAction configAction = new ConfigAction(tBuildType);
+    // String name = configAction.getName();
+    // Task task = project.getTasks().findByName(name);
+    // if (task == null) {
+    //     ApDownloadTask apDownloadTask = project.getTasks().create(name, ApDownloadTask.class);
+    //     configAction.execute(apDownloadTask);
+    //     apDownloadTask.execute();
+    // }
+  }
+
+  @Override
+  protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
+                                      @NonNull ResolvedComponentResult resolvedComponentResult,
+                                      ModuleVersionIdentifier moduleVersion) {
+    if (super.checkForExclusion(configDependencies, resolvedComponentResult,
+                                moduleVersion)) {
+      return true;
     }
 
-    @Override
-    protected boolean checkForExclusion(@NonNull VariantDependencies configDependencies,
-                                        @NonNull ResolvedComponentResult resolvedComponentResult,
-                                        ModuleVersionIdentifier moduleVersion) {
-        if (super.checkForExclusion(configDependencies, resolvedComponentResult,
-                                    moduleVersion)) {
-            return true;
-        }
+    ModuleIdentifier module = moduleVersion.getModule();
+    String artifactId = getArtifactId(resolvedComponentResult);
 
-        ModuleIdentifier module = moduleVersion.getModule();
-        String artifactId = getArtifactId(resolvedComponentResult);
-
-        if (!Strings.isNullOrEmpty(artifactId)) {
-            module = DefaultModuleIdentifier.newId(moduleVersion.getGroup(), artifactId);
-        }
+    if (!Strings.isNullOrEmpty(artifactId)) {
+      module = DefaultModuleIdentifier.newId(moduleVersion.getGroup(), artifactId);
+    }
 
 
-        if (apDependencies != null) {
-            if (apDependencies.isMainDexAwb(moduleVersion.getName())) {
-                return true;
-            }
+    if (apDependencies != null) {
+      if (apDependencies.isMainDexAwb(moduleVersion.getName())) {
+        return true;
+      }
 
-            if (!apDependencies.containsDependency(module)) {
-                return false;
-            }
-            // AtlasDependencyTree同步
-            if (!atlasDependencyTree.getMainBundle().containsDependency(module)) {
-                return true;
-            }
-        }
+      if (!apDependencies.containsDependency(module)) {
         return false;
+      }
+      // AtlasDependencyTree同步
+      if (!atlasDependencyTree.getMainBundle().containsDependency(module)) {
+        return true;
+      }
     }
+    return false;
+  }
 
-    private String getArtifactId(@NonNull ResolvedComponentResult resolvedComponentResult) {
-        // get the associated gradlepath
-        ComponentIdentifier id = resolvedComponentResult.getId();
-        String gradlePath =
-          (id instanceof ProjectComponentIdentifier) ? ((ProjectComponentIdentifier)id)
-            .getProjectPath() : null;
-        Project subProject = null;
-        String artifactId = null;
+  private String getArtifactId(@NonNull ResolvedComponentResult resolvedComponentResult) {
+    // get the associated gradlepath
+    ComponentIdentifier id = resolvedComponentResult.getId();
+    String gradlePath =
+      (id instanceof ProjectComponentIdentifier) ? ((ProjectComponentIdentifier)id)
+        .getProjectPath() : null;
+    Project subProject = null;
+    String artifactId = null;
 
-        if (gradlePath != null) {
-            // this is a sub-module. Get the matching object file
-            // to query its build output;
-            subProject = project.findProject(gradlePath);
-            artifactId = DependencyResolver.getArtifactId(subProject);
-        }
-        return artifactId;
+    if (gradlePath != null) {
+      // this is a sub-module. Get the matching object file
+      // to query its build output;
+      subProject = project.findProject(gradlePath);
+      artifactId = DependencyResolver.getArtifactId(subProject);
     }
+    return artifactId;
+  }
+
+  @Override
+  protected boolean isLibrary(ResolvedArtifact artifact) {
+    return super.isLibrary(artifact) || "awb".equals(artifact.getExtension());
+  }
 }
