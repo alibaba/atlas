@@ -219,7 +219,7 @@ public abstract class AtlasDexMerger {
                     handleNativeMultiDex(
                             allDexsArchives,
                             output,
-                            outputDir,
+                            finalDexDir,
                             null));
         } else {
             mergeTasks.addAll(

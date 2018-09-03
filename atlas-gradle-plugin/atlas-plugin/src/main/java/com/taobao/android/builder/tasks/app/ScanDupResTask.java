@@ -170,7 +170,8 @@ public class ScanDupResTask extends BaseTask {
 //                                this.removeOutFile(removedItem);
                                 break;
                             case XML_VALUES:
-                                System.out.println(removedItem.getQualifiers());
+                                mValuesResMap.put(removedItem.getQualifiers(), replacedBy);
+//                                System.out.println(removedItem.getQualifiers());
 //                                this.mQualifierWithDeletedValues.add(removedItem.getQualifiers());
                                 break;
                             default:
@@ -249,7 +250,7 @@ public class ScanDupResTask extends BaseTask {
 
                             }
                         }else {
-                            if (resourceItem.getFile()!= null && valuesMap.get(tag)!= null&& !isSameBundle(valuesMap.get(tag).getValue(),resourceItem.getFile(),atlasDependencyTree) && allInMainBundle(getId(valuesMap.get(tag).getValue()),getId(resourceItem.getFile()),atlasDependencyTree)) {
+                            if (resourceItem.getFile()!= null && valuesMap.get(tag)!= null) {
                                 if (!valuesMap.get(tag).equals(resourceItem.getFile()) && !isSameValue(resourceItem,valuesMap.get(tag).getKey()))
                                     exceptions.add("dup value " + tag +"|"+valuesMap.get(tag).getKey()+"|"+getOtherString(resourceItem)+"|"+getId(valuesMap.get(tag).getValue())+"|"+getId(resourceItem.getFile()));
                             }

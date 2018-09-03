@@ -4,6 +4,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.BuildCacheUtils;
+import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
@@ -97,6 +98,7 @@ public class AtlasDexMergerTransform extends Transform {
     @Override
     public Set<? super QualifiedContent.Scope> getScopes() {
         return TransformManager.SCOPE_FULL_WITH_IR_FOR_DEXING;
+
     }
 
     @Override

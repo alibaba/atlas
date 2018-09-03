@@ -32,6 +32,7 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.transform.dex.AtlasDexMerger;
 import com.taobao.android.builder.tools.FileNameUtils;
+import com.taobao.android.builder.tools.JarUtils;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.cache.FileCacheCenter;
 import com.taobao.android.builder.tools.cache.FileCacheException;
@@ -40,11 +41,10 @@ import it.unimi.dsi.fastutil.Hash;
 import org.apache.commons.compress.compressors.FileNameUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.gradle.caching.configuration.BuildCache;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -54,8 +54,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 
 
 /**
@@ -70,6 +74,8 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
     private Boolean mIsDexInProcess = null;
 
     private final TargetInfo mTargetInfo;
+
+    public static final int MAX_CLASSES = 3000;
 
     private AppVariantOutputContext variantOutputContext;
 
@@ -280,6 +286,10 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                 }
 
             }
+
+            if (inputFile.size() ==1 ){
+                splitFile();
+            }
             inputFile.parallelStream().forEach(file -> {
                 File outPutFolder = new File(finalTempDexFolder, FilenameUtils.getBaseName(file.getName()));
                 if (globalCacheBuilder != null && file.isFile()) {
@@ -375,7 +385,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
         if (variantContext.getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
             try {
-                atlasDexArchiveMerger.mergeDexArchives(dexPaths, outDexFolder.toPath(), mainDexList.toPath(), DexingType.LEGACY_MULTIDEX);
+                atlasDexArchiveMerger.mergeDexArchives(dexPaths, outDexFolder.toPath(), null, DexingType.LEGACY_MULTIDEX);
             } catch (DexArchiveMergerException e) {
                 e.printStackTrace();
             } finally {
@@ -389,6 +399,20 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
 
     }
+
+    private void splitFile() {
+        inputFile = new ArrayList<>(inputFile);
+        File file = inputFile.iterator().next();
+        inputFile.clear();
+        try {
+            JarUtils.splitMainJar((List<File>) inputFile,file,1,MAX_CLASSES);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
 
     private void generateEmptyMainDexList(File mainDexList) {
         try {

@@ -452,8 +452,9 @@ public class MergeTool {
     }
 
     public static boolean isArt() {
+        return true;
 
-        return Build.VERSION.SDK_INT > 20;
+//        return Build.VERSION.SDK_INT > 20;
 
     }
 

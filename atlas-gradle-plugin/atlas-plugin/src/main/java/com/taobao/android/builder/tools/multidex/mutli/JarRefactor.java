@@ -213,6 +213,7 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.builder.packaging.JarMerger;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.FileNameUtils;
+import com.taobao.android.builder.tools.JarUtils;
 import com.taobao.android.builder.tools.multidex.dex.DexMerger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -336,7 +337,7 @@ public class JarRefactor {
                 FileUtils.copyFile(jar, outJar);
             }
             if (!appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard() && files.size() == 1){
-                splitMainJar(result,outJar,1);
+                JarUtils.splitMainJar(result,outJar,1,MAX_CLASSES);
             }
         }
 
@@ -349,52 +350,7 @@ public class JarRefactor {
         return result;
     }
 
-    private void splitMainJar(List<File> result, File outJar, int index) throws IOException {
-        boolean hasClass = false;
-        File splitOutJar = new File(outJar.getParentFile(), FileNameUtils.getUniqueJarName(outJar) + "-" + (index + 1) + ".jar");
-        File splitOutJarMain = new File(outJar.getParentFile(), FileNameUtils.getUniqueJarName(outJar) + "-" + (index) + ".jar");
-        JarOutputStream jos = new JarOutputStream(
-                new BufferedOutputStream(new FileOutputStream(splitOutJar)));
-        JarOutputStream josMain = new JarOutputStream(
-                new BufferedOutputStream(new FileOutputStream(splitOutJarMain)));
-        JarFile jarFile = new JarFile(outJar);
-        try {
 
-
-            Enumeration<JarEntry> entryEnumeration = jarFile.entries();
-            int i = 0;
-            while (entryEnumeration.hasMoreElements()) {
-                JarEntry jarEntry = entryEnumeration.nextElement();
-                if (jarEntry.getName().endsWith(".class")) {
-                    i++;
-                    }
-                if (i > MAX_CLASSES) {
-                    hasClass = true;
-                    copyStream(jarFile.getInputStream(jarEntry), jos, jarEntry, jarEntry.getName());
-                } else {
-                    copyStream(jarFile.getInputStream(jarEntry), josMain, jarEntry, jarEntry.getName());
-                }
-            }
-            IOUtils.closeQuietly(jos);
-            IOUtils.closeQuietly(josMain);
-            jarFile.close();
-            if (!hasClass) {
-                FileUtils.deleteQuietly(splitOutJar);
-                return;
-            } else {
-                FileUtils.deleteQuietly(outJar);
-                result.remove(outJar);
-                result.add(splitOutJar);
-                result.add(splitOutJarMain);
-            }
-            splitMainJar(result, splitOutJar, index + 1);
-        }catch (Exception e){
-
-        }finally {
-
-        }
-
-    }
 
     private void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
         try {

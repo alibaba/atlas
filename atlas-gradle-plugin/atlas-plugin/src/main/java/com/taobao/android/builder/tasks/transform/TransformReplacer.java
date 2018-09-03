@@ -140,6 +140,7 @@ public class TransformReplacer {
         DexMergerTransformCallable.Factory factory = (dexingType1, processOutput, dexOutputDir, dexArchives, mainDexList, forkJoinPool, dexMerger, minSdkVersion, isDebuggable) -> new DexMergerTransformCallable(dexingType1,processOutput,dexOutputDir,dexArchives,mainDexList,forkJoinPool,dexMerger,minSdkVersion,isDebuggable);
         for (TransformTask transformTask: list){
             transformTask.setEnabled(false);
+
 //            AtlasExternalLibsMergerTransform atlasExternalLibsMergerTransform = new AtlasExternalLibsMergerTransform(variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),
 //                    dexingType,
 //                    dexMergerTool,

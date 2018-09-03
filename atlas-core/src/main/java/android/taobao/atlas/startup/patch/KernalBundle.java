@@ -217,6 +217,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -255,6 +256,11 @@ public class KernalBundle {
     private NClassLoader replaceClassLoader;
 
     public static boolean nativeLibPatched;
+
+    static List <String>blackList = Arrays.asList(
+            "/Plugin/",
+            "/virtual/");
+
     public static String KERNAL_BUNDLE_NAME = "com.taobao.maindex";
 
     public static KernalBundle kernalBundle = null;
@@ -279,6 +285,9 @@ public class KernalBundle {
         if (kernalUpdateDir.exists() || kernalDexPatchDir.exists()) {
             try {
                 kernalBundle = new KernalBundle(kernalUpdateDir, kernalDexPatchDir, KernalVersionManager.instance().getBaseBundleVersion(KERNAL_BUNDLE_NAME), currentProcessName);
+                if (isInBlackList(kernalBundle)){
+                    throw new IOException(kernalBundle.getArchive().getArchiveFile().getAbsolutePath());
+                }
                 kernalBundle.patchKernalDex(application);
                 kernalBundle.patchKernalResource(application);
                 return true;
@@ -293,6 +302,18 @@ public class KernalBundle {
             }
         }
         return false;
+    }
+
+    private static boolean isInBlackList(KernalBundle kernalBundle) {
+        if (kernalBundle!= null && kernalBundle.getArchive()!= null && kernalBundle.getArchive().getArchiveFile()!= null){
+            for (String s:blackList) {
+                if (kernalBundle.getArchive().getArchiveFile().getAbsolutePath().contains(s)){
+                    return true;
+                }
+            }
+        }
+        return false;
+
     }
 
     public static boolean checkLoadKernalDebugPatch(Application application) {
@@ -402,7 +423,7 @@ public class KernalBundle {
     public static void patchNativeLib(Context base) {
         try {
             File dir = new File(base.getFilesDir(), String.format("nativeLib-%s", base.getPackageManager().getPackageInfo(base.getPackageName(), 0).versionName));
-            ClassLoader loader = Atlas.class.getClassLoader();
+            ClassLoader loader = KernalBundle.class.getClassLoader();
             Field pathListField = findField(loader, "pathList");
             Object dexPathList = pathListField.get(loader);
             patchLibrary(dexPathList, dir);
