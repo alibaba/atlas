@@ -569,6 +569,9 @@ public class ApDependencies /*extends BaseTask*/ {
     if (mainVersion.endsWith("-SNAPSHOT") && mainVersion.equals(moduleVersion.getVersion())) {
       return false;
     }
+    if (mainVersion.endsWith("-SNAPSHOT") && !moduleVersion.getVersion().endsWith("-SNAPSHOT")) {
+      return true;
+    }
 
 
     if (versionStringComparator.compare(moduleVersion.getVersion(), mainVersion) <= 0) {
