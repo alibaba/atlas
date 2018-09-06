@@ -1,6 +1,9 @@
 package com.taobao.atlas.dexmerge;
 
+import android.content.SharedPreferences;
 import android.os.Build;
+import android.preference.PreferenceManager;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.patch.releaser.DexReleaser;
 import android.text.TextUtils;
 import android.util.Log;
@@ -27,6 +30,9 @@ public class MergeTool {
 
 
     private static String noPatchDexIndex;
+
+    private static int patchVersion = 2;
+
 
     private static TreeMap<Integer,List<String>>classes = new TreeMap();
 
@@ -132,7 +138,7 @@ public class MergeTool {
 
     private static boolean isEnhanceDex(String name) {
 
-       return !TextUtils.isEmpty(noPatchDexIndex) && name.equals(String.format("classes%s.dex",noPatchDexIndex));
+       return !TextUtils.isEmpty(noPatchDexIndex) && name.equals(String.format("classes%s.dex",noPatchDexIndex)) && Build.VERSION.SDK_INT > 27;
 
     }
 
@@ -148,6 +154,13 @@ public class MergeTool {
                     noPatchDexIndex = dexIndex;
                     continue;
                 }
+
+                if (!TextUtils.isEmpty(clazz)&& clazz.equals(MergeConstants.PATCH_VERSION)){
+                    patchVersion = Integer.valueOf(dexIndex);
+                    savePatchVersion(patchVersion);
+                    continue;
+                }
+
                 if (classes.containsKey(Integer.valueOf(dexIndex))){
                     classes.get(Integer.valueOf(dexIndex)).add(clazz);
                 }else {
@@ -161,6 +174,11 @@ public class MergeTool {
             classes.clear();
         }
 
+    }
+
+    private static void savePatchVersion(int patchVersion) {
+        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(RuntimeVariables.androidApplication).edit();
+        editor.putInt("patch_version",patchVersion).commit();
     }
 
 

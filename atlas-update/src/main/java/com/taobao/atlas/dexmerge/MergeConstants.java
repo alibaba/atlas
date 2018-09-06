@@ -20,5 +20,9 @@ public class MergeConstants {
     public static final String DEX_PATCH_META = "DEX-PATCH-INF";
 
     public static final String NO_PATCH_DEX = "NO_PATCH_DEX";
+
+    public static final String PATCH_VERSION = "PATCH_VERSION";
+
+
 }
 

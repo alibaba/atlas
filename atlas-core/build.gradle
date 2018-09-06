@@ -29,7 +29,7 @@ repositories {
 group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
-version "5.0.8.7-rc13"
+version "5.0.8.7-rc14-SNAPSHOT"
 
 
 String getEnvValue(key, defValue) {
