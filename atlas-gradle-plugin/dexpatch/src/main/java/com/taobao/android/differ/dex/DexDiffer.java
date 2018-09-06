@@ -454,6 +454,17 @@ public class DexDiffer {
     private static final String PATCH_VERSION = "PATCH_VRESION";
 
 
+    public boolean isNewPatch() {
+        return newPatch;
+    }
+
+    public void setNewPatch(boolean newPatch) {
+        this.newPatch = newPatch;
+    }
+
+    private boolean newPatch = true;
+
+
     private Map<String, org.jf.dexlib2.iface.ClassDef>lastBundleClassMap = new HashMap<String, org.jf.dexlib2.iface.ClassDef>();
     private DexDiffInfo dexDiffInfo = new DexDiffInfo();
 
@@ -580,7 +591,7 @@ public class DexDiffer {
             diffClasses.add(new DiffClass(NO_PATCH_DEX,Integer.valueOf(noPatchDexNum)));
         }
 
-        diffClasses.add(new DiffClass(PATCH_VERSION,2));
+        diffClasses.add(new DiffClass(PATCH_VERSION,newPatch ? 2:1));
         return dexDiffInfo;
     }
 

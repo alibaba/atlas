@@ -233,6 +233,16 @@ public class PatchConfig {
     @Config(message = " Play andfix patch bag ", order = 1, advance = true, group = "atlas_patch")
     private boolean createAPatch = false;
 
+    public boolean isNewPatch() {
+        return newPatch;
+    }
+
+    public void setNewPatch(boolean newPatch) {
+        this.newPatch = newPatch;
+    }
+
+    private boolean newPatch = true;
+
     @Config(message = " Dynamic deployment patch bag ", order = 2, group = "atlas_patch")
     private boolean createTPatch = false;
 

@@ -581,6 +581,7 @@ public class TPatchTool extends AbstractTool {
                                                   DEFAULT_API_LEVEL,
                                                   bundleClassMap.get(diffDexFolder.getName()),
                                                   mainDex);
+        dexTool.setNewPatch(((TpatchInput)input).newPatch);
         DexDiffInfo dexDiffInfo = dexTool.createPatchDex(diffDexFolder);
         if (diffDexFolder.listFiles()!= null && diffDexFolder.listFiles().length > 0) {
             dexs.addAll(FileUtils.listFiles(diffDexFolder,new String[]{"dex"},true));

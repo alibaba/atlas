@@ -220,6 +220,7 @@ public class DexPatchTool extends TPatchTool {
                 DEFAULT_API_LEVEL,
                 null,
                 mainDex);
+        dexTool.setNewPatch(((DexPatchInput)input).newPatch);
         dexTool.setExculdeClasses(((DexPatchInput)input).excludeClasses);
         dexTool.setPatchClasses(((DexPatchInput)input).patchClasses);
 

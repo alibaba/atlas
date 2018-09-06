@@ -46,6 +46,8 @@ public class TpatchInput extends BaseInput {
 
     public File bundleWhiteList;
 
+    public boolean newPatch = true;
+
     //dexpatch name:com.taobao.maindex
     public String mainBundleName = "libcom_taobao_maindex";
 

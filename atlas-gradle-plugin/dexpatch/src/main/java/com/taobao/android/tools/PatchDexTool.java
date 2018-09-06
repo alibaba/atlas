@@ -49,6 +49,16 @@ public abstract class PatchDexTool {
 
     private boolean tpatch;
 
+    public boolean isNewPatch() {
+        return newPatch;
+    }
+
+    public void setNewPatch(boolean newPatch) {
+        this.newPatch = newPatch;
+    }
+
+    private boolean newPatch = true;
+
     public PatchDexTool(List<File> baseDexFiles, List<File> newDexFiles, int apiLevel, Map<String,ClassDef> map,boolean mainBundle) {
         this.baseDexFiles = baseDexFiles;
         this.newDexFiles = newDexFiles;
@@ -57,6 +67,7 @@ public abstract class PatchDexTool {
         assert (null != baseDexFiles && baseDexFiles.size() > 0);
         assert (null != newDexFiles && newDexFiles.size() > 0);
         this.dexDiffer = new DexDiffer(baseDexFiles, newDexFiles, apiLevel);
+        dexDiffer.setNewPatch(newPatch);
         if (map == null) {
             dexDiffer.setLastBundleClassMap(lastBundleClassMap);
         }else {
@@ -73,7 +84,8 @@ public abstract class PatchDexTool {
         newDexFiles.add(newDex);
         this.mainBundle = mainBundle;
         this.dexDiffer = new DexDiffer(baseDex, newDex, apiLevel);
-       dexDiffer.setLastBundleClassMap(lastBundleClassMap);
+        dexDiffer.setNewPatch(newPatch);
+        dexDiffer.setLastBundleClassMap(lastBundleClassMap);
 
     }
 

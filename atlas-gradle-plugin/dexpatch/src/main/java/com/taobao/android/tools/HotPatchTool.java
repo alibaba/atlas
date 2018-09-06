@@ -2,6 +2,7 @@ package com.taobao.android.tools;
 
 import com.taobao.android.differ.dex.BundleDiffResult;
 import com.taobao.android.inputs.HotPatchInput;
+import com.taobao.android.inputs.TpatchInput;
 import com.taobao.android.object.DexDiffInfo;
 import org.apache.commons.io.FileUtils;
 
@@ -53,6 +54,7 @@ public class HotPatchTool extends DexPatchTool {
                     DEFAULT_API_LEVEL,
                     null,
                     mainDex);
+            dexTool.setNewPatch(((HotPatchInput)input).newPatch);
             dexTool.setExculdeClasses(((HotPatchInput)input).excludeClasses);
             dexTool.setPatchClassList(hotClassList);
             DexDiffInfo dexDiffInfo = dexTool.createPatchDex(destDexFolder);

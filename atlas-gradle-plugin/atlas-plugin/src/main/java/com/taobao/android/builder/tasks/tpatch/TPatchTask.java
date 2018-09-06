@@ -348,6 +348,7 @@ public class TPatchTask extends BaseTask {
         tpatchInput.outPutJson = new File(getOutPatchFolder(), "patchs.json");
         tpatchInput.artifactBundleInfos = patchContext.artifactBundleInfos;
         tpatchInput.diffBundleDex = true;
+        tpatchInput.newPatch = patchContext.newPatch;
         tpatchInput.mainBundleName = patchContext.mainBundleName;
         tpatchInput.retainMainBundleRes = retainMainBundleRes;
         if (StringUtils.isNotBlank(patchContext.excludeFiles)) {
@@ -547,6 +548,8 @@ public class TPatchTask extends BaseTask {
                                                            ",");
 
                     tPatchContext.buildId = tBuildType.getPatchConfig().getBuildId();
+
+                    tPatchContext.newPatch = tBuildType.getPatchConfig().isNewPatch();
                     tPatchContext.writeBuildInfo = tBuildType.getPatchConfig()
                         .isTpatchWriteBuildInfo();
                     tPatchContext.diffBundleDex = tBuildType.getPatchConfig()
@@ -592,6 +595,8 @@ public class TPatchTask extends BaseTask {
         public String notPatchBundles;
 
         public String buildId;
+
+        public boolean newPatch = true;
 
         public boolean diffNativeSo;
 
