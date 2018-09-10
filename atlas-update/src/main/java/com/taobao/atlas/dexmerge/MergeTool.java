@@ -1,5 +1,7 @@
 package com.taobao.atlas.dexmerge;
 
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.preference.PreferenceManager;
@@ -119,7 +121,7 @@ public class MergeTool {
                 continue;
             }
             ZipEntry newEntry = new ZipEntry(name);
-            if (name.contains("raw/") || name.contains("assets/")) {
+            if (name.contains("raw/") || name.contains("assets/") ||name.equals("resources.arsc")) {
                 newEntry.setMethod(ZipEntry.STORED);
                 newEntry.setCrc(zipEnt.getCrc());
                 newEntry.setSize(zipEnt.getSize());
@@ -138,7 +140,7 @@ public class MergeTool {
 
     private static boolean isEnhanceDex(String name) {
 
-       return !TextUtils.isEmpty(noPatchDexIndex) && name.equals(String.format("classes%s.dex",noPatchDexIndex)) && Build.VERSION.SDK_INT > 27;
+       return !TextUtils.isEmpty(noPatchDexIndex) && name.equals(String.format("classes%s.dex",noPatchDexIndex)) && (Build.VERSION.SDK_INT > 27||Build.VERSION.SDK_INT < 21);
 
     }
 
@@ -157,7 +159,7 @@ public class MergeTool {
 
                 if (!TextUtils.isEmpty(clazz)&& clazz.equals(MergeConstants.PATCH_VERSION)){
                     patchVersion = Integer.valueOf(dexIndex);
-                    savePatchVersion(patchVersion);
+                    notifyPatchVersion(patchVersion);
                     continue;
                 }
 
@@ -176,9 +178,10 @@ public class MergeTool {
 
     }
 
-    private static void savePatchVersion(int patchVersion) {
-        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(RuntimeVariables.androidApplication).edit();
-        editor.putInt("patch_version",patchVersion).commit();
+    private static void notifyPatchVersion(int patchVersion) {
+        Intent intent = new Intent("com.taobao.atlas.intent.PATCH_VERSION");
+        intent.putExtra("patch_version",patchVersion);
+        RuntimeVariables.androidApplication.sendBroadcast(intent);
     }
 
 

@@ -67,7 +67,6 @@ public abstract class PatchDexTool {
         assert (null != baseDexFiles && baseDexFiles.size() > 0);
         assert (null != newDexFiles && newDexFiles.size() > 0);
         this.dexDiffer = new DexDiffer(baseDexFiles, newDexFiles, apiLevel);
-        dexDiffer.setNewPatch(newPatch);
         if (map == null) {
             dexDiffer.setLastBundleClassMap(lastBundleClassMap);
         }else {
@@ -84,7 +83,6 @@ public abstract class PatchDexTool {
         newDexFiles.add(newDex);
         this.mainBundle = mainBundle;
         this.dexDiffer = new DexDiffer(baseDex, newDex, apiLevel);
-        dexDiffer.setNewPatch(newPatch);
         dexDiffer.setLastBundleClassMap(lastBundleClassMap);
 
     }
@@ -102,7 +100,8 @@ public abstract class PatchDexTool {
 
 
     public Set<ClassDef> createModifyClasses() throws IOException, PatchException {
-            dexDiffInfo = dexDiffer.doDiff();
+        dexDiffer.setNewPatch(newPatch);
+        dexDiffInfo = dexDiffer.doDiff();
         final Set<ClassDef> modifyClasses = new HashSet<ClassDef>();
         for (ClassDiffInfo classDiffInfo : dexDiffInfo.getClassDiffInfoMap().values()) {
             if (DiffType.MODIFY.equals(classDiffInfo.getType()) || DiffType.ADD.equals(classDiffInfo.getType()) || DiffType.OVERRIDE.equals(classDiffInfo.getType())) {

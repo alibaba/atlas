@@ -451,7 +451,7 @@ public class DexDiffer {
     private static final String NO_PATCH_DEX = "NO_PATCH_DEX";
 
 
-    private static final String PATCH_VERSION = "PATCH_VRESION";
+    private static final String PATCH_VERSION = "PATCH_VERSION";
 
 
     public boolean isNewPatch() {
