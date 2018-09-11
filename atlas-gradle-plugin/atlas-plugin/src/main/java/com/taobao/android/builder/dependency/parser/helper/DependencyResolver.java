@@ -437,10 +437,15 @@ public class DependencyResolver {
 
           MavenCoordinates mavenCoordinates = DependencyConvertUtils.convert(resolvedArtifact);
 
+          String type = resolvedArtifact.getType().toLowerCase();
+          if (("awb".equals(type)) && (apDependencies.isMainDexAwb(moduleVersion.getName()))) {
+            type = "aar";
+          }
+
           File explodedDir = DependencyLocationManager.getExploreDir(project,
                                                                      mavenCoordinates,
                                                                      resolvedArtifact.getFile(),
-                                                                     resolvedArtifact.getType().toLowerCase(),
+                                                                     type,
                                                                      path);
 
           resolvedDependencyInfo.setExplodedDir(explodedDir);
