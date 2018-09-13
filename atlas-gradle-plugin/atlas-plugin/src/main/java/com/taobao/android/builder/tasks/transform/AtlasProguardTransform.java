@@ -306,7 +306,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
                     appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
         } else {
 
-            defaultProguardFiles.addAll(oldConfigurableFileCollection.getFiles());
+//            defaultProguardFiles.addAll(oldConfigurableFileCollection.getFiles());
+            defaultProguardFiles.addAll(appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
             nonConsumerProguardFiles.addAll(
                     appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
 
@@ -349,15 +350,15 @@ public class AtlasProguardTransform extends ProGuardTransform {
             ReflectUtils.updateField(this, "configurationFiles", oldConfigurableFileCollection);
 
 
-            Configuration configuration = (Configuration) ReflectUtils.getField(BaseProguardAction.class,
-                    oldTransform, "configuration");
-            if (null == this.configuration.keep) {
-                this.configuration.keep = new ArrayList();
-            }
-            if (null != configuration.keep) {
-                this.configuration.keep.addAll(configuration.keep);
-            }
-
+//            Configuration configuration = (Configuration) ReflectUtils.getField(BaseProguardAction.class,
+//                    oldTransform, "configuration");
+//            if (null == this.configuration.keep) {
+//                this.configuration.keep = new ArrayList();
+//            }
+//            if (null != configuration.keep) {
+//                this.configuration.keep.addAll(configuration.keep);
+//            }
+//
         } catch (Exception e) {
             throw new GradleException(e.getMessage(), e);
         }
