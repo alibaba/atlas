@@ -235,6 +235,7 @@ import com.taobao.android.inputs.HotPatchInput;
 import com.taobao.android.inputs.TpatchInput;
 import com.taobao.android.object.ApkFileList;
 import com.taobao.android.object.ArtifactBundleInfo;
+import com.taobao.android.object.DiffType;
 import com.taobao.android.tpatch.model.ApkBO;
 import com.taobao.android.tpatch.model.BundleBO;
 import org.apache.commons.io.FileUtils;
@@ -253,6 +254,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 import static com.android.build.gradle.internal.api.ApContext.APK_FILE_MD5;
 
@@ -308,6 +310,17 @@ public class TPatchTask extends BaseTask {
         ApkBO apkBO = new ApkBO(baseApk, baseApkVersion, baseApk.getName());
         ApkBO newApkBO = new ApkBO(newApk, newApkVersion, newApk.getName());
         BaseInput baseInput = createInput(apkBO,newApkBO,retainMainBundleRes);
+        if (baseInput.patchType.equals(PatchType.DEXPATCH)){
+            List<ArtifactBundleInfo> modifyBundles = new ArrayList<ArtifactBundleInfo>();
+            baseInput.artifactBundleInfos.forEach(artifactBundleInfo -> {
+                if (artifactBundleInfo.getDiffType().equals(DiffType.MODIFY)){
+                    modifyBundles.add(artifactBundleInfo);
+                }
+            });
+            if (modifyBundles.size() > 1){
+                throw new Exception("more than 1 bundle has changed:"+JSON.toJSONString(modifyBundles));
+            }
+        }
         PatchManager patchManager = new PatchManager(baseInput);
         patchManager.setLogger(getILogger());
         getLogger().info("start to do patch");
