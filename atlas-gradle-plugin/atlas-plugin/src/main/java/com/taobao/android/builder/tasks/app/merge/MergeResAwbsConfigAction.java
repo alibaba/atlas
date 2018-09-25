@@ -222,6 +222,7 @@ import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
+import org.gradle.api.specs.Spec;
 
 import java.io.File;
 import java.io.IOException;
@@ -275,6 +276,12 @@ public class MergeResAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask>
             final MergeAwbResource mergeTask = TaskCreater.create(appVariantContext.getProject(),
                                                                 mergeAwbResourceConfigAction.getName(),
                                                                 mergeAwbResourceConfigAction.getType());
+            mergeTask.getOutputs().cacheIf(new Spec<Task>() {
+                @Override
+                public boolean isSatisfiedBy(Task element) {
+                    return false;
+                }
+            });
 
             mergeTask.setBlameLogFolder(appVariantContext.getAwbBlameLogFolder(awbBundle));
 

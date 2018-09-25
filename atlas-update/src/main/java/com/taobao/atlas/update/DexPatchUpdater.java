@@ -82,6 +82,10 @@ public class DexPatchUpdater {
                     //对于merge成功的bundle列表进行更新
                     Pair<String, Item> pair = patchMerger.mergeOutputs.get(item.name);
                     boolean succeed = new File(pair.first).exists();
+                    if (item.reset){
+                        result.add(item);
+                        succeed = true;
+                    }
                     if (succeed) {
                         result.add(item);
                     }
@@ -111,6 +115,9 @@ public class DexPatchUpdater {
                 boolean succeed = installList.containsKey(item.name) && item.dexpatchVersion == installList.get(
                     item.name);
                 monitor.install(succeed, item.name, item.dexpatchVersion, "");
+                if (!succeed && item.reset){
+                    monitor.install(true, item.name, item.dexpatchVersion, "");
+                }
             }
         }
     }
