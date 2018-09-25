@@ -520,6 +520,7 @@ public class MergeAwbResource extends IncrementalTask {
         for (AndroidLibrary androidLibrary:libraries){
             resFiles.add(androidLibrary.getResFolder());
         }
+        resFiles.add(awbBundle.getAndroidLibrary().getResFolder());
         return getProject().files(resFiles);
  }
 
