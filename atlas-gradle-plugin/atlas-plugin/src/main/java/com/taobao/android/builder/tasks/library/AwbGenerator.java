@@ -224,10 +224,8 @@ import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.extension.AtlasExtension;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
 import org.gradle.api.tasks.bundling.Zip;
 
 import java.io.File;
@@ -323,7 +321,7 @@ public class AwbGenerator {
         if (null == libDependencyTree) {
 
             libDependencyTree = new AtlasDepTreeParser(libVariantContext.getProject(),
-                                                       new ExtraModelInfo(new ProjectOptions(libVariantContext.getProject()),null))
+                                                       new ExtraModelInfo(new ProjectOptions(libVariantContext.getProject()),null), awbs)
                 .parseDependencyTree(libVariantContext.getVariantDependency());
             AtlasBuildContext.libDependencyTrees.put(variantName, libDependencyTree);
         }

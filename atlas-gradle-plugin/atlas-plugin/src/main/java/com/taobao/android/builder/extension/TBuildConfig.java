@@ -309,6 +309,17 @@ public class TBuildConfig {
     @Config(title = "bundleThe packageId definition file", message = "bundlePackageId defines files that are not defined automatically", group = "atlas")
     private File packageIdFile = new File("");
 
+
+    public File getAwbConfigFile() {
+        return awbConfigFile;
+    }
+
+    public void setAwbConfigFile(File awbConfigFile) {
+        this.awbConfigFile = awbConfigFile;
+    }
+
+    private File awbConfigFile = new File("");
+
     @Config(message = "Automatically generate the bundle's packageId", order = 6, advance = false, group = "atlas")
     private boolean autoPackageId = true;
 

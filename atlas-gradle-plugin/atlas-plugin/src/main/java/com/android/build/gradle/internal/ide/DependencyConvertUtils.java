@@ -230,6 +230,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Tool classes that depend on object transformation
@@ -381,7 +382,7 @@ public class DependencyConvertUtils {
     }
 
     public static boolean isAwbDependency(DependencyResult dependencyResult,
-                                          Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
+                                          Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts, Set<String>awbs) {
         if (dependencyResult instanceof ResolvedDependencyResult) {
             ResolvedDependencyResult resolvedDependencyResult = (ResolvedDependencyResult)dependencyResult;
             ModuleVersionIdentifier moduleVersionIdentifier = resolvedDependencyResult.getSelected().getModuleVersion();
@@ -389,7 +390,7 @@ public class DependencyConvertUtils {
 
             if (resolvedArtifacts != null && resolvedArtifacts.size() > 0) {
                 ResolvedArtifact resolvedArtifact = resolvedArtifacts.get(0);
-                return ("awb".equals(resolvedArtifact.getType()));
+                return ("awb".equals(resolvedArtifact.getType()) || awbs.contains(resolvedArtifact.getModuleVersion().getId().getGroup()+":"+resolvedArtifact.getModuleVersion().getId().getName()));
             }
         }
         return false;

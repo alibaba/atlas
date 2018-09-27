@@ -445,7 +445,7 @@ public class AtlasBuilder extends AndroidBuilder {
                     AtlasSymbolIo.write(awbSymbols, mergedSymbolFile);
                 }
 
-                //why do this?
+                //why do this? youku need use this !
 //                FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(mainSymbolFile), true);
             } catch (IOException e) {
                 throw new RuntimeException("Could not load file ", e);
