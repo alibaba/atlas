@@ -559,7 +559,7 @@ public class AppVariantOutputContext {
                 awbTransform.getInputLibraries().add(output);
                 return currentFile;
             }else {
-               Iterator<File>iterator = awbTransform.getInputLibraries().iterator();
+               Iterator<File>iterator = awbTransform.getInputLibraries().listIterator();
                while (iterator.hasNext()){
                    File file = iterator.next();
                    if (file.equals(jarInput.getFile())){
