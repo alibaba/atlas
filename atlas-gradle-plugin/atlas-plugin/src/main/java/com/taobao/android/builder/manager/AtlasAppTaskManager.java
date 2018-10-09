@@ -430,6 +430,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(JavacAwbsTask.ConfigAction.class, null));
 
+
                                                               if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(AwbDataBindingRenameTask.ConfigAction.class, null));
                                                               }

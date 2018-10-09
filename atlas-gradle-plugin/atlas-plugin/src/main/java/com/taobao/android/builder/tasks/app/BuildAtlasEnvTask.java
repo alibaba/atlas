@@ -149,6 +149,7 @@ public class BuildAtlasEnvTask extends BaseTask {
                 String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
                 allJars.add(new FileIdentity(projectPath.substring(projectPath.lastIndexOf(":") + 1), resolvedArtifactResult.getFile(), resolvedArtifactResult.getId().getDisplayName().startsWith("classes.jar") ? false : true, true));
             } else if (componentIdentifier instanceof OpaqueComponentArtifactIdentifier) {
+                if (resolvedArtifactResult.getFile().getAbsolutePath().contains("renderscript"))
                 appLocalJars.add(new FileIdentity(componentIdentifier.getDisplayName(), resolvedArtifactResult.getFile(), true, false));
             }
         }
@@ -208,7 +209,7 @@ public class BuildAtlasEnvTask extends BaseTask {
 
 
          //app localJar is not support , this may course duplicate localjars
-//        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(fileIdentity));
+        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(fileIdentity));
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();

@@ -230,6 +230,7 @@ import org.gradle.api.tasks.bundling.Zip;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -321,7 +322,7 @@ public class AwbGenerator {
         if (null == libDependencyTree) {
 
             libDependencyTree = new AtlasDepTreeParser(libVariantContext.getProject(),
-                                                       new ExtraModelInfo(new ProjectOptions(libVariantContext.getProject()),null), awbs)
+                                                       new ExtraModelInfo(new ProjectOptions(libVariantContext.getProject()),null), new HashSet<>())
                 .parseDependencyTree(libVariantContext.getVariantDependency());
             AtlasBuildContext.libDependencyTrees.put(variantName, libDependencyTree);
         }
