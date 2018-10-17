@@ -522,7 +522,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   transformReplacer.replaceDexTransform(appVariantContext, vod);
                                                                   transformReplacer.replaceShrinkResourcesTransform();
                                                                   transformReplacer.replaceMergeJavaResourcesTransform(appVariantContext, vod);
-
+                                                                  transformReplacer.repalaceSomeInstantTransform(vod);
 
                                                                   if (atlasExtension.getTBuildConfig().isIncremental()) {
                                                                       InstantRunPatchingPolicy patchingPolicy = variantScope.getInstantRunBuildContext()

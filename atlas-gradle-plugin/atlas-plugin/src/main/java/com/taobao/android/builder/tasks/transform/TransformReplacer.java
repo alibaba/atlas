@@ -14,6 +14,8 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
+import com.android.build.gradle.internal.scope.DefaultGradlePackagingScope;
+import com.android.build.gradle.internal.scope.PackagingScope;
 import com.android.build.gradle.internal.scope.TaskOutputHolder;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingMergeArtifactsTransform;
@@ -27,16 +29,23 @@ import com.android.builder.core.ErrorReporter;
 import com.android.builder.dexing.DexMergerTool;
 import com.android.builder.dexing.DexingType;
 import com.android.builder.utils.FileCache;
+import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.process.JavaProcessExecutor;
 import com.android.utils.FileUtils;
+import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.hook.dex.DexByteCodeConverterHook;
+import com.taobao.android.builder.insant.TaobaoExtractJarsTransform;
+import com.taobao.android.builder.insant.TaobaoInstantRunDependenciesApkBuilder;
+import com.taobao.android.builder.insant.TaobaoInstantRunSlicer;
+import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import com.taobao.android.builder.tasks.manager.transform.TransformManager;
 import com.taobao.android.builder.tasks.transform.dex.AtlasDexArchiveBuilderTransform;
 import com.taobao.android.builder.tasks.transform.dex.AtlasDexMergerTransform;
 import com.taobao.android.builder.tasks.transform.dex.AtlasMultiDexListTransform;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
+import groovy.transform.PackageScope;
 import org.gradle.api.Task;
 import org.gradle.api.internal.tasks.DefaultTaskOutputs;
 import org.gradle.api.logging.LogLevel;
@@ -385,6 +394,77 @@ public class TransformReplacer {
                 ReflectUtils.updateField(transformTask.getOutputs(),"upToDateSpec",AndSpec.empty());
 
 
+            }
+        }
+
+
+    }
+
+    public void repalaceSomeInstantTransform(BaseVariantOutput vod) {
+        List<TransformTask> baseTransforms = TransformManager.findTransformTaskByTransformType(
+                variantContext, InstantRunDependenciesApkBuilder.class);
+        if (baseTransforms != null && baseTransforms.size() > 0){
+            for (TransformTask transformTask:baseTransforms){
+                transformTask.setEnabled(false);
+//                PackagingScope packagingScope = new DefaultGradlePackagingScope(variantContext.getScope());
+//                TaobaoInstantRunDependenciesApkBuilder taobaoInstantRunDependenciesApkBuilder = new TaobaoInstantRunDependenciesApkBuilder(
+//                        variantContext.getProject().getLogger(),
+//                        variantContext.getProject(),
+//                        variantContext.getScope().getInstantRunBuildContext(),
+//                        variantContext.getScope().getGlobalScope().getAndroidBuilder(),
+//                        variantContext.getScope().getGlobalScope().getBuildCache(),
+//                        packagingScope,
+//                        packagingScope.getSigningConfig(),
+//                        AaptGeneration.AAPT_V1,
+//                        packagingScope.getAaptOptions(),
+//                        new File(packagingScope.getInstantRunSplitApkOutputFolder(), "dep"),
+//                        packagingScope.getInstantRunSupportDir(),
+//                        new File(
+//                                packagingScope.getIncrementalDir(
+//                                        "TaobaoInstantRunDependenciesApkBuilder"),
+//                                "aapt-temp"));
+//                ReflectUtils.updateField(transformTask, "transform",
+//                        taobaoInstantRunDependenciesApkBuilder);
+            }
+        }
+
+        List<TransformTask> transforms = TransformManager.findTransformTaskByTransformType(
+                variantContext, InstantRunTransform.class);
+        if (transforms != null && transforms.size() > 0){
+            for (TransformTask transformTask: transforms){
+                TaobaoInstantRunTransform taobaoInstantRunTransform = new TaobaoInstantRunTransform(variantContext,variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),WaitableExecutor.useGlobalSharedThreadPool(),
+                        variantContext.getScope());
+                ReflectUtils.updateField(transformTask,"transform",taobaoInstantRunTransform);
+            }
+        }
+
+        List<TransformTask> transforms1 = TransformManager.findTransformTaskByTransformType(
+                variantContext, ExtractJarsTransform.class);
+        if (transforms1 != null && transforms1.size() > 0){
+            for (TransformTask transformTask: transforms1){
+                TaobaoExtractJarsTransform taobaoExtractJarsTransform = new TaobaoExtractJarsTransform(variantContext,variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),ImmutableSet.of(QualifiedContent.DefaultContentType.CLASSES),
+                        ImmutableSet.of(QualifiedContent.Scope.SUB_PROJECTS));
+                ReflectUtils.updateField(transformTask,"transform",taobaoExtractJarsTransform);
+            }
+        }
+
+
+
+        List<TransformTask> transformTaskList = TransformManager.findTransformTaskByTransformType(
+                variantContext, InstantRunSliceSplitApkBuilder.class);
+        if (transformTaskList != null && transformTaskList.size() > 0){
+            for (TransformTask transformTask: transformTaskList){
+                transformTask.setEnabled(false);
+            }
+        }
+
+        List<TransformTask> transformTaskList1 = TransformManager.findTransformTaskByTransformType(
+                variantContext, InstantRunSlicer.class);
+        if (transformTaskList1 != null && transformTaskList1.size() > 0){
+            for (TransformTask transformTask: transformTaskList1){
+                transformTask.setEnabled(false);
+//                TaobaoInstantRunSlicer taobaoInstantRunSlicer = new TaobaoInstantRunSlicer(variantContext.getProject().getLogger(),variantContext.getScope());
+//                ReflectUtils.updateField(transformTask,"transform",taobaoInstantRunSlicer);
             }
         }
 

@@ -255,6 +255,8 @@ public class AppVariantOutputContext {
 
     private final Map<String, AwbTransform> awbTransformMap = Maps.newHashMap();
 
+    private File dexMergeOutFolder;
+
     public Map<String, AtlasMergeJavaResourcesTransform.NativeInfo> getSoMap() {
         return soMap;
     }
@@ -572,6 +574,31 @@ public class AppVariantOutputContext {
 
         }
         return null;
+    }
+
+    public void setDexMergeFolder(File outputDir) {
+       this.dexMergeOutFolder = outputDir;
+    }
+
+    public File getDexMergeFolder(){
+        return dexMergeOutFolder;
+    }
+
+    public File getAwbExtractJarsFolder(AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/awb-extractJars/" +
+                        variantData.getVariantConfiguration().getDirName() +
+                        "/" +
+                        awbBundle.getName());
+
+    }
+
+    public File getAwbClassesInstantOut(AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/awb-instantRun/" +
+                        variantData.getVariantConfiguration().getDirName() +
+                        "/" +
+                        awbBundle.getName());
     }
 
 

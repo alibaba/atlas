@@ -170,8 +170,8 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                 List<File> inputFiles = new ArrayList<File>();
                                 inputFiles.addAll(awbTransform.getInputFiles());
                                 inputFiles.addAll(awbTransform.getInputLibraries());
-                                if (null != awbTransform.getInputDir()) {
-                                    inputFiles.add(awbTransform.getInputDir());
+                                if (null != awbTransform.getInputDirs()) {
+                                    inputFiles.addAll(awbTransform.getInputDirs());
                                 }
 
 

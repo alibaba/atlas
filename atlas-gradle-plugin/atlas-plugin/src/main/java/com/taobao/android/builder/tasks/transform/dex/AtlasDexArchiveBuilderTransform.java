@@ -137,7 +137,9 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
     @NonNull
     @Override
     public Set<QualifiedContent.ContentType> getInputTypes() {
-        return TransformManager.CONTENT_CLASS;
+         return ImmutableSet.of(
+                QualifiedContent.DefaultContentType.CLASSES,
+                ExtendedContentType.CLASSES_ENHANCED);
     }
 
     @NonNull
@@ -205,6 +207,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
         try {
             for (TransformInput input : transformInvocation.getInputs()) {
                 for (DirectoryInput dirInput : input.getDirectoryInputs()) {
+                    mainJars.add(dirInput.getFile());
                     logger.verbose("Dir input %s", dirInput.getFile().toString());
                     convertToDexArchive(
                             transformInvocation.getContext(),
@@ -252,6 +255,23 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
             }
 
 
+            for (File file:AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs()){
+                if (mainJars.contains(file)){
+                    continue;
+                }else {
+                    DirectoryInput dirInput = makeDirectoryInput(file);
+                    logger.verbose("Dir input %s", dirInput.getFile().toString());
+                    convertToDexArchive(
+                            transformInvocation.getContext(),
+                            dirInput,
+                            outputProvider,
+                            false);
+                }
+            }
+
+
+
+
             processAwbDexArchive(transformInvocation, listFiles);
             // all work items have been submitted, now wait for completion.
             if (useGradleWorkers) {
@@ -286,6 +306,9 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
     }
 
     private boolean inMainDex(JarInput jarInput) {
+        if (jarInput.getFile().getName().contains("instant-run")){
+            return true;
+        }
         boolean flag = AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).inMainDex(jarInput);
         return flag;
     }
@@ -720,8 +743,8 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
             List<File> inputFiles = new ArrayList<File>();
             inputFiles.addAll(awbTransform.getInputFiles());
             inputFiles.addAll(awbTransform.getInputLibraries());
-            if (null != awbTransform.getInputDir()) {
-                inputFiles.add(awbTransform.getInputDir());
+            if (null != awbTransform.getInputDirs()) {
+                inputFiles.addAll(awbTransform.getInputDirs());
             }
 
             for (File file : inputFiles) {
@@ -828,7 +851,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
 
             @Override
             public Set<? super Scope> getScopes() {
-                return ImmutableSet.of();
+                return ImmutableSet.of(Scope.EXTERNAL_LIBRARIES);
             }
         };
 
