@@ -57,28 +57,28 @@ public class TaobaoInstantRunTransform extends Transform {
     private final ImmutableList.Builder<String> generatedClasses3Names = ImmutableList.builder();
     private final AndroidVersion targetPlatformApi;
     private File injectFailedFile;
-    private List<String>errors = new ArrayList<>();
+    private List<String> errors = new ArrayList<>();
+    private Map<String,PatchPolicy>modifyClasses = new HashMap<>();
 
-
-    public TaobaoInstantRunTransform(AppVariantContext variantContext,AppVariantOutputContext variantOutputContext,WaitableExecutor executor, InstantRunVariantScope transformScope) {
+    public TaobaoInstantRunTransform(AppVariantContext variantContext, AppVariantOutputContext variantOutputContext, WaitableExecutor executor, InstantRunVariantScope transformScope) {
         this.variantContext = variantContext;
         this.variantOutputContext = variantOutputContext;
         this.executor = executor;
         this.transformScope = transformScope;
-         this.targetPlatformApi =
+        this.targetPlatformApi =
                 DeploymentDevice.getDeploymentDeviceAndroidVersion(
                         transformScope.getGlobalScope().getProjectOptions());
-        injectFailedFile = new File(variantContext.getProject().getBuildDir(),"outputs/instrument-inject-error.txt");
+        injectFailedFile = new File(variantContext.getProject().getBuildDir(), "outputs/instrument-inject-error.properties");
     }
 
     @Override
     public String getName() {
-         return "taobaoInstantRun";
+        return "taobaoInstantRun";
     }
 
     @Override
     public Set<QualifiedContent.ContentType> getInputTypes() {
-         return com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_CLASS;
+        return com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_CLASS;
     }
 
     @NonNull
@@ -110,8 +110,7 @@ public class TaobaoInstantRunTransform extends Transform {
     @Override
     public void transform(TransformInvocation invocation) throws IOException, TransformException, InterruptedException {
 
-        LOGGER.warning("start excute:"+getClass().getName());
-
+        LOGGER.warning("start excute:" + getClass().getName());
         List<JarInput> jarInputs =
                 invocation
                         .getInputs()
@@ -129,15 +128,15 @@ public class TaobaoInstantRunTransform extends Transform {
         } finally {
             buildContext.stopRecording(InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
         }
-        org.apache.commons.io.FileUtils.writeLines(injectFailedFile,errors);
+        org.apache.commons.io.FileUtils.writeLines(injectFailedFile, errors);
     }
 
     public void doTransform(TransformInvocation invocation) throws IOException, TransformException, InterruptedException {
         InstantRunBuildContext buildContext = transformScope.getInstantRunBuildContext();
 
         // if we do not run in incremental mode, we should automatically switch to COLD swap.
-            buildContext.setVerifierStatus(
-                    InstantRunVerifierStatus.BUILD_NOT_INCREMENTAL);
+        buildContext.setVerifierStatus(
+                InstantRunVerifierStatus.BUILD_NOT_INCREMENTAL);
 
         // If this is not a HOT_WARM build, clean up the enhanced classes and don't generate new
         // ones during this build.
@@ -168,48 +167,48 @@ public class TaobaoInstantRunTransform extends Transform {
         for (TransformInput input : invocation.getInputs()) {
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                 File inputDir = directoryInput.getFile();
-                LOGGER.warning("inputDir:",inputDir.getAbsolutePath());
-                if (invocation.isIncremental()) {
-                    for (Map.Entry<File, Status> fileEntry : directoryInput
-                            .getChangedFiles()
-                            .entrySet()) {
-
-                        File inputFile = fileEntry.getKey();
-                        if (!inputFile.getName().endsWith(SdkConstants.DOT_CLASS)) {
-                            continue;
-                        }
-                        switch (fileEntry.getValue()) {
-                            case REMOVED:
-                                // remove the classes.2 and classes.3 files.
-                                deleteOutputFile(
-                                        IncrementalSupportVisitor.VISITOR_BUILDER,
-                                        inputDir, inputFile, classesTwoOutput);
-                                deleteOutputFile(IncrementalChangeVisitor.VISITOR_BUILDER,
-                                        inputDir, inputFile, classesThreeOutput);
-                                break;
-                            case CHANGED:
-                                if (inHotSwapMode) {
-                                    workItems.add(() -> transformToClasses3Format(
-                                            inputDir,
-                                            inputFile,
-                                            classesThreeOutput));
-                                }
-                                // fall through the ADDED case to generate classes.2
-                            case ADDED:
-                                workItems.add(() -> transformToClasses2Format(
-                                        inputDir,
-                                        inputFile,
-                                        classesTwoOutput,
-                                        fileEntry.getValue()));
-                                break;
-                            case NOTCHANGED:
-                                break;
-                            default:
-                                throw new IllegalStateException("Unhandled file status "
-                                        + fileEntry.getValue());
-                        }
-                    }
-                } else {
+                LOGGER.warning("inputDir:", inputDir.getAbsolutePath());
+//                if (invocation.isIncremental()) {
+//                    for (Map.Entry<File, Status> fileEntry : directoryInput
+//                            .getChangedFiles()
+//                            .entrySet()) {
+//
+//                        File inputFile = fileEntry.getKey();
+//                        if (!inputFile.getName().endsWith(SdkConstants.DOT_CLASS)) {
+//                            continue;
+//                        }
+//                        switch (fileEntry.getValue()) {
+//                            case REMOVED:
+//                                // remove the classes.2 and classes.3 files.
+//                                deleteOutputFile(
+//                                        IncrementalSupportVisitor.VISITOR_BUILDER,
+//                                        inputDir, inputFile, classesTwoOutput);
+//                                deleteOutputFile(IncrementalChangeVisitor.VISITOR_BUILDER,
+//                                        inputDir, inputFile, classesThreeOutput);
+//                                break;
+//                            case CHANGED:
+//                                if (inHotSwapMode) {
+//                                    workItems.add(() -> transformToClasses3Format(
+//                                            inputDir,
+//                                            inputFile,
+//                                            classesThreeOutput));
+//                                }
+//                                // fall through the ADDED case to generate classes.2
+//                            case ADDED:
+//                                workItems.add(() -> transformToClasses2Format(
+//                                        inputDir,
+//                                        inputFile,
+//                                        classesTwoOutput,
+//                                        fileEntry.getValue()));
+//                                break;
+//                            case NOTCHANGED:
+//                                break;
+//                            default:
+//                                throw new IllegalStateException("Unhandled file status "
+//                                        + fileEntry.getValue());
+//                        }
+//                    }
+//                } else {
                     // non incremental mode, we need to traverse the TransformInput#getFiles()
                     // folder
                     FileUtils.cleanOutputDir(classesTwoOutput);
@@ -217,6 +216,28 @@ public class TaobaoInstantRunTransform extends Transform {
                         if (file.isDirectory()) {
                             continue;
                         }
+                        String path = FileUtils.relativePath(file, inputDir);
+                        String className = path.replace("/",".").substring(0,path.length()-6);
+                        if (modifyClasses.containsKey(className)){
+                            PatchPolicy patchPolicy = modifyClasses.get(className);
+                            switch (patchPolicy){
+                                case ADD:
+                                    workItems.add(() -> transformToClasses2Format(
+                                            inputDir,
+                                            file,
+                                            classesThreeOutput,
+                                            Status.ADDED));
+                                    break;
+
+                                case MODIFY:
+                                    workItems.add(() -> transformToClasses3Format(
+                                            inputDir,
+                                            file,
+                                            classesThreeOutput));
+                                    break;
+                            }
+                        }
+
                         workItems.add(() -> transformToClasses2Format(
                                 inputDir,
                                 file,
@@ -225,45 +246,42 @@ public class TaobaoInstantRunTransform extends Transform {
                     }
 
 
-                }
+//                }
             }
         }
 
 
-        variantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
-            @Override
-            public void accept(AwbTransform awbTransform) {
-                File awbClassesTwoOutout = variantOutputContext.getAwbClassesInstantOut(awbTransform.getAwbBundle());
-                LOGGER.warning("InstantAwbclassOut["+awbTransform.getAwbBundle().getPackageName()+"]---------------------"+awbClassesTwoOutout.getAbsolutePath());
-                FileUtils.mkdirs(awbClassesTwoOutout);
-                try {
-                    FileUtils.cleanOutputDir(awbClassesTwoOutout);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                awbTransform.getInputDirs().forEach(new Consumer<File>() {
-                    @Override
-                    public void accept(File dir) {
-                        LOGGER.warning("InstantAwbclassDir["+awbTransform.getAwbBundle().getPackageName()+"]---------------------"+dir.getAbsolutePath());
-                        for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dir)) {
-                            if (file.isDirectory()) {
-                                continue;
-                            }
-                            workItems.add(() -> transformToClasses2Format(
-                                    dir,
-                                    file,
-                                    awbClassesTwoOutout,
-                                    Status.ADDED));
-                        }
-
-                    }
-                });
-
-                awbTransform.getInputDirs().clear();
-                awbTransform.getInputLibraries().clear();
-                awbTransform.getInputFiles().clear();
-                awbTransform.getInputDirs().add(awbClassesTwoOutout);
+        variantOutputContext.getAwbTransformMap().values().forEach(awbTransform -> {
+            File awbClassesTwoOutout = variantOutputContext.getAwbClassesInstantOut(awbTransform.getAwbBundle());
+            LOGGER.warning("InstantAwbclassOut[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + awbClassesTwoOutout.getAbsolutePath());
+            FileUtils.mkdirs(awbClassesTwoOutout);
+            try {
+                FileUtils.cleanOutputDir(awbClassesTwoOutout);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            awbTransform.getInputDirs().forEach(new Consumer<File>() {
+                @Override
+                public void accept(File dir) {
+                    LOGGER.warning("InstantAwbclassDir[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + dir.getAbsolutePath());
+                    for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dir)) {
+                        if (file.isDirectory()) {
+                            continue;
+                        }
+                        workItems.add(() -> transformToClasses2Format(
+                                dir,
+                                file,
+                                awbClassesTwoOutout,
+                                Status.ADDED));
+                    }
+
+                }
+            });
+
+            awbTransform.getInputDirs().clear();
+            awbTransform.getInputLibraries().clear();
+            awbTransform.getInputFiles().clear();
+            awbTransform.getInputDirs().add(awbClassesTwoOutout);
         });
 
         // first get all referenced input to construct a class loader capable of loading those
@@ -346,8 +364,9 @@ public class TaobaoInstantRunTransform extends Transform {
             @Override
             public void accept(AwbTransform awbTransform) {
                 try {
-                    addAllClassLocations(awbTransform.getInputFiles(),referencedInputUrls);
-                    addAllClassLocations(awbTransform.getInputDirs(),referencedInputUrls);
+                    addAllClassLocations(awbTransform.getInputFiles(), referencedInputUrls);
+
+                    addAllClassLocations(awbTransform.getInputDirs(), referencedInputUrls);
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
@@ -375,7 +394,6 @@ public class TaobaoInstantRunTransform extends Transform {
         }
 
     }
-
 
 
     private static void deleteOutputFile(
@@ -415,7 +433,6 @@ public class TaobaoInstantRunTransform extends Transform {
     @Nullable
     protected Void transformToClasses3Format(File inputDir, File inputFile, File outputDir)
             throws IOException {
-
         File outputFile =
                 IncrementalVisitor.instrumentClass(
                         targetPlatformApi.getFeatureLevel(),
@@ -528,7 +545,7 @@ public class TaobaoInstantRunTransform extends Transform {
             mv.visitCode();
             mv.visitIntInsn(Opcodes.BIPUSH, patchFileContents.size());
             mv.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/String");
-            for (int index=0; index < patchFileContents.size(); index++) {
+            for (int index = 0; index < patchFileContents.size(); index++) {
                 mv.visitInsn(Opcodes.DUP);
                 mv.visitIntInsn(Opcodes.BIPUSH, index);
                 mv.visitLdcInsn(patchFileContents.get(index));
@@ -548,6 +565,13 @@ public class TaobaoInstantRunTransform extends Transform {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+
+    enum PatchPolicy{
+
+        ADD,MODIFY
+
     }
 
 

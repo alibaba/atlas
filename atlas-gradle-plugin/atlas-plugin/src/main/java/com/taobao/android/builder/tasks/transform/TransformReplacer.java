@@ -25,6 +25,7 @@ import com.android.build.gradle.options.IntegerOption;
 import com.android.build.gradle.options.ProjectOptions;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.DefaultDexOptions;
+import com.android.builder.core.DexOptions;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.dexing.DexMergerTool;
 import com.android.builder.dexing.DexingType;
@@ -35,10 +36,7 @@ import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.hook.dex.DexByteCodeConverterHook;
-import com.taobao.android.builder.insant.TaobaoExtractJarsTransform;
-import com.taobao.android.builder.insant.TaobaoInstantRunDependenciesApkBuilder;
-import com.taobao.android.builder.insant.TaobaoInstantRunSlicer;
-import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
+import com.taobao.android.builder.insant.*;
 import com.taobao.android.builder.tasks.manager.transform.TransformManager;
 import com.taobao.android.builder.tasks.transform.dex.AtlasDexArchiveBuilderTransform;
 import com.taobao.android.builder.tasks.transform.dex.AtlasDexMergerTransform;
@@ -445,6 +443,21 @@ public class TransformReplacer {
                 TaobaoExtractJarsTransform taobaoExtractJarsTransform = new TaobaoExtractJarsTransform(variantContext,variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),ImmutableSet.of(QualifiedContent.DefaultContentType.CLASSES),
                         ImmutableSet.of(QualifiedContent.Scope.SUB_PROJECTS));
                 ReflectUtils.updateField(transformTask,"transform",taobaoExtractJarsTransform);
+            }
+        }
+
+        List<TransformTask> transforms2 = TransformManager.findTransformTaskByTransformType(
+                variantContext, InstantRunDex.class);
+        if (transforms2 != null && transforms2.size() > 0){
+            for (TransformTask transformTask: transforms2){
+                TaobaoInstantRunDex taobaoInstantRunDex = new TaobaoInstantRunDex(variantContext,
+                        variantContext.getScope(),
+                        variantContext.getScope().getGlobalScope().getAndroidBuilder().getDexByteCodeConverter(),
+                        (DexOptions) ReflectUtils.getField(transformTask.getTransform(),"dexOptions"),
+                        variantContext.getProject().getLogger(),
+                        (Integer) ReflectUtils.getField(transformTask.getTransform(),"minSdkForDx")
+                );
+                ReflectUtils.updateField(transformTask,"transform",taobaoInstantRunDex);
             }
         }
 
