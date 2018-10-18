@@ -233,6 +233,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                         .putBoolean("jumbomode", dexOptions.getJumboMode())
                         .putString("type", type);
 
+                inputFile = new ArrayList<>(inputFile);
                 Collections.sort((List<File>) inputFile);
                 FileCache.Inputs inputsKey = globalCacheBuilder.putString("md5", MD5Util.getFileMd5(inputFile)).build();
 
