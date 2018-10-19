@@ -178,6 +178,7 @@ public class TaobaoExtractJarsTransform extends Transform {
             for (AwbTransform awbTransform:variantOutputContext.getAwbTransformMap().values()){
                 File outJarFolder = variantOutputContext.getAwbExtractJarsFolder(awbTransform.getAwbBundle());
                 awbTransform.getInputFiles().forEach(file -> executor.execute(() -> {
+                    LOGGER.warn("ExtractAwbJar["+awbTransform.getAwbBundle().getPackageName()+"]---------------------"+file.getAbsolutePath());
                     extractJar(outJarFolder, file, extractCode);
                     return null;
                 }));

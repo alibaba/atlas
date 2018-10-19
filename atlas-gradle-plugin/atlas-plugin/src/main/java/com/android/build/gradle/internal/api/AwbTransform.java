@@ -269,7 +269,7 @@ public class AwbTransform {
     }
 
     private File              inputLib;
-    private Collection<File>              inputDirs = new ArrayList<>();
+    private Collection<File>              inputDirs = new HashSet<>();
 
     public AwbTransform(AwbBundle awbBundle){
         this.awbBundle = awbBundle;

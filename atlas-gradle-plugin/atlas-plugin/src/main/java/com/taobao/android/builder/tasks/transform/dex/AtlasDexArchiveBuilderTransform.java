@@ -30,6 +30,7 @@ import com.android.tools.r8.AtlasD8DexArchiveBuilder;
 import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.*;
+import com.sun.javafx.scene.transform.TransformUtils;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -37,6 +38,7 @@ import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.TransformInputUtils;
 import com.taobao.android.builder.tools.log.FileLogger;
 import org.apache.commons.collections.MultiHashMap;
 import org.gradle.tooling.BuildException;
@@ -243,7 +245,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 if (mainJars.contains(file)){
                     continue;
                 }else {
-                    JarInput jarInput = makeJarInput(file);
+                    JarInput jarInput = TransformInputUtils.makeJarInput(file,variantContext);
                     List<File> dexArchives =
                             processJarInput(
                                     transformInvocation.getContext(),
@@ -259,7 +261,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 if (mainJars.contains(file)){
                     continue;
                 }else {
-                    DirectoryInput dirInput = makeDirectoryInput(file);
+                    DirectoryInput dirInput = TransformInputUtils.makeDirectoryInput(file,variantContext);
                     logger.verbose("Dir input %s", dirInput.getFile().toString());
                     convertToDexArchive(
                             transformInvocation.getContext(),
@@ -760,10 +762,10 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
 
                 if (!find) {
                     if (file.isDirectory()) {
-                        DirectoryInput directoryInput = makeDirectoryInput(file);
+                        DirectoryInput directoryInput = TransformInputUtils.makeDirectoryInput(file,variantContext);
                         qualifiedContents.add(directoryInput);
                     } else if (file.isFile()) {
-                        JarInput jarInput = makeJarInput(file);
+                        JarInput jarInput = TransformInputUtils.makeJarInput(file,variantContext);
                         qualifiedContents.add(jarInput);
                     }
 
@@ -827,74 +829,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
     }
 
 
-    private DirectoryInput makeDirectoryInput(File file) {
-        return new DirectoryInput() {
-            @Override
-            public Map<File, Status> getChangedFiles() {
-                return ImmutableMap.of(file, Status.CHANGED);
-            }
 
-            @Override
-            public String getName() {
-                return "folder";
-            }
-
-            @Override
-            public File getFile() {
-                return file;
-            }
-
-            @Override
-            public Set<ContentType> getContentTypes() {
-                return ImmutableSet.of(QualifiedContent.DefaultContentType.CLASSES);
-            }
-
-            @Override
-            public Set<? super Scope> getScopes() {
-                return ImmutableSet.of(Scope.EXTERNAL_LIBRARIES);
-            }
-        };
-
-    }
-
-
-    private JarInput makeJarInput(File file) {
-        BuildAtlasEnvTask.FileIdentity finalFileIdentity = AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).get(file);
-        return new JarInput() {
-            @Override
-            public Status getStatus() {
-                return Status.ADDED;
-            }
-
-            @Override
-            public String getName() {
-
-               return MD5Util.getFileMD5(file);
-            }
-
-            @Override
-            public File getFile() {
-                return file;
-            }
-
-            @Override
-            public Set<ContentType> getContentTypes() {
-                return ImmutableSet.of(QualifiedContent.DefaultContentType.CLASSES);
-            }
-
-            @Override
-            public Set<? super Scope> getScopes() {
-                if (finalFileIdentity == null){
-                    return  ImmutableSet.of(Scope.EXTERNAL_LIBRARIES);
-                }
-                if (finalFileIdentity.subProject) {
-                    return ImmutableSet.of(Scope.SUB_PROJECTS);
-                } else {
-                    return ImmutableSet.of(Scope.EXTERNAL_LIBRARIES);
-                }
-            }
-        };
-    }
 
     private int computerClassCount(File file){
         JarFile jarFile = null;

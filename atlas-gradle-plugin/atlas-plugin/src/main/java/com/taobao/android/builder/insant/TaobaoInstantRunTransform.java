@@ -68,7 +68,7 @@ public class TaobaoInstantRunTransform extends Transform {
         this.targetPlatformApi =
                 DeploymentDevice.getDeploymentDeviceAndroidVersion(
                         transformScope.getGlobalScope().getProjectOptions());
-        injectFailedFile = new File(variantContext.getProject().getBuildDir(), "outputs/instrument-inject-error.properties");
+        injectFailedFile = new File(variantContext.getProject().getBuildDir(), "outputs/warning-instrument-inject-error.properties");
     }
 
     @Override
