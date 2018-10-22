@@ -139,6 +139,9 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 //    }
     @Override
     public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, final File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
+        logger.warning("outDexFolder:"+outDexFolder.getAbsolutePath());
+        FileUtils.forceMkdir(outDexFolder);
+//        outDexFolder.mkdirs();
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 variantContext.getVariantName());
 
