@@ -274,7 +274,8 @@ public class PostProcessManifestAction implements Action<Task> {
                 bundleBaseLineInfo,
                 atlasExtension.manifestOptions,
                 isMultiDexEnabled(),
-                false,
+                variantScope.getInstantRunBuildContext().isInInstantRunMode(),
+                appVariantContext.getBuildType().isDebuggable(),
                 atlasExtension.getTBuildConfig()
                     .getOutOfApkBundles(),atlasExtension.getTBuildConfig().getInsideOfApkBundles(),atlasExtension.getTBuildConfig().isPushInstall());
 
@@ -298,7 +299,8 @@ public class PostProcessManifestAction implements Action<Task> {
                     atlasExtension.manifestOptions,
                     isMultiDexEnabled(),
                     true,
-                    atlasExtension.getTBuildConfig()
+                        appVariantContext.getBuildType().isDebuggable(),
+                        atlasExtension.getTBuildConfig()
                         .getOutOfApkBundles(),atlasExtension.getTBuildConfig().getInsideOfApkBundles(),atlasExtension.getTBuildConfig().isPushInstall());
             }
 

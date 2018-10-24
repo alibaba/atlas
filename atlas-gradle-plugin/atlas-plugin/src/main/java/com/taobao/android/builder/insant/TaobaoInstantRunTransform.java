@@ -1,5 +1,6 @@
 package com.taobao.android.builder.insant;
 
+import com.alibaba.fastjson.JSON;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -25,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.tasks.manager.transform.TransformManager;
 import org.gradle.api.logging.Logging;
 import org.gradle.internal.impldep.bsh.commands.dir;
@@ -58,7 +60,7 @@ public class TaobaoInstantRunTransform extends Transform {
     private final AndroidVersion targetPlatformApi;
     private File injectFailedFile;
     private List<String> errors = new ArrayList<>();
-    private Map<String,PatchPolicy>modifyClasses = new HashMap<>();
+    private Map<String,String>modifyClasses = new HashMap<>();
 
     public TaobaoInstantRunTransform(AppVariantContext variantContext, AppVariantOutputContext variantOutputContext, WaitableExecutor executor, InstantRunVariantScope transformScope) {
         this.variantContext = variantContext;
@@ -109,6 +111,17 @@ public class TaobaoInstantRunTransform extends Transform {
 
     @Override
     public void transform(TransformInvocation invocation) throws IOException, TransformException, InterruptedException {
+
+        if (variantContext.getBuildType().getPatchConfig().isCreateTPatch()){
+            PatchConfig patchConfig = variantContext.getBuildType().getPatchConfig();
+            if (patchConfig != null){
+                File classFile = patchConfig.getHotClassListFile();
+                String s = org.apache.commons.io.FileUtils.readFileToString(classFile);
+                modifyClasses = JSON.parseObject(s,Map.class);
+            }
+
+
+        }
 
         LOGGER.warning("start excute:" + getClass().getName());
         List<JarInput> jarInputs =
@@ -168,47 +181,6 @@ public class TaobaoInstantRunTransform extends Transform {
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                 File inputDir = directoryInput.getFile();
                 LOGGER.warning("inputDir:", inputDir.getAbsolutePath());
-//                if (invocation.isIncremental()) {
-//                    for (Map.Entry<File, Status> fileEntry : directoryInput
-//                            .getChangedFiles()
-//                            .entrySet()) {
-//
-//                        File inputFile = fileEntry.getKey();
-//                        if (!inputFile.getName().endsWith(SdkConstants.DOT_CLASS)) {
-//                            continue;
-//                        }
-//                        switch (fileEntry.getValue()) {
-//                            case REMOVED:
-//                                // remove the classes.2 and classes.3 files.
-//                                deleteOutputFile(
-//                                        IncrementalSupportVisitor.VISITOR_BUILDER,
-//                                        inputDir, inputFile, classesTwoOutput);
-//                                deleteOutputFile(IncrementalChangeVisitor.VISITOR_BUILDER,
-//                                        inputDir, inputFile, classesThreeOutput);
-//                                break;
-//                            case CHANGED:
-//                                if (inHotSwapMode) {
-//                                    workItems.add(() -> transformToClasses3Format(
-//                                            inputDir,
-//                                            inputFile,
-//                                            classesThreeOutput));
-//                                }
-//                                // fall through the ADDED case to generate classes.2
-//                            case ADDED:
-//                                workItems.add(() -> transformToClasses2Format(
-//                                        inputDir,
-//                                        inputFile,
-//                                        classesTwoOutput,
-//                                        fileEntry.getValue()));
-//                                break;
-//                            case NOTCHANGED:
-//                                break;
-//                            default:
-//                                throw new IllegalStateException("Unhandled file status "
-//                                        + fileEntry.getValue());
-//                        }
-//                    }
-//                } else {
                     // non incremental mode, we need to traverse the TransformInput#getFiles()
                     // folder
                     FileUtils.cleanOutputDir(classesTwoOutput);
@@ -219,7 +191,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         String path = FileUtils.relativePath(file, inputDir);
                         String className = path.replace("/",".").substring(0,path.length()-6);
                         if (modifyClasses.containsKey(className)){
-                            PatchPolicy patchPolicy = modifyClasses.get(className);
+                            PatchPolicy patchPolicy = modifyClasses.get(className).equals(PatchPolicy.ADD.name()) ? PatchPolicy.ADD:PatchPolicy.MODIFY;
                             switch (patchPolicy){
                                 case ADD:
                                     workItems.add(() -> transformToClasses2Format(
@@ -267,6 +239,27 @@ public class TaobaoInstantRunTransform extends Transform {
                     for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dir)) {
                         if (file.isDirectory()) {
                             continue;
+                        }
+                        String path = FileUtils.relativePath(file, dir);
+                        String className = path.replace("/",".").substring(0,path.length()-6);
+                        if (modifyClasses.containsKey(className)){
+                            PatchPolicy patchPolicy = modifyClasses.get(className).equals(PatchPolicy.ADD.name()) ? PatchPolicy.ADD:PatchPolicy.MODIFY;
+                            switch (patchPolicy){
+                                case ADD:
+                                    workItems.add(() -> transformToClasses2Format(
+                                            dir,
+                                            file,
+                                            classesThreeOutput,
+                                            Status.ADDED));
+                                    break;
+
+                                case MODIFY:
+                                    workItems.add(() -> transformToClasses3Format(
+                                            dir,
+                                            file,
+                                            classesThreeOutput));
+                                    break;
+                            }
                         }
                         workItems.add(() -> transformToClasses2Format(
                                 dir,
@@ -324,13 +317,12 @@ public class TaobaoInstantRunTransform extends Transform {
 
         // If our classes.2 transformations indicated that a cold swap was necessary,
         // clean up the classes.3 output folder as some new files may have been generated.
-        if (buildContext.getBuildMode() != InstantRunBuildMode.HOT_WARM) {
+        if (generatedClasses3Names.build().size() == 0) {
             FileUtils.cleanOutputDir(classesThreeOutput);
         }
 
         wrapUpOutputs(classesTwoOutput, classesThreeOutput);
 
-//        super.doTransform(invocation);
     }
 
     private interface WorkItem {
@@ -499,10 +491,10 @@ public class TaobaoInstantRunTransform extends Transform {
 
         // the transform can set the verifier status to failure in some corner cases, in that
         // case, make sure we delete our classes.3
-        if (!transformScope.getInstantRunBuildContext().hasPassedVerification()) {
-            FileUtils.cleanOutputDir(classes3Folder);
-            return;
-        }
+//        if (!transformScope.getInstantRunBuildContext().hasPassedVerification()) {
+//            FileUtils.cleanOutputDir(classes3Folder);
+//            return;
+//        }
         // otherwise, generate the patch file and add it to the list of files to process next.
         ImmutableList<String> generatedClassNames = generatedClasses3Names.build();
         if (!generatedClassNames.isEmpty()) {

@@ -268,16 +268,16 @@ public class ManifestFileUtils {
 
     /**
      * Follow up the manifest
-     *
-     * @param mainManifest
+     *  @param mainManifest
      * @param libManifestMap
      * @param baseBunfleInfoFile
      * @param manifestOptions
+     * @param debuggable
      */
     public static Result postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
                                               Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
                                               ManifestOptions manifestOptions, boolean addMultiDex,
-                                              boolean isInstantRun, Set<String> remoteBundles,Set<String> insideBundles,boolean pushInstall)
+                                              boolean isInstantRun, boolean debuggable, Set<String> remoteBundles, Set<String> insideBundles, boolean pushInstall)
         throws IOException, DocumentException {
 
         Result result = new Result();
@@ -314,6 +314,11 @@ public class ManifestFileUtils {
         if (isInstantRun) {
             removeProcess(document);
         }
+
+        if (isInstantRun && !debuggable){
+            disableDebuggable(document);
+
+        }
         removeCustomLaunches(document, manifestOptions);
         updatePermission(document, manifestOptions);
         removeComments(document);
@@ -323,6 +328,17 @@ public class ManifestFileUtils {
         printlnPermissions(document);
 
         return result;
+    }
+
+    private static void disableDebuggable(Document document) {
+        Element root = document.getRootElement();// Get the root node
+        Element app = root.element("application");
+        Attribute attribute = app.attribute("debuggable");
+        if (attribute!= null){
+            attribute.setValue("false");
+            logger.warn("disable android:debuggable .......");
+//            app.remove(attribute);
+        }
     }
 
     private static void addAndroidLabel(Document document,boolean pushInstall) {

@@ -236,6 +236,16 @@ public class TBuildType {
 
     private boolean realign;
 
+    public boolean isDebuggable() {
+        return debuggable;
+    }
+
+    public void setDebuggable(boolean debuggable) {
+        this.debuggable = debuggable;
+    }
+
+    private boolean debuggable;
+
     private PatchConfig patchConfig;
 
     private DefaultChannelConfig channelConfig;
