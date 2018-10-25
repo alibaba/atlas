@@ -68,7 +68,11 @@ public class DexMergeTransformCallable implements Callable<Void>{
                                 processOutput.getStandardOutput(), processOutput.getErrorOutput());
                 merger = DexArchiveMerger.createDxDexMerger(dxContext, forkJoinPool);
                 ReflectUtils.updateField(merger,"mergingStrategy",new AtlasDexArchiveMerger.AtlasDexRefMergingStrategy());
-                System.out.println("update mergingStrategy to atlas AtlasDexRefMergingStrategy");
+
+
+                System.out.println("dexingType && mutildexList "+dexingType == null? "":dexingType.name()+"|");
+
+//                System.out.println("update mergingStrategy to atlas AtlasDexRefMergingStrategy && dexingType && mutildexList "+dexingType == null? "":dexingType.name()+"|"+mainDexList!= null?mainDexList.toString():"");
                 break;
             case D8:
                 int d8MinSdkVersion = minSdkVersion;

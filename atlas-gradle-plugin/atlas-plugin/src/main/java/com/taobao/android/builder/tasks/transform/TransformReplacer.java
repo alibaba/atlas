@@ -44,6 +44,7 @@ import com.taobao.android.builder.tasks.transform.dex.AtlasMultiDexListTransform
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
 import groovy.transform.PackageScope;
+import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.internal.tasks.DefaultTaskOutputs;
 import org.gradle.api.logging.LogLevel;
@@ -52,7 +53,9 @@ import org.gradle.api.specs.AndSpec;
 import org.gradle.api.specs.Spec;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -96,10 +99,36 @@ public class TransformReplacer {
                     variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable());
             atlasDexArchiveBuilderTransform.setTransformTask(transformTask);
             ReflectUtils.updateField(transformTask,"transform",atlasDexArchiveBuilderTransform);
+            if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()){
+                transformTask.doLast(new Action<Task>() {
+                    @Override
+                    public void execute(Task task) {
+                        generateMainDexList(variantContext.getScope());
 
+                    }
+                });
+            }
 
         }
 
+    }
+
+    private void generateMainDexList(VariantScope variantScope) {
+        File mainDexListFile = variantScope.getMainDexListFile();
+        Collection<File> inputs =AtlasBuildContext.atlasMainDexHelperMap.get(variantScope.getFullVariantName()).getAllMainDexJars();
+        inputs.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantScope.getFullVariantName()).getInputDirs());
+        FastMultiDexer fastMultiDexer = new FastMultiDexer(variantContext);
+        Collection<File>files = null;
+        try {
+            files = fastMultiDexer.repackageJarList(inputs, mainDexListFile,variantScope.getVariantData().getName().toLowerCase().endsWith("release"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (files!= null && files.size() > 0){
+            AtlasBuildContext.atlasMainDexHelperMap.get(variantScope.getFullVariantName()).addAllMainDexJars(files);
+
+        }
     }
 
     public void replaceDataBindingMergeArtifactsTransform() {
@@ -164,6 +193,9 @@ public class TransformReplacer {
         List<TransformTask> list = TransformManager.findTransformTaskByTransformType(variantContext,
                 DexMergerTransform.class);
         DexingType dexingType = variantContext.getScope().getDexingType();
+        if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()){
+            dexingType = DexingType.LEGACY_MULTIDEX;
+        }
         DexMergerTool dexMergerTool = variantContext.getScope().getDexMerger();
         int sdkVerision = variantContext.getScope().getMinSdkVersion().getFeatureLevel();
         boolean debug = variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable();

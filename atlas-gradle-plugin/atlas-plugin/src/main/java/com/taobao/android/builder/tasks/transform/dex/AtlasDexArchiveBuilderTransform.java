@@ -211,11 +211,12 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 for (DirectoryInput dirInput : input.getDirectoryInputs()) {
                     mainJars.add(dirInput.getFile());
                     logger.verbose("Dir input %s", dirInput.getFile().toString());
-                    convertToDexArchive(
+                    List<File>dirFiles = convertToDexArchive(
                             transformInvocation.getContext(),
                             dirInput,
                             outputProvider,
                             false);
+                    cacheItems.putAll(dirInput,dirFiles);
                 }
 
                 for (JarInput jarInput : input.getJarInputs()) {
@@ -263,11 +264,12 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 }else {
                     DirectoryInput dirInput = TransformInputUtils.makeDirectoryInput(file,variantContext);
                     logger.verbose("Dir input %s", dirInput.getFile().toString());
-                    convertToDexArchive(
+                    List<File>files = convertToDexArchive(
                             transformInvocation.getContext(),
                             dirInput,
                             outputProvider,
                             false);
+                    cacheItems.putAll(dirInput,files);
                 }
             }
 
@@ -774,11 +776,11 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
             }
             for (QualifiedContent qualifiedContent : qualifiedContents) {
                 if (qualifiedContent.getFile().isDirectory()) {
-                    convertAwbToDexArchive(
+                    List<File>awbFiles = convertAwbToDexArchive(
                             transformInvocation.getContext(),
                             qualifiedContent, variantContext.getAwbDexAchiveOutput(awbBundle), transformInvocation.isIncremental()
                     ,true);
-//                    cacheableItems.putAll(qualifiedContent, folderFiles);
+                    cacheableItems.putAll(qualifiedContent, awbFiles);
 
                 } else {
                     List<File> jarFiles = processAwbJarInput(transformInvocation.getContext(), transformInvocation.isIncremental(), (JarInput) qualifiedContent, variantContext.getAwbDexAchiveOutput(awbBundle));

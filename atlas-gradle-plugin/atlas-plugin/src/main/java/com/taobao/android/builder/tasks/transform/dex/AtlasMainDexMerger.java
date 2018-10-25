@@ -160,7 +160,7 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
                                             Arrays.asList(mergeDexs[0]),
                                             output,
                                             outputDir,
-                                            null));
+                                            mainDexListFile == null ? null : mainDexListFile.getSingleFile()));
                         } else {
                             mergeTasks.addAll(
                                     handleLegacyAndMonoDex(
