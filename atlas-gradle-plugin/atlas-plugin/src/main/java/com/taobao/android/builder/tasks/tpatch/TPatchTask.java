@@ -229,8 +229,10 @@ import com.taobao.android.PatchType;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildType;
+import com.taobao.android.builder.insant.InstantInfo;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.BuildHelper;
+import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.ZipUtils;
 import com.taobao.android.inputs.BaseInput;
@@ -275,6 +277,8 @@ public class TPatchTask extends BaseTask {
 
     private File outPatchFolder;
 
+    private File instantInfoFile;
+
     private AppVariantContext appVariantContext;
 
     @TaskAction
@@ -283,6 +287,7 @@ public class TPatchTask extends BaseTask {
         patchContext = getPatchContext();
         signingConfig = getSigningConfig();
         outPatchFolder = getOutPatchFolder();
+
 
         //the bundle List Copied to the outpatchFoulder
         new File(outPatchFolder, appVariantContext.bundleListCfg.getName()).delete();
@@ -296,6 +301,7 @@ public class TPatchTask extends BaseTask {
             if (patchFile.exists()) {
                 File finalFile = new File(outPatchFolder, patchContext.getBaseVersionName() + "@" + patchContext.getBaseVersionName() + ".tpatch");
                 zipPatch(finalFile, patchFile);
+                generatePatchInfo(finalFile);
                 return;
             }else {
                getLogger().warn("patchFile is not exist!");
@@ -359,6 +365,21 @@ public class TPatchTask extends BaseTask {
         } catch (Exception e) {
             throw new GradleException(e.getMessage(), e);
         }
+
+    }
+
+    private void generatePatchInfo(File finalFile) throws IOException, DocumentException {
+        InstantInfo instantInfo = new InstantInfo();
+        instantInfo.baseVersion = patchContext.getBaseVersionName();
+        instantInfo.patchSize = finalFile.length();
+        instantInfo.fileName = finalFile.getName();
+        instantInfo.md5 = MD5Util.getFileMD5(finalFile);
+        instantInfoFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/instantInfo.json");
+        File patchClassInfo = new File(appVariantContext.getProject().getBuildDir(),"outputs/patchClassInfo.json");
+        FileUtils.copyFile(patchContext.hotClassListFile,patchClassInfo);
+        FileUtils.writeStringToFile(instantInfoFile,JSON.toJSONString(instantInfo));
+
+
 
     }
 
