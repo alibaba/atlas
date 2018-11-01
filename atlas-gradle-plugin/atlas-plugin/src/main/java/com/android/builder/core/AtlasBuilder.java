@@ -714,8 +714,9 @@ public class AtlasBuilder extends AndroidBuilder {
             }
         } else {
             //R Too much, you need to start multi-dex
-            multiDex = true;
         }
+
+        multiDex = false;
 
         dexFile.delete();
 
@@ -725,6 +726,7 @@ public class AtlasBuilder extends AndroidBuilder {
         if (!multiDex) {
             defaultDexOptions.setJavaMaxHeapSize("500m");
             defaultDexOptions.setDexInProcess(true);
+            defaultDexOptions.getAdditionalParameters().remove("--multi-dex");
         }
 
         sLogger.info("[mtldex] pre dex for {} {}",

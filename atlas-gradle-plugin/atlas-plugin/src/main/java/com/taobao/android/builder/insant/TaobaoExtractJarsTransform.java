@@ -101,25 +101,6 @@ public class TaobaoExtractJarsTransform extends Transform {
         try {
             WaitableExecutor executor = WaitableExecutor.useGlobalSharedThreadPool();
 
-//                for (File dir : AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs()) {
-//
-//                    DirectoryInput dirInput = makeDirInput();
-//                    File dirOutput =
-//                            outputProvider.getContentLocation(
-//                                    dirInput.getName(),
-//                                    dirInput.getContentTypes(),
-//                                    dirInput.getScopes(),
-//                                    Format.DIRECTORY);
-//                    // since we do a full copy, we have to delete the output first.
-//                    // FIXME make this incremental!
-//                    if (dirOutput.isDirectory()) {
-//                        FileUtils.deleteDirectoryContents(dirOutput);
-//                    }
-//                    if (dirInput.getFile().exists()) {
-//                        org.apache.commons.io.FileUtils.copyDirectory(
-//                                dirInput.getFile(), dirOutput);
-//                    }
-//                }
             AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().clear();
 
                 for (File jarFile : AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars()) {

@@ -12,7 +12,6 @@ import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.incremental.*;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
-import com.android.build.gradle.internal.transforms.InstantRunTransform;
 import com.android.build.gradle.options.DeploymentDevice;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.AndroidVersion;
@@ -27,9 +26,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.PatchConfig;
-import com.taobao.android.builder.tasks.manager.transform.TransformManager;
 import org.gradle.api.logging.Logging;
-import org.gradle.internal.impldep.bsh.commands.dir;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -191,6 +188,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         String path = FileUtils.relativePath(file, inputDir);
                         String className = path.replace("/",".").substring(0,path.length()-6);
                         if (modifyClasses.containsKey(className)){
+                            boolean isAdd = false;
                             PatchPolicy patchPolicy = modifyClasses.get(className).equals(PatchPolicy.ADD.name()) ? PatchPolicy.ADD:PatchPolicy.MODIFY;
                             switch (patchPolicy){
                                 case ADD:
@@ -199,6 +197,7 @@ public class TaobaoInstantRunTransform extends Transform {
                                             file,
                                             classesThreeOutput,
                                             Status.ADDED));
+                                    isAdd = true;
                                     break;
 
                                 case MODIFY:
@@ -207,6 +206,9 @@ public class TaobaoInstantRunTransform extends Transform {
                                             file,
                                             classesThreeOutput));
                                     break;
+                            }
+                            if (isAdd) {
+                                continue;
                             }
                         }
 
@@ -243,6 +245,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         String path = FileUtils.relativePath(file, dir);
                         String className = path.replace("/",".").substring(0,path.length()-6);
                         if (modifyClasses.containsKey(className)){
+                            boolean isAdd = false;
                             PatchPolicy patchPolicy = modifyClasses.get(className).equals(PatchPolicy.ADD.name()) ? PatchPolicy.ADD:PatchPolicy.MODIFY;
                             switch (patchPolicy){
                                 case ADD:
@@ -251,6 +254,7 @@ public class TaobaoInstantRunTransform extends Transform {
                                             file,
                                             classesThreeOutput,
                                             Status.ADDED));
+                                    isAdd = true;
                                     break;
 
                                 case MODIFY:
@@ -259,6 +263,10 @@ public class TaobaoInstantRunTransform extends Transform {
                                             file,
                                             classesThreeOutput));
                                     break;
+                            }
+
+                            if (isAdd) {
+                                continue;
                             }
                         }
                         workItems.add(() -> transformToClasses2Format(
@@ -352,11 +360,15 @@ public class TaobaoInstantRunTransform extends Transform {
             addAllClassLocations(input, referencedInputUrls);
         }
 
+//        addAllClassLocations(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars(), referencedInputUrls);
+
         variantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
             @Override
             public void accept(AwbTransform awbTransform) {
                 try {
                     addAllClassLocations(awbTransform.getInputFiles(), referencedInputUrls);
+
+//                    addAllClassLocations(awbTransform.getInputLibraries(), referencedInputUrls);
 
                     addAllClassLocations(awbTransform.getInputDirs(), referencedInputUrls);
                 } catch (MalformedURLException e) {
@@ -460,18 +472,21 @@ public class TaobaoInstantRunTransform extends Transform {
             @NonNull final File outputDir,
             @NonNull final Status change) {
         if (inputFile.getPath().endsWith(SdkConstants.DOT_CLASS)) {
+            String path = FileUtils.relativePath(inputFile, inputDir);
             try {
-                IncrementalVisitor.instrumentClass(
+                File file = IncrementalVisitor.instrumentClass(
                         targetPlatformApi.getFeatureLevel(),
                         inputDir,
                         inputFile,
                         outputDir,
                         IncrementalSupportVisitor.VISITOR_BUILDER,
                         LOGGER);
+                if (file.length() == inputFile.length()){
+                    errors.add("NO INJECT:"+path);
+                }
             } catch (Exception e) {
                 LOGGER.warning("exception instrumentClass:" + inputFile.getPath());
-                errors.add(inputFile.getPath());
-                String path = FileUtils.relativePath(inputFile, inputDir);
+                errors.add("EXCEPTION:"+path);
                 File outputFile = new File(outputDir, path);
                 try {
                     Files.createParentDirs(outputFile);

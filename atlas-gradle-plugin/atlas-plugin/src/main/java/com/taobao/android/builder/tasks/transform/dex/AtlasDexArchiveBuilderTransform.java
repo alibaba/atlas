@@ -12,6 +12,7 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.pipeline.*;
 import com.android.build.gradle.internal.transforms.DexArchiveBuilderTransform;
+import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.ErrorReporter;
@@ -220,6 +221,10 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 }
 
                 for (JarInput jarInput : input.getJarInputs()) {
+                    if (jarInput.getFile().getName().equals(PackageAndroidArtifact.INSTANT_RUN_PACKAGES_PREFIX + ".jar")){
+                        logger.warning("skip instant run jar:"+jarInput.getFile().getAbsolutePath());
+                        continue;
+                    }
                     if (!inMainDex(jarInput)) {
                         listFiles.add(jarInput);
                         continue;
@@ -246,6 +251,10 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 if (mainJars.contains(file)){
                     continue;
                 }else {
+                    if (file.getName().equals(PackageAndroidArtifact.INSTANT_RUN_PACKAGES_PREFIX + ".jar")){
+                        logger.warning("skip instant run jar:"+file.getAbsolutePath());
+                        continue;
+                    }
                     JarInput jarInput = TransformInputUtils.makeJarInput(file,variantContext);
                     List<File> dexArchives =
                             processJarInput(
@@ -310,7 +319,8 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
     }
 
     private boolean inMainDex(JarInput jarInput) {
-        if (jarInput.getFile().getName().contains("instant-run")){
+
+        if (jarInput.getFile().getName().contains(PackageAndroidArtifact.INSTANT_RUN_PACKAGES_PREFIX + "-bootstrap.jar")){
             return true;
         }
         boolean flag = AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).inMainDex(jarInput);
