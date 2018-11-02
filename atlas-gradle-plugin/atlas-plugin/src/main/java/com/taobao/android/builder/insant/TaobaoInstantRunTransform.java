@@ -116,8 +116,6 @@ public class TaobaoInstantRunTransform extends Transform {
                 String s = org.apache.commons.io.FileUtils.readFileToString(classFile);
                 modifyClasses = JSON.parseObject(s,Map.class);
             }
-
-
         }
 
         LOGGER.warning("start excute:" + getClass().getName());
@@ -234,49 +232,46 @@ public class TaobaoInstantRunTransform extends Transform {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            awbTransform.getInputDirs().forEach(new Consumer<File>() {
-                @Override
-                public void accept(File dir) {
-                    LOGGER.warning("InstantAwbclassDir[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + dir.getAbsolutePath());
-                    for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dir)) {
-                        if (file.isDirectory()) {
+            awbTransform.getInputDirs().forEach(dir -> {
+                LOGGER.warning("InstantAwbclassDir[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + dir.getAbsolutePath());
+                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dir)) {
+                    if (file.isDirectory()) {
+                        continue;
+                    }
+                    String path = FileUtils.relativePath(file, dir);
+                    String className = path.replace("/",".").substring(0,path.length()-6);
+                    if (modifyClasses.containsKey(className)){
+                        boolean isAdd = false;
+                        PatchPolicy patchPolicy = modifyClasses.get(className).equals(PatchPolicy.ADD.name()) ? PatchPolicy.ADD:PatchPolicy.MODIFY;
+                        switch (patchPolicy){
+                            case ADD:
+                                workItems.add(() -> transformToClasses2Format(
+                                        dir,
+                                        file,
+                                        classesThreeOutput,
+                                        Status.ADDED));
+                                isAdd = true;
+                                break;
+
+                            case MODIFY:
+                                workItems.add(() -> transformToClasses3Format(
+                                        dir,
+                                        file,
+                                        classesThreeOutput));
+                                break;
+                        }
+
+                        if (isAdd) {
                             continue;
                         }
-                        String path = FileUtils.relativePath(file, dir);
-                        String className = path.replace("/",".").substring(0,path.length()-6);
-                        if (modifyClasses.containsKey(className)){
-                            boolean isAdd = false;
-                            PatchPolicy patchPolicy = modifyClasses.get(className).equals(PatchPolicy.ADD.name()) ? PatchPolicy.ADD:PatchPolicy.MODIFY;
-                            switch (patchPolicy){
-                                case ADD:
-                                    workItems.add(() -> transformToClasses2Format(
-                                            dir,
-                                            file,
-                                            classesThreeOutput,
-                                            Status.ADDED));
-                                    isAdd = true;
-                                    break;
-
-                                case MODIFY:
-                                    workItems.add(() -> transformToClasses3Format(
-                                            dir,
-                                            file,
-                                            classesThreeOutput));
-                                    break;
-                            }
-
-                            if (isAdd) {
-                                continue;
-                            }
-                        }
-                        workItems.add(() -> transformToClasses2Format(
-                                dir,
-                                file,
-                                awbClassesTwoOutout,
-                                Status.ADDED));
                     }
-
+                    workItems.add(() -> transformToClasses2Format(
+                            dir,
+                            file,
+                            awbClassesTwoOutout,
+                            Status.ADDED));
                 }
+
             });
 
             awbTransform.getInputDirs().clear();
@@ -360,15 +355,12 @@ public class TaobaoInstantRunTransform extends Transform {
             addAllClassLocations(input, referencedInputUrls);
         }
 
-//        addAllClassLocations(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars(), referencedInputUrls);
 
         variantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
             @Override
             public void accept(AwbTransform awbTransform) {
                 try {
                     addAllClassLocations(awbTransform.getInputFiles(), referencedInputUrls);
-
-//                    addAllClassLocations(awbTransform.getInputLibraries(), referencedInputUrls);
 
                     addAllClassLocations(awbTransform.getInputDirs(), referencedInputUrls);
                 } catch (MalformedURLException e) {

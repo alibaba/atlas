@@ -139,6 +139,8 @@ public class AtlasD8Creator {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
 
             }

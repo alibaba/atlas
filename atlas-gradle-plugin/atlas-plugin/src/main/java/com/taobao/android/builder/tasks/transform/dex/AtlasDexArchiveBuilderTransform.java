@@ -500,7 +500,15 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
         ImmutableList.Builder<File> dexArchives = ImmutableList.builder();
         for (int bucketId = 0; bucketId < NUMBER_OF_BUCKETS; bucketId++) {
             File preDexOutputFile = getPreDexFile(outputProvider, input, bucketId);
-            dexArchives.add(preDexOutputFile);
+            if (input.getFile().isDirectory()) {
+                File cachedVersion = cacheHandler.getCachedVersionIfPresent(input.getFile());
+                dexArchives.add(preDexOutputFile);
+                if (cachedVersion != null) {
+                    FileUtils.copyDirectoryContentToDirectory(cachedVersion, preDexOutputFile);
+                    return dexArchives.build();
+
+                }
+            }
             if (preDexOutputFile.isDirectory() && preDexOutputFile.exists()) {
                 FileUtils.cleanOutputDir(preDexOutputFile);
             }else {
@@ -667,7 +675,14 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
 
         for (int bucketId = 0; bucketId < count; bucketId++) {
             File preDexOutputFile = getAwbPreDexFile(outputProvider, input, bucketId);
-            dexArchives.add(preDexOutputFile);
+            if (input.getFile().isDirectory()) {
+                File cachedVersion = cacheHandler.getCachedVersionIfPresent(input.getFile());
+                dexArchives.add(preDexOutputFile);
+                if (cachedVersion != null) {
+                    FileUtils.copyDirectoryContentToDirectory(cachedVersion, preDexOutputFile);
+                    return dexArchives.build();
+                }
+            }
             if (preDexOutputFile.isDirectory() && preDexOutputFile.exists()) {
                 FileUtils.cleanOutputDir(preDexOutputFile);
             }else {
