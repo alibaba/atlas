@@ -207,7 +207,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
         File tempDexFolder = null;
 
-        inputFile = AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars();
+        inputFile.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars());
         inputFile.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs());
 
         logger.warning("maindex inputFile size :" + inputFile.size());

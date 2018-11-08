@@ -299,7 +299,7 @@ public class TPatchTask extends BaseTask {
             InstantRunBuildContext.Artifact artifact = instantRunBuildContext.getLastBuild().getArtifactForType(FileType.RELOAD_DEX);
             File patchFile = artifact.getLocation();
             if (patchFile.exists()) {
-                File finalFile = new File(outPatchFolder, patchContext.getBaseVersionName() + "@" + patchContext.getBaseVersionName() + ".tpatch");
+                File finalFile = new File(outPatchFolder, patchContext.getBaseVersionName() + "@" + patchContext.getBaseVersionName() + ".ipatch");
                 zipPatch(finalFile, patchFile);
                 generatePatchInfo(finalFile);
                 return;
@@ -375,8 +375,6 @@ public class TPatchTask extends BaseTask {
         instantInfo.fileName = finalFile.getName();
         instantInfo.md5 = MD5Util.getFileMD5(finalFile);
         instantInfoFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/instantInfo.json");
-        File patchClassInfo = new File(appVariantContext.getProject().getBuildDir(),"outputs/patchClassInfo.json");
-        FileUtils.copyFile(patchContext.hotClassListFile,patchClassInfo);
         FileUtils.writeStringToFile(instantInfoFile,JSON.toJSONString(instantInfo));
 
 

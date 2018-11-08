@@ -389,6 +389,17 @@ public class TBuildConfig {
 
     private boolean incremental = false;
 
+
+    public boolean isInjectSerialVersionUID() {
+        return injectSerialVersionUID;
+    }
+
+    public void setInjectSerialVersionUID(boolean injectSerialVersionUID) {
+        this.injectSerialVersionUID = injectSerialVersionUID;
+    }
+
+    private boolean injectSerialVersionUID = true;
+
     @Config(message = "Whether to use fast proguard", order = 16, advance = true, group = "atlas")
     private boolean fastProguard = false;
 

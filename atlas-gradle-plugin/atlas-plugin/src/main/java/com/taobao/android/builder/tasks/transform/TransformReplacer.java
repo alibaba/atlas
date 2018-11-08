@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.transforms.*;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.IntegerOption;
 import com.android.build.gradle.options.ProjectOptions;
+import com.android.build.gradle.tasks.ir.FastDeployRuntimeExtractorTask;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
@@ -58,6 +59,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Verify.verifyNotNull;
@@ -431,6 +433,8 @@ public class TransformReplacer {
     }
 
     public void repalaceSomeInstantTransform(BaseVariantOutput vod) {
+
+        variantContext.getProject().getTasks().withType(FastDeployRuntimeExtractorTask.class).forEach(fastDeployRuntimeExtractorTask -> fastDeployRuntimeExtractorTask.setEnabled(false));
         List<TransformTask> baseTransforms = TransformManager.findTransformTaskByTransformType(
                 variantContext, InstantRunDependenciesApkBuilder.class);
         if (baseTransforms != null && baseTransforms.size() > 0){
