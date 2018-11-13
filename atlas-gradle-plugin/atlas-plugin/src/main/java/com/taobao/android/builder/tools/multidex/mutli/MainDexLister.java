@@ -317,6 +317,11 @@ public class MainDexLister {
             maindexListClazz.add(className);
         }
 
+        if (multiDexConfig.getMainDexListCount()!=0){
+
+            maindexListClazz = maindexListClazz.subList(0,multiDexConfig.getMainDexListCount());
+        }
+
         try {
             FileUtils.writeLines(mainDexListFile,
                                  maindexListClazz);

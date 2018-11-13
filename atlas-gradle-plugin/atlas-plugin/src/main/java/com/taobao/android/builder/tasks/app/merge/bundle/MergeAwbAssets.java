@@ -93,6 +93,9 @@ public class MergeAwbAssets extends IncrementalTask{
 
     @Override
     protected void doFullTaskAction() throws IOException {
+        if (awbBundle.isMBundle){
+            return;
+        }
         // this is full run, clean the previous output
         File destinationDir = getOutputDir();
         FileUtils.cleanOutputDir(destinationDir);

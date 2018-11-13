@@ -79,12 +79,9 @@ public class DexPatchTool extends TPatchTool {
             @Override
             public Boolean call() throws Exception {
                 // 得到主bundle的dex diff文件
-                File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
-                File tmpDexFile = new File(patchTmpDir, tpatchInput.mainBundleName + "-dex");
                 createBundleDexPatch(newApkUnzipFolder,
                         baseApkUnzipFolder,
-                        mianDiffDestDex,
-                        tmpDexFile,
+                        mainDiffFolder,
                         true);
 
                 return true;
@@ -201,16 +198,14 @@ public class DexPatchTool extends TPatchTool {
 
     }
 
-    public File createBundleDexPatch(File newApkUnzipFolder,
-                                     File baseApkUnzipFolder,
-                                     File destDex,
-                                     File tmpDexFile,
-                                     boolean mainDex) throws Exception {
+    @Override
+    public List<File> createBundleDexPatch(File newApkUnzipFolder,
+                                           File baseApkUnzipFolder,
+                                           File mainDiffFolder,
+                                           boolean mainDex) throws Exception {
         List<File> dexs = Lists.newArrayList();
         // 比较主bundle的dex
-        if (!tmpDexFile.exists()) {
-            tmpDexFile.mkdirs();
-        }
+
         String bundleName = null;
         if (mainDex) {
             bundleName = "com.taobao.maindex";
@@ -219,15 +214,17 @@ public class DexPatchTool extends TPatchTool {
         }
         List<File> baseDexFiles = getFolderDexFiles(baseApkUnzipFolder);
         List<File> newDexFiles = getFolderDexFiles(newApkUnzipFolder);
-        File dexDiffFile = new File(tmpDexFile, "diff.dex");
+        File dexDiffFile = new File(mainDiffFolder, TPatchTool.DEX_NAME);
         PatchDexTool dexTool = new DexPatchDexTool(baseDexFiles,
                 newDexFiles,
                 DEFAULT_API_LEVEL,
                 null,
                 mainDex);
+        dexTool.setNewPatch(((DexPatchInput)input).newPatch);
         dexTool.setExculdeClasses(((DexPatchInput)input).excludeClasses);
+        dexTool.setPatchClasses(((DexPatchInput)input).patchClasses);
 
-        DexDiffInfo dexDiffInfo = dexTool.createPatchDex(dexDiffFile);
+        DexDiffInfo dexDiffInfo = dexTool.createPatchDex(mainDiffFolder);
         if (dexDiffFile.exists()) {
             dexs.add(dexDiffFile);
             BundleDiffResult bundleDiffResult = new BundleDiffResult();
@@ -238,10 +235,8 @@ public class DexPatchTool extends TPatchTool {
         }
         if (dexs.size() > 0) {
             bundleTypes.put(bundleName,1);
-            FileUtils.copyFile(dexs.get(0), destDex);
         }
-        FileUtils.deleteDirectory(tmpDexFile);
 
-        return destDex;
+        return dexs;
     }
 }

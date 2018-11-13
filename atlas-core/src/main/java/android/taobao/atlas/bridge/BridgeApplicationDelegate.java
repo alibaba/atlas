@@ -224,6 +224,7 @@ import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.AtlasPreLauncher;
 import android.taobao.atlas.runtime.PackageManagerDelegate;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.runtime.WindowSessionProxy;
 import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
 import android.taobao.atlas.util.AtlasCrashManager;
 import android.taobao.atlas.util.SoLoader;
@@ -504,6 +505,8 @@ public class BridgeApplicationDelegate {
         Atlas.getInstance().startup(mRealApplication,mIsUpdated);
 
         mRealApplication.onCreate();
+
+        WindowSessionProxy.delegateWindowSession(mRawApplication);
     }
 
 }

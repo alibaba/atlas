@@ -28,6 +28,7 @@ import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.gradle.internal.impldep.org.apache.tools.zip.ZipUtil;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -62,8 +63,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
     private final Set<QualifiedContent.ContentType> mergedType;
 
 
-    private Set<String>paths = new HashSet<>();
-
+    private Set<String> paths = new HashSet<>();
 
 
     @NonNull
@@ -125,7 +125,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
         if (removedNativeSos.size() > 0) {
             if (removedNativeSos.contains(path)) {
                 File soFile = outputLocation.toPath().resolve(path).toFile();
-                appVariantOutputContext.getVariantContext().getProject().getLogger().info("remove soFile path:"+soFile.getAbsolutePath());
+                appVariantOutputContext.getVariantContext().getProject().getLogger().info("remove soFile path:" + soFile.getAbsolutePath());
                 String url = AtlasBuildContext.atlasApkProcessor.uploadNativeSo(appVariantOutputContext.getVariantContext().getProject(), soFile, appVariantOutputContext.getVariantContext().getBuildType());
                 NativeInfo nativeInfo = new NativeInfo();
                 nativeInfo.bundleName = "mainBundle";
@@ -134,13 +134,13 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                 nativeInfo.path = path;
                 appVariantOutputContext.getSoMap().put(path, nativeInfo);
                 try {
-                    org.apache.commons.io.FileUtils.moveFileToDirectory(soFile,appVariantOutputContext.getRemoteNativeSoFolder(nativeInfo.bundleName),true);
+                    org.apache.commons.io.FileUtils.moveFileToDirectory(soFile, appVariantOutputContext.getRemoteNativeSoFolder(nativeInfo.bundleName), true);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
-        }
+    }
 
     @Override
     public void transform(TransformInvocation invocation) throws IOException {
@@ -177,7 +177,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                                         zipCache,
                                         cacheUpdates,
                                         full,
-                                        contentMap, null));
+                                        contentMap, null,appVariantOutputContext.getVariantContext().getVariantName()));
 
 
 
@@ -271,15 +271,15 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                  */
                 IncrementalFileMergerOutput baseOutput;
                 if (mergedType == QualifiedContent.DefaultContentType.RESOURCES) {
-                     outputLocation =
+                    outputLocation =
                             outputProvider.getContentLocation(
                                     "resources", getOutputTypes(), getScopes(), Format.JAR);
                     baseOutput =
                             IncrementalFileMergerOutputs.fromAlgorithmAndWriter(
                                     mergeTransformAlgorithm, MergeOutputWriters.toZip(outputLocation));
-                    AtlasBuildContext.atlasMainDexHelper.addMainJavaRes(outputLocation);
+                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).addMainJavaRes(outputLocation);
                 } else {
-                     outputLocation =
+                    outputLocation =
                             outputProvider.getContentLocation(
                                     "resources", getOutputTypes(), getScopes(), Format.DIRECTORY);
                     baseOutput =
@@ -380,7 +380,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                                             zipCache,
                                             cacheUpdates,
                                             full,
-                                            contentMap, awbTransform));
+                                            contentMap, awbTransform,appVariantOutputContext.getVariantContext().getVariantName()));
 
 
 
@@ -557,56 +557,52 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
             e.printStackTrace();
         }
 
-        appVariantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
-            if (awbTransform.getAwbBundle().isMBundle){
-                    if (mergedType.contains(ExtendedContentType.NATIVE_LIBS)){
-                        File bundleOutputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
+        appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
+            if (awbTransform.getAwbBundle().isMBundle) {
+                if (mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
+                    File bundleOutputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
+                    if (bundleOutputLocation.exists()) {
                         try {
-                            org.apache.commons.io.FileUtils.copyDirectory(bundleOutputLocation,outputLocation);
+
+                            org.apache.commons.io.FileUtils.copyDirectory(bundleOutputLocation, outputLocation);
                             org.apache.commons.io.FileUtils.deleteDirectory(bundleOutputLocation);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-
-                    }else {
-                        File bundleOutputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
-                        try {
-                            mergeZipToZip(bundleOutputLocation,outputLocation);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
                     }
+
+                } else {
+                    File bundleOutputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
+                    File tempDir = new File(outputLocation.getParentFile(), "unzip");
+                    try {
+                        if (bundleOutputLocation.exists() && ZipUtils.isZipFile(bundleOutputLocation)) {
+                            BetterZip.unzipDirectory(bundleOutputLocation, tempDir);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         });
+
+        if (!mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
+            File tempDir = new File(outputLocation.getParentFile(), "unzip");
+            if (outputLocation != null && outputLocation.exists() && ZipUtils.isZipFile(outputLocation)) {
+                BetterZip.unzipDirectory(outputLocation, tempDir);
+            }
+            if (tempDir.exists() && tempDir.listFiles() != null) {
+                FileUtils.deleteIfExists(outputLocation);
+                BetterZip.zipDirectory(tempDir, outputLocation);
+            }
+
+        }
 
 
         paths.parallelStream().forEach(s -> processAtlasNativeSo(s));
 
 
-
     }
 
-    private void mergeZipToZip(File bundleOutputLocation, File outputLocation) throws Exception {
-        if (bundleOutputLocation == null || !bundleOutputLocation.exists()){
-            return;
-        }
-
-        File tempDir = new File(outputLocation.getParentFile(),"unzip");
-
-        BetterZip.unzipDirectory(bundleOutputLocation,tempDir);
-
-        if (outputLocation != null && outputLocation.exists()){
-            BetterZip.unzipDirectory(outputLocation,tempDir);
-        }
-
-        if (tempDir.listFiles()!= null) {
-            FileUtils.deleteIfExists(outputLocation);
-            BetterZip.zipDirectory(tempDir, outputLocation);
-        }
-
-        org.apache.commons.io.FileUtils.deleteDirectory(tempDir);
-    }
 
 
     private void createEmptyZipFile(File outputLocation) throws IOException {

@@ -433,6 +433,8 @@ import org.jf.dexlib2.util.ReferenceUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
@@ -441,7 +443,8 @@ import java.util.regex.Pattern;
 public class DexDiffInfo {
 
     private static final Pattern p = Pattern.compile("Ljava/lang/|Ljava/util/|Landroid/app/|Landroid/util/");
-    private Set<DexBackedClassDef> oldClasses = Collections.synchronizedSet(new HashSet<DexBackedClassDef>());
+    private Map<DexBackedClassDef,Integer> oldClasses = new ConcurrentHashMap<>();
+    private TreeMap<Integer,Set<? extends ClassDef>>dexs = new TreeMap<>();
     private Set<DexBackedClassDef> newClasses = Collections.synchronizedSet(new HashSet<DexBackedClassDef>());
     public static Set<DexBackedClassDef> addedClasses = Collections.synchronizedSet(new HashSet<DexBackedClassDef>());
     public static Set<DexBackedClassDef> modifiedClasses = Collections.synchronizedSet(new HashSet<DexBackedClassDef>());
@@ -688,7 +691,7 @@ public class DexDiffInfo {
         FileUtils.writeStringToFile(diffJsonFile, JSON.toJSONString(jsonArray));
     }
 
-    public Set<DexBackedClassDef> getOldClasses() {
+    public Map<DexBackedClassDef,Integer> getOldClasses() {
         return oldClasses;
     }
 
@@ -696,9 +699,6 @@ public class DexDiffInfo {
         return newClasses;
     }
 
-    public void setOldClasses(Set<? extends DexBackedClassDef> oldClasses) {
-        this.oldClasses.addAll(oldClasses);
-    }
 
     public void setNewClasses(Set<? extends DexBackedClassDef> newClasses) {
         this.newClasses.addAll(newClasses);
@@ -726,5 +726,19 @@ public class DexDiffInfo {
                 }
             }
         }
+    }
+
+    public void setOldClasses(String dexNum, Set<? extends DexBackedClassDef> baseClassDefs) {
+        baseClassDefs.forEach(new Consumer<DexBackedClassDef>() {
+            @Override
+            public void accept(DexBackedClassDef dexBackedClassDef) {
+                oldClasses.put(dexBackedClassDef,Integer.valueOf(dexNum));
+            }
+        });
+
+    }
+
+    public Integer getBaseClassDefNum(ClassDef classDef){
+       return oldClasses.get(classDef);
     }
 }

@@ -17,6 +17,7 @@ import java.util.Set;
 
 public class DexPatchDexTool extends PatchDexTool {
     private Set<String>excludeClasses = new HashSet<>();
+    private Set<String>patchClasses = new HashSet<>();
 
     public DexPatchDexTool(List<File> baseDexFiles, List<File> newDexFiles, int apiLevel, Map<String, ClassDef> map, boolean mainBundle) {
         super(baseDexFiles, newDexFiles, apiLevel, map, mainBundle);
@@ -30,11 +31,18 @@ public class DexPatchDexTool extends PatchDexTool {
     public Set<ClassDef> createModifyClasses() throws IOException, PatchException {
         dexDiffer.setTpatch(false);
         dexDiffer.setExludeClasses(excludeClasses);
+        dexDiffer.setPatchClasses(patchClasses);
         return super.createModifyClasses();
     }
 
     @Override
     public void setExculdeClasses(Set<String> classes) {
         this.excludeClasses = classes;
+    }
+
+    @Override
+    public void setPatchClasses(Set<String> classes) {
+        this.patchClasses = classes;
+
     }
 }

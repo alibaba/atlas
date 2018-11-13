@@ -125,10 +125,6 @@ dependencies {
 
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-//    compile('com.taobao.android:atlas_core:5.0.8.1-rc1@aar') {
-//
-//        transitive = true
-//    }
     compile project(':middlewarelibrary')
     compile project(':splashscreen')
     compile project(':databindinglibrary')
@@ -143,6 +139,7 @@ dependencies {
     compile 'com.android.support:support-vector-drawable:25.1.0'
     compile 'com.android.support:support-v4:25.1.0'
     compile rootProject.ext.lib_atlas_update
+    compile 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.0'
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
     compile 'com.android.support:recyclerview-v7:25.3.0'

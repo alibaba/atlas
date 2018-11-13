@@ -217,21 +217,22 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.taobao.atlas.startup.patch.KernalConstants;
 import android.taobao.atlas.startup.DexFileCompat;
+import android.taobao.atlas.startup.patch.KernalConstants;
 import android.util.Log;
+
 import com.taobao.android.runtime.AndroidRuntime;
-import dalvik.system.DexFile;
+
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import dalvik.system.DexFile;
 
 public class BundleReleaser {
     private static final int MSG_ID_DEX_RELEASE_DONE = 1;
@@ -422,11 +423,11 @@ public class BundleReleaser {
         final File[] validDexes = reversionDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir,String pathname) {
-                if (!DexReleaser.isArt() || externalStorage) {
+//                if (!DexReleaser.isArt() || externalStorage) {
                     return pathname.endsWith(DEX_SUFFIX);
-                } else {
-                    return pathname.endsWith(".zip");
-                }
+//                } else {
+//                    return pathname.endsWith(".zip");
+//                }
             }
         });
         dexFiles = new DexFile[validDexes.length];
@@ -516,21 +517,21 @@ public class BundleReleaser {
     }
 
     public boolean checkDexValid(DexFile odexFile) throws IOException {
-        if (DexReleaser.isArt()) {
-            String applicationName = KernalConstants.RAW_APPLICATION_NAME;
-            try {
-                Enumeration<String> enumeration = odexFile.entries();
-                while (enumeration.hasMoreElements()) {
-                    if (enumeration.nextElement().replace("/", ".").equals(applicationName)) {
-                        return true;
-                    }
-                }
-                return false;
-            } catch (Throwable e) {
-                e.printStackTrace();
-                return false;
-            }
-        }
+//        if (DexReleaser.isArt()) {
+//            String applicationName = KernalConstants.RAW_APPLICATION_NAME;
+//            try {
+//                Enumeration<String> enumeration = odexFile.entries();
+//                while (enumeration.hasMoreElements()) {
+//                    if (enumeration.nextElement().replace("/", ".").equals(applicationName)) {
+//                        return true;
+//                    }
+//                }
+//                return false;
+//            } catch (Throwable e) {
+//                e.printStackTrace();
+//                return false;
+//            }
+//        }
         return true;
     }
 

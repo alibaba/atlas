@@ -8,6 +8,7 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.aapt.AaptGeneration;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
@@ -40,6 +41,7 @@ import org.gradle.api.Task;
 import org.gradle.api.internal.tasks.DefaultTaskOutputs;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.specs.AndSpec;
 import org.gradle.api.specs.Spec;
 
 import java.io.File;
@@ -138,6 +140,7 @@ public class TransformReplacer {
         DexMergerTransformCallable.Factory factory = (dexingType1, processOutput, dexOutputDir, dexArchives, mainDexList, forkJoinPool, dexMerger, minSdkVersion, isDebuggable) -> new DexMergerTransformCallable(dexingType1,processOutput,dexOutputDir,dexArchives,mainDexList,forkJoinPool,dexMerger,minSdkVersion,isDebuggable);
         for (TransformTask transformTask: list){
             transformTask.setEnabled(false);
+
 //            AtlasExternalLibsMergerTransform atlasExternalLibsMergerTransform = new AtlasExternalLibsMergerTransform(variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),
 //                    dexingType,
 //                    dexMergerTool,
@@ -345,6 +348,8 @@ public class TransformReplacer {
             for (TransformTask transformTask:list){
                 List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
                 list1.clear();
+                ReflectUtils.updateField(transformTask.getOutputs(),"upToDateSpec",AndSpec.empty());
+
 
             }
         }
@@ -355,6 +360,7 @@ public class TransformReplacer {
             for (TransformTask transformTask:list){
                 List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
                 list1.clear();
+                ReflectUtils.updateField(transformTask.getOutputs(),"upToDateSpec",AndSpec.empty());
 
             }
         }
@@ -365,6 +371,7 @@ public class TransformReplacer {
             for (TransformTask transformTask:list){
                 List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
                 list1.clear();
+                ReflectUtils.updateField(transformTask.getOutputs(),"upToDateSpec",AndSpec.empty());
 
             }
         }
@@ -375,6 +382,8 @@ public class TransformReplacer {
             for (TransformTask transformTask:list){
                 List<Object>list1 = (List<Object>) ReflectUtils.getField(DefaultTaskOutputs.class,transformTask.getOutputs(),"cacheIfSpecs");
                 list1.clear();
+                ReflectUtils.updateField(transformTask.getOutputs(),"upToDateSpec",AndSpec.empty());
+
 
             }
         }

@@ -19,12 +19,14 @@ public class MainArtifactsCollection implements ArtifactCollection {
 
     private Set<ResolvedArtifactResult>fullArtifacts = new HashSet<>();
     private Project project;
+    private String variantName;
 
     Set<ResolvedArtifactResult>mainDexs;
 
-    public MainArtifactsCollection(ArtifactCollection fullArtifacts, Project project) {
+    public MainArtifactsCollection(ArtifactCollection fullArtifacts, Project project,String variantName) {
         this.fullArtifacts = fullArtifacts.getArtifacts();
         this.project = project;
+        this.variantName = variantName;
     }
 
     @Override
@@ -47,7 +49,7 @@ public class MainArtifactsCollection implements ArtifactCollection {
             mainDexs = new HashSet<>();
         for (ResolvedArtifactResult resolvedArtifactResult:fullArtifacts){
             String name = resolvedArtifactResult.getFile().getAbsolutePath();
-            if (AtlasBuildContext.atlasMainDexHelper.getMainManifestFiles().containsKey(name.substring(0,name.lastIndexOf(File.separatorChar)))){
+            if (AtlasBuildContext.atlasMainDexHelperMap.get(variantName).getMainManifestFiles().containsKey(name.substring(0,name.lastIndexOf(File.separatorChar)))){
                 mainDexs.add(resolvedArtifactResult);
             }
         }

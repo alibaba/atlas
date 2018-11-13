@@ -580,6 +580,12 @@ public class BundleInstaller implements Callable{
             Bundle bundle = null;
             if (!mTransitive) {
                 for (int x = 0; x < mLocation.length; x++) {
+                    if (AtlasBundleInfoManager.instance().isMbundle(mLocation[x])){
+                        if (Framework.getBundle(mLocation[x]) == null) {
+                            RuntimeVariables.delegateClassLoader.installMbundle(mLocation[x]);
+                        }
+                        continue;
+                    }
                     if (FileUtils.getUsableSpace(Environment.getDataDirectory()) >= 5) {
                         if (mBundleSourceInputStream != null && mBundleSourceInputStream.length > x
                             && mBundleSourceInputStream[x] != null) {
@@ -629,6 +635,12 @@ public class BundleInstaller implements Callable{
                     Log.e("BundleInstaller",
                         mLocation[x] + "-->" + bundlesForInstall.toString() + ", thread=" + Thread.currentThread());
                     for (String bundleName : bundlesForInstall) {
+                        if (AtlasBundleInfoManager.instance().isMbundle(bundleName)){
+                            if (Framework.getBundle(bundleName) == null){
+                                RuntimeVariables.delegateClassLoader.installMbundle(bundleName);
+                            }
+                            continue;
+                        }
                         if ((bundle = getInstalledBundle(bundleName)) == null) {
                             if ((BaselineInfoManager.instance().isDexPatched(bundleName) || BaselineInfoManager
                                 .instance().isUpdated(bundleName))) {

@@ -211,6 +211,7 @@ package com.taobao.android.builder.tasks.app;
 
 import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -288,7 +289,7 @@ public class ApBuildTask extends DefaultAndroidTask {
         int index = path.lastIndexOf(".apk");
         File APFile = new File(path.substring(0, index) + ".ap");
 
-        addFile(new File(baseVariantOutputData.getProcessManifest().getManifestOutputDirectory(),"AndroidManifest.xml"),
+        addFile(com.android.utils.FileUtils.join(baseVariantOutputData.getProcessManifest().getManifestOutputDirectory(),ApkDataUtils.get(baseVariantOutputData).getDirName(),"AndroidManifest.xml"),
                 "AndroidManifest.xml");
         addFile(apkFile, ApContext.AP_INLINE_APK_FILENAME);
         addFile(new File(

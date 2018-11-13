@@ -324,36 +324,16 @@ public class DiffBundleInfoTask extends BaseTask {
             tagMap.put(obj.getString("pkgName"), obj.getString("unique_tag"));
         }
 
-        // 1. First add the main bundle
-        ArtifactBundleInfo mainBundleInfo = getMainArtifactBundInfo(mainfestFile);
-        mainBundleInfo.setBaseVersion(apVersion);
-        mainBundleInfo.setMainBundle(true);
-        mainBundleInfo.setVersion(appVariantOutputContext.getVariantContext()
-                                          .getVariantConfiguration()
-                                          .getVersionName());
-        if (dependencyDiff.getMainDexDiffs().size() > 0) {
-            mainBundleInfo.setDiffType(DiffType.MODIFY);
-        } else {
-            mainBundleInfo.setDiffType(DiffType.NONE);
-        }
 
-        mainBundleInfo.setSrcUnitTag(jsonObject.getString("unit_tag"));
-        mainBundleInfo.setUnitTag(appVariantOutputContext.getVariantContext().unit_tag);
-
-        artifactBundleInfos.add(mainBundleInfo);
 
         // 2. Add your own bundle
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 appVariantOutputContext.getVariantContext().
                         getVariantConfiguration().getFullName());
 
+        List<AwbBundle>modifyMbundles = new ArrayList<>();
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-
             BundleInfo bundleInfo = awbBundle.bundleInfo;
-            if (awbBundle.isMBundle){
-                continue;
-            }
-
             ArtifactBundleInfo awbBundleInfo = new ArtifactBundleInfo();
             awbBundleInfo.setMainBundle(false);
             awbBundleInfo.setDependency(newDependency(bundleInfo.getDependency(),appVariantOutputContext.getVariantContext()));
@@ -385,8 +365,34 @@ public class DiffBundleInfoTask extends BaseTask {
                 awbBundleInfo.setDiffType(DiffType.NONE);
             }
 
+            if (awbBundle.isMBundle) {
+                if (awbBundleInfo.getDiffType() == DiffType.ADD || awbBundleInfo.getDiffType() == DiffType.MODIFY) {
+                    modifyMbundles.add(awbBundle);
+                }
+                continue;
+            }
+
             artifactBundleInfos.add(awbBundleInfo);
         }
+
+        // 1. First add the main bundle
+        ArtifactBundleInfo mainBundleInfo = getMainArtifactBundInfo(mainfestFile);
+        mainBundleInfo.setBaseVersion(apVersion);
+        mainBundleInfo.setMainBundle(true);
+        mainBundleInfo.setVersion(appVariantOutputContext.getVariantContext()
+                .getVariantConfiguration()
+                .getVersionName());
+        if (dependencyDiff.getMainDexDiffs().size() > 0 || modifyMbundles.size() > 0) {
+            mainBundleInfo.setDiffType(DiffType.MODIFY);
+        } else {
+            mainBundleInfo.setDiffType(DiffType.NONE);
+        }
+
+        mainBundleInfo.setSrcUnitTag(jsonObject.getString("unit_tag"));
+        mainBundleInfo.setUnitTag(appVariantOutputContext.getVariantContext().unit_tag);
+
+        artifactBundleInfos.add(mainBundleInfo);
+
         return artifactBundleInfos;
     }
 

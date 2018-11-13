@@ -322,8 +322,8 @@ public class BundleProguarder {
         Map<String,File> md5Map = input.getMd5Files();
 
         if (input.getAwbBundles().get(0).getAwbBundle().isMainBundle()) {
-            AtlasBuildContext.atlasMainDexHelper.getMainDexFiles().clear();
-            AtlasBuildContext.atlasMainDexHelper.getInputDirs().clear();
+            AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getMainDexFiles().clear();
+            AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().clear();
 
             for (File file : cacheDir.listFiles()) {
                 if (file.getName().endsWith("jar") && ZipUtils.isZipFile(file)) {
@@ -334,10 +334,10 @@ public class BundleProguarder {
                     if ( null != srcFile && srcFile.exists()){
                         String fileName = FileNameUtils.getUniqueJarName(srcFile);
                         FileUtils.copyFile(file,new File(input.proguardOutputDir,   fileName+".jar"));
-                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(fileName,new File(input.proguardOutputDir, fileName + ".jar"),false,false));
+                        AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(fileName,new File(input.proguardOutputDir, fileName + ".jar"),false,false));
                     }else {
                         FileUtils.copyFileToDirectory(file, input.proguardOutputDir);
-                        AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(),new File(input.proguardOutputDir, file.getName()),false,false));
+                        AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(),new File(input.proguardOutputDir, file.getName()),false,false));
 
                     }
 
@@ -534,13 +534,13 @@ public class BundleProguarder {
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
 
-                if (inputLibrary.isDirectory() && AtlasBuildContext.atlasMainDexHelper.getInputDirs().contains(inputLibrary)){
+                if (inputLibrary.isDirectory() && AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().contains(inputLibrary)){
                     input.maindexFolderTransform.put(inputLibrary,obsJar);
-                }else if (AtlasBuildContext.atlasMainDexHelper.inMainDex(inputLibrary)) {
+                }else if (AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).inMainDex(inputLibrary)) {
                     input.maindexFileTransform.put(inputLibrary,obsJar);
 //                    AtlasBuildContext.atlasMainDexHelper.updateMainDexFile(inputLibrary, obsJar);
                 }else if (awbTransform.getAwbBundle().isMainBundle()){
-                    AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(),obsJar,false,false));
+                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(),obsJar,false,false));
                 }
             }
 
@@ -558,8 +558,8 @@ public class BundleProguarder {
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
                 if (awbTransform.getAwbBundle().isMainBundle()){
-                    AtlasBuildContext.atlasMainDexHelper.getInputDirs().clear();
-                    AtlasBuildContext.atlasMainDexHelper.addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(),obsJar,false,false));
+                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().clear();
+                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(),obsJar,false,false));
                 }
 
             }

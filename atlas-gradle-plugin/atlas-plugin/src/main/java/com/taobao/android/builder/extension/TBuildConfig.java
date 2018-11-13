@@ -247,6 +247,26 @@ public class TBuildConfig {
 
     private Boolean allBundlesToMdex = false;
 
+    public Boolean getMergeBundlesDex() {
+        return mergeBundlesDex;
+    }
+
+    public void setMergeBundlesDex(Boolean mergeBundlesDex) {
+        this.mergeBundlesDex = mergeBundlesDex;
+    }
+
+    private Boolean mergeBundlesDex = false;
+
+    public Boolean getScanDupRes() {
+        return scanDupRes;
+    }
+
+    public void setScanDupRes(Boolean scanDupRes) {
+        this.scanDupRes = scanDupRes;
+    }
+
+    private Boolean scanDupRes = false;
+
     public String getAppCoordinate() {
         return appCoordinate;
     }

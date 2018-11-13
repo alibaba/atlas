@@ -346,6 +346,10 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
         // Don't process the removedSubStreams as they were removed in a previous run.
         List<SubStream> copyList = Lists.newArrayListWithCapacity(subStreams.size());
         for (SubStream subStream : subStreams) {
+            if (rootFolder.getName().endsWith("debug") && subStream.getScopes().contains(QualifiedContent.Scope.EXTERNAL_LIBRARIES)){
+                subStream = new SubStream(subStream.getName(),subStream.getIndex(),Sets.immutableEnumSet(
+                        QualifiedContent.Scope.PROJECT),subStream.getTypes(),subStream.getFormat(),subStream.isPresent());
+            }
             copyList.add(
                     subStream.duplicateWithPresent(
                             new File(rootFolder, subStream.getName()+"-"+subStream.getFilename()).exists()));

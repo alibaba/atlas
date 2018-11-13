@@ -172,8 +172,8 @@ public class ResourcesShrinker extends Transform {
         }
 
         List<File> classes = new ArrayList<>();
-        classes.addAll(AtlasBuildContext.atlasMainDexHelper.getInputDirs());
-        classes.addAll(AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars());
+        classes.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs());
+        classes.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars());
         AppVariantOutputContext appVariantOutputContext = variantContext.getAppVariantOutputContext(apkData);
         for (AwbTransform awbTransform : appVariantOutputContext.getAwbTransformMap().values()) {
             classes.addAll(awbTransform.getInputLibraries());

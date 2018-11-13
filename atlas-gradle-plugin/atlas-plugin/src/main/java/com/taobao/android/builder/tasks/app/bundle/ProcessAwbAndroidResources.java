@@ -411,7 +411,7 @@ public class ProcessAwbAndroidResources extends IncrementalTask {
 
         try {
             if (builder instanceof AtlasBuilder) {
-                ((AtlasBuilder) builder).processAwbResources(aapt, aaptPackageCommandBuilder,getEnforceUniquePackageName(),getMainSymbolFile());
+                ((AtlasBuilder) builder).processAwbResources(aapt, aaptPackageCommandBuilder,getMainSymbolFile(),awbBundle.getAndroidLibrary().getSymbolFile(),appVariantContext.getVariantData().getApplicationId());
             }else {
                 builder.processResources(aapt,aaptPackageCommandBuilder);
             }

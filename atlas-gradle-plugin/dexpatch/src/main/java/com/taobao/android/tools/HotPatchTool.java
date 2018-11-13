@@ -2,10 +2,12 @@ package com.taobao.android.tools;
 
 import com.taobao.android.differ.dex.BundleDiffResult;
 import com.taobao.android.inputs.HotPatchInput;
+import com.taobao.android.inputs.TpatchInput;
 import com.taobao.android.object.DexDiffInfo;
 import org.apache.commons.io.FileUtils;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -21,20 +23,17 @@ public class HotPatchTool extends DexPatchTool {
         private Set<String>hotClassList = new HashSet<>();
 
         @Override
-        public File createBundleDexPatch(File newApkUnzipFolder,
+        public List<File> createBundleDexPatch(File newApkUnzipFolder,
                 File baseApkUnzipFolder,
-                File destDex,
-                File tmpDexFile,
+                File destDexFolder,
         boolean mainDex) throws Exception {
             if (input instanceof HotPatchInput){
                 readClassFile(((HotPatchInput) input).hotClassListFile);
             }
             boolean hasDexPatch = false;
             boolean hasHotDexPatch = false;
-            // 比较主bundle的dex
-            if (!tmpDexFile.exists()) {
-                tmpDexFile.mkdirs();
-            }
+            List<File>dexs = new ArrayList<>();
+
             String bundleName = null;
             if (mainDex){
                 bundleName = "com.taobao.maindex";
@@ -43,13 +42,11 @@ public class HotPatchTool extends DexPatchTool {
             }
             List<File> baseDexFiles = getFolderDexFiles(baseApkUnzipFolder);
             List<File> newDexFiles = getFolderDexFiles(newApkUnzipFolder);
-            File dexDiffFile = new File(tmpDexFile, "diff.dex");
-            File hotDiffDexFile = new File(dexDiffFile.getParentFile(),"hot-diff.dex");
             File hotdestDexFile = null;
             if (mainDex) {
-                hotdestDexFile = new File(destDex.getParentFile().getParentFile(), "hot.dex");
+                hotdestDexFile = new File(destDexFolder, "hot.dex");
             }else {
-                hotdestDexFile = new File(destDex.getParentFile(), "hot.dex");
+                hotdestDexFile = new File(destDexFolder, "hot.dex");
 
             }
             PatchDexTool dexTool = new HotDexPatchDexTool(baseDexFiles,
@@ -57,21 +54,24 @@ public class HotPatchTool extends DexPatchTool {
                     DEFAULT_API_LEVEL,
                     null,
                     mainDex);
+            dexTool.setNewPatch(((HotPatchInput)input).newPatch);
             dexTool.setExculdeClasses(((HotPatchInput)input).excludeClasses);
             dexTool.setPatchClassList(hotClassList);
-            DexDiffInfo dexDiffInfo = dexTool.createPatchDex(dexDiffFile);
-            if (dexDiffFile.exists()) {
+            DexDiffInfo dexDiffInfo = dexTool.createPatchDex(destDexFolder);
+            if (destDexFolder.exists() && destDexFolder.listFiles()!= null) {
+                File dexDiffFile = new File(destDexFolder,TPatchTool.DEX_NAME);
                 hasDexPatch = true;
                 BundleDiffResult bundleDiffResult = new BundleDiffResult();
                 bundleDiffResult.setBundleName(bundleName);
                 bundleDiffResults.add(bundleDiffResult);
                 diffPatchInfos.add(bundleDiffResult);
                 dexDiffInfo.save(bundleDiffResult);
-                FileUtils.copyFile(dexDiffFile, destDex);
+                dexs.add(dexDiffFile);
+
             }
-            if (hotDiffDexFile.exists()){
+            if (hotdestDexFile.exists()){
+                dexs.add(hotdestDexFile);
                 hasHotDexPatch = true;
-                FileUtils.copyFile(hotDiffDexFile, hotdestDexFile);
 
             }
             if (hasDexPatch&&!hasHotDexPatch){
@@ -80,11 +80,9 @@ public class HotPatchTool extends DexPatchTool {
                 bundleTypes.put(bundleName,3);
             }else if (!hasDexPatch && hasHotDexPatch){
                 bundleTypes.put(bundleName,2);
-
             }
-            FileUtils.deleteDirectory(tmpDexFile);
 
-            return destDex;
+            return dexs;
            }
 
     private void readClassFile(File hotClassListFile) throws IOException {

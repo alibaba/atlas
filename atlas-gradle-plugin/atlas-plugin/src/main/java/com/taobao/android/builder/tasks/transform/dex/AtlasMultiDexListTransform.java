@@ -9,6 +9,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.BaseProguardAction;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
 import com.android.build.gradle.internal.transforms.TransformInputUtil;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
@@ -84,6 +85,11 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
     }
 
     @Override
+    public Collection<File> getSecondaryFileOutputs() {
+        return ImmutableList.of(mainDexListFile);
+    }
+
+    @Override
     public boolean isIncremental() {
         return false;
     }
@@ -97,8 +103,8 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
         LoggingManager loggingManager = transformInvocation.getContext().getLogging();
         loggingManager.captureStandardOutput(LogLevel.INFO);
         loggingManager.captureStandardError(LogLevel.WARN);
-        Collection<File> inputs =AtlasBuildContext.atlasMainDexHelper.getAllMainDexJars();
-        inputs.addAll(AtlasBuildContext.atlasMainDexHelper.getInputDirs());
+        Collection<File> inputs =AtlasBuildContext.atlasMainDexHelperMap.get(variantScope.getFullVariantName()).getAllMainDexJars();
+        inputs.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantScope.getFullVariantName()).getInputDirs());
         if (AtlasBuildContext.androidBuilderMap.get(variantScope.getGlobalScope().getProject()) == null) {
             super.transform(transformInvocation);
         } else if (AtlasBuildContext.androidBuilderMap.get(variantScope.getGlobalScope().getProject()).multiDexer == null) {
@@ -109,7 +115,7 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
         Collection<File>files = fastMultiDexer.repackageJarList(inputs, mainDexListFile,variantScope.getVariantData().getName().toLowerCase().endsWith("release"));
 
         if (files!= null && files.size() > 0){
-            AtlasBuildContext.atlasMainDexHelper.addAllMainDexJars(files);
+            AtlasBuildContext.atlasMainDexHelperMap.get(variantScope.getFullVariantName()).addAllMainDexJars(files);
 
         }
     }

@@ -217,7 +217,7 @@ public class AtlasFixStackFramesTransform extends Transform {
             }
 
             waitableExecutor.waitForTasksWithQuickFail(true);
-            AtlasBuildContext.atlasMainDexHelper.updateMainDexFiles(mainDexTransformFiles);
+            AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).updateMainDexFiles(mainDexTransformFiles);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
@@ -316,7 +316,7 @@ public class AtlasFixStackFramesTransform extends Transform {
 
     private boolean inMainDex(JarInput jarInput) throws IOException {
 
-        return AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput);
+        return AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).inMainDex(jarInput);
     }
 
 }

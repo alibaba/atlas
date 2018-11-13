@@ -434,18 +434,45 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
-/**
- * compile dex diff
- * Created by shenghua.nish on 2016-03-09 下午2:10.
- */
 public class DexDiffer {
 
     private List<File> baseDexFiles = Lists.newArrayList();
     private List<File> newDexFiles = Lists.newArrayList();
     private int apiLevel;
+
+    public String getNoPatchDexNum() {
+        return noPatchDexNum;
+    }
+
+    private String noPatchDexNum;
+
+    private static final String NO_PATCH_DEX = "NO_PATCH_DEX";
+
+
+    private static final String PATCH_VERSION = "PATCH_VERSION";
+
+
+    public boolean isNewPatch() {
+        return newPatch;
+    }
+
+    public void setNewPatch(boolean newPatch) {
+        this.newPatch = newPatch;
+    }
+
+    private boolean newPatch = true;
+
+
     private Map<String, org.jf.dexlib2.iface.ClassDef>lastBundleClassMap = new HashMap<String, org.jf.dexlib2.iface.ClassDef>();
     private DexDiffInfo dexDiffInfo = new DexDiffInfo();
+
+    public List<DiffClass> getDiffClasses() {
+        return diffClasses;
+    }
+
+    private List<DiffClass>diffClasses = new ArrayList<>();
 
     public Set<String> getExludeClasses() {
         return exludeClasses;
@@ -456,6 +483,17 @@ public class DexDiffer {
     }
 
     private Set<String>exludeClasses = new HashSet<>();
+
+    public Set<String> getPatchClasses() {
+        return patchClasses;
+    }
+
+    public void setPatchClasses(Set<String> patchClasses) {
+        this.patchClasses = patchClasses;
+    }
+
+    private Set<String>patchClasses = new HashSet<>();
+
     //dex filter
     private DexDiffFilter dexDiffFilter;
     //
@@ -521,6 +559,10 @@ public class DexDiffer {
                 continue;
             }
 
+            if (!tpatch&&patchClasses.size() > 0 && !patchClasses.contains(newClassDef.getType())){
+                continue;
+            }
+
             if (!tpatch &&(newClassDef.getType().contains("/R$")||newClassDef.getType().contains("/R;"))){
                 continue;
             }
@@ -531,14 +573,28 @@ public class DexDiffer {
                 classDiffInfo.setType(DiffType.OVERRIDE);
                 classDiffInfo.setClassDef(baseClassDef);
                 dexDiffInfo.getClassDiffInfoMap().put(className,classDiffInfo);
+                DiffClass diffClass = new DiffClass(baseClassDef.getType(),dexDiffInfo.getBaseClassDefNum(baseClassDef));
+                diffClasses.add(diffClass);
             }
             ClassDiffInfo classDiffInfo = compareClassDef(baseClassDef, newClassDef);
-            if (DiffType.MODIFY.equals(classDiffInfo.getType()) || DiffType.ADD.equals(classDiffInfo.getType())) {
+            if (DiffType.MODIFY.equals(classDiffInfo.getType())){
+                DiffClass diffClass = new DiffClass(baseClassDef.getType(),dexDiffInfo.getBaseClassDefNum(baseClassDef));
+                diffClasses.add(diffClass);
+                dexDiffInfo.getClassDiffInfoMap().put(className, classDiffInfo);
+
+            } else if (DiffType.ADD.equals(classDiffInfo.getType())) {
                 dexDiffInfo.getClassDiffInfoMap().put(className, classDiffInfo);
             }
         }
+
+        if (noPatchDexNum != null){
+            diffClasses.add(new DiffClass(NO_PATCH_DEX,Integer.valueOf(noPatchDexNum)));
+        }
+
+        diffClasses.add(new DiffClass(PATCH_VERSION,newPatch ? 2:1));
         return dexDiffInfo;
     }
+
 
 
     public void dexFilter() throws PatchException {
@@ -553,9 +609,19 @@ public class DexDiffer {
      */
     private void scanBaseDexFile() throws IOException {
         for (File baseDexFile : baseDexFiles) {
+            String s = baseDexFile.getName().substring(7);
+            String dexNum = s.startsWith(".")? "0":s.substring(0,s.indexOf("."));
             DexBackedDexFile baseBackedDexFile = DexFileFactory.loadDexFile(baseDexFile, Opcodes.getDefault());
             final Set<? extends DexBackedClassDef> baseClassDefs = baseBackedDexFile.getClasses();
-            dexDiffInfo.setOldClasses(baseClassDefs);
+            baseClassDefs.forEach(new Consumer<DexBackedClassDef>() {
+                @Override
+                public void accept(DexBackedClassDef dexBackedClassDef) {
+                    if (dexBackedClassDef.getType().equals("Lcom/ali/mobisecenhance/ReflectMap;")){
+                        noPatchDexNum = dexNum;
+                    }
+                }
+            });
+            dexDiffInfo.setOldClasses(dexNum,baseClassDefs);
             for (DexBackedClassDef baseClassDef : baseClassDefs) {
                 String className = getDalvikClassName(baseClassDef.getType());
                 baseClassDefMap.put(className, baseClassDef);
@@ -808,6 +874,27 @@ public class DexDiffer {
             throw new RuntimeException("Not a valid dalvik class name");
         }
         return StringUtils.replace(className.substring(1, className.length() - 1), "/", ".");
+    }
+
+    private static class DiffClass implements Comparable<DiffClass>{
+        public String className;
+        public Integer dexNumber;
+
+        public DiffClass(String className, Integer dexNumber) {
+            this.className = className;
+            this.dexNumber = dexNumber;
+        }
+
+
+        @Override
+        public String toString() {
+            return dexNumber+"-"+className;
+        }
+
+        @Override
+        public int compareTo(DiffClass o) {
+            return Integer.valueOf(dexNumber)-Integer.valueOf(o.dexNumber);
+        }
     }
 
 

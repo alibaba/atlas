@@ -1,0 +1,287 @@
+//是否需要把项目发送到远程maven库
+ext.publishToRemote = true
+ext.publishDefaultArtifact = !"true".equals(project.getProperties().get("org.gradle.parallel"))
+ext.publishApk = false
+ext.isApplication = false
+
+if (!project.getBuildFile().exists()) {
+    return;
+}
+
+def versionFile = new File(project.getRootDir(), "version.properties");
+HashMap<String, String> versionMap = new HashMap<String, String>();
+if (versionFile.exists()) {
+    versionFile.eachLine {line ->
+        String[] arr = line.split(".version=");
+        if (arr.length == 2) {
+            StringBuilder b = new StringBuilder(arr[0]);
+            b.replace(arr[0].lastIndexOf("."), arr[0].lastIndexOf(".") + 1, ":");
+            versionMap.put(b.toString(), arr[1])
+        }
+    }
+}
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+configurations {
+    providedCompile
+    compile.extendsFrom providedCompile
+}
+
+configurations.all {
+    resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    resolutionStrategy {
+        for (String key : versionMap.keySet()) {
+            force(key + ":" + versionMap.get(key))
+        }
+    }
+}
+
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+
+if (!project.getRootProject().hasProperty("aarMap")) {
+    project.getRootProject().ext.set("aarMap", new HashSet<String>())
+}
+
+def deployVersion = System.getProperty('deployVersion')
+def mtlVersion = System.getenv("MUPP_VERSION_NAME");
+
+project.afterEvaluate {
+
+    if (project.plugins.hasPlugin("com.taobao.android.library") || project.plugins.hasPlugin("com.android.library")) {
+        project.getRootProject().aarMap.add(project.name)
+    }
+
+    ext.isApplication = (project.plugins.hasPlugin("com.android.application") || project.plugins.hasPlugin(
+            "com.taobao.android.application"))
+
+    tasks.whenTaskAdded {task ->
+        if (task.name.startsWith("generatePomFileForMavenPublication")) {
+            task.mustRunAfter(project.getTasks().withType(Zip.class));
+            task.doFirst {
+                project.publishing.publications.maven(MavenPublication) {
+                    if (!components.hasWithName("java") && !isApplication) {
+                        File publishFile = file("${project.buildDir}/outputs/awb/${project.name}-release.awb");
+                        if (!publishFile.exists()) {
+                            publishFile = file("${project.buildDir}/outputs/aar/${project.name}-release.aar");
+                        }
+                        if (!publishFile.exists()) {
+                            publishFile = file("${project.buildDir}/outputs/awb/${project.name}-debug.awb");
+                        }
+                        if (!publishFile.exists()) {
+                            publishFile = file("${project.buildDir}/outputs/aar/${project.name}-debug.aar");
+                        }
+                        artifact publishFile.getPath()
+                    }
+                }
+            }
+        }
+
+        if (isApplication && !publishApk) {
+            if (task.name.startsWith("publish")) {
+                task.setEnabled(false)
+            }
+        }
+    }
+}
+
+
+
+publishing {
+
+    if (null != deployVersion) {
+        version = deployVersion
+    } else if (null != mtlVersion) {
+        version = mtlVersion
+    }
+
+    publications {
+        maven(MavenPublication) {
+            version version
+
+            task sourceJar(type: Jar) {
+                classifier = 'source'
+                version = version
+                try {
+                    if (components.hasWithName("java")) {
+                        from sourceSets.main.allJava
+                    } else {
+                        from android.sourceSets.main.java.srcDirs
+                    }
+                } catch (Throwable e) {
+                }
+            }
+
+            artifact sourceJar
+
+            if (components.hasWithName("java")) {
+                from components.java
+            } else if (components.hasWithName("android") && !isApplication) {
+                from components.android
+
+                updatePom(pom, versionMap, groupId)
+
+                if (components.hasWithName("android")) {
+                    pom.withXml {
+                        def dependenciesNode = asNode().dependencies[0]
+                        if (getGradle().startParameter.toString().contains("assembleDebug")) {
+                            configurations.debugCompile.allDependencies.each {
+                                appendBuildTypeDependency(it, versionMap, dependenciesNode, groupId)
+                            }
+                        } else {
+                            configurations.releaseCompile.allDependencies.each {
+                                appendBuildTypeDependency(it, versionMap, dependenciesNode, groupId)
+                            }
+                        }
+                    }
+                }
+            } else if (!isApplication) {
+
+                pom.withXml {
+
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    def providedCompiles = new HashSet();
+                    configurations.providedCompile.allDependencies.each {
+                        addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles , true)
+                    }
+
+                    configurations.compile.allDependencies.each {
+                        addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles)
+                    }
+
+                    if (getGradle().startParameter.toString().contains("assembleDebug")) {
+                        configurations.debugCompile.allDependencies.each {
+                            addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles)
+                        }
+                    } else {
+                        configurations.releaseCompile.allDependencies.each {
+                            addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    repositories {
+        mavenLocal()
+        if (publishToRemote) {
+            if (version.endsWith("-SNAPSHOT")) {
+                maven {
+                    url 'http://mvnrepo.alibaba-inc.com/nexus/content/repositories/snapshots'
+                    credentials {
+                        username = 'snapshotsAdmin'
+                        password = '123456'
+                    }
+                }
+            } else {
+                def accountMap = getAccount();
+                maven {
+                   url RELEASE_REPOSITORY_URL
+//                   credentials {
+//                       username = accountMap.get("username")
+//                       password = accountMap.get("password")
+//                   }
+                }
+            }
+        }
+    }
+}
+
+private HashMap getAccount() {
+    HashMap<String, String> accountMap = new HashMap()
+    def parsedSettingsXml
+    def settingsFile = '/home/admin/software/apache-maven-3.2.1/conf/settings.xml'
+    def defaultSettingsFile = System.getProperty("user.home") + "/.m2/settings.xml"
+
+    if (file(settingsFile).exists() || file(defaultSettingsFile).exists()) {
+        if (file(settingsFile).exists()) {
+            parsedSettingsXml = (new XmlParser()).parse(settingsFile);
+        } else if (file(defaultSettingsFile).exists()) {
+            parsedSettingsXml = (new XmlParser()).parse(defaultSettingsFile);
+        }
+
+        parsedSettingsXml.servers[0].server.each {server ->
+            if ("releases" == server.id.text()) {
+                accountMap.put("id", server.id.text())
+                accountMap.put("username", server.username.text())
+                accountMap.put("password", server.password.text())
+            }
+        }
+    } else {
+        accountMap.put("id", "releases")
+        accountMap.put("username", "admin")
+        accountMap.put("password", "screct")
+    }
+
+    return accountMap
+}
+
+private void updatePom(pom, versionMap, groupId) {
+    pom.withXml {
+        asNode().dependencies.'*'.each {
+            if (it.groupId.text() == "" || it.artifactId.text() == "" ){
+                it.parent().remove(it)
+                return
+            }
+            String key = it.groupId.text() + ":" + it.artifactId.text();
+            String version = versionMap.get(key);
+            if (version) {
+                it.version*.value = version
+            }
+
+            if (project.configurations.providedCompile.allDependencies.find {dep -> dep.name == it.artifactId.text()}) {
+                it.scope*.value = 'provided'
+            } else if (project.configurations.compile.allDependencies.find {dep -> dep.name == it.artifactId.text()}) {
+                it.scope*.value = 'compile'
+            }
+
+            if (it.groupId.text() == groupId && project.getRootProject().aarMap.contains(it.artifactId.text())) {
+                //TODO
+                it.appendNode('type', 'aar')
+            }
+        }
+    }
+}
+
+private void appendBuildTypeDependency(it, versionMap, dependenciesNode, groupId) {
+    if (it.group != null && (it.name != null || "unspecified" == it.name) && it.version != null) {
+        def dependencyNode = dependenciesNode.appendNode('dependency')
+        dependencyNode.appendNode('groupId', it.group)
+        dependencyNode.appendNode('artifactId', it.name)
+        String version = versionMap.get(it.groupId.text() + ":" + it.artifactId.text());
+        dependencyNode.appendNode('version', version ? version : it.version)
+        if (it.group == groupId && project.getRootProject().aarMap.contains(it.name)) {
+            dependencyNode.appendNode('type', 'aar')
+        }
+    }
+}
+
+private void addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles , provided = false) {
+    if (it.group != null && (it.name != null || "unspecified" == it.name) && it.version != null) {
+        if (providedCompiles.contains(it.group + "." + it.name)) {
+            return
+        }
+        def dependencyNode = dependenciesNode.appendNode('dependency')
+        dependencyNode.appendNode('groupId', it.group)
+        dependencyNode.appendNode('artifactId', it.name)
+        String version = versionMap.get(it.group + ":" + it.name);
+        dependencyNode.appendNode('version', version ? version : it.version)
+        dependencyNode.appendNode('scope', provided ? 'provided' : 'compile')
+        if (it.group == groupId && project.getRootProject().aarMap.contains(it.name)) {
+            dependencyNode.appendNode('type', 'aar')
+        }else{
+            Set types = it.artifacts;
+            if (types && types.size()>0){
+                dependencyNode.appendNode('type', types[0].type)
+            }
+        }
+        providedCompiles.add(it.group + "." + it.name)
+    }
+}

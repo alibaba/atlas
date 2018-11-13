@@ -200,6 +200,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
 //        }
 
         List<QualifiedContent> listFiles = new ArrayList<>();
+        Set<File>mainJars = new HashSet<>();
 
         try {
             for (TransformInput input : transformInvocation.getInputs()) {
@@ -217,9 +218,11 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                         listFiles.add(jarInput);
                         continue;
                     }
+                    mainJars.add(jarInput.getFile());
                     if (!validJar(jarInput)){
                         continue;
                     }
+
                     logger.verbose("Jar input %s", jarInput.getFile().toString());
                     List<File> dexArchives =
                             processJarInput(
@@ -229,7 +232,22 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                                     outputProvider);
                     cacheItems.putAll(jarInput,dexArchives);
 
+                }
 
+            }
+
+            for (File file:AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars()){
+                if (mainJars.contains(file)){
+                    continue;
+                }else {
+                    JarInput jarInput = makeJarInput(file);
+                    List<File> dexArchives =
+                            processJarInput(
+                                    transformInvocation.getContext(),
+                                    false,
+                                    jarInput,
+                                    outputProvider);
+                    cacheItems.putAll(jarInput,dexArchives);
                 }
             }
 
@@ -268,7 +286,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
     }
 
     private boolean inMainDex(JarInput jarInput) {
-        boolean flag = AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput);
+        boolean flag = AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).inMainDex(jarInput);
         return flag;
     }
 
@@ -818,7 +836,7 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
 
 
     private JarInput makeJarInput(File file) {
-        BuildAtlasEnvTask.FileIdentity finalFileIdentity = AtlasBuildContext.atlasMainDexHelper.get(file);
+        BuildAtlasEnvTask.FileIdentity finalFileIdentity = AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).get(file);
         return new JarInput() {
             @Override
             public Status getStatus() {

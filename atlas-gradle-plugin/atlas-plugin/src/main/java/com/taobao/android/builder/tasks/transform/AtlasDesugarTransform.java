@@ -222,7 +222,7 @@ public class AtlasDesugarTransform extends Transform {
                 processNonCachedOnes(getClasspath(transformInvocation));
                 waitableExecutor.waitForTasksWithQuickFail(true);
             }
-            AtlasBuildContext.atlasMainDexHelper.updateMainDexFiles(transformFiles);
+            AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).updateMainDexFiles(transformFiles);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TransformException(e);
@@ -235,7 +235,7 @@ public class AtlasDesugarTransform extends Transform {
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         Preconditions.checkNotNull(outputProvider);
         outputProvider.deleteAll();
-        AtlasBuildContext.atlasMainDexHelper.getInputDirs().clear();
+        AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).getInputDirs().clear();
         for (TransformInput input : transformInvocation.getInputs()) {
             for (DirectoryInput dirInput : input.getDirectoryInputs()) {
                 Path rootFolder = dirInput.getFile().toPath();
@@ -243,7 +243,7 @@ public class AtlasDesugarTransform extends Transform {
                 if (Files.notExists(rootFolder)) {
                     PathUtils.deleteIfExists(output);
                 } else {
-                    AtlasBuildContext.atlasMainDexHelper.getInputDirs().add(output.toFile());
+                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).getInputDirs().add(output.toFile());
                     Set<Status> statuses = Sets.newHashSet(dirInput.getChangedFiles().values());
                     boolean reRun =
                             !transformInvocation.isIncremental()
@@ -588,6 +588,6 @@ public class AtlasDesugarTransform extends Transform {
 
     private boolean inMainDex(JarInput jarInput) throws IOException {
 
-        return AtlasBuildContext.atlasMainDexHelper.inMainDex(jarInput);
+        return AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).inMainDex(jarInput);
     }
 }

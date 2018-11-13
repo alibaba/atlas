@@ -1,9 +1,6 @@
 package com.taobao.atlas.dexmerge;
 
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.*;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.taobao.atlas.runtime.RuntimeVariables;
@@ -43,6 +40,8 @@ public class DexMergeClient {
 
     public DexMergeClient(MergeCallback mergeCallBack) {
         this.mergeCallBack = mergeCallBack;
+        IntentFilter intentFilter = new IntentFilter("com.taobao.atlas.intent.PATCH_VERSION");
+        RuntimeVariables.androidApplication.registerReceiver(new PatchVersionReceiver(),intentFilter);
     }
 
     public boolean prepare() {

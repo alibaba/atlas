@@ -208,11 +208,6 @@
 
 package android.taobao.atlas.framework;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Set;
-
 import android.app.Activity;
 import android.app.Application;
 import android.app.Dialog;
@@ -222,27 +217,36 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Looper;
-import android.taobao.atlas.runtime.ActivityTaskMgr;
-import android.taobao.atlas.runtime.DelegateResources;
-import android.taobao.atlas.runtime.SecurityHandler;
-import android.taobao.atlas.util.ApkUtils;
-import android.taobao.atlas.util.WrapperUtil;
-import android.text.TextUtils;
-import android.util.Log;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.BundleListener;
-
+import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AssertionArrayException;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.ActivityManagerDelegate;
+import android.taobao.atlas.runtime.ActivityTaskMgr;
 import android.taobao.atlas.runtime.BundleLifecycleHandler;
 import android.taobao.atlas.runtime.ClassNotFoundInterceptorCallback;
 import android.taobao.atlas.runtime.DelegateClassLoader;
+import android.taobao.atlas.runtime.DelegateResources;
 import android.taobao.atlas.runtime.FrameworkLifecycleHandler;
 import android.taobao.atlas.runtime.InstrumentationHook;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.runtime.SecurityHandler;
+import android.taobao.atlas.util.ApkUtils;
+import android.taobao.atlas.util.WrapperUtil;
+import android.taobao.atlas.util.log.impl.AtlasMonitor;
+import android.text.TextUtils;
+import android.util.Log;
+
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.BundleListener;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static android.taobao.atlas.runtime.InstrumentationHook.sOnIntentRedirectListener;
 
@@ -278,6 +282,7 @@ public class Atlas {
         if(application==null){
             throw new RuntimeException("application is null");
         }
+        Log.e("Atlas","Atlas patch sucecess!");
         ApplicationInfo app_info = application.getApplicationInfo();
         sAPKSource = app_info.sourceDir;
         boolean DEBUG = (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
@@ -328,7 +333,7 @@ public class Atlas {
             }
             if(RuntimeVariables.sCurrentProcessName.equals(RuntimeVariables.androidApplication.getPackageName())) {
                 System.setProperty("BUNDLES_INSTALLED", "true");
-                application.getBaseContext().sendBroadcast(new Intent("com.taobao.taobao.action.BUNDLES_INSTALLED"));
+//                application.getBaseContext().sendBroadcast(new Intent("com.taobao.taobao.action.BUNDLES_INSTALLED"));
             }
         }
     }
@@ -377,6 +382,7 @@ public class Atlas {
             Log.e("Atlas","empty location");
             return;
         }
+
         if (Framework.getBundle(location) == null){
             checkingThread(false);
             BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{location});
@@ -388,6 +394,7 @@ public class Atlas {
         if (TextUtils.isEmpty(location)){
             Log.e("Atlas","empty location");
         }
+
         if (Framework.getBundle(location) == null) {
             checkingThread(false);
             BundleInstallerFetcher.obtainInstaller().installSync(new String[]{location}, new InputStream[]{input});
@@ -399,6 +406,7 @@ public class Atlas {
         if (TextUtils.isEmpty(location)){
             Log.e("Atlas","empty location");
         }
+
         if (Framework.getBundle(location) == null) {
             checkingThread(false);
             BundleInstallerFetcher.obtainInstaller().installSync(new String[]{location}, new File[]{file});
@@ -452,6 +460,7 @@ public class Atlas {
     public void installBundleTransitivelyAsync(String[] locations,BundleInstaller.InstallListener listener){
         BundleInstallerFetcher.obtainInstaller().installTransitivelyAsync(locations,listener);
     }
+
 
     /**
      * idle时候安装一批低优先级的apk内部的bundle
@@ -544,21 +553,34 @@ public class Atlas {
      * @param dependency 被依赖bundle的classloader
      * @param resourceDependencyNeed 是否需要使用被依赖bundle的资源
      */
+
+    @Deprecated
     public void requestRuntimeDependency(ClassLoader source, ClassLoader dependency,boolean resourceDependencyNeed){
-        if(source == getClass().getClassLoader()){
-            throw new IllegalArgumentException("PathClassLoader can not have bundle dependency");
-        }
-        if(dependency == getClass().getClassLoader()){
-            //bundle can use main dex class by default
+        Map<String,Object>detailMap = new HashMap<>();
+        if(source == getClass().getClassLoader() && dependency instanceof BundleClassLoader){
+            detailMap.put("source",Atlas.class.getClassLoader().getClass().getSimpleName());
+            detailMap.put("dependency",((BundleClassLoader) dependency).location);
+            detailMap.put("method","requestRuntimeDependency(ClassLoader, ClassLoader,boolean)");
+
+            AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
+
+            Log.e("Atlas","PathClassLoader can not have bundle dependency,this method will be removed in next stage");
             return;
         }
-        if(!(source instanceof BundleClassLoader)){
-            throw new IllegalArgumentException("source must be bundleclassloader");
+        if (source == getClass().getClassLoader() && dependency == getClass().getClassLoader()){
+            detailMap.put("source",Atlas.class.getClassLoader().getClass().getSimpleName());
+            detailMap.put("dependency",Atlas.class.getClassLoader().getClass().getSimpleName());
+            detailMap.put("method","requestRuntimeDependency(ClassLoader, ClassLoader,boolean)");
+            AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
+            Log.e("Atlas","PathClassLoader can not have runtime PathClassLoader dependency, this method will be removed in next stage");
+            return;
+
         }
-        if(!(dependency instanceof BundleClassLoader)){
-            throw new IllegalArgumentException("dependency must be bundleclassloader");
+        if (source instanceof BundleClassLoader && dependency == getClass().getClassLoader()){
+            return;
         }
         String dependencyLocation = ((BundleClassLoader)dependency).location;
+
         ((BundleClassLoader)source).addRuntimeDependency(dependencyLocation);
 
         if(resourceDependencyNeed) {
@@ -573,17 +595,64 @@ public class Atlas {
      * @param resourceDependencyNeed 是否需要使用被依赖bundle的资源
      * @throws BundleException
      */
+    @Deprecated
     public void requestRuntimeDependency(ClassLoader source,String dependencyBundle,boolean resourceDependencyNeed) throws BundleException{
-        checkingThread(true);
+        Map<String,Object>detailMap = new HashMap<>();
         BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
         if(impl==null){
+            checkingThread(true);
             BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{dependencyBundle});
         }
         impl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
         if(impl==null){
             throw new BundleException("failed install deppendencyBundle : " +dependencyBundle);
         }else{
-            requestRuntimeDependency(source,impl.getClassLoader(),resourceDependencyNeed);
+            if(source instanceof BundleClassLoader && impl.getClassLoader() instanceof BundleClassLoader){
+                requestRuntimeDependency(source,impl.getClassLoader(),resourceDependencyNeed);
+            }else if (source instanceof BundleClassLoader && impl.getClassLoader() == Framework.getSystemClassLoader()){
+                ((BundleClassLoader)source).addRuntimeDependency(dependencyBundle);
+            }else if (source  == Framework.getSystemClassLoader() && impl.getClassLoader() instanceof BundleClassLoader){
+                detailMap.put("source",Atlas.class.getClassLoader().getClass().getSimpleName());
+                detailMap.put("dependency",dependencyBundle);
+                detailMap.put("method","requestRuntimeDependency(ClassLoader,String,boolean)");
+                AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
+                Log.e("Atlas"," PathClassLoader can not have bundle dependency "+dependencyBundle);
+            }else {
+                detailMap.put("source",Atlas.class.getClassLoader().getClass().getSimpleName());
+                detailMap.put("dependency",dependencyBundle);
+                detailMap.put("method","requestRuntimeDependency(ClassLoader,String,boolean)");
+                AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
+                Log.e("Atlas"," PathClassLoader can not have runtime dependency of pathClassloader"+dependencyBundle);
+            }
+        }
+    }
+
+    public void requestRuntimeDependency(String bundleName,String dependencyBundle,boolean resourceDependencyNeed) throws BundleException{
+        Map<String,Object>detailMap = new HashMap<>();
+        BundleImpl dependecyBundleImpl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
+        BundleImpl bundle = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
+
+        if(dependecyBundleImpl==null||dependecyBundleImpl ==null){
+            checkingThread(true);
+            BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{dependencyBundle,bundleName});
+        }
+
+        if(dependecyBundleImpl==null || bundle == null){
+            throw new BundleException("failed install deppendencyBundle : " +dependencyBundle);
+        }else{
+            if(bundle.getClassLoader() instanceof BundleClassLoader && dependecyBundleImpl.getClassLoader() instanceof BundleClassLoader){
+                requestRuntimeDependency(bundle.getClassLoader(),dependecyBundleImpl.getClassLoader(),resourceDependencyNeed);
+            }else if (bundle.getClassLoader() instanceof BundleClassLoader && dependecyBundleImpl.getClassLoader() == Framework.getSystemClassLoader()){
+                ((BundleClassLoader)bundle.getClassLoader()).addRuntimeDependency(dependencyBundle);
+            }else if (bundle.getClassLoader()  == Framework.getSystemClassLoader() && dependecyBundleImpl.getClassLoader() instanceof BundleClassLoader){
+                detailMap.put("source",bundleName);
+                detailMap.put("dependency",dependencyBundle);
+                detailMap.put("method","requestRuntimeDependency(String,String,boolean)");
+                AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
+                Log.e("Atlas" ,"PathClassLoader can not have bundle dependency "+dependencyBundle);
+            }else {
+                AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getTotalDependency().add(dependencyBundle);
+            }
         }
     }
 

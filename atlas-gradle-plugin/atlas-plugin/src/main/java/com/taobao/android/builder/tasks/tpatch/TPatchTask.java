@@ -235,6 +235,7 @@ import com.taobao.android.inputs.HotPatchInput;
 import com.taobao.android.inputs.TpatchInput;
 import com.taobao.android.object.ApkFileList;
 import com.taobao.android.object.ArtifactBundleInfo;
+import com.taobao.android.object.DiffType;
 import com.taobao.android.tpatch.model.ApkBO;
 import com.taobao.android.tpatch.model.BundleBO;
 import org.apache.commons.io.FileUtils;
@@ -249,9 +250,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 import static com.android.build.gradle.internal.api.ApContext.APK_FILE_MD5;
 
@@ -307,6 +310,17 @@ public class TPatchTask extends BaseTask {
         ApkBO apkBO = new ApkBO(baseApk, baseApkVersion, baseApk.getName());
         ApkBO newApkBO = new ApkBO(newApk, newApkVersion, newApk.getName());
         BaseInput baseInput = createInput(apkBO,newApkBO,retainMainBundleRes);
+        if (baseInput.patchType.equals(PatchType.DEXPATCH)){
+            List<ArtifactBundleInfo> modifyBundles = new ArrayList<ArtifactBundleInfo>();
+            baseInput.artifactBundleInfos.forEach(artifactBundleInfo -> {
+                if (artifactBundleInfo.getDiffType().equals(DiffType.MODIFY)){
+                    modifyBundles.add(artifactBundleInfo);
+                }
+            });
+            if (modifyBundles.size() > 1){
+                throw new Exception("more than 1 bundle has changed:"+JSON.toJSONString(modifyBundles));
+            }
+        }
         PatchManager patchManager = new PatchManager(baseInput);
         patchManager.setLogger(getILogger());
         getLogger().info("start to do patch");
@@ -347,6 +361,7 @@ public class TPatchTask extends BaseTask {
         tpatchInput.outPutJson = new File(getOutPatchFolder(), "patchs.json");
         tpatchInput.artifactBundleInfos = patchContext.artifactBundleInfos;
         tpatchInput.diffBundleDex = true;
+        tpatchInput.newPatch = patchContext.newPatch;
         tpatchInput.mainBundleName = patchContext.mainBundleName;
         tpatchInput.retainMainBundleRes = retainMainBundleRes;
         if (StringUtils.isNotBlank(patchContext.excludeFiles)) {
@@ -360,6 +375,7 @@ public class TPatchTask extends BaseTask {
 
             }else {
                 tpatchInput.patchType = PatchType.DEXPATCH;
+                ((DexPatchInput)tpatchInput).patchClasses= patchContext.patchClasses;
                 ((DexPatchInput)tpatchInput).excludeClasses = patchContext.excludeClasses;
             }
             tpatchInput.mainBundleName = "com.taobao.maindex";
@@ -442,7 +458,6 @@ public class TPatchTask extends BaseTask {
         }
     }
 
-    @OutputDirectory
     public File getOutPatchFolder() {
         return outPatchFolder;
     }
@@ -546,6 +561,8 @@ public class TPatchTask extends BaseTask {
                                                            ",");
 
                     tPatchContext.buildId = tBuildType.getPatchConfig().getBuildId();
+
+                    tPatchContext.newPatch = tBuildType.getPatchConfig().isNewPatch();
                     tPatchContext.writeBuildInfo = tBuildType.getPatchConfig()
                         .isTpatchWriteBuildInfo();
                     tPatchContext.diffBundleDex = tBuildType.getPatchConfig()
@@ -554,6 +571,10 @@ public class TPatchTask extends BaseTask {
                         .isOnlyIncrementInMain();
                     tPatchContext.excludeClasses = tBuildType.getPatchConfig()
                             .getExcludeClasses();
+
+                    tPatchContext.patchClasses = tBuildType.getPatchConfig()
+                            .getPatchClasses();
+
                     tPatchContext.appSignName = tBuildType.getPatchConfig().getAppSignName();
 
                     tPatchContext.patchVersions = tBuildType.getPatchConfig().getPatchVersions();
@@ -588,6 +609,8 @@ public class TPatchTask extends BaseTask {
 
         public String buildId;
 
+        public boolean newPatch = true;
+
         public boolean diffNativeSo;
 
         public boolean writeBuildInfo;
@@ -608,6 +631,8 @@ public class TPatchTask extends BaseTask {
         public List<String> patchVersions;
 
         public Set<ArtifactBundleInfo> artifactBundleInfos;
+
+        public Set<String>patchClasses = new HashSet<>();
 
         /**
          * patchDirectories that need to be excluded

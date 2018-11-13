@@ -230,6 +230,8 @@ import com.google.wireless.android.sdk.stats.GradleBuildProject;
 import com.google.wireless.android.sdk.stats.GradleBuildVariant;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.ReflectUtils;
+import org.gradle.api.Action;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -420,7 +422,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
                 && appVariantOutputContext.getVariantContext().isDataBindEnabled(awbBundle)) {
             File file = appVariantOutputContext.getVariantContext().getAwbDataBindingMergeArtifacts(awbBundle);
             ReflectUtils.updateField(javacTask, "dataBindingDependencyArtifacts", scope.getGlobalScope().getProject().files(file));
-//
+
 
 
 //            FileCollection files =

@@ -218,6 +218,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -311,7 +312,7 @@ public class ApkInjectInfoCreator {
                 basicBundleInfo.setContentProviders(bundleInfo.getContentProviders());
             }
             if (!bundleInfo.getDependency().isEmpty()) {
-                basicBundleInfo.setDependency(newDependency(bundleInfo.getDependency(),appVariantContext));
+                basicBundleInfo.setDependency(bundleInfo.getDependency());
             }
             if (!bundleInfo.getReceivers().isEmpty()) {
                 basicBundleInfo.setReceivers(bundleInfo.getReceivers());
@@ -333,7 +334,17 @@ public class ApkInjectInfoCreator {
             basicBundleInfoMap.put(bundleInfo.getPkgName(), basicBundleInfo);
         }
 
-        injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
+//        Collections.sort(basicBundleInfos, (o1, o2) -> {
+//            if (o1.getDependency().contains(o2.getPkgName())){
+//                return -1;
+//            }else {
+//                return 1;
+//            }
+//        });
+
+       basicBundleInfos.forEach(basicBundleInfo -> checkDependency(basicBundleInfo,atlasDependencyTree.getAwbBundles()));
+
+                injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
 
         //FIXME MOVE TO MTL-PLUGIN
         //List<String> autoStartBundles = new ArrayList<String>(appVariantContext.getAtlasExtension().getTBuildConfig
@@ -356,6 +367,19 @@ public class ApkInjectInfoCreator {
             .getPreLaunch();
         mergeBundleInfos(appVariantContext, injectParam, basicBundleInfos, basicBundleInfoMap);
         return injectParam;
+    }
+
+    private void checkDependency(BasicBundleInfo basicBundleInfo, List<AwbBundle> awbBundles) {
+        if (basicBundleInfo.getIsMBundle()){
+           basicBundleInfo.getDependency().parallelStream().forEach(s -> awbBundles.stream().forEach(awbBundle -> {
+               if (awbBundle.getPackageName().equals(s)){
+                   if (!awbBundle.isMBundle){
+                       throw new IllegalArgumentException(basicBundleInfo.getPkgName()+" mbundle can not dependent local bundle or remote Bundle" +s);
+                   }
+               }
+           }));
+        }
+
     }
 
     private List<String> newDependency(List<String> dependency,AppVariantContext appVariantContext) {

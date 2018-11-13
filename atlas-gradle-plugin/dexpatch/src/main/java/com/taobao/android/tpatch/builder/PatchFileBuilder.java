@@ -471,8 +471,13 @@ public class PatchFileBuilder {
 
             if (addToPatch && patchBundleInfo.getUnitTag().equals(patchBundleInfo.getSrcUnitTag())) {
 
+                if (hisPatchInfo.getPatchVersion().split("\\.").length == 3) {
 
-                throw new PatchException(patchName + patchBundleInfo.getPkgName() + " in patch srcunittag equals unittag," + patchBundleInfo.getUnitTag() + ",please upgrade bundle version and Reintegration!");
+                    throw new PatchException(patchName + patchBundleInfo.getPkgName() + " in patch srcunittag equals unittag," + patchBundleInfo.getUnitTag() + ",please upgrade bundle version and Reintegration!");
+                }else {
+
+                    System.err.println(patchName + patchBundleInfo.getPkgName() + " in patch srcunittag equals unittag," + patchBundleInfo.getUnitTag() + ",please upgrade bundle version and Reintegration!");
+                }
 
             } else if (addToPatch) {
                 patchInfo.getBundles().add(patchBundleInfo);
