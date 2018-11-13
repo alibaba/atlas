@@ -288,7 +288,6 @@ public class TPatchTask extends BaseTask {
         signingConfig = getSigningConfig();
         outPatchFolder = getOutPatchFolder();
 
-
         //the bundle List Copied to the outpatchFoulder
         new File(outPatchFolder, appVariantContext.bundleListCfg.getName()).delete();
         outPatchFolder.mkdirs();

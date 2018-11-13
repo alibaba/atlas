@@ -97,7 +97,6 @@ public class TaobaoExtractJarsTransform extends Transform {
         if (!isIncremental) {
             outputProvider.deleteAll();
         }
-
         try {
             WaitableExecutor executor = WaitableExecutor.useGlobalSharedThreadPool();
 

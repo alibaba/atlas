@@ -323,6 +323,9 @@ public class TaobaoInstantRunTransform extends Transform {
     }
 
     private PatchPolicy parseClassPolicy(File file) {
+        if (!variantContext.getBuildType().getPatchConfig().isCreateTPatch()){
+            return PatchPolicy.NONE;
+        }
         final PatchPolicy[] patchPolicy = {PatchPolicy.NONE};
         try {
             BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));

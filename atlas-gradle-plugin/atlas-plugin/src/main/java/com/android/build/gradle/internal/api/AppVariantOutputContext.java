@@ -309,6 +309,11 @@ public class AppVariantOutputContext {
                         "source/awb-r/" + config.getDirName() + "/" + awbBundle.getName());
     }
 
+    public File getAwbApplicationInjectClassOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "awb-app-inject/" + config.getDirName() + "/" + awbBundle.getName());
+    }
+
     public File getAwbMergedResourceDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
                         "/awb-res/merged/" + config.getDirName() + "/" + awbBundle.getName());
