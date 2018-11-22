@@ -414,7 +414,7 @@ public class InstrumentationHook extends Instrumentation {
 
 			}else if (Atlas.getInstance().getBundle(bundleName) == null && !AtlasBundleInfoManager.instance().getBundleInfo(bundleName).isInternal() && Framework.getInstalledBundle(bundleName,AtlasBundleInfoManager.instance().getBundleInfo(bundleName).unique_tag) == null) {
 
-				fallBackToClassNotFoundCallback(context,intent,bundleName);
+				fallBackToClassNotFoundCallback(context,intent,componentName);
 				return null;
 
 

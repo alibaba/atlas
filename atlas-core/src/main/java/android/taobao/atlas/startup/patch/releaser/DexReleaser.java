@@ -208,7 +208,10 @@
 
 package android.taobao.atlas.startup.patch.releaser;
 
+import android.content.SharedPreferences;
 import android.os.Build;
+import android.preference.PreferenceManager;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.patch.CombineDexMerger;
 import android.taobao.atlas.startup.patch.CombineDexVerifier;
 import android.taobao.atlas.startup.patch.KernalBundle;
@@ -237,7 +240,7 @@ public class DexReleaser {
 
     private static final String CLASS_SUFFIX = "classes";
 
-    public static boolean releaseDexes(File bundleFile, File reversionDir, boolean externalStorage) throws IOException {
+    public static boolean   releaseDexes(File bundleFile, File reversionDir, boolean externalStorage) throws IOException {
         boolean dexPatch = bundleFile.getAbsolutePath().contains("dexpatch");
         ZipFile zipFile = null;
         try {
@@ -247,7 +250,16 @@ public class DexReleaser {
                 return true;
             }
 //            if (externalStorage || !isArt()) {
+//             RuntimeVariables.patchVersion = readPatchVersion();
 
+
+            if (Build.VERSION.SDK_INT > 27){
+
+                return true;
+            }
+
+
+            if (RuntimeVariables.patchVersion == 2 ||!isArt()) {
                 Enumeration entryEnumeration = zipFile.entries();
                 while (entryEnumeration.hasMoreElements()) {
                     ZipEntry zipEntry = (ZipEntry) entryEnumeration.nextElement();
@@ -258,6 +270,26 @@ public class DexReleaser {
                         fileOutputStream.close();
                     }
                 }
+            }else if (RuntimeVariables.patchVersion == 1) {
+                File sourceFile;
+                if (dexPatch) {
+                    //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
+                    sourceFile = null == KernalBundle.kernalBundle
+                            ? new File(KernalConstants.APK_PATH)
+                            : KernalBundle.kernalBundle.getRevisionZip();
+                } else {
+                    sourceFile = new File(KernalConstants.APK_PATH);
+                }
+                File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", bundleFile.getParentFile());
+                CombineDexMerger combineDexMerger = new CombineDexMerger(new CombineDexVerifier());
+                boolean result = combineDexMerger.merge(sourceFile, bundleFile, targetFile);
+                if (result && bundleFile.delete() && targetFile.renameTo(bundleFile)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
                 return true;
 //            } else {
 //                File sourceFile;
@@ -288,6 +320,7 @@ public class DexReleaser {
         }
         return false;
     }
+
 
 
     public static boolean isArt() {

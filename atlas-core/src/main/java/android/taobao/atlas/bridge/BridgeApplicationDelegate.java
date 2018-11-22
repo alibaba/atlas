@@ -217,8 +217,10 @@ import android.content.pm.ProviderInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
+import android.os.Process;
 import android.support.multidex.MultiDex;
 import android.taobao.atlas.framework.Atlas;
+import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.AtlasPreLauncher;
@@ -226,6 +228,7 @@ import android.taobao.atlas.runtime.PackageManagerDelegate;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.WindowSessionProxy;
 import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
+import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.util.AtlasCrashManager;
 import android.taobao.atlas.util.SoLoader;
 import android.taobao.atlas.util.log.IAlarmer;
@@ -241,6 +244,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -266,41 +270,41 @@ public class BridgeApplicationDelegate {
 
     public BridgeApplicationDelegate(Application rawApplication,String processname,String installedVersion,
                                      long versioncode,long lastupdatetime,String apkPath,boolean isUpdated,Object dexLoadBooster){
-        if(Build.VERSION.SDK_INT<=19 && getClass().getClassLoader().getClass().getName().startsWith("com.ali.mobisecenhance")){
-            try {
-                Field pathListField = AndroidHack.findField(rawApplication.getClassLoader(), "pathList");
-                Object dexPathList = pathListField.get(rawApplication.getClassLoader());
-                Field elementsField = AndroidHack.findField(dexPathList,"dexElements");
-                Object[] elements = (Object[])elementsField.get(dexPathList);
-                Log.e("BridgeApplication","get Elements :"+ elements);
-
-                if(elements.length>0) {
-                    Field dexFileField = elements[0].getClass().getDeclaredField("dexFile");
-                    dexFileField.setAccessible(true);
-                    for(int x=elements.length-1; x>=0; x--){
-                        DexFile dexFile = (DexFile) dexFileField.get(elements[x]);
-                        if(dexFile.getName().contains("com.taobao.maindex")) {
-                            //针对动态部署处理过的dex做判断
-                            boolean findDexToDelete = false;
-                            Enumeration<String> enumeration = dexFile.entries();
-                            while (enumeration.hasMoreElements()) {
-                                if (enumeration.nextElement().replace("/", ".").startsWith("com.ali.mobisecenhance.ld.util")) {
-                                    findDexToDelete = true;
-                                    break;
-                                }
-                            }
-                            if(findDexToDelete){
-                                Log.e("BridgeApplication","delete dexfile :"+dexFile.getName());
-                                dexFileField.set(elements[x],null);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }catch(Throwable e){
-                e.printStackTrace();
-            }
-        }
+//        if(Build.VERSION.SDK_INT<=19 && getClass().getClassLoader().getClass().getName().startsWith("com.ali.mobisecenhance")){
+//            try {
+//                Field pathListField = AndroidHack.findField(rawApplication.getClassLoader(), "pathList");
+//                Object dexPathList = pathListField.get(rawApplication.getClassLoader());
+//                Field elementsField = AndroidHack.findField(dexPathList,"dexElements");
+//                Object[] elements = (Object[])elementsField.get(dexPathList);
+//                Log.e("BridgeApplication","get Elements :"+ elements);
+//
+//                if(elements.length>0) {
+//                    Field dexFileField = elements[0].getClass().getDeclaredField("dexFile");
+//                    dexFileField.setAccessible(true);
+//                    for(int x=elements.length-1; x>=0; x--){
+//                        DexFile dexFile = (DexFile) dexFileField.get(elements[x]);
+//                        if(dexFile.getName().contains("com.taobao.maindex")) {
+//                            //针对动态部署处理过的dex做判断
+//                            boolean findDexToDelete = false;
+//                            Enumeration<String> enumeration = dexFile.entries();
+//                            while (enumeration.hasMoreElements()) {
+//                                if (enumeration.nextElement().replace("/", ".").startsWith("com.ali.mobisecenhance.ld.util")) {
+//                                    findDexToDelete = true;
+//                                    break;
+//                                }
+//                            }
+//                            if(findDexToDelete){
+//                                Log.e("BridgeApplication","delete dexfile :"+dexFile.getName());
+//                                dexFileField.set(elements[x],null);
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//            }catch(Throwable e){
+//                e.printStackTrace();
+//            }
+//        }
 
         mRawApplication = rawApplication;
         mCurrentProcessname = processname;
@@ -392,9 +396,14 @@ public class BridgeApplicationDelegate {
         RuntimeVariables.sRealApplicationName = mRealApplicationName;
 
         try {
+
             Atlas.getInstance().init(mRawApplication, mIsUpdated);
-        } catch (Exception e) {
-            throw new RuntimeException("atlas initialization fail" + e.getMessage());
+        } catch (Throwable e) {
+                File storageDir = new File(mRawApplication.getFilesDir(),"storage");
+                Framework.deleteDirectory(storageDir);
+                KernalVersionManager.instance().removeBaseLineInfo();
+                android.os.Process.killProcess(Process.myPid());
+//                throw new RuntimeException("atlas initialization fail--->" + e.getMessage());
         }
         //////////////////////////////////////////launchTime////////////////////
         try{
@@ -412,6 +421,15 @@ public class BridgeApplicationDelegate {
             mBoundApplication_provider = AtlasHacks.ActivityThread$AppBindData_providers.get(mBoundApplication);
             if(mBoundApplication_provider!=null && mBoundApplication_provider.size()>0){
                 AtlasHacks.ActivityThread$AppBindData_providers.set(mBoundApplication,null);
+            }else if (Build.VERSION.SDK_INT >= 24 && mCurrentProcessname!= null && mCurrentProcessname.equals(mRawApplication.getPackageName())){
+                mBoundApplication_provider = new ArrayList<>();
+                ProviderInfo providerInfo = mRawApplication.getPackageManager().resolveContentProvider(mRawApplication.getPackageName()+".update.provider",0);
+                if (providerInfo!= null){
+                    providerInfo.exported = false;
+                    providerInfo.grantUriPermissions = true;
+                    mBoundApplication_provider.add(providerInfo);
+                }
+
             }
         } catch (Exception e) {
             if(e instanceof InvocationTargetException){
@@ -484,6 +502,8 @@ public class BridgeApplicationDelegate {
                 Object mBoundApplication = AtlasHacks.ActivityThread_mBoundApplication.get(activityThread);
                 AtlasHacks.ActivityThread$AppBindData_providers.set(mBoundApplication,mBoundApplication_provider);
                 AtlasHacks.ActivityThread_installContentProviders.invoke(activityThread,mRealApplication,mBoundApplication_provider);
+            }else {
+
             }
 
         }catch(Throwable e){
@@ -506,7 +526,9 @@ public class BridgeApplicationDelegate {
 
         mRealApplication.onCreate();
 
-        WindowSessionProxy.delegateWindowSession(mRawApplication);
+
+        //this is walkround bad token crash
+//        WindowSessionProxy.delegateWindowSession(mRawApplication);
     }
 
 }

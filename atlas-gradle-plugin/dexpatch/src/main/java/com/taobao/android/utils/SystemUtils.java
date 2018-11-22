@@ -32,12 +32,10 @@ public class SystemUtils {
         String diffPath = osName + "/" + fileName;
 
         File temp = new File(new File(SystemUtils.class.getProtectionDomain().getCodeSource().getLocation().getFile()).getParentFile(),fileName);
-        if(temp.exists()){
-            return temp;
-        }
         FileOutputStream fileOutputStream = null;
         InputStream inputStream = null;
         try {
+
             fileOutputStream = new FileOutputStream(temp);
 
              inputStream = SystemUtils.class.getClassLoader().getResourceAsStream(diffPath);
@@ -52,8 +50,12 @@ public class SystemUtils {
 
         }
 
+//        File tempFile = new File(workingDir,)
         return temp;
 
+
+
+//        return new File(SystemUtils.class.getClassLoader().getResourceAsStream(diffPath).getFile());
     }
 
 
@@ -79,9 +81,6 @@ public class SystemUtils {
 
         File temp = new File(new File(SystemUtils.class.getProtectionDomain().getCodeSource().getLocation().getFile()).getParentFile(),fileName);
 
-        if (temp.exists()){
-            return temp;
-        }
         try {
 
             fileOutputStream = new FileOutputStream(temp);

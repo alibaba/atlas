@@ -211,6 +211,7 @@ package android.taobao.atlas.runtime;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Dialog;
+import android.app.PreVerifier;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -240,6 +241,8 @@ public class RuntimeVariables implements Serializable{
 
     public static boolean             safeMode = false;
 
+    public static int                 patchVersion = 1;
+
     public static String              sInstalledVersionName;
 
     public static long                sInstalledVersionCode;
@@ -261,6 +264,12 @@ public class RuntimeVariables implements Serializable{
     public static Object      sDexLoadBooster;
     private static String launchActivityName;
 
+
+    static {
+        if (Boolean.FALSE.booleanValue()) {
+            String.valueOf(PreVerifier.class);
+        }
+    }
     public static Dialog alertDialogUntilBundleProcessed(Activity activity,String bundleName){
         if (activity != null) {
             if(sReminder!=null){

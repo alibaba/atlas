@@ -1,6 +1,7 @@
 package android.taobao.atlas.framework;
 
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
+import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
@@ -38,7 +39,8 @@ public class MbundleImpl extends BundleImpl{
     public boolean checkValidate() {
         List<String>bundles = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
         for (String bundle:bundles) {
-            if (!AtlasBundleInfoManager.instance().getBundleInfo(bundle).isMBundle()){
+            BundleListing.BundleInfo bundleInfo = AtlasBundleInfoManager.instance().getBundleInfo(bundle);
+            if (bundleInfo!= null && !bundleInfo.isMBundle()){
                 Map<String,Object> detailMap = new HashMap<>();
                 detailMap.put("source",location);
                 detailMap.put("dependency",bundle);

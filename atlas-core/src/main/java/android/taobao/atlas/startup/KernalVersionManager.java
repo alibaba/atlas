@@ -540,7 +540,7 @@ public class KernalVersionManager {
         {
             Map.Entry entry = (java.util.Map.Entry)iterator.next();
             if(entry.getValue().equals("-1") && dexPatchBundles.containsKey(entry.getKey())){
-                dexPatchBundles.remove(entry.getKey());
+                //dexPatchBundles.remove(entry.getKey());
             }else{
                 dexPatchBundles.put((String)entry.getKey(),Long.parseLong((String)entry.getValue()));
             }
@@ -550,6 +550,9 @@ public class KernalVersionManager {
         for(Iterator iterator = dexPatchBundles.entrySet().iterator(); iterator.hasNext();)
         {
             Map.Entry entry = (java.util.Map.Entry)iterator.next();
+            if("-1".equals(infos.get(entry.getKey()))){
+                continue;
+            }
             bundleList.append(entry.getKey());
             bundleList.append("@");
             bundleList.append(entry.getValue());

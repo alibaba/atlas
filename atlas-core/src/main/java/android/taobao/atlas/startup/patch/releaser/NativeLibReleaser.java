@@ -238,7 +238,6 @@ public class NativeLibReleaser {
         }
     }
 
-
     public static boolean releaseLibs(File apkFile, File reversionDir) throws IOException {
         ZipFile rawZip = new ZipFile(KernalConstants.APK_PATH);
         if (new File(reversionDir, "lib").exists() && new File(reversionDir, "lib").listFiles().length > 0) {

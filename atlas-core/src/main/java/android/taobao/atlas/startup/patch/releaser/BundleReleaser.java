@@ -217,6 +217,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.DexFileCompat;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.util.Log;
@@ -226,7 +227,11 @@ import com.taobao.android.runtime.AndroidRuntime;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -420,16 +425,32 @@ public class BundleReleaser {
 
     private void dexOptimization() {
         Log.e(TAG, "dexOptimization start");
-        final File[] validDexes = reversionDir.listFiles(new FilenameFilter() {
+        File[] validDexes = reversionDir.listFiles(new FilenameFilter() {
             @Override
-            public boolean accept(File dir,String pathname) {
-//                if (!DexReleaser.isArt() || externalStorage) {
-                    return pathname.endsWith(DEX_SUFFIX);
-//                } else {
-//                    return pathname.endsWith(".zip");
-//                }
+            public boolean accept(File dir, String pathname) {
+                return pathname.endsWith(DEX_SUFFIX);
+
             }
         });
+
+        File[] rawMainDexZip = reversionDir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String pathname) {
+                return pathname.endsWith(".zip");
+
+            }
+        });
+
+        if (validDexes!= null && validDexes.length > 0) {
+            validDexes = sortDexs(validDexes);
+            if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 24) {
+                PatchDexProfile.instance(RuntimeVariables.androidApplication).disableJitCompile();
+            }
+        }else if (rawMainDexZip!= null){
+
+            validDexes = rawMainDexZip;
+        }
+
         dexFiles = new DexFile[validDexes.length];
         if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
             KernalConstants.dexBooster.setVerificationEnabled(true);
@@ -440,10 +461,12 @@ public class BundleReleaser {
             final CountDownLatch countDownLatch = new CountDownLatch(validDexes.length);
             for (int i = 0; i < validDexes.length; i++) {
                 final int j = i;
+                final File[] finalValidDexes = validDexes;
+
                 service.submit(new Runnable() {
                     @Override
                     public void run() {
-                        dexFiles[j] = dexoptInternal(validDexes[j]);
+                        dexFiles[j] = dexoptInternal(finalValidDexes[j]);
                         countDownLatch.countDown();
                     }
                 });
@@ -466,12 +489,45 @@ public class BundleReleaser {
         handler.sendMessage(handler.obtainMessage(MSG_ID_DEX_OPT_DONE));
     }
 
+    private String[] toString(File[] validDexes) {
+        String[]ss = new String[validDexes.length];
+        for (int i = 0; i < ss.length; i ++){
+            ss[i] = validDexes[i].getPath();
+        }
+        return ss;
+    }
+
+    private File[] sortDexs(File[] validDexes) {
+        if (validDexes == null){
+            return validDexes;
+        }else {
+           List<File>files = Arrays.asList(validDexes);
+           Collections.sort(files, new Comparator<File>() {
+               @Override
+               public int compare(File lhs, File rhs) {
+                   if (lhs.getName().equals("classes.dex")) {
+                       return -1;
+                   } else if (rhs.getName().equals("classes.dex")) {
+                       return 1;
+                   }
+                   return Integer.valueOf(lhs.getName().substring(7, lhs.getName().indexOf("."))) - Integer.valueOf(rhs.getName().substring(7, rhs.getName().indexOf(".")));
+               }
+           });
+           return files.toArray(new File[0]);
+        }
+
+    }
+
     private DexFile dexoptInternal(File validDex){
         long startTime = System.currentTimeMillis();
         DexFile dexFile = null;
         String optimizedPath = optimizedPathFor(validDex, dexOptDir());
         try {
             if(!externalStorage) {
+
+
+//                dexFile = dexOat(validDex.getPath(),optimizedPath,);
+
                 dexFile = /*DexFile*/AndroidRuntime.getInstance().loadDex(validDex.getPath(), optimizedPath, 0, null);
                 if(!new File(optimizedPath).exists()){
                     Log.e(TAG,"odex not exist");
@@ -488,7 +544,10 @@ public class BundleReleaser {
             }
             boolean result = verifyDexFile(dexFile,optimizedPath);
             if (!result) {
+                
                 handler.sendMessage(handler.obtainMessage(MSG_ID_RELEASE_FAILED));
+            }else {
+                Log.e(TAG,"oat length:"+String.valueOf(new File(optimizedPath).length()));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -509,7 +568,7 @@ public class BundleReleaser {
                 return false;
             }
             if(!hasReleased && Build.VERSION.SDK_INT>=21 && Build.VERSION.SDK_INT<26) {
-                KernalConstants.dexBooster.isOdexValid(optimizedPath);
+                 return KernalConstants.dexBooster.isOdexValid(optimizedPath);
             }
             return true;
         }
@@ -517,21 +576,21 @@ public class BundleReleaser {
     }
 
     public boolean checkDexValid(DexFile odexFile) throws IOException {
-//        if (DexReleaser.isArt()) {
-//            String applicationName = KernalConstants.RAW_APPLICATION_NAME;
-//            try {
-//                Enumeration<String> enumeration = odexFile.entries();
-//                while (enumeration.hasMoreElements()) {
-//                    if (enumeration.nextElement().replace("/", ".").equals(applicationName)) {
-//                        return true;
-//                    }
-//                }
-//                return false;
-//            } catch (Throwable e) {
-//                e.printStackTrace();
-//                return false;
-//            }
-//        }
+        if (DexReleaser.isArt()) {
+            String applicationName = KernalConstants.RAW_APPLICATION_NAME;
+            try {
+                Enumeration<String> enumeration = odexFile.entries();
+                while (enumeration.hasMoreElements()) {
+                    if (enumeration.nextElement().replace("/", ".").equals(applicationName)) {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (Throwable e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
         return true;
     }
 
@@ -600,6 +659,36 @@ public class BundleReleaser {
         return isMultidexCapable;
     }
 
+
+    private void dexOat(String dexFilePath,String oatFilePath,String targetISA) throws IOException, InterruptedException {
+        final List<String> commandAndParams = new ArrayList<>();
+        commandAndParams.add("dex2oat");
+        if (Build.VERSION.SDK_INT >= 24) {
+            commandAndParams.add("--runtime-arg");
+            commandAndParams.add("-classpath");
+            commandAndParams.add("--runtime-arg");
+            commandAndParams.add("&");
+        }
+        commandAndParams.add("--dex-file=" + dexFilePath);
+        commandAndParams.add("--oat-file=" + oatFilePath);
+        commandAndParams.add("--instruction-set=" + targetISA);
+        if (Build.VERSION.SDK_INT > 25) {
+            commandAndParams.add("--compiler-filter=quicken");
+        } else {
+            commandAndParams.add("--compiler-filter=interpret-only");
+        }
+        final ProcessBuilder pb = new ProcessBuilder(commandAndParams);
+        pb.redirectErrorStream(true);
+        final Process dex2oatProcess = pb.start();
+        StreamConsumer.consumeInputStream(dex2oatProcess.getInputStream());
+        StreamConsumer.consumeInputStream(dex2oatProcess.getErrorStream());
+            final int ret = dex2oatProcess.waitFor();
+            if (ret != 0) {
+                throw new IOException("dex2oat works unsuccessfully, exit code: " + ret);
+            }
+
+    }
+
     public interface ProcessCallBack{
 
         void onFailed() throws IOException;
@@ -608,6 +697,48 @@ public class BundleReleaser {
 
         void onAllFinish();
 
+    }
+
+    private static class StreamConsumer {
+        static final Executor STREAM_CONSUMER = Executors.newSingleThreadExecutor();
+
+        static void consumeInputStream(final InputStream is) {
+            STREAM_CONSUMER.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if (is == null) {
+                        return;
+                    }
+                    final byte[] buffer = new byte[256];
+                    try {
+                        while ((is.read(buffer)) > 0) {
+                            // To satisfy checkstyle rules.
+                        }
+                    } catch (IOException ignored) {
+                        // Ignored.
+                    } finally {
+                        try {
+                            is.close();
+                        } catch (Exception ignored) {
+                            // Ignored.
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    public static String getCurrentInstructionSet() throws Exception {
+        String currentInstructionSet = null;
+        if (currentInstructionSet != null) {
+            return currentInstructionSet;
+        }
+        Class<?> clazz = Class.forName("dalvik.system.VMRuntime");
+        Method currentGet = clazz.getDeclaredMethod("getCurrentInstructionSet");
+
+        currentInstructionSet = (String) currentGet.invoke(null);
+        Log.d(TAG, "getCurrentInstructionSet:" + currentInstructionSet);
+        return currentInstructionSet;
     }
 
 

@@ -36,7 +36,7 @@ public class MergeTool {
     private static int patchVersion = 2;
 
 
-    private static TreeMap<Integer,List<String>>classes = new TreeMap();
+    private static TreeMap<Integer, List<String>> classes = new TreeMap();
 
 
     public static void mergePrepare(File oldBundle, List<ZipEntry> entryList, String patchName, File targetBundle, boolean isDiff, MergeExcutorServices.PrepareCallBack prepareCallBack) throws IOException, MergeException {
@@ -79,41 +79,98 @@ public class MergeTool {
         File mainDexFile = new File(tempFile.getParentFile(), "libcom_taobao_maindex.zip");
         inputStreamToFile(MergeExcutorServices.sZipPatch.getInputStream(entryList.get(0)), mainDexFile);
         ZipFile zipFile = new ZipFile(mainDexFile);
-        if (zipFile.getEntry(MergeConstants.DEX_PATCH_META)!= null){
-            readPatchClasses(zipFile,zipFile.getEntry(MergeConstants.DEX_PATCH_META));
+        if (zipFile.getEntry(MergeConstants.DEX_PATCH_META) != null) {
+            readPatchClasses(zipFile, zipFile.getEntry(MergeConstants.DEX_PATCH_META));
         }
-        if (classes.size() > 0) {
-            while (e.hasMoreElements()) {
-                ZipEntry zipEnt = (ZipEntry) e.nextElement();
-                String name = zipEnt.getName();
-                if (name.endsWith(MergeConstants.DEX_SUFFIX)) {
-                    String s = name.substring(7);
-                    Integer sourceDexIndex = s.startsWith(".") ? 0 : Integer.valueOf(s.substring(0,s.indexOf(".")));
-                    if (classes.get(sourceDexIndex) != null) {
-                        Log.e("MergeTool","process sourceDex:"+sourceDexIndex+" and classes size:"+classes.get(sourceDexIndex).size());
-                        InputStream inputStream = sourceZip.getInputStream(zipEnt);
-                        Dex dex = processDex(inputStream, classes.get(sourceDexIndex));
-                        ZipEntry newEntry = new ZipEntry(zipEnt.getName());
-                        out.putNextEntry(newEntry);
-                        write(new ByteArrayInputStream(dex.getBytes()), out, buffer);
-                        bo.flush();
-                    }else if (isArt() && !isEnhanceDex(name)){
-                        ZipEntry newEntry = new ZipEntry(zipEnt.getName());
-                        out.putNextEntry(newEntry);
-                        write(sourceZip.getInputStream(zipEnt), out, buffer);
-                        bo.flush();
+        Enumeration entries = zipFile.entries();
+        switch (patchVersion) {
+            case 1:
+                i = writePatch(entries, out, bo,zipFile, i);
+
+                writeSourceApkDex(e, sourceZip,bo, out, i);
+                break;
+
+            case 2:
+                while (e.hasMoreElements()) {
+                        ZipEntry zipEnt = (ZipEntry) e.nextElement();
+                        String name = zipEnt.getName();
+                        if (name.endsWith(MergeConstants.DEX_SUFFIX)) {
+                            String s = name.substring(7);
+                            Integer sourceDexIndex = s.startsWith(".") ? 0 : Integer.valueOf(s.substring(0, s.indexOf(".")));
+                            if (classes.get(sourceDexIndex) != null) {
+                                Log.e("MergeTool", "process sourceDex:" + sourceDexIndex + " and classes size:" + classes.get(sourceDexIndex).size());
+                                InputStream inputStream = sourceZip.getInputStream(zipEnt);
+                                Dex dex = processDex(inputStream, classes.get(sourceDexIndex));
+                                ZipEntry newEntry = new ZipEntry(zipEnt.getName());
+                                out.putNextEntry(newEntry);
+                                write(new ByteArrayInputStream(dex.getBytes()), out, buffer);
+                                bo.flush();
+                            } else if (isArt() && !isEnhanceDex(name)) {
+                                ZipEntry newEntry = new ZipEntry(zipEnt.getName());
+                                out.putNextEntry(newEntry);
+                                write(sourceZip.getInputStream(zipEnt), out, buffer);
+                                bo.flush();
+                            }
+                            i++;
+                        }
                     }
-                    i++;
-                }
-            }
+
+                writePatch(entries, out, bo,zipFile, i);
+                break;
+
+            default:
+                break;
+
         }
 
-        Enumeration entries = zipFile.entries();
+        mainDexFile.delete();
+        zipFile.close();
+        closeQuitely(out);
+        closeQuitely(bo);
+
+
+    }
+
+    private static int writeSourceApkDex(Enumeration e, ZipFile sourceZip, BufferedOutputStream bo,ZipOutputStream out, int i) throws IOException {
+        byte[] buffer = new byte[BUFFEREDSIZE];
+        while (e.hasMoreElements()) {
+            ZipEntry zipEnt = (ZipEntry) e.nextElement();
+            String name = zipEnt.getName();
+            if (!name.endsWith(MergeConstants.DEX_SUFFIX)) {
+                continue;
+            }
+            ZipEntry newEntry = new ZipEntry(String.format("%s%s%s", MergeConstants.CLASS, i == 1 ? "" : i, MergeConstants.DEX_SUFFIX));
+            if (isArt() && !isEnhanceDex(name)) {
+                InputStream inputStream = sourceZip.getInputStream(zipEnt);
+                out.putNextEntry(newEntry);
+                write(inputStream, out, buffer);
+                bo.flush();
+            } else if (!isArt()) {
+                String s = name.substring(7);
+                Integer sourceDexIndex = s.startsWith(".") ? 0 : Integer.valueOf(s.substring(0, s.indexOf(".")));
+                if (classes.get(sourceDexIndex) != null) {
+                    Log.e("MergeTool", "process sourceDex:" + sourceDexIndex + " and classes size:" + classes.get(sourceDexIndex).size());
+                    InputStream inputStream = sourceZip.getInputStream(zipEnt);
+                    Dex dex = processDex(inputStream, classes.get(sourceDexIndex));
+                    out.putNextEntry(newEntry);
+                    write(new ByteArrayInputStream(dex.getBytes()), out, buffer);
+                    bo.flush();
+                }
+            }
+            i++;
+        }
+
+        return i;
+
+    }
+
+    private static int writePatch(Enumeration entries, ZipOutputStream out, BufferedOutputStream bo,ZipFile zipFile, int i) throws IOException {
+        byte[] buffer = new byte[BUFFEREDSIZE];
         while (entries.hasMoreElements()) {
             ZipEntry zipEnt = (ZipEntry) entries.nextElement();
             String name = zipEnt.getName();
             if (name.endsWith(MergeConstants.DEX_SUFFIX)) {
-                ZipEntry zipEntry = new ZipEntry(String.format("%s%s%s", MergeConstants.CLASS, i, MergeConstants.DEX_SUFFIX));
+                ZipEntry zipEntry = new ZipEntry(String.format("%s%s%s", MergeConstants.CLASS, i == 1 ? "" : i, MergeConstants.DEX_SUFFIX));
                 out.putNextEntry(zipEntry);
                 write(zipFile.getInputStream(zipEnt), out, buffer);
                 bo.flush();
@@ -121,54 +178,52 @@ public class MergeTool {
                 continue;
             }
             ZipEntry newEntry = new ZipEntry(name);
-            if (name.contains("raw/") || name.contains("assets/") ||name.equals("resources.arsc")) {
+            if (name.contains("raw/") || name.contains("assets/") || name.equals("resources.arsc")) {
                 newEntry.setMethod(ZipEntry.STORED);
                 newEntry.setCrc(zipEnt.getCrc());
                 newEntry.setSize(zipEnt.getSize());
             }
             out.putNextEntry(newEntry);
-            in = zipFile.getInputStream(zipEnt);
+            InputStream in = zipFile.getInputStream(zipEnt);
             write(in, out, buffer);
             bo.flush();
-
         }
-        mainDexFile.delete();
-        zipFile.close();
-        closeQuitely(out);
-        closeQuitely(bo);
+
+        return i;
+
     }
 
     private static boolean isEnhanceDex(String name) {
 
-       return !TextUtils.isEmpty(noPatchDexIndex) && name.equals(String.format("classes%s.dex",noPatchDexIndex)) && (Build.VERSION.SDK_INT > 27||Build.VERSION.SDK_INT < 21);
+        return !TextUtils.isEmpty(noPatchDexIndex) && name.equals(String.format("classes%s.dex", noPatchDexIndex)) && (Build.VERSION.SDK_INT > 27 || Build.VERSION.SDK_INT < 21);
 
     }
 
-    private static void readPatchClasses(ZipFile zipFile,ZipEntry entry) {
+    private static void readPatchClasses(ZipFile zipFile, ZipEntry entry) {
         try {
             InputStream is = zipFile.getInputStream(entry);
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
             String s = null;
-            while (!TextUtils.isEmpty(s = bufferedReader.readLine())){
+            while (!TextUtils.isEmpty(s = bufferedReader.readLine())) {
                 String dexIndex = s.split("-")[0];
                 String clazz = s.split("-")[1];
-                if (!TextUtils.isEmpty(clazz)&& clazz.equals(MergeConstants.NO_PATCH_DEX)){
+                if (!TextUtils.isEmpty(clazz) && clazz.equals(MergeConstants.NO_PATCH_DEX)) {
                     noPatchDexIndex = dexIndex;
                     continue;
                 }
 
-                if (!TextUtils.isEmpty(clazz)&& clazz.equals(MergeConstants.PATCH_VERSION)){
+                if (!TextUtils.isEmpty(clazz) && clazz.equals(MergeConstants.PATCH_VERSION)) {
                     patchVersion = Integer.valueOf(dexIndex);
                     notifyPatchVersion(patchVersion);
                     continue;
                 }
 
-                if (classes.containsKey(Integer.valueOf(dexIndex))){
+                if (classes.containsKey(Integer.valueOf(dexIndex))) {
                     classes.get(Integer.valueOf(dexIndex)).add(clazz);
-                }else {
-                    List<String>cc = new ArrayList<>();
+                } else {
+                    List<String> cc = new ArrayList<>();
                     cc.add(clazz);
-                    classes.put(Integer.valueOf(dexIndex),cc);
+                    classes.put(Integer.valueOf(dexIndex), cc);
                 }
             }
         } catch (IOException e) {
@@ -180,7 +235,7 @@ public class MergeTool {
 
     private static void notifyPatchVersion(int patchVersion) {
         Intent intent = new Intent("com.taobao.atlas.intent.PATCH_VERSION");
-        intent.putExtra("patch_version",patchVersion);
+        intent.putExtra("patch_version", patchVersion);
         RuntimeVariables.androidApplication.sendBroadcast(intent);
     }
 
@@ -197,7 +252,7 @@ public class MergeTool {
     private static boolean isBundleFileUpdated(ZipEntry sourceEntry, List<ZipEntry> entryList, AtomicReference patchEntry) {
         for (ZipEntry entry : entryList) {
             if (entry.getName().contains(sourceEntry.getName())) {
-                patchEntry.compareAndSet(null,entry);
+                patchEntry.compareAndSet(null, entry);
                 return true;
             }
         }
@@ -218,7 +273,7 @@ public class MergeTool {
         ZipEntry originalDex = null;
         ZipEntry patchDex = null;
         File outDex;
-        AtomicReference<ZipEntry>zipEntryAtomicReference = new AtomicReference<>();
+        AtomicReference<ZipEntry> zipEntryAtomicReference = new AtomicReference<>();
         while (e.hasMoreElements()) {
             ZipEntry zipEnt = (ZipEntry) e.nextElement();
             String name = zipEnt.getName();
@@ -473,9 +528,9 @@ public class MergeTool {
     }
 
     public static boolean isArt() {
-        return true;
+//        return true;
 
-//        return Build.VERSION.SDK_INT > 20;
+        return Build.VERSION.SDK_INT > 20;
 
     }
 

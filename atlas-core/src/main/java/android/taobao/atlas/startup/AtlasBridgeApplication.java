@@ -262,6 +262,8 @@ public class AtlasBridgeApplication extends Application{
         System.setProperty("BOOT_TIME",System.currentTimeMillis()+"");
         // *0 checkload kernalpatch
         boolean isUpdated = isUpdated(getBaseContext());
+        Log.e("AtlasBridgeApplication", "attachBaseContext() - isUpdated = " + isUpdated);
+
         KernalConstants.baseContext = getBaseContext();
         KernalConstants.APK_PATH = getBaseContext().getApplicationInfo().sourceDir;
         KernalConstants.RAW_APPLICATION_NAME = getClass().getName();
@@ -309,9 +311,6 @@ public class AtlasBridgeApplication extends Application{
             }
         }
 
-        if (KernalBundle.hasNativeLibPatch(this)){
-            KernalBundle.patchNativeLib(this);
-        }
 
         try {
             //初始化baselineinfomanager
@@ -339,6 +338,9 @@ public class AtlasBridgeApplication extends Application{
             method.invoke(mBridgeApplicationDelegate);
         } catch (Throwable e) {
             throw new RuntimeException(e);
+        }
+        if (KernalBundle.hasNativeLibPatch(this)){
+            KernalBundle.patchNativeLib(this);
         }
     }
 
@@ -470,15 +472,17 @@ public class AtlasBridgeApplication extends Application{
                 String storedVersionName = in.readUTF();
                 long   storedVersionCode = in.readLong();
                 long   storedLastUpdateTime = in.readLong();
-                String storedApkPath     = in.readUTF();
+                String storedApkPath = in.readUTF();
+                String fingerprint = in.readUTF();
 
                 System.setProperty("APP_VERSION_TAG",KernalConstants.INSTALLED_VERSIONNAME);
                 // 检测之前的版本记录
                 if(packageInfo.versionCode == storedVersionCode &&
                         TextUtils.equals(packageInfo.versionName, storedVersionName) &&
-                        packageInfo.lastUpdateTime == storedLastUpdateTime &&
-                        context.getApplicationInfo().sourceDir.equals(storedApkPath) &&
-                        !needRollback()){
+                        packageInfo.lastUpdateTime == storedLastUpdateTime
+                        && context.getApplicationInfo().sourceDir.equals(storedApkPath)
+                        && !needRollback() && (Build.FINGERPRINT + ""
+                        + Build.VERSION.SDK_INT).equals(fingerprint)) {
                     return false;
                 }
             }catch(Throwable e){
@@ -508,6 +512,7 @@ public class AtlasBridgeApplication extends Application{
             out.writeLong(KernalConstants.INSTALLED_VERSIONCODE);
             out.writeLong(KernalConstants.LASTUPDATETIME);
             out.writeUTF(KernalConstants.APK_PATH);
+            out.writeUTF(Build.FINGERPRINT + "" + Build.VERSION.SDK_INT);
             out.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
