@@ -225,6 +225,9 @@ public class TaobaoExtractJarsTransform extends Transform {
             @NonNull File outJarFolder,
             @NonNull File jarFile,
             boolean extractCode) throws IOException {
+        if (!jarFile.exists()){
+            return;
+        }
         mkdirs(outJarFolder);
         HashSet<String> lowerCaseNames = new HashSet<>();
         boolean foundCaseInsensitiveIssue = false;

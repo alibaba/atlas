@@ -78,16 +78,13 @@ public class ScanDupResTask extends BaseTask {
                 // add to 0 always, since we need to reverse the order.
                 resourceSetList.add(0,resourceSet);
             }
-            resourceSetList.forEach(new Consumer<ResourceSet>() {
-                @Override
-                public void accept(ResourceSet resourceSet) {
-                    try {
-                        resourceSet.loadFromFiles(getILogger());
-                    } catch (MergingException e) {
-                        e.printStackTrace();
-                    }
-                    resourceMerger.addDataSet(resourceSet);
+            resourceSetList.forEach(resourceSet -> {
+                try {
+                    resourceSet.loadFromFiles(getILogger());
+                } catch (MergingException e) {
+                    e.printStackTrace();
                 }
+                resourceMerger.addDataSet(resourceSet);
             });
 
             ListMultimap<String, ResourceItem> mValuesResMap = ArrayListMultimap.create();
@@ -230,34 +227,33 @@ public class ScanDupResTask extends BaseTask {
                 e.printStackTrace();
             }
 
-            mValuesResMap.asMap().values().forEach(new Consumer<Collection<ResourceItem>>() {
-                @Override
-                public void accept(Collection<ResourceItem> resourceItems) {
-                    for (ResourceItem resourceItem:resourceItems){
-                        String tag = null;
-                        if (resourceItem.getSource() == null){
-                            tag = resourceItem.getQualifiers() + ":" +resourceItem.getType().getName()+":"+resourceItem.getName();
+            mValuesResMap.asMap().values().forEach(resourceItems -> {
+                for (ResourceItem resourceItem:resourceItems){
+                    String tag = null;
+                    if (resourceItem.getSource() == null){
+                        tag = resourceItem.getQualifiers() + ":" +resourceItem.getType().getName()+":"+resourceItem.getName();
 
-                        }else {
-                            tag = resourceItem.getQualifiers() + ":" +  resourceItem.getKey();
-                        }
-                        if (!valuesMap.containsKey(tag)){
-                            String value = getOtherString(resourceItem);
-                            if (resourceItem.getSource() == null ||resourceItem.getFile() == null) {
-                                valuesMap.put(tag, new Pair<String,File>(value,new File("aa")));
-                            }else {
-                                valuesMap.put(tag, new Pair<String, File>(value,resourceItem.getFile()));
-
-                            }
-                        }else {
-                            if (resourceItem.getFile()!= null && valuesMap.get(tag)!= null) {
-                                if (!valuesMap.get(tag).equals(resourceItem.getFile()) && !isSameValue(resourceItem,valuesMap.get(tag).getKey()))
-                                    exceptions.add("dup value " + tag +"|"+valuesMap.get(tag).getKey()+"|"+getOtherString(resourceItem)+"|"+getId(valuesMap.get(tag).getValue())+"|"+getId(resourceItem.getFile()));
-                            }
-                        }
+                    }else {
+                        tag = resourceItem.getQualifiers() + ":" +  resourceItem.getKey();
                     }
+                    if (!valuesMap.containsKey(tag)){
+                        String value = getOtherString(resourceItem);
+                        if (resourceItem.getSource() == null ||resourceItem.getFile() == null) {
+                            valuesMap.put(tag, new Pair<String,File>(value,new File("aa")));
+                        }else {
+                            valuesMap.put(tag, new Pair<String, File>(value,resourceItem.getFile()));
 
+                        }
+                    }else {
+                        if (resourceItem.getFile()!= null && valuesMap.get(tag)!= null) {
+                            if (!valuesMap.get(tag).equals(resourceItem.getFile()) && !isSameValue(resourceItem,valuesMap.get(tag).getKey()))
+                                if (!tag.equals(":string/app_name")) {
+                                    exceptions.add("dup value " + tag + "|" + valuesMap.get(tag).getKey() + "|" + getOtherString(resourceItem) + "|" + getId(valuesMap.get(tag).getValue()) + "|" + getId(resourceItem.getFile()));
+                                }
+                                }
+                    }
                 }
+
             });
 
             Collections.sort(exceptions);

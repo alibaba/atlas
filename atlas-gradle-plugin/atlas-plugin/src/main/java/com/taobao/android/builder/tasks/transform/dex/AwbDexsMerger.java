@@ -94,7 +94,6 @@ public class AwbDexsMerger extends AtlasDexMerger {
     }
 
     public void merge(AwbBundle awbBundle){
-
         File file = variantOutputContext.getVariantContext().getAwbDexAchiveOutput(awbBundle);
         List<File> awbDexFiles = new ArrayList<>();
         awbDexFiles.addAll(org.apache.commons.io.FileUtils.listFiles(file, new String[]{"jar", "dex"}, true));

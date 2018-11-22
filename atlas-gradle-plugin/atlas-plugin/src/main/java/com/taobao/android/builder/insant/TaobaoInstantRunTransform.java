@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.insant.incremental.TBIncrementalVisitor;
 import org.gradle.api.logging.Logging;
@@ -106,7 +107,6 @@ public class TaobaoInstantRunTransform extends Transform {
 
     @Override
     public void transform(TransformInvocation invocation) throws IOException, TransformException, InterruptedException {
-        LOGGER.warning("start excute:" + getClass().getName());
         List<JarInput> jarInputs =
                 invocation
                         .getInputs()
@@ -213,6 +213,7 @@ public class TaobaoInstantRunTransform extends Transform {
         }
 
 
+        Map<AwbBundle,File> awbBundleFileMap = new HashMap<>();
         variantOutputContext.getAwbTransformMap().values().forEach(awbTransform -> {
             File awbClassesTwoOutout = variantOutputContext.getAwbClassesInstantOut(awbTransform.getAwbBundle());
             LOGGER.warning("InstantAwbclassOut[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + awbClassesTwoOutout.getAbsolutePath());
@@ -225,7 +226,7 @@ public class TaobaoInstantRunTransform extends Transform {
             awbTransform.getInputDirs().forEach(dir -> {
                 LOGGER.warning("InstantAwbclassDir[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + dir.getAbsolutePath());
                 for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dir)) {
-                    if (file.isDirectory()) {
+                    if (!file.exists()||file.isDirectory()) {
                         continue;
                     }
                     PatchPolicy patchPolicy = PatchPolicy.NONE;
@@ -268,10 +269,7 @@ public class TaobaoInstantRunTransform extends Transform {
 
             });
 
-            awbTransform.getInputDirs().clear();
-            awbTransform.getInputLibraries().clear();
-            awbTransform.getInputFiles().clear();
-            awbTransform.getInputDirs().add(awbClassesTwoOutout);
+            awbBundleFileMap.put(awbTransform.getAwbBundle(),awbClassesTwoOutout);
         });
 
         // first get all referenced input to construct a class loader capable of loading those
@@ -311,6 +309,13 @@ public class TaobaoInstantRunTransform extends Transform {
                 throw new TransformException(e);
             }
         }
+
+        variantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
+            awbTransform.getInputLibraries().clear();
+            awbTransform.getInputFiles().clear();
+            awbTransform.getInputDirs().clear();
+            awbTransform.getInputDirs().add(awbBundleFileMap.get(awbTransform.getAwbBundle()));
+        });
 
         // If our classes.2 transformations indicated that a cold swap was necessary,
         // clean up the classes.3 output folder as some new files may have been generated.
@@ -428,7 +433,6 @@ public class TaobaoInstantRunTransform extends Transform {
             public void accept(AwbTransform awbTransform) {
                 try {
                     addAllClassLocations(awbTransform.getInputFiles(), referencedInputUrls);
-
                     addAllClassLocations(awbTransform.getInputDirs(), referencedInputUrls);
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
@@ -643,7 +647,6 @@ public class TaobaoInstantRunTransform extends Transform {
 
 
     enum PatchPolicy {
-
         ADD, MODIFY, NONE
 
     }
