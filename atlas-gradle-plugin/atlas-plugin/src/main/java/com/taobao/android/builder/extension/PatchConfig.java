@@ -241,7 +241,7 @@ public class PatchConfig {
         this.newPatch = newPatch;
     }
 
-    private boolean newPatch = true;
+    private boolean newPatch = false;
 
     @Config(message = " Dynamic deployment patch bag ", order = 2, group = "atlas_patch")
     private boolean createTPatch = false;
