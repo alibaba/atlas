@@ -377,6 +377,17 @@ public class TBuildConfig {
     @Deprecated
     private Set<String> insideOfApkBundles = Sets.newHashSet();
 
+
+    public Set<String> getInjectExcludePkgs() {
+        return injectExcludePkgs;
+    }
+
+    public void setInjectExcludePkgs(Set<String> injectExcludePkgs) {
+        this.injectExcludePkgs = injectExcludePkgs;
+    }
+
+    private Set<String>injectExcludePkgs = new HashSet<>();
+
     public Set<String> getOutOfApkNativeSos() {
         return outOfApkNativeSos;
     }

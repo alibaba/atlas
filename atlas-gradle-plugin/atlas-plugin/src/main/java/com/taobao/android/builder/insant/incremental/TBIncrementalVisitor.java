@@ -212,6 +212,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
     }
 
     protected enum AccessRight {
+
         PRIVATE, PACKAGE_PRIVATE, PROTECTED, PUBLIC;
 
         @NonNull
