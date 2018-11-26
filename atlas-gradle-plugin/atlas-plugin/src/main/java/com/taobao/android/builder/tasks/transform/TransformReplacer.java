@@ -440,25 +440,6 @@ public class TransformReplacer {
         if (baseTransforms != null && baseTransforms.size() > 0){
             for (TransformTask transformTask:baseTransforms){
                 transformTask.setEnabled(false);
-//                PackagingScope packagingScope = new DefaultGradlePackagingScope(variantContext.getScope());
-//                TaobaoInstantRunDependenciesApkBuilder taobaoInstantRunDependenciesApkBuilder = new TaobaoInstantRunDependenciesApkBuilder(
-//                        variantContext.getProject().getLogger(),
-//                        variantContext.getProject(),
-//                        variantContext.getScope().getInstantRunBuildContext(),
-//                        variantContext.getScope().getGlobalScope().getAndroidBuilder(),
-//                        variantContext.getScope().getGlobalScope().getBuildCache(),
-//                        packagingScope,
-//                        packagingScope.getSigningConfig(),
-//                        AaptGeneration.AAPT_V1,
-//                        packagingScope.getAaptOptions(),
-//                        new File(packagingScope.getInstantRunSplitApkOutputFolder(), "dep"),
-//                        packagingScope.getInstantRunSupportDir(),
-//                        new File(
-//                                packagingScope.getIncrementalDir(
-//                                        "TaobaoInstantRunDependenciesApkBuilder"),
-//                                "aapt-temp"));
-//                ReflectUtils.updateField(transformTask, "transform",
-//                        taobaoInstantRunDependenciesApkBuilder);
             }
         }
 
@@ -469,6 +450,15 @@ public class TransformReplacer {
                 TaobaoInstantRunTransform taobaoInstantRunTransform = new TaobaoInstantRunTransform(variantContext,variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),WaitableExecutor.useGlobalSharedThreadPool(),
                         variantContext.getScope());
                 ReflectUtils.updateField(transformTask,"transform",taobaoInstantRunTransform);
+            }
+        }
+
+
+        List<TransformTask> verifytransforms = TransformManager.findTransformTaskByTransformType(
+                variantContext, InstantRunVerifierTransform.class);
+        if (verifytransforms != null && verifytransforms.size() > 0){
+            for (TransformTask transformTask: verifytransforms){
+               transformTask.setEnabled(false);
             }
         }
 
