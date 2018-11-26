@@ -7,6 +7,11 @@ package com.taobao.android.builder.insant.matcher;
  */
 public interface Imatcher {
 
-        boolean match(String s);
+        public boolean match(String s);
+
+        public  String rule();
+
+
+        public Imatcher superMatcher();
 
 }

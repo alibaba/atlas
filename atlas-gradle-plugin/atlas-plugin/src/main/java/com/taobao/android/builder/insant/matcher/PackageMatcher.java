@@ -24,4 +24,15 @@ public class PackageMatcher implements Imatcher {
         }
         return false;
     }
+
+    @Override
+    public String rule() {
+        return rule;
+    }
+
+    @Override
+    public Imatcher superMatcher() {
+        String tempRule = rule.substring(0, rule.lastIndexOf("."));
+        return new PackageMatcher(tempRule.substring(0,tempRule.lastIndexOf("."))+".**");
+    }
 }
