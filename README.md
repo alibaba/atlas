@@ -1,9 +1,9 @@
 # Atlas
 
 [![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/alibaba/atlas/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/atlas_core-5.1.0.0-orange.svg)](https://github.com/alibaba/atlas/releases/tag/v5.1.0.0) 
-[![Release Version](https://img.shields.io/badge/atlasupdate-1.1.4.21-blue.svg)](https://github.com/alibaba/atlas/releases/tag/v5.1.0.0) 
-[![Release Version](https://img.shields.io/badge/atlasplugin-2.3.3.rc63-green.svg)](https://github.com/alibaba/atlas/releases/tag/v5.1.0.0) 
+[![Release Version](https://img.shields.io/badge/atlas__core-5.1.0.8--RC1-orange.svg)](https://github.com/alibaba/atlas/releases/tag/v5.1.0.0) 
+[![Release Version](https://img.shields.io/badge/atlasupdate-1.1.4.22--rc7-blue.svg)](https://github.com/alibaba/atlas/releases/tag/v5.1.0.0) 
+[![Release Version](https://img.shields.io/badge/atlasplugin-3.0.1--rc81-green.svg)](https://github.com/alibaba/atlas/releases/tag/v5.1.0.0) 
 
 > A powerful Android Dynamic Component Framework.
 
