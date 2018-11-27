@@ -209,16 +209,15 @@
 
 package com.taobao.android.builder.tasks.app.merge;
 
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbAssets;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tasks.manager.MtlParallelTask;
 import com.taobao.android.builder.tasks.manager.TaskCreater;
-import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbAssetConfigAction;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.DefaultTask;
 
 import java.util.ArrayList;
@@ -229,7 +228,7 @@ public class MergeAssetAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTas
 
     private AppVariantContext appVariantContext;
 
-    public MergeAssetAwbsConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+    public MergeAssetAwbsConfigAction(AppVariantContext appVariantContext, BaseVariantOutput baseVariantOutputData) {
         super(appVariantContext, baseVariantOutputData);
         this.appVariantContext = appVariantContext;
     }
@@ -258,10 +257,13 @@ public class MergeAssetAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTas
         List<DefaultTask> tasks = new ArrayList<DefaultTask>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            if (awbBundle.isMBundle){
+                continue;
+            }
 
-            MergeAwbAssetConfigAction mergeAwbAssetConfigAction = new MergeAwbAssetConfigAction(appVariantContext, baseVariantOutputData, awbBundle);
+            MergeAwbAssets.MergeAwbAssetConfigAction mergeAwbAssetConfigAction = new MergeAwbAssets.MergeAwbAssetConfigAction(appVariantContext, baseVariantOutput, awbBundle);
 
-            MergeSourceSetFolders mergeTask = TaskCreater.create(appVariantContext.getProject(), mergeAwbAssetConfigAction.getName(), mergeAwbAssetConfigAction.getType());
+            MergeAwbAssets mergeTask = TaskCreater.create(appVariantContext.getProject(), mergeAwbAssetConfigAction.getName(), mergeAwbAssetConfigAction.getType());
 
             mergeAwbAssetConfigAction.execute(mergeTask);
 
@@ -271,6 +273,7 @@ public class MergeAssetAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTas
 
 
         parallelTask.parallelTask = tasks;
+        parallelTask.concurrent = false;
         parallelTask.uniqueTaskName = getName();
 
     }

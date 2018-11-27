@@ -41,7 +41,6 @@ import java.util.zip.ZipFile;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
-@ParallelizableTask
 public class Dex extends BaseTask {
     @Input
     public String getBuildToolsVersion() {
@@ -134,8 +133,8 @@ public class Dex extends BaseTask {
         List<File> inputDexFiles = new ArrayList<File>();
         inputDexFiles.addAll(inputFiles);
         inputDexFiles.addAll(getLibraries());
-        getBuilder().convertByteCode(inputDexFiles, outFolder, getMultiDexEnabled(), getMainDexListFile(),
-                                     getDexOptions(), outputHandler);
+        getBuilder().getDexByteCodeConverter().convertByteCode(inputDexFiles, outFolder, getMultiDexEnabled(), getMainDexListFile(),
+                                     getDexOptions(), outputHandler,14);
         File dexBaseFile = getDexBaseFile();
         if (dexBaseFile != null) {
             ZipFile files = new ZipFile(dexBaseFile);
@@ -350,7 +349,7 @@ public class Dex extends BaseTask {
             ConventionMappingHelper.map(dexTask, "outputFolder", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return appVariantOutputContext.getVariantContext().getAwbDexOutput(awbBundle.getName());
+                    return appVariantOutputContext.getAwbDexOutput(awbBundle.getName());
                 }
 
             });
@@ -388,7 +387,7 @@ public class Dex extends BaseTask {
 //                    if (!awbBundle.getManifest().exists()) {
 //                        return null;
 //                    }
-//                    return appVariantOutputContext.getVariantContext().apContext.getBaseAwb(awbBundle.getAwbSoName());
+
 //                }
 //            });
             ConventionMappingHelper.map(dexTask, "libraries", new Callable<List<File>>() {

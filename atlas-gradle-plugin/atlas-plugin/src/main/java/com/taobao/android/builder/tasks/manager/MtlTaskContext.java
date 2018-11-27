@@ -209,7 +209,7 @@
 
 package com.taobao.android.builder.tasks.manager;
 
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.api.BaseVariantOutput;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 
@@ -300,7 +300,7 @@ public class MtlTaskContext {
     }
 
     public static interface TaskFilter {
-        public List<Task> getBeforeTasks(Project project, BaseVariantOutputData vod);
+        public List<Task> getBeforeTasks(Project project, BaseVariantOutput vod);
     }
 
     public Task getSysTask() {

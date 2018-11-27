@@ -213,6 +213,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.bundlestorage.BundleArchive;
 import android.taobao.atlas.framework.bundlestorage.BundleArchiveRevision;
 import android.taobao.atlas.hack.AtlasHacks;
+import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.util.Log;
 import org.osgi.framework.Bundle;
@@ -314,12 +315,20 @@ public final class BundleClassLoader extends BaseDexClassLoader {
             return false;
         }
         if (!archive.isDexOpted()) {
-            Log.e("BundleClassLoader", "dexopt is failed: " + location);
-            return false;
+            archive.optDexFile();
+            if (!archive.isDexOpted()) {
+                Log.e("BundleClassLoader", "dexopt is failed: " + location);
+                return false;
+            }
         }
         List<String> dependencies = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
         for (String bundleName : dependencies) {
             BundleImpl dependencyBundle = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
+            if (dependencyBundle == null && AtlasBundleInfoManager.instance().isMbundle(bundleName)){
+                RuntimeVariables.delegateClassLoader.installMbundle(bundleName);
+                continue;
+
+            }
             if (dependencyBundle == null || dependencyBundle.getArchive() == null || !dependencyBundle.getArchive()
                 .isDexOpted()) {
                 Log.e("BundleClassLoader",
@@ -428,6 +437,11 @@ public final class BundleClassLoader extends BaseDexClassLoader {
                 try {
                     BundleImpl impl = (BundleImpl)Atlas.getInstance().getBundle(dependencyBundle);
                     if (impl != null) {
+                        if (AtlasBundleInfoManager.instance().isMbundle(dependencyBundle)){
+                            impl.startBundle();
+                            continue;
+                        }
+
                         clazz = ((BundleClassLoader)impl.getClassLoader()).loadOwnClass(classname);
                         if (clazz != null) {
                             impl.startBundle();

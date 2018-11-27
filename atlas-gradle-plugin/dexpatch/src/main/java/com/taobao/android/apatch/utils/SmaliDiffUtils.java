@@ -215,9 +215,10 @@ import com.taobao.android.object.DexDiffInfo;
 import com.taobao.android.smali.AfBakSmali;
 import com.taobao.android.smali.SmaliMod;
 import org.antlr.runtime.RecognitionException;
-import org.jf.baksmali.baksmaliOptions;
+import org.jf.baksmali.BaksmaliOptions;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.Opcode;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.ReferenceType;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile;
@@ -257,7 +258,7 @@ public class SmaliDiffUtils {
         if (!newTemp.exists()) {
             newTemp.mkdirs();
         }
-        for (DexBackedClassDef dexBackedClassDef : diffInfo.getOldClasses()) {
+        for (DexBackedClassDef dexBackedClassDef : diffInfo.getOldClasses().keySet()) {
             if (DexDiffer.getDalvikClassName(dexBackedClassDef.getType()).equals(outterClassName)) {
                 oldDexBackClassDef = dexBackedClassDef;
             }
@@ -342,7 +343,7 @@ public class SmaliDiffUtils {
         classDefs.addAll(info.getAddedClasses());
         final ClassFileNameHandler outFileNameHandler = new ClassFileNameHandler(smaliDir, ".smali");
         final ClassFileNameHandler inFileNameHandler = new ClassFileNameHandler(smaliDir, ".smali");
-        DexBuilder dexBuilder = DexBuilder.makeDexBuilder();
+        DexBuilder dexBuilder = new DexBuilder(Opcodes.getDefault());
         File smaliFile;
         String className;
         for (DexBackedClassDef classDef : classDefs) {
@@ -381,6 +382,12 @@ public class SmaliDiffUtils {
                     }
                 };
             }
+
+            @Nonnull
+            @Override
+            public Opcodes getOpcodes() {
+                return Opcodes.getDefault();
+            }
         });
 
         for (ClassDef classDef:classDefs){
@@ -394,7 +401,7 @@ public class SmaliDiffUtils {
         Set<DexBackedClassDef> classes = Sets.newHashSet();
         try {
             for (File newFile : newFiles) {
-                DexBackedDexFile newDexFile = DexFileFactory.loadDexFile(newFile, 19, true);
+                DexBackedDexFile newDexFile = DexFileFactory.loadDexFile(newFile, Opcodes.getDefault());
                 Set<? extends DexBackedClassDef> dexClasses = newDexFile.getClasses();
                 classes.addAll(dexClasses);
             }
@@ -428,24 +435,21 @@ public class SmaliDiffUtils {
     }
 
 
-    public static baksmaliOptions getBuildOption(Iterable<? extends ClassDef> collection, int apiLevel) {
-        baksmaliOptions options = new baksmaliOptions();
+    public static BaksmaliOptions getBuildOption(Iterable<? extends ClassDef> collection, int apiLevel) {
+        BaksmaliOptions options = new BaksmaliOptions();
 
         options.deodex = false;
-        options.noParameterRegisters = false;
-        options.useLocalsDirective = true;
-        options.useSequentialLabels = true;
-        options.outputDebugInfo = true;
-        options.addCodeOffsets = false;
-        options.jobs = -1;
-        options.noAccessorComments = false;
+        options.parameterRegisters = false;
+        options.localsDirective = true;
+        options.sequentialLabels = true;
+        options.debugInfo = true;
+        options.codeOffsets = false;
+        options.accessorComments = false;
         options.registerInfo = 0;// 128
-        options.ignoreErrors = false;
         options.inlineResolver = null;
         options.apiLevel = apiLevel;
-        options.checkPackagePrivateAccess = false;
-        if (!options.noAccessorComments) {
-            options.syntheticAccessorResolver = new SyntheticAccessorResolver(collection);
+        if (!options.accessorComments) {
+            options.syntheticAccessorResolver = new SyntheticAccessorResolver(Opcodes.getDefault(),collection);
         }
 
         return options;

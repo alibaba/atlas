@@ -209,20 +209,10 @@
 
 package com.taobao.android.builder.tasks.app.prepare;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
@@ -231,6 +221,17 @@ import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.io.FileUtils;
 import org.dom4j.DocumentException;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class PrepareBundleInfoTask extends BaseTask {
 
@@ -250,7 +251,7 @@ public class PrepareBundleInfoTask extends BaseTask {
     }
 
     private void generateBundleListCfg(AppVariantContext appVariantContext) throws IOException {
-        List<String> bundleLists = AtlasBuildContext.awbBundleMap.values().stream().map(awbBundle -> {
+        List<String> bundleLists = AtlasBuildContext.awbBundleMap.values().stream().filter(awbBundle -> !awbBundle.isMBundle).map(awbBundle -> {
             return appVariantOutputContext.getAwbPackageOutputFilePath(awbBundle);
         }).sorted().collect(Collectors.toList());
         File outputFile = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(), "bundleList.cfg");
@@ -262,12 +263,7 @@ public class PrepareBundleInfoTask extends BaseTask {
         //Set the bundle dependencies
 
         List<BundleInfo> bundleInfos = new ArrayList<>();
-        AtlasBuildContext.awbBundleMap.values().stream().forEach(new Consumer<AwbBundle>() {
-            @Override
-            public void accept(AwbBundle awbBundle) {
-                bundleInfos.add(awbBundle.bundleInfo);
-            }
-        });
+        AtlasBuildContext.awbBundleMap.values().stream().forEach(awbBundle -> bundleInfos.add(awbBundle.bundleInfo));
 
     }
 
@@ -293,8 +289,8 @@ public class PrepareBundleInfoTask extends BaseTask {
     public static class ConfigAction extends MtlBaseTaskAction<PrepareBundleInfoTask> {
 
         public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
-            super(appVariantContext, baseVariantOutputData);
+                            BaseVariantOutput variantOutput) {
+            super(appVariantContext, variantOutput);
         }
 
         @Override

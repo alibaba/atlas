@@ -6,7 +6,7 @@
 /.idea/libraries
 !.idea/codeStyleSettings.xml
 .DS_Store
-/build/
+#/build
 /captures
 .vscode/
 

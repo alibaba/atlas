@@ -420,6 +420,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.jf.dexlib2.DexFileFactory;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.iface.ClassDef;
 
 import java.io.File;
@@ -500,7 +501,7 @@ public class PatchUtils {
         File[] dexFiles = getDexFiles(file);
         HashSet<ClassDef> classDefs = new HashSet<ClassDef>();
         for (File dexFile : dexFiles) {
-            classDefs.addAll(DexFileFactory.loadDexFile(dexFile, 19, true).getClasses());
+            classDefs.addAll(DexFileFactory.loadDexFile(dexFile, Opcodes.getDefault()).getClasses());
         }
         for (ClassDef classDef : classDefs) {
             classDefMap.put(classDef.getType(), classDef);

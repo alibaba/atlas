@@ -28,14 +28,14 @@
 
 package com.taobao.android.baksmali.adaptors;
 
-import org.jf.baksmali.baksmaliOptions;
+import org.jf.baksmali.BaksmaliOptions;
 
 import javax.annotation.Nonnull;
 
 public class EndTryLabelMethodItem extends LabelMethodItem {
     private int endTryAddress;
 
-    public EndTryLabelMethodItem(@Nonnull baksmaliOptions options, int codeAddress, int endTryAddress) {
+    public EndTryLabelMethodItem(@Nonnull BaksmaliOptions options, int codeAddress, int endTryAddress) {
         super(options, codeAddress, "try_end_");
         this.endTryAddress = endTryAddress;
     }

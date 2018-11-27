@@ -214,10 +214,15 @@ import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
+import com.android.build.gradle.options.ProjectOptions;
 import com.android.builder.core.AtlasBuilder;
 import com.android.utils.ILogger;
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.asm.field.Field;
 import org.gradle.api.Project;
+import org.gradle.api.internal.tasks.TaskExecuter;
+import org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter;
 import org.gradle.api.logging.Logging;
 
 /**
@@ -251,8 +256,8 @@ public abstract class AtlasBaseTaskManager<T extends BaseExtension> {
         this.project = project;
         this.tasks = new TaskContainerAdaptor(project.getTasks());
         this.atlasExtension = atlasExtension;
-        this.extraModelInfo = new ExtraModelInfo(project);
         this.logger = new LoggerWrapper(Logging.getLogger(AtlasBaseTaskManager.class));
+        this.extraModelInfo = new ExtraModelInfo(new ProjectOptions(project), Logging.getLogger(AtlasBaseTaskManager.class));
 
         //this.dependencyManager = new DependencyManager(androidExtension, project, atlasExtension);
     }
@@ -280,5 +285,29 @@ public abstract class AtlasBaseTaskManager<T extends BaseExtension> {
      * Parse configuration file
      */
     public void parseConfig() {
+
+    }
+
+    protected<V extends TaskExecuter> V getExecuteActionsTaskExecuter(TaskExecuter taskExecuter,Class<V>clazz) {
+        if (taskExecuter == null){
+            return null;
+        }
+        while (get(taskExecuter).getClass()!=clazz){
+
+              taskExecuter = get(taskExecuter);
+        }
+        return (V) get(taskExecuter);
+
+    }
+
+    private TaskExecuter get(TaskExecuter taskExecuter) {
+        Object object = ReflectUtils.getField(taskExecuter, "executer");
+        if (object == null) {
+            object = ReflectUtils.getField(taskExecuter, "delegate");
+        }
+        if (object == null){
+            return taskExecuter;
+        }
+        return (TaskExecuter) object;
     }
 }

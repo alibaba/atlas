@@ -74,6 +74,7 @@ public class BundleInfoSourceCreator {
         infoBuffer.append(String.format("info.unique_tag = \"%s\";\n",info.getUnique_tag()));
         infoBuffer.append(String.format("info.pkgName = \"%s\";\n",info.getPkgName()));
         infoBuffer.append(String.format("info.isInternal = %s;\n",info.getIsInternal()));
+        infoBuffer.append(String.format("info.isMBundle = %s;\n",info.getIsMBundle()));
         if(info.getApplicationName()!=null) {
             infoBuffer.append(String.format("info.applicationName = \"%s\";\n", info.getApplicationName()));
         }

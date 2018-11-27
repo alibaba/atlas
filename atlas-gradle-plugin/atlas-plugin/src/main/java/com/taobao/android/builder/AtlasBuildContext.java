@@ -209,19 +209,21 @@
 
 package com.taobao.android.builder;
 
+import com.android.build.api.transform.QualifiedContent;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.taobao.android.builder.adapter.BuilderAdapter;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tasks.dexpatch.builder.DefaultDexBuilder;
-import com.taobao.android.builder.tasks.dexpatch.builder.DexBuilder;
+import com.taobao.android.builder.manager.AtlasConfigurationHelper;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
+import com.taobao.android.builder.tools.process.ApkProcessor;
 import org.gradle.api.Project;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.io.File;
+import java.util.*;
 
 /**
  * Created by shenghua.nish on 2016-05-09 At 3:50 p.m.
@@ -233,6 +235,8 @@ public class AtlasBuildContext {
      */
     public static BuilderAdapter sBuilderAdapter = new BuilderAdapter();
 
+    public static Map<String,File>bundleExploadDir = new HashMap<>();
+
     public static Map<String, AtlasDependencyTree> androidDependencyTrees = Maps.newHashMap();
 
     public static Map<String, AtlasDependencyTree> libDependencyTrees = Maps.newHashMap();
@@ -243,9 +247,20 @@ public class AtlasBuildContext {
 
     public static Map<String, AwbBundle> awbBundleMap = new HashMap<String, AwbBundle>();
 
+//    public static AtlasMainDexHelper atlasMainDexHelper = new AtlasMainDexHelper();
+
+    public static Map<String,AtlasMainDexHelper> atlasMainDexHelperMap = new HashMap<>();
+
+
+    public static ApkProcessor atlasApkProcessor = new ApkProcessor.AtlasApkProcessor();
+
     public static Set<String> conflictDependencies;
 
-    public static DexBuilder dexBuilder = DefaultDexBuilder.getInstance();
+
+    public static AtlasConfigurationHelper atlasConfigurationHelper;
+
+
+    public static STATUS status = STATUS.DEXARCHIVE;
 
     /**
      * Depending on the original coordinate address, classInject You need to find atlas.
@@ -259,6 +274,8 @@ public class AtlasBuildContext {
      */
     public static Map<String, String> jarTraceMap = new HashMap<String, String>();
 
+    public static Set<File> localLibs = new HashSet<>();
+
     public static void reset(){
         dependencyTraceMap.clear();
         jarTraceMap.clear();
@@ -268,6 +285,16 @@ public class AtlasBuildContext {
         customPackageIdMaps.clear();
         libDependencyTrees.clear();
         androidBuilderMap.clear();
+        localLibs.clear();
+        status = STATUS.DEXARCHIVE;
+        bundleExploadDir.clear();
+        atlasMainDexHelperMap.clear();
+
+    }
+
+    public enum STATUS{
+        MULTIDEX,DEXARCHIVE,PREDEX,DEX,EXTERNALLIBSMERGE,DEXMERGE
+
     }
 
 }

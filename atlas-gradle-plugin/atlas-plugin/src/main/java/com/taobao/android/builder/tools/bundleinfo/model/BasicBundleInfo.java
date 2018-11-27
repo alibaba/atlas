@@ -230,6 +230,17 @@ public class BasicBundleInfo {
 
     private String version;
 
+
+    public Boolean getIsMBundle() {
+        return isMBundle;
+    }
+
+    public void setIsMBundle(boolean mainBundle) {
+        isMBundle = mainBundle;
+    }
+
+    private Boolean isMBundle = false;
+
     private List<String> dependency = Lists.newArrayList();
 
     private List<String> activities = Lists.newArrayList();

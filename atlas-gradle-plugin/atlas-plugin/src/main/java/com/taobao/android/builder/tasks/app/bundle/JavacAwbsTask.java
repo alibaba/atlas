@@ -209,16 +209,14 @@
 
 package com.taobao.android.builder.tasks.app.bundle;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-
 import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.tasks.factory.AndroidJavaCompile;
+import com.android.build.gradle.tasks.factory.AwbAndroidJavaCompile;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -228,6 +226,10 @@ import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.compile.JavaCompile;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * compiling awb the R file
@@ -258,7 +260,9 @@ public class JavacAwbsTask extends BaseTask {
         List<Runnable> runnables2 = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-
+            if (awbBundle.isMBundle){
+                continue;
+            }
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
@@ -268,7 +272,7 @@ public class JavacAwbsTask extends BaseTask {
                         AwbJavaCompileConfigAction awbJavaCompileConfigAction = new AwbJavaCompileConfigAction(
                             awbBundle, appVariantOutputContext);
 
-                        JavaCompile awbJavaCompile = TaskCreater.create(getProject(),
+                        AwbAndroidJavaCompile awbJavaCompile = TaskCreater.create(getProject(),
                                                                         awbJavaCompileConfigAction.getName(),
                                                                         awbJavaCompileConfigAction.getType());
 
@@ -304,7 +308,7 @@ public class JavacAwbsTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<JavacAwbsTask> {
 
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
         }
 

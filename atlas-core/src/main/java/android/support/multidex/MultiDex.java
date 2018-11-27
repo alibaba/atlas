@@ -48,7 +48,7 @@ import java.util.zip.ZipFile;
  * class methods. Secondary dex files named classes2.dex, classes3.dex... found
  * in the application apk will be added to the classloader after first call to
  * {@link #install(Context)}.
- *
+ * <p>
  * <p/>
  * This library provides compatibility for platforms with API level 4 through 20. This library does
  * nothing on newer versions of the platform which provide built-in support for secondary dex files.
@@ -78,7 +78,8 @@ public final class MultiDex {
     public static final boolean IS_VM_MULTIDEX_CAPABLE =
             isVMMultidexCapable(System.getProperty("java.vm.version"));
 
-    private MultiDex() {}
+    private MultiDex() {
+    }
 
     /**
      * Patches the application context class loader by appending extra dex files
@@ -88,7 +89,7 @@ public final class MultiDex {
      *
      * @param context application context.
      * @throws RuntimeException if an error occurred preventing the classloader
-     *         extension.
+     *                          extension.
      */
     public static void install(Context context) {
         Log.i(TAG, "Installing application");
@@ -105,9 +106,9 @@ public final class MultiDex {
         try {
             ApplicationInfo applicationInfo = getApplicationInfo(context);
             if (applicationInfo == null) {
-              Log.i(TAG, "No ApplicationInfo available, i.e. running on a test Context:"
-                  + " MultiDex support library is disabled.");
-              return;
+                Log.i(TAG, "No ApplicationInfo available, i.e. running on a test Context:"
+                        + " MultiDex support library is disabled.");
+                return;
             }
 
             doInstallation(context,
@@ -130,12 +131,12 @@ public final class MultiDex {
      * {@link com.android.test.runner.MultiDexTestRunner} for an example.
      *
      * @param instrumentationContext instrumentation context.
-     * @param targetContext target application context.
+     * @param targetContext          target application context.
      * @throws RuntimeException if an error occurred preventing the classloader
-     *         extension.
+     *                          extension.
      */
     public static void installInstrumentation(Context instrumentationContext,
-            Context targetContext) {
+                                              Context targetContext) {
         Log.i(TAG, "Installing instrumentation");
 
         if (IS_VM_MULTIDEX_CAPABLE) {
@@ -152,14 +153,14 @@ public final class MultiDex {
             ApplicationInfo instrumentationInfo = getApplicationInfo(instrumentationContext);
             if (instrumentationInfo == null) {
                 Log.i(TAG, "No ApplicationInfo available for instrumentation, i.e. running on a"
-                    + " test Context: MultiDex support library is disabled.");
+                        + " test Context: MultiDex support library is disabled.");
                 return;
             }
 
             ApplicationInfo applicationInfo = getApplicationInfo(targetContext);
             if (applicationInfo == null) {
                 Log.i(TAG, "No ApplicationInfo available, i.e. running on a test Context:"
-                    + " MultiDex support library is disabled.");
+                        + " MultiDex support library is disabled.");
                 return;
             }
 
@@ -186,17 +187,17 @@ public final class MultiDex {
     }
 
     /**
-     * @param mainContext context used to get filesDir, to save preference and to get the
-     * classloader to patch.
-     * @param sourceApk Apk file.
-     * @param dataDir data directory to use for code cache simulation.
+     * @param mainContext         context used to get filesDir, to save preference and to get the
+     *                            classloader to patch.
+     * @param sourceApk           Apk file.
+     * @param dataDir             data directory to use for code cache simulation.
      * @param secondaryFolderName name of the folder for storing extractions.
-     * @param prefsKeyPrefix prefix of all stored preference keys.
+     * @param prefsKeyPrefix      prefix of all stored preference keys.
      */
     private static void doInstallation(Context mainContext, File sourceApk, File dataDir,
-            String secondaryFolderName, String prefsKeyPrefix) throws IOException,
-                IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
-                InvocationTargetException, NoSuchMethodException {
+                                       String secondaryFolderName, String prefsKeyPrefix) throws IOException,
+            IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
+            InvocationTargetException, NoSuchMethodException {
         synchronized (installedApk) {
             if (installedApk.contains(sourceApk)) {
                 return;
@@ -233,15 +234,15 @@ public final class MultiDex {
                 // Note, the context class loader is null when running Robolectric tests.
                 Log.e(TAG,
                         "Context class loader is null. Must be running in test mode. "
-                        + "Skip patching.");
+                                + "Skip patching.");
                 return;
             }
 
             try {
-              clearOldDexDir(mainContext);
+                clearOldDexDir(mainContext);
             } catch (Throwable t) {
-              Log.w(TAG, "Something went wrong when trying to clear old MultiDex extraction, "
-                  + "continuing without cleaning.", t);
+                Log.w(TAG, "Something went wrong when trying to clear old MultiDex extraction, "
+                        + "continuing without cleaning.", t);
             }
 
             File dexDir = getDexDir(mainContext, dataDir, secondaryFolderName);
@@ -276,6 +277,7 @@ public final class MultiDex {
     /**
      * Identifies if the current VM has a native support for multidex, meaning there is no need for
      * additional installation by this library.
+     *
      * @return true if the VM handles multidex
      */
     /* package visible for test */
@@ -289,7 +291,7 @@ public final class MultiDex {
                     int minor = Integer.parseInt(matcher.group(2));
                     isMultidexCapable = (major > VM_WITH_MULTIDEX_VERSION_MAJOR)
                             || ((major == VM_WITH_MULTIDEX_VERSION_MAJOR)
-                                    && (minor >= VM_WITH_MULTIDEX_VERSION_MINOR));
+                            && (minor >= VM_WITH_MULTIDEX_VERSION_MINOR));
                 } catch (NumberFormatException e) {
                     // let isMultidexCapable be false
                 }
@@ -303,7 +305,7 @@ public final class MultiDex {
     }
 
     private static void installSecondaryDexes(ClassLoader loader, File dexDir,
-        List<? extends File> files)
+                                              List<? extends File> files)
             throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
             InvocationTargetException, NoSuchMethodException, IOException {
         if (!files.isEmpty()) {
@@ -321,7 +323,7 @@ public final class MultiDex {
      * Locates a given field anywhere in the class inheritance hierarchy.
      *
      * @param instance an object to search the field into.
-     * @param name field name
+     * @param name     field name
      * @return a field object
      * @throws NoSuchFieldException if the field cannot be located
      */
@@ -347,8 +349,8 @@ public final class MultiDex {
     /**
      * Locates a given method anywhere in the class inheritance hierarchy.
      *
-     * @param instance an object to search the method into.
-     * @param name method name
+     * @param instance       an object to search the method into.
+     * @param name           method name
      * @param parameterTypes method parameter types
      * @return a method object
      * @throws NoSuchMethodException if the method cannot be located
@@ -377,12 +379,13 @@ public final class MultiDex {
     /**
      * Replace the value of a field containing a non null array, by a new array containing the
      * elements of the original array plus the elements of extraElements.
-     * @param instance the instance whose field is to be modified.
-     * @param fieldName the field to modify.
+     *
+     * @param instance      the instance whose field is to be modified.
+     * @param fieldName     the field to modify.
      * @param extraElements elements to append at the end of the array.
      */
     private static void expandFieldArray(Object instance, String fieldName,
-            Object[] extraElements) throws NoSuchFieldException, IllegalArgumentException,
+                                         Object[] extraElements) throws NoSuchFieldException, IllegalArgumentException,
             IllegalAccessException {
         Field jlrField = findField(instance, fieldName);
         Object[] original = (Object[]) jlrField.get(instance);
@@ -461,10 +464,10 @@ public final class MultiDex {
     private static final class V19 {
 
         private static void install(ClassLoader loader,
-                List<? extends File> additionalClassPathEntries,
-                File optimizedDirectory)
-                        throws IllegalArgumentException, IllegalAccessException,
-                        NoSuchFieldException, InvocationTargetException, NoSuchMethodException {
+                                    List<? extends File> additionalClassPathEntries,
+                                    File optimizedDirectory)
+                throws IllegalArgumentException, IllegalAccessException,
+                NoSuchFieldException, InvocationTargetException, NoSuchMethodException {
             /* The patched class loader is expected to be a descendant of
              * dalvik.system.BaseDexClassLoader. We modify its
              * dalvik.system.DexPathList pathList field to append additional DEX
@@ -492,7 +495,7 @@ public final class MultiDex {
                 } else {
                     IOException[] combined =
                             new IOException[suppressedExceptions.size() +
-                                            dexElementsSuppressedExceptions.length];
+                                    dexElementsSuppressedExceptions.length];
                     suppressedExceptions.toArray(combined);
                     System.arraycopy(dexElementsSuppressedExceptions, 0, combined,
                             suppressedExceptions.size(), dexElementsSuppressedExceptions.length);
@@ -510,14 +513,16 @@ public final class MultiDex {
         private static Object[] makeDexElements(
                 Object dexPathList, ArrayList<File> files, File optimizedDirectory,
                 ArrayList<IOException> suppressedExceptions)
-                        throws IllegalAccessException, InvocationTargetException,
-                        NoSuchMethodException {
+                throws IllegalAccessException, InvocationTargetException,
+                NoSuchMethodException {
             Method makeDexElements =
                     findMethod(dexPathList, "makeDexElements", ArrayList.class, File.class,
                             ArrayList.class);
 
-            return (Object[]) makeDexElements.invoke(dexPathList, files, optimizedDirectory,
-                    suppressedExceptions);
+            IDexElementsMethodInvoker invoker = new DexElementsMethodInvokerV19(dexPathList, optimizedDirectory, suppressedExceptions, makeDexElements);
+            DexElementsMaker dexElementsMaker = new DexElementsMaker(files, invoker);
+
+            return dexElementsMaker.make();
         }
     }
 
@@ -527,10 +532,10 @@ public final class MultiDex {
     private static final class V14 {
 
         private static void install(ClassLoader loader,
-                List<? extends File> additionalClassPathEntries,
-                File optimizedDirectory)
-                        throws IllegalArgumentException, IllegalAccessException,
-                        NoSuchFieldException, InvocationTargetException, NoSuchMethodException {
+                                    List<? extends File> additionalClassPathEntries,
+                                    File optimizedDirectory)
+                throws IllegalArgumentException, IllegalAccessException,
+                NoSuchFieldException, InvocationTargetException, NoSuchMethodException {
             /* The patched class loader is expected to be a descendant of
              * dalvik.system.BaseDexClassLoader. We modify its
              * dalvik.system.DexPathList pathList field to append additional DEX
@@ -548,12 +553,15 @@ public final class MultiDex {
          */
         private static Object[] makeDexElements(
                 Object dexPathList, ArrayList<File> files, File optimizedDirectory)
-                        throws IllegalAccessException, InvocationTargetException,
-                        NoSuchMethodException {
+                throws IllegalAccessException, InvocationTargetException,
+                NoSuchMethodException {
             Method makeDexElements =
                     findMethod(dexPathList, "makeDexElements", ArrayList.class, File.class);
 
-            return (Object[]) makeDexElements.invoke(dexPathList, files, optimizedDirectory);
+            IDexElementsMethodInvoker invoker = new DexElementsMethodInvokerV14(dexPathList, optimizedDirectory, makeDexElements);
+            DexElementsMaker dexElementsMaker = new DexElementsMaker(files, invoker);
+
+            return dexElementsMaker.make();
         }
     }
 
@@ -562,9 +570,9 @@ public final class MultiDex {
      */
     private static final class V4 {
         private static void install(ClassLoader loader,
-                List<? extends File> additionalClassPathEntries)
-                        throws IllegalArgumentException, IllegalAccessException,
-                        NoSuchFieldException, IOException {
+                                    List<? extends File> additionalClassPathEntries)
+                throws IllegalArgumentException, IllegalAccessException,
+                NoSuchFieldException, IOException {
             /* The patched class loader is expected to be a descendant of
              * dalvik.system.DexClassLoader. We modify its
              * fields mPaths, mFiles, mZips and mDexs to append additional DEX
@@ -580,7 +588,7 @@ public final class MultiDex {
             ZipFile[] extraZips = new ZipFile[extraSize];
             DexFile[] extraDexs = new DexFile[extraSize];
             for (ListIterator<? extends File> iterator = additionalClassPathEntries.listIterator();
-                    iterator.hasNext();) {
+                 iterator.hasNext(); ) {
                 File additionalEntry = iterator.next();
                 String entryPath = additionalEntry.getAbsolutePath();
                 path.append(':').append(entryPath);

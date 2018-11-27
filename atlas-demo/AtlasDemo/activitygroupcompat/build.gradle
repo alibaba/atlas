@@ -5,7 +5,7 @@ version = '1.0.1'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.0'
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         minSdkVersion 14
@@ -25,6 +25,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:25.1.0'
-    compile rootProject.ext.lib_atlas_core
-    //compile project(':atlas-core')
+//    compile('com.taobao.android:atlas_core:5.0.7.55')
+    compile project(':atlas_core')
 }

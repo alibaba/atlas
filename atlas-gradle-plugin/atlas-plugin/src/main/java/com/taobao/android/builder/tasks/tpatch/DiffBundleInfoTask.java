@@ -209,26 +209,15 @@
 
 package com.taobao.android.builder.tasks.tpatch;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.diff.DependencyDiff;
@@ -240,18 +229,16 @@ import com.taobao.android.object.ArtifactBundleInfo;
 import com.taobao.android.object.DiffType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.dom4j.Attribute;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.Node;
+import org.dom4j.*;
 import org.dom4j.io.SAXReader;
 import org.gradle.api.GradleException;
-import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  * Created by wuzhong on 16/6/24.
@@ -337,36 +324,19 @@ public class DiffBundleInfoTask extends BaseTask {
             tagMap.put(obj.getString("pkgName"), obj.getString("unique_tag"));
         }
 
-        // 1. First add the main bundle
-        ArtifactBundleInfo mainBundleInfo = getMainArtifactBundInfo(mainfestFile);
-        mainBundleInfo.setBaseVersion(apVersion);
-        mainBundleInfo.setMainBundle(true);
-        mainBundleInfo.setVersion(appVariantOutputContext.getVariantContext()
-                                          .getVariantConfiguration()
-                                          .getVersionName());
-        if (dependencyDiff.getMainDexDiffs().size() > 0) {
-            mainBundleInfo.setDiffType(DiffType.MODIFY);
-        } else {
-            mainBundleInfo.setDiffType(DiffType.NONE);
-        }
 
-        mainBundleInfo.setSrcUnitTag(jsonObject.getString("unit_tag"));
-        mainBundleInfo.setUnitTag(appVariantOutputContext.getVariantContext().unit_tag);
-
-        artifactBundleInfos.add(mainBundleInfo);
 
         // 2. Add your own bundle
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 appVariantOutputContext.getVariantContext().
                         getVariantConfiguration().getFullName());
 
+        List<AwbBundle>modifyMbundles = new ArrayList<>();
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-
             BundleInfo bundleInfo = awbBundle.bundleInfo;
-
             ArtifactBundleInfo awbBundleInfo = new ArtifactBundleInfo();
             awbBundleInfo.setMainBundle(false);
-            awbBundleInfo.setDependency(bundleInfo.getDependency());
+            awbBundleInfo.setDependency(newDependency(bundleInfo.getDependency(),appVariantOutputContext.getVariantContext()));
             awbBundleInfo.setPkgName(bundleInfo.getPkgName());
             awbBundleInfo.setApplicationName(bundleInfo.getApplicationName());
             awbBundleInfo.setArtifactId(awbBundle.getResolvedCoordinates().getArtifactId());
@@ -395,9 +365,49 @@ public class DiffBundleInfoTask extends BaseTask {
                 awbBundleInfo.setDiffType(DiffType.NONE);
             }
 
+            if (awbBundle.isMBundle) {
+                if (awbBundleInfo.getDiffType() == DiffType.ADD || awbBundleInfo.getDiffType() == DiffType.MODIFY) {
+                    modifyMbundles.add(awbBundle);
+                }
+                continue;
+            }
+
             artifactBundleInfos.add(awbBundleInfo);
         }
+
+        // 1. First add the main bundle
+        ArtifactBundleInfo mainBundleInfo = getMainArtifactBundInfo(mainfestFile);
+        mainBundleInfo.setBaseVersion(apVersion);
+        mainBundleInfo.setMainBundle(true);
+        mainBundleInfo.setVersion(appVariantOutputContext.getVariantContext()
+                .getVariantConfiguration()
+                .getVersionName());
+        if (dependencyDiff.getMainDexDiffs().size() > 0 || modifyMbundles.size() > 0) {
+            mainBundleInfo.setDiffType(DiffType.MODIFY);
+        } else {
+            mainBundleInfo.setDiffType(DiffType.NONE);
+        }
+
+        mainBundleInfo.setSrcUnitTag(jsonObject.getString("unit_tag"));
+        mainBundleInfo.setUnitTag(appVariantOutputContext.getVariantContext().unit_tag);
+
+        artifactBundleInfos.add(mainBundleInfo);
+
         return artifactBundleInfos;
+    }
+
+    private List<String> newDependency(List<String> dependency,AppVariantContext appVariantContext) {
+        List<String>dependencies = new ArrayList<>();
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||dependency == null ||dependency.size() == 0){
+            return dependencies;
+        }
+        for (String s:dependency){
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(s)){
+                dependencies.add(s);
+            }
+        }
+        return dependencies;
+
     }
 
     private String getBundleName(AwbBundle libraryDependency) {
@@ -455,7 +465,7 @@ public class DiffBundleInfoTask extends BaseTask {
         private AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+                            BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -490,14 +500,13 @@ public class DiffBundleInfoTask extends BaseTask {
                 diffBundleInfoTask.setEnabled(false);
             }
 
-            final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope.getVariantOutputData();
-            final GradleVariantConfiguration config = scope.getVariantScope()
+            final GradleVariantConfiguration config = scope
                     .getVariantConfiguration();
 
             ConventionMappingHelper.map(diffBundleInfoTask, "outJsonFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    File file = scope.getVariantScope().getGlobalScope().getOutputsDir();
+                    File file = scope.getGlobalScope().getOutputsDir();
                     if (!file.exists()) {
                         file.mkdirs();
                     }
@@ -508,7 +517,7 @@ public class DiffBundleInfoTask extends BaseTask {
             ConventionMappingHelper.map(diffBundleInfoTask, "manifestFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return variantOutputData.manifestProcessorTask.getManifestOutputFile();
+                    return com.android.utils.FileUtils.join(baseVariantOutput.getProcessManifest().getManifestOutputDirectory(), new String[]{baseVariantOutput.getDirName(), "AndroidManifest.xml"});
                 }
             });
 

@@ -35,7 +35,7 @@ import com.taobao.android.apatch.utils.TypeGenUtil;
 import com.taobao.android.baksmali.util.ReferenceUtil;
 import com.taobao.android.object.DexDiffInfo;
 
-import org.jf.baksmali.baksmaliOptions;
+import org.jf.baksmali.BaksmaliOptions;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.dexbacked.DexBackedClassDef;
 import org.jf.dexlib2.dexbacked.DexBackedDexFile.InvalidItemIndex;
@@ -63,7 +63,7 @@ import javax.annotation.Nonnull;
 public class ClassDefinition {
 
     @Nonnull
-    public final baksmaliOptions options;
+    public final BaksmaliOptions options;
     @Nonnull
     public final ClassDef classDef;
     @Nonnull
@@ -75,7 +75,7 @@ public class ClassDefinition {
 
     protected boolean validationErrors;
 
-    public ClassDefinition(@Nonnull baksmaliOptions options, @Nonnull ClassDef classDef,
+    public ClassDefinition(@Nonnull BaksmaliOptions options, @Nonnull ClassDef classDef,
                            @Nonnull boolean isScan, @Nonnull boolean fullMethod) {
         this.options = options;
         this.classDef = classDef;
@@ -84,7 +84,7 @@ public class ClassDefinition {
         fieldsSetInStaticConstructor = findFieldsSetInStaticConstructor();
     }
 
-    public ClassDefinition(baksmaliOptions options, ClassDef classDef) {
+    public ClassDefinition(BaksmaliOptions options, ClassDef classDef) {
         this.options = options;
         this.classDef = classDef;
         this.isScan = false;
@@ -215,7 +215,7 @@ public class ClassDefinition {
             writer.write("# annotations\n");
 
             String containingClass = null;
-            if (options.useImplicitReferences) {
+            if (options.implicitReferences) {
                 containingClass = classDef.getType();
             }
 

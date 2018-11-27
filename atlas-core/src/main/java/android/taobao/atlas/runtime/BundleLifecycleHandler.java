@@ -218,6 +218,7 @@ import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleClassLoader;
+import android.taobao.atlas.profile.AtlasProfile;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
@@ -290,7 +291,7 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
 
     private void started(Bundle bundle){
         BundleImpl b = (BundleImpl) bundle;
-        if(b.getClassLoader()==null || !((BundleClassLoader)b.getClassLoader()).validateClasses()){
+        if(b.getClassLoader()==null || (b.getClassLoader() instanceof BundleClassLoader && !((BundleClassLoader)b.getClassLoader()).validateClasses())){
             Log.e("BundleLifeCycle","validateClass fail,bundle can't be started :"+b);
             List<Bundle> bundles = Atlas.getInstance().getBundles();
             Map<String, Object> detail = new HashMap<>();
@@ -298,9 +299,9 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
             detail.put("bundles", bundles);
             Exception e = new Exception();
             AtlasMonitor.getInstance().report(AtlasMonitor.VALIDATE_CLASSES, detail, e);
-            if(Framework.isDeubgMode()){
-                throw new RuntimeException("validateClass fail,bundle can't be started :"+b);
-            }
+//            if(Framework.isDeubgMode()){
+//                throw new RuntimeException("validateClass fail,bundle can't be started :"+b);
+//            }
             return;
         }
         long time = System.currentTimeMillis();
@@ -309,10 +310,11 @@ public class BundleLifecycleHandler implements SynchronousBundleListener {
             String appClassName = info.getApplicationName();
             if (StringUtils.isNotEmpty(appClassName)) {
                 try {
-                    Log.e("BundleLifeCycle","start "+appClassName);
+                    AtlasProfile ap = AtlasProfile.profile(appClassName);
+                    ap.start();
                     Application app = newApplication(appClassName, b.getClassLoader());
                     app.onCreate();
-                    Log.e("BundleLifeCycle","start finish"+appClassName);
+                    Log.e("BundleLifeCycle","start finish"+appClassName+"@"+ap.stop()+"@"+Thread.currentThread().toString());
                     ((BundleImpl) bundle).setActive();
                 }catch(ApplicationInitException e){
                     if(b.getArchive()!=null && b.getArchive().isDexOpted()){

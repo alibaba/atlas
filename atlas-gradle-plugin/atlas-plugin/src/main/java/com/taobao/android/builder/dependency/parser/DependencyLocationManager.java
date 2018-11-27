@@ -209,19 +209,15 @@
 
 package com.taobao.android.builder.dependency.parser;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Optional;
-
-import com.android.build.gradle.AndroidGradleOptions;
-import com.android.build.gradle.internal.tasks.PrepareLibraryTask;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.utils.FileCache;
 import com.android.utils.FileUtils;
-import com.google.common.base.Preconditions;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
+
+import java.io.File;
+import java.util.Optional;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -240,34 +236,47 @@ public class DependencyLocationManager {
             project.getLogger().info("missing " + mavenCoordinates.toString());
         }
 
-        Optional<FileCache> buildCache =
-            AndroidGradleOptions.getBuildCache(project);
-        File explodedDir;
-        if (shouldUseBuildCache(project, mavenCoordinates, bundle, buildCache)) { //&& !"awb"
-            // .equals(type)
-            try {
+//        if (BuildAtlasEnvTask.allManifests.containsKey(mavenCoordinates.)){
+//
+//            return BuildAtlasEnvTask.allManifests.get(mavenCoordinates.toString().split("@")[0]);
+//        }
 
-                explodedDir = buildCache.get().getFileInCache(
-                    PrepareLibraryTask.getBuildCacheInputs(bundle));
+//        AtlasDependencyGraph.HashableResolvedArtifactResult hashableResolvedArtifactResult = AtlasDependencyGraph.sLibraryMap.get(mavenCoordinates.toString().intern());
+//
+//        if (hashableResolvedArtifactResult!= null && hashableResolvedArtifactResult.getDelegate()!= null){
+//            return hashableResolvedArtifactResult.getDelegate().getFile();
+//        }
 
-                return explodedDir;
-
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        } else {
-            Preconditions.checkState(
-                !AndroidGradleOptions
-                    .isImprovedDependencyResolutionEnabled(project),
-                "Improved dependency resolution must be used with "
-                    + "build cache.");
+//        if (){
+//
+//            BuildCacheConfiguration
+//        }
+//
+//
+//
+////        Optional<FileCache> buildCache =
+////            AndroidGradleOptions.getBuildCache(project);
+////        File explodedDir;
+////        if (shouldUseBuildCache(project, mavenCoordinates, bundle, buildCache)) { //&& !"awb"
+//            // .equals(type)
+////            try {
+////
+////                explodedDir = buildCache.get().getFileInCache(
+////                    PrepareLibraryTask.getBuildCacheInputs(bundle));
+////
+////                return explodedDir;
+////
+////            } catch (IOException e) {
+////                throw new UncheckedIOException(e);
+////            }
+//        } else {
 
             return FileUtils.join(
                 project.getBuildDir(),
                 FD_INTERMEDIATES,
                 "exploded-" + type,
                 path);
-        }
+//        }
 
         //throw new GradleException("set explored dir exception");
 
@@ -275,10 +284,10 @@ public class DependencyLocationManager {
 
     private static boolean shouldUseBuildCache(Project project, MavenCoordinates mavenCoordinates, File bundle,
                                                Optional<FileCache> buildCache) {
-        if (!PrepareLibraryTask.shouldUseBuildCache(
-            buildCache.isPresent(), mavenCoordinates)) {
-            return false;
-        }
+//        if (!PrepareLibraryTask.shouldUseBuildCache(
+//            buildCache.isPresent(), mavenCoordinates)) {
+//            return false;
+//        }
 
         if (!bundle.exists()) {
             return false;

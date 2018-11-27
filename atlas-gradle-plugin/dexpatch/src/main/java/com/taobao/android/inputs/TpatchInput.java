@@ -18,6 +18,10 @@ public class TpatchInput extends BaseInput {
 
     public boolean createAll = false;
 
+    public boolean diffNativeSo;
+
+    public boolean diffBundleSo;
+
     public File baseApkFileList;
 
     public File newApkFileList;
@@ -41,6 +45,8 @@ public class TpatchInput extends BaseInput {
     public File outPutJson;
 
     public File bundleWhiteList;
+
+    public boolean newPatch = true;
 
     //dexpatch name:com.taobao.maindex
     public String mainBundleName = "libcom_taobao_maindex";

@@ -213,6 +213,9 @@ import java.sql.Date;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -227,13 +230,7 @@ import com.taobao.android.differ.dex.ApkDiff;
 import com.taobao.android.differ.dex.BundleDiffResult;
 import com.taobao.android.differ.dex.PatchException;
 import com.taobao.android.inputs.TpatchInput;
-import com.taobao.android.object.ApkFileList;
-import com.taobao.android.object.ArtifactBundleInfo;
-import com.taobao.android.object.BuildPatchInfos;
-import com.taobao.android.object.DexDiffInfo;
-import com.taobao.android.object.DiffType;
-import com.taobao.android.object.PatchBundleInfo;
-import com.taobao.android.object.PatchInfo;
+import com.taobao.android.object.*;
 import com.taobao.android.outputs.PatchFile;
 import com.taobao.android.outputs.TpatchFile;
 import com.taobao.android.task.ExecutorServicesHelper;
@@ -247,6 +244,7 @@ import com.taobao.android.tpatch.utils.PathUtils;
 import com.taobao.android.utils.CommandUtils;
 import com.taobao.android.utils.PathMatcher;
 import com.taobao.android.utils.Profiler;
+import com.taobao.android.utils.SoDiffUtils;
 import com.taobao.checker.Checker;
 import com.taobao.update.UpdateInfo;
 import org.antlr.runtime.RecognitionException;
@@ -262,7 +260,10 @@ import org.jf.dexlib2.iface.ClassDef;
 /**
  * generate atlas dynamic tpatch
  * <p/>
+ *
+ * Created by lilong on 16/6/17.
  */
+
 public class TPatchTool extends AbstractTool {
 
     public ApkDiff apkDiff = new ApkDiff();
@@ -271,6 +272,8 @@ public class TPatchTool extends AbstractTool {
     public Map<String,Integer> bundleTypes = new HashMap<>();
 
     public ApkDiff apkPatchInfos = new ApkDiff();
+
+    public static List<SoFileDef>soFileDefs = new ArrayList<>();
 
     public List<BundleDiffResult> bundleDiffResults = Collections.synchronizedList(new ArrayList<BundleDiffResult>());
 
@@ -285,6 +288,12 @@ public class TPatchTool extends AbstractTool {
         "META-INF/**"};
 
     public static File hisTpatchFolder;
+
+    public static final String SO_PATCH_META = "SO-PATCH-INF";
+
+
+    public static final String DEX_PATCH_META = "DEX-PATCH-INF";
+
 
     private boolean hasMainBundle;
 
@@ -335,6 +344,17 @@ public class TPatchTool extends AbstractTool {
     private File createTPatchFile(File outPatchDir, File patchTmpDir) throws IOException {
         // 首先压缩主bundle,先判断主bundle里有没有文件
         File mainBundleFoder = new File(patchTmpDir, ((TpatchInput)input).mainBundleName);
+        File metaFile = new File(mainBundleFoder,SO_PATCH_META);
+        if (soFileDefs.size() > 0){
+            com.taobao.android.tpatch.model.PatchFile patchFile = new com.taobao.android.tpatch.model.PatchFile(metaFile);
+            soFileDefs.stream().forEach(new Consumer<SoFileDef>() {
+                @Override
+                public void accept(SoFileDef soFileDef) {
+                    patchFile.append(soFileDef);
+                }
+            });
+            patchFile.close();
+        }
         File mainBundleFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + ".so");
         if (FileUtils.listFiles(mainBundleFoder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
             .size() > 0) {
@@ -354,6 +374,7 @@ public class TPatchTool extends AbstractTool {
 
         File infoFile = new File(patchTmpDir,"patchInfo");
         FileUtils.writeStringToFile(infoFile, "patch-" + input.newApkBo.getVersionName() + "@" + input.baseApkBo.getVersionName() + ".tpatch");
+
         //        zipBundle(patchTmpDir, patchFile);
         CommandUtils.exec(patchTmpDir, "zip -r " + patchFile.getAbsolutePath() + " . -x */ -x .*");
         FileUtils.deleteDirectory(patchTmpDir);
@@ -469,7 +490,18 @@ public class TPatchTool extends AbstractTool {
                         baseBundleResFile,
                         bundleName,
                         resPath)) { // modify resource
-                    FileUtils.copyFile(newBundleResFile, destResFile);
+                    if (baseBundleResFile.getName().endsWith(".so")){
+                        if (((TpatchInput)input).diffNativeSo && ((TpatchInput) input).diffBundleSo){
+                            destResFile = new File(destPatchBundleDir,resPath.concat(".patch"));
+                            SoDiffUtils.diffSo(baseBundleResFile.getParentFile(),baseBundleResFile,newBundleResFile,destResFile);
+
+                        }else {
+                            FileUtils.copyFile(newBundleResFile, destResFile);
+                        }
+
+                    }else {
+                        FileUtils.copyFile(newBundleResFile, destResFile);
+                    }
                 }
             } else {// new resource
                 FileUtils.copyFile(newBundleResFile, destResFile);
@@ -482,12 +514,11 @@ public class TPatchTool extends AbstractTool {
                 "unzip " + newBundleFile.getAbsolutePath() + " -d " + newBundleUnzipFolder.getAbsolutePath());
         CommandUtils.exec(patchTmpDir, "unzip " + baseBundleFile.getAbsolutePath() + " -d " + baseBundleUnzipFolder
                 .getAbsolutePath());
-        File destDex = new File(destPatchBundleDir, DEX_NAME);
-        File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
+//        File destDex = new File(destPatchBundleDir, DEX_NAME);
+//        File tmpDexFolder = new File(patchTmpDir, bundleName + "-dex");
         createBundleDexPatch(newBundleUnzipFolder,
                 baseBundleUnzipFolder,
-                destDex,
-                tmpDexFolder,
+                destPatchBundleDir,
                 false);
 
     }
@@ -534,30 +565,26 @@ public class TPatchTool extends AbstractTool {
      * @throws IOException
      * @throws RecognitionException
      */
-    public File createBundleDexPatch(File newApkUnzipFolder,
+    public List<File> createBundleDexPatch(File newApkUnzipFolder,
                                       File baseApkUnzipFolder,
-                                      File destDex,
-                                      File tmpDexFile,
+                                      File diffDexFolder,
                                       boolean mainDex) throws Exception {
         List<File> dexs = Lists.newArrayList();
         // 比较主bundle的dex
-        if (!tmpDexFile.exists()) {
-            tmpDexFile.mkdirs();
-        }
+//        if (!tmpDexFile.exists()) {
+//            tmpDexFile.mkdirs();
+//        }
         List<File> baseDexFiles = getFolderDexFiles(baseApkUnzipFolder);
         List<File> newDexFiles = getFolderDexFiles(newApkUnzipFolder);
-        File dexDiffFile = new File(tmpDexFile, "diff.dex");
         PatchDexTool dexTool = new TpatchDexTool(baseDexFiles,
                                                   newDexFiles,
                                                   DEFAULT_API_LEVEL,
-                                                  bundleClassMap.get(tmpDexFile.getName().substring(0,
-                                                                                                    tmpDexFile.getName()
-                                                                                                        .length() -
-                                                                                                        4)),
+                                                  bundleClassMap.get(diffDexFolder.getName()),
                                                   mainDex);
-        DexDiffInfo dexDiffInfo = dexTool.createPatchDex(dexDiffFile);
-        if (dexDiffFile.exists()) {
-            dexs.add(dexDiffFile);
+        dexTool.setNewPatch(((TpatchInput)input).newPatch);
+        DexDiffInfo dexDiffInfo = dexTool.createPatchDex(diffDexFolder);
+        if (diffDexFolder.listFiles()!= null && diffDexFolder.listFiles().length > 0) {
+            dexs.addAll(FileUtils.listFiles(diffDexFolder,new String[]{"dex"},true));
             BundleDiffResult bundleDiffResult = new BundleDiffResult();
             if (mainDex) {
                 bundleDiffResult.setBundleName("com.taobao.maindex");
@@ -569,11 +596,12 @@ public class TPatchTool extends AbstractTool {
             diffPatchInfos.add(bundleDiffResult);
             dexDiffInfo.save(bundleDiffResult);
         }
-        if (dexs.size() > 0) {
-            FileUtils.copyFile(dexs.get(0), destDex);
-        }
-
-        FileUtils.deleteDirectory(tmpDexFile);
+//        if (dexs.size() > 0) {
+//
+//            FileUtils.copyFile(dexs.get(0), destDex);
+//        }
+//
+//        FileUtils.deleteDirectory(tmpDexFile);
 //        if (mainDex){
 //            try {
 //
@@ -591,7 +619,7 @@ public class TPatchTool extends AbstractTool {
 //
 //            }
 
-        return destDex;
+        return dexs;
     }
 
     /**
@@ -673,7 +701,7 @@ public class TPatchTool extends AbstractTool {
                 patchBundleInfo.setBaseVersion(artifactBundleInfo.getBaseVersion());
                 patchInfo.getBundles().add(patchBundleInfo);
                 if (artifactBundleInfo.getUnitTag().equals(artifactBundleInfo.getSrcUnitTag())){
-                    throw new RuntimeException(artifactBundleInfo.getPkgName()+"内容发生了变化,但是unitTag一致"+artifactBundleInfo.getUnitTag()+",请修改版本做集成");
+                    throw new RuntimeException(artifactBundleInfo.getPkgName()+"has contents change,but unitTag equals srcUnitTag"+artifactBundleInfo.getUnitTag()+",please upgrade bundle version and reintegration");
                 }
             }
         }
@@ -754,8 +782,15 @@ public class TPatchTool extends AbstractTool {
                             "armeabi" +
                             "/" +
                             bundleFileSoName);
+            File assetsBundleFile = new File(newApkUnzipFolder,
+                    "assets" +
+                            "/" +
+                            bundleFileSoName);
             if (bundleFile.exists()) {
                 awbBundleMap.put(artifactBundleInfo.getArtifactId(), bundleFile);
+            }else if (assetsBundleFile.exists()){
+                awbBundleMap.put(artifactBundleInfo.getArtifactId(), assetsBundleFile);
+
             }
         }
         if (((TpatchInput)input).splitDiffBundle != null) {
@@ -1044,6 +1079,7 @@ public class TPatchTool extends AbstractTool {
 
         Collection<File> retainFiles = FileUtils.listFiles(newApkUnzipFolder, new IOFileFilter() {
 
+
             @Override
             public boolean accept(File file) {
                 String relativePath = PathUtils.toRelative(newApkUnzipFolder, file.getAbsolutePath());
@@ -1062,25 +1098,33 @@ public class TPatchTool extends AbstractTool {
                 return accept(new File(file, s));
             }
         }, TrueFileFilter.INSTANCE);
-        executorServicesHelper.submitTask(taskName, () -> {
-            // 得到主bundle的dex diff文件
-            File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
-            File tmpDexFile = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + "-dex");
-            createBundleDexPatch(newApkUnzipFolder,
-                    baseApkUnzipFolder,
-                    mianDiffDestDex,
-                    tmpDexFile,
-                    true);
 
-            // 是否保留主bundle的资源文件
-            if (isRetainMainBundleRes()) {
-                copyMainBundleResources(newApkUnzipFolder,
-                    baseApkUnzipFolder,
+
+        executorServicesHelper.submitTask(taskName, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                // 得到主bundle的dex diff文件
+//                File mianDiffDestDex = new File(mainDiffFolder, DEX_NAME);
+//                File tmpDexFolder = new File(patchTmpDir, ((TpatchInput)input).mainBundleName + "-dex");
+                createBundleDexPatch(newApkUnzipFolder,
+                        baseApkUnzipFolder,
+                        mainDiffFolder,
+//                        tmpDexFolder,
+                        true);
+
+                // 是否保留主bundle的资源文件
+                if (isRetainMainBundleRes()) {
+                    copyMainBundleResources(newApkUnzipFolder,
+                            baseApkUnzipFolder,
                     new File(patchTmpDir, ((TpatchInput)input).mainBundleName),
                     retainFiles);
+                }
+                return true;
             }
-            return true;
-        });
+
+        }
+        );
+
 
         for (final File soFile : soFiles) {
             System.out.println("do patch:" + soFile.getAbsolutePath());
@@ -1099,7 +1143,21 @@ public class TPatchTool extends AbstractTool {
                     if (isBundleFile(soFile)) {
                         processBundleFiles(soFile, baseSoFile, patchTmpDir);
 
-                    } else if (isFileModify(soFile, baseSoFile)) { FileUtils.copyFile(soFile, destFile); }
+                    } else if (isFileModify(soFile, baseSoFile)) {
+                        if (destFile.exists()){
+                            FileUtils.deleteQuietly(destFile);
+                        }
+                        if (!baseSoFile.exists()||!((TpatchInput) input).diffNativeSo) {
+                            //新增
+                            FileUtils.copyFile(soFile, destFile);
+                        }else {
+
+                            destFile = new File(destFile.getParentFile(),destFile.getName()+".patch");
+                            SoDiffUtils.diffSo(patchTmpDir,baseSoFile,soFile,destFile);
+                            soFileDefs.add(new SoFileDef(baseSoFile,soFile,destFile,relativePath));
+
+                        }
+                    }
 
                     return true;
                 }
@@ -1212,6 +1270,24 @@ public class TPatchTool extends AbstractTool {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static void main(String[]args) throws IOException {
+
+
+//        TPatchTool.class.getProtectionDomain().getCodeSource().getLocation();
+//        File workingDir = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3");
+//        File oldFile = new File("/Users/lilong/Documents/main_builder/aa/lib/armeabi/libalinnkit-v7a.so");
+//        File newFile = new File("/Users/lilong/Downloads/patch-7.7.4.67686@7.7.3/libcom_taobao_maindex/lib/armeabi/libalinnkit-v7a.so");
+//        File patchFile = new File("/Users/lilong/Downloads/libalinnkit-v7a.so.patch");
+//        File new2File = new File("/Users/lilong/Downloads/libalinnkit-v7a.so");
+//        File bsDiffFile = new File(TPatchTool.class.getClassLoader().getResource("mac/bsdiff").getFile());
+//        File bsPatchFile = new File(TPatchTool.class.getClassLoader().getResource("mac/bspatch").getFile());
+//
+//        CommandUtils.exec(workingDir,bsDiffFile.getAbsolutePath()+ " "+oldFile.getAbsolutePath() + " "+newFile.getAbsolutePath()+" "+patchFile.getAbsolutePath());
+//        CommandUtils.exec(workingDir,bsPatchFile.getAbsolutePath()+" "+oldFile.getAbsolutePath() + " "+new2File.getAbsolutePath()+" "+patchFile.getAbsolutePath());
+//
+//        assert MD5Util.getFileMD5String(new2File).equals(MD5Util.getFileMD5String(newFile));
     }
 
 }

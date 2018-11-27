@@ -213,17 +213,18 @@ package com.taobao.android.builder.tasks.app.prepare;
  * Created by wuzhong on 16/6/13.
  */
 
-import java.io.File;
-import java.util.ArrayList;
-
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.util.ArrayList;
 
 public class PrepareAaptTask extends BaseTask {
 
@@ -243,28 +244,38 @@ public class PrepareAaptTask extends BaseTask {
             aaptOptions.setAdditionalParameters(new ArrayList<String>());
         }
 
-        if (!appVariantContext.getAtlasExtension().getTBuildConfig().getAaptConstantId()) {
-            aaptOptions.getAdditionalParameters().add("--non-constant-id");
-        }
-
         processAndroidResources.setAndroidBuilder(getBuilder());
         processAndroidResources.setAaptOptions(aaptOptions);
 
         ApContext apContext = appVariantContext.apContext;
+        if (processAndroidResources.isAapt2Enabled()) {
+            aaptOptions.getAdditionalParameters().add("--emit-ids");
+            aaptOptions.getAdditionalParameters().add(new File(getProject().getBuildDir(),
+                "outputs/public.txt").getAbsolutePath());
+        }
         if (null != apContext && apContext.getBaseApk() != null && apContext.getBaseApk().exists()) {
             File baseApk = appVariantContext.apContext.getBaseApk();
             //You need to increase the -b parameter
-            if (!aaptOptions.getAdditionalParameters().contains("-B")) {
-                aaptOptions.getAdditionalParameters().add("-B");
-                aaptOptions.getAdditionalParameters().add(baseApk.getAbsolutePath());
+            if (processAndroidResources.isAapt2Enabled()) {
+                aaptOptions.getAdditionalParameters().add("-I");
+            } else {
+                if (!aaptOptions.getAdditionalParameters().contains("-B")) {
+                    aaptOptions.getAdditionalParameters().add("-B");
+                }
+            }
+            aaptOptions.getAdditionalParameters().add(baseApk.getAbsolutePath());
+            if (processAndroidResources.isAapt2Enabled()) {
+                aaptOptions.getAdditionalParameters().add("--stable-ids");
+                aaptOptions.getAdditionalParameters().add(apContext.getBaseStableIdsFile().getAbsolutePath());
             }
             if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && (
                 appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                    .getPatchConfig().isCreateTPatch())) {
+                    .getPatchConfig()
+                    .isCreateTPatch())) {
                 aaptOptions.getAdditionalParameters().add("--vm-safemode");
                 aaptOptions.getAdditionalParameters().add("--merge");
             }
-            //AndroidManifestThe file cannot be modified OR ignored when patch, so the current selection is ignored when patch
+            //AndroidManifestThe file cannot e modified OR ignored when patch, so the current selection is ignored when patch
         }
 
         //TODO update merge resource
@@ -275,7 +286,7 @@ public class PrepareAaptTask extends BaseTask {
 
         private final AppVariantContext appVariantContext;
 
-        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+        public ConfigAction(AppVariantContext appVariantContext, BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
             this.appVariantContext = appVariantContext;
         }
@@ -301,7 +312,9 @@ public class PrepareAaptTask extends BaseTask {
             }
 
             prepareAaptTask.appVariantContext = appVariantContext;
-            prepareAaptTask.processAndroidResources = baseVariantOutputData.processResourcesTask;
+            prepareAaptTask.processAndroidResources = appVariantContext.getScope()
+                .getProcessResourcesTask()
+                .get(new TaskContainerAdaptor(scope.getGlobalScope().getProject().getTasks()));
 
             //prepareAaptTask.mergeResources = appVariantContext.getVariantData().mergeResourcesTask;
 

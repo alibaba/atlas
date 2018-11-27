@@ -277,7 +277,7 @@ public class ManifestFileUtils {
     public static Result postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
                                               Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
                                               ManifestOptions manifestOptions, boolean addMultiDex,
-                                              boolean isInstantRun, Set<String> remoteBundles)
+                                              boolean isInstantRun, Set<String> remoteBundles,Set<String> insideBundles,boolean pushInstall)
         throws IOException, DocumentException {
 
         Result result = new Result();
@@ -289,12 +289,14 @@ public class ManifestFileUtils {
         Document document = XmlHelper.readXml(inputFile);
 
         if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists()) {
-            addApplicationMetaData(document, libManifestMap, baseBunfleInfoFile, manifestOptions, remoteBundles);
+            addApplicationMetaData(document, libManifestMap, baseBunfleInfoFile, manifestOptions, remoteBundles,insideBundles);
         }
 
         if (null != manifestOptions && manifestOptions.isAddAtlasProxyComponents()) {
             AtlasProxy.addAtlasProxyClazz(document, manifestOptions.getAtlasProxySkipChannels(), result);
         }
+
+            addAndroidLabel(document,pushInstall);
 
         if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
             addBundleLocationToDestManifest(document, libManifestMap, libDependenciesMaps, manifestOptions);
@@ -321,6 +323,19 @@ public class ManifestFileUtils {
         printlnPermissions(document);
 
         return result;
+    }
+
+    private static void addAndroidLabel(Document document,boolean pushInstall) {
+        Element root = document.getRootElement();// Get the root node
+        Element applicationElement = root.element("application");
+        Attribute attribute = applicationElement.attribute("android:extractNativeLibs");
+        if (attribute == null && pushInstall){
+            applicationElement.addAttribute("android:extractNativeLibs","false");
+        }else if (pushInstall){
+            attribute.setValue("false");
+        }else if (!pushInstall && attribute!= null){
+            applicationElement.remove(attribute);
+        }
     }
 
     /**
@@ -365,7 +380,7 @@ public class ManifestFileUtils {
      */
     private static void addApplicationMetaData(Document document, Map<String, File> libManifestMap,
                                                File baseBunfleInfoFile, ManifestOptions manifestOptions,
-                                               Set<String> remoteBundles) throws IOException, DocumentException {
+                                               Set<String> remoteBundles,Set<String>insideBundles) throws IOException, DocumentException {
         Map<String, BundleInfo> bundleFileMap = Maps.newHashMap();
         // Parsing basic information
         if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists() && baseBunfleInfoFile.canRead()) {
@@ -411,7 +426,7 @@ public class ManifestFileUtils {
                     if (null != bundleInfo && bundleInfo.getDependency() != null) {
                         bundleDepValue = StringUtils.join(bundleInfo.getDependency(), "|");
                     }
-                    String value = libBundleInfo.applicationName + "," + !remoteBundles.contains(libBundleInfo.libName)
+                    String value = libBundleInfo.applicationName + "," + !(remoteBundles.contains(libBundleInfo.libName)||insideBundles.contains(libBundleInfo.libName))
                         + "," + bundleDepValue;
                     logger.info("[bundleInfo] add bundle value : " + value + " to manifest");
                     metaData.addAttribute("android:name", "bundle_" + bundlePackageName);
@@ -796,6 +811,8 @@ public class ManifestFileUtils {
         // First, we will manually process the tools:remove and tools:replace rules, and find that some of them are not necessarily possible through the ManifestMerge
         Element applicationElement = root.element("application");
 
+        List<Node> supportVersion = root.selectNodes("//meta-data");
+
         //Determines whether there is application and needs to be deleted
         if (null != applicationElement) {
             Attribute attribute = applicationElement.attribute("name");
@@ -803,6 +820,20 @@ public class ManifestFileUtils {
                 applicationElement.remove(attribute);
             }
         }
+
+        for (Node node : supportVersion) {
+            Element element = (Element)node;
+            Attribute attribute = element.attribute("name");
+            if (attribute != null) {
+                if (attribute.getValue().equals("android.support.VERSION")) {
+                    if (element.attribute("value")!= null)
+                    element.attribute("value").setValue("25.3.1");
+                }
+            }
+        }
+//        if (supportVersion!= null && supportVersion.size() > 0){
+//            if (supportVersion.("name");
+//        }
 
         Map<String, String> replaceAttrs = mainManifestFileObject.getReplaceApplicationAttribute();
         List<String> removeAttrs = mainManifestFileObject.getRemoveApplicationAttribute();
@@ -1109,5 +1140,12 @@ public class ManifestFileUtils {
         }
 
         return nodes;
+    }
+
+    public static void main(String []args) throws DocumentException {
+        File manifest = new File("/Users/lilong/.gradle/caches/transforms-1/files-1.1/recyclerview-v7-25.3.1.aar/1046cd92fdcfb77468417d61ed21e0db/AndroidManifest.xml");
+        Document document = XmlHelper.readXml(manifest);
+        Element element = document.getRootElement();
+        Attribute attribute = element.attribute("meta-data");
     }
 }

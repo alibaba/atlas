@@ -208,9 +208,10 @@
 
 package android.taobao.atlas.startup.patch.releaser;
 
+import android.app.PreVerifier;
 import android.os.Build;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.startup.patch.KernalConstants;
+import android.taobao.atlas.startup.patch.*;
 import android.util.Log;
 import com.alibaba.patch.PatchUtils;
 
@@ -226,12 +227,28 @@ public class NativeLibReleaser {
 
     private static final String SO_PATCH_SUFFIX = ".patch";
 
+
+    public static final String SO_PATCH_META = "SO-PATCH-INF";
+
+    private static PatchMerger patchMerger;
+
+    public NativeLibReleaser() {
+        if(Boolean.FALSE.booleanValue()){
+            String.valueOf(PreVerifier.class);
+        }
+    }
+
     public static boolean releaseLibs(File apkFile, File reversionDir) throws IOException {
         ZipFile rawZip = new ZipFile(KernalConstants.APK_PATH);
         if (new File(reversionDir, "lib").exists() && new File(reversionDir, "lib").listFiles().length > 0) {
             return true;
         }
         ZipFile bundleFile = new ZipFile(apkFile);
+        PatchVerifier patchVerifier = null;
+        if (bundleFile.getEntry(SO_PATCH_META) != null) {
+            patchVerifier = new NativePatchVerifier(bundleFile.getInputStream(bundleFile.getEntry(SO_PATCH_META)));
+        }
+        patchMerger = new NativePatchMerger(patchVerifier);
         String extractTag = "lib/armeabi";
         if (Build.CPU_ABI.contains("x86")) {
             if (bundleFile.getEntry("lib/x86/") != null) {
@@ -242,75 +259,49 @@ public class NativeLibReleaser {
             ZipEntry zipEntry = (ZipEntry) entries.nextElement();
             String entryName = zipEntry.getName();
             if (entryName.startsWith(extractTag) && !entryName.equalsIgnoreCase("../")) {
-                int numAttempts = 0;
-                boolean isExtractionSuccessful = false;
-                while (numAttempts < 3 && !isExtractionSuccessful) {
-                    numAttempts++;
-                    try {
-                        String targetPath = String.format("%s%s%s%s%s", mappingInternalDirectory(reversionDir), File.separator, "lib", File.separator,
-                                entryName.substring(entryName.lastIndexOf(File.separator) + 1, entryName.length()));
-                        if (zipEntry.isDirectory()) {
-                            File decompressDirFile = new File(targetPath);
-                            if (!decompressDirFile.exists()) {
-                                decompressDirFile.mkdirs();
-                                break;
-                            }
-                        } else {
-                            String fileDir = targetPath.substring(0, targetPath.lastIndexOf("/"));
-                            File fileDirFile = new File(fileDir);
-                            if (!fileDirFile.exists()) {
-                                fileDirFile.mkdirs();
-                            }
 
-                            BufferedInputStream bi = new BufferedInputStream(bundleFile.getInputStream(zipEntry));
-                            inputStreamToFile(bi, new File(targetPath));
-                            if (entryName.endsWith(SO_PATCH_SUFFIX)) {
-                                String soName = new File(targetPath).getName().replace(SO_PATCH_SUFFIX, "");
-                                File oringalSo = findBaseSo(soName, entryName, rawZip, targetPath);
-                                Log.e("NativeLibReleaser", "oringal so-->" + oringalSo.getAbsolutePath());
-
-                                File newSo = new File(new File(targetPath).getParentFile(), new File(targetPath).getName().replace(SO_PATCH_SUFFIX, ""));
-                                if (!new File(targetPath).exists() || !oringalSo.exists()) {
-                                    throw new IOException("maindex so merge failed! because " + targetPath + " is not exits or " + oringalSo.getAbsolutePath() + " is not exits!");
-                                }
-                                long start = System.currentTimeMillis();
-                                int ret = PatchUtils.applyPatch(oringalSo.getAbsolutePath(), newSo.getAbsolutePath(), targetPath);
-                                Log.e("NativeLibReleaser", "merge so-->" + newSo.getAbsolutePath() + " cost:" + String.valueOf(System.currentTimeMillis() - start));
-                                if (!newSo.exists() || ret != 0) {
-                                    throw new IOException("maindex so merge failed! because " + newSo + " is not exits!");
-                                } else {
-                                    Log.e("NativeLibReleaser", "merge so success!" + newSo.getAbsolutePath());
-                                }
-
-                                //if delete failed, it doesn't matter,so we consider success.
-                                if (oringalSo.canWrite()) {
-                                    oringalSo.delete();
-                                }
-                                new File(targetPath).delete();
-                            }
-                            isExtractionSuccessful = true;
-
+                try {
+                    String targetPath = String.format("%s%s%s%s%s", mappingInternalDirectory(reversionDir), File.separator, "lib", File.separator,
+                            entryName.substring(entryName.lastIndexOf(File.separator) + 1, entryName.length()));
+                    if (zipEntry.isDirectory()) {
+                        File decompressDirFile = new File(targetPath);
+                        if (!decompressDirFile.exists()) {
+                            decompressDirFile.mkdirs();
+                            continue;
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        return false;
+                    } else {
+                        String fileDir = targetPath.substring(0, targetPath.lastIndexOf("/"));
+                        File fileDirFile = new File(fileDir);
+                        if (!fileDirFile.exists()) {
+                            fileDirFile.mkdirs();
+                        }
+                        BufferedInputStream bi = new BufferedInputStream(bundleFile.getInputStream(zipEntry));
+                        inputStreamToFile(bi, new File(targetPath));
+                        if (entryName.endsWith(SO_PATCH_SUFFIX)) {
+                            String soName = new File(targetPath).getName().replace(SO_PATCH_SUFFIX, "");
+                            File oringalSo = findBaseSo(soName, entryName, rawZip, targetPath);
+                            Log.e("NativeLibReleaser", "oringal so-->" + oringalSo.getAbsolutePath());
+
+                            File newSo = new File(new File(targetPath).getParentFile(), new File(targetPath).getName().replace(SO_PATCH_SUFFIX, ""));
+                            if (!new File(targetPath).exists() || !oringalSo.exists()) {
+                                throw new IOException("maindex so merge failed! because " + targetPath + " is not exits or " + oringalSo.getAbsolutePath() + " is not exits!");
+                            }
+                            patchMerger.sumitForMerge(oringalSo, new File(targetPath), newSo);
+                        }
                     }
-                }
-                if (!zipEntry.isDirectory()) {
-                    if (!isExtractionSuccessful) {
-                        return false;
-                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return false;
                 }
 
             }
         }
-
-        return true;
+        return patchMerger.waitForResult();
     }
 
     private static File findBaseSo(String soName, String entryName, ZipFile rawZip, String targetPath) throws IOException {
         File libDir = new File(RuntimeVariables.androidApplication.getFilesDir().getParentFile(), "lib");
-        if (new File(libDir, soName).exists() && new File(libDir,soName).canRead()) {
+        if (new File(libDir, soName).exists() && new File(libDir, soName).canRead()) {
             return new File(libDir, soName);
         } else {
             File oringalSo = new File(new File(targetPath).getParentFile(), new File(targetPath).getName().replace(SO_PATCH_SUFFIX, ".old"));

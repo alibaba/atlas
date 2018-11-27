@@ -209,20 +209,20 @@
 
 package com.taobao.android.builder.tasks.app.merge;
 
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbResource;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tasks.manager.MtlParallelTask;
 import com.taobao.android.builder.tasks.manager.TaskCreater;
-import com.taobao.android.builder.tasks.app.merge.bundle.MergeAwbResourceConfigAction;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
+import org.gradle.api.specs.Spec;
 
 import java.io.File;
 import java.io.IOException;
@@ -234,8 +234,8 @@ public class MergeResAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask>
     private AppVariantContext appVariantContext;
 
     public MergeResAwbsConfigAction(AppVariantContext appVariantContext,
-                                    BaseVariantOutputData baseVariantOutputData) {
-        super(appVariantContext, baseVariantOutputData);
+                                    BaseVariantOutput baseVariantOutput) {
+        super(appVariantContext, baseVariantOutput);
         this.appVariantContext = appVariantContext;
     }
 
@@ -264,15 +264,24 @@ public class MergeResAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask>
         List<DefaultTask> tasks = new ArrayList<DefaultTask>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            if (awbBundle.isMBundle){
+                continue;
+            }
 
-            MergeAwbResourceConfigAction mergeAwbResourceConfigAction = new MergeAwbResourceConfigAction(
+            MergeAwbResource.MergeAwbResourceConfigAction mergeAwbResourceConfigAction = new MergeAwbResource.MergeAwbResourceConfigAction(
                     appVariantContext,
-                    baseVariantOutputData,
+                    baseVariantOutput,
                     awbBundle);
 
-            final CachedMergeResources mergeTask = TaskCreater.create(appVariantContext.getProject(),
+            final MergeAwbResource mergeTask = TaskCreater.create(appVariantContext.getProject(),
                                                                 mergeAwbResourceConfigAction.getName(),
                                                                 mergeAwbResourceConfigAction.getType());
+            mergeTask.getOutputs().cacheIf(new Spec<Task>() {
+                @Override
+                public boolean isSatisfiedBy(Task element) {
+                    return false;
+                }
+            });
 
             mergeTask.setBlameLogFolder(appVariantContext.getAwbBlameLogFolder(awbBundle));
 

@@ -212,7 +212,6 @@ package com.taobao.android.builder.extension;
 import com.android.annotations.NonNull;
 import com.taobao.android.builder.extension.annotation.Config;
 import com.taobao.android.builder.extension.annotation.ConfigGroup;
-
 import com.taobao.android.builder.extension.factory.DefaultChannelConfigFactory;
 import com.taobao.android.builder.extension.factory.EnhanceConfigFactory;
 import com.taobao.android.builder.extension.factory.MultiDexConfigFactory;
@@ -232,12 +231,19 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     @ConfigGroup(order = 2)
     public NamedDomainObjectContainer<T> buildTypes;
 
+
+
     public NamedDomainObjectContainer<EnhanceConfig> enhanceConfigs;
 
     @ConfigGroup(order = 12, advance = false)
     public NamedDomainObjectContainer<PatchConfig> patchConfigs;
 
     public NamedDomainObjectContainer<DexConfig> dexConfigs;
+
+
+    public NamedDomainObjectContainer<DefaultChannelConfig> atlasChannelConfigs;
+
+
 
     public BundleConfig bundleConfig;
 
@@ -247,13 +253,23 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     @ConfigGroup(order = 4, advance = false)
     public NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs;
 
-    public NamedDomainObjectContainer<DefaultChannelConfig> atlasChannelConfigs;
 
     //If the atlas switch is switched on, the default switch will be opened automatically
     @Config(title = "Enable atlas", message = "Enable atlas , true/false", order = 0, group = "atlas")
     private boolean atlasEnabled;
 
     protected Project project;
+
+
+    public boolean isInstantAppEnabled() {
+        return instantAppEnabled;
+    }
+
+    public void setInstantAppEnabled(boolean instantAppEnabled) {
+        this.instantAppEnabled = instantAppEnabled;
+    }
+
+    private boolean instantAppEnabled;
 
     protected Logger logger;
 
@@ -273,9 +289,10 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         this.dexConfigs = dexConfigs;
         this.buildTypes = buildTypes;
         this.multiDexConfigs = project.container(MultiDexConfig.class, new MultiDexConfigFactory(
-                instantiator, project, project.getLogger()));
-        this.enhanceConfigs = project.container(EnhanceConfig.class, new EnhanceConfigFactory(instantiator, project, project.getLogger()));
+
+            instantiator,project, project.getLogger()));
         this.atlasChannelConfigs = project.container(DefaultChannelConfig.class, new DefaultChannelConfigFactory(instantiator, project, project.getLogger()));
+        this.enhanceConfigs = project.container(EnhanceConfig.class, new EnhanceConfigFactory(instantiator, project, project.getLogger()));
         tBuildConfig = (Z) instantiator.newInstance(TBuildConfig.class);
         manifestOptions = instantiator.newInstance(ManifestOptions.class);
         bundleConfig = instantiator.newInstance(BundleConfig.class);
@@ -313,10 +330,10 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         action.execute(enhanceConfigs);
     }
 
-    public void atlasChannelConfigs(Action<? super NamedDomainObjectContainer<DefaultChannelConfig>> action) {
-        action.execute(atlasChannelConfigs);
-    }
 
+    public void setEnhanceConfigs(NamedDomainObjectContainer<EnhanceConfig> enhanceConfigs) {
+        this.enhanceConfigs = enhanceConfigs;
+    }
 
 
     public NamedDomainObjectContainer<PatchConfig> getPatchConfigs() {
@@ -368,11 +385,20 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         this.multiDexConfigs = multiDexConfigs;
     }
 
-    public void setEnhanceConfigs(NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs) {
-        this.enhanceConfigs = enhanceConfigs;
+
+    public Boolean getBaseFeature() {
+        return false;
     }
 
-    public void setAtlasChannelConfigs(NamedDomainObjectContainer<DefaultChannelConfig> channelConfigs) {
-        this.atlasChannelConfigs = channelConfigs;
+
+    public void atlasChannelConfigs(Action<? super NamedDomainObjectContainer<DefaultChannelConfig>> action) {
+        action.execute(atlasChannelConfigs);
     }
+
+
+    public void setAtlasChannelConfigs(NamedDomainObjectContainer<DefaultChannelConfig> atlasChannelConfigs) {
+        this.atlasChannelConfigs = atlasChannelConfigs;
+    }
+
 }
+

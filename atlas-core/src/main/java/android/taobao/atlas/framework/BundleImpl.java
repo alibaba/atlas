@@ -232,7 +232,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public final class BundleImpl implements Bundle {
+public  class BundleImpl implements Bundle {
 
     /**
      * the bundle location.
@@ -340,6 +340,12 @@ public final class BundleImpl implements Bundle {
 
     }
 
+    public BundleImpl(String location) {
+        this.location = location;
+        this.state = RESOLVED;
+
+    }
+
     private synchronized void resolveBundle() throws BundleException {
 
         if (this.archive == null) {
@@ -359,7 +365,7 @@ public final class BundleImpl implements Bundle {
             if(dependencies!=null) {
                 for (String str : dependencies) {
                     BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(str);
-                    if (impl != null) {
+                    if (impl != null && !AtlasBundleInfoManager.instance().isMbundle(str)) {
                         nativeLibDir += ":";
                         File dependencyLibDir = new File(impl.getArchive().getCurrentRevision().mappingInternalDirectory(), "lib");
                         nativeLibDir += dependencyLibDir;
@@ -460,6 +466,9 @@ public final class BundleImpl implements Bundle {
         if (checkIsActive()) {
             return;
         }
+        if (checkActing()){
+            return;
+        }
         state = STARTING;
         Framework.notifyBundleListeners(BundleEvent.BEFORE_STARTED, this);
         Framework.notifyBundleListeners(BundleEvent.STARTED, this);
@@ -468,6 +477,13 @@ public final class BundleImpl implements Bundle {
         }
 
 
+    }
+
+    private boolean checkActing() {
+        if (state == STARTING){
+            return true;
+        }
+        return false;
     }
 
     private boolean checkIsActive() {
@@ -512,6 +528,9 @@ public final class BundleImpl implements Bundle {
 
         List<String> dependencies = AtlasBundleInfoManager.instance().getBundleInfo(location).getTotalDependency();
         for(String bundleName : dependencies){
+            if (AtlasBundleInfoManager.instance().isMbundle(bundleName)){
+                continue;
+            }
             BundleImpl dependencyBundle = (BundleImpl)Atlas.getInstance().getBundle(bundleName);
             if(dependencyBundle==null || dependencyBundle.getArchive()==null ||
                     !DelegateResources.checkAsset(dependencyBundle.getArchive().getArchiveFile().getAbsolutePath())){

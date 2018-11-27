@@ -3,15 +3,15 @@ package com.taobao.demo;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.taobao.atlas.remote.RemoteFactory;
+import android.taobao.atlas.remote.fragment.RemoteFragment;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
 import android.view.Menu;
@@ -20,40 +20,39 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.middleware.dialog.Dialog;
-import com.taobao.android.ActivityGroupDelegate;
 import com.taobao.update.Updater;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
 
-    private ActivityGroupDelegate mActivityDelegate;
+    //    private ActivityGroupDelegate mActivityDelegate;
     private ViewGroup mActivityGroupContainer;
 
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
+    private final BottomNavigationView.OnNavigationItemSelectedListener
+            mOnNavigationItemSelectedListener
 
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
-                    Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
-                    return true;
-                case R.id.navigation_dashboard:
-                    switchToActivity("second","com.taobao.secondbundle.SecondBundleActivity");
-                    return true;
-                case R.id.navigation_notifications:
-                    new AlertDialog.Builder(MainActivity.this,R.style.Theme_AppCompat_Dialog_Alert).setPositiveButton(android.R.string.cancel, null).setCancelable(true).create().show();
-//                    Intent intent3 = new Intent();
-//                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
-//                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);
-                    return true;
-            }
-            return false;
-        }
-
-    };
+            = item -> {
+                switch (item.getItemId()) {
+                    case R.id.navigation_home:
+                        switchToActivity("home",
+                                "atlas.fragment.intent.action.FIRST_FRAGMENT"/*"com.taobao
+                                .firstbundle.FirstBundleActivity"*/);
+                        Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
+                        return true;
+                    case R.id.navigation_dashboard:
+                        switchToActivity("second",
+                                "atlas.fragment.intent.action.SECOND_BUNDLE_FRAGMENT"/*"com
+                                .taobao.secondbundle.SecondBundleActivity"*/);
+                        return true;
+                    case R.id.navigation_notifications:
+    //                    Intent intent3 = new Intent();
+    //                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
+    //                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);
+                        return true;
+                }
+                return false;
+            };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,26 +60,43 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_navigation);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        Log.e("ddddd","dsfsfsf");
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
+        Log.e("aa","bbb");
+
 
         ((BottomNavigationView)findViewById(R.id.navigation)).setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        mActivityDelegate = new ActivityGroupDelegate(this,savedInstanceState);
+//        mActivityDelegate = new ActivityGroupDelegate(this,savedInstanceState);
         mActivityGroupContainer = (ViewGroup) findViewById(R.id.content);
-        switchToActivity("home","com.taobao.firstbundle.FirstBundleActivity");
+        switchToActivity("home",
+                "atlas.fragment.intent.action.FIRST_FRAGMENT"/*"com.taobao.firstbundle
+                .FirstBundleActivity"*/);
     }
 
     public void switchToActivity(String key,String activityName){
-        Intent intent = new Intent();
-        intent.setClassName(getBaseContext(),activityName);
-        mActivityDelegate.startChildActivity(mActivityGroupContainer,key,intent);
+        RemoteFactory.requestRemote(RemoteFragment.class, this, new Intent(activityName),
+                new RemoteFactory.OnRemoteStateListener<RemoteFragment>() {
+                    @Override
+                    public void onRemotePrepared(RemoteFragment iRemote) {
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.content, iRemote)
+                                .commit();
+                    }
+
+                    @Override
+                    public void onFailed(String s) {
+                        Log.e("UserRemoteActivity", s);
+                    }
+                });
+//        Intent intent = new Intent();
+//        intent.setClassName(getBaseContext(),activityName);
+//        mActivityDelegate.startChildActivity(mActivityGroupContainer,key,intent);
     }
 
     @Override
@@ -150,16 +166,18 @@ public class MainActivity extends AppCompatActivity
 
 
         } else if (id == R.id.nav_dex_patch) {
-            new AsyncTask<Void, Void, Void>() {
+            new AsyncTask<Void, Void, Boolean>() {
                 @Override
-                protected Void doInBackground(Void... voids) {
-                    Updater.dexPatchUpdate(getBaseContext());
-                    return null;
+                protected Boolean doInBackground(Void... voids) {
+                    boolean update = Updater.dexPatchUpdate(getBaseContext());
+                    return update;
                 }
 
                 @Override
-                protected void onPostExecute(Void aVoid) {
-                    android.os.Process.killProcess(android.os.Process.myPid());
+                protected void onPostExecute(Boolean aVoid) {
+                    if (aVoid) {
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                    }
                 }
             }.execute();
         }else if (id == R.id.nav_databind_bundle) {

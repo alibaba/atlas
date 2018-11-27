@@ -217,6 +217,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -225,9 +226,14 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
+import android.taobao.atlas.framework.Atlas;
+import android.taobao.atlas.framework.FrameworkProperties;
+import android.taobao.atlas.startup.AtlasBridgeApplication;
 import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.NClassLoader;
+import android.taobao.atlas.startup.patch.releaser.PatchDexProfile;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -237,7 +243,7 @@ import dalvik.system.PathClassLoader;
 /**
  * Created by guanjie on 15/6/4.
  */
-public class KernalBundle{
+public class KernalBundle {
     /**
      * the storage location.
      */
@@ -247,40 +253,51 @@ public class KernalBundle{
      * the bundle archive file.
      */
     KernalBundleArchive archive;
-    private Class FrameworkPropertiesClazz ;
+    private Class FrameworkPropertiesClazz;
     private NClassLoader replaceClassLoader;
+
+    public static boolean nativeLibPatched;
+
+    static List <String>blackList = Arrays.asList(
+            "/Plugin/",
+            "/virtual/");
 
     public static String KERNAL_BUNDLE_NAME = "com.taobao.maindex";
 
     public static KernalBundle kernalBundle = null;
     public static boolean patchWithApk = false;
-    public static boolean checkloadKernalBundle(Application application,String currentProcessName) {
+
+    public static boolean checkloadKernalBundle(Application application, String currentProcessName) {
         File updateDir = null;
         File dexPatchDir = null;
         dexPatchDir = updateDir = new File(KernalConstants.baseContext.getFilesDir(), "storage");
 
-        if(!TextUtils.isEmpty(KernalVersionManager.instance().DEXPATCH_STORAGE_LOCATION)){
+        if (!TextUtils.isEmpty(KernalVersionManager.instance().DEXPATCH_STORAGE_LOCATION)) {
             dexPatchDir = new File(KernalVersionManager.instance().DEXPATCH_STORAGE_LOCATION);
         }
 
-        if(!TextUtils.isEmpty(KernalVersionManager.instance().CURRENT_STORAGE_LOCATION)){
+        if (!TextUtils.isEmpty(KernalVersionManager.instance().CURRENT_STORAGE_LOCATION)) {
             updateDir = new File(KernalVersionManager.instance().CURRENT_STORAGE_LOCATION);
         }
 
         final File kernalUpdateDir = new File(updateDir, KERNAL_BUNDLE_NAME);
-        final File kernalDexPatchDir = new File(dexPatchDir,KERNAL_BUNDLE_NAME);
+        final File kernalDexPatchDir = new File(dexPatchDir, KERNAL_BUNDLE_NAME);
 
         if (kernalUpdateDir.exists() || kernalDexPatchDir.exists()) {
             try {
-                kernalBundle = new KernalBundle(kernalUpdateDir,kernalDexPatchDir,KernalVersionManager.instance().getBaseBundleVersion(KERNAL_BUNDLE_NAME),currentProcessName);
+                kernalBundle = new KernalBundle(kernalUpdateDir, kernalDexPatchDir, KernalVersionManager.instance().getBaseBundleVersion(KERNAL_BUNDLE_NAME), currentProcessName);
+                if (isInBlackList(kernalBundle)){
+                    throw new IOException(kernalBundle.getArchive().getArchiveFile().getAbsolutePath());
+                }
                 kernalBundle.patchKernalDex(application);
                 kernalBundle.patchKernalResource(application);
+
                 return true;
             } catch (Throwable e) {
                 e.printStackTrace();
                 kernalBundle = null;
                 deleteDirectory(kernalUpdateDir);
-                if(kernalDexPatchDir.exists()) {
+                if (kernalDexPatchDir.exists()) {
                     deleteDirectory(kernalDexPatchDir);
                 }
                 return false;
@@ -289,8 +306,20 @@ public class KernalBundle{
         return false;
     }
 
-    public static boolean checkLoadKernalDebugPatch(Application application){
-        if(Build.VERSION.SDK_INT<21) {
+    private static boolean isInBlackList(KernalBundle kernalBundle) {
+        if (kernalBundle!= null && kernalBundle.getArchive()!= null && kernalBundle.getArchive().getArchiveFile()!= null){
+            for (String s:blackList) {
+                if (kernalBundle.getArchive().getArchiveFile().getAbsolutePath().contains(s)){
+                    return true;
+                }
+            }
+        }
+        return false;
+
+    }
+
+    public static boolean checkLoadKernalDebugPatch(Application application) {
+        if (Build.VERSION.SDK_INT < 21) {
             //暂时只支持art设备的debug调试
             return false;
         }
@@ -299,34 +328,34 @@ public class KernalBundle{
         try {
             ApplicationInfo app_info = application.getApplicationInfo();
             boolean debug = (app_info.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-            if(debug){
-                File debugBundleDir = new File(KernalConstants.baseContext.getExternalFilesDir("debug_storage"),KERNAL_BUNDLE_NAME);
-                File patchFile = new File(debugBundleDir,"patch.zip");
-                if(patchFile.exists()){
+            if (debug) {
+                File debugBundleDir = new File(KernalConstants.baseContext.getExternalFilesDir("debug_storage"), KERNAL_BUNDLE_NAME);
+                File patchFile = new File(debugBundleDir, "patch.zip");
+                if (patchFile.exists()) {
                     loadKernalPatch = true;
                     KernalBundle bundle = new KernalBundle();
-                    DexFile dexFile = (DexFile)KernalConstants.dexBooster.loadDex(KernalConstants.baseContext,KernalConstants.baseContext.getApplicationInfo().sourceDir,
-                                                                                  new File(patchFile.getParent(),"base.dex").getAbsolutePath(),0,true) ;
+                    //DexFile dexFile = (DexFile) KernalConstants.dexBooster.loadDex(KernalConstants.baseContext, KernalConstants.baseContext.getApplicationInfo().sourceDir,
+                    //        new File(patchFile.getParent(), "base.dex").getAbsolutePath(), 0, true);
 
                     File internalDebugBundleDir = new File(new File(application.getFilesDir(), "debug_storage"), KERNAL_BUNDLE_NAME);
                     internalDebugBundleDir.mkdirs();
-                    DexFile patchDexFile = (DexFile)KernalConstants.dexBooster.loadDex(KernalConstants.baseContext,patchFile.getAbsolutePath(),
-                            new File(internalDebugBundleDir,"patch.dex").getAbsolutePath(),0,true) ;
-                    bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(), patchFile, new DexFile[]{patchDexFile,dexFile}, null,
-                                               true /*(app_info.flags & ApplicationInfo.FLAG_VM_SAFE_MODE) != 0*/);
-                    if(bundle.needReplaceClassLoader(application)){
-                        NClassLoader loader = new NClassLoader(".",KernalBundle.class.getClassLoader().getParent());
+                    DexFile patchDexFile = (DexFile) KernalConstants.dexBooster.loadDex(KernalConstants.baseContext, patchFile.getAbsolutePath(),
+                            new File(internalDebugBundleDir, "patch.dex").getAbsolutePath(), 0, true);
+                    if (bundle.needReplaceClassLoader(application)) {
+                        NClassLoader loader = new NClassLoader(".", KernalBundle.class.getClassLoader().getParent());
                         try {
-                            NClassLoader.replacePathClassLoader(KernalConstants.baseContext,KernalBundle.class.getClassLoader(),loader);
+                            NClassLoader.replacePathClassLoader(KernalConstants.baseContext, KernalBundle.class.getClassLoader(), loader);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
                     }
+                    bundle.installKernalBundle(KernalConstants.baseContext.getClassLoader(), patchFile, new DexFile[]{patchDexFile/*, dexFile*/}, null,
+                        true /*(app_info.flags & ApplicationInfo.FLAG_VM_SAFE_MODE) != 0*/);
                     bundle.prepareRuntimeVariables(application);
                     Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
                     DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
                             .invoke(DelegateResourcesClazz, patchFile.getAbsolutePath());
-                    Toast.makeText(KernalConstants.baseContext,"当前处于DEBUG调试状态，不支持动态更新，清除数据可恢复",Toast.LENGTH_LONG).show();
+                    Toast.makeText(KernalConstants.baseContext, "当前处于DEBUG调试状态，不支持动态更新，清除数据可恢复", Toast.LENGTH_LONG).show();
                 }
             }
         } finally {
@@ -334,28 +363,39 @@ public class KernalBundle{
         }
     }
 
-    public static boolean hasKernalPatch(){
+    public static boolean hasKernalPatch() {
         return KernalVersionManager.instance().isUpdated(KERNAL_BUNDLE_NAME) || KernalVersionManager.instance().isDexPatched(KERNAL_BUNDLE_NAME);
     }
 
-    public static void clear(){
-        File storageDir = new File(KernalConstants.baseContext.getFilesDir(),"storage");
+
+    public static boolean hasNativeLibPatch(Context base) {
+        try {
+            return new File(base.getFilesDir(), String.format("nativeLib-%s", base.getPackageManager().getPackageInfo(base.getPackageName(), 0).versionName)).exists()
+                    && new File(new File(base.getFilesDir(), String.format("nativeLib-%s", base.getPackageManager().getPackageInfo(base.getPackageName(), 0).versionName)), "mark").exists();
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static void clear() {
+        File storageDir = new File(KernalConstants.baseContext.getFilesDir(), "storage");
         final File kernalDir = new File(storageDir, KERNAL_BUNDLE_NAME);
-        if(kernalDir.exists()){
+        if (kernalDir.exists()) {
             deleteDirectory(kernalDir);
         }
     }
 
     //DEBUG
-    private KernalBundle(){
+    private KernalBundle() {
     }
 
     //create
     public KernalBundle(final File bundleDir,
-                        final File file,String version,long dexPatchVersion) throws Exception {
+                        final File file, String version, long dexPatchVersion) throws Exception {
         this.bundleDir = bundleDir;
         try {
-            archive = new KernalBundleArchive(bundleDir, file,version,dexPatchVersion);
+            archive = new KernalBundleArchive(bundleDir, file, version, dexPatchVersion);
         } catch (IOException e) {
             e.printStackTrace();
             if (bundleDir.exists()) {
@@ -366,37 +406,52 @@ public class KernalBundle{
     }
 
     //reload
-    public KernalBundle(final File updateDir,final File dexPatchDir,String version,String process) throws Exception {
+    public KernalBundle(final File updateDir, final File dexPatchDir, String version, String process) throws Exception {
         long dexPatchVersion = KernalVersionManager.instance().getDexPatchBundleVersion(KERNAL_BUNDLE_NAME);
-        if(dexPatchVersion>0) {
+        if (dexPatchVersion > 0) {
             try {
                 bundleDir = dexPatchDir;
                 archive = new KernalBundleArchive(KernalConstants.baseContext, dexPatchDir, "", dexPatchVersion, process);
-            }catch(Throwable e){
+            } catch (Throwable e) {
                 bundleDir = updateDir;
-                archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, makeMainDexUniqueTag(KernalVersionManager.instance().currentVersionName(),version), dexPatchVersion, process);
+                archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, makeMainDexUniqueTag(KernalVersionManager.instance().currentVersionName(), version), dexPatchVersion, process);
             }
-        }else{
+        } else {
             bundleDir = updateDir;
-            archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, makeMainDexUniqueTag(KernalVersionManager.instance().currentVersionName(),version), dexPatchVersion, process);
+            archive = new KernalBundleArchive(KernalConstants.baseContext, bundleDir, makeMainDexUniqueTag(KernalVersionManager.instance().currentVersionName(), version), dexPatchVersion, process);
         }
     }
 
-    private String makeMainDexUniqueTag(String appVersion,String maindexTag){
-        if(maindexTag.startsWith(appVersion)){
+    public static void patchNativeLib(Context base) {
+        try {
+            File dir = new File(base.getFilesDir(), String.format("nativeLib-%s", base.getPackageManager().getPackageInfo(base.getPackageName(), 0).versionName));
+            ClassLoader loader = KernalBundle.class.getClassLoader();
+            Field pathListField = findField(loader, "pathList");
+            Object dexPathList = pathListField.get(loader);
+            patchLibrary(dexPathList, dir);
+            nativeLibPatched = true;
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    private String makeMainDexUniqueTag(String appVersion, String maindexTag) {
+        if (maindexTag.startsWith(appVersion)) {
             return maindexTag;
         }
-        return appVersion+"_"+maindexTag;
+        return appVersion + "_" + maindexTag;
     }
 
-    public void patchKernalDex(Application application) throws Exception {
+    public void  patchKernalDex(Application application) throws Exception {
         DexFile[] dexFile = archive.getOdexFile();
-        if ((dexFile != null&&dexFile.length>0) || archive.getLibraryDirectory().exists()) {
+        if ((dexFile != null && dexFile.length > 0) || archive.getLibraryDirectory().exists()) {
             boolean needReplaceClassLoader = needReplaceClassLoader(application);
             boolean dexPatch = dexFile[dexFile.length - 1].getName().contains(KernalBundleArchive.DEXPATCH_DIR);
             int newFrameworkPropertiesDexIndex;
             if (dexPatch) {
-                newFrameworkPropertiesDexIndex = dexFile.length > 1 ? dexFile.length - 2 : dexFile.length - 1;
+                    newFrameworkPropertiesDexIndex = 0;
             } else {
                 newFrameworkPropertiesDexIndex = dexFile.length - 1;
             }
@@ -404,58 +459,91 @@ public class KernalBundle{
             patchWithApk = dexPatch &&
                     (TextUtils.isEmpty(KernalVersionManager.instance().currentVersionName()) || KernalVersionManager.instance().currentVersionName().equals(KernalConstants.INSTALLED_VERSIONNAME));
             if (!needReplaceClassLoader) {
+                Log.e("KernalBundle","no need replace Classloader!");
                 FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
-            }else if(patchWithApk){
-                FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", application.getClassLoader());
-                replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader().getParent());
-            }else{
-                replaceClassLoader = new NClassLoader(".",KernalBundle.class.getClassLoader().getParent());
+            } else if (patchWithApk) {
+                Log.e("KernalBundle","need replace Classloader && patchWithApk!");
+                replaceClassLoader = new NClassLoader(".", KernalBundle.class.getClassLoader().getParent());
+                if (needReplaceClassLoader) {
+                    try {
+                        NClassLoader.replacePathClassLoader(KernalConstants.baseContext, KernalBundle.class.getClassLoader(), replaceClassLoader);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", replaceClassLoader);
+
+            } else {
+                Log.e("KernalBundle","need replace Classloader && load FrameworkPropertiesClazz to NclassLoader!");
+                replaceClassLoader = new NClassLoader(".", KernalBundle.class.getClassLoader().getParent());
+                if (needReplaceClassLoader) {
+                    try {
+                        NClassLoader.replacePathClassLoader(KernalConstants.baseContext, KernalBundle.class.getClassLoader(), replaceClassLoader);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
                 FrameworkPropertiesClazz = archive.getOdexFile()[newFrameworkPropertiesDexIndex].loadClass("android.taobao.atlas.framework.FrameworkProperties", replaceClassLoader);
             }
-            if(FrameworkPropertiesClazz==null && isDeubgMode()){
-                Log.e("KernalBundle","main dex is not match, library awo test?");
+
+
+            //for mini sdk 21
+            if (FrameworkPropertiesClazz == null){
+                Log.e("KernalBundle","FrameworkPropertiesClazz is null, load from source apk");
+                FrameworkPropertiesClazz = Class.forName("android.taobao.atlas.framework.FrameworkProperties");
+            }
+
+            if (FrameworkPropertiesClazz == null && isDeubgMode()) {
+                Log.e("KernalBundle", "main dex is not match, library awo test?");
                 return;
             }
             Field versionField = FrameworkPropertiesClazz.getDeclaredField("version");
             versionField.setAccessible(true);
-            String version = (String)versionField.get(FrameworkPropertiesClazz.newInstance());
-            if(!KernalVersionManager.instance().currentVersionName().equals(version)){
-                if(isDeubgMode()){
-                    Log.e("KernalBundle","main dex is not match, awo test?");
-                }else {
-                    throw new RuntimeException("maindex version is not mismatch");
+            String version = (String) versionField.get(FrameworkPropertiesClazz.newInstance());
+            if (!KernalVersionManager.instance().currentVersionName().equals(version)) {
+                if (isDeubgMode()) {
+                    Log.e("KernalBundle", "main dex is not match, awo test?");
+                } else {
+                    throw new RuntimeException(String.format("maindex version is not mismatch %s vs %s!",KernalVersionManager.instance().currentVersionName(),version));
                 }
             }
-            if(needReplaceClassLoader){
-                try {
-                    NClassLoader.replacePathClassLoader(KernalConstants.baseContext,KernalBundle.class.getClassLoader(),replaceClassLoader);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            installKernalBundle(KernalConstants.baseContext.getClassLoader(),archive.getArchiveFile(),archive.getOdexFile(),archive.getLibraryDirectory());
+
+            installKernalBundle(KernalConstants.baseContext.getClassLoader(), archive.getArchiveFile(), archive.getOdexFile(), archive.getLibraryDirectory());
 
             prepareRuntimeVariables(application);
+
+            prepareKernalConstant(application);
         }
     }
 
-    public boolean needReplaceClassLoader(Application application){
-        if(Build.VERSION.SDK_INT>=24) {
+    private void prepareKernalConstant(Application application) {
+        try {
+            Class kernalConstantClass = application.getClassLoader().loadClass("android.taobao.atlas.startup.patch.KernalConstants");
+            kernalConstantClass.getDeclaredField("APK_PATH").set(null,application.getApplicationInfo().sourceDir);
+            kernalConstantClass.getDeclaredField("baseContext").set(null,application.getBaseContext());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public boolean needReplaceClassLoader(Application application) {
+        if (Build.VERSION.SDK_INT >= 24) {
             ClassLoader loader = getClass().getClassLoader();
             boolean needReplace = false;
-            do{
-                if(loader.getClass().getName().equals(PathClassLoader.class.getName())){
+            do {
+                if (loader.getClass().getName().equals(PathClassLoader.class.getName())) {
                     needReplace = true;
                     break;
                 }
-            }while((loader=loader.getParent())!=null);
+            } while ((loader = loader.getParent()) != null);
             return needReplace;
-        }else{
+        } else {
             return false;
         }
     }
 
-    public void prepareRuntimeVariables(Application application){
+    public void prepareRuntimeVariables(Application application) {
         try {
             Class RuntimeVariablesClass = application.getClassLoader().loadClass("android.taobao.atlas.runtime.RuntimeVariables");
             RuntimeVariablesClass.getDeclaredField("sRawClassLoader").set(RuntimeVariablesClass, KernalBundle.class.getClassLoader());
@@ -467,13 +555,21 @@ public class KernalBundle{
             RuntimeVariablesClass.getDeclaredField("sCurrentProcessName").set(RuntimeVariablesClass, KernalConstants.PROCESS);
             RuntimeVariablesClass.getDeclaredField("androidApplication").set(RuntimeVariablesClass, application);
             RuntimeVariablesClass.getDeclaredField("delegateResources").set(RuntimeVariablesClass, KernalConstants.baseContext.getResources());
-        }catch(Throwable e){
+
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void patchKernalResource(Application application) throws Exception{
-        if(!patchWithApk) {
+    /**
+     * 主dex动态资源部署
+     * See {@link android.taobao.atlas.runtime.DelegateResources#addApkpatchResources}
+     *
+     * @param application
+     * @throws Exception
+     */
+    public void patchKernalResource(Application application) throws Exception {
+        if (!patchWithApk) {
             Class DelegateResourcesClazz = application.getClassLoader().loadClass("android.taobao.atlas.runtime.DelegateResources");
             DelegateResourcesClazz.getDeclaredMethod("addApkpatchResources", String.class)
                     .invoke(DelegateResourcesClazz, archive.getArchiveFile().getAbsolutePath());
@@ -483,10 +579,11 @@ public class KernalBundle{
     public int getState() {
         return 0;
     }
+
     /**
      * 安装so库
      */
-    private static void extract(String zipPath,String entryPath,File targetPath){
+    private static void extract(String zipPath, String entryPath, File targetPath) {
         ZipFile zip = null;
         try {
             zip = new ZipFile(new File(zipPath));
@@ -497,18 +594,19 @@ public class KernalBundle{
             byte[] readContent = new byte[600];
             int readCount = bi.read(readContent);
             while (readCount != -1) {
-                bos.write(readContent, 0,readCount);
-                readCount =bi.read(readContent);
+                bos.write(readContent, 0, readCount);
+                readCount = bi.read(readContent);
             }
             bos.close();
-        }catch(final Exception e){
+        } catch (final Exception e) {
             e.printStackTrace();
-        }finally{
-            try{
-                if(zip!=null){
+        } finally {
+            try {
+                if (zip != null) {
                     zip.close();
                 }
-            }catch(Throwable e){}
+            } catch (Throwable e) {
+            }
         }
     }
 
@@ -555,7 +653,7 @@ public class KernalBundle{
         Object[] original = (Object[]) jlrField.get(instance);
         Object[] combined = (Object[]) Array.newInstance(
                 original.getClass().getComponentType(), original.length + extraElement.length);
-        for (int i = 0; i<extraElement.length; i++) {
+        for (int i = 0; i < extraElement.length; i++) {
             combined[i] = extraElement[i];
         }
         System.arraycopy(original, 0, combined, extraElement.length, original.length);
@@ -563,23 +661,23 @@ public class KernalBundle{
     }
 
     private static void expandFieldList(Object instance, String fieldName,
-                                         Object extraElement) throws NoSuchFieldException, IllegalArgumentException,
+                                        Object extraElement) throws NoSuchFieldException, IllegalArgumentException,
             IllegalAccessException {
         Field jlrField = findField(instance, fieldName);
         List original = (List) jlrField.get(instance);
-        original.add(0,extraElement);
+        original.add(0, extraElement);
     }
 
-    private static boolean replaceElement(Object instance,String fieldName,Object replaceElement) throws NoSuchFieldException,IllegalArgumentException,
-            IllegalAccessException{
+    private static boolean replaceElement(Object instance, String fieldName, Object[] replaceElement) throws NoSuchFieldException, IllegalArgumentException,
+            IllegalAccessException {
         boolean replaceSuccess = false;
         Field jlrField = findField(instance, fieldName);
         Object[] original = (Object[]) jlrField.get(instance);
-        for(int x=0; x<original.length; x++){
+        for (int x = 0; x < original.length; x++) {
             Object element = original[x];
             File apkFile = findDexRawFile(element);
-            if(apkFile!=null){
-                if(apkFile.getAbsolutePath()!=null && apkFile.getAbsolutePath().contains(KernalConstants.baseContext.getPackageName())){
+            if (apkFile != null) {
+                if (apkFile.getAbsolutePath() != null && apkFile.getAbsolutePath().contains(KernalConstants.baseContext.getPackageName())) {
                     original[x] = replaceElement;
                     replaceSuccess = true;
                     break;
@@ -590,39 +688,42 @@ public class KernalBundle{
 
     }
 
-    private static File findDexRawFile(Object element){
+    private static File findDexRawFile(Object element) {
         Field field = null;
         File dexRawFile = null;
-        if(Build.VERSION.SDK_INT>=25) {
+        if (Build.VERSION.SDK_INT >= 25) {
             try {
                 field = element.getClass().getDeclaredField("path");
                 field.setAccessible(true);
-                dexRawFile =  (File)field.get(element);
+                dexRawFile = (File) field.get(element);
                 return dexRawFile;
-            }catch(Throwable e){}
+            } catch (Throwable e) {
+            }
         }
         try {
             field = element.getClass().getDeclaredField("file");
             field.setAccessible(true);
-            dexRawFile =  (File)field.get(element);
-        }catch(Throwable e){}
+            dexRawFile = (File) field.get(element);
+        } catch (Throwable e) {
+        }
 
-        if(field==null){
+        if (field == null) {
             try {
                 field = element.getClass().getDeclaredField("zip");
                 field.setAccessible(true);
-                dexRawFile = (File)field.get(element);
-            }catch(Throwable e){}
+                dexRawFile = (File) field.get(element);
+            } catch (Throwable e) {
+            }
         }
         return dexRawFile;
     }
 
-    public boolean installKernalBundle(ClassLoader updateClassLoader,File archiveFile, DexFile[] odexFiles,File libraryDirectory) throws IOException, NoSuchFieldException, IllegalAccessException {
-        return installKernalBundle(updateClassLoader,archiveFile,odexFiles,libraryDirectory,false);
+    public boolean installKernalBundle(ClassLoader updateClassLoader, File archiveFile, DexFile[] odexFiles, File libraryDirectory) throws IOException, NoSuchFieldException, IllegalAccessException {
+        return installKernalBundle(updateClassLoader, archiveFile, odexFiles, libraryDirectory, false);
     }
 
 
-    public boolean installKernalBundle(ClassLoader updateClassLoader,File archiveFile, DexFile[] odexFiles,File libraryDirectory,boolean vmSafeMode) throws IOException, NoSuchFieldException, IllegalAccessException {
+    public boolean installKernalBundle(ClassLoader updateClassLoader, File archiveFile, DexFile[] odexFiles, File libraryDirectory, boolean vmSafeMode) throws IOException, NoSuchFieldException, IllegalAccessException {
         Object[] element = null;
         boolean success = false;
         try {
@@ -631,34 +732,25 @@ public class KernalBundle{
             Object dexPathList = pathListField.get(loader);
             if (odexFiles != null) {
                 element = makeDexElement(archiveFile, odexFiles);
-                if (element == null||element.length == 0) {
+                if (element == null || element.length == 0) {
                     throw new IOException("makeDexElement failed");
                 }
 
                 //增加kernal bundle
-                expandFieldArray(dexPathList, "dexElements", element);
+               expandFieldArray(dexPathList, "dexElements", element);
 //                if (Build.VERSION.SDK_INT > 20 && !vmSafeMode) {
-//                     success = replaceElement(dexPathList, "dexElements", element[0]);
+//                     success = removeOrignalElement(dexPathList, "dexElements");
 //                    if(!success){
 //                        throw new IOException("replaceElement failed");
 //                    }
 //                } else {
-//                    expandFieldArray(dexPathList, "dexElements", element);
+////                    expandFieldArray(dexPathList, "dexElements", element);
 //                }
             }
             //增加kernal bundle library
-            if (libraryDirectory!=null && !TextUtils.isEmpty(libraryDirectory.getAbsolutePath()) && libraryDirectory.exists()) {
-                if(Build.VERSION.SDK_INT<23){
-                    expandFieldArray(dexPathList, "nativeLibraryDirectories", new Object[]{libraryDirectory});
-                }else{
-                    expandFieldList(dexPathList, "nativeLibraryDirectories", libraryDirectory);
-                }
 
-                if(Build.VERSION.SDK_INT>=23){
-                    Object nativeLibraryElement = makeNativeLibraryElement(libraryDirectory);
-                    expandFieldArray(dexPathList, "nativeLibraryPathElements", new Object[]{nativeLibraryElement});
-                }
-            }
+            patchLibrary(dexPathList, libraryDirectory);
+
             return true;
         } catch (Exception e) {
             throw new IOException("install kernal fail", e);
@@ -666,12 +758,45 @@ public class KernalBundle{
 
     }
 
-    private void quietClose(Closeable closeable){
-        try{
-            if(closeable!=null){
+    private boolean removeOrignalElement(Object instance, String fieldName) throws NoSuchFieldException, IllegalAccessException {
+        Field jlrField = findField(instance, fieldName);
+        Object[] original = (Object[]) jlrField.get(instance);
+        for (int x = 0; x < original.length; x++) {
+            Object element = original[x];
+            Field dexFileField = element.getClass().getDeclaredField("dexFile");
+            dexFileField.setAccessible(true);
+            File apkFile = findDexRawFile(element);
+            if (apkFile != null) {
+                if (apkFile.getAbsolutePath() != null && apkFile.getAbsolutePath().contains(KernalConstants.baseContext.getPackageName())) {
+                    dexFileField.set(element,null);
+                    break;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static void patchLibrary(Object dexPathList, File libraryDirectory) throws NoSuchFieldException, IllegalAccessException, IOException {
+        if (libraryDirectory != null && !TextUtils.isEmpty(libraryDirectory.getAbsolutePath()) && libraryDirectory.exists()) {
+            if (Build.VERSION.SDK_INT < 23) {
+                expandFieldArray(dexPathList, "nativeLibraryDirectories", new Object[]{libraryDirectory});
+            } else {
+                expandFieldList(dexPathList, "nativeLibraryDirectories", libraryDirectory);
+            }
+
+            if (Build.VERSION.SDK_INT >= 23) {
+                Object nativeLibraryElement = makeNativeLibraryElement(libraryDirectory);
+                expandFieldArray(dexPathList, "nativeLibraryPathElements", new Object[]{nativeLibraryElement});
+            }
+        }
+    }
+
+    private void quietClose(Closeable closeable) {
+        try {
+            if (closeable != null) {
                 closeable.close();
             }
-        }catch (Throwable e){
+        } catch (Throwable e) {
 
         }
     }
@@ -681,18 +806,18 @@ public class KernalBundle{
     static Class[] constructorArgs2 = {File.class, File.class, DexFile.class};
     static Class[] constructorArgs1 = {File.class, boolean.class, File.class, DexFile.class};
 
-    static Class[] constructorArgsO = {DexFile.class,File.class};
+    static Class[] constructorArgsO = {DexFile.class, File.class};
 
 
-    public static Object[] makeDexElement(File file,DexFile[] dex) throws Exception{
-        Object []objects = new Object[dex.length];
-        for (int i = 0; i < dex.length; i ++) {
+    public static Object[] makeDexElement(File file, DexFile[] dex) throws Exception {
+        Object[] objects = new Object[dex.length];
+        for (int i = 0; i < dex.length; i++) {
             try {
                 Class Element = Class.forName("dalvik.system.DexPathList$Element");
-                if(Build.VERSION.SDK_INT>25 || Build.VERSION.SDK_INT==25&&Build.VERSION.PREVIEW_SDK_INT>0){
+                if (Build.VERSION.SDK_INT > 25 || Build.VERSION.SDK_INT == 25 && Build.VERSION.PREVIEW_SDK_INT > 0) {
                     Constructor cons = getElementConstructor(Element, constructorArgsO);
-                    objects[i] = cons.newInstance(dex[i],file);
-                }else {
+                    objects[i] = cons.newInstance(dex[i], file);
+                } else {
                     File apkFile = new File(KernalConstants.baseContext.getApplicationInfo().sourceDir);
                     Constructor cons = getElementConstructor(Element, constructorArgs1);
                     if (cons != null) {
@@ -718,18 +843,18 @@ public class KernalBundle{
 
 
     // for api level >=23
-    public static Object makeNativeLibraryElement(File dir) throws IOException{
-        if(Build.VERSION.SDK_INT>25 || Build.VERSION.SDK_INT==25&&Build.VERSION.PREVIEW_SDK_INT>0) {
+    public static Object makeNativeLibraryElement(File dir) throws IOException {
+        if (Build.VERSION.SDK_INT > 25 || Build.VERSION.SDK_INT == 25 && Build.VERSION.PREVIEW_SDK_INT > 0) {
             try {
                 Class NativeLibraryElement = Class.forName("dalvik.system.DexPathList$NativeLibraryElement");
                 Class[] oconstructorArgs = {File.class};
                 Constructor constructor = NativeLibraryElement.getDeclaredConstructor(oconstructorArgs);
                 constructor.setAccessible(true);
                 return constructor.newInstance(dir);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 throw new IOException("make nativeElement fail", e);
             }
-        }else {
+        } else {
             try {
                 Class Element = Class.forName("dalvik.system.DexPathList$Element");
                 Constructor cons = getElementConstructor(Element, constructorArgs1);
@@ -744,11 +869,11 @@ public class KernalBundle{
         }
     }
 
-    private static Constructor getElementConstructor(Class element,Class... args){
-        try{
+    private static Constructor getElementConstructor(Class element, Class... args) {
+        try {
             return element.getDeclaredConstructor(args);
-        }catch(Throwable e){
-            Log.w("KernalBundleImpl","can not create element by args" + args);
+        } catch (Throwable e) {
+            Log.w("KernalBundleImpl", "can not create element by args" + args);
         }
         return null;
     }
@@ -757,29 +882,29 @@ public class KernalBundle{
         return archive;
     }
 
-    public File getRevisionDir(){
+    public File getRevisionDir() {
         return getArchive().getRevisionDir();
     }
 
-    public File getRevisionZip(){
+    public File getRevisionZip() {
         return getArchive().getArchiveFile();
     }
 
-    public static boolean shouldSyncUpdateInThisProcess(String process){
+    public static boolean shouldSyncUpdateInThisProcess(String process) {
         String processName = process;
-        if(processName!=null &&
+        if (processName != null &&
                 (processName.equals(KernalConstants.baseContext.getPackageName()) ||
                         processName.toLowerCase().contains(":safemode")
-                )){
+                )) {
             return true;
-        }else{
+        } else {
             return false;
         }
     }
 
     public static void deleteDirectory(final File path) {
         final File[] files = path.listFiles();
-        if (files == null){
+        if (files == null) {
             return;
         }
         for (int i = 0; i < files.length; i++) {
@@ -802,9 +927,9 @@ public class KernalBundle{
             if (DEBUG) {
                 return true;
             }
-            SharedPreferences sharedPreferences = KernalConstants.baseContext.getSharedPreferences("dynamic_test",Context.MODE_PRIVATE);
-            boolean dynamic_test_flag = sharedPreferences.getBoolean("dynamic_test_key",false);
-            if(dynamic_test_flag){
+            SharedPreferences sharedPreferences = KernalConstants.baseContext.getSharedPreferences("dynamic_test", Context.MODE_PRIVATE);
+            boolean dynamic_test_flag = sharedPreferences.getBoolean("dynamic_test_key", false);
+            if (dynamic_test_flag) {
                 return true;
             }
         } catch (final Exception e) {

@@ -205,7 +205,7 @@
  *
  *
  */
-package com.taobao.android;
+package com.taobao.android.tools;
 /*
  *
  *
@@ -418,6 +418,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.jf.dexlib2.DexFileFactory;
 import org.jf.dexlib2.Opcode;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.builder.BuilderInstruction;
 import org.jf.dexlib2.builder.MutableMethodImplementation;
 import org.jf.dexlib2.builder.instruction.BuilderInstruction21c;
@@ -446,7 +447,7 @@ public class PatchMethodTool {
 
     public static void modifyMethod(String srcDexFile, String outDexFile, boolean isAndFix) throws IOException {
 
-        DexFile dexFile = DexFileFactory.loadDexFile(srcDexFile, 15, true);
+        DexFile dexFile = DexFileFactory.loadDexFile(srcDexFile, Opcodes.getDefault());
 
         final Set<ClassDef> classes = Sets.newConcurrentHashSet();
 
@@ -502,6 +503,12 @@ public class PatchMethodTool {
                         return classes.size();
                     }
                 };
+            }
+
+            @Nonnull
+            @Override
+            public Opcodes getOpcodes() {
+                return Opcodes.getDefault();
             }
         });
     }

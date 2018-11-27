@@ -229,15 +229,24 @@ public class AtlasMonitor {
     public static final String VALIDATE_CLASSES = "validate_classes";
     public static final String INSTALL = "install";
 
+    public static final String INSTRUMENTATION_HOOK_CLASS_NOT_FOUND_EXCEPTION
+        = "instrumentation_hook_class_not_found_exception";
     public static final String ACTIVITY_THREAD_HOOK_BAD_TOKEN_EXCEPTION = "activity_thread_hook_bad_token_exception";
+    public static final String ACTIVITY_THREAD_HOOK_EXCEPTION = "activity_thread_hook_exception";
     public static final String ACTIVITY_THREAD_HOOK_CLASS_NOT_FOUND_EXCEPTION = "activity_thread_hook_class_not_found_exception";
 
-
+    public static final String NEWCOMPONENT_SERVICE = "newcomponent_service";
 
 
     //动态部署稳定性stage
     public static final String DD_BUNDLE_MISMATCH = "dd_bundle_mismatch";
     public static final String DD_BUNDLE_RESOLVEFAIL = "bundle_resolve_fail";
+    public static final String BUNDLE_DEPENDENCY_ERROR = "bundle_dependency_error";
+    public static final String ADD_BAD_APP_TOKEN = "add_bad_app_token";
+    public static final String ADD_BAD_SUBWINDOW_TOKEN = "add_bad_subwindow_token";
+
+
+
 
 
 

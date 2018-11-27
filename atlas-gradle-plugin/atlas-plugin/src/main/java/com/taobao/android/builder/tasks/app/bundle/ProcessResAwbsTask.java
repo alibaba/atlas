@@ -209,20 +209,19 @@
 
 package com.taobao.android.builder.tasks.app.bundle;
 
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.core.AtlasBuilder;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tasks.manager.TaskCreater;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-
 import org.gradle.api.GradleException;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -238,7 +237,13 @@ public class ProcessResAwbsTask extends BaseTask {
 
     static final String taskName = "processResAwbs";
 
+    private AppVariantContext appVariantContext;
     private AppVariantOutputContext appVariantOutputContext;
+
+    public FileCollection mainDexSymbolFileCollection;
+
+    private BaseVariantOutput baseVariantOutput;
+
 
     @TaskAction
     void run() throws ExecutionException, InterruptedException {
@@ -250,7 +255,7 @@ public class ProcessResAwbsTask extends BaseTask {
             return;
         }
 
-        final VariantOutputScope outputScope = appVariantOutputContext.getOutputScope();
+        final VariantScope outputScope = appVariantOutputContext.getScope();
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
                                                                                    getLogger(),
@@ -258,6 +263,9 @@ public class ProcessResAwbsTask extends BaseTask {
         List<Runnable> runnables = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            if (awbBundle.isMBundle){
+                continue;
+            }
 
             runnables.add(new Runnable() {
                 @Override
@@ -266,7 +274,7 @@ public class ProcessResAwbsTask extends BaseTask {
                     File symbolLocation = new File(outputScope.getGlobalScope()
                                                            .getIntermediatesDir(),
                                                    "awb-symbols/" +
-                                                           outputScope.getVariantScope()
+                                                           outputScope
                                                                    .getVariantConfiguration()
                                                                    .getDirName() +
                                                            "/" +
@@ -286,14 +294,16 @@ public class ProcessResAwbsTask extends BaseTask {
                             symbolLocation,
                             true,
                             awbBundle,
-                            (AtlasBuilder) getBuilder(),
-                            appVariantOutputContext);
+                            getBuilder(),
+                            appVariantOutputContext,baseVariantOutput);
 
                     ProcessAwbAndroidResources processAwbAndroidResources = TaskCreater.create(
                             getProject(),
                             configAction.getName(),
                             configAction.getType());
+                    processAwbAndroidResources.mainDexSymbolFileCollection = mainDexSymbolFileCollection;
 
+                    appVariantContext.awbsProcessResourcesTask.put(awbBundle.getName(),processAwbAndroidResources);
                     configAction.execute(processAwbAndroidResources);
 
                     try {
@@ -310,9 +320,11 @@ public class ProcessResAwbsTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<ProcessResAwbsTask> {
 
+        private AppVariantContext variantContext;
         public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+                            BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
+            this.variantContext = appVariantContext;
         }
 
         @Override
@@ -329,8 +341,10 @@ public class ProcessResAwbsTask extends BaseTask {
         public void execute(ProcessResAwbsTask processResAwbsTask) {
 
             super.execute(processResAwbsTask);
-
+            processResAwbsTask.baseVariantOutput = baseVariantOutput;
+            processResAwbsTask.appVariantContext = variantContext;
             processResAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
+            variantContext.processResAwbsTask= processResAwbsTask;
         }
     }
 }

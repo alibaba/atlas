@@ -224,7 +224,7 @@ public class BundleArchive {
 
     public final static String DEXPATCH_DIR = "dexpatch/";
     private File                                         bundleDir = null;
-    private  final BundleArchiveRevision                currentRevision;
+    private   BundleArchiveRevision                currentRevision;
 
     // reload
     public BundleArchive(String location,File bundleDir,String uniqueTag,long dexPatchVersion) throws IOException {
@@ -289,6 +289,10 @@ public class BundleArchive {
             File revisionDir = new File(bundleDir, uniqueTag);
             currentRevision = new BundleArchiveRevision(location, revisionDir, file);
         }
+    }
+
+    public BundleArchive(String location) {
+
     }
 
     //update

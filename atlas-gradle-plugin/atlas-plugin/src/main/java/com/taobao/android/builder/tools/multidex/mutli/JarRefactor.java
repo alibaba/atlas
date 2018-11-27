@@ -210,9 +210,10 @@
 package com.taobao.android.builder.tools.multidex.mutli;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.transforms.JarMerger;
+import com.android.builder.packaging.JarMerger;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.FileNameUtils;
+import com.taobao.android.builder.tools.JarUtils;
 import com.taobao.android.builder.tools.multidex.dex.DexMerger;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -245,10 +246,21 @@ public class JarRefactor {
         this.multiDexConfig = multiDexConfig;
     }
 
-    public Collection<File> repackageJarList(Collection<File> files) throws IOException {
+    public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile, boolean release) throws IOException {
 
 
-        List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files);
+        List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files,mainDexListFile);
+        if (release){
+            return generateFirstDexJar(mainDexList,files);
+
+        }else {
+            return null;
+        }
+
+
+    }
+
+    private Collection<File> generateFirstDexJar(List<String>mainDexList,Collection<File> files)throws IOException {
 
         List<File> jarList = new ArrayList<>();
         List<File> folderList = new ArrayList<>();
@@ -261,7 +273,7 @@ public class JarRefactor {
         }
 
         File dir = new File(appVariantContext.getScope().getGlobalScope().getIntermediatesDir(),
-                            "fastmultidex/" + appVariantContext.getVariantName());
+                "fastmultidex/" + appVariantContext.getVariantName());
         FileUtils.deleteDirectory(dir);
         dir.mkdirs();
 
@@ -270,9 +282,9 @@ public class JarRefactor {
             mergedJar.getParentFile().mkdirs();
             mergedJar.delete();
             mergedJar.createNewFile();
-            JarMerger jarMerger = new JarMerger(mergedJar);
+            JarMerger jarMerger = new JarMerger(mergedJar.toPath());
             for (File folder : folderList) {
-                jarMerger.addFolder(folder);
+                jarMerger.addDirectory(folder.toPath());
             }
             jarMerger.close();
             if (mergedJar.length() > 0) {
@@ -284,7 +296,7 @@ public class JarRefactor {
         File maindexJar = new File(dir, DexMerger.FASTMAINDEX_JAR + ".jar");
 
         JarOutputStream mainJarOuputStream = new JarOutputStream(
-            new BufferedOutputStream(new FileOutputStream(maindexJar)));
+                new BufferedOutputStream(new FileOutputStream(maindexJar)));
 
         //First order
         Collections.sort(jarList, new NameComparator());
@@ -325,7 +337,7 @@ public class JarRefactor {
                 FileUtils.copyFile(jar, outJar);
             }
             if (!appVariantContext.getAtlasExtension().getTBuildConfig().isFastProguard() && files.size() == 1){
-                splitMainJar(result,outJar,1);
+                JarUtils.splitMainJar(result,outJar,1,MAX_CLASSES);
             }
         }
 
@@ -338,52 +350,7 @@ public class JarRefactor {
         return result;
     }
 
-    private void splitMainJar(List<File> result, File outJar, int index) throws IOException {
-        boolean hasClass = false;
-        File splitOutJar = new File(outJar.getParentFile(), FileNameUtils.getUniqueJarName(outJar) + "-" + (index + 1) + ".jar");
-        File splitOutJarMain = new File(outJar.getParentFile(), FileNameUtils.getUniqueJarName(outJar) + "-" + (index) + ".jar");
-        JarOutputStream jos = new JarOutputStream(
-                new BufferedOutputStream(new FileOutputStream(splitOutJar)));
-        JarOutputStream josMain = new JarOutputStream(
-                new BufferedOutputStream(new FileOutputStream(splitOutJarMain)));
-        JarFile jarFile = new JarFile(outJar);
-        try {
 
-
-            Enumeration<JarEntry> entryEnumeration = jarFile.entries();
-            int i = 0;
-            while (entryEnumeration.hasMoreElements()) {
-                JarEntry jarEntry = entryEnumeration.nextElement();
-                if (jarEntry.getName().endsWith(".class")) {
-                    i++;
-                    }
-                if (i > MAX_CLASSES) {
-                    hasClass = true;
-                    copyStream(jarFile.getInputStream(jarEntry), jos, jarEntry, jarEntry.getName());
-                } else {
-                    copyStream(jarFile.getInputStream(jarEntry), josMain, jarEntry, jarEntry.getName());
-                }
-            }
-            IOUtils.closeQuietly(jos);
-            IOUtils.closeQuietly(josMain);
-            jarFile.close();
-            if (!hasClass) {
-                FileUtils.deleteQuietly(splitOutJar);
-                return;
-            } else {
-                FileUtils.deleteQuietly(outJar);
-                result.remove(outJar);
-                result.add(splitOutJar);
-                result.add(splitOutJarMain);
-            }
-            splitMainJar(result, splitOutJar, index + 1);
-        }catch (Exception e){
-
-        }finally {
-
-        }
-
-    }
 
     private void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
         try {

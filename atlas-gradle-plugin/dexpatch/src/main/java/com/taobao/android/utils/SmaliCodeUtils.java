@@ -416,10 +416,12 @@ package com.taobao.android.utils;
 
 import com.google.common.collect.Lists;
 
+import com.taobao.android.smali.BakSmali;
 import org.apache.commons.lang3.StringUtils;
 import org.jf.baksmali.Adaptors.ClassDefinition;
 import org.jf.baksmali.Adaptors.MethodDefinition;
-import org.jf.baksmali.baksmaliOptions;
+import org.jf.baksmali.BaksmaliOptions;
+import org.jf.dexlib2.Opcodes;
 import org.jf.dexlib2.dexbacked.DexBackedMethodImplementation;
 import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.util.SyntheticAccessorResolver;
@@ -490,24 +492,21 @@ public class SmaliCodeUtils {
      *
      * @return
      */
-    private static baksmaliOptions createBaksmaliOptions(ClassDef classDef) {
-        baksmaliOptions options = new baksmaliOptions();
+    private static BaksmaliOptions createBaksmaliOptions(ClassDef classDef) {
+        BaksmaliOptions options = new BaksmaliOptions();
         options.deodex = false;
-        options.noParameterRegisters = false;
-        options.useLocalsDirective = true;
-        options.useSequentialLabels = true;
-        options.outputDebugInfo = false;
-        options.addCodeOffsets = false;
-        options.jobs = -1;
-        options.noAccessorComments = false;
+        options.parameterRegisters = false;
+        options.localsDirective = true;
+        options.sequentialLabels = true;
+        options.debugInfo = false;
+        options.codeOffsets = false;
+        options.accessorComments = false;
         options.registerInfo = 0;// 128
-        options.ignoreErrors = false;
         options.inlineResolver = null;
-        options.checkPackagePrivateAccess = false;
         options.apiLevel = DEFAULT_API_LEVEL;
         List<ClassDef> classDefs = Lists.newArrayList();
         classDefs.add(classDef);
-        options.syntheticAccessorResolver = new SyntheticAccessorResolver(classDefs);
+        options.syntheticAccessorResolver = new SyntheticAccessorResolver(Opcodes.getDefault(),classDefs);
         return options;
     }
 }

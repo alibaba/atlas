@@ -226,6 +226,7 @@ import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.artifacts.ModuleIdentifier;
+import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.jetbrains.annotations.TestOnly;
 
 /**
@@ -250,6 +251,27 @@ public class AwbBundle {
     private final List<AndroidLibrary> androidLibraries = new ArrayList<>();
 
     private final List<JavaLibrary> javaLibraries = new ArrayList<>();
+
+
+    public List<ResolvedArtifactResult> getResolvedResArtifactResults() {
+        return resolvedResArtifactResults;
+    }
+
+    private final List<ResolvedArtifactResult>resolvedResArtifactResults = new ArrayList<>();
+
+    public List<ResolvedArtifactResult> getResolvedAssetsArtifactResults() {
+        return resolvedAssetsArtifactResults;
+    }
+
+    private final List<ResolvedArtifactResult>resolvedAssetsArtifactResults = new ArrayList<>();
+
+    public List<ResolvedArtifactResult> getResolvedSymbolListWithPackageNameArtifactResults() {
+        return resolvedSymbolListWithPackageNameArtifactResults;
+    }
+
+    private final List<ResolvedArtifactResult>resolvedSymbolListWithPackageNameArtifactResults = new ArrayList<>();
+
+
 
     //Compatible with old patterns, gradually discarded androidLibrary
     private final List<SoLibrary> soLibraries = new ArrayList<>();
@@ -351,6 +373,8 @@ public class AwbBundle {
     private String packageName;
 
     public boolean isRemote;
+
+    public boolean isMBundle;
 
     private String soFileName;
 

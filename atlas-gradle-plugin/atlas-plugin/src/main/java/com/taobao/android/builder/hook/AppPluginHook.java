@@ -212,11 +212,6 @@ package com.taobao.android.builder.hook;
 import com.android.build.gradle.AppPlugin;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.LibraryPlugin;
-import com.android.build.gradle.internal.AtlasDependencyManager;
-import com.android.build.gradle.internal.DependencyManager;
-import com.android.build.gradle.internal.ExtraModelInfo;
-import com.android.build.gradle.internal.SdkHandler;
-import com.android.build.gradle.internal.TaskManager;
 import com.android.builder.core.AndroidBuilder;
 import com.taobao.android.builder.tools.ReflectUtils;
 import org.gradle.api.Project;
@@ -238,31 +233,31 @@ public class AppPluginHook {
         this.project = project;
     }
 
-    public void replaceTaskManager() throws Exception {
-
-        AppPlugin appPlugin = project.getPlugins().findPlugin(AppPlugin.class);
-
-        if (null == appPlugin) {
-            return;
-        }
-
-        TaskManager taskManager =
-            (TaskManager)ReflectUtils.getField(BasePlugin.class, appPlugin, "taskManager");
-
-        DependencyManager dependencyManager = (DependencyManager)ReflectUtils.getField(TaskManager.class, taskManager,
-                                                                                       "dependencyManager");
-
-        AtlasDependencyManager atlasDependencyManager = new AtlasDependencyManager(project,
-                                                                                   (ExtraModelInfo)ReflectUtils
-                                                                                       .getField(dependencyManager,
-                                                                                                 "extraModelInfo"),
-                                                                                   (SdkHandler)ReflectUtils
-                                                                                       .getField(dependencyManager,
-                                                                                                 "sdkHandler"));
-
-        ReflectUtils.updateField(TaskManager.class, taskManager, "dependencyManager", atlasDependencyManager);
-
-    }
+//    public void replaceTaskManager() throws Exception {
+//
+//        AppPlugin appPlugin = project.getPlugins().findPlugin(AppPlugin.class);
+//
+//        if (null == appPlugin) {
+//            return;
+//        }
+//
+//        TaskManager taskManager =
+//            (TaskManager)ReflectUtils.getField(BasePlugin.class, appPlugin, "taskManager");
+//
+//        DependencyManager dependencyManager = (DependencyManager)ReflectUtils.getField(TaskManager.class, taskManager,
+//                                                                                       "dependencyManager");
+//
+//        AtlasDependencyManager atlasDependencyManager = new AtlasDependencyManager(project,
+//                                                                                   (ExtraModelInfo)ReflectUtils
+//                                                                                       .getField(dependencyManager,
+//                                                                                                 "extraModelInfo"),
+//                                                                                   (SdkHandler)ReflectUtils
+//                                                                                       .getField(dependencyManager,
+//                                                                                                 "sdkHandler"));
+//
+//        ReflectUtils.updateField(TaskManager.class, taskManager, "dependencyManager", atlasDependencyManager);
+//
+//    }
 
     public AndroidBuilder getAndroidBuilder() throws Exception {
 

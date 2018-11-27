@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.taobao.atlas.remote.IRemote;
+import android.taobao.atlas.remote.IRemoteTransactor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,7 +22,7 @@ import com.taobao.secondbundlelibrary.SecondbundleShareActivity;
  * Use the {@link PlusOneFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class PlusOneFragment extends Fragment {
+public class PlusOneFragment extends Fragment implements IRemote {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -105,8 +107,8 @@ public class PlusOneFragment extends Fragment {
         if (context instanceof OnFragmentInteractionListener) {
             mListener = (OnFragmentInteractionListener) context;
         } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
+//            throw new RuntimeException(context.toString()
+//                    + " must implement OnFragmentInteractionListener");
         }
     }
 
@@ -131,4 +133,13 @@ public class PlusOneFragment extends Fragment {
         void onFragmentInteraction(Uri uri);
     }
 
+    @Override
+    public Bundle call(String s, Bundle bundle, IResponse iResponse) {
+        return null;
+    }
+
+    @Override
+    public <T> T getRemoteInterface(Class<T> aClass, Bundle bundle) {
+        return null;
+    }
 }

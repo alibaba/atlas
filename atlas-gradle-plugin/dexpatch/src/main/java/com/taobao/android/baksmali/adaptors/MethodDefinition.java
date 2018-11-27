@@ -36,7 +36,7 @@ import com.taobao.android.baksmali.adaptors.Debug.EndPrologueMethodItem;
 import com.taobao.android.baksmali.adaptors.Format.InstructionMethodItemFactory;
 import com.taobao.android.baksmali.util.ReferenceUtil;
 import com.taobao.android.object.DexDiffInfo;
-import org.jf.baksmali.baksmaliOptions;
+import org.jf.baksmali.BaksmaliOptions;
 import org.jf.dexlib2.AccessFlags;
 import org.jf.dexlib2.Format;
 import org.jf.dexlib2.Opcode;
@@ -181,7 +181,7 @@ public class MethodDefinition {
     }
 
     public static void writeEmptyMethodTo(IndentingWriter writer, Method method,
-                                          baksmaliOptions options) throws IOException {
+                                          BaksmaliOptions options) throws IOException {
         writer.write(".method ");
         writeAccessFlags(writer, method.getAccessFlags());
         writer.write(method.getName());
@@ -198,7 +198,7 @@ public class MethodDefinition {
         writeParameters(writer, method, methodParameters, options);
 
         String containingClass = null;
-        if (options.useImplicitReferences) {
+        if (options.implicitReferences) {
             containingClass = method.getDefiningClass();
         }
         //如果是修改的方法，需要添加ReplaceAnnotation
@@ -235,7 +235,7 @@ public class MethodDefinition {
         writer.write('\n');
 
         writer.indent(4);
-        if (classDef.options.useLocalsDirective) {
+        if (classDef.options.localsDirective) {
             writer.write(".locals ");
             int registerCount = methodImpl.getRegisterCount() - parameterRegisterCount;
             writer.printSignedIntAsDec(registerCount);
@@ -252,7 +252,7 @@ public class MethodDefinition {
         }
 
         String containingClass = null;
-        if (classDef.options.useImplicitReferences) {
+        if (classDef.options.implicitReferences) {
             containingClass = method.getDefiningClass();
         }
         //如果是修改的方法，需要添加ReplaceAnnotation
@@ -369,7 +369,7 @@ public class MethodDefinition {
 
     private static void writeParameters(IndentingWriter writer, Method method,
                                         List<? extends MethodParameter> parameters,
-                                        baksmaliOptions options) throws IOException {
+                                        BaksmaliOptions options) throws IOException {
         boolean isStatic = AccessFlags.STATIC.isSet(method.getAccessFlags());
         int registerNumber = isStatic ? 0 : 1;
         for (MethodParameter parameter : parameters) {
@@ -380,7 +380,7 @@ public class MethodDefinition {
                 writer.write(".param p");
                 writer.printSignedIntAsDec(registerNumber);
 
-                if (parameterName != null && options.outputDebugInfo) {
+                if (parameterName != null && options.debugInfo) {
                     writer.write(", ");
                     ReferenceFormatter.writeStringReference(writer, parameterName);
                 }
@@ -391,7 +391,7 @@ public class MethodDefinition {
                     writer.indent(4);
 
                     String containingClass = null;
-                    if (options.useImplicitReferences) {
+                    if (options.implicitReferences) {
                         containingClass = method.getDefiningClass();
                     }
                     AnnotationFormatter.writeTo(writer, annotations, containingClass);
@@ -430,11 +430,11 @@ public class MethodDefinition {
         }
 
         addTries(methodItems);
-        if (classDef.options.outputDebugInfo) {
+        if (classDef.options.debugInfo) {
             addDebugInfo(methodItems);
         }
 
-        if (classDef.options.useSequentialLabels) {
+        if (classDef.options.sequentialLabels) {
             setLabelSequentialNumbers();
         }
 
@@ -471,7 +471,7 @@ public class MethodDefinition {
                 methodItems.add(new BlankMethodItem(currentCodeAddress));
             }
 
-            if (classDef.options.addCodeOffsets) {
+            if (classDef.options.codeOffsets) {
                 methodItems.add(new MethodItem(currentCodeAddress) {
 
                     @Override
@@ -488,7 +488,7 @@ public class MethodDefinition {
                 });
             }
 
-            if (!classDef.options.noAccessorComments && (instruction instanceof ReferenceInstruction)) {
+            if (!classDef.options.accessorComments && (instruction instanceof ReferenceInstruction)) {
                 Opcode opcode = instruction.getOpcode();
 
                 if (opcode.referenceType == ReferenceType.METHOD) {
@@ -517,7 +517,7 @@ public class MethodDefinition {
 
     private void addAnalyzedInstructionMethodItems(List<MethodItem> methodItems) {
         MethodAnalyzer methodAnalyzer = new MethodAnalyzer(classDef.options.classPath, method,
-                classDef.options.inlineResolver);
+                classDef.options.inlineResolver,classDef.options.normalizeVirtualMethods);
 
         AnalysisException analysisException = methodAnalyzer.getAnalysisException();
         if (analysisException != null) {
@@ -549,7 +549,7 @@ public class MethodDefinition {
                 methodItems.add(new BlankMethodItem(currentCodeAddress));
             }
 
-            if (classDef.options.addCodeOffsets) {
+            if (classDef.options.codeOffsets) {
                 methodItems.add(new MethodItem(currentCodeAddress) {
 
                     @Override
@@ -653,7 +653,7 @@ public class MethodDefinition {
 
     @Nullable
     private String getContainingClassForImplicitReference() {
-        if (classDef.options.useImplicitReferences) {
+        if (classDef.options.implicitReferences) {
             return classDef.classDef.getType();
         }
         return null;

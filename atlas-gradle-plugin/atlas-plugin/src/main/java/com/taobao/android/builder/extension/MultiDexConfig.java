@@ -236,6 +236,16 @@ public class MultiDexConfig {
     @Config(title = "dexThe number of", message = "0unlimited", order = 1, group = "atlas")
     private int dexCount;
 
+    public int getMainDexListCount() {
+        return mainDexListCount;
+    }
+
+    public void setMainDexListCount(int mainDexListCount) {
+        this.mainDexListCount = mainDexListCount;
+    }
+
+    private int mainDexListCount;
+
     @Config(title = "dexSeparated rules", message = "a,b;c,d", order = 2, group = "atlas")
     private String dexSplitRules;
 

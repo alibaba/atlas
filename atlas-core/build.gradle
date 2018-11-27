@@ -2,7 +2,6 @@ apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
-
 def mini = getEnvValue("mini", 'false')
 def commitTag = getEnvValue("commitTag", 'false')
 
@@ -11,9 +10,11 @@ buildscript {
     repositories {
         mavenCentral()
         jcenter()
+        google()
     }
+
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.0'
+        classpath "com.taobao.android:atlasplugin:3.0.1-rc55"
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         classpath "com.github.dcendents:android-maven-gradle-plugin:1.4.1"
     }
@@ -24,10 +25,12 @@ repositories {
 
 }
 
+
 group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
-version "5.1.0.0${postFix}"
+
+version "5.1.0.8-RC1"
 
 String getEnvValue(key, defValue) {
     def val = System.getProperty(key);
@@ -126,7 +129,7 @@ project.gradle.buildFinished{
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '25.0.1'
+    buildToolsVersion '26.0.2'
     lintOptions {
         abortOnError false
     }
@@ -198,16 +201,16 @@ install {
     }
 }
 
-task sourcesJar(type: Jar) {
-    from('src/main/java') {
-        include '**'
-    }
-    classifier = 'sources'
-}
+//task sourcesJar(type: Jar) {
+//    from('src/main/java') {
+//        include '**'
+//    }
+//    classifier = 'sources'
+//}
 
-artifacts {
-    archives sourcesJar
-}
+//artifacts {
+//    archives sourcesJar
+//}
 
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())

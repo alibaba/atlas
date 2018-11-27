@@ -209,36 +209,18 @@
 
 package com.taobao.android.builder.tools.proguard;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -247,14 +229,20 @@ import com.taobao.android.builder.tools.bundleinfo.BundleGraphExecutor;
 import com.taobao.android.builder.tools.bundleinfo.BundleItem;
 import com.taobao.android.builder.tools.bundleinfo.BundleItemRunner;
 import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
-import com.taobao.android.builder.tools.proguard.dump.KeepConverter;
 import com.taobao.android.builder.tools.proguard.domain.Input;
 import com.taobao.android.builder.tools.proguard.dump.ClazzRefInfo;
+import com.taobao.android.builder.tools.proguard.dump.KeepConverter;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
@@ -291,11 +279,12 @@ public class AtlasProguardHelper {
 
         //Get the basic proguard configuration
         List<File> defaultProguardFiles = new ArrayList<>(
-            appVariantContext.getVariantConfiguration().getProguardFiles(true, new ArrayList<>()));
+
+            appVariantContext.getVariantConfiguration().getBuildType().getProguardFiles());
         Collections.sort(defaultProguardFiles);
 
-        BaseVariantOutputData vod = appVariantContext.getVariantData().getOutputs().get(0);
-        AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(vod);
+        BaseVariantOutput vod = (BaseVariantOutput) appVariantContext.getVariantOutputData().iterator().next();
+        AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(ApkDataUtils.get(vod));
 
         int parallelCount = appVariantContext.getAtlasExtension().getTBuildConfig().getProguardParallelCount();
         ////FIXME
@@ -385,10 +374,14 @@ public class AtlasProguardHelper {
 
     private static void addChildDependency(BundleItem bundleItem, Input input,
                                            Map<BundleInfo, AwbTransform> bundleInfoAwbTransformMap) throws IOException {
-        List<AwbTransform> childTransforms = new ArrayList<>();
+
         List<String>pkgNames = new ArrayList<>();
 
         input.getAwbBundles().forEach(awbTransform -> pkgNames.add(awbTransform.getAwbBundle().getPackageName()));
+
+        sLogger.info("combine to proguard bundles:"+pkgNames.toString());
+
+        List<AwbTransform> childTransforms = new ArrayList<>();
 
         sLogger.info("combine to proguard bundles:"+pkgNames.toString());
 
@@ -468,12 +461,7 @@ public class AtlasProguardHelper {
 
         File maindexkeep = generateBundleKeepCfg(appVariantContext);
 
-        proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
-            @Override
-            public Collection<File> get() {
-                return Lists.newArrayList(maindexkeep);
-            }
-        });
+        proGuardTransform.setConfigurationFiles(appVariantContext.getScope().getGlobalScope().getProject().files(maindexkeep));
 
     }
 
@@ -529,12 +517,7 @@ public class AtlasProguardHelper {
             }
         }
 
-        proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
-            @Override
-            public Collection<File> get() {
-                return proguardFiles;
-            }
-        });
+        proGuardTransform.setConfigurationFiles(appVariantContext.getScope().getGlobalScope().getProject().files(proguardFiles));
 
     }
 
@@ -556,8 +539,8 @@ public class AtlasProguardHelper {
 
         if (dependencyTree.getAwbBundles().size() > 0) {
 
-            BaseVariantOutputData vod = appVariantContext.getVariantData().getOutputs().get(0);
-            AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(vod);
+            BaseVariantOutput vod = (BaseVariantOutput) appVariantContext.getVariantOutputData().iterator().next();
+            AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(ApkDataUtils.get(vod));
             File awbObfuscatedDir = new File(globalScope.getIntermediatesDir(),
                                              "/classes-proguard/" + variantScope.getVariantConfiguration()
                                                  .getDirName());
@@ -570,14 +553,7 @@ public class AtlasProguardHelper {
                 throw new GradleException("", e);
             }
 
-            proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
-                @Override
-                public Collection<File> get() {
-                    Set<File> proguardFiles = new HashSet<File>();
-                    ((HashSet<File>)proguardFiles).add(awbInOutConfig);
-                    return proguardFiles;
-                }
-            });
+            proGuardTransform.setConfigurationFiles(appVariantContext.getScope().getGlobalScope().getProject().files(awbInOutConfig));
 
         }
 
@@ -615,12 +591,7 @@ public class AtlasProguardHelper {
             }
         }
 
-        proGuardTransform.setConfigurationFiles(new Supplier<Collection<File>>() {
-            @Override
-            public Collection<File> get() {
-                return proguardFiles;
-            }
-        });
+        proGuardTransform.setConfigurationFiles(appVariantContext.getScope().getGlobalScope().getProject().files(proguardFiles));
 
     }
 

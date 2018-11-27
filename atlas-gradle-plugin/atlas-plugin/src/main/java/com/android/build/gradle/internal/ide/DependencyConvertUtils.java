@@ -209,11 +209,6 @@
 
 package com.android.build.gradle.internal.ide;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.android.builder.dependency.MavenCoordinatesImpl;
 import com.android.builder.dependency.level2.AndroidDependency;
 import com.android.builder.model.AndroidLibrary;
@@ -230,6 +225,11 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Tool classes that depend on object transformation
@@ -251,7 +251,7 @@ public class DependencyConvertUtils {
                                                   null,
                                                   ImmutableList.<JavaLibrary>of(),
                                                   null,
-                                                  convert(artifact),
+                                                  convert(artifact,Type.JAR),
                                                   false,
                                                   false);
         return jarInfo;
@@ -269,7 +269,7 @@ public class DependencyConvertUtils {
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
 
         AndroidDependency androidDependency = AndroidDependency.createExplodedAarLibrary(artifact.getFile(),
-                                                                                         convert(artifact),
+                                                                                         convert(artifact,bundle?Type.AWB:Type.AAR),
                                                                                          resolvedDependencyInfo
                                                                                              .getDependencyName(),
                                                                                          null,
@@ -278,7 +278,7 @@ public class DependencyConvertUtils {
 
         List<File> localJars = new ArrayList<>();
 
-        return new AndroidLibraryImpl(androidDependency,
+        return new AtlasAndroidLibraryImpl(androidDependency,
                                       false,
                                       false,
                                       ImmutableList.<AndroidLibrary>of(),
@@ -308,7 +308,7 @@ public class DependencyConvertUtils {
                                                                                          null,
                                                                                          dir);
 
-        return new AndroidLibraryImpl(androidDependency,
+        return new AtlasAndroidLibraryImpl(androidDependency,
                                       false,
                                       false,
                                       ImmutableList.<AndroidLibrary>of(),
@@ -326,7 +326,7 @@ public class DependencyConvertUtils {
     public static ApLibrary toApLibrary(ResolvedDependencyInfo resolvedDependencyInfo) {
         assertType(Type.AP, resolvedDependencyInfo);
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
-        ApLibrary apLibrary = new ApLibrary(convert(artifact),
+        ApLibrary apLibrary = new ApLibrary(convert(artifact,Type.AP),
                                             artifact.getFile(),
                                             resolvedDependencyInfo.getExplodedDir());
         return apLibrary;
@@ -335,7 +335,7 @@ public class DependencyConvertUtils {
     public static ApkLibrary toApkLibrary(ResolvedDependencyInfo resolvedDependencyInfo) {
         assertType(Type.APK, resolvedDependencyInfo);
         ResolvedArtifact artifact = resolvedDependencyInfo.getResolvedArtifact();
-        ApkLibrary apkLibrary = new ApkLibrary(convert(artifact), artifact.getFile());
+        ApkLibrary apkLibrary = new ApkLibrary(convert(artifact,Type.APK), artifact.getFile());
         return apkLibrary;
     }
 
@@ -353,6 +353,10 @@ public class DependencyConvertUtils {
         APK("apk"),
         OTHER("");
 
+        public String getType() {
+            return type;
+        }
+
         private String type;
 
         Type(String type) {
@@ -369,11 +373,10 @@ public class DependencyConvertUtils {
         }
     }
 
-    public static MavenCoordinatesImpl convert(ResolvedArtifact artifact) {
+    public static MavenCoordinatesImpl convert(ResolvedArtifact artifact,Type type) {
         return new MavenCoordinatesImpl(artifact.getModuleVersion().getId().getGroup(),
                                         artifact.getModuleVersion().getId().getName(),
-                                        artifact.getModuleVersion().getId().getVersion(),
-                                        artifact.getExtension(),
+                                        artifact.getModuleVersion().getId().getVersion(),type.getType(),
                                         artifact.getClassifier());
     }
 
@@ -384,7 +387,7 @@ public class DependencyConvertUtils {
             ModuleVersionIdentifier moduleVersionIdentifier = resolvedDependencyResult.getSelected().getModuleVersion();
             List<ResolvedArtifact> resolvedArtifacts = artifacts.get(moduleVersionIdentifier);
 
-            if (resolvedArtifacts.size() > 0) {
+            if (resolvedArtifacts != null && resolvedArtifacts.size() > 0) {
                 ResolvedArtifact resolvedArtifact = resolvedArtifacts.get(0);
                 return ("awb".equals(resolvedArtifact.getType()));
             }

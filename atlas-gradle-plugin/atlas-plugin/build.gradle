@@ -214,6 +214,7 @@ repositories {
     //本地库，local repository(${user.home}/.m2/repository)
     mavenLocal()
     jcenter()
+    google()
 }
 
 sourceSets {
@@ -223,27 +224,36 @@ sourceSets {
         resources.srcDirs = ['src/main/resources']
     }
 }
-tasks.findByName("test").enabled=false
+
+
+tasks.findByName("test").enabled = false
+
 
 dependencies {
     compile localGroovy()
     compile gradleApi()
-    compile "com.taobao.android:dex_patch:1.4.4.22"
-    compile "com.android.tools.build:gradle:2.3.3"
+
+    compile "com.taobao.android:dex_patch:3.0.0-rc15"
+    compile "com.android.tools.build:gradle:3.0.1"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
     compile "com.alibaba:fastjson:1.2.6"
-    compile 'com.google.guava:guava:17.0'
     compile 'org.dom4j:dom4j:2.0.0'
     compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.8.3'
+    compile 'commons-beanutils:commons-beanutils:1.9.0'
     compile 'org.javassist:javassist:3.19.0-GA'
     compile "com.taobao.android:preverify:1.0.0"
     compile "org.codehaus.plexus:plexus-utils:3.0.24"
     compile "com.taobao.android:aapt:2.3.1.rc4"
+    compile "com.google.inject:guice:4.0"
+    compile "com.google.auto.value:auto-value:1.0"
+    compile "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.41"
+    compile fileTree(dir: 'libs', include: ['*.jar'])
 
     testCompile "junit:junit:4.11"
 }
+jar {
+    from zipTree("libs/libarsc.jar")
+}
 
-
-version = '2.3.3.rc70-SNAPSHOT'
+version = '3.0.1-rc81'

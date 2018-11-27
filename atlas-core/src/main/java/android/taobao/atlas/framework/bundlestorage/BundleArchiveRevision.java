@@ -355,6 +355,7 @@ public class BundleArchiveRevision {
         }
     }
 
+
     private boolean shouldCopyInstallFile(File bundleFile) throws IOException{
         if(bundleFile==null){
             throw new IOException("bundle file not exists");

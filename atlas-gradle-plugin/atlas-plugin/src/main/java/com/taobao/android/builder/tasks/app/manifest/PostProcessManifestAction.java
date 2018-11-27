@@ -209,18 +209,14 @@
 
 package com.taobao.android.builder.tasks.app.manifest;
 
-import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.android.SdkConstants;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
+import com.android.utils.FileUtils;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -236,17 +232,23 @@ import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Task;
 
+import java.io.File;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by wuzhong on 2017/4/13.
  */
 public class PostProcessManifestAction implements Action<Task> {
 
     private AppVariantContext appVariantContext;
-    private BaseVariantOutputData baseVariantOutputData;
+    private BaseVariantOutput baseVariantOutputData;
 
-    public PostProcessManifestAction(AppVariantContext appVariantContext, BaseVariantOutputData baseVariantOutputData) {
+    public PostProcessManifestAction(AppVariantContext appVariantContext, BaseVariantOutput baseVariantOutput) {
         this.appVariantContext = appVariantContext;
-        this.baseVariantOutputData = baseVariantOutputData;
+        this.baseVariantOutputData = baseVariantOutput;
     }
 
     @Override
@@ -261,9 +263,12 @@ public class PostProcessManifestAction implements Action<Task> {
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
 
         try {
+            File androidManifest = FileUtils.join(
+                    baseVariantOutputData.getProcessManifest().getManifestOutputDirectory(),
+                    baseVariantOutputData.getDirName(),
+                    SdkConstants.ANDROID_MANIFEST_XML);
 
-            Result result = ManifestFileUtils.postProcessManifests(
-                baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(),
+            Result result = ManifestFileUtils.postProcessManifests(androidManifest,
                 getLibManifestMap(),
                 getLibManifestDepenendyMap(),
                 bundleBaseLineInfo,
@@ -271,18 +276,23 @@ public class PostProcessManifestAction implements Action<Task> {
                 isMultiDexEnabled(),
                 false,
                 atlasExtension.getTBuildConfig()
-                    .getOutOfApkBundles());
+                    .getOutOfApkBundles(),atlasExtension.getTBuildConfig().getInsideOfApkBundles(),atlasExtension.getTBuildConfig().isPushInstall());
 
             File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
-            if ( atlasExtension.isAtlasEnabled()&& AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
-                appVariantContext.getVariantData().javacTask.source(proxySrcDir);
+
+            if (AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
+//                appVariantContext.getVariantData().javacTask.source(proxySrcDir);
             }
 
             File file = variantScope
-                .getInstantRunManifestOutputFile();
+                .getInstantRunManifestOutputDirectory();
             if (null != file && file.exists() && variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
+                File instantRunAndroidManifest = FileUtils.join(
+                        baseVariantOutputData.getProcessManifest().getInstantRunManifestOutputDirectory(),
+                        baseVariantOutputData.getDirName(),
+                        SdkConstants.ANDROID_MANIFEST_XML);
                 ManifestFileUtils.postProcessManifests(
-                    baseVariantOutputData.manifestProcessorTask.getInstantRunManifestOutputFile(),
+                        instantRunAndroidManifest,
                     getLibManifestMap(),
                     getLibManifestDepenendyMap(),
                     bundleBaseLineInfo,
@@ -290,12 +300,12 @@ public class PostProcessManifestAction implements Action<Task> {
                     isMultiDexEnabled(),
                     true,
                     atlasExtension.getTBuildConfig()
-                        .getOutOfApkBundles());
+                        .getOutOfApkBundles(),atlasExtension.getTBuildConfig().getInsideOfApkBundles(),atlasExtension.getTBuildConfig().isPushInstall());
             }
 
             // manifest list check
             ManifestHelper.checkManifest( appVariantContext,
-                baseVariantOutputData.manifestProcessorTask.getManifestOutputFile(), dependencyTree,
+                androidManifest, dependencyTree,
                 atlasExtension);
 
             //TODO??
@@ -320,7 +330,7 @@ public class PostProcessManifestAction implements Action<Task> {
     private boolean isMultiDexEnabled() {
         boolean isMultiDex = false;
         for (BuildType buildType : appVariantContext.getAppExtension().getBuildTypes()) {
-            if (buildType.getName().equals(baseVariantOutputData.variantData.getName())) {
+            if (buildType.getName().equals(baseVariantOutputData.getName())) {
                 isMultiDex = (null !=
                     buildType.getMultiDexEnabled()) ? buildType.getMultiDexEnabled() : false;
                 break;

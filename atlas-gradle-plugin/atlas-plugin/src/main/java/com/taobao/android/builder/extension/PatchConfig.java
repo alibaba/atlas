@@ -233,6 +233,16 @@ public class PatchConfig {
     @Config(message = " Play andfix patch bag ", order = 1, advance = true, group = "atlas_patch")
     private boolean createAPatch = false;
 
+    public boolean isNewPatch() {
+        return newPatch;
+    }
+
+    public void setNewPatch(boolean newPatch) {
+        this.newPatch = newPatch;
+    }
+
+    private boolean newPatch = false;
+
     @Config(message = " Dynamic deployment patch bag ", order = 2, group = "atlas_patch")
     private boolean createTPatch = false;
 
@@ -246,6 +256,25 @@ public class PatchConfig {
     private Set<String> filterClasses = new HashSet<String>();
 
     private boolean apForBaseFile = true;
+
+    public boolean isDiffNativeSo() {
+        return diffNativeSo;
+    }
+
+    public void setDiffNativeSo(boolean diffNativeSo) {
+        this.diffNativeSo = diffNativeSo;
+    }
+
+    private boolean diffNativeSo = false;
+
+
+    private Set<String> j2cPatchClasses = new HashSet<>();
+
+    public void setPatchClasses(Set<String> patchClasses) {
+        this.patchClasses = patchClasses;
+    }
+
+    private Set<String> patchClasses = new HashSet<>();
 
     private File apExploredFolder;
 
@@ -285,7 +314,17 @@ public class PatchConfig {
         this.j2cPatchClasses = j2cPatchClasses;
     }
 
-    private Set<String> j2cPatchClasses = new HashSet<>();
+
+
+    public boolean isDiffBundleSo() {
+        return diffBundleSo;
+    }
+
+    public void setDiffBundleSo(boolean diffBundleSo) {
+        this.diffBundleSo = diffBundleSo;
+    }
+
+    private boolean diffBundleSo = false;
 
     private boolean onlyIncrementInMain = true;
 
@@ -519,5 +558,9 @@ public class PatchConfig {
 
     public void setFullResValues(boolean fullResValues) {
         this.fullResValues = fullResValues;
+    }
+
+    public Set<String> getPatchClasses() {
+        return patchClasses;
     }
 }

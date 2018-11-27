@@ -291,7 +291,7 @@ public class ActivityTaskMgr {
         }catch (Throwable e){
 
         }finally {
-            activityList = null;
+            activityList.clear();
         }
     }
 

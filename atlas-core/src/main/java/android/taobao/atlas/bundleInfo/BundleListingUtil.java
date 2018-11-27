@@ -210,8 +210,8 @@ package android.taobao.atlas.bundleInfo;
 
 import android.text.TextUtils;
 
+import android.util.Log;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -242,6 +242,9 @@ public class BundleListingUtil {
             info.unique_tag = object.optString("unique_tag");
             if (object.has("isInternal")) {
                 info.isInternal = object.optBoolean("isInternal");
+            }
+            if (object.has("isMBundle")) {
+                info.isMBundle = object.optBoolean("isMBundle");
             }
 
             JSONArray dependency = object.optJSONArray("dependency");
@@ -287,6 +290,69 @@ public class BundleListingUtil {
                     contentProvidersList.put(contentProviders.getString(i),Boolean.FALSE);
                 }
                 info.contentProviders = contentProvidersList;
+            }
+
+            JSONObject remoteFragments = object.optJSONObject("remoteFragments");
+            if (remoteFragments != null && remoteFragments.length() > 0) {
+                HashMap<String, String> remoteFragmentsList = new HashMap<String, String>();
+
+                final Iterator keys = remoteFragments.keys();
+                while (keys.hasNext()) {
+                    final String next = (String) keys.next();
+
+                    // Could be single object or array.
+                    final String remoteFragment = remoteFragments.getString(next);
+                    if (remoteFragment == null) {
+                        Log.w("BundleListingUtil",
+                                "parseArray: No remoteFragment found for next " + next);
+                    } else {
+                        remoteFragmentsList.put(next, remoteFragment);
+                    }
+                }
+
+                info.remoteFragments = remoteFragmentsList;
+            }
+
+            JSONObject remoteViews = object.optJSONObject("remoteViews");
+            if (remoteViews != null && remoteViews.length() > 0) {
+                HashMap<String, String> remoteViewsList = new HashMap<String, String>();
+
+                final Iterator keys = remoteViews.keys();
+                while (keys.hasNext()) {
+                    final String next = (String) keys.next();
+
+                    // Could be single object or array.
+                    final String remoteView = remoteViews.getString(next);
+                    if (remoteView == null) {
+                        Log.w("BundleListingUtil",
+                                "parseArray: No remoteView found for next " + next);
+                    } else {
+                        remoteViewsList.put(next, remoteView);
+                    }
+                }
+
+                info.remoteViews = remoteViewsList;
+            }
+
+            JSONObject remoteTransactors = object.optJSONObject("remoteTransactors");
+            if (remoteTransactors != null && remoteTransactors.length() > 0) {
+                HashMap<String, String> remoteTransactorsList = new HashMap<String, String>();
+
+                final Iterator keys = remoteTransactors.keys();
+                while (keys.hasNext()) {
+                    final String next = (String) keys.next();
+
+                    // Could be single object or array.
+                    final String remoteTransactor = remoteTransactors.getString(next);
+                    if (remoteTransactor == null) {
+                        Log.w("BundleListingUtil",
+                                "parseArray: No remoteTransactor found for next " + next);
+                    } else {
+                        remoteTransactorsList.put(next, remoteTransactor);
+                    }
+                }
+
+                info.remoteTransactors = remoteTransactorsList;
             }
 
             infos.put(info.getPkgName(),info);

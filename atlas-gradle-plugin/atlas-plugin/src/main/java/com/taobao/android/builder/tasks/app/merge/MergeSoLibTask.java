@@ -213,13 +213,12 @@ package com.taobao.android.builder.tasks.app.merge;
  * Created by wuzhong on 16/6/13.
  */
 
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
@@ -229,18 +228,16 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.solib.NativeSoUtils;
-
+import com.taobao.android.builder.tools.zip.BetterZip;
+import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 /**
@@ -357,6 +354,11 @@ public class MergeSoLibTask extends BaseTask {
             if (null != solibs) {
                 for (SoLibrary solib : solibs) {
                     File explodeFolder = solib.getFolder();
+                    try {
+                        BetterZip.unzipDirectory(solib.getSoLibFile(),explodeFolder);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     if (explodeFolder.exists() && explodeFolder.isDirectory()) {
                         NativeSoUtils.copyLocalNativeLibraries(explodeFolder,
                                                                awbOutputFolder,
@@ -403,11 +405,11 @@ public class MergeSoLibTask extends BaseTask {
         private AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutputData baseVariantOutputData) {
+                            BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
 
             this.appVariantContext = appVariantContext;
-            GradleVariantConfiguration config = scope.getVariantScope().getVariantConfiguration();
+            GradleVariantConfiguration config = scope.getVariantConfiguration();
             dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
         }
 
@@ -439,11 +441,7 @@ public class MergeSoLibTask extends BaseTask {
 
             final AppVariantOutputContext appVariantOutputContext = getAppVariantOutputContext();
 
-            final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) appVariantOutputContext
-                    .getOutputScope()
-                    .getVariantOutputData();
-            final GradleVariantConfiguration config = scope.getVariantScope()
-                    .getVariantConfiguration();
+            final GradleVariantConfiguration config = scope.getVariantConfiguration();
 
             ConventionMappingHelper.map(copySoLibTask, "jniFolders", new Callable<Set<File>>() {
                 @Override
@@ -479,10 +477,8 @@ public class MergeSoLibTask extends BaseTask {
                 @Override
                 public Set call() throws Exception {
 
-                    if (variantOutputData.getMainOutputFile()
-                            .getFilter(com.android.build.OutputFile.ABI) != null) {
-                        return ImmutableSet.of(variantOutputData.getMainOutputFile()
-                                                       .getFilter(com.android.build.OutputFile.ABI));
+                    if (baseVariantOutput.getFilterTypes()!= null && baseVariantOutput.getFilterTypes().size()!= 0){
+                        return ImmutableSet.copyOf(baseVariantOutput.getFilterTypes());
                     }
                     Set<String> supportedAbis = config.getSupportedAbis();
                     if (supportedAbis != null) {

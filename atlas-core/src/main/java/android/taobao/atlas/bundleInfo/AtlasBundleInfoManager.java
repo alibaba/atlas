@@ -216,6 +216,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
+import android.taobao.atlas.bundleInfo.BundleListing.BundleInfo;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.util.WrapperUtil;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
@@ -254,51 +255,55 @@ public class AtlasBundleInfoManager {
 
     private AtlasBundleInfoManager(){
         if(mCurrentBundleListing==null){
-            String bundleInfoStr = (String)RuntimeVariables.getFrameworkProperty("bundleInfo");
-            if(!TextUtils.isEmpty(bundleInfoStr)) {
-                Object compressInfo = RuntimeVariables.getFrameworkProperty("compressInfo");
-                if(compressInfo!=null && (boolean)compressInfo){
-                    bundleInfoStr = uncompress(bundleInfoStr);
-                    Log.e("AtlasBundleInfoManager","the result of decoded info "+bundleInfoStr);
-                }
-                if(bundleInfoStr==null){
-                    throw new RuntimeException("bundleinfo is invalid");
-                }
-                int retryCount = 2;
-                Throwable e = null;
-                do {
+            String bundleInfoStr = null;
+            int retryCount = 2;
+            Throwable e = null;
+            do {
+                try {
                     try {
-                        try {
-                            mCurrentBundleListing = AtlasBundleInfoGenerator.generateBundleInfo();
-                            Log.e("AtlasBundleInfoManager","generate info from generator");
-                        }catch (Throwable exception) {
-                            exception.printStackTrace();
-                            LinkedHashMap<String, BundleListing.BundleInfo> infos = BundleListingUtil.parseArray(bundleInfoStr);
-                            if (infos == null) {
-                                Map<String, Object> detail = new HashMap<>();
-                                detail.put("InitBundleInfoByVersionIfNeed", bundleInfoStr);
-                                AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL, detail, new RuntimeException("the infos is null!"));
+                        mCurrentBundleListing = AtlasBundleInfoGenerator.generateBundleInfo();
+                        Log.e("AtlasBundleInfoManager", "generate info from generator");
+                    } catch (Throwable exception) {
+                        exception.printStackTrace();
+                        if (bundleInfoStr == null) {
+                            bundleInfoStr = (String)RuntimeVariables.getFrameworkProperty("bundleInfo");
+                            if (TextUtils.isEmpty(bundleInfoStr)) {
+                                throw new RuntimeException("read bundleInfo failed");
                             }
-                            BundleListing listing = new BundleListing();
-                            listing.setBundles(infos);
-                            mCurrentBundleListing = listing;
+                            Object compressInfo = RuntimeVariables.getFrameworkProperty("compressInfo");
+                            if (compressInfo != null && (boolean)compressInfo) {
+                                bundleInfoStr = uncompress(bundleInfoStr);
+                                Log.e("AtlasBundleInfoManager", "the result of decoded info " + bundleInfoStr);
+                            }
+                            if (bundleInfoStr == null) {
+                                throw new RuntimeException("bundleinfo is invalid");
+                            }
                         }
-                        updateBundleListingWithExtraInfo();
-                        break;
-                    } catch (Throwable error) {
-                        e = error;
-                        e.printStackTrace();
+                        LinkedHashMap<String, BundleInfo> infos = BundleListingUtil.parseArray(bundleInfoStr);
+                        if (infos == null) {
+                            Map<String, Object> detail = new HashMap<>();
+                            detail.put("InitBundleInfoByVersionIfNeed", bundleInfoStr);
+                            AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL,
+                                                              detail,
+                                                              new RuntimeException("the infos is null!"));
+                        }
+                        BundleListing listing = new BundleListing();
+                        listing.setBundles(infos);
+                        mCurrentBundleListing = listing;
                     }
-                    retryCount--;
-                }while(retryCount>0);
-                if(e!=null){
-                    Map<String, Object> detail = new HashMap<>();
-                    detail.put("InitBundleInfoByVersionIfNeed", bundleInfoStr);
-                    AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL, detail, e);
-                    throw new RuntimeException("parse bundleinfo failed");
+                    updateBundleListingWithExtraInfo();
+                    break;
+                } catch (Throwable error) {
+                    e = error;
+                    e.printStackTrace();
                 }
-            }else{
-                throw new RuntimeException("read bundleInfo failed");
+                retryCount--;
+            } while (retryCount > 0);
+            if (e != null) {
+                Map<String, Object> detail = new HashMap<>();
+                detail.put("InitBundleInfoByVersionIfNeed", bundleInfoStr);
+                AtlasMonitor.getInstance().report(AtlasMonitor.CONTAINER_BUNDLEINFO_PARSE_FAIL, detail, e);
+                throw new RuntimeException("parse bundleinfo failed");
             }
         }
     }
@@ -402,7 +407,7 @@ public class AtlasBundleInfoManager {
                 return bundleInfo.getPkgName();
             }
 
-            if(bundleInfo!=null && bundleInfo.getReceivers()!=null && bundleInfo.getReceivers().containsKey(componentName)) {
+            if(bundleInfo!=null && bundleInfo.getReceivers()!=null && bundleInfo.getReceivers().containsKey(componentName) ) {
                 return bundleInfo.getPkgName();
             }
 
@@ -413,6 +418,15 @@ public class AtlasBundleInfoManager {
         }
 
         return null;
+    }
+
+
+    public boolean isMbundle(String location){
+        BundleListing.BundleInfo bundleInfo = getBundleInfo(location);
+        if (bundleInfo!= null){
+            return bundleInfo.isMBundle();
+        }
+        return false;
     }
 
     public BundleListing.BundleInfo getBundleInfo(String name){

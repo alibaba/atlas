@@ -217,13 +217,13 @@ import java.util.Map;
 
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.builder.core.AtlasBuilder.MultiDexer;
+import com.android.dex.Dex;
+import com.android.dx.command.dexer.DxContext;
+import com.android.dx.merge.CollisionPolicy;
+import com.android.dx.merge.DexMerger;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.multidex.dex.DexGroup;
 import com.taobao.android.builder.tools.multidex.mutli.JarRefactor;
-import com.taobao.android.dex.Dex;
-import com.taobao.android.dx.merge.CollisionPolicy;
-import com.taobao.android.dx.merge.DexMerger;
-import org.gradle.api.GradleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -249,31 +249,35 @@ public class FastMultiDexer implements MultiDexer {
             return false;
         }
         boolean fastMultiDex = multiDexConfig.isFastMultiDex();
-        if (fastMultiDex) {
 
-            if (appVariantContext.getVariantData().getVariantConfiguration().isMultiDexEnabled()) {
-                throw new GradleException(
-                    "atlas fast multi dex must close android's default multi dex , please `multiDexEnabled false`");
-            }
+        return fastMultiDex&&appVariantContext.getVariantData().getVariantConfiguration().isMultiDexEnabled();
 
-            if (appVariantContext.getAtlasExtension().getTBuildConfig().isAtlasMultiDex()) {
-                logger.error("atlasMultiDex is ignored");
-            }
-        }
-        return fastMultiDex;
+//        if (fastMultiDex && appVariantContext.getVariantData().getVariantConfiguration().isMultiDexEnabled()) {
+//            return true;
+//
+////            if (appVariantContext.getVariantData().getVariantConfiguration().isMultiDexEnabled()) {
+////                throw new GradleException(
+////                    "atlas fast multi dex must close android's default multi dex , please `multiDexEnabled false`");
+////            }
+////
+////            if (appVariantContext.getAtlasExtension().getTBuildConfig().isAtlasMultiDex()) {
+////                logger.error("atlasMultiDex is ignored");
+////            }
+//        }
+//        return fastMultiDex;
     }
 
     @Override
-    public Collection<File> repackageJarList(Collection<File> files) throws IOException {
+    public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile, boolean release) throws IOException {
 
-        return new JarRefactor(appVariantContext, multiDexConfig).repackageJarList(files);
+        return new JarRefactor(appVariantContext, multiDexConfig).repackageJarList(files,mainDexListFile,release);
 
     }
 
     @Override
     public void dexMerge(Map<File, Dex> fileDexMap, File outDexFolder) throws IOException {
 
-        com.taobao.android.builder.tools.multidex.dex.DexMerger dexMerger
+       com.taobao.android.builder.tools.multidex.dex.DexMerger dexMerger
             = new com.taobao.android.builder.tools.multidex.dex.DexMerger(multiDexConfig, fileDexMap);
 
         List<DexGroup> dexDtos = dexMerger.group();
@@ -284,7 +288,7 @@ public class FastMultiDexer implements MultiDexer {
 
     private void mergeDex(File outDexFolder, List<Dex> tmpList, int index, Dex[] mergedList) throws IOException {
 
-        DexMerger dexMerger = new DexMerger(tmpList.toArray(new Dex[0]), CollisionPolicy.KEEP_FIRST);
+        DexMerger dexMerger = new DexMerger(tmpList.toArray(new Dex[0]), CollisionPolicy.KEEP_FIRST,new DxContext());
         Dex dex = dexMerger.merge();
 
         mergedList[index] = dex;

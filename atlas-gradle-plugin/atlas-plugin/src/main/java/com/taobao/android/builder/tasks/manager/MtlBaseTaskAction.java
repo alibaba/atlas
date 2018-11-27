@@ -209,14 +209,15 @@
 
 package com.taobao.android.builder.tasks.manager;
 
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
-import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-
+import com.android.build.gradle.internal.variant.BaseVariantData;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.StopExecutionException;
@@ -228,17 +229,20 @@ import java.lang.reflect.Field;
  */
 public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAction<T> {
 
-    protected VariantOutputScope scope;
+    protected VariantScope scope;
 
     protected VariantContext variantContext;
 
-    protected BaseVariantOutputData baseVariantOutputData;
+    protected BaseVariantData baseVariantData;
+
+    protected  BaseVariantOutput baseVariantOutput;
 
     public MtlBaseTaskAction(VariantContext variantContext,
-                             BaseVariantOutputData baseVariantOutputData) {
+                             BaseVariantOutput baseVariantOutput) {
         this.variantContext = variantContext;
-        this.baseVariantOutputData = baseVariantOutputData;
-        this.scope = baseVariantOutputData.getScope();
+        this.baseVariantData = variantContext.getBaseVariantData();
+        this.scope = baseVariantData.getScope();
+        this.baseVariantOutput = baseVariantOutput;
     }
 
     protected AppVariantOutputContext getAppVariantOutputContext() {
@@ -251,15 +255,15 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
 
         AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) appVariantContext
                 .getOutputContextMap()
-                .get(baseVariantOutputData.getFullName());
+                .get(ApkDataUtils.get(baseVariantOutput).getFullName());
 
         if (null == appVariantOutputContext) {
-            appVariantOutputContext = new AppVariantOutputContext(baseVariantOutputData.getFullName(),
+            appVariantOutputContext = new AppVariantOutputContext(ApkDataUtils.get(baseVariantOutput).getFullName(),
                                                                   appVariantContext,
-                                                                  baseVariantOutputData.getScope(),
-                                                                  baseVariantOutputData.variantData);
+                    ApkDataUtils.get(baseVariantOutput),
+                                                                  baseVariantData);
             appVariantContext.getOutputContextMap()
-                    .put(baseVariantOutputData.getFullName(), appVariantOutputContext);
+                    .put(ApkDataUtils.get(baseVariantOutput).getFullName(), appVariantOutputContext);
         }
 
         return appVariantOutputContext;
@@ -270,7 +274,7 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
 
         if (task instanceof DefaultAndroidTask) {
             DefaultAndroidTask defaultAndroidTask = (DefaultAndroidTask) task;
-            defaultAndroidTask.setVariantName(scope.getVariantScope()
+            defaultAndroidTask.setVariantName(baseVariantData
                                                       .getVariantConfiguration()
                                                       .getFullName());
         }

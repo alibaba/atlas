@@ -209,14 +209,23 @@
 
 package com.taobao.android.builder.tools.bundleinfo;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import android.aapt.pb.internal.ResourcesInternal.CompiledFile;
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.api.ApkFiles;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.google.common.base.Preconditions;
+import com.google.protobuf.CodedInputStream;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -226,6 +235,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang.StringUtils;
+import org.gradle.api.UncheckedIOException;
 import org.gradle.api.tasks.StopExecutionException;
 
 /**
@@ -282,14 +292,46 @@ public class ApkFileListUtils {
         for (File file : files) {
             if (file.isFile()) {
                 String relativePath = prefixName + File.separator + PathUtil.toRelative(folder, file.getAbsolutePath());
-                String md5 = MD5Util.getFileMD5(file);
+                String md5;
+                if ("res".equals(prefixName)) {
+                    md5 = getResMd5(file);
+                } else {
+                    md5 = MD5Util.getFileMD5(file);
+                }
                 if (isImageFile(relativePath)) {
                     apkFiles.apkFileList.put(relativePath, md5);
                 }
                 apkFiles.finalApkFileList.put(relativePath, md5);
             }
         }
+    }
 
+    private static String getResMd5(File file) {
+        String md5;
+        if (isCompiledFile(file.getName())) {
+            md5 = getCompiledFileMd5(file);
+        } else {
+            md5 = MD5Util.getFileMD5(file);
+        }
+        return md5;
+    }
+
+    private static String getCompiledFileMd5(File file) {
+        String md5;
+        try (InputStream is = new BufferedInputStream(new FileInputStream(file))) {
+            CodedInputStream codedInputStream = CodedInputStream.newInstance(is);
+            int numFiles = codedInputStream.readRawLittleEndian32();
+            // Preconditions.checkState(numFiles == 1, "inline xml not implemented yet");
+            long pbSize = codedInputStream.readRawLittleEndian64();
+            codedInputStream.pushLimit((int)pbSize);
+            CompiledFile compiledFile = CompiledFile.parser().parsePartialFrom(codedInputStream);
+            md5 = MD5Util.getFileMD5(compiledFile.getSourcePath());
+            // codedInputStream.popLimit((int)pbSize);
+            // codedInputStream.pushLimit(0);
+            return md5;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     protected static void prepareApkFileList(File folder, String prefixName, String awbName, ApkFiles apkFiles) {
@@ -317,13 +359,27 @@ public class ApkFileListUtils {
 
     }
 
-    private static String[] IMG_EXTENSIONS = new String[] {".png", ".jpg"};
+    private static final String[] IMG_EXTENSIONS = new String[] {".png", ".jpg"};
 
     private static boolean isImageFile(String name) {
         for (String imgExt : IMG_EXTENSIONS) {
             if (StringUtils.endsWithIgnoreCase(name, imgExt)) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    @NonNull
+    private static final String FLAT_FILE_EXTENSION = ".flat";
+
+    @NonNull
+    private static final String ARSC_FLAT_FILE_EXTENSION = ".arsc.flat";
+
+    private static boolean isCompiledFile(String name) {
+        if (StringUtils.endsWithIgnoreCase(name, FLAT_FILE_EXTENSION) && !StringUtils.endsWithIgnoreCase(name,
+            ARSC_FLAT_FILE_EXTENSION)) {
+            return true;
         }
         return false;
     }
