@@ -5,6 +5,7 @@
 [![Release Version](https://img.shields.io/badge/atlasupdate-1.1.4.22--rc7-blue.svg)](https://github.com/alibaba/atlas/releases/tag/v5.1.0.8-RC1) 
 [![Release Version](https://img.shields.io/badge/atlasplugin-3.0.1--rc81-green.svg)](https://github.com/alibaba/atlas/releases/tag/v5.1.0.8-RC1) 
 
+
 > A powerful Android Dynamic Component Framework.
 
 Atlas is an Android client-side containerization framework. we call it android dynamic component framework.
@@ -42,7 +43,7 @@ You can see there were three main library in this project ([atlas-core](./atlas-
 
 ## Support
 ----------
-Atlas support all Android version from Android 4.0 to 8.0. 
+Atlas support all Android version from Android 4.0 to 9.0. 
 
 Follow is support status.
 
@@ -57,6 +58,7 @@ ART     | 5.1             | Yes
 ART     | M               | Yes
 ART     | N               | Yes
 ART     | 8.0             | Yes
+ART     | 9.0             | Yes
 
 <!--## Contributing
 
