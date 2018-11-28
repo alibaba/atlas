@@ -6,6 +6,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.incremental.AsmUtils;
 import com.android.build.gradle.internal.incremental.IncrementalVisitor;
+import com.android.build.gradle.internal.incremental.TBIncrementalSupportVisitor;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
@@ -57,7 +58,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             @NonNull VisitorBuilder visitorBuilder,
             @NonNull ILogger logger,
             InjectErrorListener injectErrorListener,
-            boolean addSerialVersionUID) throws IOException {
+            boolean addSerialVersionUID,boolean patchInitMethod) throws IOException {
 
         byte[] classBytes;
         String path = FileUtils.relativePath(inputFile, inputRootDirectory);
@@ -176,6 +177,10 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         Files.createParentDirs(outputFile);
         IncrementalVisitor visitor =
                 visitorBuilder.build(classNode, parentsNodes, classWriter, logger);
+        if (visitor instanceof TBIncrementalSupportVisitor){
+
+            ((TBIncrementalSupportVisitor) visitor).setPatchInitMethod(patchInitMethod);
+        }
 
         if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
             /*

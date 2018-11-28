@@ -6,6 +6,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.incremental.TBIncrementalSupportVisitor;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
@@ -68,6 +69,7 @@ public class TaobaoInstantRunTransform extends Transform {
         this.targetPlatformApi =
                 DeploymentDevice.getDeploymentDeviceAndroidVersion(
                         transformScope.getGlobalScope().getProjectOptions());
+
         injectFailedFile = new File(variantContext.getProject().getBuildDir(), "outputs/warning-instrument-inject-error.properties");
     }
 
@@ -109,6 +111,16 @@ public class TaobaoInstantRunTransform extends Transform {
 
     @Override
     public void transform(TransformInvocation invocation) throws IOException, TransformException, InterruptedException {
+        if (variantContext.getBuildType().getPatchConfig().isCreateTPatch()){
+            PatchConfig patchConfig = variantContext.getBuildType().getPatchConfig();
+            if (patchConfig != null){
+                File classFile = patchConfig.getHotClassListFile();
+                String s = org.apache.commons.io.FileUtils.readFileToString(classFile);
+                modifyClasses = JSON.parseObject(s,Map.class);
+            }
+        }
+
+
         List<JarInput> jarInputs =
                 invocation
                         .getInputs()
@@ -513,7 +525,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         IncrementalChangeVisitor.VISITOR_BUILDER,
                         LOGGER,
                         null,
-                        false);
+                        false,variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors());
 
         // if the visitor returned null, that means the class cannot be hot swapped or more likely
         // that it was disabled for InstantRun, we don't add it to our collection of generated
@@ -564,16 +576,17 @@ public class TaobaoInstantRunTransform extends Transform {
                         inputDir,
                         inputFile,
                         outputDir,
-                        IncrementalSupportVisitor.VISITOR_BUILDER,
+                        TBIncrementalSupportVisitor.VISITOR_BUILDER,
                         LOGGER,
                         errorType -> {
                             errors.add(errorType.name() + ":" + path);
                         },
-                        variantContext.getAtlasExtension().getTBuildConfig().isInjectSerialVersionUID());
+                        variantContext.getAtlasExtension().getTBuildConfig().isInjectSerialVersionUID(),variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors());
                 if (file.length() == inputFile.length()) {
                     errors.add("NO INJECT:" + path);
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 LOGGER.warning("exception instrumentClass:" + inputFile.getPath());
                 errors.add("EXCEPTION:" + path);
                 File outputFile = new File(outputDir, path);

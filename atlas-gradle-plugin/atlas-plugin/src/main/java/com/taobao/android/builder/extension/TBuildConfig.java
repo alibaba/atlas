@@ -722,4 +722,16 @@ public class TBuildConfig {
     public boolean isPushInstall() {
         return pushInstall;
     }
+
+    public boolean isPatchConstructors() {
+        return patchConstructors;
+    }
+
+    public void setPatchConstructors(boolean patchConstructors) {
+        this.patchConstructors = patchConstructors;
+    }
+
+    private boolean patchConstructors = false;
+
+
 }
