@@ -296,15 +296,15 @@ public class TPatchTask extends BaseTask {
         if (appVariantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
             InstantRunBuildContext instantRunBuildContext = appVariantContext.getScope().getInstantRunBuildContext();
             InstantRunBuildContext.Artifact artifact = instantRunBuildContext.getLastBuild().getArtifactForType(FileType.RELOAD_DEX);
-            File patchFile = artifact.getLocation();
-            if (patchFile.exists()) {
+            File patchFile = null;
+            if (artifact!= null && ((patchFile = artifact.getLocation()).exists())) {
                 File finalFile = new File(outPatchFolder, patchContext.getBaseVersionName() + "@" + patchContext.getBaseVersionName() + ".ipatch");
                 zipPatch(finalFile, patchFile);
                 generatePatchInfo(finalFile);
-                return;
             }else {
-               getLogger().warn("patchFile is not exist!");
+               getLogger().warn("patchFile is not exist or no classes is modified!");
             }
+            return;
         }
 
         // Get the container version

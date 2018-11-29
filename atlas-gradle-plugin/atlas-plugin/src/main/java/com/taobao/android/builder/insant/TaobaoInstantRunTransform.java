@@ -618,6 +618,7 @@ public class TaobaoInstantRunTransform extends Transform {
         if (!generatedClassNames.isEmpty()) {
             File patchClassInfo = new File(variantContext.getProject().getBuildDir(), "outputs/patchClassInfo.json");
             org.apache.commons.io.FileUtils.writeStringToFile(patchClassInfo, JSON.toJSONString(modifyClasses));
+            modifyClasses.entrySet().forEach(stringStringEntry -> LOGGER.warning(stringStringEntry.getKey()+":"+stringStringEntry.getValue()));
             writePatchFileContents(
                     generatedClassNames,
                     classes3Folder,
