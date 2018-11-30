@@ -30,6 +30,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.insant.incremental.TBIncrementalVisitor;
 import com.taobao.android.builder.insant.matcher.MatcherCreator;
+import com.taobao.android.builder.insant.visitor.ModifyClassVisitor;
 import org.gradle.api.logging.Logging;
 import org.objectweb.asm.*;
 
@@ -111,15 +112,6 @@ public class TaobaoInstantRunTransform extends Transform {
 
     @Override
     public void transform(TransformInvocation invocation) throws IOException, TransformException, InterruptedException {
-        if (variantContext.getBuildType().getPatchConfig().isCreateTPatch()){
-            PatchConfig patchConfig = variantContext.getBuildType().getPatchConfig();
-            if (patchConfig != null){
-                File classFile = patchConfig.getHotClassListFile();
-                String s = org.apache.commons.io.FileUtils.readFileToString(classFile);
-                modifyClasses = JSON.parseObject(s,Map.class);
-            }
-        }
-
 
         List<JarInput> jarInputs =
                 invocation
@@ -351,69 +343,11 @@ public class TaobaoInstantRunTransform extends Transform {
         try {
             BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
             ClassReader classReader = new ClassReader(inputStream);
-            classReader.accept(new ClassVisitor(Opcodes.ASM5) {
-                @Override
-                public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-                    super.visit(version, access, name, signature, superName, interfaces);
-                }
-
-                @Override
-                public void visitSource(String source, String debug) {
-                    super.visitSource(source, debug);
-                }
-
-                @Override
-                public void visitOuterClass(String owner, String name, String desc) {
-                    super.visitOuterClass(owner, name, desc);
-                }
-
-                @Override
-                public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-                    if (desc.equals(TBIncrementalVisitor.ADD_CLASS.getDescriptor()) && visible) {
-                        patchPolicy[0] = PatchPolicy.ADD;
-                    } else if (desc.equals(TBIncrementalVisitor.MODIFY_CLASS.getDescriptor()) && visible) {
-                        patchPolicy[0] = PatchPolicy.MODIFY;
-                    }
-                    return super.visitAnnotation(desc, visible);
-                }
-
-                @Override
-                public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-                    return super.visitTypeAnnotation(typeRef, typePath, desc, visible);
-                }
-
-                @Override
-                public void visitAttribute(Attribute attr) {
-                    super.visitAttribute(attr);
-                }
-
-                @Override
-                public void visitInnerClass(String name, String outerName, String innerName, int access) {
-                    super.visitInnerClass(name, outerName, innerName, access);
-                }
-
-                @Override
-                public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
-                    return super.visitField(access, name, desc, signature, value);
-                }
-
-                @Override
-                public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-                    return super.visitMethod(access, name, desc, signature, exceptions);
-                }
-
-                @Override
-                public void visitEnd() {
-                    super.visitEnd();
-                }
-            }, ClassReader.EXPAND_FRAMES);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, patchPolicy), ClassReader.EXPAND_FRAMES);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         return patchPolicy[0];
-
     }
 
     private interface WorkItem {
@@ -525,7 +459,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         IncrementalChangeVisitor.VISITOR_BUILDER,
                         LOGGER,
                         null,
-                        false,variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors());
+                        false, variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors());
 
         // if the visitor returned null, that means the class cannot be hot swapped or more likely
         // that it was disabled for InstantRun, we don't add it to our collection of generated
@@ -581,7 +515,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         errorType -> {
                             errors.add(errorType.name() + ":" + path);
                         },
-                        variantContext.getAtlasExtension().getTBuildConfig().isInjectSerialVersionUID(),variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors());
+                        variantContext.getAtlasExtension().getTBuildConfig().isInjectSerialVersionUID(), variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors());
                 if (file.length() == inputFile.length()) {
                     errors.add("NO INJECT:" + path);
                 }
@@ -603,7 +537,6 @@ public class TaobaoInstantRunTransform extends Transform {
     }
 
 
-
     protected void wrapUpOutputs(File classes2Folder, File classes3Folder)
             throws IOException {
 
@@ -618,7 +551,7 @@ public class TaobaoInstantRunTransform extends Transform {
         if (!generatedClassNames.isEmpty()) {
             File patchClassInfo = new File(variantContext.getProject().getBuildDir(), "outputs/patchClassInfo.json");
             org.apache.commons.io.FileUtils.writeStringToFile(patchClassInfo, JSON.toJSONString(modifyClasses));
-            modifyClasses.entrySet().forEach(stringStringEntry -> LOGGER.warning(stringStringEntry.getKey()+":"+stringStringEntry.getValue()));
+            modifyClasses.entrySet().forEach(stringStringEntry -> LOGGER.warning(stringStringEntry.getKey() + ":" + stringStringEntry.getValue()));
             writePatchFileContents(
                     generatedClassNames,
                     classes3Folder,
@@ -681,7 +614,7 @@ public class TaobaoInstantRunTransform extends Transform {
     }
 
 
-    enum PatchPolicy {
+    public enum PatchPolicy {
 
         ADD, MODIFY, NONE
     }

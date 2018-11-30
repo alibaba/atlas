@@ -45,6 +45,21 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
     public static final Type MODIFY_CLASS =
             Type.getObjectType("com/android/tools/ir/api/ModifyClass");
 
+    public static final Type MODIFY_FIELD =
+            Type.getObjectType("com/android/tools/ir/api/ModifyField");
+
+    public static final Type MODIFY_METHOD =
+            Type.getObjectType("com/android/tools/ir/api/ModifyMethod");
+
+    public static final Type ADD_FIELD =
+            Type.getObjectType("com/android/tools/ir/api/AddField");
+
+
+    public static final Type ADD_METHOD =
+            Type.getObjectType("com/android/tools/ir/api/AddMethod");
+
+
+
     public enum ErrorType{
         R_CLASS,INTERFACE , NEW_API, PACKAGE_DISABLED
     }
