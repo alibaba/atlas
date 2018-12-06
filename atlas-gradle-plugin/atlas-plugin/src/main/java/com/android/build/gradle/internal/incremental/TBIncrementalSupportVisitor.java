@@ -515,8 +515,8 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
 
             @Override
             void visitDefault() {
-                mv.visitInsn(Opcodes.RETURN);
-//                writeMissingMessageWithHash(mv, visitedClassName);
+//                mv.visitInsn(Opcodes.RETURN);
+                writeMissingMessageWithHash(mv, visitedClassName);
             }
 
             @Override

@@ -23,7 +23,6 @@ public class ModifyMethodVisitor extends MethodVisitor {
         if (desc.equals(TBIncrementalVisitor.MODIFY_METHOD.getDescriptor()) && visible) {
             patchPolicy[0] = TaobaoInstantRunTransform.PatchPolicy.MODIFY;
         }else if (desc.equals(TBIncrementalVisitor.ADD_METHOD.getDescriptor()) && visible){
-
             throw new RuntimeException("add method is not support!");
         }
         return super.visitAnnotation(desc, visible);
