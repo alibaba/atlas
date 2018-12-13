@@ -452,7 +452,7 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
     @Override
     public int compareTo(ResolvedDependencyInfo other) {
         // If the two are equal, follow the same sequence
-        if (this.indent < other.indent) {
+        if (indent < other.indent) {
             return -1;
         } else {
             return 1;
@@ -463,22 +463,29 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
      * Gets a character description of DependencyInfo
      *
      * @return //TODO , do this later
+     * @param printFileSize
      */
-    public String getDependencyString() {
+    public String getDependencyString(boolean printFileSize) {
         StringBuilder sb = new StringBuilder();
-        sb.append(this.getGroup()).append(":");
-        sb.append(this.getName()).append(":");
+        sb.append(getGroup()).append(":");
+        sb.append(getName()).append(":");
 
         //FIXME REPLACE IT LATER
         if (AtlasBuildContext.sBuilderAdapter.prettyDependencyFormat) {
-            sb.append(this.getVersion()).append("@");
-            sb.append(this.getType());
+            sb.append(getVersion()).append("@");
+            sb.append(getType());
         } else {
-            sb.append(this.getType());
-            if (org.apache.commons.lang.StringUtils.isNotBlank(this.getClassifier())) {
-                sb.append(":").append(this.getClassifier());
+            sb.append(getType());
+            if (org.apache.commons.lang.StringUtils.isNotBlank(getClassifier())) {
+                sb.append(":").append(getClassifier());
             }
-            sb.append(":").append(this.getVersion());
+            sb.append(":").append(getVersion());
+        }
+        if (printFileSize) {
+            File file = getResolvedArtifact().getFile();
+            long fileLength = file.length();
+            sb.append(" ");
+            sb.append(fileLength);
         }
 
         return sb.toString();
