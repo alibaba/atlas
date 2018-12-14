@@ -92,7 +92,7 @@ public class PrepareBaseApkTask extends IncrementalTask {
     if (dexFilesCount > 0) {
       int i;
       if (patch) {
-        i = 1;
+        i = 2;
       }
       else {
         for (i = 1; ; i++) {
