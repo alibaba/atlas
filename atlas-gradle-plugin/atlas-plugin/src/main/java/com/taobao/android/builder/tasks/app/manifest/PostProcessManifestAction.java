@@ -233,6 +233,9 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Task;
 
 import java.io.File;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -284,25 +287,31 @@ public class PostProcessManifestAction implements Action<Task> {
 //                appVariantContext.getVariantData().javacTask.source(proxySrcDir);
             }
 
+
             File file = variantScope
                 .getInstantRunManifestOutputDirectory();
             if (null != file && file.exists() && variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
+
                 File instantRunAndroidManifest = FileUtils.join(
                         baseVariantOutputData.getProcessManifest().getInstantRunManifestOutputDirectory(),
                         baseVariantOutputData.getDirName(),
                         SdkConstants.ANDROID_MANIFEST_XML);
-                ManifestFileUtils.postProcessManifests(
-                        instantRunAndroidManifest,
-                    getLibManifestMap(),
-                    getLibManifestDepenendyMap(),
-                    bundleBaseLineInfo,
-                    atlasExtension.manifestOptions,
-                    isMultiDexEnabled(),
-                    true,
-                        appVariantContext.getBuildType().isDebuggable(),
-                        atlasExtension.getTBuildConfig()
-                        .getOutOfApkBundles(),atlasExtension.getTBuildConfig().getInsideOfApkBundles(),atlasExtension.getTBuildConfig().isPushInstall());
+
+                Files.copy(androidManifest.toPath(),instantRunAndroidManifest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
             }
+//                ManifestFileUtils.postProcessManifests(
+//                        instantRunAndroidManifest,
+//                    getLibManifestMap(),
+//                    getLibManifestDepenendyMap(),
+//                    bundleBaseLineInfo,
+//                    atlasExtension.manifestOptions,
+//                    isMultiDexEnabled(),
+//                    true,
+//                        appVariantContext.getBuildType().isDebuggable(),
+//                        atlasExtension.getTBuildConfig()
+//                        .getOutOfApkBundles(),atlasExtension.getTBuildConfig().getInsideOfApkBundles(),atlasExtension.getTBuildConfig().isPushInstall());
+//            }
 
             // manifest list check
             ManifestHelper.checkManifest( appVariantContext,

@@ -258,6 +258,9 @@ public class BundleInfoUtils {
 
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
             update(awbBundle, bundleInfoMap, appVariantContext, apkVersion, baseVersion);
+            if (appVariantContext.getAtlasExtension().getTBuildConfig().getDisabledBundleDependency()){
+                awbBundle.bundleInfo.getDependency().clear();
+            }
         }
     }
 
@@ -306,6 +309,7 @@ public class BundleInfoUtils {
 
         ManifestHelper.collectBundleInfo(appVariantContext, bundleInfo, awbBundle.getManifest(),
                                          awbBundle.getAndroidLibraries());
+
 
     }
 

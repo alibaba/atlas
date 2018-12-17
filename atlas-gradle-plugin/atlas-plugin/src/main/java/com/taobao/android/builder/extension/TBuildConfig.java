@@ -357,6 +357,17 @@ public class TBuildConfig {
     @Deprecated
     private Boolean resV4Enabled = true;
 
+
+    public Boolean getDisabledBundleDependency() {
+        return disabledBundleDependency;
+    }
+
+    public void setDisabledBundleDependency(Boolean disabledBundleDependency) {
+        this.disabledBundleDependency = disabledBundleDependency;
+    }
+
+    private Boolean disabledBundleDependency = false;
+
     @Config(message = "classInjection before proguard", advance = true, order = 12, group = "atlas")
     private Boolean injectBeforeProguard = false;
 

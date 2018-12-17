@@ -266,6 +266,8 @@ public class ManifestFileUtils {
 
     public static String[] SYSTEM_PERMISSION = new String[] {"android.permission", "com.android"};
 
+    private static final String INSTANT_RUN_CONTENTPROVIDER = "com.android.tools.ir.server.InstantRunContentProvider";
+
     /**
      * Follow up the manifest
      *  @param mainManifest
@@ -312,7 +314,8 @@ public class ManifestFileUtils {
             removeProvider(document);
         }
         if (isInstantRun) {
-            removeProcess(document);
+//            removeProcess(document);
+            singleProcess(document);
         }
 
         if (isInstantRun && !debuggable){
@@ -328,6 +331,24 @@ public class ManifestFileUtils {
         printlnPermissions(document);
 
         return result;
+    }
+
+    private static void singleProcess(Document document) {
+            List<Node> nodes = document.getRootElement().selectNodes("//provider");
+        for (Node node : nodes) {
+            Element element = (Element)node;
+            String name = element.attributeValue("name");
+            if (name.equals(INSTANT_RUN_CONTENTPROVIDER)){
+                Attribute attribute = element.attribute("multiprocess");
+                if (attribute!= null) {
+                    attribute.setValue("false");
+                    logger.warn("singleProcess  com.android.tools.ir.server.InstantRunContentProvider.......");
+                }
+
+            }
+
+        }
+
     }
 
     private static void disableDebuggable(Document document) {
