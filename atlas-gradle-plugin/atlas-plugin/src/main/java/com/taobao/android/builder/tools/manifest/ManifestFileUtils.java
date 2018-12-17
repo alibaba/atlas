@@ -314,7 +314,6 @@ public class ManifestFileUtils {
             removeProvider(document);
         }
         if (isInstantRun) {
-//            removeProcess(document);
             singleProcess(document);
         }
 
