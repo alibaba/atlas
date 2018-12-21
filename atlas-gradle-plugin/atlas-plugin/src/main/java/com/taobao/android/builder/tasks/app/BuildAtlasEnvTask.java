@@ -712,9 +712,6 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private boolean isMBundle(AppVariantContext appVariantContext, AwbBundle awbBundle){
 
-        if (awbBundle.getResolvedCoordinates().getArtifactId().equals("custom-detail-android")){
-            return false;
-        }
 
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getOutOfApkBundles().contains(awbBundle.getResolvedCoordinates().getArtifactId())){
             return false;

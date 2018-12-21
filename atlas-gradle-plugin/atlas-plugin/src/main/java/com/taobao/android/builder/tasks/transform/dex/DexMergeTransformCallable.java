@@ -10,6 +10,7 @@ import com.android.ide.common.process.ProcessOutput;
 import com.android.tools.r8.AtlasD8Merger;
 import com.android.tools.r8.CompilationMode;
 import com.taobao.android.builder.hook.dex.AtlasDexArchiveMerger;
+import com.taobao.android.builder.hook.dex.DexArchiveMergerHook;
 import com.taobao.android.builder.tools.ReflectUtils;
 import sun.security.krb5.internal.PAData;
 
@@ -66,13 +67,7 @@ public class DexMergeTransformCallable implements Callable<Void>{
                 DxContext dxContext =
                         new DxContext(
                                 processOutput.getStandardOutput(), processOutput.getErrorOutput());
-                merger = DexArchiveMerger.createDxDexMerger(dxContext, forkJoinPool);
-                ReflectUtils.updateField(merger,"mergingStrategy",new AtlasDexArchiveMerger.AtlasDexRefMergingStrategy());
-
-
-                System.out.println("dexingType && mutildexList "+dexingType == null? "":dexingType.name()+"|");
-
-//                System.out.println("update mergingStrategy to atlas AtlasDexRefMergingStrategy && dexingType && mutildexList "+dexingType == null? "":dexingType.name()+"|"+mainDexList!= null?mainDexList.toString():"");
+                merger = new DexArchiveMergerHook(dxContext,new AtlasDexArchiveMerger.AtlasDexRefMergingStrategy(),forkJoinPool);
                 break;
             case D8:
                 int d8MinSdkVersion = minSdkVersion;
