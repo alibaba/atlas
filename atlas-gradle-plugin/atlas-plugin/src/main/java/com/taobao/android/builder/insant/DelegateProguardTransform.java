@@ -136,9 +136,9 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         applyBundleInOutConfigration(appVariantContext);
 
         //apply bundle's configuration, Switch control
-//        if (buildConfig.isBundleProguardConfigEnabled()) {
-//            applyBundleProguardConfigration(appVariantContext);
-//        }
+        if (buildConfig.isBundleProguardConfigEnabled()) {
+            applyBundleProguardConfigration(appVariantContext);
+        }
 
         //apply mapping
         applyMapping(appVariantContext);
