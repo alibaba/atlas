@@ -498,6 +498,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         try {
                             Files.createParentDirs(outputFile);
                             Files.copy(inputFile, outputFile);
+                            errors.add("NO INJECT:" + path);
                             return null;
                         } catch (IOException e1) {
                             e1.printStackTrace();
