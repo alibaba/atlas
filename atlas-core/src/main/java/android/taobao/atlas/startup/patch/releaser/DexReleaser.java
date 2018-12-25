@@ -270,25 +270,28 @@ public class DexReleaser {
                         fileOutputStream.close();
                     }
                 }
-            }else if (RuntimeVariables.patchVersion == 1) {
-                File sourceFile;
-                if (dexPatch) {
-                    //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
-                    sourceFile = null == KernalBundle.kernalBundle
-                            ? new File(KernalConstants.APK_PATH)
-                            : KernalBundle.kernalBundle.getRevisionZip();
-                } else {
-                    sourceFile = new File(KernalConstants.APK_PATH);
-                }
-                File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", bundleFile.getParentFile());
-                CombineDexMerger combineDexMerger = new CombineDexMerger(new CombineDexVerifier());
-                boolean result = combineDexMerger.merge(sourceFile, bundleFile, targetFile);
-                if (result && bundleFile.delete() && targetFile.renameTo(bundleFile)) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
+            }else
+
+
+//                if (RuntimeVariables.patchVersion == 1) {
+//                File sourceFile;
+//                if (dexPatch) {
+//                    //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
+//                    sourceFile = null == KernalBundle.kernalBundle
+//                            ? new File(KernalConstants.APK_PATH)
+//                            : KernalBundle.kernalBundle.getRevisionZip();
+//                } else {
+//                    sourceFile = new File(KernalConstants.APK_PATH);
+//                }
+//                File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", bundleFile.getParentFile());
+//                CombineDexMerger combineDexMerger = new CombineDexMerger(new CombineDexVerifier());
+//                boolean result = combineDexMerger.merge(sourceFile, bundleFile, targetFile);
+//                if (result && bundleFile.delete() && targetFile.renameTo(bundleFile)) {
+//                    return true;
+//                } else {
+//                    return false;
+//                }
+//            }
 
                 return true;
 //            } else {
