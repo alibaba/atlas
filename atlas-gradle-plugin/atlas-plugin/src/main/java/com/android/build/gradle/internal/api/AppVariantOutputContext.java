@@ -224,6 +224,7 @@ import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuil
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.ide.common.build.ApkData;
+import com.android.utils.FileUtils;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -514,6 +515,18 @@ public class AppVariantOutputContext {
     public File getTPatchFolder() {
         return new File(variantContext.getScope().getGlobalScope().getOutputsDir(),
                         "tpatch-" + variantContext.getVariantName());
+    }
+
+    public File getIPatchFolder() {
+        return new File(variantContext.getScope().getGlobalScope().getOutputsDir(),
+                "ipatch-" + variantContext.getVariantName());
+    }
+
+    public File getIPatchFile(String versionName) {
+        if (!getIPatchFolder().exists()){
+            FileUtils.mkdirs(getIPatchFolder());
+        }
+        return new File(getIPatchFolder(),versionName + "@" + versionName + ".ipatch");
     }
 
     public File getRemoteNativeSoFolder(String bundleName) {

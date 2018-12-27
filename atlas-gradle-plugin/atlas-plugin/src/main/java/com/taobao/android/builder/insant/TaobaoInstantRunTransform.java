@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
  * @date 18/10/12
  */
 public class TaobaoInstantRunTransform extends Transform {
+    private final File injectSuccessFile;
     private InstantRunVariantScope transformScope;
     protected static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(TaobaoInstantRunTransform.class));
@@ -59,6 +60,8 @@ public class TaobaoInstantRunTransform extends Transform {
     private final AndroidVersion targetPlatformApi;
     private File injectFailedFile;
     private List<String> errors = new ArrayList<>();
+    private List<String> success = new ArrayList<>();
+
     private Map<String, String> modifyClasses = new HashMap<>();
 
 
@@ -72,6 +75,8 @@ public class TaobaoInstantRunTransform extends Transform {
                         transformScope.getGlobalScope().getProjectOptions());
 
         injectFailedFile = new File(variantContext.getProject().getBuildDir(), "outputs/warning-instrument-inject-error.properties");
+        injectSuccessFile = new File(variantContext.getProject().getBuildDir(), "outputs/instrument.properties");
+
     }
 
     @Override
@@ -132,6 +137,8 @@ public class TaobaoInstantRunTransform extends Transform {
             buildContext.stopRecording(InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
         }
         org.apache.commons.io.FileUtils.writeLines(injectFailedFile, errors);
+        org.apache.commons.io.FileUtils.writeLines(injectSuccessFile, success);
+
     }
 
 
@@ -343,9 +350,10 @@ public class TaobaoInstantRunTransform extends Transform {
         try {
             BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
             ClassReader classReader = new ClassReader(inputStream);
-            classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, patchPolicy), ClassReader.EXPAND_FRAMES);
+            classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, patchPolicy), ClassReader.SKIP_CODE);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+//            throw new RuntimeException(e);
         }
         return patchPolicy[0];
     }
@@ -519,6 +527,8 @@ public class TaobaoInstantRunTransform extends Transform {
                         variantContext.getAtlasExtension().getTBuildConfig().isInjectSerialVersionUID(), variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors());
                 if (file.length() == inputFile.length()) {
                     errors.add("NO INJECT:" + path);
+                }else {
+                    success.add("SUCCESS INJECT:"+path);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

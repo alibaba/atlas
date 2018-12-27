@@ -468,8 +468,8 @@ public class TransformReplacer {
                         variantContext.getScope().getGlobalScope().getAndroidBuilder().getDexByteCodeConverter(),
                         (DexOptions) ReflectUtils.getField(transformTask.getTransform(), "dexOptions"),
                         variantContext.getProject().getLogger(),
-                        (Integer) ReflectUtils.getField(transformTask.getTransform(), "minSdkForDx")
-                );
+                        (Integer) ReflectUtils.getField(transformTask.getTransform(), "minSdkForDx"),
+                vod);
                 ReflectUtils.updateField(transformTask, "transform", taobaoInstantRunDex);
             }
         }

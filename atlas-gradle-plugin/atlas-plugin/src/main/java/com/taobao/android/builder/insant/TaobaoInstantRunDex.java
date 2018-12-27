@@ -1,8 +1,11 @@
 package com.taobao.android.builder.insant;
 
+import com.alibaba.fastjson.JSON;
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.*;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.incremental.FileType;
@@ -23,6 +26,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+import com.taobao.android.builder.tools.MD5Util;
+import org.dom4j.DocumentException;
 import org.gradle.api.logging.Logger;
 
 import java.io.*;
@@ -33,6 +38,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * TaobaoInstantRunDex
@@ -51,6 +58,7 @@ public class TaobaoInstantRunDex extends Transform {
 
     private DexByteCodeConverter dexByteCodeConverter;
 
+    private BaseVariantOutput variantOutput;
     @NonNull
     private final InstantRunVariantScope variantScope;
     private final int minSdkForDx;
@@ -62,13 +70,15 @@ public class TaobaoInstantRunDex extends Transform {
             DexByteCodeConverter dexByteCodeConverter,
             @NonNull DexOptions dexOptions,
             @NonNull Logger logger,
-            int minSdkForDx) {
+            int minSdkForDx,
+            BaseVariantOutput variantOutput) {
         this.variantScope = transformVariantScope;
         this.variantContext = variantContext;
         this.dexByteCodeConverter = dexByteCodeConverter;
         this.dexOptions = dexOptions;
         this.logger = new LoggerWrapper(logger);
         this.minSdkForDx = minSdkForDx;
+        this.variantOutput = variantOutput;
     }
 
     @Override
@@ -147,7 +157,25 @@ public class TaobaoInstantRunDex extends Transform {
                     .getInstantRunBuildContext()
                     .stopRecording(InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
         }
+
+        variantScope.getInstantRunBuildContext().close();
+
+        if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
+            InstantRunBuildContext instantRunBuildContext = variantContext.getScope().getInstantRunBuildContext();
+            InstantRunBuildContext.Artifact artifact = instantRunBuildContext.getLastBuild().getArtifactForType(FileType.RELOAD_DEX);
+            File patchFile = artifact.getLocation();
+            String baseVersion = ApkDataUtils.get(variantOutput).getVersionName();
+            if (artifact!= null && patchFile.exists()) {
+                File finalFile = variantContext.getAppVariantOutputContext(ApkDataUtils.get(variantOutput)).getIPatchFile(baseVersion);
+                zipPatch(finalFile, patchFile);
+            }else {
+                logger.warning("patchFile is not exist or no classes is modified!");
+            }
+            return;
+        }
     }
+
+
 
     @VisibleForTesting
     static class JarClassesBuilder implements Closeable {
@@ -256,6 +284,22 @@ public class TaobaoInstantRunDex extends Transform {
     @Override
     public boolean isIncremental() {
         return true;
+    }
+
+    public static void zipPatch(File file, File dexFile) throws IOException {
+        BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(dexFile));
+        byte[] BUFFER = new byte[4096];
+        FileOutputStream fOutputStream = new FileOutputStream(file);
+        ZipOutputStream zoutput = new ZipOutputStream(fOutputStream);
+        ZipEntry zEntry = new ZipEntry(dexFile.getName());
+        zoutput.putNextEntry(zEntry);
+        int len;
+        while ((len = inputStream.read(BUFFER)) > 0) {
+            zoutput.write(BUFFER, 0, len);
+        }
+        zoutput.closeEntry();
+        zoutput.close();
+        inputStream.close();
     }
 }
 

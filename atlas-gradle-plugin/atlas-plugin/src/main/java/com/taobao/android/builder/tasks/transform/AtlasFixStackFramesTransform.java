@@ -16,6 +16,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.io.ByteStreams;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
@@ -184,6 +185,9 @@ public class AtlasFixStackFramesTransform extends Transform {
         try {
             for (TransformInput input : transformInvocation.getInputs()) {
                 for (JarInput jarInput : input.getJarInputs()) {
+                    if (input.getJarInputs().size()!= BuildAtlasEnvTask.verifySize){
+                        throw new IOException("miss dependency in first transform!");
+                    }
                     boolean flag = inMainDex(jarInput);
                     File output =
                             outputProvider.getContentLocation(

@@ -118,12 +118,15 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private ArtifactCollection symbolListWithPackageNames;
 
+    public static int verifySize = 0;
+
 
     @TaskAction
     void generate() {
 
         Set<ResolvedArtifactResult> compileArtifacts = compileManifests.getArtifacts();
         Set<ResolvedArtifactResult> jarArtifacts = compileJars.getArtifacts();
+        verifySize = jarArtifacts.size();
         Set<ResolvedArtifactResult> nativeLibsArtifacts = nativeLibs.getArtifacts();
         Set<ResolvedArtifactResult> javaResourcesArtifacts = javaResources.getArtifacts();
         Set<ResolvedArtifactResult> androidRes = res.getArtifacts();
