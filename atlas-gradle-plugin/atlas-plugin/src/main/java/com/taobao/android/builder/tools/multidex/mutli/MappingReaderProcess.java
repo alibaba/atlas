@@ -219,7 +219,7 @@ public class MappingReaderProcess implements MappingProcessor {
 
     @Override
     public boolean processClassMapping(String className, String newClassName) {
-        classMapping.put(className, newClassName);
+        classMapping.put(newClassName, className);
         return true;
     }
 

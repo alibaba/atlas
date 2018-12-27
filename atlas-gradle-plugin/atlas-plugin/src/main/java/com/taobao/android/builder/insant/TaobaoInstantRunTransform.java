@@ -12,6 +12,7 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.incremental.*;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.options.DeploymentDevice;
 import com.android.ide.common.internal.WaitableExecutor;
@@ -31,6 +32,8 @@ import com.taobao.android.builder.extension.PatchConfig;
 import com.taobao.android.builder.insant.incremental.TBIncrementalVisitor;
 import com.taobao.android.builder.insant.matcher.MatcherCreator;
 import com.taobao.android.builder.insant.visitor.ModifyClassVisitor;
+import com.taobao.android.builder.tools.multidex.mutli.MappingReaderProcess;
+import com.taobao.android.repatch.mapping.MappingReader;
 import org.gradle.api.logging.Logging;
 import org.objectweb.asm.*;
 
@@ -41,6 +44,8 @@ import java.net.URLClassLoader;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 /**
  * TaobaoInstantRunTransform
@@ -61,6 +66,8 @@ public class TaobaoInstantRunTransform extends Transform {
     private File injectFailedFile;
     private List<String> errors = new ArrayList<>();
     private List<String> success = new ArrayList<>();
+
+    MappingReaderProcess mappingReaderProcess = new MappingReaderProcess();
 
     private Map<String, String> modifyClasses = new HashMap<>();
 
@@ -118,6 +125,15 @@ public class TaobaoInstantRunTransform extends Transform {
     @Override
     public void transform(TransformInvocation invocation) throws IOException, TransformException, InterruptedException {
 
+        File mappingFile = loadProguardFile();
+        boolean isMinifyEnabled = variantContext.getVariantConfiguration().getBuildType().isMinifyEnabled();
+
+        if (mappingFile.exists() &&isMinifyEnabled){
+            proguard.obfuscate.MappingReader mappingReader = new proguard.obfuscate.MappingReader(mappingFile);
+            mappingReader.pump(mappingReaderProcess);
+
+
+        }
         List<JarInput> jarInputs =
                 invocation
                         .getInputs()
@@ -347,13 +363,20 @@ public class TaobaoInstantRunTransform extends Transform {
             return PatchPolicy.NONE;
         }
         final PatchPolicy[] patchPolicy = {PatchPolicy.NONE};
+        BufferedInputStream inputStream = null;
         try {
-            BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+             inputStream = new BufferedInputStream(new FileInputStream(file));
             ClassReader classReader = new ClassReader(inputStream);
             classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, patchPolicy), ClassReader.SKIP_CODE);
         } catch (Exception e) {
             e.printStackTrace();
 //            throw new RuntimeException(e);
+        }finally {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return patchPolicy[0];
     }
@@ -499,8 +522,10 @@ public class TaobaoInstantRunTransform extends Transform {
             String path = FileUtils.relativePath(inputFile, inputDir);
             try {
                 Set<String> excludePkgs = variantContext.getAtlasExtension().getTBuildConfig().getInjectExcludePkgs();
+
+                 String newPath = originalPath(path);
                 for (String s : excludePkgs) {
-                    boolean matched = MatcherCreator.create(s).match(path);
+                    boolean matched = MatcherCreator.create(s).match(newPath);
                     if (matched) {
                         File outputFile = new File(outputDir, path);
                         try {
@@ -545,6 +570,33 @@ public class TaobaoInstantRunTransform extends Transform {
             }
         }
         return null;
+    }
+
+    private String originalPath(String path) {
+        String className = path.replace("/", ".").substring(0, path.length() - 6);
+        if (mappingReaderProcess.classMapping.size() == 0){
+            return path;
+        }else {
+            String orign =  mappingReaderProcess.classMapping.get(className);
+
+            if (orign == null ||orign.equals(className)){
+                return path;
+            }
+            return orign.replace(".","/")+".class";
+        }
+    }
+
+    private File loadProguardFile() {
+        GlobalScope globalScope = variantContext.getScope().getGlobalScope();
+        File proguardOut = new File(Joiner.on(File.separatorChar).join(
+                String.valueOf(globalScope.getBuildDir()),
+                FD_OUTPUTS,
+                "mapping",
+                variantContext.getScope().getVariantConfiguration().getDirName()));
+
+        File printMapping = new File(proguardOut, "mapping.txt");
+
+        return printMapping;
     }
 
 
