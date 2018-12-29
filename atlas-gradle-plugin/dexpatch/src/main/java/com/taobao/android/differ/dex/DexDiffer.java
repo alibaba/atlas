@@ -567,23 +567,24 @@ public class DexDiffer {
                 continue;
             }
             DexBackedClassDef baseClassDef = baseClassDefMap.get(className);
-            if (lastBundleClassMap.containsKey(newClassDef.getType())&&tpatch){
-                System.out.println("overide class:"+className);
-                ClassDiffInfo classDiffInfo = new ClassDiffInfo();
-                classDiffInfo.setType(DiffType.OVERRIDE);
-                classDiffInfo.setClassDef(baseClassDef);
-                dexDiffInfo.getClassDiffInfoMap().put(className,classDiffInfo);
-                DiffClass diffClass = new DiffClass(baseClassDef.getType(),dexDiffInfo.getBaseClassDefNum(baseClassDef));
-                diffClasses.add(diffClass);
-            }
             ClassDiffInfo classDiffInfo = compareClassDef(baseClassDef, newClassDef);
             if (DiffType.MODIFY.equals(classDiffInfo.getType())){
                 DiffClass diffClass = new DiffClass(baseClassDef.getType(),dexDiffInfo.getBaseClassDefNum(baseClassDef));
                 diffClasses.add(diffClass);
                 dexDiffInfo.getClassDiffInfoMap().put(className, classDiffInfo);
-
             } else if (DiffType.ADD.equals(classDiffInfo.getType())) {
                 dexDiffInfo.getClassDiffInfoMap().put(className, classDiffInfo);
+            }else if (DiffType.NONE.equals(classDiffInfo.getType())){
+                if (lastBundleClassMap.containsKey(newClassDef.getType())&&tpatch){
+                    System.out.println("overide class:"+className);
+//                    ClassDiffInfo classDiffInfo = new ClassDiffInfo();
+                    classDiffInfo.setType(DiffType.OVERRIDE);
+                    classDiffInfo.setClassDef(baseClassDef);
+                    dexDiffInfo.getClassDiffInfoMap().put(className,classDiffInfo);
+                    DiffClass diffClass = new DiffClass(baseClassDef.getType(),dexDiffInfo.getBaseClassDefNum(baseClassDef));
+                    diffClasses.add(diffClass);
+                }
+
             }
         }
 

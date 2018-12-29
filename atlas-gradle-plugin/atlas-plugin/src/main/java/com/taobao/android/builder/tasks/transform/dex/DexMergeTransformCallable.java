@@ -67,7 +67,8 @@ public class DexMergeTransformCallable implements Callable<Void>{
                 DxContext dxContext =
                         new DxContext(
                                 processOutput.getStandardOutput(), processOutput.getErrorOutput());
-                merger = new DexArchiveMergerHook(dxContext,new AtlasDexArchiveMerger.AtlasDexRefMergingStrategy(),forkJoinPool);
+                merger = DexArchiveMerger.createDxDexMerger(dxContext,forkJoinPool);
+//                merger = new DexArchiveMergerHook(dxContext,new AtlasDexArchiveMerger.AtlasDexRefMergingStrategy(),forkJoinPool);
                 break;
             case D8:
                 int d8MinSdkVersion = minSdkVersion;
