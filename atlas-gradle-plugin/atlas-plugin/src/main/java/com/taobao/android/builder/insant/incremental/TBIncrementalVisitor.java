@@ -5,6 +5,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.incremental.AsmUtils;
+import com.android.build.gradle.internal.incremental.ByteCodeUtils;
 import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.incremental.TBIncrementalSupportVisitor;
 import com.android.utils.FileUtils;
@@ -15,12 +16,15 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.commons.SerialVersionUIDAdder;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * 创建日期：2018/11/6 on 下午7:41
@@ -33,7 +37,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         super(classNode, parentNodes, classVisitor, logger);
     }
 
-    public interface InjectErrorListener{
+    public interface InjectErrorListener {
 
         void onError(ErrorType errorType);
 
@@ -59,9 +63,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             Type.getObjectType("com/android/tools/ir/api/AddMethod");
 
 
-
-    public enum ErrorType{
-        R_CLASS,INTERFACE , NEW_API, PACKAGE_DISABLED
+    public enum ErrorType {
+        R_CLASS, INTERFACE, NEW_API, PACKAGE_DISABLED, NO_METHOD ,ANDROID_SUB
     }
 
     @Nullable
@@ -73,7 +76,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             @NonNull VisitorBuilder visitorBuilder,
             @NonNull ILogger logger,
             InjectErrorListener injectErrorListener,
-            boolean addSerialVersionUID,boolean patchInitMethod) throws IOException {
+            boolean addSerialVersionUID, boolean patchInitMethod, boolean patchAndroidSubClazz) throws IOException {
 
         byte[] classBytes;
         String path = FileUtils.relativePath(inputFile, inputRootDirectory);
@@ -81,7 +84,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         // if the class is not eligible for IR, return the non instrumented version or null if
         // the override class is requested.
         if (!isClassEligibleForInstantRun(inputFile)) {
-            if (injectErrorListener!= null){
+            if (injectErrorListener != null) {
                 injectErrorListener.onError(ErrorType.R_CLASS);
             }
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
@@ -132,16 +135,38 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             }
         };
 
-        ClassNode classNode =  AsmUtils.readClass(classReader);
+        ClassNode classNode = AsmUtils.readClass(classReader);
+
+        boolean hasOtherMethod = false;
+        if (classNode != null && classNode.methods != null) {
+            for (Object methodNode : classNode.methods) {
+                if (methodNode instanceof MethodNode) {
+                    if (!((MethodNode) methodNode).name.equals(ByteCodeUtils.CLASS_INITIALIZER) && !((MethodNode) methodNode).name.equals(ByteCodeUtils.CONSTRUCTOR)) {
+                        hasOtherMethod = true;
+                    }
+                }
+            }
+        }
+
 
         // when dealing with interface, we just copy the inputFile over without any changes unless
         // this is a package private interface.
         AccessRight accessRight = AccessRight.fromNodeAccess(classNode.access);
         File outputFile = new File(outputDirectory, path);
+
+        if (!hasOtherMethod) {
+            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+                Files.write(classBytes, outputFile);
+                return outputFile;
+            } else {
+                return null;
+            }
+
+        }
         if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
                 // don't change the name of interfaces.
-                if (injectErrorListener != null){
+                if (injectErrorListener != null) {
                     injectErrorListener.onError(ErrorType.INTERFACE);
                 }
                 Files.createParentDirs(outputFile);
@@ -173,12 +198,35 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         // if we could not determine the parent hierarchy, disable instant run.
         if (parentsNodes.isEmpty() || isPackageInstantRunDisabled(inputFile)) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
-                if (injectErrorListener!= null){
-                    if (parentsNodes.isEmpty()){
+                if (injectErrorListener != null) {
+                    if (parentsNodes.isEmpty()) {
                         injectErrorListener.onError(ErrorType.NEW_API);
-                    }else {
+                    } else {
                         injectErrorListener.onError(ErrorType.PACKAGE_DISABLED);
                     }
+                }
+                Files.createParentDirs(outputFile);
+                Files.write(classBytes, outputFile);
+                return outputFile;
+            } else {
+                return null;
+            }
+        }
+
+        boolean androidSubClazz = false;
+        for (ClassNode pN:parentsNodes){
+            if (pN.name.startsWith("android/app") ||
+                    pN.name.startsWith("android/content") ||
+            pN.name.startsWith("android/view")){
+                androidSubClazz = true;
+                break;
+            }
+        }
+
+        if (androidSubClazz && !patchAndroidSubClazz){
+            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+                if (injectErrorListener != null) {
+                        injectErrorListener.onError(ErrorType.ANDROID_SUB);
                 }
                 Files.createParentDirs(outputFile);
                 Files.write(classBytes, outputFile);
@@ -192,8 +240,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         Files.createParentDirs(outputFile);
         IncrementalVisitor visitor =
                 visitorBuilder.build(classNode, parentsNodes, classWriter, logger);
-        if (visitor instanceof TBIncrementalSupportVisitor){
-
+        if (visitor instanceof TBIncrementalSupportVisitor) {
             ((TBIncrementalSupportVisitor) visitor).setPatchInitMethod(patchInitMethod);
         }
 
@@ -209,7 +256,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
              */
             if (addSerialVersionUID) {
                 classNode.accept(new SerialVersionUIDAdder(visitor));
-            }else {
+            } else {
                 classNode.accept(visitor);
             }
         } else {
@@ -279,7 +326,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
     private static boolean isPackageInstantRunDisabled(@NonNull File inputFile) throws IOException {
 
-        ClassNode packageInfoClass =  AsmUtils.parsePackageInfo(inputFile);
+        ClassNode packageInfoClass = AsmUtils.parsePackageInfo(inputFile);
         if (packageInfoClass != null) {
             //noinspection unchecked
             List<AnnotationNode> annotations = packageInfoClass.invisibleAnnotations;

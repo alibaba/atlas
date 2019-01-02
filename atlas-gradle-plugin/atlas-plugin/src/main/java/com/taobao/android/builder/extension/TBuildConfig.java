@@ -420,7 +420,7 @@ public class TBuildConfig {
         this.injectSerialVersionUID = injectSerialVersionUID;
     }
 
-    private boolean injectSerialVersionUID = true;
+    private boolean injectSerialVersionUID = false;
 
     @Config(message = "Whether to use fast proguard", order = 16, advance = true, group = "atlas")
     private boolean fastProguard = false;
@@ -744,5 +744,13 @@ public class TBuildConfig {
 
     private boolean patchConstructors = false;
 
+    public void setPatchAndroidSubClazz(boolean patchAndroidSubClazz) {
+        this.patchAndroidSubClazz = patchAndroidSubClazz;
+    }
 
+    private boolean patchAndroidSubClazz = true;
+
+    public boolean isPatchAndroidSubClazz() {
+        return patchAndroidSubClazz;
+    }
 }

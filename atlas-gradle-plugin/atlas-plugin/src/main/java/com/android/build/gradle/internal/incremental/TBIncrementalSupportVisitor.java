@@ -103,6 +103,14 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
                         "Method found by visitor but not in the pre-parsed class node.");
 
         // does the method use blacklisted APIs.
+
+
+        //this is method generaged by visualMachine
+
+        if ((access & Opcodes.ACC_SYNTHETIC) != 0){
+            return defaultVisitor;
+        }
+
         boolean hasIncompatibleChange = InstantRunMethodVerifier.verifyMethod(method)
                 != InstantRunVerifierStatus.COMPATIBLE;
 
@@ -359,6 +367,7 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
             addAllNewMethods(classNode, classNode, uniqueMethods);
         } else {
             // otherwise, use the parent list.
+
             for (ClassNode parentNode : parentNodes) {
                 addAllNewMethods(classNode, parentNode, uniqueMethods);
             }

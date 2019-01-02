@@ -490,7 +490,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         IncrementalChangeVisitor.VISITOR_BUILDER,
                         LOGGER,
                         null,
-                        false, variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors());
+                        false, variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors(),variantContext.getAtlasExtension().getTBuildConfig().isPatchAndroidSubClazz());
 
         // if the visitor returned null, that means the class cannot be hot swapped or more likely
         // that it was disabled for InstantRun, we don't add it to our collection of generated
@@ -549,7 +549,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         errorType -> {
                             errors.add(errorType.name() + ":" + path);
                         },
-                        variantContext.getAtlasExtension().getTBuildConfig().isInjectSerialVersionUID(), variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors());
+                        variantContext.getAtlasExtension().getTBuildConfig().isInjectSerialVersionUID(), variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors(),variantContext.getAtlasExtension().getTBuildConfig().isPatchAndroidSubClazz());
                 if (file.length() == inputFile.length()) {
                     errors.add("NO INJECT:" + path);
                 }else {
