@@ -156,6 +156,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
         if (!hasOtherMethod) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+                Files.createParentDirs(outputFile);
                 Files.write(classBytes, outputFile);
                 return outputFile;
             } else {

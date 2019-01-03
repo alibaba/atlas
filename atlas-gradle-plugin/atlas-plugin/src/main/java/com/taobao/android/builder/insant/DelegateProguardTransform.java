@@ -140,6 +140,8 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             applyBundleProguardConfigration(appVariantContext);
         }
 
+        proGuardTransform.setConfigurationFiles(appVariantContext.getScope().getGlobalScope().getProject().files(defaultProguardFiles));
+
         //apply mapping
         applyMapping(appVariantContext);
 
@@ -240,7 +242,6 @@ public class DelegateProguardTransform extends MtlInjectTransform {
                 variantScope.getVariantConfiguration().getFullName());
 
         if (dependencyTree.getAwbBundles().size() > 0) {
-
             BaseVariantOutput vod = (BaseVariantOutput) appVariantContext.getVariantOutputData().iterator().next();
             AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(ApkDataUtils.get(vod));
             File awbObfuscatedDir = new File(globalScope.getIntermediatesDir(),
@@ -256,7 +257,6 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             }
 
             defaultProguardFiles.add(awbInOutConfig);
-            proGuardTransform.setConfigurationFiles(appVariantContext.getScope().getGlobalScope().getProject().files(defaultProguardFiles));
 
         }
 
@@ -311,7 +311,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
                 }
             }
         }
-        proGuardTransform.setConfigurationFiles(appVariantContext.getScope().getGlobalScope().getProject().files(proguardFiles));
+        defaultProguardFiles.addAll(proguardFiles);
 
     }
 }
