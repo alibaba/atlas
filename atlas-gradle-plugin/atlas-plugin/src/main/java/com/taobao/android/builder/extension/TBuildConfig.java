@@ -744,13 +744,37 @@ public class TBuildConfig {
 
     private boolean patchConstructors = false;
 
-    public void setPatchAndroidSubClazz(boolean patchAndroidSubClazz) {
-        this.patchAndroidSubClazz = patchAndroidSubClazz;
+    public boolean isPatchEachMethod() {
+        return patchEachMethod;
     }
 
-    private boolean patchAndroidSubClazz = true;
+    public void setPatchEachMethod(boolean patchEachMethod) {
+        this.patchEachMethod = patchEachMethod;
+    }
 
-    public boolean isPatchAndroidSubClazz() {
-        return patchAndroidSubClazz;
+    private boolean patchEachMethod = false;
+
+
+
+    public int getPatchSuperMethodCount() {
+        return patchSuperMethodCount;
+    }
+
+    public void setPatchSuperMethodCount(int patchSuperMethodCount) {
+        this.patchSuperMethodCount = patchSuperMethodCount;
+    }
+
+    private int patchSuperMethodCount = 100;
+
+    public void setSupportAddCallSuper(boolean supportAddCallSuper) {
+        this.supportAddCallSuper = supportAddCallSuper;
+    }
+
+    private boolean supportAddCallSuper = false;
+
+
+
+    public boolean isSupportAddCallSuper() {
+        return supportAddCallSuper;
     }
 }

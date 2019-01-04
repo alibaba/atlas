@@ -20,11 +20,7 @@ import org.objectweb.asm.tree.MethodNode;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
+import java.util.*;
 
 /**
  * 创建日期：2018/11/6 on 下午7:41
@@ -64,7 +60,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
 
     public enum ErrorType {
-        R_CLASS, INTERFACE, NEW_API, PACKAGE_DISABLED, NO_METHOD ,ANDROID_SUB
+        R_CLASS, INTERFACE, NEW_API, PACKAGE_DISABLED, NO_METHOD, SUB_EXCEEDED
     }
 
     @Nullable
@@ -76,7 +72,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             @NonNull VisitorBuilder visitorBuilder,
             @NonNull ILogger logger,
             InjectErrorListener injectErrorListener,
-            boolean addSerialVersionUID, boolean patchInitMethod, boolean patchAndroidSubClazz) throws IOException {
+            boolean addSerialVersionUID, boolean patchInitMethod, boolean patchEachMethod,boolean supportAddCallSuper,int count) throws IOException {
 
         byte[] classBytes;
         String path = FileUtils.relativePath(inputFile, inputRootDirectory);
@@ -214,20 +210,14 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             }
         }
 
-        boolean androidSubClazz = false;
-        for (ClassNode pN:parentsNodes){
-            if (pN.name.startsWith("android/app") ||
-                    pN.name.startsWith("android/content") ||
-            pN.name.startsWith("android/view")){
-                androidSubClazz = true;
-                break;
-            }
+        Map<String, TBIncrementalSupportVisitor.MethodReference> methods = new HashMap<>();
+        for (ClassNode pN : parentsNodes) {
+            TBIncrementalSupportVisitor.addAllNewMethods(classNode,pN,methods, null);
         }
-
-        if (androidSubClazz && !patchAndroidSubClazz){
+        if (methods.size() > count) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
                 if (injectErrorListener != null) {
-                        injectErrorListener.onError(ErrorType.ANDROID_SUB);
+                    injectErrorListener.onError(ErrorType.SUB_EXCEEDED);
                 }
                 Files.createParentDirs(outputFile);
                 Files.write(classBytes, outputFile);
@@ -243,6 +233,9 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
                 visitorBuilder.build(classNode, parentsNodes, classWriter, logger);
         if (visitor instanceof TBIncrementalSupportVisitor) {
             ((TBIncrementalSupportVisitor) visitor).setPatchInitMethod(patchInitMethod);
+            ((TBIncrementalSupportVisitor) visitor).setSupportEachMethod(patchEachMethod);
+            ((TBIncrementalSupportVisitor) visitor).setSupportAddCallSuper(supportAddCallSuper);
+
         }
 
         if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
@@ -267,6 +260,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         Files.write(classWriter.toByteArray(), outputFile);
         return outputFile;
     }
+
 
     @VisibleForTesting
     public static boolean isClassEligibleForInstantRun(@NonNull File inputFile) {
