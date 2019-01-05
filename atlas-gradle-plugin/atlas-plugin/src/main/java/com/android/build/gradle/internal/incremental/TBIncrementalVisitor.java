@@ -1,13 +1,9 @@
-package com.taobao.android.builder.insant.incremental;
+package com.android.build.gradle.internal.incremental;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.build.gradle.internal.incremental.AsmUtils;
-import com.android.build.gradle.internal.incremental.ByteCodeUtils;
-import com.android.build.gradle.internal.incremental.IncrementalVisitor;
-import com.android.build.gradle.internal.incremental.TBIncrementalSupportVisitor;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
@@ -39,24 +35,49 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
     }
 
+    public static final String ALI_RUNTIME_PACKAGE = "com/android/alibaba/ip/runtime";
+    public static final String ALI_ABSTRACT_PATCHES_LOADER_IMPL =
+            ALI_RUNTIME_PACKAGE + "/AbstractPatchesLoaderImpl";
+    public static final String ALI_APP_PATCHES_LOADER_IMPL = ALI_RUNTIME_PACKAGE + "/AppPatchesLoaderImpl";
+
+
+    protected static final Type ALI_INSTANT_RELOAD_EXCEPTION =
+            Type.getObjectType(ALI_RUNTIME_PACKAGE + "/InstantReloadException");
+
+    public static final String ALI_DISPATCHING_THIS_SIGNATURE =
+            "([Ljava/lang/Object;"
+                    + ALI_INSTANT_RELOAD_EXCEPTION.getDescriptor() + ")V";
+
+    protected static final Type ALI_RUNTIME_TYPE =
+            Type.getObjectType(ALI_RUNTIME_PACKAGE + "/AndroidInstantRuntime");
+    public static final Type ALI_DISABLE_ANNOTATION_TYPE =
+            Type.getObjectType("com/android/alibaba/ip/api/DisableInstantRun");
+    public static final Type TARGET_API_TYPE =
+            Type.getObjectType("android/annotation/TargetApi");
+
+    protected static final boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
+
+    public static final Type ALI_CHANGE_TYPE = Type.getObjectType(ALI_RUNTIME_PACKAGE + "/IpChange");
+
+
     public static final Type ADD_CLASS =
-            Type.getObjectType("com/android/tools/ir/api/AddClass");
+            Type.getObjectType("com/android/alibaba/ip/api/AddClass");
 
     public static final Type MODIFY_CLASS =
-            Type.getObjectType("com/android/tools/ir/api/ModifyClass");
+            Type.getObjectType("com/android/alibaba/ip/api/ModifyClass");
 
     public static final Type MODIFY_FIELD =
-            Type.getObjectType("com/android/tools/ir/api/ModifyField");
+            Type.getObjectType("com/android/alibaba/ip/api/ModifyField");
 
     public static final Type MODIFY_METHOD =
-            Type.getObjectType("com/android/tools/ir/api/ModifyMethod");
+            Type.getObjectType("com/android/alibaba/ip/api/ModifyMethod");
 
     public static final Type ADD_FIELD =
-            Type.getObjectType("com/android/tools/ir/api/AddField");
+            Type.getObjectType("com/android/alibaba/ip/api/AddField");
 
 
     public static final Type ADD_METHOD =
-            Type.getObjectType("com/android/tools/ir/api/AddMethod");
+            Type.getObjectType("com/android/alibaba/ip/api/AddMethod");
 
 
     public enum ErrorType {
@@ -278,7 +299,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         PRIVATE, PACKAGE_PRIVATE, PROTECTED, PUBLIC;
 
         @NonNull
-        static TBIncrementalVisitor.AccessRight fromNodeAccess(int nodeAccess) {
+        public static TBIncrementalVisitor.AccessRight fromNodeAccess(int nodeAccess) {
             if ((nodeAccess & Opcodes.ACC_PRIVATE) != 0) return PRIVATE;
             if ((nodeAccess & Opcodes.ACC_PROTECTED) != 0) return PROTECTED;
             if ((nodeAccess & Opcodes.ACC_PUBLIC) != 0) return PUBLIC;

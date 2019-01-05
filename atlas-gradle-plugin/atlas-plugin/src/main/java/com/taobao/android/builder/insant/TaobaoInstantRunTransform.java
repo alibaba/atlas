@@ -28,17 +28,14 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.extension.PatchConfig;
-import com.taobao.android.builder.insant.incremental.TBIncrementalVisitor;
+import com.android.build.gradle.internal.incremental.TBIncrementalVisitor;
 import com.taobao.android.builder.insant.matcher.MatcherCreator;
 import com.taobao.android.builder.insant.visitor.ModifyClassVisitor;
 import com.taobao.android.builder.tools.multidex.mutli.MappingReaderProcess;
-import com.taobao.android.repatch.mapping.MappingReader;
 import org.gradle.api.logging.Logging;
 import org.objectweb.asm.*;
 
 import java.io.*;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -514,7 +511,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         inputDir,
                         inputFile,
                         outputDir,
-                        IncrementalChangeVisitor.VISITOR_BUILDER,
+                        TBIncrementalChangeVisitor.VISITOR_BUILDER,
                         LOGGER,
                         null,
                         false,

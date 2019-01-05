@@ -22,9 +22,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * 描述:
  * 作者:zhayu.ll
  */
-public class TBIncrementalSupportVisitor extends IncrementalVisitor {
+public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
     private boolean disableRedirectionForClass = false;
+
 
 
     public void setPatchInitMethod(boolean patchInitMethod) {
@@ -92,13 +93,13 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
                 String fullName = methodNode.name + "." + methodNode.desc;
                 super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
                                 | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
-                        "$change"+"$"+ fullName.hashCode(), getRuntimeTypeName(CHANGE_TYPE), null, null);
+                        "$ipChange"+"$"+ fullName.hashCode(), getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
             });
 
         }else {
             super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
                             | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
-                    "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
+                    "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
         }
         access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
@@ -113,7 +114,7 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
 
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        if (desc.equals(DISABLE_ANNOTATION_TYPE.getDescriptor())) {
+        if (desc.equals(ALI_DISABLE_ANNOTATION_TYPE.getDescriptor())) {
             disableRedirectionForClass = true;
         }
         return super.visitAnnotation(desc, visible);
@@ -205,7 +206,7 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
                 }
 
             } else {
-                mv.addRedirection(new MethodRedirection(
+                mv.addRedirection(new TBMethodRedirection(
                         new LabelNode(mv.getStartLabel()),
                         name + "." + desc,
                         args,
@@ -291,7 +292,7 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
 
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-            if (desc.equals(DISABLE_ANNOTATION_TYPE.getDescriptor())) {
+            if (desc.equals(ALI_DISABLE_ANNOTATION_TYPE.getDescriptor())) {
                 disableRedirection = true;
             }
             return super.visitAnnotation(desc, visible);
@@ -316,13 +317,13 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
                 }
 
                 super.visitLabel(start);
-                change = newLocal(CHANGE_TYPE);
+                change = newLocal(ALI_CHANGE_TYPE);
                 if (supportEachMethod){
-                    visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change"+"$"+fullName.hashCode(),
-                            getRuntimeTypeName(CHANGE_TYPE));
+                    visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$ipChange"+"$"+fullName.hashCode(),
+                            getRuntimeTypeName(ALI_CHANGE_TYPE));
                 }else {
-                    visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
-                            getRuntimeTypeName(CHANGE_TYPE));
+                    visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$ipChange",
+                            getRuntimeTypeName(ALI_CHANGE_TYPE));
                 }
                 storeLocal(change);
 
@@ -429,7 +430,7 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
 
         int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC
                 | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_VARARGS;
-        Method m = new Method("access$super", "(L" + visitedClassName
+        Method m = new Method("ipc$super", "(L" + visitedClassName
                 + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
         MethodVisitor visitor = super.visitMethod(access,
                 m.getName(),
@@ -470,7 +471,7 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
                 }
                 String parentName = findParentClassForMethod(methodRef);
                 logger.verbose(
-                        "Generating access$super for %1$s recev %2$s",
+                        "Generating ipc$super for %1$s recev %2$s",
                         methodRef.method.name,
                         parentName);
 
@@ -544,7 +545,7 @@ public class TBIncrementalSupportVisitor extends IncrementalVisitor {
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
 
         Method m = new Method(ByteCodeUtils.CONSTRUCTOR,
-                ConstructorRedirection.DISPATCHING_THIS_SIGNATURE);
+                ALI_DISPATCHING_THIS_SIGNATURE);
         MethodVisitor visitor = super.visitMethod(0, m.getName(), m.getDescriptor(), null, null);
         final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 

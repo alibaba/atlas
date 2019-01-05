@@ -268,6 +268,9 @@ public class ManifestFileUtils {
 
     private static final String INSTANT_RUN_CONTENTPROVIDER = "com.android.tools.ir.server.InstantRunContentProvider";
 
+    private static final String ALI_INSTANT_RUN_CONTENTPROVIDER = "com.android.alibaba.ip.server.InstantRunContentProvider";
+
+
     /**
      * Follow up the manifest
      *  @param mainManifest
@@ -314,7 +317,7 @@ public class ManifestFileUtils {
             removeProvider(document);
         }
         if (isInstantRun) {
-            singleProcess(document);
+            singleProcess(document,ManifestFileUtils.getApplicationId(inputFile));
         }
 
         if (isInstantRun && !debuggable){
@@ -332,12 +335,14 @@ public class ManifestFileUtils {
         return result;
     }
 
-    private static void singleProcess(Document document) {
+    private static void singleProcess(Document document, String applicationId) {
             List<Node> nodes = document.getRootElement().selectNodes("//provider");
         for (Node node : nodes) {
             Element element = (Element)node;
-            String name = element.attributeValue("name");
-            if (name.equals(INSTANT_RUN_CONTENTPROVIDER)){
+            String value = element.attributeValue("name");
+            if (value.equals(INSTANT_RUN_CONTENTPROVIDER)){
+                element.addAttribute("name",ALI_INSTANT_RUN_CONTENTPROVIDER);
+                element.addAttribute("authorities",applicationId+"."+ALI_INSTANT_RUN_CONTENTPROVIDER);
                 Attribute attribute = element.attribute("multiprocess");
                 if (attribute!= null) {
                     attribute.setValue("false");

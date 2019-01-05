@@ -1,7 +1,7 @@
 package com.taobao.android.builder.insant.visitor;
 
 import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
-import com.taobao.android.builder.insant.incremental.TBIncrementalVisitor;
+import com.android.build.gradle.internal.incremental.TBIncrementalVisitor;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.TypePath;
