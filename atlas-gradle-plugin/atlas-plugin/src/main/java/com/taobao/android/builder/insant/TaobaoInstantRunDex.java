@@ -59,6 +59,16 @@ public class TaobaoInstantRunDex extends Transform {
     private DexByteCodeConverter dexByteCodeConverter;
 
     private BaseVariantOutput variantOutput;
+
+    public PreloadJarHooker getPreloadJarHooker() {
+        return preloadJarHooker;
+    }
+
+    public void setPreloadJarHooker(PreloadJarHooker preloadJarHooker) {
+        this.preloadJarHooker = preloadJarHooker;
+    }
+
+    private PreloadJarHooker preloadJarHooker;
     @NonNull
     private final InstantRunVariantScope variantScope;
     private final int minSdkForDx;
@@ -139,6 +149,11 @@ public class TaobaoInstantRunDex extends Transform {
             FileUtils.cleanOutputDir(outputFolder);
             return;
         }
+
+        if (preloadJarHooker != null){
+           classesJar = preloadJarHooker.process(classesJar);
+        }
+
         final ImmutableList.Builder<File> inputFiles = ImmutableList.builder();
         inputFiles.add(classesJar);
 
@@ -300,6 +315,12 @@ public class TaobaoInstantRunDex extends Transform {
         zoutput.closeEntry();
         zoutput.close();
         inputStream.close();
+    }
+
+
+    public static interface PreloadJarHooker{
+
+        File process(File jarFile);
     }
 }
 

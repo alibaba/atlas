@@ -138,7 +138,9 @@ public class TaobaoInstantRunTransform extends Transform {
                 org.apache.commons.io.FileUtils.readLines(errorFile).forEach(new Consumer<String>() {
                     @Override
                     public void accept(String s) {
-                        errors.add(s.split(":")[1]);
+                        if (s.split(":").length > 2) {
+                            errors.add(s.split(":")[1]);
+                        }
                     }
                 });
             }
@@ -659,8 +661,8 @@ public class TaobaoInstantRunTransform extends Transform {
         MethodVisitor mv;
 
         cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER,
-                IncrementalVisitor.APP_PATCHES_LOADER_IMPL, null,
-                IncrementalVisitor.ABSTRACT_PATCHES_LOADER_IMPL, null);
+                TBIncrementalVisitor.ALI_APP_PATCHES_LOADER_IMPL, null,
+                TBIncrementalVisitor.ALI_ABSTRACT_PATCHES_LOADER_IMPL, null);
 
         // Add the build ID to force the patch file to be repackaged.
         cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC + Opcodes.ACC_FINAL,
@@ -671,7 +673,7 @@ public class TaobaoInstantRunTransform extends Transform {
             mv.visitCode();
             mv.visitVarInsn(Opcodes.ALOAD, 0);
             mv.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                    IncrementalVisitor.ABSTRACT_PATCHES_LOADER_IMPL,
+                    TBIncrementalVisitor.ALI_ABSTRACT_PATCHES_LOADER_IMPL,
                     "<init>", "()V", false);
             mv.visitInsn(Opcodes.RETURN);
             mv.visitMaxs(1, 1);
@@ -696,7 +698,7 @@ public class TaobaoInstantRunTransform extends Transform {
         cw.visitEnd();
 
         byte[] classBytes = cw.toByteArray();
-        File outputFile = new File(outputDir, IncrementalVisitor.APP_PATCHES_LOADER_IMPL + ".class");
+        File outputFile = new File(outputDir, TBIncrementalVisitor.ALI_APP_PATCHES_LOADER_IMPL + ".class");
         try {
             Files.createParentDirs(outputFile);
             Files.write(classBytes, outputFile);
