@@ -231,7 +231,7 @@ public class PatchConfig {
     private String appSignName;
 
     @Config(message = " Play andfix patch bag ", order = 1, advance = true, group = "atlas_patch")
-    private boolean createAPatch = false;
+    private boolean createIPatch = false;
 
     public boolean isNewPatch() {
         return newPatch;
@@ -375,12 +375,12 @@ public class PatchConfig {
         this.name = name;
     }
 
-    public boolean isCreateAPatch() {
-        return createAPatch;
+    public boolean isCreateIPatch() {
+        return createIPatch;
     }
 
-    public void setCreateAPatch(boolean createAPatch) {
-        this.createAPatch = createAPatch;
+    public void setCreateIPatch(boolean createIPatch) {
+        this.createIPatch = createIPatch;
     }
 
     public boolean isCreateTPatch() {

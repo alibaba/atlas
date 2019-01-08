@@ -353,18 +353,6 @@ public class TPatchTask extends BaseTask {
 
     }
 
-    private void generatePatchInfo(File finalFile) throws IOException, DocumentException {
-        InstantInfo instantInfo = new InstantInfo();
-        instantInfo.baseVersion = patchContext.getBaseVersionName();
-        instantInfo.patchSize = finalFile.length();
-        instantInfo.fileName = finalFile.getName();
-        instantInfo.md5 = MD5Util.getFileMD5(finalFile);
-        instantInfoFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/instantInfo.json");
-        FileUtils.writeStringToFile(instantInfoFile,JSON.toJSONString(instantInfo));
-
-
-
-    }
 
     private BaseInput createInput(ApkBO apkBO, ApkBO newApkBO, boolean retainMainBundleRes) throws IOException {
         TpatchInput tpatchInput = null;
