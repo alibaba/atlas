@@ -9,6 +9,7 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.pipeline.InjectTransform;
 import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
@@ -106,6 +107,10 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         firstTime = true;
         defaultProguardFiles.addAll(appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
 
+        if (buildConfig.getConsumerProguardEnabled()){
+            defaultProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.PROGUARD_RULES).getFiles());
+        }
+
         List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
                 appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
         if (awbBundles != null && awbBundles.size() > 0) {
@@ -136,7 +141,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         applyBundleInOutConfigration(appVariantContext);
 
         //apply bundle's configuration, Switch control
-        if (buildConfig.isBundleProguardConfigEnabled()) {
+        if (buildConfig.isBundleProguardConfigEnabled() &&! buildConfig.getConsumerProguardEnabled()) {
             applyBundleProguardConfigration(appVariantContext);
         }
 

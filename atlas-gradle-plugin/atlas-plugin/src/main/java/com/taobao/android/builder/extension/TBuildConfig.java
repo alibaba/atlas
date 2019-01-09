@@ -247,6 +247,16 @@ public class TBuildConfig {
 
     private Boolean allBundlesToMdex = false;
 
+    public Boolean getConsumerProguardEnabled() {
+        return consumerProguardEnabled;
+    }
+
+    public void setConsumerProguardEnabled(Boolean consumerProguardEnabled) {
+        this.consumerProguardEnabled = consumerProguardEnabled;
+    }
+
+    private Boolean consumerProguardEnabled = false;
+
     public Boolean getMergeBundlesDex() {
         return mergeBundlesDex;
     }

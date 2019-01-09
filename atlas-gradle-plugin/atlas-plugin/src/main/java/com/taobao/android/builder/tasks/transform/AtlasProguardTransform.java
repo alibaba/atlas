@@ -304,12 +304,17 @@ public class AtlasProguardTransform extends ProGuardTransform {
                     appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
         } else {
 
-//            defaultProguardFiles.addAll(oldConfigurableFileCollection.getFiles());
             defaultProguardFiles.addAll(appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
             nonConsumerProguardFiles.addAll(
                     appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
 
         }
+
+        if (buildConfig.getConsumerProguardEnabled()){
+            nonConsumerProguardFiles.addAll(appVariantContext.getScope().getConsumerProguardFiles());
+
+        }
+
         List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
                 appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
         if (awbBundles != null && awbBundles.size() > 0) {
