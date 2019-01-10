@@ -101,14 +101,11 @@ public class TransformReplacer {
                     variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable());
             atlasDexArchiveBuilderTransform.setTransformTask(transformTask);
             ReflectUtils.updateField(transformTask, "transform", atlasDexArchiveBuilderTransform);
-            if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
-                transformTask.doLast(new Action<Task>() {
-                    @Override
-                    public void execute(Task task) {
-                        task.getLogger().info("generate maindexList......");
-                        generateMainDexList(variantContext.getScope());
+            if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode() && variantContext.getVariantConfiguration().getMinSdkVersion().getApiLevel() < 21) {
+                transformTask.doLast(task -> {
+                    task.getLogger().info("generate maindexList......");
+                    generateMainDexList(variantContext.getScope());
 
-                    }
                 });
             }
 
@@ -182,7 +179,7 @@ public class TransformReplacer {
         List<TransformTask> list = TransformManager.findTransformTaskByTransformType(variantContext,
                 DexMergerTransform.class);
         DexingType dexingType = variantContext.getScope().getDexingType();
-        if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
+        if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode() && variantContext.getVariantConfiguration().getMinSdkVersion().getApiLevel() < 21) {
             dexingType = DexingType.LEGACY_MULTIDEX;
         }
         DexMergerTool dexMergerTool = variantContext.getScope().getDexMerger();
