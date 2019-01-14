@@ -8,6 +8,9 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
+import com.taobao.android.builder.insant.matcher.Imatcher;
+import com.taobao.android.builder.insant.matcher.ImplementsMatcher;
+import com.taobao.android.builder.insant.matcher.MatcherCreator;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.SerialVersionUIDAdder;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -81,7 +84,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
 
     public enum ErrorType {
-        R_CLASS, INTERFACE, NEW_API, PACKAGE_DISABLED, NO_METHOD, SUB_EXCEEDED
+        R_CLASS, INTERFACE, NEW_API, PACKAGE_DISABLED, NO_METHOD, SUB_EXCEEDED, IMPLEMENTS
     }
 
     @Nullable
@@ -131,9 +134,10 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
                     // This may happen if we're processing class files which reference APIs not
                     // available on the target device. In this case return a dummy value, since this
                     // is ignored during dx compilation.
+                    System.err.println("can not find superClass:"+type1 +" or "+type2);
                     return "instant/run/NoCommonSuperClass";
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                } catch (Throwable e) {
+                    throw new RuntimeException(type1+":"+type2,e);
                 }
                 if (c.isAssignableFrom(d)) {
                     return type1;
@@ -181,6 +185,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             }
 
         }
+
         if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
                 // don't change the name of interfaces.
@@ -201,6 +206,36 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
                 return null;
             }
         }
+
+        Class<?> c, d;
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            c = Class.forName(classNode.name.replace('/', '.'), false, classLoader);
+            for (Imatcher imatcher: MatcherCreator.getMatchers()){
+                d = ((ImplementsMatcher)imatcher).getClazz(classLoader);
+                if (d.isAssignableFrom(c)){
+                    if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+                        // don't change the name of interfaces.
+                        if (injectErrorListener != null) {
+                            injectErrorListener.onError(ErrorType.IMPLEMENTS);
+                        }
+                        Files.createParentDirs(outputFile);
+
+                        // just copy the input file over, no change.
+                        Files.write(classBytes, outputFile);
+                        return outputFile;
+                    } else {
+                        return null;
+                    }
+                }
+
+            }
+
+        }catch (Throwable e){
+            e.printStackTrace();
+        }
+
+
 
         AsmUtils.DirectoryBasedClassReader directoryClassReader =
                 new AsmUtils.DirectoryBasedClassReader(getBinaryFolder(inputFile, classNode));
