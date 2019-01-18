@@ -582,15 +582,8 @@ public class AtlasBuilder extends AndroidBuilder {
                     outputs.add(dexDir);
             }
 
-            FilenameFilter filenameFilter = new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.endsWith("dex");
-                }
-            };
-
-            for (File dexDir : outputs) {
-                File[] files = dexDir.listFiles();
+                for (File dexDir : outputs) {
+                Collection<File> files = FileUtils.listFiles(dexDir,new String[]{"dex"},true);
                 for (File dexFile : files) {
                     if (dexFile.exists() && dexFile.length() > 0) {
                         Dex dex = new Dex(dexFile);
@@ -613,7 +606,7 @@ public class AtlasBuilder extends AndroidBuilder {
                     } else {
 
                         DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
-                                                            CollisionPolicy.KEEP_FIRST.KEEP_FIRST, new DxContext());
+                                                            CollisionPolicy.KEEP_FIRST, new DxContext());
                         Dex dex = dexMerger.merge();
 
                         File dexFile = new File(outDexFolder, "classes.dex");

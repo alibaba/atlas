@@ -7,6 +7,8 @@ import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.tasks.MergeManifests;
+import com.android.build.gradle.tasks.ResourceException;
+import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.AndroidLibrary;
 import com.android.ide.common.res2.*;
 import com.android.resources.ResourceType;
@@ -55,7 +57,40 @@ public class ScanDupResTask extends BaseTask {
             return;
         }
         File dupResFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/warning-dup-res.properties");
+        File dupAssetsFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/warning-dup-assets.properties");
+
         ArtifactCollection res = appVariantContext.getScope().getArtifactCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,AndroidArtifacts.ArtifactScope.ALL,AndroidArtifacts.ArtifactType.ANDROID_RES);
+        ArtifactCollection assets = appVariantContext.getScope().getArtifactCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,AndroidArtifacts.ArtifactScope.ALL,AndroidArtifacts.ArtifactType.ASSETS);
+
+        Set<String> errors = new HashSet<>();
+
+        Map<Pair<String,File>,String>map1 = new HashMap<>();
+        for (File file :assets.getArtifactFiles().getFiles()){
+            Collection<File> files = FileUtils.listFiles(file,null,true);
+           for (File file1:files){
+               boolean e = false;
+               for (Pair stringFilePair:map1.keySet()){
+                   if (stringFilePair.getKey().equals(file1.getAbsolutePath().substring(file1.getAbsolutePath().indexOf("assets"))) && !isSameFile((File) stringFilePair.getValue(),file1)&&!map1.get(stringFilePair).equals(file.getAbsolutePath())){
+                       errors.add("dup assets:"+file1.getName() +" in "+map1.get(stringFilePair) + " and "+file.getAbsolutePath());
+                       e = true;
+                       break;
+                   }
+               }
+
+               if (!e){
+
+                       map1.put(new Pair<>(file1.getAbsolutePath().substring(file1.getAbsolutePath().indexOf("assets")),file1),file.getAbsolutePath());
+               }
+
+
+           }
+        }
+        try {
+            FileUtils.writeLines(dupAssetsFile,errors);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         Map<String,File> map = new HashMap<>();
         Map<String,Pair<String,File>>valuesMap = new HashMap<>();
         List<String> exceptions = new ArrayList<>();
@@ -209,7 +244,6 @@ public class ScanDupResTask extends BaseTask {
                             }else if (type == DataFile.FileType.SINGLE_FILE){
                                 if (!map.containsKey(tag)){
                                     map.put(tag,file);
-                                }else if (!map.get(tag).equals(file)){
                                     if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
                                             && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
                                             && !isSameFile(map.get(tag),file))
@@ -465,6 +499,8 @@ public class ScanDupResTask extends BaseTask {
                 ||resourceItem.getType().getName().equals("string")
                 ||resourceItem.getType().getName().equals("public");
     }
+
+
 
 
 }
