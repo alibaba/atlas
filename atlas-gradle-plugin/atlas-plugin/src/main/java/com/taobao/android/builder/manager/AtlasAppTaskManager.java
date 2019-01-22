@@ -545,33 +545,33 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
 
 
-                                                              Boolean includeCompileClasspath =
-                                                                      appVariantContext.getScope().getVariantConfiguration()
-                                                                              .getJavaCompileOptions()
-                                                                              .getAnnotationProcessorOptions()
-                                                                              .getIncludeCompileClasspath();
+//                                                              Boolean includeCompileClasspath =
+//                                                                      appVariantContext.getScope().getVariantConfiguration()
+//                                                                              .getJavaCompileOptions()
+//                                                                              .getAnnotationProcessorOptions()
+//                                                                              .getIncludeCompileClasspath();
 
-                                                              appVariantContext.getVariantData().javaCompilerTask.doFirst(task -> {
-                                                                  JavaCompile compile = (JavaCompile) task;
-                                                                  Set<File> mainDexFiles = new MainFilesCollection(appVariantContext.getVariantName()).getFiles();
-                                                                  FileCollection mainFiles = appVariantContext.getProject().files(mainDexFiles);
-                                                                  FileCollection files = appVariantContext.getScope().getArtifactFileCollection(ANNOTATION_PROCESSOR, ALL, JAR);
-                                                                  FileCollection bootFiles = appVariantContext.getProject().files(appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(false));
-                                                                  mainFiles = mainFiles.plus(bootFiles);
-                                                                  FileCollection fileCollection = compile.getClasspath();
-                                                                  File kotlinClasses = null;
-                                                                  for (File file : fileCollection) {
-                                                                      if (file.getAbsolutePath().contains("kotlin-classes")) {
-                                                                          mainFiles = mainFiles.plus(appVariantContext.getProject().files(file));
-                                                                          kotlinClasses = file;
-                                                                          break;
-                                                                      }
-                                                                  }
-                                                                  compile.setClasspath(mainFiles);
-                                                                  if (Boolean.TRUE.equals(includeCompileClasspath)) {
-                                                                      compile.getOptions().setAnnotationProcessorPath(files.plus(mainFiles));
-                                                                  }
-                                                              });
+//                                                              appVariantContext.getVariantData().javaCompilerTask.doFirst(task -> {
+//                                                                  JavaCompile compile = (JavaCompile) task;
+//                                                                  Set<File> mainDexFiles = new MainFilesCollection(appVariantContext.getVariantName()).getFiles();
+//                                                                  FileCollection mainFiles = appVariantContext.getProject().files(mainDexFiles);
+//                                                                  FileCollection files = appVariantContext.getScope().getArtifactFileCollection(ANNOTATION_PROCESSOR, ALL, JAR);
+//                                                                  FileCollection bootFiles = appVariantContext.getProject().files(appVariantContext.getScope().getGlobalScope().getAndroidBuilder().getBootClasspath(false));
+//                                                                  mainFiles = mainFiles.plus(bootFiles);
+//                                                                  FileCollection fileCollection = compile.getClasspath();
+//                                                                  File kotlinClasses = null;
+//                                                                  for (File file : fileCollection) {
+//                                                                      if (file.getAbsolutePath().contains("kotlin-classes")) {
+//                                                                          mainFiles = mainFiles.plus(appVariantContext.getProject().files(file));
+//                                                                          kotlinClasses = file;
+//                                                                          break;
+//                                                                      }
+//                                                                  }
+//                                                                  compile.setClasspath(mainFiles);
+//                                                                  if (Boolean.TRUE.equals(includeCompileClasspath)) {
+//                                                                      compile.getOptions().setAnnotationProcessorPath(files.plus(mainFiles));
+//                                                                  }
+//                                                              });
 
                                                               appVariantContext.getVariantData().javaCompilerTask.doLast(new Action<Task>() {
                                                                   @Override
