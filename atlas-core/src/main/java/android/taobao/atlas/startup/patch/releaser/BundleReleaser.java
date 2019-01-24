@@ -226,6 +226,7 @@ import com.taobao.android.runtime.AndroidRuntime;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -423,11 +424,11 @@ public class BundleReleaser {
         final File[] validDexes = reversionDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir,String pathname) {
-//                if (!DexReleaser.isArt() || externalStorage) {
-                    return pathname.endsWith(DEX_SUFFIX);
-//                } else {
-//                    return pathname.endsWith(".zip");
-//                }
+                if (!DexReleaser.isArt() || externalStorage) {
+                  return pathname.endsWith(DEX_SUFFIX);
+                } else {
+                    return pathname.endsWith(".zip");
+                }
             }
         });
         dexFiles = new DexFile[validDexes.length];
@@ -517,21 +518,21 @@ public class BundleReleaser {
     }
 
     public boolean checkDexValid(DexFile odexFile) throws IOException {
-//        if (DexReleaser.isArt()) {
-//            String applicationName = KernalConstants.RAW_APPLICATION_NAME;
-//            try {
-//                Enumeration<String> enumeration = odexFile.entries();
-//                while (enumeration.hasMoreElements()) {
-//                    if (enumeration.nextElement().replace("/", ".").equals(applicationName)) {
-//                        return true;
-//                    }
-//                }
-//                return false;
-//            } catch (Throwable e) {
-//                e.printStackTrace();
-//                return false;
-//            }
-//        }
+        if (DexReleaser.isArt()) {
+            String applicationName = KernalConstants.RAW_APPLICATION_NAME;
+            try {
+                Enumeration<String> enumeration = odexFile.entries();
+                while (enumeration.hasMoreElements()) {
+                    if (enumeration.nextElement().replace("/", ".").equals(applicationName)) {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (Throwable e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
         return true;
     }
 

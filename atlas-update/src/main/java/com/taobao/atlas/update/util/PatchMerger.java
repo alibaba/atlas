@@ -44,7 +44,7 @@ public class PatchMerger {
     private static String MAIN_DEX = "com.taobao.maindex";
     private boolean lowDisk = false;
     static {
-        supportMerge = true;
+        supportMerge = Build.VERSION.SDK_INT < 21;
     }
 
 

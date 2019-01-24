@@ -97,8 +97,12 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             });
 
         }else {
+//            super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
+//                            | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
+//                    "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
+
             super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
-                            | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
+                            | Opcodes.ACC_TRANSIENT |Opcodes.ACC_SYNTHETIC,
                     "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
         }
         access = transformClassAccessForInstantRun(access);
@@ -199,7 +203,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                         method.instructions.insert(constructor.loadThis,
                                 new LineNumberNode(constructor.lineForLoad, start));
                     }
-                    mv.addRedirection(new ConstructorRedirection(start, constructor, args));
+                    mv.addRedirection(new TBConstructorRedirection(start, constructor, args));
 
                 } else {
                     return defaultVisitor;

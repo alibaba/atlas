@@ -213,12 +213,14 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
 import android.taobao.atlas.framework.BundleInstaller;
 
+import android.text.TextUtils;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
@@ -234,6 +236,7 @@ import android.taobao.atlas.util.StringUtils;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -256,19 +259,19 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
     }
 
     private void starting() {
-        if(RuntimeVariables.safeMode){
+        if (RuntimeVariables.safeMode) {
             return;
         }
 
-        if(BaselineInfoManager.instance().isUpdated("com.taobao.maindex")){
+        if (BaselineInfoManager.instance().isUpdated("com.taobao.maindex")) {
             AdditionalPackageManager.getInstance();
         }
-        
+
         long time = System.currentTimeMillis();
         android.os.Bundle metaData = null;
         try {
             ApplicationInfo applicationInfo = RuntimeVariables.androidApplication.getPackageManager().getApplicationInfo(RuntimeVariables.androidApplication.getPackageName(),
-                                                                                                                         PackageManager.GET_META_DATA);
+                    PackageManager.GET_META_DATA);
             metaData = applicationInfo.metaData;
         } catch (NameNotFoundException e1) {
             e1.printStackTrace();
@@ -279,12 +282,12 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
             if (StringUtils.isNotEmpty(strApps)) {
                 String[] appClassNames = StringUtils.split(strApps, ",");
                 if (appClassNames == null || appClassNames.length == 0) {
-                    appClassNames = new String[] { strApps };
+                    appClassNames = new String[]{strApps};
                 }
                 for (String appClassName : appClassNames) {
                     try {
                         Application app = BundleLifecycleHandler.newApplication(appClassName,
-                                                                                Framework.getSystemClassLoader());
+                                Framework.getSystemClassLoader());
                         app.onCreate();
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -292,7 +295,7 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
                 }
             }
         }
-        
+
         final long timediff = System.currentTimeMillis() - time;
     }
 
@@ -301,8 +304,8 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
         RuntimeVariables.androidApplication.registerComponentCallbacks(new ComponentCallbacks() {
             @Override
             public void onConfigurationChanged(Configuration newConfig) {
-                if(RuntimeVariables.delegateResources!=null){
-                    RuntimeVariables.delegateResources.updateConfiguration(newConfig,RuntimeVariables.delegateResources.getDisplayMetrics());
+                if (RuntimeVariables.delegateResources != null) {
+                    RuntimeVariables.delegateResources.updateConfiguration(newConfig, RuntimeVariables.delegateResources.getDisplayMetrics());
                 }
             }
 
@@ -328,16 +331,27 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
 //            }
 //        } catch (Throwable e) {}
 
-        if(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication).equals(RuntimeVariables.androidApplication.getPackageName())) {
+        if (RuntimeVariables.getProcessName(RuntimeVariables.androidApplication).equals(RuntimeVariables.androidApplication.getPackageName())) {
             final String autoStartBundle = (String) RuntimeVariables.getFrameworkProperty("autoStartBundles");
-            if (autoStartBundle != null) {
+            String configBundles = PreferenceManager.getDefaultSharedPreferences(RuntimeVariables.androidApplication).getString("auto_start_bundles", "");
+            if (!TextUtils.isEmpty(configBundles)) {
+                final String[] bundles = configBundles.split(",");
+                for (int i = 0; i < bundles.length; i++) {
+                    final String bundleName = bundles[i];
+                    RuntimeVariables.delegateClassLoader.installMbundle(bundleName);
+
+                }
+            }
+
+            if (!TextUtils.isEmpty(autoStartBundle)) {
+                final String[] autoStartBundles = autoStartBundle.split(",");
+
                 new android.os.Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        String[] bundles = autoStartBundle.split(",");
-                        if (bundles.length > 0) {
-                            for (int x = 0; x < bundles.length; x++) {
-                                final String bundleName = bundles[x];
+                        if (autoStartBundles.length > 0) {
+                            for (int x = 0; x < autoStartBundles.length; x++) {
+                                final String bundleName = autoStartBundles[x];
                                 BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
                                 if (impl == null) {
                                     BundleInstaller.startDelayInstall(bundleName, new BundleInstaller.InstallListener() {
@@ -363,7 +377,7 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
                             }
                         }
                     }
-                },4000);
+                }, 4000);
             }
         }
     }

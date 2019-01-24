@@ -233,7 +233,6 @@ import android.taobao.atlas.framework.FrameworkProperties;
 import android.taobao.atlas.startup.AtlasBridgeApplication;
 import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.NClassLoader;
-import android.taobao.atlas.startup.patch.releaser.PatchDexProfile;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;

@@ -12,7 +12,7 @@ buildscript {
 }
 
 group = 'com.taobao.android'
-version = '1.1.4.22-rc5'
+version = '1.1.4.22-rc8'
 
 
 

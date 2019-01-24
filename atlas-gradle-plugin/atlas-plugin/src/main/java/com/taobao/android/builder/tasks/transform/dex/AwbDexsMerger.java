@@ -86,6 +86,9 @@ public class AwbDexsMerger extends AtlasDexMerger {
     public void merge(TransformInvocation transformInvocation) {
 
         mainDexOut = getDexOutputLocation(transformInvocation.getOutputProvider(),"main", TransformManager.SCOPE_FULL_PROJECT);
+        if (!mainDexOut.exists() || !mainDexOut.isDirectory()){
+            return;
+        }
         atomicInteger.set(org.apache.commons.io.FileUtils.listFiles(mainDexOut,new String[]{"dex"},true).size());
         for (AwbTransform awbTransform : variantOutputContext.getAwbTransformMap().values()) {
            merge(awbTransform.getAwbBundle());
@@ -96,6 +99,9 @@ public class AwbDexsMerger extends AtlasDexMerger {
     public void merge(AwbBundle awbBundle){
         File file = variantOutputContext.getVariantContext().getAwbDexAchiveOutput(awbBundle);
         List<File> awbDexFiles = new ArrayList<>();
+        if (!file.exists() || !file.isDirectory()){
+            return;
+        }
         awbDexFiles.addAll(org.apache.commons.io.FileUtils.listFiles(file, new String[]{"jar", "dex"}, true));
         File[] mergeDexs = file.listFiles(pathname -> pathname.getName().endsWith(".jar") || pathname.isDirectory());
         sort(awbDexFiles);
