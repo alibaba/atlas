@@ -266,22 +266,22 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             }
         }
 
-        Map<String, TBIncrementalSupportVisitor.MethodReference> methods = new HashMap<>();
-        for (ClassNode pN : parentsNodes) {
-            TBIncrementalSupportVisitor.addAllNewMethods(classNode,pN,methods, null);
-        }
-        if (methods.size() > count) {
-            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
-                if (injectErrorListener != null) {
-                    injectErrorListener.onError(ErrorType.SUB_EXCEEDED);
-                }
-                Files.createParentDirs(outputFile);
-                Files.write(classBytes, outputFile);
-                return outputFile;
-            } else {
-                return null;
-            }
-        }
+//        Map<String, TBIncrementalSupportVisitor.MethodReference> methods = new HashMap<>();
+//        for (ClassNode pN : parentsNodes) {
+//            TBIncrementalSupportVisitor.addAllNewMethods(classNode,pN,methods, null);
+//        }
+//        if (methods.size() > count) {
+//            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+//                if (injectErrorListener != null) {
+//                    injectErrorListener.onError(ErrorType.SUB_EXCEEDED);
+//                }
+//                Files.createParentDirs(outputFile);
+//                Files.write(classBytes, outputFile);
+//                return outputFile;
+//            } else {
+//                return null;
+//            }
+//        }
 
         outputFile = new File(outputDirectory, visitorBuilder.getMangledRelativeClassFilePath(path));
         Files.createParentDirs(outputFile);
