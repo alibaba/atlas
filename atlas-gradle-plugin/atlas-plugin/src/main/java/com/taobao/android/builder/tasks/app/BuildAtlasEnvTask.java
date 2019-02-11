@@ -716,6 +716,10 @@ public class BuildAtlasEnvTask extends BaseTask {
     private boolean isMBundle(AppVariantContext appVariantContext, AwbBundle awbBundle){
 
 
+        if (awbBundle.getPackageName().equals("com.taobao.android.customdetail")){
+            return false;
+        }
+
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getOutOfApkBundles().contains(awbBundle.getResolvedCoordinates().getArtifactId())){
             return false;
         }

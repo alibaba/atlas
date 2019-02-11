@@ -348,57 +348,7 @@ public class ScanDupResTask extends BaseTask {
         return id1;
     }
 
-    private boolean isSameBundle(String id1, String id2, AtlasDependencyTree atlasDependencyTree) {
 
-        for (AwbBundle awbBundle:atlasDependencyTree.getAwbBundles()){
-            boolean id1Find = false;
-            boolean id2Find = false;
-            for (AndroidLibrary androidLibrary:awbBundle.getAndroidLibraries()){
-                String s = androidLibrary.getFolder().getAbsolutePath();
-                if (s.contains(id1)){
-                    id1Find = true;
-                }else if (s.contains(id2)){
-                    id2Find = true;
-                }//                        folders.add(androidLibrary.getFolder().getAbsolutePath());
-            }
-            String s = awbBundle.getAndroidLibrary().getFolder().getAbsolutePath();
-            if (s.contains(id1)){
-                id1Find = true;
-            }else if (s.contains(id2)){
-                id2Find = true;
-            }//
-
-            if (id1Find && id2Find){
-                return true;
-
-            }else if (id1Find||id2Find){
-                return false;
-            }
-
-        }
-        boolean id1Find = false;
-        boolean id2Find = false;
-
-        for (AndroidLibrary androidLibrary:atlasDependencyTree.getMainBundle().getAndroidLibraries()){
-            String s = androidLibrary.getFolder().getAbsolutePath();
-            if (s.contains(id1)){
-                id1Find = true;
-            }else if (s.contains(id2)){
-                id2Find = true;
-            }//                        folders.add(androidLibrary.getFolder().getAbsolutePath());
-        }
-
-        if (id1Find && id2Find){
-            return true;
-
-        }else if (id1Find||id2Find){
-            return false;
-        }
-
-        return false;
-
-
-    }
 
     private static String getFolderName(ResourceItem resourceItem) {
         ResourceType itemType = resourceItem.getType();
@@ -413,52 +363,8 @@ public class ScanDupResTask extends BaseTask {
 
 
     private boolean allInMainBundle(String id1,String id2,AtlasDependencyTree atlasDependencyTree){
-        boolean id1Find = false;
-        boolean id2Find = false;
-        for (AwbBundle awbBundle:atlasDependencyTree.getAwbBundles()){
-            if (!awbBundle.isMBundle){
-                continue;
-            }
 
-            for (AndroidLibrary androidLibrary:awbBundle.getAndroidLibraries()){
-                String s = androidLibrary.getFolder().getAbsolutePath();
-                if (s.contains(id1)){
-                    id1Find = true;
-                }
-                if (s.contains(id2)){
-                    id2Find = true;
-                }//
-            }
-            String s = awbBundle.getAndroidLibrary().getFolder().getAbsolutePath();
-            if (s.contains(id1)){
-                id1Find = true;
-            }
-            if (s.contains(id2)){
-                id2Find = true;
-            }//
-
-            if (id1Find && id2Find){
-                return true;
-            }
-
-        }
-
-        for (AndroidLibrary androidLibrary:atlasDependencyTree.getMainBundle().getAndroidLibraries()){
-            String s = androidLibrary.getFolder().getAbsolutePath();
-            if (s.contains(id1)){
-                id1Find = true;
-            }
-            if (s.contains(id2)){
-                id2Find = true;
-            }//
-
-            if (id1Find && id2Find){
-                return true;
-
-            }
-        }
-
-        return false;
+        return true;
 
     }
 
