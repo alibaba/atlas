@@ -30,11 +30,7 @@ public class MatcherCreator {
         }
         Imatcher imatcher = null;
         if (rule.startsWith("!")) {
-            if (rule.contains("|")){
-                imatcher = new SeveralExcludeMatcher(rule);
-            }else {
-                imatcher = new ExcludeMatcher(rule);
-            }
+            imatcher = new ExcludeMatcher(rule);
         } else if (rule.endsWith(".**")) {
             imatcher = new PackageMatcher(rule);
         } else if (rule.endsWith(".*")) {

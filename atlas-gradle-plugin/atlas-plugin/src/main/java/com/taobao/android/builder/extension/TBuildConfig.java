@@ -409,6 +409,18 @@ public class TBuildConfig {
 
     private Set<String>injectExcludePkgs = new HashSet<>();
 
+
+    public Set<String> getInjectPkgs() {
+        return injectPkgs;
+    }
+
+    public void setInjectPkgs(Set<String> injectPkgs) {
+        this.injectPkgs = injectPkgs;
+    }
+
+    private Set<String>injectPkgs = new HashSet<>();
+
+
     public Set<String> getOutOfApkNativeSos() {
         return outOfApkNativeSos;
     }
