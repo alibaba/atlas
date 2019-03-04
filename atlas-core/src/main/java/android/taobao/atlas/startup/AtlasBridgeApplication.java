@@ -221,6 +221,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Process;
+import android.preference.PreferenceManager;
 import android.taobao.atlas.startup.patch.KernalBundle;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.text.TextUtils;
@@ -472,6 +473,8 @@ public class AtlasBridgeApplication extends Application{
                 long   storedLastUpdateTime = in.readLong();
                 String storedApkPath     = in.readUTF();
 
+
+
                 System.setProperty("APP_VERSION_TAG",KernalConstants.INSTALLED_VERSIONNAME);
                 // 检测之前的版本记录
                 if(packageInfo.versionCode == storedVersionCode &&
@@ -480,6 +483,10 @@ public class AtlasBridgeApplication extends Application{
                         context.getApplicationInfo().sourceDir.equals(storedApkPath) &&
                         !needRollback()){
                     return false;
+                }else {
+                    if (!TextUtils.isEmpty(storedVersionName)){
+                        PreferenceManager.getDefaultSharedPreferences(this).edit().putString("lastInstalledVersionName",storedVersionName).apply();
+                    }
                 }
             }catch(Throwable e){
 //                throw new RuntimeException(e);

@@ -382,14 +382,10 @@ public class InstrumentationHook extends Instrumentation {
 
 		if (componentName == null){
 			ActivityResult result = null;
-			try{
 				// Just invoke callback since component is null
-				result = callback.execStartActivity();
-			} catch (Exception e){
-				e.printStackTrace();
-			}
+			return callback.execStartActivity();
 
-			return result;
+			 
 		}
 
 		// Taobao may start a component not exist in com.taobao.taobao package.

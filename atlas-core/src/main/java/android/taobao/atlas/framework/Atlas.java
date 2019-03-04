@@ -255,6 +255,8 @@ public class Atlas {
     public static String sAPKSource ;
     public static boolean Downgrade_H5 = false;
     public static boolean isDebug;
+
+
     public static Set<String> sDisableBundle = null;
 
     private Atlas(){
@@ -412,6 +414,7 @@ public class Atlas {
             BundleInstallerFetcher.obtainInstaller().installSync(new String[]{location}, new File[]{file});
         }
     }
+
 
     @Deprecated
     public void uninstallBundle(final String location) throws BundleException {
