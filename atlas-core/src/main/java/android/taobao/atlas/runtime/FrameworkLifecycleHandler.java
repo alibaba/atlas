@@ -217,9 +217,9 @@ import android.preference.PreferenceManager;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.bundleInfo.BundleListing;
 import android.taobao.atlas.framework.Atlas;
-import android.taobao.atlas.framework.BundleImpl;
-import android.taobao.atlas.framework.BundleInstaller;
 
+
+import android.taobao.atlas.hack.AtlasHacks;
 import android.text.TextUtils;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkEvent;
@@ -230,12 +230,12 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.taobao.atlas.framework.Framework;
-import android.taobao.atlas.runtime.newcomponent.AdditionalPackageManager;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.taobao.atlas.util.StringUtils;
 import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -264,7 +264,7 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
         }
 
         if (BaselineInfoManager.instance().isUpdated("com.taobao.maindex")) {
-            AdditionalPackageManager.getInstance();
+//            AdditionalPackageManager.getInstance();
         }
 
         long time = System.currentTimeMillis();
@@ -286,7 +286,7 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
                 }
                 for (String appClassName : appClassNames) {
                     try {
-                        Application app = BundleLifecycleHandler.newApplication(appClassName,
+                        Application app = newApplication(appClassName,
                                 Framework.getSystemClassLoader());
                         app.onCreate();
                     } catch (Exception e) {
@@ -316,69 +316,15 @@ public class FrameworkLifecycleHandler implements FrameworkListener {
         });
 
 
-//        try {
-//            if (RuntimeVariables.androidApplication.getPackageName().equals(RuntimeVariables.getProcessName(RuntimeVariables.androidApplication))) {
-//                SharedPreferences sharedPreferences = RuntimeVariables.androidApplication.getSharedPreferences(KernalConstants.ATLAS_MONITOR, Context.MODE_PRIVATE);
-//                String errMsg = sharedPreferences.getString(KernalConstants.DD_BASELINEINFO_FAIL, " ");
-//                AtlasMonitor.getInstance().trace(KernalConstants.DD_BASELINEINFO_FAIL, false, "0", errMsg, "");
-//
-//                errMsg = sharedPreferences.getString(KernalConstants.DD_INSTALL_DEXOPT_FAIL, "");
-//                AtlasMonitor.getInstance().trace(KernalConstants.DD_INSTALL_DEXOPT_FAIL, false, "0", errMsg, "");
-//
-//                errMsg = sharedPreferences.getString(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, "");
-//                AtlasMonitor.getInstance().trace(KernalConstants.DD_INSTALL_NATIVE_SO_UZIP_FAIL, false, "0", errMsg, "");
-//                sharedPreferences.edit().clear();
-//            }
-//        } catch (Throwable e) {}
+   }
 
-        if (RuntimeVariables.getProcessName(RuntimeVariables.androidApplication).equals(RuntimeVariables.androidApplication.getPackageName())) {
-            final String autoStartBundle = (String) RuntimeVariables.getFrameworkProperty("autoStartBundles");
-            String configBundles = PreferenceManager.getDefaultSharedPreferences(RuntimeVariables.androidApplication).getString("auto_start_bundles", "");
-            if (!TextUtils.isEmpty(configBundles)) {
-                final String[] bundles = configBundles.split(",");
-                for (int i = 0; i < bundles.length; i++) {
-                    final String bundleName = bundles[i];
-                    RuntimeVariables.delegateClassLoader.installMbundle(bundleName);
 
-                }
-            }
+    protected static Application newApplication(String applicationClassName, ClassLoader cl) throws ClassNotFoundException, InvocationTargetException, IllegalAccessException, InstantiationException {
+            final Class<?> applicationClass = cl.loadClass(applicationClassName);
 
-            if (!TextUtils.isEmpty(autoStartBundle)) {
-                final String[] autoStartBundles = autoStartBundle.split(",");
+            Application app = (Application) applicationClass.newInstance();
+            AtlasHacks.Application_attach.invoke(app, RuntimeVariables.androidApplication);
 
-                new android.os.Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (autoStartBundles.length > 0) {
-                            for (int x = 0; x < autoStartBundles.length; x++) {
-                                final String bundleName = autoStartBundles[x];
-                                BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
-                                if (impl == null) {
-                                    BundleInstaller.startDelayInstall(bundleName, new BundleInstaller.InstallListener() {
-                                        @Override
-                                        public void onFinished() {
-                                            BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
-                                            if (impl != null) {
-                                                try {
-                                                    impl.start();
-                                                } catch (BundleException e) {
-                                                    e.printStackTrace();
-                                                }
-                                            }
-                                        }
-                                    });
-                                } else {
-                                    try {
-                                        impl.start();
-                                    } catch (BundleException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }, 4000);
-            }
-        }
+            return app;
     }
 }

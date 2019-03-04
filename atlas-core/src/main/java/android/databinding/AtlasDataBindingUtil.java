@@ -21,7 +21,6 @@ import android.app.Application;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.taobao.atlas.framework.Atlas;
-import android.taobao.atlas.framework.BundleImpl;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.InflateException;
@@ -35,8 +34,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
-
-import static android.taobao.atlas.runtime.DelegateResources.getGetCookieName;
 
 /**
  * Utility class to create {@link ViewDataBinding} from layouts.
@@ -366,38 +363,11 @@ public class AtlasDataBindingUtil {
         try
         {
             String className = null;
-            String bundleLocation = null;
-            AssetManager assets = resource.getAssets();
-            String assetsPath = getGetCookieName(assets, cookie);
-            if (assetsPath.endsWith(".zip"))
-            {
-                bundleLocation = substringBetween(assetsPath,"/storage/","/");
-                className = String.format("%s.%s", new Object[] { bundleLocation, "DataBinderMapper" });
-            }
-            else if (assetsPath.endsWith(".so"))
-            {
-                List<Bundle> bundles = Atlas.getInstance().getBundles();
-                for (int x = 0; x < bundles.size(); x++)
-                {
-                    BundleImpl impl = (BundleImpl)bundles.get(x);
-                    if (impl.getArchive().getArchiveFile().getAbsolutePath().equals(assetsPath))
-                    {
-                        bundleLocation = impl.getLocation();
-                        className = String.format("%s.%s", new Object[] { bundleLocation, "DataBinderMapper" });
-                        break;
-                    }
-                }
-            }
-            else
-            {
+
                 className = "android.databinding.DataBinderMapper";
-            }
-            if (TextUtils.isEmpty(className)) {
-                throw new RuntimeException("can not find DatabindMapper : " + assetsPath);
-            }
+
             Class clazz = application.getClassLoader().loadClass(className);
             Object dataMapper = clazz.newInstance();
-            sMappers.put(bundleLocation, dataMapper);
             return dataMapper;
         }
         catch (Throwable e)

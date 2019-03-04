@@ -211,8 +211,6 @@ package android.taobao.atlas.startup.patch.releaser;
 /**
  * Created by lilong on 16/12/21.
  */
-
-import android.app.PreVerifier;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -261,9 +259,7 @@ public class BundleReleaser {
     private DexFile[] dexFiles = null;
 
     public BundleReleaser(final File reversionDir,boolean hasReleased) {
-        if(Boolean.FALSE.booleanValue()){
-            String.valueOf(PreVerifier.class);
-        }
+
         this.hasReleased = hasReleased;
         this.reversionDir = reversionDir;
         if(!reversionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())){
@@ -379,39 +375,39 @@ public class BundleReleaser {
                             e.printStackTrace();
                         }
                         break;
-                    case RESOURCE:
-                        try {
-                            Log.e(TAG, "ResourceReleaser start!");
-                            boolean result = ResourceReleaser.releaseResource(apkFile, reversionDir);
-                            Log.e(TAG, "ResourceReleaser done!----->"+result);
-
-                            Message message = handler.obtainMessage();
-                            if (result) {
-                                message.what = MSG_ID_RESOURCE_RELEASE_DONE;
-                            } else {
-                                message.what = MSG_ID_RELEASE_FAILED;
-                            }
-                            handler.sendMessage(message);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case SOLIB:
-                        try {
-                            Log.e(TAG, "NativeLibReleaser start!");
-                            boolean result = NativeLibReleaser.releaseLibs(apkFile, reversionDir);
-                            Log.e(TAG, "NativeLibReleaser done!----->"+result);
-                            Message message = handler.obtainMessage();
-                            if (result) {
-                                message.what = MSG_ID_RELEASE_DONE;
-                            } else {
-                                message.what = MSG_ID_RELEASE_FAILED;
-                            }
-                            handler.sendMessage(message);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        break;
+//                    case RESOURCE:
+//                        try {
+//                            Log.e(TAG, "ResourceReleaser start!");
+//                            boolean result = ResourceReleaser.releaseResource(apkFile, reversionDir);
+//                            Log.e(TAG, "ResourceReleaser done!----->"+result);
+//
+//                            Message message = handler.obtainMessage();
+//                            if (result) {
+//                                message.what = MSG_ID_RESOURCE_RELEASE_DONE;
+//                            } else {
+//                                message.what = MSG_ID_RELEASE_FAILED;
+//                            }
+//                            handler.sendMessage(message);
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                        break;
+//                    case SOLIB:
+//                        try {
+//                            Log.e(TAG, "NativeLibReleaser start!");
+////                            boolean result = NativeLibReleaser.releaseLibs(apkFile, reversionDir);
+//                            Log.e(TAG, "NativeLibReleaser done!----->"+result);
+//                            Message message = handler.obtainMessage();
+//                            if (result) {
+//                                message.what = MSG_ID_RELEASE_DONE;
+//                            } else {
+//                                message.what = MSG_ID_RELEASE_FAILED;
+//                            }
+//                            handler.sendMessage(message);
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                        break;
                     default:
                         break;
 

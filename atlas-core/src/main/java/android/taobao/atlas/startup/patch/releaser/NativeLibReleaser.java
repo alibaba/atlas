@@ -204,7 +204,8 @@
  *
  *
  *
- */
+ *//*
+
 
 package android.taobao.atlas.startup.patch.releaser;
 
@@ -219,9 +220,11 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+*/
 /**
  * Created by lilong on 16/12/21.
- */
+ *//*
+
 public class NativeLibReleaser {
 
     private static final String SO_PATCH_SUFFIX = ".patch";
@@ -338,3 +341,4 @@ public class NativeLibReleaser {
         }
     }
 }
+*/

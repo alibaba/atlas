@@ -289,7 +289,7 @@ public class KernalBundle {
                     throw new IOException(kernalBundle.getArchive().getArchiveFile().getAbsolutePath());
                 }
                 kernalBundle.patchKernalDex(application);
-                kernalBundle.patchKernalResource(application);
+//                kernalBundle.patchKernalResource(application);
 
                 return true;
             } catch (Throwable e) {

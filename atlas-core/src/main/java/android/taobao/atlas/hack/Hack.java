@@ -216,7 +216,6 @@ import java.lang.reflect.Modifier;
 
 import android.taobao.atlas.hack.Hack.HackDeclaration.HackAssertionException;
 import android.taobao.atlas.hack.Interception.InterceptionHandler;
-import android.taobao.atlas.runtime.DelegateClassLoader;
 import android.util.Log;
 
 /** @author Oasis */
@@ -341,9 +340,6 @@ public class Hack {
 			mField.set(instance, value);
 			} catch (final IllegalAccessException e) { 
 				e.printStackTrace();
-                if(value instanceof DelegateClassLoader){
-                    throw new RuntimeException("set DelegateClassLoader fail",e);
-                }
 				/* Should never happen */
 			}
 		}

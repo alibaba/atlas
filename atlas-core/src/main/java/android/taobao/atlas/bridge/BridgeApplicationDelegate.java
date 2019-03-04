@@ -222,10 +222,7 @@ import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.AtlasPreLauncher;
-import android.taobao.atlas.runtime.PackageManagerDelegate;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.runtime.WindowSessionProxy;
-import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
 import android.taobao.atlas.util.AtlasCrashManager;
 import android.taobao.atlas.util.SoLoader;
 import android.taobao.atlas.util.log.IAlarmer;
@@ -266,41 +263,41 @@ public class BridgeApplicationDelegate {
 
     public BridgeApplicationDelegate(Application rawApplication,String processname,String installedVersion,
                                      long versioncode,long lastupdatetime,String apkPath,boolean isUpdated,Object dexLoadBooster){
-        if(Build.VERSION.SDK_INT<=19 && getClass().getClassLoader().getClass().getName().startsWith("com.ali.mobisecenhance")){
-            try {
-                Field pathListField = AndroidHack.findField(rawApplication.getClassLoader(), "pathList");
-                Object dexPathList = pathListField.get(rawApplication.getClassLoader());
-                Field elementsField = AndroidHack.findField(dexPathList,"dexElements");
-                Object[] elements = (Object[])elementsField.get(dexPathList);
-                Log.e("BridgeApplication","get Elements :"+ elements);
-
-                if(elements.length>0) {
-                    Field dexFileField = elements[0].getClass().getDeclaredField("dexFile");
-                    dexFileField.setAccessible(true);
-                    for(int x=elements.length-1; x>=0; x--){
-                        DexFile dexFile = (DexFile) dexFileField.get(elements[x]);
-                        if(dexFile.getName().contains("com.taobao.maindex")) {
-                            //针对动态部署处理过的dex做判断
-                            boolean findDexToDelete = false;
-                            Enumeration<String> enumeration = dexFile.entries();
-                            while (enumeration.hasMoreElements()) {
-                                if (enumeration.nextElement().replace("/", ".").startsWith("com.ali.mobisecenhance.ld.util")) {
-                                    findDexToDelete = true;
-                                    break;
-                                }
-                            }
-                            if(findDexToDelete){
-                                Log.e("BridgeApplication","delete dexfile :"+dexFile.getName());
-                                dexFileField.set(elements[x],null);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }catch(Throwable e){
-                e.printStackTrace();
-            }
-        }
+//        if(Build.VERSION.SDK_INT<=19 && getClass().getClassLoader().getClass().getName().startsWith("com.ali.mobisecenhance")){
+//            try {
+//                Field pathListField = AndroidHack.findField(rawApplication.getClassLoader(), "pathList");
+//                Object dexPathList = pathListField.get(rawApplication.getClassLoader());
+//                Field elementsField = AndroidHack.findField(dexPathList,"dexElements");
+//                Object[] elements = (Object[])elementsField.get(dexPathList);
+//                Log.e("BridgeApplication","get Elements :"+ elements);
+//
+//                if(elements.length>0) {
+//                    Field dexFileField = elements[0].getClass().getDeclaredField("dexFile");
+//                    dexFileField.setAccessible(true);
+//                    for(int x=elements.length-1; x>=0; x--){
+//                        DexFile dexFile = (DexFile) dexFileField.get(elements[x]);
+//                        if(dexFile.getName().contains("com.taobao.maindex")) {
+//                            //针对动态部署处理过的dex做判断
+//                            boolean findDexToDelete = false;
+//                            Enumeration<String> enumeration = dexFile.entries();
+//                            while (enumeration.hasMoreElements()) {
+//                                if (enumeration.nextElement().replace("/", ".").startsWith("com.ali.mobisecenhance.ld.util")) {
+//                                    findDexToDelete = true;
+//                                    break;
+//                                }
+//                            }
+//                            if(findDexToDelete){
+//                                Log.e("BridgeApplication","delete dexfile :"+dexFile.getName());
+//                                dexFileField.set(elements[x],null);
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//            }catch(Throwable e){
+//                e.printStackTrace();
+//            }
+//        }
 
         mRawApplication = rawApplication;
         mCurrentProcessname = processname;
@@ -310,7 +307,7 @@ public class BridgeApplicationDelegate {
         mIsUpdated = isUpdated;
         mApkPath = apkPath;
         mdexLoadBooster = dexLoadBooster;
-        PackageManagerDelegate.delegatepackageManager(rawApplication.getBaseContext());
+//        PackageManagerDelegate.delegatepackageManager(rawApplication.getBaseContext());
     }
 
     public void attachBaseContext(){
@@ -325,30 +322,30 @@ public class BridgeApplicationDelegate {
         RuntimeVariables.sDexLoadBooster = mdexLoadBooster;
         Log.e("BridgeApplication","length =" + new File(mRawApplication.getApplicationInfo().sourceDir).length());
 
-        if(Build.MANUFACTURER.equalsIgnoreCase("vivo") && Build.VERSION.SDK_INT== 23) {
-            ;
+//        if(Build.MANUFACTURER.equalsIgnoreCase("vivo") && Build.VERSION.SDK_INT== 23) {
+//            ;
+////            try {
+////                File appSGLib = mRawApplication.getDir("SGLib", Context.MODE_PRIVATE);
+////                File mark = new File(mRawApplication.getFilesDir(), "vivo_appSGLib_mark");
+////                if (appSGLib.exists() && !mark.exists()) {
+////                    mark.createNewFile();
+////                    File[] files = appSGLib.listFiles();
+////                    for(File file : files){
+////                        if(file.exists() && file.isDirectory() && file.getName().startsWith("app_")){
+////                            deleteDirectory(file);
+////                        }
+////                    }
+////                }
+////            }catch(Throwable e){
+////                e.printStackTrace();
+////            }
+//        }else{
 //            try {
-//                File appSGLib = mRawApplication.getDir("SGLib", Context.MODE_PRIVATE);
-//                File mark = new File(mRawApplication.getFilesDir(), "vivo_appSGLib_mark");
-//                if (appSGLib.exists() && !mark.exists()) {
-//                    mark.createNewFile();
-//                    File[] files = appSGLib.listFiles();
-//                    for(File file : files){
-//                        if(file.exists() && file.isDirectory() && file.getName().startsWith("app_")){
-//                            deleteDirectory(file);
-//                        }
-//                    }
-//                }
-//            }catch(Throwable e){
+//                RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
+//            } catch (Throwable e){
 //                e.printStackTrace();
 //            }
-        }else{
-            try {
-                RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
-            } catch (Throwable e){
-                e.printStackTrace();
-            }
-        }
+//        }
 
 
         if(!TextUtils.isEmpty(mInstalledVersionName)){
@@ -424,7 +421,6 @@ public class BridgeApplicationDelegate {
 
     public void onCreate(){
         try {
-            AdditionalActivityManagerProxy.get().startRegisterReceivers(RuntimeVariables.androidApplication);
             // *3 create real Application
             mRealApplication = (Application) mRawApplication.getBaseContext().getClassLoader().loadClass(mRealApplicationName).newInstance();
 
@@ -494,19 +490,11 @@ public class BridgeApplicationDelegate {
             }
         }
 
-        if(mRealApplication instanceof IMonitor){
-            AtlasMonitor.getInstance().setExternalMonitor((IMonitor) mRealApplication);
-        }
-
-        if(mRealApplication instanceof IAlarmer){
-            AtlasAlarmer.getInstance().setExternalAlarmer((IAlarmer) mRealApplication);
-        }
-
         Atlas.getInstance().startup(mRealApplication,mIsUpdated);
 
         mRealApplication.onCreate();
 
-        WindowSessionProxy.delegateWindowSession(mRawApplication);
+//        WindowSessionProxy.delegateWindowSession(mRawApplication);
     }
 
 }
