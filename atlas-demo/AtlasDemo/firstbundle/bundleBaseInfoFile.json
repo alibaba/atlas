@@ -1,4 +1,0 @@
-{
-  "name": "第一个bundle",
-  "dependency": ["com.taobao.publicBundle"]
-}

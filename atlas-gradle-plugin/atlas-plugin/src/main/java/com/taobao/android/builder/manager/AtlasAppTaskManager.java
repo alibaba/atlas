@@ -380,7 +380,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(MergeAssetAwbsConfigAction.class, null));
 
-                                                              if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled()) {
+                                                              if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled() && !appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()) {
 
 //                                                                  mtlTaskContextList.add(
 //                                                                          new MtlTaskContext(AwbDataBindingProcessLayoutTask.ConfigAction.class, null));
@@ -430,7 +430,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(JavacAwbsTask.ConfigAction.class, null));
 
 
-                                                              if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled()) {
+                                                              if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled() && !appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(AwbDataBindingRenameTask.ConfigAction.class, null));
                                                               }
 
@@ -515,7 +515,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               transformReplacer.disableCache();
 
 
-                                                              if (variantScope.getGlobalScope().getExtension().getDataBinding().isEnabled()) {
+                                                              if (variantScope.getGlobalScope().getExtension().getDataBinding().isEnabled() && !appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()) {
                                                                   transformReplacer.replaceDataBindingMergeArtifactsTransform();
                                                               }
 

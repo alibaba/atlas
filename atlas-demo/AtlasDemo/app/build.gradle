@@ -5,7 +5,6 @@ def apVersion = getEnvValue("apVersion", "");
 apply plugin: 'com.android.application'
 apply plugin: 'com.taobao.atlas'
 //apply plugin: 'com.taobao.atlas.dexpatch'
-apply from: 'dexPatchWraper.gradle'
 
 //通过增加判断逻辑，打出不同类型的定制包
 def appId = "com.taobao.demo"
@@ -21,12 +20,12 @@ repositories {
 }
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 26
     buildToolsVersion '26.0.2'
     defaultConfig {
         applicationId appId
         minSdkVersion minVersion
-        targetSdkVersion 25
+        targetSdkVersion 26
         versionCode 1
         versionName version
         vectorDrawables.useSupportLibrary = true
@@ -39,19 +38,7 @@ android {
         multiDexEnabled = false
 
     }
-    flavorDimensions 'api'
-        productFlavors{
-                productA{
-                    applicationId "com.crazyman.product.a"
-                    versionName "version-a-1.0"
-                }
-
-                productB{
-                    applicationId "com.crazyman.product.b"
-                    versionName "version-b-1.0"
-                }
-            }
-
+        
     dataBinding {
         enabled = true
     }
@@ -75,37 +62,25 @@ android {
         }
     }
 
-    //    productFlavors {
-    //        dev {
-    //            minSdkVersion 14
-    //        }
-
-    //        beta {
-    //            minSdkVersion 21
-    //        }
-    //    }
 }
 
 atlas {
     instantAppEnabled true
     atlasEnabled true
     tBuildConfig {
-        autoStartBundles = ['com.taobao.firstbundle'] //自启动bundle配置
-        outOfApkBundles = ['remotebundle']
         preLaunch = 'com.taobao.demo.DemoPreLaunch'
         classInject false
         aaptConstantId true
         dataBindingBundles = ['com.taobao.databindbundle']
+       allBundlesToMdex true
+
     }
 
-    manifestOptions {
-        addAtlasProxyComponents true
-    }
-
+   
 
     patchConfigs {
         debug {
-            createTPatch true
+            createTPatch false
         }
     }
 
@@ -128,7 +103,7 @@ dependencies {
     compile project(':middlewarelibrary')
     compile project(':splashscreen')
     compile project(':databindinglibrary')
-    compile project(':activitygroupcompat')
+//    compile project(':activitygroupcompat')
     bundleCompile project(':firstbundle')
     bundleCompile project(':secondbundle')
     bundleCompile project(':remotebundle')
@@ -138,10 +113,8 @@ dependencies {
     compile 'com.android.support:design:25.1.0'
     compile 'com.android.support:support-vector-drawable:25.1.0'
     compile 'com.android.support:support-v4:25.1.0'
-    compile rootProject.ext.lib_atlas_update
-    compile 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.0'
     compile 'com.alibaba:fastjson:1.1.45.android@jar'
-    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.android.support:recyclerview-v7:25.3.0'
 //    compile 'com.taobao.android:atlas_core:5.0.8.5-interpret-rc18'
     compile project(':atlas_core')

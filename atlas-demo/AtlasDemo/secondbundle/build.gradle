@@ -37,7 +37,7 @@ dependencies {
     providedCompile 'com.android.support:support-v4:25.3.0'
 
 //    providedCompile 'com.taobao.android:atlas_core:5.0.8.0-rc45@aar'
-    providedCompile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
+    providedCompile 'com.android.support.constraint:constraint-layout:1.0.2'
     providedCompile project(':middlewarelibrary')
 
     providedCompile project(':atlas_core')
