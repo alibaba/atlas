@@ -11,8 +11,6 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.taobao.atlas.remote.RemoteFactory;
-import android.taobao.atlas.remote.fragment.RemoteFragment;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
 import android.view.Menu;
@@ -21,7 +19,6 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.middleware.dialog.Dialog;
-import com.taobao.android.ActivityGroupDelegate;
 import com.taobao.update.Updater;
 
 public class MainActivity extends AppCompatActivity
@@ -82,20 +79,20 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void switchToActivity(String key,String activityName){
-        RemoteFactory.requestRemote(RemoteFragment.class, this, new Intent(activityName),
-                new RemoteFactory.OnRemoteStateListener<RemoteFragment>() {
-                    @Override
-                    public void onRemotePrepared(RemoteFragment iRemote) {
-                        getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.content, iRemote)
-                                .commit();
-                    }
-
-                    @Override
-                    public void onFailed(String s) {
-                        Log.e("UserRemoteActivity", s);
-                    }
-                });
+//        RemoteFactory.requestRemote(RemoteFragment.class, this, new Intent(activityName),
+//                new RemoteFactory.OnRemoteStateListener<RemoteFragment>() {
+//                    @Override
+//                    public void onRemotePrepared(RemoteFragment iRemote) {
+//                        getSupportFragmentManager().beginTransaction()
+//                                .replace(R.id.content, iRemote)
+//                                .commit();
+//                    }
+//
+//                    @Override
+//                    public void onFailed(String s) {
+//                        Log.e("UserRemoteActivity", s);
+//                    }
+//                });
 //        Intent intent = new Intent();
 //        intent.setClassName(getBaseContext(),activityName);
 //        mActivityDelegate.startChildActivity(mActivityGroupContainer,key,intent);
@@ -171,7 +168,7 @@ public class MainActivity extends AppCompatActivity
             new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... voids) {
-                    Updater.dexPatchUpdate(getBaseContext());
+//                    Updater.dexPatchUpdate(getBaseContext());
                     return null;
                 }
 

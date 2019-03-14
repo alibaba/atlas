@@ -218,9 +218,6 @@ import android.os.Message;
 import android.taobao.atlas.startup.DexFileCompat;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.util.Log;
-
-import com.taobao.android.runtime.AndroidRuntime;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -428,10 +425,6 @@ public class BundleReleaser {
             }
         });
         dexFiles = new DexFile[validDexes.length];
-        if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
-            KernalConstants.dexBooster.setVerificationEnabled(true);
-            Log.e(TAG,"enable verify");
-        }
         if(!hasReleased) {
             Log.e(TAG,"start dexopt | hasRelease : "+hasReleased);
             final CountDownLatch countDownLatch = new CountDownLatch(validDexes.length);
@@ -456,9 +449,7 @@ public class BundleReleaser {
                 dexFiles[i] = dexoptInternal(validDexes[i]);
             }
         }
-        if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
-            KernalConstants.dexBooster.setVerificationEnabled(false);
-        }
+
         Log.e(TAG, "dex opt done");
         handler.sendMessage(handler.obtainMessage(MSG_ID_DEX_OPT_DONE));
     }
@@ -469,7 +460,7 @@ public class BundleReleaser {
         String optimizedPath = optimizedPathFor(validDex, dexOptDir());
         try {
             if(!externalStorage) {
-                dexFile = /*DexFile*/AndroidRuntime.getInstance().loadDex(validDex.getPath(), optimizedPath, 0, null);
+                dexFile = /*DexFile*/DexFile.loadDex(validDex.getPath(), optimizedPath, 0);
                 if(!new File(optimizedPath).exists()){
                     Log.e(TAG,"odex not exist");
                 }
@@ -478,7 +469,7 @@ public class BundleReleaser {
                 if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {
                     optimizedPath = KernalConstants.baseContext.getFilesDir()+File.separator+"fake.dex";
                     new File(optimizedPath).createNewFile();
-                    dexFile = KernalConstants.dexBooster.loadDex(KernalConstants.baseContext, validDex.getPath(), optimizedPath, 0, true);
+                    dexFile = DexFileCompat.loadDex(KernalConstants.baseContext, validDex.getPath(), optimizedPath, 0);
                 }else{
                     dexFile = DexFileCompat.loadDex(KernalConstants.baseContext,validDex.getPath(), optimizedPath,0);
                 }
@@ -505,9 +496,7 @@ public class BundleReleaser {
             if (!checkDexValid(dexFile)) {
                 return false;
             }
-            if(!hasReleased && Build.VERSION.SDK_INT>=21 && Build.VERSION.SDK_INT<26) {
-                KernalConstants.dexBooster.isOdexValid(optimizedPath);
-            }
+
             return true;
         }
         return false;

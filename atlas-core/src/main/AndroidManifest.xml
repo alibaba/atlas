@@ -8,12 +8,6 @@
         android:targetSdkVersion="23" />
 
     <application>
-        <service
-            android:name="com.taobao.android.runtime.Dex2OatService"
-            android:process=":dex2oat" />
-        <activity
-            android:name="android.taobao.atlas.remote.RemoteActivityManager$EmbeddedActivity">
-            </activity>
 
     </application>
 
