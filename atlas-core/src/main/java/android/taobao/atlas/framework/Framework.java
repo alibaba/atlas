@@ -216,6 +216,10 @@ import android.os.Looper;
 import android.os.Process;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.runtime.RuntimeVariables;
+import android.taobao.atlas.util.AtlasFileLock;
+import android.taobao.atlas.util.BundleLock;
+import android.taobao.atlas.versionInfo.BaselineInfoManager;
+import android.text.TextUtils;
 import android.util.Log;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleEvent;
@@ -365,6 +369,103 @@ public final class Framework {
         path.delete();
     }
 
+    public static void update(boolean upgrade,final String[] locations, final File[] files, String[] newBundleTag,long[] dexPatchVersions,String newBaselineVersion,boolean lowInternalDisk) throws BundleException {
+        if (locations == null || files == null || locations.length != files.length) {
+            throw new IllegalArgumentException("locations and files must not be null and must be same length");
+        }
+        Class KernalBundleClass = null;
+        HashMap<String,String> updateBundles = new HashMap<>();
+        File updateStorageDir = new File(STORAGE_LOCATION);
+        if(lowInternalDisk){
+            updateStorageDir = null;
+            File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
+            if(externalStorages!=null && externalStorages.length>0){
+                for(File externalStorage : externalStorages){
+                    if(externalStorage!=null && getStorageState(externalStorage).equals(Environment.MEDIA_MOUNTED) && externalStorage.getUsableSpace()>50*1024*1024) {
+                        updateStorageDir = externalStorage;
+                    }
+                }
+            }
+        }
+        if(updateStorageDir==null){
+            throw new BundleException("no enough space");
+        }
+        updateHappend = true;
+        for (int i = 0; i < locations.length; i++) {
+            //reset
+            if(!upgrade && dexPatchVersions[i]==-1){
+                updateBundles.put(locations[i],"-1");
+                continue;
+            }
+
+            if (locations[i] == null || files[i] == null) {
+                continue;
+            }
+
+            File bundleDir = null;
+            try {
+                if (isKernalBundle(locations[i])) {
+                    BundleLock.WriteLock(locations[i]);
+                    KernalBundleClass = RuntimeVariables.getRawClassLoader().loadClass("android.taobao.atlas.startup.patch.KernalBundle");
+                    bundleDir = new File(updateStorageDir, "com.taobao.maindex");
+                    if (!bundleDir.exists()){
+                        bundleDir.mkdirs();
+                    }
+                    AtlasFileLock.getInstance().LockExclusive(bundleDir);
+                    Constructor cons = KernalBundleClass.getDeclaredConstructor(File.class,File.class,String.class,long.class);
+                    cons.setAccessible(true);
+                    if(upgrade) {
+                        cons.newInstance(bundleDir, files[i], makeMainDexUniqueTag(newBaselineVersion,newBundleTag[i]), -1l);
+                    }else{
+                        cons.newInstance(bundleDir, files[i],null,dexPatchVersions[i]);                    }
+                } else {
+
+                }
+                if(upgrade){
+                    updateBundles.put(locations[i],newBundleTag[i]);
+                }else{
+                    updateBundles.put(locations[i],Long.toString(dexPatchVersions[i]));
+                }
+            } catch (Exception e) {
+                if(upgrade) {
+                    throw new BundleException("failed to installOrUpdate bundles ", e);
+                }
+            } finally {
+                if (bundleDir != null) {
+                    AtlasFileLock.getInstance().unLock(bundleDir);
+                }
+                BundleLock.WriteUnLock(locations[i]);
+            }
+        }
+
+            if(updateBundles.size()>0){
+                try {
+                    BaselineInfoManager.instance().saveDexPathInfo(updateBundles,lowInternalDisk ? updateStorageDir.getAbsolutePath() : "");
+                } catch (IOException e) {
+                    throw new BundleException("save dexpatch info fail");
+                }
+            }
+
+    }
+
+    private static String makeMainDexUniqueTag(String appVersion,String maindexTag){
+        if(maindexTag.startsWith(appVersion)){
+            return maindexTag;
+        }
+        return appVersion+"_"+maindexTag;
+    }
+
+    public static void rollback(){
+        BaselineInfoManager.instance().rollback();
+    }
+
+    static boolean isKernalBundle(String location) {
+        if (TextUtils.isEmpty(location)) {
+            return false;
+        }
+        return location.equals("com.taobao.maindex");
+    }
+
 
 
 
@@ -394,6 +495,36 @@ public final class Framework {
 
             listener.frameworkEvent(event);
         }
+    }
+
+    public static File[] getExternalFilesDirs(Context context, String type) {
+        final int version = Build.VERSION.SDK_INT;
+        if (version >= 19) {
+            //返回结果可能存在null值
+            return context.getExternalFilesDirs(type);
+        } else {
+            return new File[] { context.getExternalFilesDir(type) };
+        }
+    }
+
+    public static String getStorageState(File path) {
+        final int version = Build.VERSION.SDK_INT;
+        if (version >= 19) {
+            return Environment.getStorageState(path);
+        }
+
+        try {
+            final String canonicalPath = path.getCanonicalPath();
+            final String canonicalExternal = Environment.getExternalStorageDirectory()
+                    .getCanonicalPath();
+
+            if (canonicalPath.startsWith(canonicalExternal)) {
+                return Environment.getExternalStorageState();
+            }
+        } catch (IOException e) {
+        }
+
+        return MEDIA_UNKNOWN;
     }
 
 

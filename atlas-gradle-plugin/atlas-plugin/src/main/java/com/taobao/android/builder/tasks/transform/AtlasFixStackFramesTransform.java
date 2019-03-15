@@ -185,9 +185,6 @@ public class AtlasFixStackFramesTransform extends Transform {
         try {
             for (TransformInput input : transformInvocation.getInputs()) {
                 for (JarInput jarInput : input.getJarInputs()) {
-                    if (input.getJarInputs().size()!= BuildAtlasEnvTask.verifySize){
-                        throw new IOException("miss dependency in first transform!");
-                    }
                     boolean flag = inMainDex(jarInput);
                     File output =
                             outputProvider.getContentLocation(

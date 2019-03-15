@@ -2,6 +2,7 @@ package com.taobao.android.builder.tasks.app;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.TransformException;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -122,7 +123,7 @@ public class BuildAtlasEnvTask extends BaseTask {
 
 
     @TaskAction
-    void generate() {
+    void generate() throws TransformException {
 
         Set<ResolvedArtifactResult> compileArtifacts = compileManifests.getArtifacts();
         Set<ResolvedArtifactResult> jarArtifacts = compileJars.getArtifacts();
@@ -132,6 +133,38 @@ public class BuildAtlasEnvTask extends BaseTask {
         Set<ResolvedArtifactResult> androidRes = res.getArtifacts();
         Set<ResolvedArtifactResult> androidAssets = assets.getArtifacts();
         Set<ResolvedArtifactResult> androidRnames = symbolListWithPackageNames.getArtifacts();
+
+        AtlasDependencyTree androidDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
+        List<AwbBundle> bundles = new ArrayList<>();
+        bundles.add(androidDependencyTree.getMainBundle());
+        bundles.addAll(androidDependencyTree.getAwbBundles());
+
+
+        int i =0 ;
+        for (AwbBundle awbBundle : bundles) {
+            for (AndroidLibrary aarBundle : awbBundle.getAllLibraryAars()) {
+
+                if (null == aarBundle){
+                    continue;
+                }
+                    i++;
+                for (File file : aarBundle.getLocalJars()) {
+                    i++;
+                }
+
+            }
+
+            for (JavaLibrary jarInfo : awbBundle.getJavaLibraries()) {
+                i++;
+            }
+
+        }
+
+        if (i != verifySize){
+            throw new TransformException("miss aar in first task");
+        }
+
+
 
 
 
