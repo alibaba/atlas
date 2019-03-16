@@ -135,12 +135,9 @@ public class TaobaoInstantRunTransform extends Transform {
                 .getApExploredFolder().exists()) {
             File errorFile = new File(variantContext.apContext.getApExploredFolder(), "warning-instrument-inject-error.properties");
             if (errorFile.exists()) {
-                org.apache.commons.io.FileUtils.readLines(errorFile).forEach(new Consumer<String>() {
-                    @Override
-                    public void accept(String s) {
-                        if (s.split(":").length > 2) {
-                            errors.add(s.split(":")[1]);
-                        }
+                org.apache.commons.io.FileUtils.readLines(errorFile).forEach(s -> {
+                    if (s.split(":").length == 2) {
+                        errors.add(s.split(":")[1]);
                     }
                 });
             }
