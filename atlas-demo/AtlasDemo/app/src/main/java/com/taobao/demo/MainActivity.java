@@ -26,7 +26,6 @@ public class MainActivity extends AppCompatActivity
 
 
     //    private ActivityGroupDelegate mActivityDelegate;
-    private ViewGroup mActivityGroupContainer;
 
     private final BottomNavigationView.OnNavigationItemSelectedListener
             mOnNavigationItemSelectedListener
@@ -34,17 +33,14 @@ public class MainActivity extends AppCompatActivity
             = item -> {
                 switch (item.getItemId()) {
                     case R.id.navigation_home:
-                        switchToActivity("home",
-                                "atlas.fragment.intent.action.FIRST_FRAGMENT"/*"com.taobao
-                                .firstbundle.FirstBundleActivity"*/);
+                        switchToActivity("com.taobao.firstbundle.FirstBundleActivity");
                         Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
                         return true;
                     case R.id.navigation_dashboard:
-                        switchToActivity("second",
-                                "atlas.fragment.intent.action.SECOND_BUNDLE_FRAGMENT"/*"com
-                                .taobao.secondbundle.SecondBundleActivity"*/);
+                        switchToActivity("com.taobao.secondbundle.SecondBundleActivity");
                         return true;
                     case R.id.navigation_notifications:
+                        
     //                    Intent intent3 = new Intent();
     //                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
     //                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);
@@ -72,13 +68,10 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 //        mActivityDelegate = new ActivityGroupDelegate(this,savedInstanceState);
-        mActivityGroupContainer = (ViewGroup) findViewById(R.id.content);
-        switchToActivity("home",
-                "atlas.fragment.intent.action.FIRST_FRAGMENT"/*"com.taobao.firstbundle
-                .FirstBundleActivity"*/);
+        switchToActivity("com.taobao.firstbundle.FirstBundleActivity");
     }
 
-    public void switchToActivity(String key,String activityName){
+    public void switchToActivity(String activityName){
 //        RemoteFactory.requestRemote(RemoteFragment.class, this, new Intent(activityName),
 //                new RemoteFactory.OnRemoteStateListener<RemoteFragment>() {
 //                    @Override
@@ -93,9 +86,9 @@ public class MainActivity extends AppCompatActivity
 //                        Log.e("UserRemoteActivity", s);
 //                    }
 //                });
-//        Intent intent = new Intent();
-//        intent.setClassName(getBaseContext(),activityName);
-//        mActivityDelegate.startChildActivity(mActivityGroupContainer,key,intent);
+        Intent intent = new Intent();
+        intent.setClassName(getBaseContext(),activityName);
+        startActivity(intent);
     }
 
     @Override
