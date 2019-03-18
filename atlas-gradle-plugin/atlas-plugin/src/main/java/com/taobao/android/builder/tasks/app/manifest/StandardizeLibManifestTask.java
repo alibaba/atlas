@@ -313,7 +313,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
                         //    .getAbsolutePath());
 
                         ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file, mainManifestFileObject,
-                                                                       true, appVariantContext.getAtlasExtension()
+                                                                       appVariantContext.getAtlasExtension().getTBuildConfig().isUpdateSdkVersion(), appVariantContext.getAtlasExtension()
                                                                            .getTBuildConfig().isIncremental());
 
                     } catch (Throwable e) {

@@ -313,6 +313,17 @@ public class TBuildConfig {
         message = "atlasThe primary dex subcontracting mechanism, the first dex to set up only the startup code corresponding to atlas", order = 3, advance = false, group = "atlas")
     private boolean atlasMultiDex = false;
 
+
+    public boolean isUpdateSdkVersion() {
+        return updateSdkVersion;
+    }
+
+    public void setUpdateSdkVersion(boolean updateSdkVersion) {
+        this.updateSdkVersion = updateSdkVersion;
+    }
+
+    private boolean updateSdkVersion = true;
+
     @Config(message = "List of so files to delete", order = 4, advance = true, group = "atlas")
     private Set<String> removeSoFiles = Sets.newHashSet();
 
