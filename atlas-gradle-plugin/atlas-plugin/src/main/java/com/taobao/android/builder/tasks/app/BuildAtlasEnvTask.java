@@ -119,7 +119,6 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private ArtifactCollection symbolListWithPackageNames;
 
-    public static int verifySize = 0;
 
 
     @TaskAction
@@ -127,7 +126,6 @@ public class BuildAtlasEnvTask extends BaseTask {
 
         Set<ResolvedArtifactResult> compileArtifacts = compileManifests.getArtifacts();
         Set<ResolvedArtifactResult> jarArtifacts = compileJars.getArtifacts();
-        verifySize = jarArtifacts.size();
         Set<ResolvedArtifactResult> nativeLibsArtifacts = nativeLibs.getArtifacts();
         Set<ResolvedArtifactResult> javaResourcesArtifacts = javaResources.getArtifacts();
         Set<ResolvedArtifactResult> androidRes = res.getArtifacts();
@@ -138,31 +136,6 @@ public class BuildAtlasEnvTask extends BaseTask {
         List<AwbBundle> bundles = new ArrayList<>();
         bundles.add(androidDependencyTree.getMainBundle());
         bundles.addAll(androidDependencyTree.getAwbBundles());
-
-
-        int i =0 ;
-        for (AwbBundle awbBundle : bundles) {
-            for (AndroidLibrary aarBundle : awbBundle.getAllLibraryAars()) {
-
-                if (null == aarBundle){
-                    continue;
-                }
-                    i++;
-                for (File file : aarBundle.getLocalJars()) {
-                    i++;
-                }
-
-            }
-
-            for (JavaLibrary jarInfo : awbBundle.getJavaLibraries()) {
-                i++;
-            }
-
-        }
-
-        if (i != verifySize){
-            throw new TransformException("miss aar in first task");
-        }
 
 
 
