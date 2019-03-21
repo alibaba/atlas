@@ -264,6 +264,7 @@ public class AtlasBridgeApplication extends Application{
         // *0 checkload kernalpatch
         boolean isUpdated = isUpdated(getBaseContext());
         Log.e("AtlasBridgeApplication", "attachBaseContext() - isUpdated = " + isUpdated);
+
         KernalConstants.baseContext = getBaseContext();
         KernalConstants.APK_PATH = getBaseContext().getApplicationInfo().sourceDir;
         KernalConstants.RAW_APPLICATION_NAME = getClass().getName();
@@ -289,7 +290,8 @@ public class AtlasBridgeApplication extends Application{
             }
             KernalVersionManager.instance().init();
             if(!KernalBundle.checkLoadKernalDebugPatch(this)){
-                if(KernalBundle.hasKernalPatch()&& Build.VERSION.SDK_INT < 28) {
+
+                if(KernalBundle.hasKernalPatch() && Build.VERSION.SDK_INT < 28) {
                     //has patch ? true -> must load successed
                     hasKernalPatched = KernalBundle.checkloadKernalBundle(this, KernalConstants.PROCESS);
                     if (!hasKernalPatched) {
@@ -469,10 +471,8 @@ public class AtlasBridgeApplication extends Application{
                 String storedVersionName = in.readUTF();
                 long   storedVersionCode = in.readLong();
                 long   storedLastUpdateTime = in.readLong();
-                String storedApkPath     = in.readUTF();
+                String storedApkPath = in.readUTF();
                 String fingerprint = in.readUTF();
-
-
 
                 System.setProperty("APP_VERSION_TAG",KernalConstants.INSTALLED_VERSIONNAME);
                 // 检测之前的版本记录
@@ -482,6 +482,7 @@ public class AtlasBridgeApplication extends Application{
                         context.getApplicationInfo().sourceDir.equals(storedApkPath) &&
                         !needRollback() &&
                         (Build.FINGERPRINT + ""+  Build.VERSION.SDK_INT).equals(fingerprint)){
+
                     return false;
                 }else {
                     if (!TextUtils.isEmpty(storedVersionName)){
