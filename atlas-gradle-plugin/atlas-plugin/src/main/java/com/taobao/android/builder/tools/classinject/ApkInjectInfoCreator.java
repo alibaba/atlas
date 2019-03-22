@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tools.classinject;
 
@@ -236,9 +237,11 @@ import com.taobao.android.builder.tools.bundleinfo.model.BundleInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+*/
 /**
  * Created by wuzhong on 2016/12/1.
- */
+ *//*
+
 public class ApkInjectInfoCreator {
 
     public InjectParam creteInjectParam(AppVariantContext appVariantContext) throws Exception {
@@ -453,3 +456,4 @@ public class ApkInjectInfoCreator {
     public void injectTpatchValuesRes(AppVariantContext appVariantContext, File valuesXml) {
     }
 }
+*/

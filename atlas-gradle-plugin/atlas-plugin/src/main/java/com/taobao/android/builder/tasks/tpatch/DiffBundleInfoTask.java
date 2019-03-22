@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.tpatch;
 
@@ -240,9 +241,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+*/
 /**
  * Created by wuzhong on 16/6/24.
- */
+ *//*
+
 public class DiffBundleInfoTask extends BaseTask {
 
     private AppVariantOutputContext appVariantOutputContext;
@@ -277,9 +280,11 @@ public class DiffBundleInfoTask extends BaseTask {
         return apDir;
     }
 
-    /**
+    */
+/**
      * Generate this file
-     */
+     *//*
+
     @TaskAction
     public void generate() throws IOException {
 
@@ -292,10 +297,10 @@ public class DiffBundleInfoTask extends BaseTask {
 
         try {
             appVariantOutputContext.artifactBundleInfos = getArtifactBundleInfo(getDependencyDiff(),
-                                                                                getManifestFile(),
-                                                                                getApDir());
+                    getManifestFile(),
+                    getApDir());
             FileUtils.writeStringToFile(new File(getOutJsonFile(), "dependencyDiff.json"),
-                                        JSON.toJSONString(dependencyDiff, true));
+                    JSON.toJSONString(dependencyDiff, true));
         } catch (Exception e) {
             throw new GradleException(e.getMessage());
         }
@@ -317,13 +322,12 @@ public class DiffBundleInfoTask extends BaseTask {
             throw new GradleException(e.getMessage(), e);
         }
 
-        Map<String,String> tagMap = new HashMap<>();
-        JSONObject jsonObject = (JSONObject)JSON.parse(FileUtils.readFileToString(new File(apDir, "atlasFrameworkProperties.json")));
+        Map<String, String> tagMap = new HashMap<>();
+        JSONObject jsonObject = (JSONObject) JSON.parse(FileUtils.readFileToString(new File(apDir, "atlasFrameworkProperties.json")));
         JSONArray jsonArray = jsonObject.getJSONArray("bundleInfo");
-        for (JSONObject obj : jsonArray.toArray(new JSONObject[0])){
+        for (JSONObject obj : jsonArray.toArray(new JSONObject[0])) {
             tagMap.put(obj.getString("pkgName"), obj.getString("unique_tag"));
         }
-
 
 
         // 2. Add your own bundle
@@ -331,12 +335,12 @@ public class DiffBundleInfoTask extends BaseTask {
                 appVariantOutputContext.getVariantContext().
                         getVariantConfiguration().getFullName());
 
-        List<AwbBundle>modifyMbundles = new ArrayList<>();
+        List<AwbBundle> modifyMbundles = new ArrayList<>();
         for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
             BundleInfo bundleInfo = awbBundle.bundleInfo;
             ArtifactBundleInfo awbBundleInfo = new ArtifactBundleInfo();
             awbBundleInfo.setMainBundle(false);
-            awbBundleInfo.setDependency(newDependency(bundleInfo.getDependency(),appVariantOutputContext.getVariantContext()));
+            awbBundleInfo.setDependency(newDependency(bundleInfo.getDependency(), appVariantOutputContext.getVariantContext()));
             awbBundleInfo.setPkgName(bundleInfo.getPkgName());
             awbBundleInfo.setApplicationName(bundleInfo.getApplicationName());
             awbBundleInfo.setArtifactId(awbBundle.getResolvedCoordinates().getArtifactId());
@@ -396,13 +400,13 @@ public class DiffBundleInfoTask extends BaseTask {
         return artifactBundleInfos;
     }
 
-    private List<String> newDependency(List<String> dependency,AppVariantContext appVariantContext) {
-        List<String>dependencies = new ArrayList<>();
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||dependency == null ||dependency.size() == 0){
+    private List<String> newDependency(List<String> dependency, AppVariantContext appVariantContext) {
+        List<String> dependencies = new ArrayList<>();
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex() || dependency == null || dependency.size() == 0) {
             return dependencies;
         }
-        for (String s:dependency){
-            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(s)){
+        for (String s : dependency) {
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(s)) {
                 dependencies.add(s);
             }
         }
@@ -446,7 +450,7 @@ public class DiffBundleInfoTask extends BaseTask {
             }
         }
 
-        if ("manifest".equalsIgnoreCase(root.getName())) {
+        if ("manifest" .equalsIgnoreCase(root.getName())) {
             List<Attribute> attributes = root.attributes();
             for (Attribute attr : attributes) {
                 if (StringUtils.equalsIgnoreCase(attr.getName(), "versionName")) {
@@ -470,33 +474,39 @@ public class DiffBundleInfoTask extends BaseTask {
             this.appVariantContext = appVariantContext;
         }
 
-        /**
+        */
+/**
          * Return the name of the task to be configured.
-         */
+         *//*
+
         @Override
         public String getName() {
             return scope.getTaskName("diffBundleInfo");
         }
 
-        /**
+        */
+/**
          * Return the class type of the task to be configured.
-         */
+         *//*
+
         @Override
         public Class<DiffBundleInfoTask> getType() {
             return DiffBundleInfoTask.class;
         }
 
-        /**
+        */
+/**
          * Performs this action against the given object.
          *
          * @param diffBundleInfoTask The object to perform the action on.
-         */
+         *//*
+
         @Override
         public void execute(DiffBundleInfoTask diffBundleInfoTask) {
 
             super.execute(diffBundleInfoTask);
 
-            if (!appVariantContext.getAtlasExtension().isAtlasEnabled()){
+            if (!appVariantContext.getAtlasExtension().isAtlasEnabled()) {
                 diffBundleInfoTask.setEnabled(false);
             }
 
@@ -523,13 +533,13 @@ public class DiffBundleInfoTask extends BaseTask {
 
             //Set the DependencyDiff
             ConventionMappingHelper.map(diffBundleInfoTask,
-                                        "dependencyDiff",
-                                        new Callable<DependencyDiff>() {
-                                            @Override
-                                            public DependencyDiff call() throws Exception {
-                                                return appVariantContext.getDependencyDiff();
-                                            }
-                                        });
+                    "dependencyDiff",
+                    new Callable<DependencyDiff>() {
+                        @Override
+                        public DependencyDiff call() throws Exception {
+                            return appVariantContext.getDependencyDiff();
+                        }
+                    });
 
             ConventionMappingHelper.map(diffBundleInfoTask, "apDir", new Callable<File>() {
                 @Override
@@ -547,3 +557,4 @@ public class DiffBundleInfoTask extends BaseTask {
         }
     }
 }
+*/

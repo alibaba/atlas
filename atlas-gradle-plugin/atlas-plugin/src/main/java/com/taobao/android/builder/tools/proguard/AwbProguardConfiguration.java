@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tools.proguard;
 
@@ -221,10 +222,12 @@ import com.android.build.gradle.internal.api.AwbTransform;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 
+*/
 /**
  * Add Awb configuration to confusing configuration
  * Created by shenghua.nish on 2016-06-12 This morning.
- */
+ *//*
+
 @Deprecated
 public class AwbProguardConfiguration {
 
@@ -248,11 +251,13 @@ public class AwbProguardConfiguration {
         this.appVariantOutputContext = appVariantOutputContext;
     }
 
-    /**
+    */
+/**
      * Print the proguard config file to the specified file
      *
      * @param outConfigFile
-     */
+     *//*
+
     public void printConfigFile(File outConfigFile) throws IOException {
         List<String> configs = Lists.newArrayList();
         //awbProguard for no lib, convenient for predex
@@ -304,3 +309,4 @@ public class AwbProguardConfiguration {
         FileUtils.writeLines(outConfigFile, configs);
     }
 }
+*/

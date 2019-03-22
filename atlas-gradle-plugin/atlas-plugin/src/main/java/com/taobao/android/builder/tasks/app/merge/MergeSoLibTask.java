@@ -205,13 +205,16 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.merge;
 
+*/
 /**
  * Created by wuzhong on 16/6/13.
- */
+ *//*
+
 
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -240,25 +243,33 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+*/
 /**
  * Handle various so dependent tasks
  * Created by shenghua.nish on 2015-08-25 So in the afternoon.
- */
+ *//*
+
 public class MergeSoLibTask extends BaseTask {
 
-    /**
+    */
+/**
      * The main bundle has jnifolders, which contain the jni directory of the main and dependent aar
-     */
+     *//*
+
     Set<File> jniFolders;
 
-    /**
+    */
+/**
      * Solib that the main bundle depends on
-     */
+     *//*
+
     List<SoLibrary> mainDexSoLibraries;
 
-    /**
+    */
+/**
      * Relying on the awbs
-     */
+     *//*
+
     List<AwbBundle> awbLibs;
 
     @Input
@@ -270,17 +281,21 @@ public class MergeSoLibTask extends BaseTask {
     @OutputDirectory
     File mainBundleOutputFolder;
 
-    /**
+    */
+/**
      * Whether or not the main dex and awb's so are repeated
-     */
+     *//*
+
     @Input
     Boolean failOnDuplicateSo;
 
     AppVariantOutputContext appVariantOutputContext;
 
-    /**
+    */
+/**
      * Directory of so
-     */
+     *//*
+
     @TaskAction
     void generate() {
         List<File> scanDirs = new ArrayList<File>();
@@ -413,27 +428,33 @@ public class MergeSoLibTask extends BaseTask {
             dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
         }
 
-        /**
+        */
+/**
          * Return the name of the task to be configured.
-         */
+         *//*
+
         @Override
         public String getName() {
             return scope.getTaskName("merge", "SoLib");
         }
 
-        /**
+        */
+/**
          * Return the class type of the task to be configured.
-         */
+         *//*
+
         @Override
         public Class<MergeSoLibTask> getType() {
             return MergeSoLibTask.class;
         }
 
-        /**
+        */
+/**
          * Performs this action against the given object.
          *
          * @param copySoLibTask The object to perform the action on.
-         */
+         *//*
+
         @Override
         public void execute(MergeSoLibTask copySoLibTask) {
 
@@ -563,4 +584,4 @@ public class MergeSoLibTask extends BaseTask {
     public void setRemoveSoFiles(Set<String> removeSoFiles) {
         this.removeSoFiles = removeSoFiles;
     }
-}
+}*/

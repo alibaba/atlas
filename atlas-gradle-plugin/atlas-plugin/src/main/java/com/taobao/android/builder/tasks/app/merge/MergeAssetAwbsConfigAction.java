@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.merge;
 
@@ -257,7 +258,7 @@ public class MergeAssetAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTas
         List<DefaultTask> tasks = new ArrayList<DefaultTask>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-            if (awbBundle.isMBundle){
+            if (awbBundle.isMBundle) {
                 continue;
             }
 
@@ -277,4 +278,4 @@ public class MergeAssetAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTas
         parallelTask.uniqueTaskName = getName();
 
     }
-}
+}*/

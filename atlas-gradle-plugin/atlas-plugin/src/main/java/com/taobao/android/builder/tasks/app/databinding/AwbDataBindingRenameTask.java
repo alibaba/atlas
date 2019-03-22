@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.databinding;
 
@@ -248,9 +249,11 @@ public class AwbDataBindingRenameTask extends BaseTask {
     private AppVariantOutputContext appVariantOutputContext;
     private GradleVariantConfiguration config;
 
-    /**
+    */
+/**
      * Directory of so
-     */
+     *//*
+
     @TaskAction
     void createAwbPackages() throws ExecutionException, InterruptedException {
         WaitableExecutor workerExecutor = WaitableExecutor.useGlobalSharedThreadPool();
@@ -265,11 +268,11 @@ public class AwbDataBindingRenameTask extends BaseTask {
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
-            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getDataBindingBundles().contains(awbBundle.getPackageName())){
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getDataBindingBundles().contains(awbBundle.getPackageName())) {
                 continue;
             }
 
-            if (!awbBundle.isDataBindEnabled()|| awbBundle.isMBundle) {
+            if (!awbBundle.isDataBindEnabled() || awbBundle.isMBundle) {
                 continue;
             }
             workerExecutor.execute(new Callable() {
@@ -280,13 +283,13 @@ public class AwbDataBindingRenameTask extends BaseTask {
                     try {
 
                         File dataBindingClazzFolder = appVariantOutputContext.getVariantContext().getJAwbavaOutputDir(
-                            awbBundle);
+                                awbBundle);
                         String packageName = awbBundle.getPackageName();
                         String appName = awbBundle.getPackageName() + "._bundleapp_";
 
                         //Remove classes that already exist
                         File dataMapperClazz = new File(dataBindingClazzFolder,
-                                                        "android/databinding/DataBinderMapper.class");
+                                "android/databinding/DataBinderMapper.class");
                         if (!dataMapperClazz.exists()) {
                             throw new GradleException("missing datamapper class");
                         }
@@ -333,20 +336,20 @@ public class AwbDataBindingRenameTask extends BaseTask {
 
                         //rename DataBindUtils
                         AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(
-                            awbBundle.getName());
+                                awbBundle.getName());
 
                         List<File> files = awbTransform.getInputLibraries();
 
                         Map<String, String> replaceMap = new HashMap<>();
                         replaceMap.put("android/databinding/DataBindingUtil",
-                                       "android/databinding/AtlasDataBindingUtil");
+                                "android/databinding/AtlasDataBindingUtil");
 
                         List<File> newLibrarys = new ArrayList<>();
 
                         for (File inputJar : files) {
 
                             File outputJar = new File(appVariantContext.getAwbLibraryDirForDataBinding(awbBundle),
-                                                      FileNameUtils.getUniqueJarName(inputJar) + ".jar");
+                                    FileNameUtils.getUniqueJarName(inputJar) + ".jar");
 
                             outputJar.delete();
                             outputJar.getParentFile().mkdirs();
@@ -354,7 +357,7 @@ public class AwbDataBindingRenameTask extends BaseTask {
 
                             new ClazzReplacer(inputJar, outputJar, replaceMap).execute();
                             newLibrarys.add(outputJar);
-                            awbTransform.getFileTransform().put(inputJar,outputJar);
+                            awbTransform.getFileTransform().put(inputJar, outputJar);
                         }
 
                         awbTransform.setInputLibraries(newLibrarys);
@@ -405,6 +408,6 @@ public class AwbDataBindingRenameTask extends BaseTask {
 
         }
     }
-    
 
-}
+
+}*/

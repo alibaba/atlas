@@ -1,3 +1,4 @@
+/*
 package com.taobao.android.builder.manager;
 
 import com.android.build.api.transform.QualifiedContent;
@@ -57,6 +58,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
+*/
 /**
  * AtlasFeatureTaskManager
  *
@@ -64,7 +66,8 @@ import java.util.function.Consumer;
  * @date 18/1/3
  * @time 下午8:15
  * @description  
- */
+ *//*
+
 public class AtlasFeatureTaskManager extends AtlasBaseTaskManager {
 
     private FeatureExtension featureExtension;
@@ -197,3 +200,4 @@ public class AtlasFeatureTaskManager extends AtlasBaseTaskManager {
     }
 
 }
+*/

@@ -23,15 +23,11 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
 import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tasks.manager.transform.MtlInjectTransform;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.TransformInputUtils;
-import com.taobao.android.builder.tools.log.FileLogger;
-import com.taobao.android.builder.tools.proguard.AtlasProguardHelper;
-import com.taobao.android.builder.tools.proguard.AwbProguardConfiguration;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
@@ -111,39 +107,39 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             defaultProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.PROGUARD_RULES).getFiles());
         }
 
-        List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
-                appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
-        if (awbBundles != null && awbBundles.size() > 0) {
-            File bundleRKeepFile = new File(appVariantContext.getBaseVariantData().getScope().getGlobalScope().getIntermediatesDir(), "awb-progrard/bundleRKeep.cfg");
-            if (!bundleRKeepFile.getParentFile().exists()) {
-                bundleRKeepFile.getParentFile().mkdirs();
-            }
-
-            StringBuilder keepRStr = new StringBuilder();
-            for (AwbBundle bundleItem : awbBundles) {
-                keepRStr.append(String.format("-keep class %s.R{*;}\n", bundleItem.bundleInfo.getPkgName()));
-                keepRStr.append(String.format("-keep class %s.R$*{*;}\n", bundleItem.bundleInfo.getPkgName()));
-            }
-            try {
-                BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(bundleRKeepFile));
-                bufferedWriter.write(keepRStr.toString());
-                bufferedWriter.flush();
-                IOUtils.closeQuietly(bufferedWriter);
-                FileLogger.getInstance("proguard").log("R keep infos: " + keepRStr);
-            } catch (IOException e) {
-                throw new RuntimeException("generate bundleRkeepFile failed", e);
-            }
-            appVariantContext.getBaseVariantData().getVariantConfiguration().getBuildType().getProguardFiles().add(bundleRKeepFile);
-            defaultProguardFiles.add(bundleRKeepFile);
-        }
-
-        //apply bundle Inout
-        applyBundleInOutConfigration(appVariantContext);
-
-        //apply bundle's configuration, Switch control
-        if (buildConfig.isBundleProguardConfigEnabled() &&! buildConfig.getConsumerProguardEnabled()) {
-            applyBundleProguardConfigration(appVariantContext);
-        }
+//        List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
+//                appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
+//        if (awbBundles != null && awbBundles.size() > 0) {
+//            File bundleRKeepFile = new File(appVariantContext.getBaseVariantData().getScope().getGlobalScope().getIntermediatesDir(), "awb-progrard/bundleRKeep.cfg");
+//            if (!bundleRKeepFile.getParentFile().exists()) {
+//                bundleRKeepFile.getParentFile().mkdirs();
+//            }
+//
+//            StringBuilder keepRStr = new StringBuilder();
+//            for (AwbBundle bundleItem : awbBundles) {
+//                keepRStr.append(String.format("-keep class %s.R{*;}\n", bundleItem.bundleInfo.getPkgName()));
+//                keepRStr.append(String.format("-keep class %s.R$*{*;}\n", bundleItem.bundleInfo.getPkgName()));
+//            }
+//            try {
+//                BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(bundleRKeepFile));
+//                bufferedWriter.write(keepRStr.toString());
+//                bufferedWriter.flush();
+//                IOUtils.closeQuietly(bufferedWriter);
+//                FileLogger.getInstance("proguard").log("R keep infos: " + keepRStr);
+//            } catch (IOException e) {
+//                throw new RuntimeException("generate bundleRkeepFile failed", e);
+//            }
+//            appVariantContext.getBaseVariantData().getVariantConfiguration().getBuildType().getProguardFiles().add(bundleRKeepFile);
+//            defaultProguardFiles.add(bundleRKeepFile);
+//        }
+//
+//        //apply bundle Inout
+//        applyBundleInOutConfigration(appVariantContext);
+//
+//        //apply bundle's configuration, Switch control
+//        if (buildConfig.isBundleProguardConfigEnabled() &&! buildConfig.getConsumerProguardEnabled()) {
+//            applyBundleProguardConfigration(appVariantContext);
+//        }
 
         proGuardTransform.setConfigurationFiles(appVariantContext.getScope().getGlobalScope().getProject().files(defaultProguardFiles));
 
@@ -231,42 +227,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
     }
 
-    public File applyBundleInOutConfigration(final AppVariantContext appVariantContext) {
 
-        VariantScope variantScope = appVariantContext.getScope();
-
-        GlobalScope globalScope = variantScope.getGlobalScope();
-        File proguardOut = new File(Joiner.on(File.separatorChar)
-                .join(String.valueOf(globalScope.getBuildDir()), FD_OUTPUTS, "mapping",
-                        variantScope.getVariantConfiguration().getDirName()));
-
-        File awbInOutConfig = new File(proguardOut, "awb_inout_config.cfg");
-
-        //Add awb configuration
-        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                variantScope.getVariantConfiguration().getFullName());
-
-        if (dependencyTree.getAwbBundles().size() > 0) {
-            BaseVariantOutput vod = (BaseVariantOutput) appVariantContext.getVariantOutputData().iterator().next();
-            AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(ApkDataUtils.get(vod));
-            File awbObfuscatedDir = new File(globalScope.getIntermediatesDir(),
-                    "/classes-proguard/" + variantScope.getVariantConfiguration()
-                            .getDirName());
-            AwbProguardConfiguration awbProguardConfiguration = new AwbProguardConfiguration(
-                    appVariantOutputContext.getAwbTransformMap().values(), awbObfuscatedDir, appVariantOutputContext);
-
-            try {
-                awbProguardConfiguration.printConfigFile(awbInOutConfig);
-            } catch (IOException e) {
-                throw new GradleException("", e);
-            }
-
-            defaultProguardFiles.add(awbInOutConfig);
-
-        }
-
-        return awbInOutConfig;
-    }
 
     public File applyMapping(final AppVariantContext appVariantContext) {
 
@@ -289,34 +250,5 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
     }
 
-    public void applyBundleProguardConfigration(final AppVariantContext appVariantContext) {
 
-        Set<String> blackList = appVariantContext.getAtlasExtension().getTBuildConfig()
-                .getBundleProguardConfigBlackList();
-
-        List<File> proguardFiles = new ArrayList<>();
-        VariantScope variantScope = appVariantContext.getScope();
-        for (AwbBundle awbBundle : AtlasBuildContext.androidDependencyTrees.get(
-                variantScope.getVariantConfiguration().getFullName()).getAwbBundles()) {
-            for (AndroidLibrary androidDependency : awbBundle.getAllLibraryAars()) {
-                File proguardRules = androidDependency.getProguardRules();
-
-                String groupName = androidDependency.getResolvedCoordinates().getGroupId() + ":" + androidDependency
-                        .getResolvedCoordinates().getArtifactId();
-                if (blackList.contains(groupName)) {
-                    sLogger.info("[proguard] skip proguard from " + androidDependency.getResolvedCoordinates());
-                    continue;
-                }
-
-                if (proguardRules.isFile()) {
-                    proguardFiles.add(proguardRules);
-                    sLogger.warn("[proguard] load proguard from " + androidDependency.getResolvedCoordinates());
-                } else {
-                    sLogger.info("[proguard] missing proguard from " + androidDependency.getResolvedCoordinates());
-                }
-            }
-        }
-        defaultProguardFiles.addAll(proguardFiles);
-
-    }
 }

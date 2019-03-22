@@ -205,13 +205,16 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.prepare;
 
+*/
 /**
  * Created by wuzhong on 16/6/13.
- */
+ *//*
+
 
 import java.io.File;
 import java.io.IOException;
@@ -240,18 +243,22 @@ import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
 
+*/
 /**
  * Distribution packageId
- */
+ *//*
+
 public class PreparePackageIdsTask extends BaseTask {
 
 
     AppVariantContext appVariantContext;
     AppVariantOutputContext.AppBuildInfo appBuildInfo;
 
-    /**
+    */
+/**
      * packageid The range is 30 - 127
-     */
+     *//*
+
     @TaskAction
     void generate() throws IOException {
 
@@ -295,7 +302,9 @@ public class PreparePackageIdsTask extends BaseTask {
             for (String key : keys) {
                 if ("".equals(autoConfigMap.get(key))) {
 
-                    for (int i = minPackageId; i </*=*/ 127; i++) {
+                    for (int i = minPackageId; i <*/
+/*=*//*
+ 127; i++) {
                         if (!autoConfigMap.values().contains(String.valueOf(i))) {
                             autoConfigMap.put(key, String.valueOf(i));
                             break;
@@ -382,12 +391,14 @@ public class PreparePackageIdsTask extends BaseTask {
 
     }
 
-    /**
+    */
+/**
      * Read the component's packageId
      *
      * @param packageIdFile
      * @return
-     */
+     *//*
+
     private Map<String, String> loadPackageIdProperties(File packageIdFile) throws IOException {
         Map<String, String> values = new HashMap<String, String>();
         if (null != packageIdFile && packageIdFile.exists() && packageIdFile.isFile()) {
@@ -450,4 +461,4 @@ public class PreparePackageIdsTask extends BaseTask {
     }
 
 
-}
+}*/

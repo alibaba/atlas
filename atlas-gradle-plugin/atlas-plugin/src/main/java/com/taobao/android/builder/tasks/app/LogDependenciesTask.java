@@ -205,13 +205,16 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app;
 
+*/
 /**
  * Created by wuzhong on 16/6/13.
- */
+ *//*
+
 
 import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.api.BaseVariantOutput;
@@ -237,9 +240,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+*/
 /**
  * Record the build dependency information, facilitate the analysis and analysis
- */
+ *//*
+
 public class LogDependenciesTask extends BaseTask {
 
     private AppVariantOutputContext.AppBuildInfo appBuildInfo;
@@ -415,4 +420,4 @@ public class LogDependenciesTask extends BaseTask {
             logDependenciesTask.appVariantContext = appVariantContext;
         }
     }
-}
+}*/

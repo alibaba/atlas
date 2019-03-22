@@ -210,7 +210,6 @@
 package com.taobao.android.builder.manager;
 
 import com.android.build.gradle.*;
-import com.android.build.gradle.internal.AtlasDependencyManager;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.VariantManager;
@@ -381,21 +380,21 @@ public class AtlasConfigurationHelper {
                     project,
                     atlasExtension).run();
         } else if (PluginTypeUtils.isLibraryProject(project)) {
-            LibraryExtension libExtension = DefaultGroovyMethods.asType(DefaultGroovyMethods.getAt(
-                    project.getExtensions(),
-                    "android"), LibraryExtension.class);
-            new AtlasLibTaskManager(AtlasBuildContext.androidBuilderMap.get(project),
-                    libExtension,
-                    project,
-                    atlasExtension).run();
+//            LibraryExtension libExtension = DefaultGroovyMethods.asType(DefaultGroovyMethods.getAt(
+//                    project.getExtensions(),
+//                    "android"), LibraryExtension.class);
+//            new AtlasLibTaskManager(AtlasBuildContext.androidBuilderMap.get(project),
+//                    libExtension,
+//                    project,
+//                    atlasExtension).run();
         } else if (PluginTypeUtils.isFeatureProject(project)) {
-            LibraryExtension featureExtension = DefaultGroovyMethods.asType(DefaultGroovyMethods.getAt(
-                    project.getExtensions(),
-                    "android"), FeatureExtension.class);
-            new AtlasFeatureTaskManager(AtlasBuildContext.androidBuilderMap.get(project),
-                    featureExtension,
-                    project,
-                    atlasExtension).run();
+//            LibraryExtension featureExtension = DefaultGroovyMethods.asType(DefaultGroovyMethods.getAt(
+//                    project.getExtensions(),
+//                    "android"), FeatureExtension.class);
+//            new AtlasFeatureTaskManager(AtlasBuildContext.androidBuilderMap.get(project),
+//                    featureExtension,
+//                    project,
+//                    atlasExtension).run();
         }
     }
 
@@ -533,49 +532,18 @@ public class AtlasConfigurationHelper {
 
     public void configDependencies(File awbConfigFile) {
 
-        Set<String> awbs = getAwbs(awbConfigFile);
-
-        AtlasDependencyManager atlasDependencyManager = new AtlasDependencyManager(project, new ExtraModelInfo(new ProjectOptions(project), project.getLogger()),awbs);
-
-        VariantManager variantManager = getVariantManager();
-
-        if (variantManager!=null) {
-
-            variantManager.getVariantScopes().stream().forEach(variantScope -> atlasDependencyManager.resolveDependencies(variantScope.getVariantDependencies()));
-        }
+//        Set<String> awbs = getAwbs(awbConfigFile);
+//
+//        AtlasDependencyManager atlasDependencyManager = new AtlasDependencyManager(project, new ExtraModelInfo(new ProjectOptions(project), project.getLogger()),awbs);
+//
+//        VariantManager variantManager = getVariantManager();
+//
+//        if (variantManager!=null) {
+//
+////            variantManager.getVariantScopes().stream().forEach(variantScope -> atlasDependencyManager.resolveDependencies(variantScope.getVariantDependencies()));
+//        }
     }
 
-    private Set<String> getAwbs(File awbConfigFile) {
-        Set<String>awbs = new HashSet<>();
-        if (awbConfigFile != null && awbConfigFile.exists()){
-            try {
-                awbs.addAll(FileUtils.readLines(awbConfigFile));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return awbs;
-    }
 
-    public VariantManager getVariantManager() {
-
-        VariantManager variantManager = null;
-
-        BasePlugin appPlugin = project.getPlugins().findPlugin(AppPlugin.class);
-
-        if (null == appPlugin) {
-            appPlugin = project.getPlugins().findPlugin(LibraryPlugin.class);
-        }
-        if (appPlugin != null) {
-            try {
-                variantManager = (VariantManager) ReflectUtils.getField(BasePlugin.class, appPlugin, "variantManager");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-
-        return variantManager;
-    }
 
 }

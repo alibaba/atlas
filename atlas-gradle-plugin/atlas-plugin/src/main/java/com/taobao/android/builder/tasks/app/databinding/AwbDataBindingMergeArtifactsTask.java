@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.databinding;
 
@@ -253,9 +254,11 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
     private GradleVariantConfiguration config;
     private BaseVariantOutput variantOutputData;
 
-    /**
+    */
+/**
      * Directory of so
-     */
+     *//*
+
     @TaskAction
     void createAwbPackages() throws ExecutionException, InterruptedException {
 
@@ -398,10 +401,12 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
         return new File(outFolder, getJarFilePrefix(jarFile));
     }
 
-    /**
+    */
+/**
      * Files exported from jars are exported into a certain folder so that we can rebuild them
      * when the related jar file changes.
-     */
+     *//*
+
     @NonNull
     private static String getJarFilePrefix(@NonNull File inputFile) {
         // get the filename
@@ -453,4 +458,4 @@ public class AwbDataBindingMergeArtifactsTask extends BaseTask {
         }
     }
 
-}
+}*/

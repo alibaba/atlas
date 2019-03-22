@@ -366,23 +366,23 @@ public class AppVariantOutputContext {
                         awbBundle.getName());
     }
 
-    public synchronized Map<String, AwbTransform> getAwbTransformMap() {
-        //TODO
-        if (awbTransformMap.isEmpty()) {
-            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                    variantContext.getVariantName());
-            for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
-                //Generate the AwbTransform object
-                AwbTransform awbTransform = new AwbTransform(awbBundle);
-                //                awbTransform.setInputDir(awbJavaCompile.getDestinationDir());
-                awbTransform.getInputLibraries().addAll(awbBundle.getLibraryJars());  //ADD R.class
-                //                awbTransform.getInputLibraries().addAll(appVariantOutputContext.getJAwbavaOutputDir
-                // (awbBundle));
-                awbTransformMap.put(awbBundle.getName(), awbTransform);
-            }
-        }
-        return awbTransformMap;
-    }
+//    public synchronized Map<String, AwbTransform> getAwbTransformMap() {
+//        //TODO
+//        if (awbTransformMap.isEmpty()) {
+//            AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+//                    variantContext.getVariantName());
+//            for (AwbBundle awbBundle : dependencyTree.getAwbBundles()) {
+//                //Generate the AwbTransform object
+//                AwbTransform awbTransform = new AwbTransform(awbBundle);
+//                //                awbTransform.setInputDir(awbJavaCompile.getDestinationDir());
+//                awbTransform.getInputLibraries().addAll(awbBundle.getLibraryJars());  //ADD R.class
+//                //                awbTransform.getInputLibraries().addAll(appVariantOutputContext.getJAwbavaOutputDir
+//                // (awbBundle));
+//                awbTransformMap.put(awbBundle.getName(), awbTransform);
+//            }
+//        }
+//        return awbTransformMap;
+//    }
 
     public Map<String, PackageApplication> getAwbPackageMap() {
         return awbPackageMap;

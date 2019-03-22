@@ -415,15 +415,15 @@ public class PrepareAPTask extends BaseTask {
             ConventionMappingHelper.map(prepareAPTask, "apDependency", (Callable<String>) () -> variantContext.apContext.getApDependency());
             ConventionMappingHelper.map(prepareAPTask, "explodedDir", (Callable<File>) () -> explodedDir);
 
-            if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                ConventionMappingHelper.map(prepareAPTask, "awbBundles", (Callable<Set<String>>) () -> {
-                    AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                        variantContext.getVariantName());
-                    Set<String> awbBundles = Sets.newHashSet(
-                        Iterables.transform(dependencyTree.getAwbBundles(), AwbBundle::getAwbSoName));
-                    return awbBundles;
-                });
-            }
+//            if (variantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+//                ConventionMappingHelper.map(prepareAPTask, "awbBundles", (Callable<Set<String>>) () -> {
+//                    AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+//                        variantContext.getVariantName());
+//                    Set<String> awbBundles = Sets.newHashSet(
+//                        Iterables.transform(dependencyTree.getAwbBundles(), AwbBundle::getAwbSoName));
+//                    return awbBundles;
+//                });
+//            }
         }
     }
 }

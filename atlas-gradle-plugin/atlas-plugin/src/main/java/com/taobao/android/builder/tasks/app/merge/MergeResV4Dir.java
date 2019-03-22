@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 package com.taobao.android.builder.tasks.app.merge;
 
 import com.android.build.gradle.api.BaseVariantOutput;
@@ -304,3 +305,4 @@ public class MergeResV4Dir extends DefaultAndroidTask {
         }
     }
 }
+*/

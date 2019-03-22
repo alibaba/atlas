@@ -259,21 +259,21 @@ public class ApkFileListUtils {
         }
 
         // Record the resource information for each bundle
-        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getScope().
-            getVariantConfiguration().getFullName());
-        if (null == dependencyTree) {
-            throw new StopExecutionException("DependencyTree cannot be null!");
-        }
-
-        List<AwbBundle> libs = dependencyTree.getAwbBundles();
-
-        for (AwbBundle awbLib : libs) {
-            File mergeAssertFolder = appVariantContext.getMergeAssets(awbLib);
-            File mergeResFolder = appVariantContext.getMergeResources(awbLib);
-            String awbName = awbLib.getName();
-            prepareApkFileList(mergeAssertFolder, "assets", awbName, apkFiles);
-            prepareApkFileList(mergeResFolder, "res", awbName, apkFiles);
-        }
+//        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getScope().
+//            getVariantConfiguration().getFullName());
+//        if (null == dependencyTree) {
+//            throw new StopExecutionException("DependencyTree cannot be null!");
+//        }
+//
+//        List<AwbBundle> libs = dependencyTree.getAwbBundles();
+//
+//        for (AwbBundle awbLib : libs) {
+//            File mergeAssertFolder = appVariantContext.getMergeAssets(awbLib);
+//            File mergeResFolder = appVariantContext.getMergeResources(awbLib);
+//            String awbName = awbLib.getName();
+//            prepareApkFileList(mergeAssertFolder, "assets", awbName, apkFiles);
+//            prepareApkFileList(mergeResFolder, "res", awbName, apkFiles);
+//        }
 
         return apkFiles;
     }

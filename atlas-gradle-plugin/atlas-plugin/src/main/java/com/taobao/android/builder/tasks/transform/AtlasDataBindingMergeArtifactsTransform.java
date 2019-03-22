@@ -1,3 +1,4 @@
+/*
 package com.taobao.android.builder.tasks.transform;
 
 import android.databinding.tool.DataBindingBuilder;
@@ -35,10 +36,12 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+*/
 /**
  * @author lilong
  * @create 2017-12-08 上午2:28
- */
+ *//*
+
 
 public class AtlasDataBindingMergeArtifactsTransform extends DataBindingMergeArtifactsTransform {
 
@@ -246,10 +249,12 @@ public class AtlasDataBindingMergeArtifactsTransform extends DataBindingMergeArt
         return new File(outFolder, getJarFilePrefix(jarFile));
     }
 
-    /**
+    */
+/**
      * Files exported from jars are exported into a certain folder so that we can rebuild them
      * when the related jar file changes.
-     */
+     *//*
+
     @NonNull
     private static String getJarFilePrefix(@NonNull File inputFile) {
         // get the filename
@@ -296,3 +301,4 @@ public class AtlasDataBindingMergeArtifactsTransform extends DataBindingMergeArt
         }
     }
 }
+*/

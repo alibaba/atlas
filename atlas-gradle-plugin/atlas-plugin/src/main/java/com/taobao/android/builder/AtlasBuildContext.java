@@ -237,9 +237,9 @@ public class AtlasBuildContext {
 
     public static Map<String,File>bundleExploadDir = new HashMap<>();
 
-    public static Map<String, AtlasDependencyTree> androidDependencyTrees = Maps.newHashMap();
-
-    public static Map<String, AtlasDependencyTree> libDependencyTrees = Maps.newHashMap();
+//    public static Map<String, AtlasDependencyTree> androidDependencyTrees = Maps.newHashMap();
+//
+//    public static Map<String, AtlasDependencyTree> libDependencyTrees = Maps.newHashMap();
 
     public static Map<String, String> customPackageIdMaps = new HashMap<String, String>();
 
@@ -283,7 +283,6 @@ public class AtlasBuildContext {
         awbBundleMap.clear();
         androidBuilderMap.clear();
         customPackageIdMaps.clear();
-        libDependencyTrees.clear();
         androidBuilderMap.clear();
         localLibs.clear();
         status = STATUS.DEXARCHIVE;

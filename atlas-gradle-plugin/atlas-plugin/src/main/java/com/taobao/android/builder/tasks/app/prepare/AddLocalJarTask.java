@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.prepare;
 
@@ -231,11 +232,13 @@ import java.util.concurrent.ExecutionException;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FD_AAR_LIBS;
 
+*/
 /**
  * 1. Increase localjar
  *
  * @author wuzhong
- */
+ *//*
+
 public class AddLocalJarTask extends BaseTask {
 
     static final String taskName = "addLocalJar";
@@ -247,17 +250,17 @@ public class AddLocalJarTask extends BaseTask {
     @TaskAction
     void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
-                                                                                   getLogger(),
-                                                                                   0);
+                getLogger(),
+                0);
 
         Project project = getProject();
         //TODO localjar for main dex must on
-        for( AndroidLibrary androidLibrary : atlasDependencyTree.getMainBundle().getAllLibraryAars()){
+        for (AndroidLibrary androidLibrary : atlasDependencyTree.getMainBundle().getAllLibraryAars()) {
             List<File> localJars = getLocalJars(androidLibrary.getFolder());
             //System.out.println("get local libs");
             for (File file : localJars) {
                 project.getLogger().info("add local jar to dependency " + file.getAbsolutePath() + "->" + androidLibrary
-                    .getResolvedCoordinates().toString());
+                        .getResolvedCoordinates().toString());
             }
             androidLibrary.getLocalJars().addAll(localJars);
         }
@@ -270,7 +273,7 @@ public class AddLocalJarTask extends BaseTask {
                 //System.out.println("get local libs");
                 for (File file : localJars) {
                     project.getLogger().info("add local jar to dependency " + file.getAbsolutePath() + "->" + aarBundle
-                        .getResolvedCoordinates().toString());
+                            .getResolvedCoordinates().toString());
                 }
                 aarBundle.getLocalJars().addAll(localJars);
             }
@@ -281,7 +284,7 @@ public class AddLocalJarTask extends BaseTask {
     private boolean isLocalJarEnabled(Project project) {
         boolean localJarEnabled = AtlasBuildContext.sBuilderAdapter.localJarEnabled;
         if (project.hasProperty("localJarEnabled")) {
-            localJarEnabled = "true".equals(project.property("localJarEnabled"));
+            localJarEnabled = "true" .equals(project.property("localJarEnabled"));
         }
         return localJarEnabled;
     }
@@ -290,9 +293,9 @@ public class AddLocalJarTask extends BaseTask {
         List<File> localJars = Lists.newArrayList();
         List<File> rootDirs = new ArrayList<>();
         rootDirs.add(new File(rootDir, FD_AAR_LIBS));
-        rootDirs.add(new File(rootDir, "jars/"+FD_AAR_LIBS));
+        rootDirs.add(new File(rootDir, "jars/" + FD_AAR_LIBS));
 
-        for (File root : rootDirs){
+        for (File root : rootDirs) {
             File[] jarList = root.listFiles();
             if (jarList != null) {
                 for (File jars : jarList) {
@@ -307,10 +310,10 @@ public class AddLocalJarTask extends BaseTask {
     }
 
 
-
     public static class ConfigAction extends MtlBaseTaskAction<AddLocalJarTask> {
 
         AppVariantContext appVariantContext;
+
         public ConfigAction(AppVariantContext appVariantContext,
                             BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
@@ -331,9 +334,9 @@ public class AddLocalJarTask extends BaseTask {
         public void execute(AddLocalJarTask localJarTask) {
 
             super.execute(localJarTask);
-            localJarTask.appVariantContext =appVariantContext;
+            localJarTask.appVariantContext = appVariantContext;
             localJarTask.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                localJarTask.getVariantName());
+                    localJarTask.getVariantName());
         }
     }
-}
+}*/

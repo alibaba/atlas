@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.bundle;
 
@@ -250,10 +251,12 @@ import static com.android.build.gradle.internal.publishing.AndroidArtifacts.Cons
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH;
 import static com.android.build.gradle.internal.scope.TaskOutputHolder.TaskOutputType.ANNOTATION_PROCESSOR_LIST;
 import static com.android.build.gradle.internal.scope.TaskOutputHolder.TaskOutputType.DATA_BINDING_DEPENDENCY_ARTIFACTS;
+*/
 /**
  * @author lilong
  * @create 2017-12-08 上午3:43
- */
+ *//*
+
 
 public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJavaCompile> {
 
@@ -282,11 +285,13 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
         return AwbAndroidJavaCompile.class;
     }
 
-    /**
+    */
+/**
      * AwbInstantRun is not supported for the moment
      *
      * @param javacTask
-     */
+     *//*
+
     @Override
     public void execute(AwbAndroidJavaCompile javacTask) {
 
@@ -366,7 +371,9 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
                 appVariantOutputContext.getScope().getGlobalScope().getProject(),
                 scope,
                 compileOptions,
-                null, /* processorConfiguration, JavaCompile handles annotation processor now */
+                null, */
+/* processorConfiguration, JavaCompile handles annotation processor now *//*
+
                 LOG);
 
         javacTask.getOptions().setIncremental(incremental);
@@ -477,3 +484,4 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
         return allClassPatch;
     }
 }
+*/

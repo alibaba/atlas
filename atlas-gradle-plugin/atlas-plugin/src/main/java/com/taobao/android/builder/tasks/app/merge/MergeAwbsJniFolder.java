@@ -1,3 +1,4 @@
+/*
 package com.taobao.android.builder.tasks.app.merge;
 
 
@@ -65,3 +66,4 @@ public class MergeAwbsJniFolder extends MtlBaseTaskAction<MtlParallelTask> {
 
     }
 }
+*/

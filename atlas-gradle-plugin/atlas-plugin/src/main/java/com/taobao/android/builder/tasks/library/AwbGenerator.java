@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.library;
 
@@ -234,11 +235,13 @@ import java.util.HashSet;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
+*/
 /**
  * Created by wuzhong on 2017/2/25.
  *
  * @author wuzhong
- */
+ *//*
+
 public class AwbGenerator {
 
     private final AtlasExtension atlasExtension;
@@ -247,9 +250,11 @@ public class AwbGenerator {
         this.atlasExtension = atlasExtension;
     }
 
-    /**
+    */
+/**
      * Create a basic AWB task
-     */
+     *//*
+
     public void generateAwbArtifict(final Zip bundleTask, LibVariantContext libVariantOutputData) {
 
         Project project = bundleTask.getProject();
@@ -367,3 +372,4 @@ public class AwbGenerator {
     }
 
 }
+*/

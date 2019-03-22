@@ -261,11 +261,8 @@ public class PostProcessManifestAction implements Action<Task> {
 
         AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
 
-        File bundleBaseLineInfo = appVariantContext.getBundleBaseInfoFile();
-
         VariantScope variantScope = appVariantContext.getScope();
         GradleVariantConfiguration config = variantScope.getVariantConfiguration();
-        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
 
         File androidManifest = null;
 
@@ -287,25 +284,17 @@ public class PostProcessManifestAction implements Action<Task> {
         try {
 
             Result result = ManifestFileUtils.postProcessManifests(androidManifest,
-                    getLibManifestMap(),
-                    getLibManifestDepenendyMap(),
-                    bundleBaseLineInfo,
                     atlasExtension.manifestOptions,
                     isMultiDexEnabled(),
                     variantScope.getInstantRunBuildContext().isInInstantRunMode(),
                     appVariantContext.getBuildType().isDebuggable(),
-                    atlasExtension.getTBuildConfig()
-                            .getOutOfApkBundles(), atlasExtension.getTBuildConfig().getInsideOfApkBundles(), atlasExtension.getTBuildConfig().isPushInstall());
+                     atlasExtension.getTBuildConfig().isPushInstall());
 
 
-            File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
-            if (AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
-//                appVariantContext.getVariantData().javacTask.source(proxySrcDir);
-            }
 
-            ManifestHelper.checkManifest(appVariantContext,
-                    androidManifest, dependencyTree,
-                    atlasExtension);
+//            ManifestHelper.checkManifest(appVariantContext,
+//                    androidManifest, dependencyTree,
+//                    atlasExtension);
         } catch (DocumentException e1) {
             e1.printStackTrace();
         } catch (IOException e1) {
@@ -338,13 +327,6 @@ public class PostProcessManifestAction implements Action<Task> {
 
     }
 
-    private List<? extends AndroidLibrary> getAwbLibraries() {
-        return ManifestHelper.getManifestDependencies(
-                AtlasBuildContext.androidDependencyTrees
-                        .get(appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles(),
-                appVariantContext.getAtlasExtension().manifestOptions.getNotMergedBundles(),
-                appVariantContext.getProject().getLogger());
-    }
 
     private boolean isMultiDexEnabled() {
         boolean isMultiDex = false;
@@ -362,33 +344,4 @@ public class PostProcessManifestAction implements Action<Task> {
         return isMultiDex || fastMultiDex;
     }
 
-    private Map<String, File> getLibManifestMap() {
-        Map<String, File> maps = Maps.newHashMap();
-        List<? extends AndroidLibrary> libs = getAwbLibraries();
-        if (libs == null || libs.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        for (AndroidLibrary mdi : libs) {
-            ((HashMap<String, File>) maps).put(mdi.getName(), mdi.getManifest());
-        }
-
-        return maps;
-    }
-
-    private Multimap<String, File> getLibManifestDepenendyMap() {
-        Multimap<String, File> maps = HashMultimap.create();
-        List<? extends AndroidLibrary> libs = getAwbLibraries();
-        if (libs == null || libs.isEmpty()) {
-            return maps;
-        }
-
-        for (AndroidLibrary mdi : libs) {
-            for (AndroidLibrary childLib : mdi.getLibraryDependencies()) {
-                ((HashMultimap<String, File>) maps).put(mdi.getName(), childLib.getManifest());
-            }
-        }
-
-        return maps;
-    }
 }

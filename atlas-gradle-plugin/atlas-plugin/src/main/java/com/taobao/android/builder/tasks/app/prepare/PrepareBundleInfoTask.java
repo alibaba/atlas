@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+
+
 
 package com.taobao.android.builder.tasks.app.prepare;
 
@@ -232,6 +233,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+
+/*
 
 public class PrepareBundleInfoTask extends BaseTask {
 
@@ -267,10 +271,13 @@ public class PrepareBundleInfoTask extends BaseTask {
 
     }
 
+
+
+
     private Map<String, AwbBundle> collectBundleInfo(AppVariantOutputContext appVariantOutputContext) {
 
         List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
-            appVariantOutputContext.getVariantData().getName()).getAwbBundles();
+                appVariantOutputContext.getVariantData().getName()).getAwbBundles();
 
         Map<String, AwbBundle> map = new HashMap<String, AwbBundle>();
 
@@ -312,3 +319,4 @@ public class PrepareBundleInfoTask extends BaseTask {
         }
     }
 }
+*/

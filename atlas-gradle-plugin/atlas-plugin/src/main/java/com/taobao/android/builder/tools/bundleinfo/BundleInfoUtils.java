@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tools.bundleinfo;
 
@@ -230,11 +231,13 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 
+*/
 /**
  * Created by wuzhong on 2016/11/24.
  * <p>
  * Collect all bundle information based on the dependent tree
- */
+ *//*
+
 public class BundleInfoUtils {
 
     public static void setupAwbBundleInfos(AppVariantContext appVariantContext) throws IOException, DocumentException {
@@ -245,9 +248,11 @@ public class BundleInfoUtils {
             appVariantContext.getScope().
                 getVariantConfiguration().getFullName());
 
-        /**
+        */
+/**
          * name Is artifictId
-         */
+         *//*
+
         Map<String, BundleInfo> bundleInfoMap = getBundleInfoMap(appVariantContext);
 
         String baseVersion = apkVersion;
@@ -264,11 +269,13 @@ public class BundleInfoUtils {
         }
     }
 
-    /**
+    */
+/**
      * Resolve the manifest file and get BundleInfo
      *
      * @return
-     */
+     *//*
+
     private static void update(AwbBundle awbBundle,
                                Map<String, BundleInfo> bundleInfoMap,
                                AppVariantContext appVariantContext,
@@ -423,3 +430,4 @@ public class BundleInfoUtils {
         return bundleInfoList;
     }
 }
+*/

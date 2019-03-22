@@ -155,22 +155,22 @@ public class TaobaoExtractJarsTransform extends Transform {
 
             AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).addMainDexJars(Sets.newHashSet());
 
-            for (AwbTransform awbTransform:variantOutputContext.getAwbTransformMap().values()){
-                File outJarFolder = variantOutputContext.getAwbExtractJarsFolder(awbTransform.getAwbBundle());
-                awbTransform.getInputFiles().forEach(file -> executor.execute(() -> {
-                    LOGGER.warn("ExtractAwbJar["+awbTransform.getAwbBundle().getPackageName()+"]---------------------"+file.getAbsolutePath());
-                    extractJar(outJarFolder, file, extractCode);
-                    return null;
-                }));
-                awbTransform.getInputLibraries().forEach(file -> executor.execute(() -> {
-                    LOGGER.warn("ExtractAwbJar["+awbTransform.getAwbBundle().getPackageName()+"]---------------------"+file.getAbsolutePath());
-                    extractJar(outJarFolder, file, extractCode);
-                    return null;
-                }));
-
-                awbTransform.addDir(outJarFolder);
-                awbTransform.getInputFiles().clear();
-            }
+//            for (AwbTransform awbTransform:variantOutputContext.getAwbTransformMap().values()){
+//                File outJarFolder = variantOutputContext.getAwbExtractJarsFolder(awbTransform.getAwbBundle());
+//                awbTransform.getInputFiles().forEach(file -> executor.execute(() -> {
+//                    LOGGER.warn("ExtractAwbJar["+awbTransform.getAwbBundle().getPackageName()+"]---------------------"+file.getAbsolutePath());
+//                    extractJar(outJarFolder, file, extractCode);
+//                    return null;
+//                }));
+//                awbTransform.getInputLibraries().forEach(file -> executor.execute(() -> {
+//                    LOGGER.warn("ExtractAwbJar["+awbTransform.getAwbBundle().getPackageName()+"]---------------------"+file.getAbsolutePath());
+//                    extractJar(outJarFolder, file, extractCode);
+//                    return null;
+//                }));
+//
+//                awbTransform.addDir(outJarFolder);
+//                awbTransform.getInputFiles().clear();
+//            }
 
 
 

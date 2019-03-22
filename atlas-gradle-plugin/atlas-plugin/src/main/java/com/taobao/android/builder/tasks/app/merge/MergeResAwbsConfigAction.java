@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.merge;
 
@@ -310,4 +311,4 @@ public class MergeResAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask>
         parallelTask.uniqueTaskName = getName();
         parallelTask.concurrent = true;
     }
-}
+}*/

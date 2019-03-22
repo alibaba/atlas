@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tools.proguard;
 
@@ -246,9 +247,11 @@ import java.util.jar.JarFile;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
+*/
 /**
  * Created by wuzhong on 2016/12/9.
- */
+ *//*
+
 public class AtlasProguardHelper {
 
     private static Logger sLogger = LoggerFactory.getLogger(AtlasProguardHelper.class);
@@ -615,3 +618,4 @@ public class AtlasProguardHelper {
     }
 
 }
+*/

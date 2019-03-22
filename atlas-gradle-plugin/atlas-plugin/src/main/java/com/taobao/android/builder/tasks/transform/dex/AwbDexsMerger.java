@@ -1,3 +1,4 @@
+/*
 package com.taobao.android.builder.tasks.transform.dex;
 
 import com.android.build.api.transform.TransformInvocation;
@@ -30,12 +31,14 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+*/
 /**
  * AwbDexsMerger
  *
  * @author zhayu.ll
  * @date 18/2/9
- */
+ *//*
+
 public class AwbDexsMerger extends AtlasDexMerger {
 
     private static final String ID = "atlasbundledexmerge";
@@ -161,3 +164,4 @@ public class AwbDexsMerger extends AtlasDexMerger {
         }
     }
 }
+*/

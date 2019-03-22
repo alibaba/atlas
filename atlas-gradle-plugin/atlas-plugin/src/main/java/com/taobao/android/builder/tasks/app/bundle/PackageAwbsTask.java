@@ -205,12 +205,15 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
 
+
+*/
 /**
  * @author wuzhong,lilong
  * @create 2017-12-06 上午11:17
- */
+ *//*
+
 
 
 package com.taobao.android.builder.tasks.app.bundle;
@@ -280,9 +283,11 @@ public class PackageAwbsTask extends BaseTask {
     private BaseVariantOutput variantOutputData;
     private ILogger mLogger = LoggerWrapper.getLogger(PackageAwbsTask.class);
 
-    /**
+    */
+/**
      * Directory of so
-     */
+     *//*
+
     @TaskAction
     void createAwbPackages() throws ExecutionException, InterruptedException, IOException {
         File awbApkOutputDir = appVariantContext.getAwbApkOutputDir();
@@ -491,4 +496,4 @@ public class PackageAwbsTask extends BaseTask {
 
 
 
-}
+}*/

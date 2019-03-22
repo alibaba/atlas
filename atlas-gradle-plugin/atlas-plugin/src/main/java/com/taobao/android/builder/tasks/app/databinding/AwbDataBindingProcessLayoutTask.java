@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.databinding;
 
@@ -226,9 +227,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+*/
 /**
  * Created by wuzhong on 2017/3/27.
- */
+ *//*
+
 public class AwbDataBindingProcessLayoutTask extends BaseTask {
 
     AppVariantContext appVariantContext;
@@ -309,3 +312,4 @@ public class AwbDataBindingProcessLayoutTask extends BaseTask {
     }
 
 }
+*/

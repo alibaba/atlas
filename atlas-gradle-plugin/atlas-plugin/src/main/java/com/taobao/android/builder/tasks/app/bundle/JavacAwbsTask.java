@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.bundle;
 
@@ -231,9 +232,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+*/
 /**
  * compiling awb the R file
- */
+ *//*
+
 public class JavacAwbsTask extends BaseTask {
 
     static final String taskName = "javacAwbs";
@@ -332,4 +335,4 @@ public class JavacAwbsTask extends BaseTask {
         }
     }
 
-}
+}*/

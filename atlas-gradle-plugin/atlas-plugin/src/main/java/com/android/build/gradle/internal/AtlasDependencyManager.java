@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.android.build.gradle.internal;
 
@@ -231,11 +232,13 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 
+*/
 /**
  * A manager to resolve configuration dependencies.
  *
  * @author wuzhong
- */
+ *//*
+
 public class AtlasDependencyManager {
 
     private static final Logger sLogger = LoggerFactory.getLogger(AtlasDependencyManager.class);
@@ -259,14 +262,16 @@ public class AtlasDependencyManager {
         this.awbs = awbs;
     }
 
-    /**
+    */
+/**
      * 1 . detect if has awb dependency
      * <p>
      * yes : special process
      * no  : default process
      * <p>
      * 2.  parse to AtlasDependencyTree
-     */
+     *//*
+
     public Set<AndroidDependency> resolveDependencies(@NonNull VariantDependencies variantDeps) {
         this.apDependency = resolveApDependencies(variantDeps);
         AtlasDependencyTree atlasDependencyTree = new AtlasDepTreeParser(project, extraModelInfo,awbs)
@@ -306,3 +311,4 @@ public class AtlasDependencyManager {
 
 
 }
+*/

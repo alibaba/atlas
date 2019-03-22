@@ -51,11 +51,11 @@ public class ScanDupResTask extends BaseTask {
     void generate() {
 
 
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                getVariantName());
-        if (null == atlasDependencyTree) {
-            return;
-        }
+//        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+//                getVariantName());
+//        if (null == atlasDependencyTree) {
+//            return;
+//        }
         File dupResFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/warning-dup-res.properties");
         File dupAssetsFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/warning-dup-assets.properties");
 
@@ -154,8 +154,8 @@ public class ScanDupResTask extends BaseTask {
                                 if (!map.containsKey(tag)){
                                     map.put(tag,file);
                                 }else if (!map.get(tag).equals(file)){
-                                    if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
-                                            && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
+                                    if (!isSameBundle(map.get(tag),file,null)
+                                            && allInMainBundle(getId(map.get(tag)),getId(file),null)
                                             && !isSameFile(map.get(tag),file))
                                         exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
@@ -171,8 +171,8 @@ public class ScanDupResTask extends BaseTask {
                                 if (!map.containsKey(tag)){
                                     map.put(tag,file);
                                 }else if (!map.get(tag).equals(file)){
-                                    if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
-                                            && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
+                                    if (!isSameBundle(map.get(tag),file,null)
+                                            && allInMainBundle(getId(map.get(tag)),getId(file),null)
                                             && !isSameFile(map.get(tag),file))
                                         exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
@@ -229,7 +229,7 @@ public class ScanDupResTask extends BaseTask {
                                 if (!map.containsKey(tag)){
                                     map.put(tag,file);
                                 }else if (!map.get(tag).equals(file)){
-                                    if (!isSameBundle(map.get(tag),file,atlasDependencyTree)&&allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
+                                    if (!isSameBundle(map.get(tag),file,null)&&allInMainBundle(getId(map.get(tag)),getId(file),null)
                                             && !isSameFile(map.get(tag),file))
                                         exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
@@ -244,8 +244,8 @@ public class ScanDupResTask extends BaseTask {
                             }else if (type == DataFile.FileType.SINGLE_FILE){
                                 if (!map.containsKey(tag)){
                                     map.put(tag,file);
-                                    if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
-                                            && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
+                                    if (!isSameBundle(map.get(tag),file,null)
+                                            && allInMainBundle(getId(map.get(tag)),getId(file),null)
                                             && !isSameFile(map.get(tag),file))
                                         exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }

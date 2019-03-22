@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.manifest;
 
@@ -238,11 +239,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+*/
 /**
  * Set the awb The bundle of depend on
  *
  * @author wuzhong
- */
+ *//*
+
 public class PreProcessManifestAction implements Action<Task> {
 
     private static final Logger sLogger = LoggerFactory.getLogger(PreProcessManifestAction.class);
@@ -338,3 +341,4 @@ public class PreProcessManifestAction implements Action<Task> {
         }
     }
 }
+*/

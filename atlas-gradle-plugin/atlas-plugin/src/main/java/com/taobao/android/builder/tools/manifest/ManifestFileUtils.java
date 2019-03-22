@@ -279,10 +279,9 @@ public class ManifestFileUtils {
      * @param manifestOptions
      * @param debuggable
      */
-    public static Result postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
-                                              Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
+    public static Result postProcessManifests(File mainManifest,
                                               ManifestOptions manifestOptions, boolean addMultiDex,
-                                              boolean isInstantRun, boolean debuggable, Set<String> remoteBundles, Set<String> insideBundles, boolean pushInstall)
+                                              boolean isInstantRun, boolean debuggable, boolean pushInstall)
         throws IOException, DocumentException {
 
         Result result = new Result();
@@ -293,19 +292,19 @@ public class ManifestFileUtils {
 
         Document document = XmlHelper.readXml(inputFile);
 
-        if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists()) {
-            addApplicationMetaData(document, libManifestMap, baseBunfleInfoFile, manifestOptions, remoteBundles,insideBundles);
-        }
-
-        if (null != manifestOptions && manifestOptions.isAddAtlasProxyComponents()) {
-            AtlasProxy.addAtlasProxyClazz(document, manifestOptions.getAtlasProxySkipChannels(), result);
-        }
+//        if (null != baseBunfleInfoFile && baseBunfleInfoFile.exists()) {
+//            addApplicationMetaData(document, libManifestMap, baseBunfleInfoFile, manifestOptions, remoteBundles,insideBundles);
+//        }
+//
+//        if (null != manifestOptions && manifestOptions.isAddAtlasProxyComponents()) {
+//            AtlasProxy.addAtlasProxyClazz(document, manifestOptions.getAtlasProxySkipChannels(), result);
+//        }
 
             addAndroidLabel(document,pushInstall);
 
-        if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
-            addBundleLocationToDestManifest(document, libManifestMap, libDependenciesMaps, manifestOptions);
-        }
+//        if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
+//            addBundleLocationToDestManifest(document, libManifestMap, libDependenciesMaps, manifestOptions);
+//        }
         if (null != manifestOptions && manifestOptions.isReplaceApplication()) {
             replaceManifestApplicationName(document);
         }

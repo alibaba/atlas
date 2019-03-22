@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app.bundle;
 
@@ -230,9 +231,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+*/
 /**
  * Pack up awb the resource
- */
+ *//*
+
 public class ProcessResAwbsTask extends BaseTask {
 
     static final String taskName = "processResAwbs";
@@ -258,12 +261,12 @@ public class ProcessResAwbsTask extends BaseTask {
         final VariantScope outputScope = appVariantOutputContext.getScope();
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName,
-                                                                                   getLogger(),
-                                                                                   0);
+                getLogger(),
+                0);
         List<Runnable> runnables = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-            if (awbBundle.isMBundle){
+            if (awbBundle.isMBundle) {
                 continue;
             }
 
@@ -272,21 +275,21 @@ public class ProcessResAwbsTask extends BaseTask {
                 public void run() {
 
                     File symbolLocation = new File(outputScope.getGlobalScope()
-                                                           .getIntermediatesDir(),
-                                                   "awb-symbols/" +
-                                                           outputScope
-                                                                   .getVariantConfiguration()
-                                                                   .getDirName() +
-                                                           "/" +
-                                                           awbBundle.getName());
+                            .getIntermediatesDir(),
+                            "awb-symbols/" +
+                                    outputScope
+                                            .getVariantConfiguration()
+                                            .getDirName() +
+                                    "/" +
+                                    awbBundle.getName());
 
                     //Write the resources to the ap for debug
-                    if ("debug".equals(appVariantOutputContext.getVariantContext()
-                                               .getBaseVariantData()
-                                               .getName())) {
+                    if ("debug" .equals(appVariantOutputContext.getVariantContext()
+                            .getBaseVariantData()
+                            .getName())) {
                         appVariantOutputContext.appBuildInfo.getOtherFilesMap()
                                 .put("awo/" + awbBundle.getPackageName() + ".R.txt",
-                                     new File(symbolLocation, "R.txt"));
+                                        new File(symbolLocation, "R.txt"));
                     }
 
                     ProcessAwbAndroidResources.ConfigAction configAction = new ProcessAwbAndroidResources.ConfigAction(
@@ -295,7 +298,7 @@ public class ProcessResAwbsTask extends BaseTask {
                             true,
                             awbBundle,
                             getBuilder(),
-                            appVariantOutputContext,baseVariantOutput);
+                            appVariantOutputContext, baseVariantOutput);
 
                     ProcessAwbAndroidResources processAwbAndroidResources = TaskCreater.create(
                             getProject(),
@@ -303,7 +306,7 @@ public class ProcessResAwbsTask extends BaseTask {
                             configAction.getType());
                     processAwbAndroidResources.mainDexSymbolFileCollection = mainDexSymbolFileCollection;
 
-                    appVariantContext.awbsProcessResourcesTask.put(awbBundle.getName(),processAwbAndroidResources);
+                    appVariantContext.awbsProcessResourcesTask.put(awbBundle.getName(), processAwbAndroidResources);
                     configAction.execute(processAwbAndroidResources);
 
                     try {
@@ -321,6 +324,7 @@ public class ProcessResAwbsTask extends BaseTask {
     public static class ConfigAction extends MtlBaseTaskAction<ProcessResAwbsTask> {
 
         private AppVariantContext variantContext;
+
         public ConfigAction(AppVariantContext appVariantContext,
                             BaseVariantOutput baseVariantOutputData) {
             super(appVariantContext, baseVariantOutputData);
@@ -344,7 +348,7 @@ public class ProcessResAwbsTask extends BaseTask {
             processResAwbsTask.baseVariantOutput = baseVariantOutput;
             processResAwbsTask.appVariantContext = variantContext;
             processResAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
-            variantContext.processResAwbsTask= processResAwbsTask;
+            variantContext.processResAwbsTask = processResAwbsTask;
         }
     }
-}
+}*/

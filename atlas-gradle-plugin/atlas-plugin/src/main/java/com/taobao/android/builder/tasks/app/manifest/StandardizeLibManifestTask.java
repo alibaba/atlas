@@ -279,8 +279,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
     @TaskAction
     public void preProcess() throws IOException, DocumentException, InterruptedException {
 
-        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getVariantName());
-        androidLibraries = dependencyTree.getAllAndroidLibrarys();
+//        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getVariantName());
+//        androidLibraries = dependencyTree.getAllAndroidLibrarys();
 
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("StandardizeLibManifestTask",
@@ -291,12 +291,13 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
         appVariantContext.getModifyManifestDir().mkdirs();
 
-        for (AndroidLibrary androidLibrary : androidLibraries) {
+        FileCollection files = getCompileManifests();
+        for (File file : files.getFiles()) {
 
-            File file = androidLibrary.getManifest();
+//            File file = androidLibrary.getManifest();
 
             if (!file.exists()) {
-                getLogger().error(androidLibrary.getResolvedCoordinates().toString() + " not has manifest : " + file
+                getLogger().error(" not has manifest : " + file
                     .getAbsolutePath());
                 return;
             }
@@ -307,7 +308,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
                 public void run() {
                     try {
 
-                        File modifyManifest = appVariantContext.getModifyManifest(androidLibrary);
+                        File modifyManifest = appVariantContext.getModifyManifest(file);
 
                         //getLogger().error(file.getAbsolutePath() + " -> " + modifyManifest
                         //    .getAbsolutePath());
@@ -405,16 +406,9 @@ public class StandardizeLibManifestTask extends DefaultTask {
             task.libraryManifests = variantScope.getArtifactCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.MANIFEST);
             task.appVariantContext = appVariantContext;
 
-
-            baseVariantOutput.getProcessManifest().doFirst(
-                new PreProcessManifestAction(appVariantContext, baseVariantOutput));
-
-//            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
             baseVariantOutput.getProcessManifest().doLast(
                     new PostProcessManifestAction(appVariantContext, baseVariantOutput));
 
-            File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
-            appVariantContext.getVariantData().javacTask.source(proxySrcDir);
 
         }
 

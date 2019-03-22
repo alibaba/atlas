@@ -345,211 +345,211 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
             }
         });
 
-        for (AwbTransform awbTransform : appVariantOutputContext.getAwbTransformMap().values()) {
-
-            File awbCacheDir = new File(intermediateDir, "awb-zip-cache" + File.separator + awbTransform.getAwbBundle().getName());
-            waitableExecutor.execute(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    FileUtils.mkdirs(awbCacheDir);
-                    FileCacheByPath zipCache = new FileCacheByPath(awbCacheDir);
-                    ParsedPackagingOptions packagingOptions = new ParsedPackagingOptions(AtlasMergeJavaResourcesTransform.this.packagingOptions);
-                    boolean full = false;
-                    IncrementalFileMergerState state = loadAwbMergeState(awbTransform.getAwbBundle());
-                    if (state == null || !invocation.isIncremental()) {
-                        /*
-                         * This is a full build.
-                         */
-                        state = new IncrementalFileMergerState();
-                        if (appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle()).exists() && mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
-                            FileUtils.deleteDirectoryContents(appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle()));
-                        }
-                        if (appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).exists() && mergedType.contains(QualifiedContent.DefaultContentType.RESOURCES)) {
-                            FileUtils.deleteDirectoryContents(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()));
-                        }
-
-                        full = true;
-                    }
-
-                    List<Runnable> cacheUpdates = new ArrayList<>();
-
-                    Map<IncrementalFileMergerInput, QualifiedContent> contentMap = new HashMap<>();
-                    List<IncrementalFileMergerInput> inputs =
-                            new ArrayList<>(
-                                    AtlasIncrementalFileMergeTransformUtils.toInput(
-                                            invocation,
-                                            zipCache,
-                                            cacheUpdates,
-                                            full,
-                                            contentMap, awbTransform,appVariantOutputContext.getVariantContext().getVariantName()));
-
-
-
-
-                    /*
-                     * In an ideal world, we could just send the inputs to the file merger. However, in the
-                     * real world we live in, things are more complicated :)
-                     *
-                     * We need to:
-                     *
-                     * 1. We need to bring inputs that refer to the project scope before the other inputs.
-                     * 2. Prefix libraries that come from directories with "lib/".
-                     * 3. Filter all inputs to remove anything not accepted by acceptedPathsPredicate neither
-                     * by packagingOptions.
-                     */
-
-                    // Sort inputs to move project scopes to the start.
-                    inputs.sort((i0, i1) -> {
-                        int v0 = contentMap.get(i0).getScopes().contains(QualifiedContent.Scope.PROJECT) ? 0 : 1;
-                        int v1 = contentMap.get(i1).getScopes().contains(QualifiedContent.Scope.PROJECT) ? 0 : 1;
-                        return v0 - v1;
-                    });
-
-                    // Prefix libraries with "lib/" if we're doing libraries.
-                    assert mergedType.size() == 1;
-                    QualifiedContent.ContentType mergedType = AtlasMergeJavaResourcesTransform.this.mergedType.iterator().next();
-                    if (mergedType == ExtendedContentType.NATIVE_LIBS) {
-                        inputs =
-                                inputs.stream()
-                                        .map(
-                                                i -> {
-                                                    QualifiedContent qc = contentMap.get(i);
-                                                    if (qc.getFile().isDirectory()) {
-                                                        i =
-                                                                new RenameIncrementalFileMergerInput(
-                                                                        i,
-                                                                        s -> "lib/" + s,
-                                                                        s -> s.substring("lib/".length()));
-                                                        contentMap.put(i, qc);
-                                                    }
-
-                                                    return i;
-                                                })
-                                        .collect(Collectors.toList());
-                    }
-
-                    // Filter inputs.
-                    Predicate<String> inputFilter =
-                            acceptedPathsPredicate.and(
-                                    path -> packagingOptions.getAction(path) != PackagingFileAction.EXCLUDE);
-                    inputs = inputs.stream()
-                            .map(i -> {
-                                IncrementalFileMergerInput i2 =
-                                        new FilterIncrementalFileMergerInput(i, inputFilter);
-                                contentMap.put(i2, contentMap.get(i));
-                                return i2;
-                            })
-                            .collect(Collectors.toList());
-
-                    /*
-                     * Create the algorithm used by the merge transform. This algorithm decides on which
-                     * algorithm to delegate to depending on the packaging option of the path. By default it
-                     * requires just one file (no merging).
-                     */
-                    StreamMergeAlgorithm mergeTransformAlgorithm = StreamMergeAlgorithms.select(path -> {
-                        PackagingFileAction packagingAction = packagingOptions.getAction(path);
-                        switch (packagingAction) {
-                            case EXCLUDE:
-                                // Should have been excluded from the input.
-                                throw new AssertionError();
-                            case PICK_FIRST:
-                                return StreamMergeAlgorithms.pickFirst();
-                            case MERGE:
-                                return StreamMergeAlgorithms.concat();
-                            case NONE:
-                                return StreamMergeAlgorithms.acceptOnlyOne();
-                            default:
-                                throw new AssertionError();
-                        }
-                    });
-
-                    /*
-                     * Create an output that uses the algorithm. This is not the final output because,
-                     * unfortunately, we still have the complexity of the project scope overriding other scopes
-                     * to solve.
-                     *
-                     * When resources inside a jar file are extracted to a directory, the results may not be
-                     * expected on Windows if the file names end with "." (bug 65337573), or if there is an
-                     * uppercase/lowercase conflict. To work around this issue, we copy these resources to a
-                     * jar file.
-                     */
-                    IncrementalFileMergerOutput baseOutput;
-                    if (mergedType == QualifiedContent.DefaultContentType.RESOURCES) {
-                        File outputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
-                        if (!appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).exists()) {
-                            appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).mkdirs();
-                        }
-                        createEmptyZipFile(outputLocation);
-                        baseOutput =
-                                IncrementalFileMergerOutputs.fromAlgorithmAndWriter(
-                                        mergeTransformAlgorithm, MergeOutputWriters.toZip(outputLocation));
-                    } else {
-                        File outputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
-                        baseOutput =
-                                IncrementalFileMergerOutputs.fromAlgorithmAndWriter(
-                                        mergeTransformAlgorithm,
-                                        MergeOutputWriters.toDirectory(outputLocation));
-                    }
-
-                    /*
-                     * We need a custom output to handle the case in which the same path appears in multiple
-                     * inputs and the action is NONE, but only one input is actually PROJECT. In this specific
-                     * case we will ignore all other inputs.
-                     */
-
-                    Set<IncrementalFileMergerInput> projectInputs =
-                            contentMap.keySet().stream()
-                                    .filter(i -> contentMap.get(i).getScopes().contains(QualifiedContent.Scope.PROJECT))
-                                    .collect(Collectors.toSet());
-
-                    IncrementalFileMergerOutput output = new DelegateIncrementalFileMergerOutput(baseOutput) {
-                        @Override
-                        public void create(
-                                @NonNull String path,
-                                @NonNull List<IncrementalFileMergerInput> inputs) {
-                            super.create(path, filter(path, inputs));
-                        }
-
-                        @Override
-                        public void update(
-                                @NonNull String path,
-                                @NonNull List<String> prevInputNames,
-                                @NonNull List<IncrementalFileMergerInput> inputs) {
-                            super.update(path, prevInputNames, filter(path, inputs));
-                        }
-
-                        @Override
-                        public void remove(@NonNull String path) {
-                            super.remove(path);
-                        }
-
-                        @NonNull
-                        private ImmutableList<IncrementalFileMergerInput> filter(
-                                @NonNull String path,
-                                @NonNull List<IncrementalFileMergerInput> inputs) {
-                            PackagingFileAction packagingAction = packagingOptions.getAction(path);
-                            if (packagingAction == PackagingFileAction.NONE
-                                    && inputs.stream().anyMatch(projectInputs::contains)) {
-                                inputs = inputs.stream()
-                                        .filter(projectInputs::contains)
-                                        .collect(ImmutableCollectors.toImmutableList());
-                            }
-
-                            return ImmutableList.copyOf(inputs);
-                        }
-                    };
-
-                    state = IncrementalFileMerger.merge(ImmutableList.copyOf(inputs), output, state);
-                    saveAwbMergeState(state, awbTransform.getAwbBundle());
-
-                    cacheUpdates.forEach(Runnable::run);
-
-                    return null;
-                }
-            });
-
-
-        }
+//        for (AwbTransform awbTransform : appVariantOutputContext.getAwbTransformMap().values()) {
+//
+//            File awbCacheDir = new File(intermediateDir, "awb-zip-cache" + File.separator + awbTransform.getAwbBundle().getName());
+//            waitableExecutor.execute(new Callable<Void>() {
+//                @Override
+//                public Void call() throws Exception {
+//                    FileUtils.mkdirs(awbCacheDir);
+//                    FileCacheByPath zipCache = new FileCacheByPath(awbCacheDir);
+//                    ParsedPackagingOptions packagingOptions = new ParsedPackagingOptions(AtlasMergeJavaResourcesTransform.this.packagingOptions);
+//                    boolean full = false;
+//                    IncrementalFileMergerState state = loadAwbMergeState(awbTransform.getAwbBundle());
+//                    if (state == null || !invocation.isIncremental()) {
+//                        /*
+//                         * This is a full build.
+//                         */
+//                        state = new IncrementalFileMergerState();
+//                        if (appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle()).exists() && mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
+//                            FileUtils.deleteDirectoryContents(appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle()));
+//                        }
+//                        if (appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).exists() && mergedType.contains(QualifiedContent.DefaultContentType.RESOURCES)) {
+//                            FileUtils.deleteDirectoryContents(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()));
+//                        }
+//
+//                        full = true;
+//                    }
+//
+//                    List<Runnable> cacheUpdates = new ArrayList<>();
+//
+//                    Map<IncrementalFileMergerInput, QualifiedContent> contentMap = new HashMap<>();
+//                    List<IncrementalFileMergerInput> inputs =
+//                            new ArrayList<>(
+//                                    AtlasIncrementalFileMergeTransformUtils.toInput(
+//                                            invocation,
+//                                            zipCache,
+//                                            cacheUpdates,
+//                                            full,
+//                                            contentMap, awbTransform,appVariantOutputContext.getVariantContext().getVariantName()));
+//
+//
+//
+//
+//                    /*
+//                     * In an ideal world, we could just send the inputs to the file merger. However, in the
+//                     * real world we live in, things are more complicated :)
+//                     *
+//                     * We need to:
+//                     *
+//                     * 1. We need to bring inputs that refer to the project scope before the other inputs.
+//                     * 2. Prefix libraries that come from directories with "lib/".
+//                     * 3. Filter all inputs to remove anything not accepted by acceptedPathsPredicate neither
+//                     * by packagingOptions.
+//                     */
+//
+//                    // Sort inputs to move project scopes to the start.
+//                    inputs.sort((i0, i1) -> {
+//                        int v0 = contentMap.get(i0).getScopes().contains(QualifiedContent.Scope.PROJECT) ? 0 : 1;
+//                        int v1 = contentMap.get(i1).getScopes().contains(QualifiedContent.Scope.PROJECT) ? 0 : 1;
+//                        return v0 - v1;
+//                    });
+//
+//                    // Prefix libraries with "lib/" if we're doing libraries.
+//                    assert mergedType.size() == 1;
+//                    QualifiedContent.ContentType mergedType = AtlasMergeJavaResourcesTransform.this.mergedType.iterator().next();
+//                    if (mergedType == ExtendedContentType.NATIVE_LIBS) {
+//                        inputs =
+//                                inputs.stream()
+//                                        .map(
+//                                                i -> {
+//                                                    QualifiedContent qc = contentMap.get(i);
+//                                                    if (qc.getFile().isDirectory()) {
+//                                                        i =
+//                                                                new RenameIncrementalFileMergerInput(
+//                                                                        i,
+//                                                                        s -> "lib/" + s,
+//                                                                        s -> s.substring("lib/".length()));
+//                                                        contentMap.put(i, qc);
+//                                                    }
+//
+//                                                    return i;
+//                                                })
+//                                        .collect(Collectors.toList());
+//                    }
+//
+//                    // Filter inputs.
+//                    Predicate<String> inputFilter =
+//                            acceptedPathsPredicate.and(
+//                                    path -> packagingOptions.getAction(path) != PackagingFileAction.EXCLUDE);
+//                    inputs = inputs.stream()
+//                            .map(i -> {
+//                                IncrementalFileMergerInput i2 =
+//                                        new FilterIncrementalFileMergerInput(i, inputFilter);
+//                                contentMap.put(i2, contentMap.get(i));
+//                                return i2;
+//                            })
+//                            .collect(Collectors.toList());
+//
+//                    /*
+//                     * Create the algorithm used by the merge transform. This algorithm decides on which
+//                     * algorithm to delegate to depending on the packaging option of the path. By default it
+//                     * requires just one file (no merging).
+//                     */
+//                    StreamMergeAlgorithm mergeTransformAlgorithm = StreamMergeAlgorithms.select(path -> {
+//                        PackagingFileAction packagingAction = packagingOptions.getAction(path);
+//                        switch (packagingAction) {
+//                            case EXCLUDE:
+//                                // Should have been excluded from the input.
+//                                throw new AssertionError();
+//                            case PICK_FIRST:
+//                                return StreamMergeAlgorithms.pickFirst();
+//                            case MERGE:
+//                                return StreamMergeAlgorithms.concat();
+//                            case NONE:
+//                                return StreamMergeAlgorithms.acceptOnlyOne();
+//                            default:
+//                                throw new AssertionError();
+//                        }
+//                    });
+//
+//                    /*
+//                     * Create an output that uses the algorithm. This is not the final output because,
+//                     * unfortunately, we still have the complexity of the project scope overriding other scopes
+//                     * to solve.
+//                     *
+//                     * When resources inside a jar file are extracted to a directory, the results may not be
+//                     * expected on Windows if the file names end with "." (bug 65337573), or if there is an
+//                     * uppercase/lowercase conflict. To work around this issue, we copy these resources to a
+//                     * jar file.
+//                     */
+//                    IncrementalFileMergerOutput baseOutput;
+//                    if (mergedType == QualifiedContent.DefaultContentType.RESOURCES) {
+//                        File outputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
+//                        if (!appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).exists()) {
+//                            appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()).mkdirs();
+//                        }
+//                        createEmptyZipFile(outputLocation);
+//                        baseOutput =
+//                                IncrementalFileMergerOutputs.fromAlgorithmAndWriter(
+//                                        mergeTransformAlgorithm, MergeOutputWriters.toZip(outputLocation));
+//                    } else {
+//                        File outputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
+//                        baseOutput =
+//                                IncrementalFileMergerOutputs.fromAlgorithmAndWriter(
+//                                        mergeTransformAlgorithm,
+//                                        MergeOutputWriters.toDirectory(outputLocation));
+//                    }
+//
+//                    /*
+//                     * We need a custom output to handle the case in which the same path appears in multiple
+//                     * inputs and the action is NONE, but only one input is actually PROJECT. In this specific
+//                     * case we will ignore all other inputs.
+//                     */
+//
+//                    Set<IncrementalFileMergerInput> projectInputs =
+//                            contentMap.keySet().stream()
+//                                    .filter(i -> contentMap.get(i).getScopes().contains(QualifiedContent.Scope.PROJECT))
+//                                    .collect(Collectors.toSet());
+//
+//                    IncrementalFileMergerOutput output = new DelegateIncrementalFileMergerOutput(baseOutput) {
+//                        @Override
+//                        public void create(
+//                                @NonNull String path,
+//                                @NonNull List<IncrementalFileMergerInput> inputs) {
+//                            super.create(path, filter(path, inputs));
+//                        }
+//
+//                        @Override
+//                        public void update(
+//                                @NonNull String path,
+//                                @NonNull List<String> prevInputNames,
+//                                @NonNull List<IncrementalFileMergerInput> inputs) {
+//                            super.update(path, prevInputNames, filter(path, inputs));
+//                        }
+//
+//                        @Override
+//                        public void remove(@NonNull String path) {
+//                            super.remove(path);
+//                        }
+//
+//                        @NonNull
+//                        private ImmutableList<IncrementalFileMergerInput> filter(
+//                                @NonNull String path,
+//                                @NonNull List<IncrementalFileMergerInput> inputs) {
+//                            PackagingFileAction packagingAction = packagingOptions.getAction(path);
+//                            if (packagingAction == PackagingFileAction.NONE
+//                                    && inputs.stream().anyMatch(projectInputs::contains)) {
+//                                inputs = inputs.stream()
+//                                        .filter(projectInputs::contains)
+//                                        .collect(ImmutableCollectors.toImmutableList());
+//                            }
+//
+//                            return ImmutableList.copyOf(inputs);
+//                        }
+//                    };
+//
+//                    state = IncrementalFileMerger.merge(ImmutableList.copyOf(inputs), output, state);
+//                    saveAwbMergeState(state, awbTransform.getAwbBundle());
+//
+//                    cacheUpdates.forEach(Runnable::run);
+//
+//                    return null;
+//                }
+//            });
+//
+//
+//        }
 
 
         try {
@@ -558,33 +558,33 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
             e.printStackTrace();
         }
 
-        appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
-            if (awbTransform.getAwbBundle().isMBundle) {
-                if (mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
-                    File bundleOutputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
-                    if (bundleOutputLocation.exists()) {
-                        try {
-
-                            org.apache.commons.io.FileUtils.copyDirectory(bundleOutputLocation, outputLocation);
-                            org.apache.commons.io.FileUtils.deleteDirectory(bundleOutputLocation);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                } else {
-                    File bundleOutputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
-                    File tempDir = new File(outputLocation.getParentFile(), "unzip");
-                    try {
-                        if (bundleOutputLocation.exists() && ZipUtils.isZipFile(bundleOutputLocation)) {
-                            BetterZip.unzipDirectory(bundleOutputLocation, tempDir);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
+//        appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
+//            if (awbTransform.getAwbBundle().isMBundle) {
+//                if (mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
+//                    File bundleOutputLocation = appVariantOutputContext.getAwbJniFolder(awbTransform.getAwbBundle());
+//                    if (bundleOutputLocation.exists()) {
+//                        try {
+//
+//                            org.apache.commons.io.FileUtils.copyDirectory(bundleOutputLocation, outputLocation);
+//                            org.apache.commons.io.FileUtils.deleteDirectory(bundleOutputLocation);
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//
+//                } else {
+//                    File bundleOutputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
+//                    File tempDir = new File(outputLocation.getParentFile(), "unzip");
+//                    try {
+//                        if (bundleOutputLocation.exists() && ZipUtils.isZipFile(bundleOutputLocation)) {
+//                            BetterZip.unzipDirectory(bundleOutputLocation, tempDir);
+//                        }
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        });
 
         if (!mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
             File tempDir = new File(outputLocation.getParentFile(), "unzip");

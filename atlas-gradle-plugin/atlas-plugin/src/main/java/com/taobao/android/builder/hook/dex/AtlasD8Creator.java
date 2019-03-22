@@ -1,3 +1,4 @@
+/*
 package com.taobao.android.builder.hook.dex;
 
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -31,12 +32,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+*/
 /**
  * AtlasD8Creator
  *
  * @author zhayu.ll
  * @date 18/4/2
- */
+ *//*
+
 public class AtlasD8Creator {
 
     private Collection<File>inputFiles;
@@ -168,3 +171,4 @@ public class AtlasD8Creator {
 
     }
 }
+*/

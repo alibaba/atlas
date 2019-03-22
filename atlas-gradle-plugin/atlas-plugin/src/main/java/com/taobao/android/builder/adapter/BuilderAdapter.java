@@ -208,8 +208,6 @@
  */
 
 package com.taobao.android.builder.adapter;
-
-import com.taobao.android.builder.tools.classinject.ApkInjectInfoCreator;
 import com.taobao.android.builder.tools.sign.AndroidSigner;
 
 import java.util.ArrayList;
@@ -226,7 +224,7 @@ public class BuilderAdapter {
 
     public AndroidSigner androidSigner = new AndroidSigner();
 
-    public ApkInjectInfoCreator apkInjectInfoCreator = new ApkInjectInfoCreator();
+//    public ApkInjectInfoCreator apkInjectInfoCreator = new ApkInjectInfoCreator();
 
     public String tpatchHistoryUrl = "";
 

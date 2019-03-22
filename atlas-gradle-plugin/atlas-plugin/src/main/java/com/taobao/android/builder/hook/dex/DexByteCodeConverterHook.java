@@ -1,3 +1,4 @@
+/*
 package com.taobao.android.builder.hook.dex;
 
 import com.android.annotations.NonNull;
@@ -62,10 +63,12 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 
+*/
 /**
  * @author lilong
  * @create 2017-05-12 Morning in the afternoon
- */
+ *//*
+
 
 public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
@@ -139,10 +142,10 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 //    }
     @Override
     public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, final File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
-        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                variantContext.getVariantName());
+//        AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+//                variantContext.getVariantName());
 
-        if (null != atlasDependencyTree) {
+//        if (null != atlasDependencyTree) {
 
             ProcessOutputHandler outputHandler =
                     new ParsingProcessOutputHandler(
@@ -151,63 +154,63 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                             AtlasBuildContext.androidBuilderMap.get(variantContext.getProject()).getErrorReporter());
 
 
-            for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-                waitableExecutor.execute((Callable<Void>) () -> {
-                            try {
-
-                                long start = System.currentTimeMillis();
-                                //create dex
-                                File dexOutputFile = ((AppVariantContext) variantContext).getAwbDexOutput(awbBundle.getName());
-                                if (dexOutputFile.exists()) {
-                                    FileUtils.cleanDirectory(dexOutputFile);
-                                } else {
-                                    FileUtils.forceMkdir(dexOutputFile);
-                                }
-
-                                // if some of our .jar input files exist, just reset the inputDir to null
-                                AwbTransform awbTransform = variantOutputContext.getAwbTransformMap()
-                                        .get(awbBundle.getName());
-                                List<File> inputFiles = new ArrayList<File>();
-                                inputFiles.addAll(awbTransform.getInputFiles());
-                                inputFiles.addAll(awbTransform.getInputLibraries());
-                                if (null != awbTransform.getInputDirs()) {
-                                    inputFiles.addAll(awbTransform.getInputDirs());
-                                }
-
-
-                                if (variantContext.getScope().getDexer() == DexerTool.DX) {
-                                    AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
-                                            .convertByteCode(inputFiles,
-                                                    dexOutputFile,
-                                                    false,
-                                                    null,
-                                                    dexOptions,
-                                                    outputHandler, true);
-                                } else if (variantContext.getScope().getDexer() == DexerTool.D8) {
-
-
-                                    new AtlasD8Creator(inputFiles, ((AppVariantContext) variantContext).getAwbDexAchiveOutput(awbBundle), multidex, mainDexList, dexOptions, minSdkVersion, fileCache, processOutputHandler, variantContext, variantOutputContext).create(awbBundle);
-                                }
-
-                                if (awbBundle.isMBundle) {
-                                    mBundleSets.add(awbBundle);
-                                }
-
-                            } catch (Exception e) {
-                                throw new ProcessException(awbBundle.getName(), e);
-
-                            }
-                            return null;
-
-
-                        }
-                );
-            }
+//            for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+//                waitableExecutor.execute((Callable<Void>) () -> {
+//                            try {
+//
+//                                long start = System.currentTimeMillis();
+//                                //create dex
+//                                File dexOutputFile = ((AppVariantContext) variantContext).getAwbDexOutput(awbBundle.getName());
+//                                if (dexOutputFile.exists()) {
+//                                    FileUtils.cleanDirectory(dexOutputFile);
+//                                } else {
+//                                    FileUtils.forceMkdir(dexOutputFile);
+//                                }
+//
+//                                // if some of our .jar input files exist, just reset the inputDir to null
+//                                AwbTransform awbTransform = variantOutputContext.getAwbTransformMap()
+//                                        .get(awbBundle.getName());
+//                                List<File> inputFiles = new ArrayList<File>();
+//                                inputFiles.addAll(awbTransform.getInputFiles());
+//                                inputFiles.addAll(awbTransform.getInputLibraries());
+//                                if (null != awbTransform.getInputDirs()) {
+//                                    inputFiles.addAll(awbTransform.getInputDirs());
+//                                }
+//
+//
+//                                if (variantContext.getScope().getDexer() == DexerTool.DX) {
+//                                    AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
+//                                            .convertByteCode(inputFiles,
+//                                                    dexOutputFile,
+//                                                    false,
+//                                                    null,
+//                                                    dexOptions,
+//                                                    outputHandler, true);
+//                                } else if (variantContext.getScope().getDexer() == DexerTool.D8) {
+//
+//
+//                                    new AtlasD8Creator(inputFiles, ((AppVariantContext) variantContext).getAwbDexAchiveOutput(awbBundle), multidex, mainDexList, dexOptions, minSdkVersion, fileCache, processOutputHandler, variantContext, variantOutputContext).create(awbBundle);
+//                                }
+//
+//                                if (awbBundle.isMBundle) {
+//                                    mBundleSets.add(awbBundle);
+//                                }
+//
+//                            } catch (Exception e) {
+//                                throw new ProcessException(awbBundle.getName(), e);
+//
+//                            }
+//                            return null;
+//
+//
+//                        }
+//                );
+//            }
         }
 
-        File tempDexFolder = null;
-
-        inputFile.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars());
+//        File tempDexFolder = null;
+//
+//        inputFile.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars());
         inputFile.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs());
 
         logger.warning("maindex inputFile size :" + inputFile.size());
@@ -620,3 +623,4 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
 
 }
+*/

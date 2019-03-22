@@ -229,7 +229,6 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
-import com.taobao.android.builder.tasks.app.bundle.ProcessResAwbsTask;
 import com.taobao.android.builder.tools.bundleinfo.ApkFileListUtils;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
@@ -259,8 +258,6 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     private final Map<String, AppVariantOutputContext> outputContextMap = Maps.newHashMap();
 
-
-    public ProcessResAwbsTask processResAwbsTask = null;
 
     /**
      * buildCache The manifest of the directory cannot be changed, So save the modified manifest reference
@@ -408,6 +405,12 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                         ".xml");
     }
 
+    public File getModifyManifest(File androidManifestFile) {
+        return new File(getModifyManifestDir(),
+                androidManifestFile.getParentFile().getName() +
+                        ".xml");
+    }
+
     @NonNull
     public Collection<File> getAwbApkFiles() {
         return FileUtils.find(getAwbApkOutputDir(), Pattern.compile("\\.so$"));
@@ -473,38 +476,38 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
         return tagMap;
     }
 
-    public DependencyDiff getDependencyDiff() throws IOException {
-
-        if (null != this.dependencyDiff) {
-            return this.dependencyDiff;
-        }
-
-        if (null !=
-                this.apContext.getApExploredFolder() &&
-                this.apContext.getApExploredFolder()
-                        .exists()) {
-
-            DependencyJson dependencyJson = AtlasBuildContext.androidDependencyTrees
-                    .get(this.getVariantData().getName())
-                    .getDependencyJson();
-            File baseDependencyFile = new File(
-                    this.apContext.getApExploredFolder(),
-                    "dependencies.txt");
-            if (baseDependencyFile.exists()) {
-                DependencyDiff dependencyDiff = DependencyCompareUtils
-                        .diff(baseDependencyFile,
-                                dependencyJson);
-
-                this.dependencyDiff = dependencyDiff;
-
-                return dependencyDiff;
-            }
-
-        }
-
-        return null;
-
-    }
+//    public DependencyDiff getDependencyDiff() throws IOException {
+//
+//        if (null != this.dependencyDiff) {
+//            return this.dependencyDiff;
+//        }
+//
+//        if (null !=
+//                this.apContext.getApExploredFolder() &&
+//                this.apContext.getApExploredFolder()
+//                        .exists()) {
+//
+//            DependencyJson dependencyJson = AtlasBuildContext.androidDependencyTrees
+//                    .get(this.getVariantData().getName())
+//                    .getDependencyJson();
+//            File baseDependencyFile = new File(
+//                    this.apContext.getApExploredFolder(),
+//                    "dependencies.txt");
+//            if (baseDependencyFile.exists()) {
+//                DependencyDiff dependencyDiff = DependencyCompareUtils
+//                        .diff(baseDependencyFile,
+//                                dependencyJson);
+//
+//                this.dependencyDiff = dependencyDiff;
+//
+//                return dependencyDiff;
+//            }
+//
+//        }
+//
+//        return null;
+//
+//    }
 
     public ApkFiles getApkFiles() {
 

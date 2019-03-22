@@ -257,67 +257,67 @@ public class TaobaoInstantRunTransform extends Transform {
         }
 
 
-        Map<AwbBundle, File> awbBundleFileMap = new HashMap<>();
-        variantOutputContext.getAwbTransformMap().values().forEach(awbTransform -> {
-            File awbClassesTwoOutout = variantOutputContext.getAwbClassesInstantOut(awbTransform.getAwbBundle());
-            LOGGER.warning("InstantAwbclassOut[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + awbClassesTwoOutout.getAbsolutePath());
-            FileUtils.mkdirs(awbClassesTwoOutout);
-            try {
-                FileUtils.cleanOutputDir(awbClassesTwoOutout);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            awbTransform.getInputDirs().forEach(dir -> {
-                LOGGER.warning("InstantAwbclassDir[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + dir.getAbsolutePath());
-                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dir)) {
-                    if (!file.exists() || file.isDirectory()) {
-                        continue;
-                    }
-                    PatchPolicy patchPolicy = PatchPolicy.NONE;
-                    if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
-                        patchPolicy = parseClassPolicy(file);
-                    }
-                    String path = FileUtils.relativePath(file, dir);
-                    String className = path.replace("/", ".").substring(0, path.length() - 6);
-                    boolean isAdd = false;
-                    switch (patchPolicy) {
-                        case ADD:
-                            modifyClasses.put(className, PatchPolicy.ADD.name());
-                            workItems.add(() -> transformToClasses2Format(
-                                    dir,
-                                    file,
-                                    classesThreeOutput,
-                                    Status.ADDED));
-                            isAdd = true;
-                            break;
-
-                        case MODIFY:
-                            if (errors.contains(path)) {
-                                exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
-                            }
-                            modifyClasses.put(className, PatchPolicy.MODIFY.name());
-                            workItems.add(() -> transformToClasses3Format(
-                                    dir,
-                                    file,
-                                    classesThreeOutput));
-                            break;
-                    }
-
-                    if (isAdd) {
-                        continue;
-                    }
-
-                    workItems.add(() -> transformToClasses2Format(
-                            dir,
-                            file,
-                            awbClassesTwoOutout,
-                            Status.ADDED));
-                }
-
-            });
-
-            awbBundleFileMap.put(awbTransform.getAwbBundle(), awbClassesTwoOutout);
-        });
+//        Map<AwbBundle, File> awbBundleFileMap = new HashMap<>();
+//        variantOutputContext.getAwbTransformMap().values().forEach(awbTransform -> {
+//            File awbClassesTwoOutout = variantOutputContext.getAwbClassesInstantOut(awbTransform.getAwbBundle());
+//            LOGGER.warning("InstantAwbclassOut[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + awbClassesTwoOutout.getAbsolutePath());
+//            FileUtils.mkdirs(awbClassesTwoOutout);
+//            try {
+//                FileUtils.cleanOutputDir(awbClassesTwoOutout);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            awbTransform.getInputDirs().forEach(dir -> {
+//                LOGGER.warning("InstantAwbclassDir[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + dir.getAbsolutePath());
+//                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dir)) {
+//                    if (!file.exists() || file.isDirectory()) {
+//                        continue;
+//                    }
+//                    PatchPolicy patchPolicy = PatchPolicy.NONE;
+//                    if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
+//                        patchPolicy = parseClassPolicy(file);
+//                    }
+//                    String path = FileUtils.relativePath(file, dir);
+//                    String className = path.replace("/", ".").substring(0, path.length() - 6);
+//                    boolean isAdd = false;
+//                    switch (patchPolicy) {
+//                        case ADD:
+//                            modifyClasses.put(className, PatchPolicy.ADD.name());
+//                            workItems.add(() -> transformToClasses2Format(
+//                                    dir,
+//                                    file,
+//                                    classesThreeOutput,
+//                                    Status.ADDED));
+//                            isAdd = true;
+//                            break;
+//
+//                        case MODIFY:
+//                            if (errors.contains(path)) {
+//                                exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
+//                            }
+//                            modifyClasses.put(className, PatchPolicy.MODIFY.name());
+//                            workItems.add(() -> transformToClasses3Format(
+//                                    dir,
+//                                    file,
+//                                    classesThreeOutput));
+//                            break;
+//                    }
+//
+//                    if (isAdd) {
+//                        continue;
+//                    }
+//
+//                    workItems.add(() -> transformToClasses2Format(
+//                            dir,
+//                            file,
+//                            awbClassesTwoOutout,
+//                            Status.ADDED));
+//                }
+//
+//            });
+//
+//            awbBundleFileMap.put(awbTransform.getAwbBundle(), awbClassesTwoOutout);
+//        });
 
         // first get all referenced input to construct a class loader capable of loading those
         // classes. This is useful for ASM as it needs to load classes
@@ -360,12 +360,12 @@ public class TaobaoInstantRunTransform extends Transform {
             }
         }
 
-        variantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
-            awbTransform.getInputLibraries().clear();
-            awbTransform.getInputFiles().clear();
-            awbTransform.getInputDirs().clear();
-            awbTransform.getInputDirs().add(awbBundleFileMap.get(awbTransform.getAwbBundle()));
-        });
+//        variantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
+//            awbTransform.getInputLibraries().clear();
+//            awbTransform.getInputFiles().clear();
+//            awbTransform.getInputDirs().clear();
+//            awbTransform.getInputDirs().add(awbBundleFileMap.get(awbTransform.getAwbBundle()));
+//        });
 
         // If our classes.2 transformations indicated that a cold swap was necessary,
         // clean up the classes.3 output folder as some new files may have been generated.
@@ -430,17 +430,17 @@ public class TaobaoInstantRunTransform extends Transform {
         }
 
 
-        variantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
-            @Override
-            public void accept(AwbTransform awbTransform) {
-                try {
-                    addAllClassLocations(awbTransform.getInputFiles(), referencedInputUrls);
-                    addAllClassLocations(awbTransform.getInputDirs(), referencedInputUrls);
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+//        variantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
+//            @Override
+//            public void accept(AwbTransform awbTransform) {
+//                try {
+//                    addAllClassLocations(awbTransform.getInputFiles(), referencedInputUrls);
+//                    addAllClassLocations(awbTransform.getInputDirs(), referencedInputUrls);
+//                } catch (MalformedURLException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
 
         return referencedInputUrls;
     }

@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.app;
 
@@ -269,7 +270,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
         InjectParam injectParam = getInput();
         boolean supportRemoteComponent = true;
-        if (AtlasBuildContext.androidDependencyTrees.get(getVariantName())!= null) {
+        if (AtlasBuildContext.androidDependencyTrees.get(getVariantName()) != null) {
             List<AndroidLibrary> libraries = AtlasBuildContext.androidDependencyTrees.get(getVariantName()).getMainBundle().getAndroidLibraries();
             if (libraries.size() > 0) {
                 for (AndroidLibrary library : libraries) {
@@ -282,12 +283,12 @@ public class GenerateAtlasSourceTask extends BaseTask {
                 }
             }
         }
-        List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
-        File outputSourceGeneratorFile = new File(outputDir,"android/taobao/atlas/framework/AtlasBundleInfoGenerator.java");
-        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info,supportRemoteComponent);
+        List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo, BasicBundleInfo.class);
+        File outputSourceGeneratorFile = new File(outputDir, "android/taobao/atlas/framework/AtlasBundleInfoGenerator.java");
+        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info, supportRemoteComponent);
         outputSourceGeneratorFile.getParentFile().mkdirs();
         try {
-            FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
+            FileUtils.writeStringToFile(outputSourceGeneratorFile, infoGeneratorSourceStr.toString());
         } catch (IOException e) {
             throw new GradleException(e.getMessage(), e);
         }
@@ -301,10 +302,10 @@ public class GenerateAtlasSourceTask extends BaseTask {
         lines.add("private String version = \"" + injectParam.version + "\";");
         lines.add("public String getVersion() {return version;}");
         String escapeExprBundleInfo = escapeExprSpecialWord(injectParam.bundleInfo);
-        if(injectParam.bundleInfo.length()<65535){
+        if (injectParam.bundleInfo.length() < 65535) {
             lines.add("public static String bundleInfo = \"" + escapeExprBundleInfo + "\";");
             lines.add("public static final boolean compressInfo = false;");
-        }else{
+        } else {
             String compressBundleInfo = compressBundleInfo(injectParam.bundleInfo);
             lines.add("public static String bundleInfo = \"" + compressBundleInfo + "\";");
             lines.add("public static final boolean compressInfo = true;");
@@ -317,7 +318,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
         if (StringUtils.isNotEmpty(injectParam.blackDialogActivity)) {
             lines.add("public static String blackDialogActivity = \"" + injectParam.blackDialogActivity + "\";");
         }
-            lines.add("public static String autoStart = \"" + injectParam.autoStart + "\";");
+        lines.add("public static String autoStart = \"" + injectParam.autoStart + "\";");
 
         if (StringUtils.isNotEmpty(injectParam.preLaunch)) {
             lines.add("public static String preLaunch = \"" + injectParam.preLaunch + "\";");
@@ -339,11 +340,11 @@ public class GenerateAtlasSourceTask extends BaseTask {
             output.put("group", injectParam.group);
             output.put("outApp", injectParam.outApp);
             output.put("unit_tag", injectParam.unit_tag);
-            output.put("autoStart",injectParam.autoStart);
-            output.put("blackDialogActivity",injectParam.blackDialogActivity);
+            output.put("autoStart", injectParam.autoStart);
+            output.put("blackDialogActivity", injectParam.blackDialogActivity);
 
             FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),
-                                     "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
+                    "outputs/atlasFrameworkProperties.json"), JSON.toJSONString(output, true));
 
         } catch (Exception e) {
             throw new GradleException(e.getMessage(), e);
@@ -351,7 +352,7 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
     }
 
-    private String compressBundleInfo(String bundleInfo){
+    private String compressBundleInfo(String bundleInfo) {
         ByteArrayOutputStream cc = new ByteArrayOutputStream();
         GZIPOutputStream gzip = null;
         try {
@@ -412,4 +413,4 @@ public class GenerateAtlasSourceTask extends BaseTask {
 
         }
     }
-}
+}*/

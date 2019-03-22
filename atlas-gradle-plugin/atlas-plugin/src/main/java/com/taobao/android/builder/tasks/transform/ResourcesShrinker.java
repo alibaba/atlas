@@ -1,3 +1,4 @@
+/*
 package com.taobao.android.builder.tasks.transform;
 
 import com.android.annotations.NonNull;
@@ -36,12 +37,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinTask;
 
+*/
 /**
  * ResourcesShrinker
  *
  * @author zhayu.ll
  * @date 18/5/22
- */
+ *//*
+
 public class ResourcesShrinker extends Transform {
 
     public ShrinkResourcesTransform resourcesTransform;
@@ -389,3 +392,4 @@ public class ResourcesShrinker extends Transform {
         return ImmutableList.of(compressedResources);
     }
 }
+*/
