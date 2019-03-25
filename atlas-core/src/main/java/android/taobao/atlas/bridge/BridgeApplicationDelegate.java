@@ -354,7 +354,6 @@ public class BridgeApplicationDelegate {
         if(!TextUtils.isEmpty(mInstalledVersionName)){
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;
         }
-        AtlasCrashManager.forceStopAppWhenCrashed();
         System.out.print(SoLoader.class.getName());
         try {
             String preLaunchStr = (String) RuntimeVariables.getFrameworkProperty("preLaunch");
