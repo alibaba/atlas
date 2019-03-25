@@ -1,3 +1,4 @@
+/*
 package com.taobao.android.builder.tasks.app.bundle;
 
 import com.android.SdkConstants;
@@ -47,10 +48,12 @@ public class Dex extends BaseTask {
         return getBuildTools().getRevision().toString();
     }
 
-    /**
+    */
+/**
      * Actual entry point for the action.
      * Calls out to the doTaskAction as needed.
-     */
+     *//*
+
     @TaskAction
     public void taskAction(IncrementalTaskInputs inputs) throws IOException, InterruptedException, ProcessException {
         Collection<File> _inputFiles = getInputFiles();
@@ -418,3 +421,4 @@ public class Dex extends BaseTask {
         private final AwbBundle awbBundle;
     }
 }
+*/

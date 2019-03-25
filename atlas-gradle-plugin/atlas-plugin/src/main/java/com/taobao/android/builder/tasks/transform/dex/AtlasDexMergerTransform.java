@@ -72,7 +72,7 @@ public class AtlasDexMergerTransform extends Transform {
     ) {
         this.variantOutputContext = appVariantOutputContext;
         atlasMainDexMerger = new AtlasMainDexMerger(dexingType, mainDexListFile, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
-        awbDexMerger = new AwbDexsMerger(DexingType.MONO_DEX, null, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
+//        awbDexMerger = new AwbDexsMerger(DexingType.MONO_DEX, null, errorReporter, dexMerger, minSdkVersion, isDebuggable, appVariantOutputContext);
         this.mainDexListFile = mainDexListFile == null ? null : mainDexListFile.getSingleFile();
         this.dexingType = dexingType;
         this.dexMergerTool = dexMerger;
@@ -137,11 +137,11 @@ public class AtlasDexMergerTransform extends Transform {
         TransformOutputProvider transformOutputProvider = transformInvocation.getOutputProvider();
         transformOutputProvider.deleteAll();
         atlasMainDexMerger.merge(transformInvocation);
-        awbDexMerger.merge(transformInvocation);
-        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
-            atlasMainDexMerger.getAllDexsArchives().addAll(awbDexMerger.getAllDexsArchives());
-            atlasMainDexMerger.mergeAll(transformInvocation);
-        }
+//        awbDexMerger.merge(transformInvocation);
+//        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
+////            atlasMainDexMerger.getAllDexsArchives().addAll(awbDexMerger.getAllDexsArchives());
+//            atlasMainDexMerger.mergeAll(transformInvocation);
+//        }
 
     }
 

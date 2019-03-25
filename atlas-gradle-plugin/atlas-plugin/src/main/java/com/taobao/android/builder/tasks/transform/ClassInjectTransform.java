@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tasks.transform;
 
@@ -237,10 +238,12 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+*/
 /**
  * Code injection classes
  * Created by shenghua.nish on 2016-06-15 Instant in the afternoon.
- */
+ *//*
+
 public class ClassInjectTransform extends MtlInjectTransform {
 
     private final Logger logger;
@@ -402,3 +405,4 @@ public class ClassInjectTransform extends MtlInjectTransform {
         return pool;
     }
 }
+*/

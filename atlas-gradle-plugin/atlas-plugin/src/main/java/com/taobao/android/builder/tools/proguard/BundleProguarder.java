@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tools.proguard;
 
@@ -249,9 +250,11 @@ import static com.taobao.android.builder.tools.proguard.AwbProguardConfiguration
 import static com.taobao.android.builder.tools.proguard.AwbProguardConfiguration.OUTJARS_OPTION;
 import static proguard.AtlasProguardConstants.INOUT_CFG;
 
+*/
 /**
  * Created by wuzhong on 2017/5/13.
- */
+ *//*
+
 public class BundleProguarder {
 
     public static final String CACHE_TYPE = "proguard-bundles-0.12";
@@ -641,3 +644,4 @@ public class BundleProguarder {
 
     }
 }
+*/
