@@ -378,7 +378,7 @@ public class TaobaoInstantRunTransform extends Transform {
     }
 
     private PatchPolicy parseClassPolicy(File file) {
-        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+        if (variantContext.getBuildType().getPatchConfig() == null ||!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
             return PatchPolicy.NONE;
         }
 

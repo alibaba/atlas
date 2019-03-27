@@ -6,6 +6,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.BuildCacheUtils;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -116,6 +117,7 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
 
         variantOutputContext.setDexMergeFolder(outputDir);
 
+        ReflectUtils.updateField(variantOutputContext.getVariantContext().getScope().getPackageApplicationTask().get(new TaskContainerAdaptor(variantOutputContext.getVariantContext().getProject().getTasks())),"dexFolders",variantOutputContext.getVariantContext().getProject().files(outputDir));
         transformInputs.forEach((TransformInput transformInput) -> {
             File file = (File) ReflectUtils.getField(transformInput, "optionalRootLocation");
             if (file != null && file.exists()) {

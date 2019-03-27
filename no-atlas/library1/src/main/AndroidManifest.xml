@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.alibaba.library1">
+
+
+<application>
+
+    <activity android:name=".FirstActivity"
+              android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+    </activity>
+</application>
+
+</manifest>

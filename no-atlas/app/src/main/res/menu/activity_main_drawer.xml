@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <!--<item-->
+            <!--android:id="@+id/nav_gallery"-->
+            <!--android:title="Gallery" />-->
+        <item
+            android:id="@+id/nav_slideshow"
+            android:title="动态部署模拟" />
+        <item
+            android:id="@+id/nav_manage"
+            android:title="远程组件模拟" />
+        <item
+            android:id="@+id/awo_manager"
+            android:title="单模块调试模拟" />
+        <item
+            android:id="@+id/nav_dex_patch"
+            android:title="dex_patch模拟" />
+        <item
+            android:id="@+id/nav_databind_bundle"
+            android:title="databinding模拟" />
+
+        <item
+            android:id="@+id/nav_remote"
+            android:title="跨bundle使用View模拟" />
+    </group>
+
+    <item android:title="Communicate">
+        <menu>
+            <!--<item-->
+                <!--android:id="@+id/nav_send"-->
+                <!--android:title="介绍" />-->
+            <item
+                android:id="@+id/nav_share"
+                android:title="分享" />
+        </menu>
+    </item>
+
+</menu>

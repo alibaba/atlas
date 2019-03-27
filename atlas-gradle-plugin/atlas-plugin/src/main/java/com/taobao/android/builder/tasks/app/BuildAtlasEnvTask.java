@@ -106,7 +106,7 @@ public class BuildAtlasEnvTask extends BaseTask {
         Set<ResolvedArtifactResult> compileArtifacts = compileManifests.getArtifacts();
         Set<ResolvedArtifactResult> jarArtifacts = compileJars.getArtifacts();
         Set<ResolvedArtifactResult> nativeLibsArtifacts = nativeLibs.getArtifacts();
-        Set<ResolvedArtifactResult> javaResourcesArtifacts = javaResources.getArtifacts();
+//        Set<ResolvedArtifactResult> javaResourcesArtifacts = javaResources.getArtifacts();
         Set<ResolvedArtifactResult> androidRes = res.getArtifacts();
         Set<ResolvedArtifactResult> androidAssets = assets.getArtifacts();
         Set<ResolvedArtifactResult> androidRnames = symbolListWithPackageNames.getArtifacts();
@@ -155,14 +155,14 @@ public class BuildAtlasEnvTask extends BaseTask {
             }
         }
 
-        for (ResolvedArtifactResult resolvedArtifactResult : javaResourcesArtifacts) {
-            if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultModuleComponentIdentifier) {
-                allJavaRes.put(((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getGroup() + ":" + ((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getModule(), resolvedArtifactResult.getFile());
-            } else if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultProjectComponentIdentifier) {
-                String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
-                allJavaRes.put(projectPath.substring(projectPath.lastIndexOf(":") + 1), resolvedArtifactResult.getFile());
-            }
-        }
+//        for (ResolvedArtifactResult resolvedArtifactResult : javaResourcesArtifacts) {
+//            if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultModuleComponentIdentifier) {
+//                allJavaRes.put(((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getGroup() + ":" + ((DefaultModuleComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getModule(), resolvedArtifactResult.getFile());
+//            } else if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultProjectComponentIdentifier) {
+//                String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
+//                allJavaRes.put(projectPath.substring(projectPath.lastIndexOf(":") + 1), resolvedArtifactResult.getFile());
+//            }
+//        }
 
         for (ResolvedArtifactResult resolvedArtifactResult : androidRes) {
             if (resolvedArtifactResult.getId().getComponentIdentifier() instanceof DefaultModuleComponentIdentifier) {
@@ -199,7 +199,6 @@ public class BuildAtlasEnvTask extends BaseTask {
 
         allJars.forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainDexFiles().add(fileIdentity));
 
-        allJavaRes.values().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainResFiles().put(file.getAbsolutePath(), true));
 
         allSolibs.values().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainSoFiles().put(file.getAbsolutePath(), true));
 

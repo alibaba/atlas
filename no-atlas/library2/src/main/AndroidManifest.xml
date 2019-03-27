@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.alibaba.library2">
+
+<application>
+<activity android:name=".SecondActivity"
+          android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+</activity>
+
+</application>
+
+</manifest>

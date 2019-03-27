@@ -314,7 +314,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(appVariantContext.getVariantData().preBuildTask));
 
-//                                                              mtlTaskContextList.add(new MtlTaskContext(BuildAtlasEnvTask.ConfigAction.class, null));
+                                                              mtlTaskContextList.add(new MtlTaskContext(BuildAtlasEnvTask.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ScanDupResTask.ConfigActon.class,null));
 
@@ -486,11 +486,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 //                                                              }
 
                                                               for (final BaseVariantOutput vod : baseVariantOutputDataList) {
-//                                                                  transformReplacer.replaceFixStackFramesTransform(vod);
-//                                                                  transformReplacer.replaceDesugarTransform(vod);
-//                                                                  transformReplacer.replaceDexArchiveBuilderTransform(vod);
-//                                                                  transformReplacer.replaceDexExternalLibMerge(vod);
-//                                                                  transformReplacer.replaceDexMerge(vod);
+                                                                  transformReplacer.replaceFixStackFramesTransform(vod);
+                                                                  transformReplacer.replaceDesugarTransform(vod);
+                                                                  transformReplacer.replaceDexArchiveBuilderTransform(vod);
+                                                                  transformReplacer.replaceDexExternalLibMerge(vod);
+                                                                  transformReplacer.replaceDexMerge(vod);
 //                                                                  transformReplacer.replaceDexTransform(appVariantContext, vod);
 //                                                                  transformReplacer.replaceShrinkResourcesTransform();
 //                                                                  transformReplacer.replaceMergeJavaResourcesTransform(appVariantContext, vod);

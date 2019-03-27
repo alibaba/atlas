@@ -24,6 +24,7 @@ import com.google.common.collect.*;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import org.gradle.workers.WorkerExecutor;
 
 import java.io.File;
@@ -222,7 +223,9 @@ public class AtlasDesugarTransform extends Transform {
                 processNonCachedOnes(getClasspath(transformInvocation));
                 waitableExecutor.waitForTasksWithQuickFail(true);
             }
-            AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).updateMainDexFiles(transformFiles);
+            AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).getMainDexFiles().clear();
+            transformFiles.entrySet().forEach(jarInputFileEntry -> AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).getMainDexFiles().add(new BuildAtlasEnvTask.FileIdentity(jarInputFileEntry.getKey().getName(),jarInputFileEntry.getValue(),false,false)));
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TransformException(e);
@@ -265,27 +268,11 @@ public class AtlasDesugarTransform extends Transform {
                     }
                 }
                 Path output = getOutputPath(outputProvider, jarInput);
-                if (inMainDex(jarInput)) {
                     Files.deleteIfExists(output);
                     logger.info("process maindex desugar:" + jarInput.getFile().getAbsolutePath());
                     processSingle(jarInput.getFile().toPath(), output, jarInput.getScopes());
                     transformFiles.put(jarInput, output.toFile());
-                } else {
-                    File file = appVariantOutputContext.updateAwbDexFile(jarInput, output.toFile());
-                    if (file != null) {
-                        if (!jarInput.getFile().equals(file)) {
-                            logger.info("process awb desugar:" + file.getAbsolutePath());
-                            Files.deleteIfExists(output);
-                            processSingle(file.toPath(), output, jarInput.getScopes());
-                        } else {
-                            logger.info("process awb desugar:" + jarInput.getFile().getAbsolutePath());
-                            Files.deleteIfExists(output);
-                            processSingle(jarInput.getFile().toPath(), output, jarInput.getScopes());
-                        }
-                    } else {
-                        throw new TransformException(jarInput.getFile().getAbsolutePath() + "is not in maindex and awb libraries in AtlasdesugarTransform!");
-                    }
-                }
+
             }
         }
     }

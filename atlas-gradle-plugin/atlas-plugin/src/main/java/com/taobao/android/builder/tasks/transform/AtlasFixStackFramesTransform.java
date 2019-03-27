@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -185,40 +186,24 @@ public class AtlasFixStackFramesTransform extends Transform {
         try {
             for (TransformInput input : transformInvocation.getInputs()) {
                 for (JarInput jarInput : input.getJarInputs()) {
-                    boolean flag = inMainDex(jarInput);
                     File output =
                             outputProvider.getContentLocation(
                                     jarInput.getName(),
                                     jarInput.getContentTypes(),
                                     jarInput.getScopes(),
                                     Format.JAR);
-                    if (flag) {
                         mainDexTransformFiles.put(jarInput,output);
                         Files.deleteIfExists(output.toPath());
                         logger.info("process maindex fixStackFrames:"+jarInput.getFile().getAbsolutePath());
                         processJar(jarInput.getFile(), output, transformInvocation);
-                    } else {
-                        File file = appVariantOutputContext.updateAwbDexFile(jarInput, output);
-                        if (file!= null){
-                            if (!jarInput.getFile().equals(file)){
-                                logger.info("process awb fixStackFrames:"+file.getAbsolutePath());
-                                Files.deleteIfExists(output.toPath());
-                                processJar(file, output, transformInvocation);
-                            }else {
-                                logger.info("process awb fixStackFrames:"+jarInput.getFile().getAbsolutePath());
-                                Files.deleteIfExists(output.toPath());
-                                processJar(jarInput.getFile(), output, transformInvocation);
-                            }
-                        }else {
-                            logger.warning(jarInput.getFile().getAbsolutePath() +"is not in maindex and awb libraries in AtlasFixStackFramesTransform!");
-                        }
-                    }
 
                 }
             }
 
             waitableExecutor.waitForTasksWithQuickFail(true);
-            AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).updateMainDexFiles(mainDexTransformFiles);
+            AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).getMainDexFiles().clear();
+            mainDexTransformFiles.entrySet().forEach(jarInputFileEntry -> AtlasBuildContext.atlasMainDexHelperMap.get(appVariantOutputContext.getVariantContext().getVariantName()).getMainDexFiles().add(new BuildAtlasEnvTask.FileIdentity(jarInputFileEntry.getKey().getName(),jarInputFileEntry.getValue(),false,false)));
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
