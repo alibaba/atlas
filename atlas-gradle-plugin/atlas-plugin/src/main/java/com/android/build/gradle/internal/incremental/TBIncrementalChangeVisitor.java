@@ -3,6 +3,7 @@ package com.android.build.gradle.internal.incremental;
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
+import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
@@ -22,6 +23,8 @@ import java.util.Map;
  * 作者:zhayu.ll
  */
 public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
+
+    List<TaobaoInstantRunTransform.CodeChange>changes = new ArrayList<>();
 
     public static final VisitorBuilder VISITOR_BUILDER = new IncrementalVisitor.VisitorBuilder() {
         @NonNull
@@ -238,6 +241,15 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         // do not add any of the original class fields in the $override class, they would never
         // be used and confuse the debugger.
         return null;
+    }
+
+
+    public void setCodeChange(TaobaoInstantRunTransform.CodeChange codeChange) {
+        this.codeChange = codeChange;
+        if (codeChange.getCodeChanges()!= null && codeChange.getCodeChanges().size() > 0){
+            changes = codeChange.getCodeChanges();
+        }
+
     }
 
     public class ISVisitor extends GeneratorAdapter {
@@ -501,6 +513,17 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                                     boolean itf) {
 
+            boolean visitAddMethod = false;
+            if (changes.size() > 0){
+                for (TaobaoInstantRunTransform.CodeChange codeChange:changes){
+                        if (codeChange.getCode().equals(name+"|"+desc)){
+                            visitAddMethod = true;
+                        }
+                 }
+
+            }
+
+
             if (DEBUG) {
                 System.out.println("Generic Method dispatch : " + opcode +
                         ":" + owner + ":" + name + ":" + desc + ":" + itf + ":" + isStatic);
@@ -516,8 +539,10 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             if (DEBUG) {
                 System.out.println("Opcode handled ? " + opcodeHandled);
             }
-            if (!opcodeHandled) {
+            if (!opcodeHandled && !visitAddMethod) {
                 mv.visitMethodInsn(opcode, owner, name, desc, itf);
+            }else if (!opcodeHandled && visitAddMethod){
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, name + OVERRIDE_SUFFIX, computeOverrideMethodName(name,desc), computeOverrideMethodDesc(desc,isStatic), itf);
             }
             if (DEBUG) {
                 System.out.println("Done with generic method dispatch");

@@ -12,18 +12,29 @@ import org.objectweb.asm.MethodVisitor;
  */
 public class ModifyMethodVisitor extends MethodVisitor {
 
-    private TaobaoInstantRunTransform.PatchPolicy[] patchPolicy = new TaobaoInstantRunTransform.PatchPolicy[]{TaobaoInstantRunTransform.PatchPolicy.NONE};
-    public ModifyMethodVisitor(int api, MethodVisitor mv, TaobaoInstantRunTransform.PatchPolicy[] patchPolicy) {
+    private TaobaoInstantRunTransform.CodeChange codeChange;
+
+    private String methodName;
+
+    private String methodDesc;
+
+    public ModifyMethodVisitor(String name, String desc, int api, MethodVisitor mv, TaobaoInstantRunTransform.CodeChange codeChange) {
         super(api,mv);
-        this.patchPolicy = patchPolicy;
+        this.codeChange = codeChange;
+        this.methodName = name;
+        this.methodDesc = desc;
     }
 
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        if (desc.equals(TBIncrementalVisitor.MODIFY_METHOD.getDescriptor()) && visible) {
-            patchPolicy[0] = TaobaoInstantRunTransform.PatchPolicy.MODIFY;
+        if (desc.equals(TBIncrementalVisitor.MODIFY_METHOD.getDescriptor()) && visible && codeChange.getPy()!= TaobaoInstantRunTransform.PatchPolicy.ADD) {
+            codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
         }else if (desc.equals(TBIncrementalVisitor.ADD_METHOD.getDescriptor()) && visible){
-            throw new RuntimeException("add method is not support!");
+            codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
+            TaobaoInstantRunTransform.CodeChange codeChange = new TaobaoInstantRunTransform.CodeChange();
+            codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.ADD);
+            codeChange.setCode(methodName+"|"+methodDesc);
+            codeChange.getCodeChanges().add(codeChange);
         }
         return super.visitAnnotation(desc, visible);
     }

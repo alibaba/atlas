@@ -4,6 +4,8 @@ import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import com.android.build.gradle.internal.incremental.TBIncrementalVisitor;
 import org.objectweb.asm.*;
 
+import java.util.ArrayList;
+
 /**
  * 创建日期：2018/11/30 on 上午10:03
  * 描述:
@@ -11,15 +13,19 @@ import org.objectweb.asm.*;
  */
 public class ModifyClassVisitor extends ClassVisitor {
 
-    private TaobaoInstantRunTransform.PatchPolicy[] patchPolicy;
+    private TaobaoInstantRunTransform.CodeChange codeChange;
 
-    public ModifyClassVisitor(int i, TaobaoInstantRunTransform.PatchPolicy[] patchingPolicy) {
-        super(i);
-        this.patchPolicy = patchingPolicy;
+
+    public ModifyClassVisitor(int asm5, TaobaoInstantRunTransform.CodeChange codeChange) {
+        super(asm5);
+        this.codeChange = codeChange;
+        this.codeChange.setCodeChanges(new ArrayList<>());
+
     }
 
-        @Override
+    @Override
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+            codeChange.setCode(name);
             super.visit(version, access, name, signature, superName, interfaces);
         }
 
@@ -36,9 +42,9 @@ public class ModifyClassVisitor extends ClassVisitor {
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
             if (desc.equals(TBIncrementalVisitor.ADD_CLASS.getDescriptor()) && visible) {
-                patchPolicy[0] = TaobaoInstantRunTransform.PatchPolicy.ADD;
+                codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.ADD);
             } else if (desc.equals(TBIncrementalVisitor.MODIFY_CLASS.getDescriptor()) && visible) {
-                patchPolicy[0] = TaobaoInstantRunTransform.PatchPolicy.MODIFY;
+                codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
             }
             return super.visitAnnotation(desc, visible);
         }
@@ -63,7 +69,7 @@ public class ModifyClassVisitor extends ClassVisitor {
 
             FieldVisitor fv = super.visitField(access, name, desc, signature, value);
 
-            return new ModifyFieldVisitor(api, fv, patchPolicy);
+            return new ModifyFieldVisitor(api, fv, codeChange);
         }
 
         @Override
@@ -71,7 +77,7 @@ public class ModifyClassVisitor extends ClassVisitor {
 
             MethodVisitor mv = super.visitMethod(access,name,desc,signature,exceptions);
 
-            return new ModifyMethodVisitor(api,mv,patchPolicy);
+            return new ModifyMethodVisitor(name,desc,api,mv,codeChange);
         }
 
         @Override

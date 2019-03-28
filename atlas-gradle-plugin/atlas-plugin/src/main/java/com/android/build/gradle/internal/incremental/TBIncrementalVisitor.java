@@ -8,6 +8,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
+import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import com.taobao.android.builder.insant.matcher.Imatcher;
 import com.taobao.android.builder.insant.matcher.ImplementsMatcher;
 import com.taobao.android.builder.insant.matcher.MatcherCreator;
@@ -27,6 +28,8 @@ import java.util.*;
  * 作者:zhayu.ll
  */
 public class TBIncrementalVisitor extends IncrementalVisitor {
+
+    protected TaobaoInstantRunTransform.CodeChange codeChange;
 
     public TBIncrementalVisitor(ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor, ILogger logger) {
         super(classNode, parentNodes, classVisitor, logger);
@@ -89,14 +92,14 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
     @Nullable
     public static File instrumentClass(
-            int targetApiLevel,
+            TaobaoInstantRunTransform.CodeChange codeChange, int targetApiLevel,
             @NonNull File inputRootDirectory,
             @NonNull File inputFile,
             @NonNull File outputDirectory,
             @NonNull VisitorBuilder visitorBuilder,
             @NonNull ILogger logger,
             InjectErrorListener injectErrorListener,
-            boolean addSerialVersionUID, boolean patchInitMethod, boolean patchEachMethod,boolean supportAddCallSuper,int count) throws IOException {
+            boolean addSerialVersionUID, boolean patchInitMethod, boolean patchEachMethod, boolean supportAddCallSuper, int count) throws IOException {
 
         byte[] classBytes;
         String path = FileUtils.relativePath(inputFile, inputRootDirectory);
@@ -292,6 +295,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             ((TBIncrementalSupportVisitor) visitor).setSupportEachMethod(patchEachMethod);
             ((TBIncrementalSupportVisitor) visitor).setSupportAddCallSuper(supportAddCallSuper);
 
+        }else if (visitor instanceof TBIncrementalChangeVisitor){
+            ((TBIncrementalChangeVisitor)visitor).setCodeChange(codeChange);
         }
 
         if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
@@ -316,6 +321,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         Files.write(classWriter.toByteArray(), outputFile);
         return outputFile;
     }
+
+
 
 
     @VisibleForTesting

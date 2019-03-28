@@ -16,7 +16,7 @@ public class ModifyFieldVisitor extends FieldVisitor {
 
     private TaobaoInstantRunTransform.PatchPolicy[] py = new TaobaoInstantRunTransform.PatchPolicy[]{TaobaoInstantRunTransform.PatchPolicy.NONE};
 
-    public ModifyFieldVisitor(int api, FieldVisitor fv, TaobaoInstantRunTransform.PatchPolicy[] patchPolicy) {
+    public ModifyFieldVisitor(int api, FieldVisitor fv, TaobaoInstantRunTransform.CodeChange patchPolicy) {
         super(api, fv);
         this.py = patchPolicy;
     }

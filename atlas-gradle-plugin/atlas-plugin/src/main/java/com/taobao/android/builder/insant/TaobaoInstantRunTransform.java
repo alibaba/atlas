@@ -211,15 +211,15 @@ public class TaobaoInstantRunTransform extends Transform {
                     if (file.isDirectory()) {
                         continue;
                     }
-                    PatchPolicy patchPolicy = PatchPolicy.NONE;
+                    CodeChange codeChange = new CodeChange();
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
-                        patchPolicy = parseClassPolicy(file);
+                        parseClassPolicy(file,codeChange);
                     }
                     String path = FileUtils.relativePath(file, inputDir);
                     String className = path.replace("/", ".").substring(0, path.length() - 6);
 
                     boolean isAdd = false;
-                    switch (patchPolicy) {
+                    switch (codeChange.py) {
                         case ADD:
                             modifyClasses.put(className, PatchPolicy.ADD.name());
                             workItems.add(() -> transformToClasses2Format(
@@ -236,7 +236,7 @@ public class TaobaoInstantRunTransform extends Transform {
                             }
                             modifyClasses.put(className, PatchPolicy.MODIFY.name());
                             workItems.add(() -> transformToClasses3Format(
-                                    inputDir,
+                                    codeChange, inputDir,
                                     file,
                                     classesThreeOutput));
                             break;
@@ -273,14 +273,14 @@ public class TaobaoInstantRunTransform extends Transform {
                     if (!file.exists() || file.isDirectory()) {
                         continue;
                     }
-                    PatchPolicy patchPolicy = PatchPolicy.NONE;
+                    CodeChange codeChange = new CodeChange();
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
-                        patchPolicy = parseClassPolicy(file);
+                         parseClassPolicy(file,codeChange);
                     }
                     String path = FileUtils.relativePath(file, dir);
                     String className = path.replace("/", ".").substring(0, path.length() - 6);
                     boolean isAdd = false;
-                    switch (patchPolicy) {
+                    switch (codeChange.py) {
                         case ADD:
                             modifyClasses.put(className, PatchPolicy.ADD.name());
                             workItems.add(() -> transformToClasses2Format(
@@ -296,7 +296,7 @@ public class TaobaoInstantRunTransform extends Transform {
                                 exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
                             }
                             modifyClasses.put(className, PatchPolicy.MODIFY.name());
-                            workItems.add(() -> transformToClasses3Format(
+                            workItems.add(() -> transformToClasses3Format(codeChange,
                                     dir,
                                     file,
                                     classesThreeOutput));
@@ -377,9 +377,11 @@ public class TaobaoInstantRunTransform extends Transform {
 
     }
 
-    private PatchPolicy parseClassPolicy(File file) {
+    private void parseClassPolicy(File file,CodeChange codeChange) {
+
         if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
-            return PatchPolicy.NONE;
+            codeChange.py = PatchPolicy.NONE;
+            return ;
         }
 
 
@@ -388,7 +390,7 @@ public class TaobaoInstantRunTransform extends Transform {
         try {
             inputStream = new BufferedInputStream(new FileInputStream(file));
             ClassReader classReader = new ClassReader(inputStream);
-            classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, patchPolicy), ClassReader.SKIP_CODE);
+            classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, codeChange), ClassReader.SKIP_CODE);
         } catch (Exception e) {
             e.printStackTrace();
 //            throw new RuntimeException(e);
@@ -399,7 +401,6 @@ public class TaobaoInstantRunTransform extends Transform {
                 e.printStackTrace();
             }
         }
-        return patchPolicy[0];
     }
 
     private interface WorkItem {
@@ -500,12 +501,12 @@ public class TaobaoInstantRunTransform extends Transform {
 
 
     @Nullable
-    protected Void transformToClasses3Format(File inputDir, File inputFile, File outputDir)
+    protected Void transformToClasses3Format(CodeChange codeChange, File inputDir, File inputFile, File outputDir)
             throws IOException {
 
 
         File outputFile =
-                TBIncrementalVisitor.instrumentClass(
+                TBIncrementalVisitor.instrumentClass(codeChange,
                         targetPlatformApi.getFeatureLevel(),
                         inputDir,
                         inputFile,
@@ -558,7 +559,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         boolean matched = MatcherCreator.create(s).match(newPath);
                         if (matched) {
                             File file = TBIncrementalVisitor.instrumentClass(
-                                    targetPlatformApi.getFeatureLevel(),
+                                    new CodeChange(), targetPlatformApi.getFeatureLevel(),
                                     inputDir,
                                     inputFile,
                                     outputDir,
@@ -607,7 +608,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     }
 
                     File file = TBIncrementalVisitor.instrumentClass(
-                            targetPlatformApi.getFeatureLevel(),
+                            new CodeChange(), targetPlatformApi.getFeatureLevel(),
                             inputDir,
                             inputFile,
                             outputDir,
@@ -752,5 +753,38 @@ public class TaobaoInstantRunTransform extends Transform {
         ADD, MODIFY, NONE
     }
 
+    public static class CodeChange {
+
+        private String code;
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
+
+        private PatchPolicy py = PatchPolicy.NONE;
+
+        public PatchPolicy getPy() {
+            return py;
+        }
+
+        public void setPy(PatchPolicy py) {
+            this.py = py;
+        }
+
+        public List<CodeChange> getCodeChanges() {
+            return codeChanges;
+        }
+
+        public void setCodeChanges(List<CodeChange> codeChanges) {
+            this.codeChanges = codeChanges;
+        }
+
+        private List<CodeChange> codeChanges = new ArrayList<>();
+
+    }
 
 }
