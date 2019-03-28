@@ -245,8 +245,7 @@ public class NClassLoader extends PathClassLoader{
         Field loadPathList = findField(loader, "pathList");
         //just use PathClassloader's pathList
         loadPathList.set(loader, originPathListObject);
-//
-//        //we must recreate dexFile due to dexCache
+
         List<File> additionalClassPathEntries = new ArrayList<File>();
         Field dexElement = findField(originPathListObject, "dexElements");
         Object[] originDexElements = (Object[]) dexElement.get(originPathListObject);
