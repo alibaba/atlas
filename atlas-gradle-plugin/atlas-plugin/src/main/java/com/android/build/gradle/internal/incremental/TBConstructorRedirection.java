@@ -66,7 +66,7 @@ public class TBConstructorRedirection extends Redirection {
         ByteCodeUtils.newVariableArray(mv, constructor.variables.subList(0, constructor.localsAtLoadThis));
         mv.arrayStore(Type.getType(Object.class));
 
-        mv.invokeInterface(TBIncrementalVisitor.ALI_CHANGE_TYPE, Method.getMethod("Object access$dispatch(String, Object[])"));
+        mv.invokeInterface(TBIncrementalVisitor.ALI_CHANGE_TYPE, Method.getMethod("Object ipc$dispatch(String, Object[])"));
         mv.visitTypeInsn(Opcodes.CHECKCAST, "[Ljava/lang/Object;");
         //// At this point, init$args has been called and the result Object is on the stack.
         //// The value of that Object is Object[] with exactly n + 2 elements.
@@ -101,7 +101,7 @@ public class TBConstructorRedirection extends Redirection {
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.arrayStore(Type.getType(Object.class));
 
-        mv.invokeInterface(TBIncrementalVisitor.ALI_CHANGE_TYPE, Method.getMethod("Object access$dispatch(String, Object[])"));
+        mv.invokeInterface(TBIncrementalVisitor.ALI_CHANGE_TYPE, Method.getMethod("Object ipc$dispatch(String, Object[])"));
         mv.pop();
     }
 }

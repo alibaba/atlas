@@ -30,7 +30,11 @@ group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
 
+<<<<<<< HEAD
 version "5.1.0.9-rc23"
+=======
+version "5.1.0.9-rc24"
+>>>>>>> dev_atlas_3rd
 
 
 String getEnvValue(key, defValue) {

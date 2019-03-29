@@ -269,7 +269,7 @@ public class AwbDataBindingRenameTask extends BaseTask {
                 continue;
             }
 
-            if (!awbBundle.isDataBindEnabled()) {
+            if (!awbBundle.isDataBindEnabled()|| awbBundle.isMBundle) {
                 continue;
             }
             workerExecutor.execute(new Callable() {

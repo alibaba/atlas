@@ -263,7 +263,7 @@ public class AwbDataBindingExportBuildInfoTask extends BaseTask {
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
 
-            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getDataBindingBundles().contains(awbBundle.getPackageName())){
+            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getDataBindingBundles().contains(awbBundle.getPackageName())|| awbBundle.isMBundle){
                 continue;
             }
 

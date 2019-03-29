@@ -209,7 +209,6 @@
 package android.taobao.atlas.startup.patch;
 
 import android.content.Context;
-import android.taobao.atlas.startup.DexLoadBooster;
 
 /**
  * Created by guanjie on 2017/1/19.
@@ -224,7 +223,6 @@ public class KernalConstants {
     public static  long LASTUPDATETIME;
     public static  Context baseContext;
     public static  String  RAW_APPLICATION_NAME;
-    public static DexLoadBooster dexBooster;
 
     public static final String ATLAS_MONITOR = "Atlas_monitor";
 

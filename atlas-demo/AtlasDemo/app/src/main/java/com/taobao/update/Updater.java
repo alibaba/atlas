@@ -1,4 +1,4 @@
-/*
+package com.taobao.update;/*
  *
  *
  *                                  Apache License
@@ -204,7 +204,8 @@
  *    limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.update;
 
@@ -229,14 +230,22 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+*/
+
+import android.content.Context;
+
+import java.io.File;
+
 /**
  * Created by wuzhong on 2016/12/20.
- */
+ *//*
 
+*/
 public class Updater {
 
     public static void update(Context context) {
 
+<<<<<<< HEAD
         try {
             String versionName = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
             File updateInfo = new File(context.getExternalCacheDir(), "update-" + versionName + ".json");
@@ -306,23 +315,39 @@ public class Updater {
             Log.e("update", "loadDexPatchInfo: versionName is empty !");
             return null;
         }
-
-        File patchsFile = new File(context.getExternalCacheDir(), "dexpatch-" + versionName + ".json");
-        if (!patchsFile.exists()) {
-            Log.e("update", "dexpatch更新信息不存在， 将patchs.json push到目录中.");
-            Log.e("update", "dexpatch文档地址 :https://alibaba.github.io/atlas/update/dexpatch_use_guide.html");
-            return null;
-        }
-        UpdateInfo info = null;
-        String jsonStr = new String(FileUtils.readFile(patchsFile));
-        try {
-            info = parseDexPatchJson(new JSONObject(jsonStr));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return info;
+=======
+//        try {
+//            String versionName = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+//            File updateInfo = new File(context.getExternalCacheDir(), "update-" + versionName + ".json");
+//
+//            if (!updateInfo.exists()) {
+//                Log.e("update", "更新信息不存在，请先 执行 buildTpatch.sh");
+//                toast("更新信息不存在，请先 执行 buildTpatch.sh", context);
+//                return;
+//            }
+//
+//            String jsonStr = new String(FileUtils.readFile(updateInfo));
+//            UpdateInfo info = JSON.parseObject(jsonStr, UpdateInfo.class);
+//
+//            File patchFile = new File(context.getExternalCacheDir(),
+//                    "patch-" + info.updateVersion + "@" + info.baseVersion + ".tpatch");
+//            AtlasUpdater.update(info, patchFile);
+//            Log.e("update", "update success");
+//            toast("更新成功，请重启app", context);
+//        } catch (Throwable e) {
+//            e.printStackTrace();
+//            toast("更新失败, " + e.getMessage(), context);
+//        }
     }
 
+
+>>>>>>> dev_atlas_3rd
+
+//    private static void toast(final String msg, final Context context) {
+//        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show());
+//    }
+
+<<<<<<< HEAD
     private static UpdateInfo parseDexPatchJson(JSONObject data) throws JSONException {
         if (null == data) {
             return null;
@@ -358,3 +383,91 @@ public class Updater {
         return updateInfo;
     }
 }
+=======
+//    public static void dexPatchUpdate(Context context) {
+//        UpdateInfo info = loadDexPatchInfo(context);
+//        if (null == info) {
+//            toast("dexpatch 失败，请检查log，按照文档步骤操作", context);
+//            return;
+//        }
+//        File patchFile = new File(context.getExternalCacheDir(), info.baseVersion + "@" + info.baseVersion + ".tpatch");
+//        try {
+//            AtlasUpdater.dexpatchUpdate(context, info, patchFile, new AtlasUpdater.IDexpatchMonitor() {
+//                @Override
+//                public void merge(boolean success, String bundleName, long version, String errMsg) {
+//                    Log.d("update", "merge: " + success + " " + bundleName + " " + version + " " + errMsg);
+//                }
+//
+//                @Override
+//                public void install(boolean success, String bundleName, long version, String errMsg) {
+//                    Log.d("update", "install: " + success + " " + bundleName + " " + version + " " + errMsg);
+//                }
+//            });
+//            Log.d("update", "update success");
+//        } catch (Exception e) {
+//            Log.e("update", "更新失败", e);
+//        }
+//    }
+//
+//    private static UpdateInfo loadDexPatchInfo(Context context) {
+//        String versionName = null;
+//        try {
+//            versionName = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        if (TextUtils.isEmpty(versionName)) {
+//            Log.e("update", "loadDexPatchInfo: versionName is empty !");
+//            return null;
+//        }
+//
+//        File patchsFile = new File(context.getExternalCacheDir(), "dexpatch-" + versionName + ".json");
+//        if (!patchsFile.exists()) {
+//            Log.e("update", "dexpatch更新信息不存在， 将patchs.json push到目录中.");
+//            Log.e("update", "dexpatch文档地址 :https://alibaba.github.io/atlas/update/dexpatch_use_guide.html");
+//            return null;
+//        }
+//        UpdateInfo info = null;
+//        String jsonStr = new String(FileUtils.readFile(patchsFile));
+//        try {
+//            info = parseDexPatchJson(new JSONObject(jsonStr));
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//        return info;
+//    }
+//
+//    private static UpdateInfo parseDexPatchJson(JSONObject data) throws JSONException {
+//        if (null == data) return null;
+//        JSONObject updateJson = data.getJSONArray("patches").getJSONObject(0);
+//        JSONArray bundles = updateJson.getJSONArray("bundles");
+//        if (null == bundles || bundles.length() < 1) {
+//            return null;
+//        }
+//        UpdateInfo updateInfo = new UpdateInfo();
+//        updateInfo.dexPatch = updateJson.optBoolean("dexPatch", true);
+//        updateInfo.baseVersion = data.getString("baseVersion");
+//        updateInfo.updateBundles = new ArrayList<>(bundles.length());
+//        for (int i = 0; i < bundles.length(); i++) {
+//            JSONObject object = bundles.getJSONObject(i);
+//            JSONArray dependencies = object.getJSONArray("dependency");
+//            List<String> dep = new ArrayList<>();
+//            if (dependencies != null && dependencies.length() > 0) {
+//                for (int j = 0; j < dependencies.length(); j++) {
+//                    dep.add((String) dependencies.get(j));
+//                }
+//            }
+//            UpdateInfo.Item item = new UpdateInfo.Item();
+//            item.dependency = dep;
+//            item.dexpatchVersion = object.getLong("dexpatchVersion");
+//            item.isMainDex = object.getBoolean("isMainDex");
+//            item.reset = object.optBoolean("reset", false);
+//            item.name = object.getString("name");
+//            item.unitTag = object.getString("unitTag");
+//            item.srcUnitTag = object.getString("srcUnitTag");
+//            updateInfo.updateBundles.add(item);
+//        }
+//        return updateInfo;
+//    }
+}
+>>>>>>> dev_atlas_3rd

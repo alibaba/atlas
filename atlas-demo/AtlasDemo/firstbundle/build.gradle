@@ -47,12 +47,11 @@ dependencies {
 
     providedCompile project(':publicbundle')
 
-    compile 'com.android.support.constraint:constraint-layout:1.0.0'
     providedCompile 'com.android.support:support-v4:25.3.0'
     providedCompile 'com.android.support:appcompat-v7:25.1.0'
 
 //    providedCompile 'com.taobao.android:atlas_core:5.0.8.1-rc1@aar'
-    providedCompile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
+    providedCompile 'com.android.support.constraint:constraint-layout:1.0.2'
 
     compile project(':atlas_core')
 }

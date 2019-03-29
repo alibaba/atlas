@@ -222,9 +222,7 @@ import android.os.Looper;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
-import android.taobao.atlas.runtime.ActivityThreadHook;
-import android.taobao.atlas.runtime.DelegateClassLoader;
-import android.taobao.atlas.runtime.DelegateResources;
+
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.ArrayMap;
 import android.util.Log;
@@ -260,23 +258,7 @@ public class AndroidHack {
         return _sActivityThread;
     }
 
-    public static Handler hackH() throws Exception {
-        final Object activityThread = getActivityThread();
-        if (activityThread == null) {
-            throw new Exception("Failed to get ActivityThread.sCurrentActivityThread");
-        }
-        try {
-            final Hack.HackedClass<Object> H = Hack.into("android.app.ActivityThread$H");
-            Hack.HackedField<Object, Object> ActivityThread_mH = AtlasHacks.ActivityThread.field("mH").ofType(H.getmClass());
-            final Handler handler = (Handler) ActivityThread_mH.get(activityThread);
-            Field field = Handler.class.getDeclaredField("mCallback");
-            field.setAccessible(true);
-            field.set(handler,new ActivityThreadHook(activityThread,handler));
-        } catch (Hack.HackDeclaration.HackAssertionException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+
 
     public static Object getLoadedApk(Application application,Object activityThread, String packageName) {
         if(_mLoadedApk!=null){
@@ -316,11 +298,11 @@ public class AndroidHack {
             PackageManager packageManager = application.getPackageManager();
             Resources mResources = application.getResources();
             Method getCompatibilityInfo = null;
-            if(mResources instanceof DelegateResources) {
-                getCompatibilityInfo = mResources.getClass().getSuperclass().getDeclaredMethod("getCompatibilityInfo");
-            }else{
+//            if(mResources instanceof DelegateResources) {
+//                getCompatibilityInfo = mResources.getClass().getSuperclass().getDeclaredMethod("getCompatibilityInfo");
+//            }else{
                 getCompatibilityInfo = findMethod(mResources,"getCompatibilityInfo");
-            }
+//            }
             getCompatibilityInfo.setAccessible(true);
             Class ComplatibilityInfoClass = Class.forName("android.content.res.CompatibilityInfo");
             Object compatibilityInfo = getCompatibilityInfo.invoke(application.getResources());
@@ -362,7 +344,7 @@ public class AndroidHack {
 
     /**
      * Set classLoader to LoadedApk.mClassLoader and set LoadedApk.mApplication to null
-     * 
+     *
      * @param packageName
      * @param classLoader
      * @throws Exception
@@ -423,103 +405,8 @@ public class AndroidHack {
 //        AtlasHacks.LoadedApk_mApplication.set(loadedApk,application);
 //        AtlasHacks.ActivityThread_mInitialApplication.set(activityThread,application);
 //    }
-    
-    public static void injectResources(Application application, Resources resources) throws Exception {
-        Object activityThread = getActivityThread();
-        if (activityThread == null) {
-            throw new Exception("Failed to get ActivityThread.sCurrentActivityThread");
-        }
 
-        Object loadedApk = getLoadedApk(application,activityThread, application.getPackageName());
-        if(loadedApk==null){
-            loadedApk = createNewLoadedApk(application,activityThread);
-            if(loadedApk==null){
-                throw new RuntimeException(" Failed to get ActivityThread.mLoadedApk");
-            }
-            ClassLoader classLoader = AtlasHacks.LoadedApk_mClassLoader.get(loadedApk);
-            if(!(classLoader instanceof DelegateClassLoader)){
-                AtlasHacks.LoadedApk_mClassLoader.set(loadedApk, RuntimeVariables.delegateClassLoader);
-            }
-        }
-        
-        //AtlasHacks.LoadedApk_mResources.on(loadedApk).set(resources);
-        AtlasHacks.LoadedApk_mResources.set(loadedApk,resources);
-        //AtlasHacks.ContextImpl_mResources.on(application.getBaseContext()).set(resources);
-        AtlasHacks.ContextImpl_mResources.set(application.getBaseContext(), resources);
-        //AtlasHacks.ContextImpl_mTheme.on(application.getBaseContext()).set(null);
-        AtlasHacks.ContextImpl_mTheme.set(application.getBaseContext(), null);
-        application.getBaseContext().getTheme();
 
-        try {
-            Collection<WeakReference<Resources>> references = null;
-            if (Build.VERSION.SDK_INT <= 18) {
-                HashMap<?, WeakReference<Resources>> map = (HashMap<?, WeakReference<Resources>>)sActiveResourcesField.get(activityThread);
-                references = map.values();
-            } else if (Build.VERSION.SDK_INT < 24) {
-                Object sResourcesManager = sgetInstanceMethod.invoke(sResourcesManagerClazz);
-                ArrayMap<?,WeakReference<Resources>> activeResources = (ArrayMap<?,WeakReference<Resources>>)sActiveResourcesField.get(sResourcesManager);
-                references = activeResources.values();
-            }else{
-                Object sResourcesManager = sgetInstanceMethod.invoke(sResourcesManagerClazz);
-                references = (Collection<WeakReference<Resources>>)sActiveResourcesField.get(sResourcesManager);
-            }
-            for (WeakReference<Resources> wr : references) {
-                Resources res = wr.get();
-                if(Build.VERSION.SDK_INT<24) {
-                    if (res != null) {
-                        sAssetsField.set(res, resources.getAssets());
-                    }
-                }else{
-                    if(res!=null) {
-                        Field resourcesImplField = Resources.class.getDeclaredField("mResourcesImpl");
-                        resourcesImplField.setAccessible(true);
-                        Object resourceImpl = resourcesImplField.get(res);
-                        Field implAssets = findField(resourceImpl, "mAssets");
-                        implAssets.setAccessible(true);
-                        implAssets.set(resourceImpl, resources.getAssets());
-                    }
-                }
-
-                if(Build.VERSION.SDK_INT>19 && Build.VERSION.SDK_INT<24) {
-                    try {
-                        Field typedArrayPoolField = findField(Resources.class, "mTypedArrayPool");
-                        final Object origTypedArrayPool = typedArrayPoolField.get(resources);
-                        Field poolField = findField(origTypedArrayPool, "mPool");
-                        final Constructor<?> typedArrayConstructor = origTypedArrayPool.getClass().getConstructor(int.class);
-                        typedArrayConstructor.setAccessible(true);
-                        final int poolSize = ((Object[]) poolField.get(origTypedArrayPool)).length;
-                        final Object newTypedArrayPool = typedArrayConstructor.newInstance(poolSize);
-                        typedArrayPoolField.set(resources, newTypedArrayPool);
-                    } catch (Throwable ignored) {
-                    }
-                }
-                if(res!=null) {
-                    res.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
-                }
-
-                Class TintContextWrapper = Class.forName("android.support.v7.widget.TintContextWrapper");
-                Field tintWrapperField = TintContextWrapper.getDeclaredField("sCache");
-                tintWrapperField.setAccessible(true);
-                ArrayList<WeakReference<Object>> sCache = (ArrayList<WeakReference<Object>>)tintWrapperField.get(TintContextWrapper);
-
-                if(sCache!=null){
-                    for(int n=0; n<sCache.size();n++){
-                        final WeakReference<Object> wrappRef = sCache.get(n);
-                        final Object wrapper = wrappRef != null ? wrappRef.get() : null;
-                        Field mTintResourcesField = TintContextWrapper.getDeclaredField("mResources");
-                        mTintResourcesField.setAccessible(true);
-                        Object obj = mTintResourcesField.get(wrapper);
-                        Field mResourceField = findField(obj,"mResources");
-                        mResourceField.set(obj,resources);
-                    }
-                }
-            }
-
-        }catch(Throwable e){
-            e.printStackTrace();
-        }
-
-    }
 
     static Field sActiveResourcesField =null;
     static Class sResourcesManagerClazz = null;

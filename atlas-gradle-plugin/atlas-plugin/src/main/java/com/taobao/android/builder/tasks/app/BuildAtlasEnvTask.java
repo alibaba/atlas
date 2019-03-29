@@ -2,6 +2,7 @@ package com.taobao.android.builder.tasks.app;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.TransformException;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -118,20 +119,25 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private ArtifactCollection symbolListWithPackageNames;
 
-    public static int verifySize = 0;
 
 
     @TaskAction
-    void generate() {
+    void generate() throws TransformException {
 
         Set<ResolvedArtifactResult> compileArtifacts = compileManifests.getArtifacts();
         Set<ResolvedArtifactResult> jarArtifacts = compileJars.getArtifacts();
-        verifySize = jarArtifacts.size();
         Set<ResolvedArtifactResult> nativeLibsArtifacts = nativeLibs.getArtifacts();
         Set<ResolvedArtifactResult> javaResourcesArtifacts = javaResources.getArtifacts();
         Set<ResolvedArtifactResult> androidRes = res.getArtifacts();
         Set<ResolvedArtifactResult> androidAssets = assets.getArtifacts();
         Set<ResolvedArtifactResult> androidRnames = symbolListWithPackageNames.getArtifacts();
+
+        AtlasDependencyTree androidDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
+        List<AwbBundle> bundles = new ArrayList<>();
+        bundles.add(androidDependencyTree.getMainBundle());
+        bundles.addAll(androidDependencyTree.getAwbBundles());
+
+
 
 
 

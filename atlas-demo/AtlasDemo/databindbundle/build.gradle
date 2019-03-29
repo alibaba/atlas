@@ -50,5 +50,5 @@ dependencies {
 
     providedCompile 'com.android.support:support-v4:25.3.0'
     providedCompile 'com.android.support:appcompat-v7:25.1.0'
-    providedCompile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
+    providedCompile 'com.android.support.constraint:constraint-layout:1.0.2'
 }

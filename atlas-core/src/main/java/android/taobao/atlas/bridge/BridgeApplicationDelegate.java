@@ -224,11 +224,14 @@ import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.AtlasPreLauncher;
-import android.taobao.atlas.runtime.PackageManagerDelegate;
 import android.taobao.atlas.runtime.RuntimeVariables;
+<<<<<<< HEAD
 import android.taobao.atlas.runtime.WindowSessionProxy;
 import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
 import android.taobao.atlas.startup.KernalVersionManager;
+=======
+
+>>>>>>> dev_atlas_3rd
 import android.taobao.atlas.util.SoLoader;
 import android.taobao.atlas.util.log.IAlarmer;
 import android.taobao.atlas.util.log.IMonitor;
@@ -313,7 +316,7 @@ public class BridgeApplicationDelegate {
         mIsUpdated = isUpdated;
         mApkPath = apkPath;
         mdexLoadBooster = dexLoadBooster;
-        PackageManagerDelegate.delegatepackageManager(rawApplication.getBaseContext());
+//        PackageManagerDelegate.delegatepackageManager(rawApplication.getBaseContext());
     }
 
     public void attachBaseContext(){
@@ -328,30 +331,30 @@ public class BridgeApplicationDelegate {
         RuntimeVariables.sDexLoadBooster = mdexLoadBooster;
         Log.e("BridgeApplication","length =" + new File(mRawApplication.getApplicationInfo().sourceDir).length());
 
-        if(Build.MANUFACTURER.equalsIgnoreCase("vivo") && Build.VERSION.SDK_INT== 23) {
-            ;
+//        if(Build.MANUFACTURER.equalsIgnoreCase("vivo") && Build.VERSION.SDK_INT== 23) {
+//            ;
+////            try {
+////                File appSGLib = mRawApplication.getDir("SGLib", Context.MODE_PRIVATE);
+////                File mark = new File(mRawApplication.getFilesDir(), "vivo_appSGLib_mark");
+////                if (appSGLib.exists() && !mark.exists()) {
+////                    mark.createNewFile();
+////                    File[] files = appSGLib.listFiles();
+////                    for(File file : files){
+////                        if(file.exists() && file.isDirectory() && file.getName().startsWith("app_")){
+////                            deleteDirectory(file);
+////                        }
+////                    }
+////                }
+////            }catch(Throwable e){
+////                e.printStackTrace();
+////            }
+//        }else{
 //            try {
-//                File appSGLib = mRawApplication.getDir("SGLib", Context.MODE_PRIVATE);
-//                File mark = new File(mRawApplication.getFilesDir(), "vivo_appSGLib_mark");
-//                if (appSGLib.exists() && !mark.exists()) {
-//                    mark.createNewFile();
-//                    File[] files = appSGLib.listFiles();
-//                    for(File file : files){
-//                        if(file.exists() && file.isDirectory() && file.getName().startsWith("app_")){
-//                            deleteDirectory(file);
-//                        }
-//                    }
-//                }
-//            }catch(Throwable e){
+//                RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
+//            } catch (Throwable e){
 //                e.printStackTrace();
 //            }
-        }else{
-            try {
-                RuntimeVariables.sDexLoadBooster.getClass().getDeclaredMethod("setVerificationEnabled", boolean.class).invoke(RuntimeVariables.sDexLoadBooster, false);
-            } catch (Throwable e){
-                e.printStackTrace();
-            }
-        }
+//        }
 
 
         if(!TextUtils.isEmpty(mInstalledVersionName)){
@@ -440,7 +443,6 @@ public class BridgeApplicationDelegate {
 
     public void onCreate(){
         try {
-            AdditionalActivityManagerProxy.get().startRegisterReceivers(RuntimeVariables.androidApplication);
             // *3 create real Application
             mRealApplication = (Application) mRawApplication.getBaseContext().getClassLoader().loadClass(mRealApplicationName).newInstance();
 
@@ -512,20 +514,15 @@ public class BridgeApplicationDelegate {
             }
         }
 
-        if(mRealApplication instanceof IMonitor){
-            AtlasMonitor.getInstance().setExternalMonitor((IMonitor) mRealApplication);
-        }
-
-        if(mRealApplication instanceof IAlarmer){
-            AtlasAlarmer.getInstance().setExternalAlarmer((IAlarmer) mRealApplication);
-        }
-
         Atlas.getInstance().startup(mRealApplication,mIsUpdated);
 
         mRealApplication.onCreate();
 
+<<<<<<< HEAD
 
         //this is walkround bad token crash
+=======
+>>>>>>> dev_atlas_3rd
 //        WindowSessionProxy.delegateWindowSession(mRawApplication);
     }
 
