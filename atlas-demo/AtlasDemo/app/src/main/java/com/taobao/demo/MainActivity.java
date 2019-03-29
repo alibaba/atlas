@@ -18,7 +18,6 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.middleware.dialog.Dialog;
-import com.taobao.update.Updater;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -156,28 +155,7 @@ public class MainActivity extends AppCompatActivity
             dialog.show();
 
 
-        } else if (id == R.id.nav_dex_patch) {
-            new AsyncTask<Void, Void, Boolean>() {
-                @Override
-<<<<<<< HEAD
-                protected Boolean doInBackground(Void... voids) {
-                    boolean update = Updater.dexPatchUpdate(getBaseContext());
-                    return update;
-=======
-                protected Void doInBackground(Void... voids) {
-//                    Updater.dexPatchUpdate(getBaseContext());
-                    return null;
->>>>>>> dev_atlas_3rd
-                }
-
-                @Override
-                protected void onPostExecute(Boolean aVoid) {
-                    if (aVoid) {
-                        android.os.Process.killProcess(android.os.Process.myPid());
-                    }
-                }
-            }.execute();
-        }else if (id == R.id.nav_databind_bundle) {
+        } else if (id == R.id.nav_databind_bundle) {
 
                 Intent intent = new Intent();
                 intent.setPackage(getPackageName());
