@@ -211,7 +211,6 @@ package android.taobao.atlas.runtime;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Dialog;
-import android.app.PreVerifier;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -263,67 +262,6 @@ public class RuntimeVariables implements Serializable{
     public static Object      sDexLoadBooster;
     private static String launchActivityName;
 
-<<<<<<< HEAD
-
-    static {
-        if (Boolean.FALSE.booleanValue()) {
-            String.valueOf(PreVerifier.class);
-        }
-    }
-    public static Dialog alertDialogUntilBundleProcessed(Activity activity,String bundleName){
-        if (activity != null) {
-            if(sReminder!=null){
-                return sReminder.createReminderDialog(activity,bundleName);
-            }else {
-                Dialog dialog = new Dialog(activity, R.style.atlas_default_dialog);
-                dialog.setCanceledOnTouchOutside(false);
-                dialog.setCancelable(true);
-                DefaultProgress progress = new DefaultProgress(activity);
-                float density = delegateResources.getDisplayMetrics().density;
-                int size = (int) (96 * density);
-                ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(size, size);
-                dialog.setContentView(progress, params);
-                return dialog;
-            }
-        }
-        return null;
-    }
-
-    public static boolean verifyBundle(String bundlePath){
-        if(sBundleVerifier == null){
-            return true;
-        }else{
-            return  sBundleVerifier.verifyBundle(bundlePath);
-        }
-    }
-=======
-//    public static Dialog alertDialogUntilBundleProcessed(Activity activity,String bundleName){
-//        if (activity != null) {
-//            if(sReminder!=null){
-//                return sReminder.createReminderDialog(activity,bundleName);
-//            }else {
-//                Dialog dialog = new Dialog(activity, R.style.atlas_default_dialog);
-//                dialog.setCanceledOnTouchOutside(false);
-//                dialog.setCancelable(true);
-//                DefaultProgress progress = new DefaultProgress(activity);
-//                float density = delegateResources.getDisplayMetrics().density;
-//                int size = (int) (96 * density);
-//                ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(size, size);
-//                dialog.setContentView(progress, params);
-//                return dialog;
-//            }
-//        }
-//        return null;
-//    }
-//
-//    public static boolean verifyBundle(String bundlePath){
-//        if(sBundleVerifier == null){
-//            return true;
-//        }else{
-//            return  sBundleVerifier.verifyBundle(bundlePath);
-//        }
-//    }
->>>>>>> dev_atlas_3rd
 
     public static Class FrameworkPropertiesClazz;
 

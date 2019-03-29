@@ -516,15 +516,7 @@ public class BundleReleaser {
         String optimizedPath = optimizedPathFor(validDex, dexOptDir());
         try {
             if(!externalStorage) {
-<<<<<<< HEAD
 
-
-//                dexFile = dexOat(validDex.getPath(),optimizedPath,);
-
-                dexFile = /*DexFile*/AndroidRuntime.getInstance().loadDex(validDex.getPath(), optimizedPath, 0, null);
-=======
-                dexFile = /*DexFile*/DexFile.loadDex(validDex.getPath(), optimizedPath, 0);
->>>>>>> dev_atlas_3rd
                 if(!new File(optimizedPath).exists()){
                     Log.e(TAG,"odex not exist");
                 }
@@ -563,13 +555,7 @@ public class BundleReleaser {
             if (!checkDexValid(dexFile)) {
                 return false;
             }
-<<<<<<< HEAD
-            if(!hasReleased && Build.VERSION.SDK_INT>=21 && Build.VERSION.SDK_INT<26) {
-                 return KernalConstants.dexBooster.isOdexValid(optimizedPath);
-            }
-=======
 
->>>>>>> dev_atlas_3rd
             return true;
         }
         return false;

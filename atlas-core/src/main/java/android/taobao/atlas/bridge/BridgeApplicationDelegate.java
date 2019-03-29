@@ -225,13 +225,8 @@ import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AtlasHacks;
 import android.taobao.atlas.runtime.AtlasPreLauncher;
 import android.taobao.atlas.runtime.RuntimeVariables;
-<<<<<<< HEAD
-import android.taobao.atlas.runtime.WindowSessionProxy;
-import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
-import android.taobao.atlas.startup.KernalVersionManager;
-=======
 
->>>>>>> dev_atlas_3rd
+import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.util.SoLoader;
 import android.taobao.atlas.util.log.IAlarmer;
 import android.taobao.atlas.util.log.IMonitor;
@@ -518,12 +513,6 @@ public class BridgeApplicationDelegate {
 
         mRealApplication.onCreate();
 
-<<<<<<< HEAD
-
-        //this is walkround bad token crash
-=======
->>>>>>> dev_atlas_3rd
-//        WindowSessionProxy.delegateWindowSession(mRawApplication);
     }
 
 }
