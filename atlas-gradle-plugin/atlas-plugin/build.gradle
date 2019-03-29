@@ -256,10 +256,6 @@ jar {
     from zipTree("libs/libarsc.jar")
 }
 
-<<<<<<< HEAD
 
-version = '3.0.1-rc86-fix15-13'
-=======
 version = '3.0.1-rc86-fix15-21'
->>>>>>> dev_atlas_3rd
 
