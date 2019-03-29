@@ -221,6 +221,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Process;
+import android.preference.PreferenceManager;
 import android.taobao.atlas.startup.patch.KernalBundle;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.text.TextUtils;
@@ -292,7 +293,7 @@ public class AtlasBridgeApplication extends Application{
             }
             KernalVersionManager.instance().init();
             if(!KernalBundle.checkLoadKernalDebugPatch(this)){
-                if(KernalBundle.hasKernalPatch()) {
+                if(KernalBundle.hasKernalPatch() && Build.VERSION.SDK_INT < 28) {
                     //has patch ? true -> must load successed
                     hasKernalPatched = KernalBundle.checkloadKernalBundle(this, KernalConstants.PROCESS);
                     if (!hasKernalPatched) {
@@ -484,6 +485,10 @@ public class AtlasBridgeApplication extends Application{
                         && !needRollback() && (Build.FINGERPRINT + ""
                         + Build.VERSION.SDK_INT).equals(fingerprint)) {
                     return false;
+                }else {
+                    if (!TextUtils.isEmpty(storedVersionName)){
+                        PreferenceManager.getDefaultSharedPreferences(this).edit().putString("lastInstalledVersionName",storedVersionName).apply();
+                    }
                 }
             }catch(Throwable e){
 //                throw new RuntimeException(e);

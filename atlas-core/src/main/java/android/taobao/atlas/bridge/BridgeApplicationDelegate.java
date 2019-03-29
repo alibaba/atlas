@@ -229,7 +229,6 @@ import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.runtime.WindowSessionProxy;
 import android.taobao.atlas.runtime.newcomponent.AdditionalActivityManagerProxy;
 import android.taobao.atlas.startup.KernalVersionManager;
-import android.taobao.atlas.util.AtlasCrashManager;
 import android.taobao.atlas.util.SoLoader;
 import android.taobao.atlas.util.log.IAlarmer;
 import android.taobao.atlas.util.log.IMonitor;
@@ -358,7 +357,6 @@ public class BridgeApplicationDelegate {
         if(!TextUtils.isEmpty(mInstalledVersionName)){
             RuntimeVariables.sInstalledVersionName = mInstalledVersionName;
         }
-        AtlasCrashManager.forceStopAppWhenCrashed();
         System.out.print(SoLoader.class.getName());
         try {
             String preLaunchStr = (String) RuntimeVariables.getFrameworkProperty("preLaunch");

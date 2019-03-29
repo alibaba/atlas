@@ -371,7 +371,7 @@ public class Dex extends BaseTask {
                 @Override
                 public File call() {
                     AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName());
-                    return awbTransform.getInputDir();
+                    return awbTransform.getInputDirs().iterator().next();
                 }
             });
             ConventionMappingHelper.map(dexTask, "inputFiles", new Callable<List<File>>() {

@@ -243,7 +243,7 @@ public class DependencyGroup {
 
     public DependencyGroup(Configuration compileClasspath,
                            Configuration bundleClasspath,
-                           Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
+                           Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts, Set<String> awbs) {
 
         Set<? extends DependencyResult> compileDependencies = compileClasspath.getIncoming()
                                                                                 .getResolutionResult()
@@ -257,10 +257,10 @@ public class DependencyGroup {
 
 
 
-        Set<String> bundleSets = getBundleDependencies(compileClasspath, bundleCompileDependencies);
+        Set<String> bundleSets = getBundleDependencies(compileClasspath, bundleCompileDependencies,awbs);
         //Analysis of the compileDependencies Bundle dependency
         for (DependencyResult dependencyResult : compileDependencies) {
-            if (DependencyConvertUtils.isAwbDependency(dependencyResult, artifacts)) {
+            if (DependencyConvertUtils.isAwbDependency(dependencyResult, artifacts,awbs)) {
                 String name = dependencyResult.toString();
                 if (!bundleSets.contains(name)) {
                     bundleSets.add(name);
@@ -297,7 +297,7 @@ public class DependencyGroup {
     }
 
     private Set<String> getBundleDependencies(Configuration compileClasspath,
-                                              Set<? extends DependencyResult> bundleDependencies) {
+                                              Set<? extends DependencyResult> bundleDependencies, Set<String> awbs) {
         Set<String> bundleSets = new HashSet<>();
         for (DependencyResult dependencyResult : bundleDependencies) {
             bundleSets.add(dependencyResult.toString());
@@ -307,7 +307,7 @@ public class DependencyGroup {
                 DefaultExternalModuleDependency externalModuleDependency = (DefaultExternalModuleDependency)dependency;
                 if (!((DefaultExternalModuleDependency)dependency).getArtifacts().isEmpty()) {
                     if (StringUtils.equalsIgnoreCase("awb", ((DefaultExternalModuleDependency)dependency).getArtifacts()
-                        .iterator().next().getType())) {
+                        .iterator().next().getType()) || awbs.contains(dependency.getGroup()+":"+dependency.getName())) {
                         bundleSets.add(
                             dependency.getGroup() + ":" + dependency.getName() + ":" + dependency.getVersion());
                     }

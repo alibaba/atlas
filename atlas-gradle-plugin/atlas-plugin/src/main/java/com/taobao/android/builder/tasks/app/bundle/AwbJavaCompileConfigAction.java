@@ -336,7 +336,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
                 .addScope(QualifiedContent.Scope.PROJECT)
                 .setFileCollection(appVariantOutputContext.getVariantContext().getProject().files(appVariantOutputContext.getJAwbavaOutputDir(awbBundle)))
                 .build());
-        appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName()).setInputDir(appVariantOutputContext.getJAwbavaOutputDir(awbBundle));
+        appVariantOutputContext.getAwbTransformMap().get(awbBundle.getName()).addDir(appVariantOutputContext.getJAwbavaOutputDir(awbBundle));
         CompileOptions compileOptions = scope.getGlobalScope().getExtension().getCompileOptions();
         AbstractCompilesUtil.configureLanguageLevel(javacTask,
                 compileOptions,

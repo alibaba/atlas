@@ -5,6 +5,7 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.scope.TaskOutputHolder;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
@@ -35,6 +36,9 @@ public class FirstApkAction implements Action<Task> {
     public void execute(Task task) {
         assert task instanceof PackageApplication;
         PackageApplication packageApplication = (PackageApplication) task;
+        if (packageApplication.getName().startsWith("packageInstantRunResources")){
+            return;
+        }
         File bundleInfoFile = new File(appVariantOutputContext.getScope().getGlobalScope().getOutputsDir(),
                 "bundleInfo-" +
                         appVariantOutputContext.getVariantContext().getVariantConfiguration()
@@ -55,8 +59,14 @@ public class FirstApkAction implements Action<Task> {
                                 + SdkConstants.DOT_RES);
 
 
+        File[]dexs = null;
 
-        File[]dexs = packageApplication.getDexFolders().getSingleFile().listFiles(pathname -> pathname.getName().equals("classes.dex"));
+        if (packageApplication.getDexFolders().getFiles().size() == 0){
+            dexs = appVariantOutputContext.getDexMergeFolder().listFiles(pathname -> pathname.getName().equals("classes.dex"));
+            ReflectUtils.updateField(packageApplication,"dexFolders",appVariantOutputContext.getVariantContext().getProject().files(appVariantOutputContext.getDexMergeFolder()));
+        }else {
+            dexs = packageApplication.getDexFolders().getSingleFile().listFiles(pathname -> pathname.getName().equals("classes.dex"));
+        }
         if (dexs!= null && dexs.length == 1) {
             File androidManifest = null;
             if (appVariantOutputContext.getApkData().getFilterName() == null){

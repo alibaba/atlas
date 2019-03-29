@@ -177,8 +177,8 @@ public class ResourcesShrinker extends Transform {
         AppVariantOutputContext appVariantOutputContext = variantContext.getAppVariantOutputContext(apkData);
         for (AwbTransform awbTransform : appVariantOutputContext.getAwbTransformMap().values()) {
             classes.addAll(awbTransform.getInputLibraries());
-            if (awbTransform.getInputDir()!= null && awbTransform.getInputDir().exists()) {
-                classes.add(awbTransform.getInputDir());
+            if (awbTransform.getInputDirs()!= null && awbTransform.getInputDirs().size() > 0) {
+                classes.addAll(awbTransform.getInputDirs());
             }
         }
 

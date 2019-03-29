@@ -230,6 +230,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -427,9 +428,13 @@ public class BundleReleaser {
         Log.e(TAG, "dexOptimization start");
         File[] validDexes = reversionDir.listFiles(new FilenameFilter() {
             @Override
-            public boolean accept(File dir, String pathname) {
-                return pathname.endsWith(DEX_SUFFIX);
 
+            public boolean accept(File dir,String pathname) {
+                if (!DexReleaser.isArt() || externalStorage) {
+                  return pathname.endsWith(DEX_SUFFIX);
+                } else {
+                    return pathname.endsWith(".zip");
+                }
             }
         });
 

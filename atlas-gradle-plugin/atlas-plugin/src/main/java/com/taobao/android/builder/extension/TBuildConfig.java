@@ -247,6 +247,16 @@ public class TBuildConfig {
 
     private Boolean allBundlesToMdex = false;
 
+    public Boolean getConsumerProguardEnabled() {
+        return consumerProguardEnabled;
+    }
+
+    public void setConsumerProguardEnabled(Boolean consumerProguardEnabled) {
+        this.consumerProguardEnabled = consumerProguardEnabled;
+    }
+
+    private Boolean consumerProguardEnabled = false;
+
     public Boolean getMergeBundlesDex() {
         return mergeBundlesDex;
     }
@@ -309,6 +319,17 @@ public class TBuildConfig {
     @Config(title = "bundleThe packageId definition file", message = "bundlePackageId defines files that are not defined automatically", group = "atlas")
     private File packageIdFile = new File("");
 
+
+    public File getAwbConfigFile() {
+        return awbConfigFile;
+    }
+
+    public void setAwbConfigFile(File awbConfigFile) {
+        this.awbConfigFile = awbConfigFile;
+    }
+
+    private File awbConfigFile = new File("");
+
     @Config(message = "Automatically generate the bundle's packageId", order = 6, advance = false, group = "atlas")
     private boolean autoPackageId = true;
 
@@ -346,6 +367,17 @@ public class TBuildConfig {
     @Deprecated
     private Boolean resV4Enabled = true;
 
+
+    public Boolean getDisabledBundleDependency() {
+        return disabledBundleDependency;
+    }
+
+    public void setDisabledBundleDependency(Boolean disabledBundleDependency) {
+        this.disabledBundleDependency = disabledBundleDependency;
+    }
+
+    private Boolean disabledBundleDependency = false;
+
     @Config(message = "classInjection before proguard", advance = true, order = 12, group = "atlas")
     private Boolean injectBeforeProguard = false;
 
@@ -366,6 +398,29 @@ public class TBuildConfig {
     @Deprecated
     private Set<String> insideOfApkBundles = Sets.newHashSet();
 
+
+    public Set<String> getInjectExcludePkgs() {
+        return injectExcludePkgs;
+    }
+
+    public void setInjectExcludePkgs(Set<String> injectExcludePkgs) {
+        this.injectExcludePkgs = injectExcludePkgs;
+    }
+
+    private Set<String>injectExcludePkgs = new HashSet<>();
+
+
+    public Set<String> getInjectPkgs() {
+        return injectPkgs;
+    }
+
+    public void setInjectPkgs(Set<String> injectPkgs) {
+        this.injectPkgs = injectPkgs;
+    }
+
+    private Set<String>injectPkgs = new HashSet<>();
+
+
     public Set<String> getOutOfApkNativeSos() {
         return outOfApkNativeSos;
     }
@@ -377,6 +432,17 @@ public class TBuildConfig {
     private Set<String>outOfApkNativeSos = Sets.newHashSet();
 
     private boolean incremental = false;
+
+
+    public boolean isInjectSerialVersionUID() {
+        return injectSerialVersionUID;
+    }
+
+    public void setInjectSerialVersionUID(boolean injectSerialVersionUID) {
+        this.injectSerialVersionUID = injectSerialVersionUID;
+    }
+
+    private boolean injectSerialVersionUID = false;
 
     @Config(message = "Whether to use fast proguard", order = 16, advance = true, group = "atlas")
     private boolean fastProguard = false;
@@ -688,5 +754,49 @@ public class TBuildConfig {
     private boolean pushInstall;
     public boolean isPushInstall() {
         return pushInstall;
+    }
+
+    public boolean isPatchConstructors() {
+        return patchConstructors;
+    }
+
+    public void setPatchConstructors(boolean patchConstructors) {
+        this.patchConstructors = patchConstructors;
+    }
+
+    private boolean patchConstructors = false;
+
+    public boolean isPatchEachMethod() {
+        return patchEachMethod;
+    }
+
+    public void setPatchEachMethod(boolean patchEachMethod) {
+        this.patchEachMethod = patchEachMethod;
+    }
+
+    private boolean patchEachMethod = false;
+
+
+
+    public int getPatchSuperMethodCount() {
+        return patchSuperMethodCount;
+    }
+
+    public void setPatchSuperMethodCount(int patchSuperMethodCount) {
+        this.patchSuperMethodCount = patchSuperMethodCount;
+    }
+
+    private int patchSuperMethodCount = 100;
+
+    public void setSupportAddCallSuper(boolean supportAddCallSuper) {
+        this.supportAddCallSuper = supportAddCallSuper;
+    }
+
+    private boolean supportAddCallSuper = false;
+
+
+
+    public boolean isSupportAddCallSuper() {
+        return supportAddCallSuper;
     }
 }

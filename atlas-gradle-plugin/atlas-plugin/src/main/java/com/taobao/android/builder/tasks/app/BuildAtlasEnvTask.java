@@ -118,12 +118,15 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private ArtifactCollection symbolListWithPackageNames;
 
+    public static int verifySize = 0;
+
 
     @TaskAction
     void generate() {
 
         Set<ResolvedArtifactResult> compileArtifacts = compileManifests.getArtifacts();
         Set<ResolvedArtifactResult> jarArtifacts = compileJars.getArtifacts();
+        verifySize = jarArtifacts.size();
         Set<ResolvedArtifactResult> nativeLibsArtifacts = nativeLibs.getArtifacts();
         Set<ResolvedArtifactResult> javaResourcesArtifacts = javaResources.getArtifacts();
         Set<ResolvedArtifactResult> androidRes = res.getArtifacts();
@@ -149,6 +152,7 @@ public class BuildAtlasEnvTask extends BaseTask {
                 String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
                 allJars.add(new FileIdentity(projectPath.substring(projectPath.lastIndexOf(":") + 1), resolvedArtifactResult.getFile(), resolvedArtifactResult.getId().getDisplayName().startsWith("classes.jar") ? false : true, true));
             } else if (componentIdentifier instanceof OpaqueComponentArtifactIdentifier) {
+                if (resolvedArtifactResult.getFile().getAbsolutePath().contains("renderscript"))
                 appLocalJars.add(new FileIdentity(componentIdentifier.getDisplayName(), resolvedArtifactResult.getFile(), true, false));
             }
         }
@@ -208,7 +212,7 @@ public class BuildAtlasEnvTask extends BaseTask {
 
 
          //app localJar is not support , this may course duplicate localjars
-//        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(fileIdentity));
+        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(fileIdentity));
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
@@ -711,7 +715,8 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private boolean isMBundle(AppVariantContext appVariantContext, AwbBundle awbBundle){
 
-        if (awbBundle.getResolvedCoordinates().getArtifactId().equals("custom-detail-android")){
+
+        if (awbBundle.getPackageName().equals("com.taobao.android.customdetail")){
             return false;
         }
 

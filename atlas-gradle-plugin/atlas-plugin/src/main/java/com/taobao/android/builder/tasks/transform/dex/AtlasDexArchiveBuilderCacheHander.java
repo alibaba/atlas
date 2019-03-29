@@ -1,5 +1,7 @@
 package com.taobao.android.builder.tasks.transform.dex;
 
+import android.databinding.tool.util.L;
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.JarInput;
@@ -14,11 +16,12 @@ import com.android.builder.dexing.DexerTool;
 import com.android.builder.utils.FileCache;
 import com.android.dx.Version;
 import com.android.tools.r8.AtlasD8;
-import com.google.common.base.Joiner;
-import com.google.common.base.Throwables;
-import com.google.common.base.Verify;
+import com.android.utils.FileUtils;
+import com.google.common.base.*;
 import com.google.common.collect.Multimap;
+import com.google.common.hash.Hashing;
 import com.google.common.io.ByteStreams;
+import com.taobao.android.builder.tools.MD5Util;
 import org.gradle.api.Project;
 
 import java.nio.file.*;
@@ -28,6 +31,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+
+import static com.android.builder.dexing.ClassFileInput.CLASS_MATCHER;
 
 /**
  * @author lilong
@@ -67,7 +72,7 @@ public class AtlasDexArchiveBuilderCacheHander {
     }
 
     @Nullable
-    public File getCachedVersionIfPresent(JarInput input) throws IOException {
+    public File getCachedVersionIfPresent(JarInput input) throws Exception {
         FileCache cache =
                 getBuildCache(
                         input.getFile(), isExternalLib(input), userLevelCache);
@@ -85,7 +90,7 @@ public class AtlasDexArchiveBuilderCacheHander {
     }
 
     @Nullable
-    public File getCachedVersionIfPresent(File input) throws IOException {
+    public File getCachedVersionIfPresent(File input) throws Exception {
         assert input.isFile();
         FileCache cache =
                 getBuildCache(
@@ -176,26 +181,60 @@ public class AtlasDexArchiveBuilderCacheHander {
             @NonNull DexerTool dexerTool,
             int minSdkVersion,
             boolean isDebuggable)
-            throws IOException {
+            throws Exception {
         // To use the cache, we need to specify all the inputs that affect the outcome of a pre-dex
         // (see DxDexKey for an exhaustive list of these inputs)
         FileCache.Inputs.Builder buildCacheInputs =
                 new FileCache.Inputs.Builder(FileCache.Command.PREDEX_LIBRARY_TO_DEX_ARCHIVE);
+        java.util.function.Predicate<String> CLASS_MATCHER = s -> s.endsWith(SdkConstants.DOT_CLASS);
 
-        buildCacheInputs
-                .putFile(
-                        FileCacheInputParams.FILE.name(),
-                        inputFile,
-                        FileCache.FileProperties.HASH)
-                .putString(FileCacheInputParams.DX_VERSION.name(), Version.VERSION)
-                .putBoolean(FileCacheInputParams.JUMBO_MODE.name(), isJumboModeEnabledForDx())
-                .putBoolean(
-                        FileCacheInputParams.OPTIMIZE.name(),
-                        !dexOptions.getAdditionalParameters().contains("--no-optimize"))
-                .putString(FileCacheInputParams.DEXER_TOOL.name(), dexerTool.name())
-                .putLong(FileCacheInputParams.CACHE_KEY_VERSION.name(), CACHE_KEY_VERSION)
-                .putLong(FileCacheInputParams.MIN_SDK_VERSION.name(), minSdkVersion)
-                .putBoolean(FileCacheInputParams.IS_DEBUGGABLE.name(), isDebuggable);
+        if (inputFile.isDirectory()){
+            String hash = Files.walk(inputFile.toPath())
+                    .filter(p -> CLASS_MATCHER.test(p.toString())).sorted().map(new Function<Path, String>() {
+                        @javax.annotation.Nullable
+                        @Override
+                        public String apply(@javax.annotation.Nullable Path input) {
+                            try {
+                                return com.google.common.io.Files.asByteSource(input.toFile()).hash(Hashing.sha256()).toString();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            return "";
+                        }
+                    }).collect(StringBuilder::new, StringBuilder::append, StringBuilder::append).toString();
+
+
+
+            buildCacheInputs
+                    .putString("hash",MD5Util.getMD5(hash))
+                    .putString(FileCacheInputParams.DX_VERSION.name(), Version.VERSION)
+                    .putBoolean(FileCacheInputParams.JUMBO_MODE.name(), isJumboModeEnabledForDx())
+                    .putBoolean(
+                            FileCacheInputParams.OPTIMIZE.name(),
+                            !dexOptions.getAdditionalParameters().contains("--no-optimize"))
+                    .putString(FileCacheInputParams.DEXER_TOOL.name(), dexerTool.name())
+                    .putLong(FileCacheInputParams.CACHE_KEY_VERSION.name(), CACHE_KEY_VERSION)
+                    .putLong(FileCacheInputParams.MIN_SDK_VERSION.name(), minSdkVersion)
+                    .putBoolean(FileCacheInputParams.IS_DEBUGGABLE.name(), isDebuggable);
+
+
+
+        }else {
+            buildCacheInputs
+                    .putFile(
+                            FileCacheInputParams.FILE.name(),
+                            inputFile,
+                            FileCache.FileProperties.HASH)
+                    .putString(FileCacheInputParams.DX_VERSION.name(), Version.VERSION)
+                    .putBoolean(FileCacheInputParams.JUMBO_MODE.name(), isJumboModeEnabledForDx())
+                    .putBoolean(
+                            FileCacheInputParams.OPTIMIZE.name(),
+                            !dexOptions.getAdditionalParameters().contains("--no-optimize"))
+                    .putString(FileCacheInputParams.DEXER_TOOL.name(), dexerTool.name())
+                    .putLong(FileCacheInputParams.CACHE_KEY_VERSION.name(), CACHE_KEY_VERSION)
+                    .putLong(FileCacheInputParams.MIN_SDK_VERSION.name(), minSdkVersion)
+                    .putBoolean(FileCacheInputParams.IS_DEBUGGABLE.name(), isDebuggable);
+        }
        if (project.hasProperty("light") && project.hasProperty("deepShrink")){
             buildCacheInputs.putBoolean("deepShrink",AtlasD8.deepShrink);
         }
@@ -231,7 +270,7 @@ public class AtlasDexArchiveBuilderCacheHander {
     }
 
     void populateCache(Multimap<QualifiedContent, File> cacheableItems)
-            throws IOException, ExecutionException {
+            throws Exception {
 
         for (QualifiedContent input : cacheableItems.keys()) {
             FileCache cache =
@@ -267,7 +306,7 @@ public class AtlasDexArchiveBuilderCacheHander {
     }
 
     public void populateCache(File input,File out)
-            throws IOException, ExecutionException {
+            throws Exception {
 
             FileCache cache =
                     getBuildCache(

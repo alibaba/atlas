@@ -234,7 +234,6 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
-import org.gradle.api.internal.project.DefaultProject;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.specs.Specs;
 
@@ -261,9 +260,12 @@ public class AtlasDepTreeParser {
 
     private final ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
 
-    public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo) {
+    private Set<String>awbs = new HashSet<>();
+
+    public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo, Set<String> awbs) {
         this.project = project;
         this.extraModelInfo = extraModelInfo;
+        this.awbs =awbs;
 //        this.apDependencies = apDependencies;
     }
 
@@ -311,7 +313,7 @@ public class AtlasDepTreeParser {
 
 
         //Rely on the group
-        DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath,artifacts);
+        DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath,artifacts,awbs);
 
         DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts,
                                                                        dependencyGroup.bundleProvidedMap,dependencyGroup.bundleCompileMap);

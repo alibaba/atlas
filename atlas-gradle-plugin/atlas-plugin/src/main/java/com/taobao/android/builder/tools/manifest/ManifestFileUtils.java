@@ -266,18 +266,23 @@ public class ManifestFileUtils {
 
     public static String[] SYSTEM_PERMISSION = new String[] {"android.permission", "com.android"};
 
+    private static final String INSTANT_RUN_CONTENTPROVIDER = "com.android.tools.ir.server.InstantRunContentProvider";
+
+    private static final String ALI_INSTANT_RUN_CONTENTPROVIDER = "com.android.alibaba.ip.server.InstantRunContentProvider";
+
+
     /**
      * Follow up the manifest
-     *
-     * @param mainManifest
+     *  @param mainManifest
      * @param libManifestMap
      * @param baseBunfleInfoFile
      * @param manifestOptions
+     * @param debuggable
      */
     public static Result postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
                                               Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
                                               ManifestOptions manifestOptions, boolean addMultiDex,
-                                              boolean isInstantRun, Set<String> remoteBundles,Set<String> insideBundles,boolean pushInstall)
+                                              boolean isInstantRun, boolean debuggable, Set<String> remoteBundles, Set<String> insideBundles, boolean pushInstall)
         throws IOException, DocumentException {
 
         Result result = new Result();
@@ -312,7 +317,12 @@ public class ManifestFileUtils {
             removeProvider(document);
         }
         if (isInstantRun) {
-            removeProcess(document);
+            singleProcess(document,ManifestFileUtils.getApplicationId(inputFile));
+        }
+
+        if (isInstantRun && !debuggable){
+            disableDebuggable(document);
+
         }
         removeCustomLaunches(document, manifestOptions);
         updatePermission(document, manifestOptions);
@@ -323,6 +333,37 @@ public class ManifestFileUtils {
         printlnPermissions(document);
 
         return result;
+    }
+
+    private static void singleProcess(Document document, String applicationId) {
+            List<Node> nodes = document.getRootElement().selectNodes("//provider");
+        for (Node node : nodes) {
+            Element element = (Element)node;
+            String value = element.attributeValue("name");
+            if (value.equals(INSTANT_RUN_CONTENTPROVIDER)){
+                element.addAttribute("name",ALI_INSTANT_RUN_CONTENTPROVIDER);
+                element.addAttribute("authorities",applicationId+"."+ALI_INSTANT_RUN_CONTENTPROVIDER);
+                Attribute attribute = element.attribute("multiprocess");
+                if (attribute!= null) {
+                    attribute.setValue("false");
+                    logger.warn("singleProcess  com.android.tools.ir.server.InstantRunContentProvider.......");
+                }
+
+            }
+
+        }
+
+    }
+
+    private static void disableDebuggable(Document document) {
+        Element root = document.getRootElement();// Get the root node
+        Element app = root.element("application");
+        Attribute attribute = app.attribute("debuggable");
+        if (attribute!= null){
+            attribute.setValue("false");
+            logger.warn("disable android:debuggable .......");
+//            app.remove(attribute);
+        }
     }
 
     private static void addAndroidLabel(Document document,boolean pushInstall) {

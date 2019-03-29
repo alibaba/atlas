@@ -121,6 +121,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
     }
 
     private void processAtlasNativeSo(String path) {
+        appVariantOutputContext.getVariantContext().getProject().getLogger().info("processAtlasNativeSo soFile path:" + path);
         Set<String> removedNativeSos = appVariantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getOutOfApkNativeSos();
         if (removedNativeSos.size() > 0) {
             if (removedNativeSos.contains(path)) {
@@ -598,7 +599,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
         }
 
 
-        paths.parallelStream().forEach(s -> processAtlasNativeSo(s));
+        paths.parallelStream().forEach(s ->  processAtlasNativeSo(s));
 
 
     }

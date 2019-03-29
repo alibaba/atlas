@@ -283,7 +283,7 @@ public class JavacAwbsTask extends BaseTask {
                         AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().get(
                             awbBundle.getName());
 
-                        awbTransform.setInputDir(awbJavaCompile.getDestinationDir());
+                        awbTransform.addDir(awbJavaCompile.getDestinationDir());
 
                     } catch (Throwable e) {
                         e.printStackTrace();
