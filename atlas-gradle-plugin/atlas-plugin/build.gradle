@@ -256,5 +256,5 @@ jar {
     from zipTree("libs/libarsc.jar")
 }
 
-version = '3.0.1-rc86-fix15-21'
+version = '3.0.1-rc87'
 

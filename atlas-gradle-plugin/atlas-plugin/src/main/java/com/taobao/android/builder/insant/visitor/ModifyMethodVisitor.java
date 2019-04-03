@@ -34,7 +34,7 @@ public class ModifyMethodVisitor extends MethodVisitor {
             TaobaoInstantRunTransform.CodeChange codeChange = new TaobaoInstantRunTransform.CodeChange();
             codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.ADD);
             codeChange.setCode(methodName+"|"+methodDesc);
-            codeChange.getCodeChanges().add(codeChange);
+            this.codeChange.getCodeChanges().add(codeChange);
         }
         return super.visitAnnotation(desc, visible);
     }

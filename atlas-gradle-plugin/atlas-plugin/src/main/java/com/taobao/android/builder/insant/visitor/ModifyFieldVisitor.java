@@ -14,7 +14,7 @@ import org.objectweb.asm.TypePath;
 public class ModifyFieldVisitor extends FieldVisitor {
 
 
-    private TaobaoInstantRunTransform.PatchPolicy[] py = new TaobaoInstantRunTransform.PatchPolicy[]{TaobaoInstantRunTransform.PatchPolicy.NONE};
+    private TaobaoInstantRunTransform.CodeChange py = new TaobaoInstantRunTransform.CodeChange();
 
     public ModifyFieldVisitor(int api, FieldVisitor fv, TaobaoInstantRunTransform.CodeChange patchPolicy) {
         super(api, fv);
@@ -23,8 +23,8 @@ public class ModifyFieldVisitor extends FieldVisitor {
 
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        if (desc.equals(TBIncrementalVisitor.MODIFY_FIELD.getDescriptor()) && visible) {
-            py[0] = TaobaoInstantRunTransform.PatchPolicy.MODIFY;
+        if (desc.equals(TBIncrementalVisitor.MODIFY_FIELD.getDescriptor()) && visible && py.getPy()!= TaobaoInstantRunTransform.PatchPolicy.ADD) {
+            py.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
         }else if (desc.equals(TBIncrementalVisitor.ADD_FIELD.getDescriptor()) && visible){
             throw new RuntimeException("add field is not support!");
         }

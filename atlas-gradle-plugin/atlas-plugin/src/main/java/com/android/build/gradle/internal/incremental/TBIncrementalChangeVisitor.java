@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * 创建日期：2019/1/5 on 上午10:54
@@ -248,6 +249,8 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         this.codeChange = codeChange;
         if (codeChange.getCodeChanges()!= null && codeChange.getCodeChanges().size() > 0){
             changes = codeChange.getCodeChanges();
+            changes.forEach(codeChange1 -> System.err.println(TBIncrementalChangeVisitor.this.codeChange.getCode()+" codechange:"+ codeChange1.getCode()));
+
         }
 
     }
@@ -517,11 +520,15 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             if (changes.size() > 0){
                 for (TaobaoInstantRunTransform.CodeChange codeChange:changes){
                         if (codeChange.getCode().equals(name+"|"+desc)){
+                            System.err.println("Generic Method dispatch : " + opcode +
+                                    ":" + owner + ":" + name + ":" + desc + ":" + itf + ":" + isStatic);
                             visitAddMethod = true;
+                            break;
                         }
                  }
 
             }
+
 
 
             if (DEBUG) {
@@ -539,10 +546,45 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             if (DEBUG) {
                 System.out.println("Opcode handled ? " + opcodeHandled);
             }
-            if (!opcodeHandled && !visitAddMethod) {
+
+            if (visitAddMethod){
+                String newDesc = computeOverrideMethodDesc(desc,opcode == Opcodes.INVOKESTATIC ? true:false);
+                String newName = opcode == Opcodes.INVOKESTATIC ? computeOverrideMethodName(name,desc):name;
+                if (opcode == Opcodes.INVOKESTATIC){
+                    pushMethodRedirectArgumentsOnStack(name, desc);
+                    visitLdcInsn(Type.getType("L" + visitedClassName + OVERRIDE_SUFFIX + ";"));
+                    invokeStatic(ALI_RUNTIME_TYPE, Method.getMethod(
+                            "Object invokeProtectedStaticMethod(Object[], Class[], String, Class)"));
+                    handleReturnType(desc);
+
+//                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + OVERRIDE_SUFFIX,newName , newDesc, itf);
+                    return;
+                }else {
+
+//                    pushMethodRedirectArgumentsOnStack(name, newDesc);
+//                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, name + OVERRIDE_SUFFIX, isStatic ? computeOverrideMethodName(name, desc) : name, newDesc, itf);
+//                    handleReturnType(newDesc);
+
+
+//                    Type[] args = Type.getArgumentTypes(newDesc);
+//                    int argc = 0;
+//                    for (Type t : args) {
+//                        visitVarInsn(Opcodes.ALOAD, 2);
+//                        push(argc);
+//                        visitInsn(Opcodes.AALOAD);
+//                        ByteCodeUtils.unbox(this, t);
+//                        argc++;
+//                    }
+                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + OVERRIDE_SUFFIX, newName, newDesc, itf);
+
+                    return;
+                }
+
+
+            }
+
+            if (!opcodeHandled) {
                 mv.visitMethodInsn(opcode, owner, name, desc, itf);
-            }else if (!opcodeHandled && visitAddMethod){
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, name + OVERRIDE_SUFFIX, computeOverrideMethodName(name,desc), computeOverrideMethodDesc(desc,isStatic), itf);
             }
             if (DEBUG) {
                 System.out.println("Done with generic method dispatch");
@@ -559,7 +601,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          *  static method</li>
          * </ul>
          */
-        private boolean handleSpecialOpcode(String owner, String name, String desc,
+        private boolean  handleSpecialOpcode(String owner, String name, String desc,
                                             boolean itf) {
             if (name.equals("<init>")) {
                 return handleConstructor(owner, name, desc);
