@@ -272,7 +272,7 @@ public final class BundleClassLoader extends BaseDexClassLoader {
     BundleClassLoader(final BundleImpl bundle, List<String> dependencies, String nativeLibPath) throws BundleException {
         super(".", null, nativeLibPath, Object.class.getClassLoader());
         Log.e("BundleClassLoader", "nativeLibPath : " + nativeLibPath);
-        if (Build.VERSION.SDK_INT >= 27) {
+        if (Build.VERSION.SDK_INT >= 27 && Build.VERSION.SDK_INT <= 28) {
             try {
                 Class PatchClassLoaderFactory = Class.forName("com.android.internal.os.ClassLoaderFactory");
                 Method method = PatchClassLoaderFactory.getDeclaredMethod("createClassloaderNamespace",

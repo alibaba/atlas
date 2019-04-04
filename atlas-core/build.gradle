@@ -30,7 +30,7 @@ group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
 
-version "5.1.0.8-RC1"
+version "5.1.0.9-RC1"
 
 String getEnvValue(key, defValue) {
     def val = System.getProperty(key);
@@ -128,7 +128,7 @@ project.gradle.buildFinished{
 
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 28
     buildToolsVersion '26.0.2'
     lintOptions {
         abortOnError false
