@@ -13,7 +13,10 @@ public class SecondBundleActivity extends AppCompatActivity implements PlusOneFr
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_secondbundle);
-//        Toast.makeText(this,"ddddddddddd",Toast.LENGTH_LONG).show();
+
+        Toast.makeText(this,  SecondBundleApplication.secondBundleIniter.getApplication().toString(), Toast.LENGTH_LONG).show();
+
+
     }
 
     @Override

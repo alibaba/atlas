@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+            android:name=".SecondBundleApplication"
         android:allowBackup="true"
         android:supportsRtl="true">
         <activity
