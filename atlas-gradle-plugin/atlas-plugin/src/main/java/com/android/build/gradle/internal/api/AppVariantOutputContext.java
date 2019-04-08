@@ -224,6 +224,7 @@ import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuil
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.ide.common.build.ApkData;
+import com.android.utils.FileUtils;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -254,6 +255,8 @@ public class AppVariantOutputContext {
     private final Map<String, ProcessAwbAndroidResources> awbAndroidResourcesMap = Maps.newHashMap();
 
     private final Map<String, AwbTransform> awbTransformMap = Maps.newHashMap();
+
+    private File dexMergeOutFolder;
 
     public Map<String, AtlasMergeJavaResourcesTransform.NativeInfo> getSoMap() {
         return soMap;
@@ -305,6 +308,11 @@ public class AppVariantOutputContext {
     public File getAwbRClassSourceOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getGeneratedDir(),
                         "source/awb-r/" + config.getDirName() + "/" + awbBundle.getName());
+    }
+
+    public File getAwbApplicationInjectClassOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "awb-app-inject/" + config.getDirName() + "/" + awbBundle.getName());
     }
 
     public File getAwbMergedResourceDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
@@ -509,6 +517,18 @@ public class AppVariantOutputContext {
                         "tpatch-" + variantContext.getVariantName());
     }
 
+    public File getIPatchFolder() {
+        return new File(variantContext.getScope().getGlobalScope().getOutputsDir(),
+                "ipatch-" + variantContext.getVariantName());
+    }
+
+    public File getIPatchFile(String versionName) {
+        if (!getIPatchFolder().exists()){
+            FileUtils.mkdirs(getIPatchFolder());
+        }
+        return new File(getIPatchFolder(),versionName + "@" + versionName + ".ipatch");
+    }
+
     public File getRemoteNativeSoFolder(String bundleName) {
          File file = new File(variantContext.getScope().getGlobalScope().getOutputsDir(),
                 "remote-nativeSos-"+variantData.getVariantConfiguration().getDirName()+File.separator+bundleName);
@@ -559,7 +579,7 @@ public class AppVariantOutputContext {
                 awbTransform.getInputLibraries().add(output);
                 return currentFile;
             }else {
-               Iterator<File>iterator = awbTransform.getInputLibraries().iterator();
+               Iterator<File>iterator = awbTransform.getInputLibraries().listIterator();
                while (iterator.hasNext()){
                    File file = iterator.next();
                    if (file.equals(jarInput.getFile())){
@@ -572,6 +592,31 @@ public class AppVariantOutputContext {
 
         }
         return null;
+    }
+
+    public void setDexMergeFolder(File outputDir) {
+       this.dexMergeOutFolder = outputDir;
+    }
+
+    public File getDexMergeFolder(){
+        return dexMergeOutFolder;
+    }
+
+    public File getAwbExtractJarsFolder(AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/awb-extractJars/" +
+                        variantData.getVariantConfiguration().getDirName() +
+                        "/" +
+                        awbBundle.getName());
+
+    }
+
+    public File getAwbClassesInstantOut(AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/awb-instantRun/" +
+                        variantData.getVariantConfiguration().getDirName() +
+                        "/" +
+                        awbBundle.getName());
     }
 
 

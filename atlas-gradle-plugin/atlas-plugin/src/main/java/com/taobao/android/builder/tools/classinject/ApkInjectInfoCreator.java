@@ -382,19 +382,6 @@ public class ApkInjectInfoCreator {
 
     }
 
-    private List<String> newDependency(List<String> dependency,AppVariantContext appVariantContext) {
-        List<String>dependencies = new ArrayList<>();
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()||dependency == null ||dependency.size() == 0){
-            return dependencies;
-        }
-        for (String s:dependency){
-            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(s)){
-                dependencies.add(s);
-            }
-        }
-       return dependencies;
-
-    }
 
 
 
@@ -463,9 +450,6 @@ public class ApkInjectInfoCreator {
     }
 
 
-    public void injectTpatchValuesRes(AppVariantContext appVariantContext,
-                                      File valuesXml){
-
+    public void injectTpatchValuesRes(AppVariantContext appVariantContext, File valuesXml) {
     }
-
 }

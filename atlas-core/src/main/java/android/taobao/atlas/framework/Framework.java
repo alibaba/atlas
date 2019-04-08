@@ -215,17 +215,9 @@ import android.os.Environment;
 import android.os.Looper;
 import android.os.Process;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
-import android.taobao.atlas.bundleInfo.BundleListing;
-import android.taobao.atlas.framework.bundlestorage.BundleArchive;
-import android.taobao.atlas.patch.AtlasHotPatchManager;
-import android.taobao.atlas.runtime.BundleUtil;
-import android.taobao.atlas.runtime.ClassNotFoundInterceptorCallback;
-import android.taobao.atlas.runtime.InstrumentationHook;
-import android.taobao.atlas.runtime.LowDiskException;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.util.*;
 import android.taobao.atlas.util.AtlasFileLock;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
+import android.taobao.atlas.util.BundleLock;
 import android.taobao.atlas.versionInfo.BaselineInfoManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -257,7 +249,6 @@ public final class Framework {
 
     public final static String DEPRECATED_MARK = "deprecated";
     static String containerVersion = "";
-    private static ClassNotFoundInterceptorCallback classNotFoundCallback;
 
     /**
      * framework basedir.
@@ -334,7 +325,6 @@ public final class Framework {
      */
     static void startup(boolean updated) throws BundleException {
         AtlasBundleInfoManager.instance().getBundleInfo();
-        AtlasHotPatchManager.getInstance();
         notifyFrameworkListeners(0 /* STARTING */, null, null);
         notifyFrameworkListeners(FrameworkEvent.STARTED, null, null);
     }
@@ -379,200 +369,6 @@ public final class Framework {
         path.delete();
     }
 
-    /**
-     * install a bundle from input stream.
-     *
-     * @param location the bundle location.
-     * @param in       the input stream.
-     * @return a Bundle object.
-     * @throws BundleException if the installation failed.
-     */
-     static BundleImpl installNewBundle(final String location, final InputStream in)throws BundleException {
-        File bundleDir = null;
-        try{
-            BundleLock.WriteLock(location);
-            installingBundles.put(location,0);
-            bundleDir = createBundleStorage(location);
-            if(!bundleDir.exists()){
-                bundleDir.mkdirs();
-            }
-            AtlasFileLock.getInstance().LockExclusive(bundleDir);
-            final BundleImpl cached;
-            if ((cached = (BundleImpl) getBundle(location)) != null) {
-                return cached;
-            }
-
-            BundleImpl bundle = null;
-            BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            bundle = new BundleImpl(bundleDir, location, in, null, info.getUnique_tag(),true,-1l);
-            return bundle;
-        } catch (IOException e) {
-            BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
-            if (bundleDir != null && !updateHappend) {
-                Framework.deleteDirectory(bundleDir);
-            }
-            if (FileUtils.getUsableSpace(Environment.getDataDirectory()) < LowDiskException.thredshold) {
-                throw new LowDiskException(FileUtils.getAvailableDisk(), e);
-            }
-            throw new BundleException("Failed to install bundle.", e);
-        } catch (BundleException e) {
-            BundleException e1 = new BundleException("Failed to install bundle." + FileUtils.getAvailableDisk(), e);
-            if (bundleDir != null && !updateHappend) {
-                Framework.deleteDirectory(bundleDir);
-            }
-            throw e1;
-        } finally {
-            installingBundles.remove(location);
-            BundleLock.WriteUnLock(location);
-            if (bundleDir != null) {
-                AtlasFileLock.getInstance().unLock(bundleDir);
-            }
-        }
-    }
-
-    /**
-     * install a bundle from input file, the file will move to bundle storage directory.
-     *
-     * @param location the bundle location.
-     * @param file     the input file.
-     * @return a Bundle object.
-     * @throws BundleException if the installation failed.
-     * @throws
-     */
-     static BundleImpl installNewBundle(final String location, final File file) throws BundleException {
-        File bundleDir = null;
-
-        try {
-            BundleLock.WriteLock(location);
-            installingBundles.put(location,0);
-            bundleDir = createBundleStorage(location);
-            if(!bundleDir.exists()){
-                bundleDir.mkdirs();
-            }
-            AtlasFileLock.getInstance().LockExclusive(bundleDir);
-            final BundleImpl cached;
-            if ((cached = (BundleImpl) getBundle(location)) != null) {
-                return cached;
-            }
-            Log.e("BundleInstaller","real install " + location);
-            BundleImpl bundle = null;
-
-            BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(location);
-            bundle = new BundleImpl(bundleDir, location, null, file,info.getUnique_tag(),true,-1l);
-            return bundle;
-        } catch (IOException e) {
-            BundleException e1 = new BundleException(
-                "Failed to install bundle." + FileUtils.getAvailableDisk() + ", location=" + location, e);
-            if (bundleDir != null && !updateHappend) {
-                Framework.deleteDirectory(bundleDir);
-            }
-            if (FileUtils.getUsableSpace(Environment.getDataDirectory()) < LowDiskException.thredshold) {
-                throw new LowDiskException(FileUtils.getAvailableDisk(), e);
-            }
-            throw new BundleException(
-                "Failed to install bundle." + FileUtils.getAvailableDisk() + ", location=" + location, e);
-        } catch (BundleException e) {
-            BundleException e1 = new BundleException(
-                "Failed to install bundle." + FileUtils.getAvailableDisk() + ", location=" + location, e);
-            if (bundleDir != null && !updateHappend) {
-                Framework.deleteDirectory(bundleDir);
-            }
-            throw e1;
-        } finally {
-            installingBundles.remove(location);
-            BundleLock.WriteUnLock(location);
-            if (bundleDir != null) {
-                AtlasFileLock.getInstance().unLock(bundleDir);
-            }
-        }
-    }
-
-    public static BundleImpl restoreFromExistedBundle(final String location) {
-        BundleImpl bundle = null;
-        String bundleUniqueTag = AtlasBundleInfoManager.instance().getBundleInfo(location).getUnique_tag();
-        long dexPatchVersion = BaselineInfoManager.instance().getDexPatchBundleVersion(location);
-        File bundleDir = null;
-        File dexPatchDir = null;
-
-        File internalTmpDir = new File(STORAGE_LOCATION,location+File.separator+bundleUniqueTag);
-        if(internalTmpDir.exists() && new File(internalTmpDir,"meta").exists()){
-            bundleDir = new File(STORAGE_LOCATION,location);
-        }else{
-            File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
-            if(externalStorages!=null && externalStorages.length>0){
-                for(File tmpDir : externalStorages){
-                    if(tmpDir!=null && new File(tmpDir,location+File.separator+bundleUniqueTag).exists() &&
-                            getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED)) {
-                        bundleDir = new File(tmpDir,location);
-                        break;
-                    }
-                }
-            }
-        }
-
-        if(dexPatchVersion>0){
-            if(new File(STORAGE_LOCATION,location+File.separator+BundleArchive.DEXPATCH_DIR+dexPatchVersion).exists()){
-                dexPatchDir = new File(STORAGE_LOCATION,location);
-            }else{
-                File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
-                if(externalStorages!=null && externalStorages.length>0){
-                    for(File tmpDir : externalStorages){
-                        if(tmpDir!=null && getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+BundleArchive.DEXPATCH_DIR+dexPatchVersion).exists()) {
-                            bundleDir = new File(tmpDir,location);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        if(bundleDir!=null && bundleDir.exists()) {
-            String[] temp = bundleDir.list();
-            if(temp!=null) {
-                for (String tmp : temp) {
-                    Log.e("Framework", "content: " + tmp);
-                }
-            }
-        }
-        Log.e("Framework","restoreExisted: "+location+"| "+bundleUniqueTag +"| "+bundleDir);
-        if((bundleDir==null || !new File(bundleDir,bundleUniqueTag).exists()) && BaselineInfoManager.instance().isUpdated(location)){
-            //出现无法恢复的情况，立即回滚
-            if(getCurProcessName().equals(RuntimeVariables.androidApplication.getPackageName())) {
-                Map<String, Object> detail = new HashMap<>();
-                detail.put("Bundle", location);
-                AtlasMonitor.getInstance().report(AtlasMonitor.DD_BUNDLE_MISMATCH, detail, new RuntimeException(bundleUniqueTag+" is not existed"));
-                BaselineInfoManager.instance().rollbackHardly();
-                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        android.os.Process.killProcess(Process.myPid());
-                    }
-                },1000);
-            }
-        }
-        if(!installingBundles.containsKey(location) && ((bundleDir!=null&&bundleDir.exists()) || dexPatchDir!=null&&dexPatchDir.exists())){
-            try {
-                BundleContext bcontext = new BundleContext();
-                bcontext.bundle_tag = bundleUniqueTag;
-                bcontext.location = location;
-                bcontext.bundleDir = bundleDir;
-                bcontext.dexPatchDir = dexPatchDir;
-                bundle = new BundleImpl(bcontext);
-                if (bundle != null) {
-                    bundle.optDexFile();
-                }
-            } catch (Exception e) {
-                if (e instanceof BundleArchive.MisMatchException) {
-                    if (bundleDir.exists()) {
-                        bundle = null;
-                    }
-                }
-                Log.e("Framework","restore bundle failed" + location, e);
-            }
-        }
-        return bundle;
-    }
-
-    // update or dexpatched
     public static void update(boolean upgrade,final String[] locations, final File[] files, String[] newBundleTag,long[] dexPatchVersions,String newBaselineVersion,boolean lowInternalDisk) throws BundleException {
         if (locations == null || files == null || locations.length != files.length) {
             throw new IllegalArgumentException("locations and files must not be null and must be same length");
@@ -597,9 +393,7 @@ public final class Framework {
         updateHappend = true;
         for (int i = 0; i < locations.length; i++) {
             //reset
-            if(upgrade && newBundleTag[i].equals("-1")){
-                continue;
-            }else if(!upgrade && dexPatchVersions[i]==-1){
+            if(!upgrade && dexPatchVersions[i]==-1){
                 updateBundles.put(locations[i],"-1");
                 continue;
             }
@@ -625,53 +419,7 @@ public final class Framework {
                     }else{
                         cons.newInstance(bundleDir, files[i],null,dexPatchVersions[i]);                    }
                 } else {
-                    bundleDir = new File(updateStorageDir, locations[i]);
-                    if (!bundleDir.exists()) {
-                        bundleDir.mkdirs();
-                    }
-                    // Hold the storage file lock
-                    if(upgrade) {
-                        BundleListing.BundleInfo info = AtlasBundleInfoManager.instance().getBundleInfo(locations[i]);
-                        if(info!=null && info.getUnique_tag().equals(newBundleTag[i])){
-                            Log.e("Framework",locations[i]+" unitTag is same as before,it maybe a mistake");
-                            if(Framework.isDeubgMode()){
-                                Toast.makeText(RuntimeVariables.androidApplication,locations[i]+" unitTag is same as before,it maybe a mistake",Toast.LENGTH_LONG).show();
-                            }
-                            continue;
-                        }
-                        if(files[i].getName().equals("inherit")){
-                            BundleUtil.checkBundleStateSync(new String[]{locations[i]});
-                            BundleLock.WriteLock(locations[i]);
-                            AtlasFileLock.getInstance().LockExclusive(bundleDir);
-                            File bundleFile = getInstalledBundle(locations[i],AtlasBundleInfoManager.instance().getBundleInfo(locations[i]).getUnique_tag());
-                            if(bundleFile==null || !bundleFile.exists()){
-                                throw new IOException("can not find source bundle : new bundle is inherit");
-                            }
-                            File oldBundleDir ;
-                            if(bundleFile.getAbsolutePath().contains("storage/"+locations[i])){
-                                //from bundle dir
-                                oldBundleDir = bundleFile.getParentFile();
-                            }else{
-                                //from lib
-                                oldBundleDir = ((BundleImpl)getBundle(locations[i])).getArchive().getCurrentRevision().getRevisionDir();
-                            }
-                            ApkUtils.copyDirectory(oldBundleDir,new File(oldBundleDir.getParent(),newBundleTag[i]));
-                        }else {
-                            BundleLock.WriteLock(locations[i]);
-                            AtlasFileLock.getInstance().LockExclusive(bundleDir);
-                            new BundleImpl(bundleDir, locations[i], null, files[i], newBundleTag[i], false, -1l);
-                        }
 
-                    }else{
-                        BundleLock.WriteLock(locations[i]);
-                        AtlasFileLock.getInstance().LockExclusive(bundleDir);
-                        new BundleImpl(bundleDir, locations[i], null, files[i],null, false,dexPatchVersions[i]);
-                    }
-//                    Log.e("Framework","info of "+bundleDir+"newTag: "+newBundleTag[i]);
-//                    String[] list = bundleDir.list();
-//                    for(String temp : list){
-//                        Log.e("Framework",temp);
-//                    }
                 }
                 if(upgrade){
                     updateBundles.put(locations[i],newBundleTag[i]);
@@ -689,17 +437,7 @@ public final class Framework {
                 BundleLock.WriteUnLock(locations[i]);
             }
         }
-        if(upgrade) {
-            bundleUpdated = true;
-            try {
-                BaselineInfoManager.instance().saveBaselineInfo(newBaselineVersion,updateBundles,lowInternalDisk ? updateStorageDir.getAbsolutePath() : "");
-            } catch (IOException e) {
-                throw new BundleException("save baseline info fail");
-            }
-            WrapperUtil.appendLog("installedVersionWhenUpdated", Framework.containerVersion);
-            WrapperUtil.appendLog("VersionWhenUpdated", WrapperUtil.getPackageInfo(RuntimeVariables.androidApplication).versionName);
-            InstrumentationHook.notifyAppUpdated();
-        }else{
+
             if(updateBundles.size()>0){
                 try {
                     BaselineInfoManager.instance().saveDexPathInfo(updateBundles,lowInternalDisk ? updateStorageDir.getAbsolutePath() : "");
@@ -707,7 +445,7 @@ public final class Framework {
                     throw new BundleException("save dexpatch info fail");
                 }
             }
-        }
+
     }
 
     private static String makeMainDexUniqueTag(String appVersion,String maindexTag){
@@ -728,63 +466,12 @@ public final class Framework {
         return location.equals("com.taobao.maindex");
     }
 
-    /**
-     * notify all bundle listeners.
-     *
-     * @param state the new state.
-     * @param bundle the bundle.
-     */
-    static void notifyBundleListeners(final int state, final Bundle bundle) {
-        if (syncBundleListeners.isEmpty() && bundleListeners.isEmpty()) {
-            return;
-        }
 
-        final BundleEvent event = new BundleEvent(state, bundle);
 
-        // inform the synchrounous bundle listeners first ...
-        final BundleListener[] syncs = (BundleListener[]) syncBundleListeners.toArray(new BundleListener[syncBundleListeners.size()]);
 
-        for (int i = 0; i < syncs.length; i++) {
-            syncs[i].bundleChanged(event);
-        }
 
-        if (bundleListeners.isEmpty()) {
-            return;
-        }
 
-        final BundleListener[] asyncs;
-        synchronized (bundleListeners) {
-            asyncs = (BundleListener[])bundleListeners.toArray(new BundleListener[bundleListeners.size()]);
-        }
 
-        for (int i = 0; i < asyncs.length; i++) {
-            asyncs[i].bundleChanged(event);
-        }
-    }
-
-    public static void addFrameworkListener(FrameworkListener listener) {
-        frameworkListeners.add(listener);
-    }
-
-    public static void removeFrameworkListener(FrameworkListener listener) {
-        frameworkListeners.remove(listener);
-    }
-
-    static void addBundleListener(BundleListener listener) {
-        if (listener == null) {
-            Log.e("Framework", "the listener must not be null", new Exception());
-        }
-        synchronized (bundleListeners) {
-            bundleListeners.add(listener);
-        }
-    }
-
-    static void removeBundleListener(BundleListener listener) {
-        synchronized (bundleListeners) {
-            bundleListeners.remove(listener);
-        }
-
-    }
 
     /**
      * notify all framework listeners.
@@ -808,85 +495,6 @@ public final class Framework {
 
             listener.frameworkEvent(event);
         }
-    }
-
-    public static ClassNotFoundInterceptorCallback getClassNotFoundCallback() {
-        return classNotFoundCallback;
-    }
-
-    public static void setClassNotFoundCallback(ClassNotFoundInterceptorCallback classNotFoundCallback) {
-        Framework.classNotFoundCallback = classNotFoundCallback;
-    }
-
-    public static File getInstalledBundle(String location,String bundleUniqueId) {
-        File bundleDir = null;
-        File internalBundleStorage = new File(STORAGE_LOCATION,location+File.separator+bundleUniqueId);
-        if(internalBundleStorage.exists() && (isKernalBundle(location) || new File(internalBundleStorage,"meta").exists())){
-            bundleDir = new File(STORAGE_LOCATION,location);
-            File file = getInstalledBundleInternal(location,bundleUniqueId,bundleDir);
-            if(file!=null){
-                return file;
-            }
-        }else{
-            File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
-            if(externalStorages!=null && externalStorages.length>0){
-                for(File tmpDir : externalStorages){
-                    if(tmpDir!=null && getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && new File(tmpDir,location+File.separator+bundleUniqueId).exists()) {
-                        bundleDir = new File(tmpDir,location);
-                        File file = getInstalledBundleInternal(location,bundleUniqueId,bundleDir);
-                        if(file.exists()){
-                            return file;
-                        }
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    private static File getInstalledBundleInternal(String bundleName,String bundleUniqueId,File bundleDir){
-        if(bundleDir!=null && bundleDir.exists()){
-            if(isKernalBundle(bundleName)){
-                File file = new File(bundleDir,makeMainDexUniqueTag(BaselineInfoManager.instance().currentVersionName(),bundleUniqueId)+File.separator+"com_taobao_maindex.zip");
-                if(file.exists()){
-                    return file;
-                }
-            }else{
-                try {
-                    BundleArchive archive = new BundleArchive(bundleName, bundleDir, bundleUniqueId, 0);
-                    if(archive!=null){
-                        File file = archive.getArchiveFile();
-                        if(file!=null && file.exists()){
-                            return file;
-                        }
-                    }
-                }catch(Throwable e){
-                    return null;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static File createBundleStorage(String bundleName){
-        if(new File(STORAGE_LOCATION).getUsableSpace()>10*1024*1024){
-            return new File(STORAGE_LOCATION,bundleName);
-        }else{
-            File externalStorageDir = null;
-            File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
-            if(externalStorages!=null && externalStorages.length>0){
-                for(File tmpDir : externalStorages){
-                    if(tmpDir!=null && getStorageState(tmpDir).equals(Environment.MEDIA_MOUNTED) && tmpDir.getUsableSpace()>20*1024*1024) {
-                        externalStorageDir = tmpDir;
-                        break;
-                    }
-                }
-            }
-            if(externalStorageDir!=null){
-                return new File(externalStorageDir,bundleName);
-            }
-        }
-        return new File(STORAGE_LOCATION,bundleName);
     }
 
     public static File[] getExternalFilesDirs(Context context, String type) {
@@ -919,13 +527,8 @@ public final class Framework {
         return MEDIA_UNKNOWN;
     }
 
-    public static String getCurProcessName(){
-        return RuntimeVariables.sCurrentProcessName;
-    }
 
-    public static boolean isUpdated() {
-        return bundleUpdated;
-    }
+
 
     public static boolean isDeubgMode() {
         return DEBUG;

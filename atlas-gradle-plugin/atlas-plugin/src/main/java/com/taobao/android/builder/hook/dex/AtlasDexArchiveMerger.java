@@ -277,6 +277,7 @@ public class AtlasDexArchiveMerger implements DexArchiveMerger {
 
             // find how many references are shared, and deduct from the total count
             int shared = Sets.intersection(fieldsEvaluated, fieldRefs).size();
+
             if (fieldRefs.size() + fieldsEvaluated.size() - shared >MAX_NUMBER_OF_IDS_IN_DEX ) {
                 return false;
             } else {

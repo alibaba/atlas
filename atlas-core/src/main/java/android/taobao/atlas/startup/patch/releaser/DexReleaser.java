@@ -249,8 +249,8 @@ public class DexReleaser {
             if (!hasDexFile) {
                 return true;
             }
-//            if (externalStorage || !isArt()) {
-//             RuntimeVariables.patchVersion = readPatchVersion();
+            if (externalStorage || !isArt()) {
+
 
 
             if (Build.VERSION.SDK_INT > 27){
@@ -259,7 +259,7 @@ public class DexReleaser {
             }
 
 
-            if (RuntimeVariables.patchVersion == 2 ||!isArt()) {
+            if (!isArt()) {
                 Enumeration entryEnumeration = zipFile.entries();
                 while (entryEnumeration.hasMoreElements()) {
                     ZipEntry zipEntry = (ZipEntry) entryEnumeration.nextElement();
@@ -270,7 +270,7 @@ public class DexReleaser {
                         fileOutputStream.close();
                     }
                 }
-            }else if (RuntimeVariables.patchVersion == 1) {
+            }else {
                 File sourceFile;
                 if (dexPatch) {
                     //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
@@ -291,25 +291,25 @@ public class DexReleaser {
             }
 
                 return true;
-//            } else {
-//                File sourceFile;
-//                if (dexPatch) {
-//                    //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
-//                    sourceFile = null == KernalBundle.kernalBundle
-//                            ? new File(KernalConstants.APK_PATH)
-//                            : KernalBundle.kernalBundle.getRevisionZip();
-//                } else {
-//                    sourceFile = new File(KernalConstants.APK_PATH);
-//                }
-//                File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", bundleFile.getParentFile());
-//                CombineDexMerger combineDexMerger = new CombineDexMerger(new CombineDexVerifier());
-//                boolean result = combineDexMerger.merge(sourceFile, bundleFile, targetFile);
-//                if (result && bundleFile.delete() && targetFile.renameTo(bundleFile)) {
-//                    return true;
-//                } else {
-//                    return false;
-//                }
-//            }
+            } else {
+                File sourceFile;
+                if (dexPatch) {
+                    //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
+                    sourceFile = null == KernalBundle.kernalBundle
+                            ? new File(KernalConstants.APK_PATH)
+                            : KernalBundle.kernalBundle.getRevisionZip();
+                } else {
+                    sourceFile = new File(KernalConstants.APK_PATH);
+                }
+                File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", bundleFile.getParentFile());
+                CombineDexMerger combineDexMerger = new CombineDexMerger(new CombineDexVerifier());
+                boolean result = combineDexMerger.merge(sourceFile, bundleFile, targetFile);
+                if (result && bundleFile.delete() && targetFile.renameTo(bundleFile)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
 

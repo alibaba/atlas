@@ -33,7 +33,7 @@ public class MergeTool {
 
     private static String noPatchDexIndex;
 
-    private static int patchVersion = 2;
+    private static int patchVersion = 1;
 
 
     private static TreeMap<Integer, List<String>> classes = new TreeMap();
@@ -213,8 +213,8 @@ public class MergeTool {
                 }
 
                 if (!TextUtils.isEmpty(clazz) && clazz.equals(MergeConstants.PATCH_VERSION)) {
-                    patchVersion = Integer.valueOf(dexIndex);
-                    notifyPatchVersion(patchVersion);
+//                    patchVersion = Integer.valueOf(dexIndex);
+//                    notifyPatchVersion(patchVersion);
                     continue;
                 }
 

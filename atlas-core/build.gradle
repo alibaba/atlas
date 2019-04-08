@@ -30,7 +30,9 @@ group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
 
-version "5.1.0.9-RC1"
+
+version "5.1.0.9-rc25"
+
 
 String getEnvValue(key, defValue) {
     def val = System.getProperty(key);

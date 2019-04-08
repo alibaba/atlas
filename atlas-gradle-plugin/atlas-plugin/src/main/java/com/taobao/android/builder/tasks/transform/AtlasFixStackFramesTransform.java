@@ -16,6 +16,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.io.ByteStreams;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 

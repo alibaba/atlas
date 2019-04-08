@@ -49,6 +49,7 @@ public class PatchInstaller {
             if(bundlePair.second.reset){
                 if (!updateInfo.dexPatch) {
                     upgradeVersions.add("-1");
+                    bundleFilePathList.add(new File("reset"));
                 } else {
                     dexPatchVersions.add(Long.valueOf(-1));
                     bundleFilePathList.add(new File("reset"));

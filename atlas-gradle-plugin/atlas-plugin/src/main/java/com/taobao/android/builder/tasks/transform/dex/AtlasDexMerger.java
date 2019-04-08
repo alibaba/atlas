@@ -170,7 +170,7 @@ public abstract class AtlasDexMerger {
             return ImmutableList.of();
         }
 
-        return ImmutableList.of(submitForMerging(output, outPutDir, dexesToMerge, null));
+        return ImmutableList.of(submitForMerging(output, outPutDir, dexesToMerge, mainDexList == null ? null:mainDexList.toPath()));
 
     }
 
@@ -220,7 +220,7 @@ public abstract class AtlasDexMerger {
                             allDexsArchives,
                             output,
                             finalDexDir,
-                            null));
+                             null));
         } else {
             mergeTasks.addAll(
                     handleLegacyAndMonoDex(

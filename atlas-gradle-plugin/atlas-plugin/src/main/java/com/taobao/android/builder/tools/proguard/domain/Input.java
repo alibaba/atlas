@@ -326,8 +326,8 @@ public class Input {
                 files.add(file);
             }
             //configs.add();
-            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                files.add(awbTransform.getInputDir());
+            if (null != awbTransform.getInputDirs() && awbTransform.getInputDirs().size() > 0) {
+                files.addAll(awbTransform.getInputDirs());
             }
         }
 

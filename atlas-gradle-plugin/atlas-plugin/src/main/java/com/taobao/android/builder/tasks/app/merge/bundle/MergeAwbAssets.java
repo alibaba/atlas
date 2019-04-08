@@ -222,6 +222,7 @@ public class MergeAwbAssets extends IncrementalTask{
                 files.add(androidLibrary.getAssetsFolder());
             }
         }
+        files.add(awbBundle.getAndroidLibrary().getAssetsFolder());
         return getProject().files(files);
     }
 

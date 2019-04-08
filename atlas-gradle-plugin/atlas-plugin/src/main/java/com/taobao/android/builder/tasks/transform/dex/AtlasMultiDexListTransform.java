@@ -63,7 +63,7 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
 
     @Override
     public Set<QualifiedContent.ContentType> getOutputTypes() {
-        return ImmutableSet.of();
+        return ImmutableSet.of(QualifiedContent.DefaultContentType.CLASSES);
     }
 
     @Override
@@ -96,7 +96,6 @@ public class AtlasMultiDexListTransform extends BaseProguardAction {
 
     public void transform(@NonNull TransformInvocation transformInvocation)
             throws TransformException, InterruptedException, IOException {
-
         if (mainDexListFile.exists() && !variantScope.getVariantData().getName().toLowerCase().endsWith("release")){
             return;
         }

@@ -1,7 +1,7 @@
 include ':middlewarelibrary', ':databindinglibrary'
 include ':secondbundlelibrary'
 include ':lottie'
-include ':activitygroupcompat'
+//include ':activitygroupcompat'
 include ':firstbundle'
 include ':secondbundle'
 include ':publicbundle'

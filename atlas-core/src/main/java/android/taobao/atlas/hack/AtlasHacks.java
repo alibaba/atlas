@@ -213,12 +213,10 @@ import java.util.List;
 import java.util.Map;
 
 import android.app.Application;
-import android.app.ContentProviderHolder;
-import android.app.IActivityManager;
+
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.IContentProvider;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ProviderInfo;
 import android.content.res.Resources;
@@ -502,27 +500,27 @@ public class AtlasHacks extends HackDeclaration implements AssertionFailureHandl
 
         ActivityThread_installContentProviders = ActivityThread.method("installContentProviders",Context.class,List.class);
 
-        try {
-            if (Build.VERSION.SDK_INT > 25 || (Build.VERSION.SDK_INT == 25
-                    && Build.VERSION.PREVIEW_SDK_INT > 0)) {
-                ActivityThread_installProvider = ActivityThread.method("installProvider",
-                        Context.class, ContentProviderHolder.class, ProviderInfo.class,
-                        boolean.class, boolean.class, boolean.class);
-            } else if (Build.VERSION.SDK_INT == 14) {
-                ActivityThread_installProvider = ActivityThread.method("installProvider",
-                        Context.class, IContentProvider.class, ProviderInfo.class, boolean.class);
-            } else if (Build.VERSION.SDK_INT == 15) {
-                ActivityThread_installProvider = ActivityThread.method("installProvider",
-                        Context.class, IContentProvider.class, ProviderInfo.class, boolean.class,
-                        boolean.class);
-            } else {
-                ActivityThread_installProvider = ActivityThread.method("installProvider",
-                        Context.class, IActivityManager.ContentProviderHolder.class,
-                        ProviderInfo.class, boolean.class, boolean.class, boolean.class);
-            }
-        } catch (Throwable t) {
-            Log.w("AtlasHacks", "Error getting ActivityThread_installProvider", t);
-        }
+//        try {
+//            if (Build.VERSION.SDK_INT > 25 || (Build.VERSION.SDK_INT == 25
+//                    && Build.VERSION.PREVIEW_SDK_INT > 0)) {
+//                ActivityThread_installProvider = ActivityThread.method("installProvider",
+//                        Context.class, ContentProviderHolder.class, ProviderInfo.class,
+//                        boolean.class, boolean.class, boolean.class);
+//            } else if (Build.VERSION.SDK_INT == 14) {
+//                ActivityThread_installProvider = ActivityThread.method("installProvider",
+//                        Context.class, IContentProvider.class, ProviderInfo.class, boolean.class);
+//            } else if (Build.VERSION.SDK_INT == 15) {
+//                ActivityThread_installProvider = ActivityThread.method("installProvider",
+//                        Context.class, IContentProvider.class, ProviderInfo.class, boolean.class,
+//                        boolean.class);
+//            } else {
+//                ActivityThread_installProvider = ActivityThread.method("installProvider",
+//                        Context.class, IActivityManager.ContentProviderHolder.class,
+//                        ProviderInfo.class, boolean.class, boolean.class, boolean.class);
+//            }
+//        } catch (Throwable t) {
+//            Log.w("AtlasHacks", "Error getting ActivityThread_installProvider", t);
+//        }
 
         Service_attach = Service.method("attach",Context.class,ActivityThread.getmClass(),String.class,IBinder.class,Application.getmClass(),Object.class);
 

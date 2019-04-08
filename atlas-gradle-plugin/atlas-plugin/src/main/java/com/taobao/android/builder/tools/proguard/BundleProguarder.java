@@ -386,8 +386,8 @@ public class BundleProguarder {
                 files.addAll(awbTransform.getInputLibraries());
 
                 //configs.add();
-                if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                    files.add(awbTransform.getInputDir());
+                if (null != awbTransform.getInputDirs() && awbTransform.getInputDirs().size() > 0) {
+                    files.addAll(awbTransform.getInputDirs());
                 }
 
                 for (File oldFile : files) {
@@ -407,7 +407,7 @@ public class BundleProguarder {
 
             for (AwbTransform awbTransform : input.getAwbBundles()) {
                 awbTransform.setInputFiles(transformListMap.get(awbTransform));
-                awbTransform.setInputDir(null);
+                awbTransform.getInputDirs().clear();
                 awbTransform.getInputLibraries().clear();
                 awbTransform.getAwbBundle().setKeepProguardFile(keepJson);
             }
@@ -545,27 +545,33 @@ public class BundleProguarder {
             }
 
             //configs.add();
-            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
+            if (null != awbTransform.getInputDirs() && awbTransform.getInputDirs().size() > 0) {
 
-                String name = input.getFileMd5s().get(awbTransform.getInputDir());
-                if (null == name) {
-                    name = FileNameUtils.getUniqueFileName(awbTransform.getInputDir().getName(), "proguard");
-                }
+                for (File dir:awbTransform.getInputDirs()) {
+                    if (!dir.exists()){
+                        continue;
+                    }
+                    configs.add(INJARS_OPTION + " " + dir.getAbsolutePath());
 
-                File obsJar = new File(proguardDir,
-                                       name + ".jar");
-                inputLibraries.add(obsJar);
-                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
-                if (awbTransform.getAwbBundle().isMainBundle()){
-                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().clear();
-                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(),obsJar,false,false));
+                    String name = input.getFileMd5s().get(dir);
+                    if (null == name) {
+                        name = FileNameUtils.getUniqueFileName(dir.getName(), "proguard");
+                    }
+
+                    File obsJar = new File(proguardDir,
+                            name + ".jar");
+                    inputLibraries.add(obsJar);
+                    configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+                    if (awbTransform.getAwbBundle().isMainBundle()) {
+                        AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().clear();
+                        AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(obsJar.getName(), obsJar, false, false));
+                    }
                 }
 
             }
 
             awbTransform.setInputFiles(inputLibraries);
-            awbTransform.setInputDir(null);
+            awbTransform.getInputDirs().clear();
             awbTransform.getInputLibraries().clear();
         }
 

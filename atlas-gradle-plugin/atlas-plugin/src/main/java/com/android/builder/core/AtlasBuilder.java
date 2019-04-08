@@ -445,7 +445,7 @@ public class AtlasBuilder extends AndroidBuilder {
                     AtlasSymbolIo.write(awbSymbols, mergedSymbolFile);
                 }
 
-                //why do this?
+                //why do this? youku need use this !
 //                FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(mainSymbolFile), true);
             } catch (IOException e) {
                 throw new RuntimeException("Could not load file ", e);
@@ -572,6 +572,7 @@ public class AtlasBuilder extends AndroidBuilder {
             List<File> outputs = new ArrayList<>();
 
                 for (File input : inputs) {
+                    logger.warning("Dex input File:%s",input.getAbsolutePath());
 
                     final File dexDir = getDexOutputDir(input, tmpDir, outputs);
                     dexDir.mkdirs();
@@ -581,15 +582,8 @@ public class AtlasBuilder extends AndroidBuilder {
                     outputs.add(dexDir);
             }
 
-            FilenameFilter filenameFilter = new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.endsWith("dex");
-                }
-            };
-
-            for (File dexDir : outputs) {
-                File[] files = dexDir.listFiles();
+                for (File dexDir : outputs) {
+                Collection<File> files = FileUtils.listFiles(dexDir,new String[]{"dex"},true);
                 for (File dexFile : files) {
                     if (dexFile.exists() && dexFile.length() > 0) {
                         Dex dex = new Dex(dexFile);
@@ -612,7 +606,7 @@ public class AtlasBuilder extends AndroidBuilder {
                     } else {
 
                         DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
-                                                            CollisionPolicy.KEEP_FIRST.KEEP_FIRST, new DxContext());
+                                                            CollisionPolicy.KEEP_FIRST, new DxContext());
                         Dex dex = dexMerger.merge();
 
                         File dexFile = new File(outDexFolder, "classes.dex");
@@ -714,8 +708,9 @@ public class AtlasBuilder extends AndroidBuilder {
             }
         } else {
             //R Too much, you need to start multi-dex
-            multiDex = true;
         }
+
+        multiDex = false;
 
         dexFile.delete();
 
@@ -725,6 +720,7 @@ public class AtlasBuilder extends AndroidBuilder {
         if (!multiDex) {
             defaultDexOptions.setJavaMaxHeapSize("500m");
             defaultDexOptions.setDexInProcess(true);
+            defaultDexOptions.getAdditionalParameters().remove("--multi-dex");
         }
 
         sLogger.info("[mtldex] pre dex for {} {}",
@@ -780,6 +776,7 @@ public class AtlasBuilder extends AndroidBuilder {
             Map<String, Object> placeHolders,
             @NonNull List<ManifestMerger2.Invoker.Feature> optionalFeatures,
             @Nullable File reportFile) {
+
 
         return super.mergeManifestsForApplication(
                 mainManifest,

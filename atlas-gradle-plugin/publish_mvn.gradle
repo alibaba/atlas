@@ -182,13 +182,13 @@ publishing {
                 }
             } else {
                 def accountMap = getAccount();
-                maven {
-                   url RELEASE_REPOSITORY_URL
-//                   credentials {
+//                maven {
+//                   url RELEASE_REPOSITORY_URL
+//                  credentials {
 //                       username = accountMap.get("username")
 //                       password = accountMap.get("password")
 //                   }
-                }
+//                }
             }
         }
     }

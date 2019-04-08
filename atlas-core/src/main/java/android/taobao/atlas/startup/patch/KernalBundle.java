@@ -228,9 +228,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.taobao.atlas.framework.Atlas;
-import android.taobao.atlas.framework.FrameworkProperties;
-import android.taobao.atlas.startup.AtlasBridgeApplication;
 import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.NClassLoader;
 import android.taobao.atlas.startup.patch.releaser.PatchDexProfile;
@@ -290,7 +287,7 @@ public class KernalBundle {
                     throw new IOException(kernalBundle.getArchive().getArchiveFile().getAbsolutePath());
                 }
                 kernalBundle.patchKernalDex(application);
-                kernalBundle.patchKernalResource(application);
+//                kernalBundle.patchKernalResource(application);
 
                 return true;
             } catch (Throwable e) {
@@ -339,8 +336,7 @@ public class KernalBundle {
 
                     File internalDebugBundleDir = new File(new File(application.getFilesDir(), "debug_storage"), KERNAL_BUNDLE_NAME);
                     internalDebugBundleDir.mkdirs();
-                    DexFile patchDexFile = (DexFile) KernalConstants.dexBooster.loadDex(KernalConstants.baseContext, patchFile.getAbsolutePath(),
-                            new File(internalDebugBundleDir, "patch.dex").getAbsolutePath(), 0, true);
+                    DexFile patchDexFile = (DexFile) DexFile.loadDex(patchFile.getAbsolutePath(),new File(internalDebugBundleDir, "patch.dex").getAbsolutePath(), 0);
                     if (bundle.needReplaceClassLoader(application)) {
                         NClassLoader loader = new NClassLoader(".", KernalBundle.class.getClassLoader().getParent());
                         try {

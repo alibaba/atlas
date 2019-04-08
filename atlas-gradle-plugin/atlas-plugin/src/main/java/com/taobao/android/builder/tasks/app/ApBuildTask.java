@@ -272,6 +272,9 @@ public class ApBuildTask extends DefaultAndroidTask {
                                          .getParentFile()
                                          .getParentFile(), "jar-shrink.log");
 
+        File injectFailedFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/warning-instrument-inject-error.properties");
+
+
         File proguardOut = new File(String.valueOf(appVariantContext.getScope()
                                                        .getGlobalScope()
                                                        .getBuildDir()) +
@@ -301,6 +304,7 @@ public class ApBuildTask extends DefaultAndroidTask {
                 "R.txt");
 
         addFile(appBuildInfo.getPackageIdFile());
+        addFile(injectFailedFile);
         addFile(appBuildInfo.getDependenciesFile());
         addFile(appBuildInfo.getBuildInfoFile());
         addFile(appBuildInfo.getVersionPropertiesFile());

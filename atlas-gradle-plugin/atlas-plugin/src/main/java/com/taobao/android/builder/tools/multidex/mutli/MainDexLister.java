@@ -259,7 +259,9 @@ public class MainDexLister {
         //Map<String, String> classMap = getClassObfMap(config);
         Collection<BaseVariantOutput> collection = appVariantContext.getVariantOutputData();
         File manifest = com.android.utils.FileUtils.join(collection.iterator().next().getProcessManifest().getManifestOutputDirectory(),new String[]{collection.iterator().next().getDirName(),"AndroidManifest.xml"});
-
+        if (appVariantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()){
+            manifest = com.android.utils.FileUtils.join(collection.iterator().next().getProcessManifest().getInstantRunManifestOutputDirectory(),new String[]{collection.iterator().next().getDirName(),"AndroidManifest.xml"});
+        }
         String applicationName = ManifestFileUtils.getApplicationName(manifest);
 
         ClassPool classPool = new ClassPool();
@@ -318,7 +320,6 @@ public class MainDexLister {
         }
 
         if (multiDexConfig.getMainDexListCount()!=0){
-
             maindexListClazz = maindexListClazz.subList(0,multiDexConfig.getMainDexListCount());
         }
 

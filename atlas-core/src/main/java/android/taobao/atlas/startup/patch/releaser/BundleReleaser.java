@@ -211,8 +211,6 @@ package android.taobao.atlas.startup.patch.releaser;
 /**
  * Created by lilong on 16/12/21.
  */
-
-import android.app.PreVerifier;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -221,15 +219,13 @@ import android.taobao.atlas.runtime.RuntimeVariables;
 import android.taobao.atlas.startup.DexFileCompat;
 import android.taobao.atlas.startup.patch.KernalConstants;
 import android.util.Log;
-
-import com.taobao.android.runtime.AndroidRuntime;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -265,9 +261,7 @@ public class BundleReleaser {
     private DexFile[] dexFiles = null;
 
     public BundleReleaser(final File reversionDir,boolean hasReleased) {
-        if(Boolean.FALSE.booleanValue()){
-            String.valueOf(PreVerifier.class);
-        }
+
         this.hasReleased = hasReleased;
         this.reversionDir = reversionDir;
         if(!reversionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())){
@@ -383,39 +377,39 @@ public class BundleReleaser {
                             e.printStackTrace();
                         }
                         break;
-                    case RESOURCE:
-                        try {
-                            Log.e(TAG, "ResourceReleaser start!");
-                            boolean result = ResourceReleaser.releaseResource(apkFile, reversionDir);
-                            Log.e(TAG, "ResourceReleaser done!----->"+result);
-
-                            Message message = handler.obtainMessage();
-                            if (result) {
-                                message.what = MSG_ID_RESOURCE_RELEASE_DONE;
-                            } else {
-                                message.what = MSG_ID_RELEASE_FAILED;
-                            }
-                            handler.sendMessage(message);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case SOLIB:
-                        try {
-                            Log.e(TAG, "NativeLibReleaser start!");
-                            boolean result = NativeLibReleaser.releaseLibs(apkFile, reversionDir);
-                            Log.e(TAG, "NativeLibReleaser done!----->"+result);
-                            Message message = handler.obtainMessage();
-                            if (result) {
-                                message.what = MSG_ID_RELEASE_DONE;
-                            } else {
-                                message.what = MSG_ID_RELEASE_FAILED;
-                            }
-                            handler.sendMessage(message);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        break;
+//                    case RESOURCE:
+//                        try {
+//                            Log.e(TAG, "ResourceReleaser start!");
+//                            boolean result = ResourceReleaser.releaseResource(apkFile, reversionDir);
+//                            Log.e(TAG, "ResourceReleaser done!----->"+result);
+//
+//                            Message message = handler.obtainMessage();
+//                            if (result) {
+//                                message.what = MSG_ID_RESOURCE_RELEASE_DONE;
+//                            } else {
+//                                message.what = MSG_ID_RELEASE_FAILED;
+//                            }
+//                            handler.sendMessage(message);
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                        break;
+//                    case SOLIB:
+//                        try {
+//                            Log.e(TAG, "NativeLibReleaser start!");
+////                            boolean result = NativeLibReleaser.releaseLibs(apkFile, reversionDir);
+//                            Log.e(TAG, "NativeLibReleaser done!----->"+result);
+//                            Message message = handler.obtainMessage();
+//                            if (result) {
+//                                message.what = MSG_ID_RELEASE_DONE;
+//                            } else {
+//                                message.what = MSG_ID_RELEASE_FAILED;
+//                            }
+//                            handler.sendMessage(message);
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                        break;
                     default:
                         break;
 
@@ -427,9 +421,13 @@ public class BundleReleaser {
         Log.e(TAG, "dexOptimization start");
         File[] validDexes = reversionDir.listFiles(new FilenameFilter() {
             @Override
-            public boolean accept(File dir, String pathname) {
-                return pathname.endsWith(DEX_SUFFIX);
 
+            public boolean accept(File dir,String pathname) {
+                if (!DexReleaser.isArt() || externalStorage) {
+                  return pathname.endsWith(DEX_SUFFIX);
+                } else {
+                    return pathname.endsWith(".zip");
+                }
             }
         });
 
@@ -452,10 +450,6 @@ public class BundleReleaser {
         }
 
         dexFiles = new DexFile[validDexes.length];
-        if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
-            KernalConstants.dexBooster.setVerificationEnabled(true);
-            Log.e(TAG,"enable verify");
-        }
         if(!hasReleased) {
             Log.e(TAG,"start dexopt | hasRelease : "+hasReleased);
             final CountDownLatch countDownLatch = new CountDownLatch(validDexes.length);
@@ -482,9 +476,7 @@ public class BundleReleaser {
                 dexFiles[i] = dexoptInternal(validDexes[i]);
             }
         }
-        if(!externalStorage && Build.VERSION.SDK_INT>=21 && !hasReleased) {
-            KernalConstants.dexBooster.setVerificationEnabled(false);
-        }
+
         Log.e(TAG, "dex opt done");
         handler.sendMessage(handler.obtainMessage(MSG_ID_DEX_OPT_DONE));
     }
@@ -525,10 +517,6 @@ public class BundleReleaser {
         try {
             if(!externalStorage) {
 
-
-//                dexFile = dexOat(validDex.getPath(),optimizedPath,);
-
-                dexFile = /*DexFile*/AndroidRuntime.getInstance().loadDex(validDex.getPath(), optimizedPath, 0, null);
                 if(!new File(optimizedPath).exists()){
                     Log.e(TAG,"odex not exist");
                 }
@@ -537,7 +525,7 @@ public class BundleReleaser {
                 if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {
                     optimizedPath = KernalConstants.baseContext.getFilesDir()+File.separator+"fake.dex";
                     new File(optimizedPath).createNewFile();
-                    dexFile = KernalConstants.dexBooster.loadDex(KernalConstants.baseContext, validDex.getPath(), optimizedPath, 0, true);
+                    dexFile = DexFileCompat.loadDex(KernalConstants.baseContext, validDex.getPath(), optimizedPath, 0);
                 }else{
                     dexFile = DexFileCompat.loadDex(KernalConstants.baseContext,validDex.getPath(), optimizedPath,0);
                 }
@@ -567,9 +555,7 @@ public class BundleReleaser {
             if (!checkDexValid(dexFile)) {
                 return false;
             }
-            if(!hasReleased && Build.VERSION.SDK_INT>=21 && Build.VERSION.SDK_INT<26) {
-                 return KernalConstants.dexBooster.isOdexValid(optimizedPath);
-            }
+
             return true;
         }
         return false;

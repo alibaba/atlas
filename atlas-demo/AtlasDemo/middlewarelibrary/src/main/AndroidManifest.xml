@@ -14,9 +14,6 @@
             android:label="@string/title_item_detail"
             android:parentActivityName=".ItemListActivity"
             android:theme="@style/AppTheme.NoActionBar">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.taobao.middleware.ItemListActivity" />
         </activity>
     </application>
 

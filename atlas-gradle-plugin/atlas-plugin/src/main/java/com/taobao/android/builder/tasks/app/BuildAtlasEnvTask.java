@@ -2,6 +2,7 @@ package com.taobao.android.builder.tasks.app;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.TransformException;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -119,8 +120,9 @@ public class BuildAtlasEnvTask extends BaseTask {
     private ArtifactCollection symbolListWithPackageNames;
 
 
+
     @TaskAction
-    void generate() {
+    void generate() throws TransformException {
 
         Set<ResolvedArtifactResult> compileArtifacts = compileManifests.getArtifacts();
         Set<ResolvedArtifactResult> jarArtifacts = compileJars.getArtifacts();
@@ -129,6 +131,13 @@ public class BuildAtlasEnvTask extends BaseTask {
         Set<ResolvedArtifactResult> androidRes = res.getArtifacts();
         Set<ResolvedArtifactResult> androidAssets = assets.getArtifacts();
         Set<ResolvedArtifactResult> androidRnames = symbolListWithPackageNames.getArtifacts();
+
+        AtlasDependencyTree androidDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
+        List<AwbBundle> bundles = new ArrayList<>();
+        bundles.add(androidDependencyTree.getMainBundle());
+        bundles.addAll(androidDependencyTree.getAwbBundles());
+
+
 
 
 
@@ -149,6 +158,7 @@ public class BuildAtlasEnvTask extends BaseTask {
                 String projectPath = ((DefaultProjectComponentIdentifier) resolvedArtifactResult.getId().getComponentIdentifier()).getProjectPath();
                 allJars.add(new FileIdentity(projectPath.substring(projectPath.lastIndexOf(":") + 1), resolvedArtifactResult.getFile(), resolvedArtifactResult.getId().getDisplayName().startsWith("classes.jar") ? false : true, true));
             } else if (componentIdentifier instanceof OpaqueComponentArtifactIdentifier) {
+                if (resolvedArtifactResult.getFile().getAbsolutePath().contains("renderscript"))
                 appLocalJars.add(new FileIdentity(componentIdentifier.getDisplayName(), resolvedArtifactResult.getFile(), true, false));
             }
         }
@@ -208,7 +218,7 @@ public class BuildAtlasEnvTask extends BaseTask {
 
 
          //app localJar is not support , this may course duplicate localjars
-//        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(fileIdentity));
+        appLocalJars.stream().forEach(fileIdentity -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(fileIdentity));
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(getVariantName());
         List<AndroidLibrary> androidLibraries = atlasDependencyTree.getAllAndroidLibrarys();
@@ -711,7 +721,8 @@ public class BuildAtlasEnvTask extends BaseTask {
 
     private boolean isMBundle(AppVariantContext appVariantContext, AwbBundle awbBundle){
 
-        if (awbBundle.getResolvedCoordinates().getArtifactId().equals("custom-detail-android")){
+
+        if (awbBundle.getPackageName().equals("com.taobao.android.customdetail")){
             return false;
         }
 

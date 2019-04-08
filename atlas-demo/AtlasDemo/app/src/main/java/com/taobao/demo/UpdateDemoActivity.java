@@ -8,7 +8,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.widget.TextView;
 
-import com.taobao.update.Updater;
 
 public class UpdateDemoActivity extends AppCompatActivity {
 
@@ -26,7 +25,7 @@ public class UpdateDemoActivity extends AppCompatActivity {
             new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... voids) {
-                    Updater.update(getBaseContext());
+//                    Updater.update(getBaseContext());
                     return null;
                 }
 

@@ -217,44 +217,23 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Looper;
-import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
-import android.taobao.atlas.hack.AndroidHack;
 import android.taobao.atlas.hack.AssertionArrayException;
-import android.taobao.atlas.hack.AtlasHacks;
-import android.taobao.atlas.runtime.ActivityManagerDelegate;
 import android.taobao.atlas.runtime.ActivityTaskMgr;
-import android.taobao.atlas.runtime.BundleLifecycleHandler;
-import android.taobao.atlas.runtime.ClassNotFoundInterceptorCallback;
-import android.taobao.atlas.runtime.DelegateClassLoader;
-import android.taobao.atlas.runtime.DelegateResources;
 import android.taobao.atlas.runtime.FrameworkLifecycleHandler;
-import android.taobao.atlas.runtime.InstrumentationHook;
 import android.taobao.atlas.runtime.RuntimeVariables;
-import android.taobao.atlas.runtime.SecurityHandler;
-import android.taobao.atlas.util.ApkUtils;
-import android.taobao.atlas.util.WrapperUtil;
-import android.taobao.atlas.util.log.impl.AtlasMonitor;
 import android.text.TextUtils;
 import android.util.Log;
 
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.BundleListener;
-
-import java.io.File;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import static android.taobao.atlas.runtime.InstrumentationHook.sOnIntentRedirectListener;
 
 public class Atlas {
 
     public static String sAPKSource ;
     public static boolean Downgrade_H5 = false;
     public static boolean isDebug;
+
+
     public static Set<String> sDisableBundle = null;
 
     private Atlas(){
@@ -268,7 +247,6 @@ public class Atlas {
        return INSTANCE;
     }
 
-    private BundleLifecycleHandler    bundleLifecycleHandler;
     private FrameworkLifecycleHandler frameworkLifecycleHandler;
 
     /**
@@ -286,44 +264,21 @@ public class Atlas {
         sAPKSource = app_info.sourceDir;
         RuntimeVariables.androidApplication = application;
         RuntimeVariables.delegateResources  = application.getResources();
-        DelegateResources.walkroundActionMenuTextColor(RuntimeVariables.delegateResources);
         Framework.containerVersion = RuntimeVariables.sInstalledVersionName;
         ClassLoader cl = Atlas.class.getClassLoader();
         Framework.systemClassLoader = cl;
         // defineAndVerify
         String packageName = application.getPackageName();
-        // 
-        DelegateClassLoader newClassLoader = new DelegateClassLoader(cl);
-        // init RuntimeVariables
-        RuntimeVariables.delegateClassLoader = newClassLoader;
 
-        AndroidHack.injectClassLoader(packageName, newClassLoader);
-        AndroidHack.injectInstrumentationHook(new InstrumentationHook(AndroidHack.getInstrumentation(), application.getBaseContext()));
-        // add listeners
-        bundleLifecycleHandler = new BundleLifecycleHandler();
-        Framework.syncBundleListeners.add(bundleLifecycleHandler);
+        RuntimeVariables.delegateClassLoader = Atlas.class.getClassLoader();
+
         frameworkLifecycleHandler = new FrameworkLifecycleHandler();
         Framework.frameworkListeners.add(frameworkLifecycleHandler);
 
-        try {
-            ActivityManagerDelegate activityManagerProxy = new ActivityManagerDelegate();
-
-            Object gDefault = null;
-            if(Build.VERSION.SDK_INT>25 || (Build.VERSION.SDK_INT==25&&Build.VERSION.PREVIEW_SDK_INT>0)){
-                gDefault=AtlasHacks.ActivityManager_IActivityManagerSingleton.get(AtlasHacks.ActivityManager.getmClass());
-            }else{
-                gDefault=AtlasHacks.ActivityManagerNative_gDefault.get(AtlasHacks.ActivityManagerNative.getmClass());
-            }
-            AtlasHacks.Singleton_mInstance.hijack(gDefault, activityManagerProxy);
-        }catch(Throwable e){}
-        AndroidHack.hackH();
     }
 
     public void startup(Application application,boolean isUpdated) {
         if(!RuntimeVariables.safeMode) {
-            if (!WrapperUtil.isDebugMode(application) && ApkUtils.isRootSystem()) {
-                Atlas.getInstance().addBundleListener(new SecurityHandler());
-            }
             try {
                 Framework.startup(isUpdated);
             } catch (Exception e) {
@@ -364,303 +319,8 @@ public class Atlas {
         }
     }
 
-    public void setIntentRedirectListener(InstrumentationHook.OnIntentRedirectListener listener){
-        sOnIntentRedirectListener = listener;
-    }
-
-     ///////////////////////////////////////////////Deprecated method////////////////////////////////////////////
-    /**
-     *
-     * install bundle from internal
-     * @param location
-     */
-    @Deprecated
-    public void installBundleWithDependency(String location){
-        if (TextUtils.isEmpty(location)){
-            Log.e("Atlas","empty location");
-            return;
-        }
-
-        if (Framework.getBundle(location) == null){
-            checkingThread(false);
-            BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{location});
-        }
-    }
-
-    @Deprecated
-    public void installBundle(final String location, final InputStream input) throws BundleException {
-        if (TextUtils.isEmpty(location)){
-            Log.e("Atlas","empty location");
-        }
-
-        if (Framework.getBundle(location) == null) {
-            checkingThread(false);
-            BundleInstallerFetcher.obtainInstaller().installSync(new String[]{location}, new InputStream[]{input});
-        }
-    }
-
-    @Deprecated
-    public void installBundle(final String location, final File file) throws BundleException {
-        if (TextUtils.isEmpty(location)){
-            Log.e("Atlas","empty location");
-        }
-
-        if (Framework.getBundle(location) == null) {
-            checkingThread(false);
-            BundleInstallerFetcher.obtainInstaller().installSync(new String[]{location}, new File[]{file});
-        }
-    }
-
-    @Deprecated
-    public void uninstallBundle(final String location) throws BundleException {
-        Bundle bundle = Framework.getBundle(location);
-        if (bundle != null) {
-            BundleImpl b = (BundleImpl)bundle;
-            File delDir = null;
-            try {
-                File soFile = b.getArchive().getArchiveFile();
-                if(soFile.canWrite()){
-                    soFile.delete();
-                }
-                delDir = b.getArchive().getCurrentRevision().getRevisionDir();
-                bundle.uninstall();
-                if(delDir !=null ){
-                    Framework.deleteDirectory(delDir);
-                }
-            } catch (Exception e) {
-            }
-
-        } else {
-            throw new BundleException("Could not uninstall bundle " + location + ", because could not find it");
-        }
-    }
-
-    @Deprecated
-    public Resources getDelegateResources() {
-        return RuntimeVariables.delegateResources;
-    }
-    @Deprecated
-    public ClassLoader getDelegateClassLoader() {
-        return RuntimeVariables.delegateClassLoader;
-    }
-    ///////////////////////////////////////////////Deprecated method////////////////////////////////////////////
 
 
-    /*************************************************↓↓↓↓↓↓for public use↓↓↓↓↓↓*************************************************************
-     **************************************************↓↓↓↓↓↓for public use↓↓↓↓↓↓*************************************************************
-     **************************************************↓↓↓↓↓↓for public use↓↓↓↓↓↓***************************************************************/
-
-    /**
-     * 同步安装一批apk内部的bundle
-     * @param locations bundle的packagename
-     * @param listener
-     */
-    public void installBundleTransitivelyAsync(String[] locations,BundleInstaller.InstallListener listener){
-        BundleInstallerFetcher.obtainInstaller().installTransitivelyAsync(locations,listener);
-    }
-
-
-    /**
-     * idle时候安装一批低优先级的apk内部的bundle
-     * @param location bundle的packagename
-     * @param listener
-     */
-    public void installIdleBundleTransitively(String location,BundleInstaller.InstallListener listener){
-        BundleInstaller.startIdleInstall(location,listener);
-    }
-
-    /**
-     * 相对空闲时候安装一批低优先级的apk内部的bundle
-     * @param location bundle的packagename
-     * @param listener
-     */
-    public void installDelayBundleTransitively(String location,BundleInstaller.InstallListener listener){
-        BundleInstaller.startDelayInstall(location,listener);
-    }
-
-    /**
-     *
-     * @param location get installed bundle from Framework
-     * @return
-     */
-    public Bundle getBundle(final String location) {
-        return Framework.getBundle(location);
-    }
-
-    /**
-     * 获取当前安装的所有bundle
-     * @return
-     */
-    public List<Bundle> getBundles() {
-        return Framework.getBundles();
-    }
-
-    /**
-     * 获取bundle对应的classloader
-     * @param location
-     * @return
-     */
-    public ClassLoader getBundleClassLoader(final String location) {
-        Bundle bundle = Framework.getBundle(location);
-        if (bundle != null) {
-            return ((BundleImpl) bundle).getClassLoader();
-        }
-        return null;
-    }
-
-    /**
-     * 获取bundle对应的文件
-     * @param location
-     * @return
-     */
-    public File getBundleFile(final String location) {
-        Bundle bundle = Framework.getBundle(location);
-        if (bundle != null) {
-            return ((BundleImpl) bundle).archive.getArchiveFile();
-        }
-        return null;
-    }
-
-    /**
-     * 注册bundle生命周期监听
-     * @param listener
-     */
-    public void addBundleListener(BundleListener listener) {
-    	Framework.addBundleListener(listener);
-    }
-
-    /**
-     * 注销bundle生命周期监听
-     * @param listener
-     */
-    public void removeBundleListener(BundleListener listener) {
-    	Framework.removeBundleListener(listener);
-    }
-
-    /**
-     * Activity类查找失败监听(用于远程bundle和容错)
-     * @param callback
-     */
-    public void setClassNotFoundInterceptorCallback(ClassNotFoundInterceptorCallback callback){
-    	Framework.setClassNotFoundCallback(callback);
-    }
-
-    /**
-     * 设置bundle运行时依赖
-     * @param source  需要添加依赖的bundle
-     * @param dependency 被依赖bundle的classloader
-     * @param resourceDependencyNeed 是否需要使用被依赖bundle的资源
-     */
-
-    @Deprecated
-    public void requestRuntimeDependency(ClassLoader source, ClassLoader dependency,boolean resourceDependencyNeed){
-        Map<String,Object>detailMap = new HashMap<>();
-        if(source == getClass().getClassLoader() && dependency instanceof BundleClassLoader){
-//            detailMap.put("source",Atlas.class.getClassLoader().getClass().getSimpleName());
-//            detailMap.put("dependency",((BundleClassLoader) dependency).location);
-//            detailMap.put("method","requestRuntimeDependency(ClassLoader, ClassLoader,boolean)");
-//
-//            AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
-
-            Log.e("Atlas","PathClassLoader can not have bundle dependency,this method will be removed in next stage");
-            return;
-        }
-        if (source == getClass().getClassLoader() && dependency == getClass().getClassLoader()){
-//            detailMap.put("source",Atlas.class.getClassLoader().getClass().getSimpleName());
-//            detailMap.put("dependency",Atlas.class.getClassLoader().getClass().getSimpleName());
-//            detailMap.put("method","requestRuntimeDependency(ClassLoader, ClassLoader,boolean)");
-//            AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
-            Log.e("Atlas","PathClassLoader can not have runtime PathClassLoader dependency, this method will be removed in next stage");
-            return;
-
-        }
-        if (source instanceof BundleClassLoader && dependency == getClass().getClassLoader()){
-            return;
-        }
-        String dependencyLocation = ((BundleClassLoader)dependency).location;
-
-        ((BundleClassLoader)source).addRuntimeDependency(dependencyLocation);
-
-        if(resourceDependencyNeed) {
-            ActivityTaskMgr.getInstance().updateBundleActivityResource(dependencyLocation);
-        }
-    }
-
-    /**
-     * 设置bundle运行时依赖
-     * @param source  需要添加依赖的bundle
-     * @param dependencyBundle 被依赖的bundle的packagename
-     * @param resourceDependencyNeed 是否需要使用被依赖bundle的资源
-     * @throws BundleException
-     */
-    @Deprecated
-    public void requestRuntimeDependency(ClassLoader source,String dependencyBundle,boolean resourceDependencyNeed) throws BundleException{
-        Map<String,Object>detailMap = new HashMap<>();
-        BundleImpl impl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
-        if(impl==null){
-            checkingThread(true);
-            BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{dependencyBundle});
-        }
-        impl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
-        if(impl==null){
-            throw new BundleException("failed install deppendencyBundle : " +dependencyBundle);
-        }else{
-            if(source instanceof BundleClassLoader && impl.getClassLoader() instanceof BundleClassLoader){
-                requestRuntimeDependency(source,impl.getClassLoader(),resourceDependencyNeed);
-            }else if (source instanceof BundleClassLoader && impl.getClassLoader() == Framework.getSystemClassLoader()){
-                ((BundleClassLoader)source).addRuntimeDependency(dependencyBundle);
-            }else if (source  == Framework.getSystemClassLoader() && impl.getClassLoader() instanceof BundleClassLoader){
-//                detailMap.put("source",Atlas.class.getClassLoader().getClass().getSimpleName());
-//                detailMap.put("dependency",dependencyBundle);
-//                detailMap.put("method","requestRuntimeDependency(ClassLoader,String,boolean)");
-//                AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
-                Log.e("Atlas"," PathClassLoader can not have bundle dependency "+dependencyBundle);
-            }else {
-//                detailMap.put("source",Atlas.class.getClassLoader().getClass().getSimpleName());
-//                detailMap.put("dependency",dependencyBundle);
-//                detailMap.put("method","requestRuntimeDependency(ClassLoader,String,boolean)");
-//                AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
-//                Log.e("Atlas"," PathClassLoader can not have runtime dependency of pathClassloader"+dependencyBundle);
-            }
-        }
-    }
-
-    public void requestRuntimeDependency(String bundleName,String dependencyBundle,boolean resourceDependencyNeed) throws BundleException{
-        Map<String,Object>detailMap = new HashMap<>();
-        BundleImpl dependecyBundleImpl = (BundleImpl) Atlas.getInstance().getBundle(dependencyBundle);
-        BundleImpl bundle = (BundleImpl) Atlas.getInstance().getBundle(bundleName);
-
-        if(dependecyBundleImpl==null||dependecyBundleImpl ==null){
-            checkingThread(true);
-            BundleInstallerFetcher.obtainInstaller().installTransitivelySync(new String[]{dependencyBundle,bundleName});
-        }
-
-        if(dependecyBundleImpl==null || bundle == null){
-            throw new BundleException("failed install deppendencyBundle : " +dependencyBundle);
-        }else{
-            if(bundle.getClassLoader() instanceof BundleClassLoader && dependecyBundleImpl.getClassLoader() instanceof BundleClassLoader){
-                requestRuntimeDependency(bundle.getClassLoader(),dependecyBundleImpl.getClassLoader(),resourceDependencyNeed);
-            }else if (bundle.getClassLoader() instanceof BundleClassLoader && dependecyBundleImpl.getClassLoader() == Framework.getSystemClassLoader()){
-                ((BundleClassLoader)bundle.getClassLoader()).addRuntimeDependency(dependencyBundle);
-            }else if (bundle.getClassLoader()  == Framework.getSystemClassLoader() && dependecyBundleImpl.getClassLoader() instanceof BundleClassLoader){
-//                detailMap.put("source",bundleName);
-//                detailMap.put("dependency",dependencyBundle);
-//                detailMap.put("method","requestRuntimeDependency(String,String,boolean)");
-//                AtlasMonitor.getInstance().report(AtlasMonitor.BUNDLE_DEPENDENCY_ERROR, detailMap, new IllegalArgumentException());
-                Log.e("Atlas" ,"PathClassLoader can not have bundle dependency "+dependencyBundle);
-            }else {
-                AtlasBundleInfoManager.instance().getBundleInfo(bundleName).getTotalDependency().add(dependencyBundle);
-            }
-        }
-    }
-
-    /**
-     * 自定义异步安装时的界面提醒
-     * @param reminder
-     */
-    public void setExternalBundleInstallReminder(ExternalBundleInstallReminder reminder){
-        RuntimeVariables.sReminder = reminder;
-    }
 
     /**
      * 设置bundle安装的校验器，会在bundle启动时回调提示校验，校验不通过将无法运行

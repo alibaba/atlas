@@ -173,8 +173,8 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                 List<File> inputFiles = new ArrayList<File>();
                                 inputFiles.addAll(awbTransform.getInputFiles());
                                 inputFiles.addAll(awbTransform.getInputLibraries());
-                                if (null != awbTransform.getInputDir()) {
-                                    inputFiles.add(awbTransform.getInputDir());
+                                if (null != awbTransform.getInputDirs()) {
+                                    inputFiles.addAll(awbTransform.getInputDirs());
                                 }
 
 
@@ -210,7 +210,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
         File tempDexFolder = null;
 
-        inputFile = AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars();
+        inputFile.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars());
         inputFile.addAll(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs());
 
         logger.warning("maindex inputFile size :" + inputFile.size());

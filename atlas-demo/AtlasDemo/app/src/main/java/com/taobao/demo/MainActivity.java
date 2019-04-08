@@ -10,8 +10,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.taobao.atlas.remote.RemoteFactory;
-import android.taobao.atlas.remote.fragment.RemoteFragment;
 import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
 import android.view.Menu;
@@ -20,14 +18,12 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.middleware.dialog.Dialog;
-import com.taobao.update.Updater;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
 
     //    private ActivityGroupDelegate mActivityDelegate;
-    private ViewGroup mActivityGroupContainer;
 
     private final BottomNavigationView.OnNavigationItemSelectedListener
             mOnNavigationItemSelectedListener
@@ -35,17 +31,14 @@ public class MainActivity extends AppCompatActivity
             = item -> {
                 switch (item.getItemId()) {
                     case R.id.navigation_home:
-                        switchToActivity("home",
-                                "atlas.fragment.intent.action.FIRST_FRAGMENT"/*"com.taobao
-                                .firstbundle.FirstBundleActivity"*/);
+                        switchToActivity("com.taobao.firstbundle.FirstBundleActivity");
                         Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
                         return true;
                     case R.id.navigation_dashboard:
-                        switchToActivity("second",
-                                "atlas.fragment.intent.action.SECOND_BUNDLE_FRAGMENT"/*"com
-                                .taobao.secondbundle.SecondBundleActivity"*/);
+                        switchToActivity("com.taobao.secondbundle.SecondBundleActivity");
                         return true;
                     case R.id.navigation_notifications:
+                        
     //                    Intent intent3 = new Intent();
     //                    intent3.setClassName(getBaseContext(),"com.taobao.firstBundle.FirstBundleActivity");
     //                    mActivityDelegate.execStartChildActivityInternal(mActivityGroupContainer,"third",intent3);
@@ -73,30 +66,27 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 //        mActivityDelegate = new ActivityGroupDelegate(this,savedInstanceState);
-        mActivityGroupContainer = (ViewGroup) findViewById(R.id.content);
-        switchToActivity("home",
-                "atlas.fragment.intent.action.FIRST_FRAGMENT"/*"com.taobao.firstbundle
-                .FirstBundleActivity"*/);
+        switchToActivity("com.taobao.firstbundle.FirstBundleActivity");
     }
 
-    public void switchToActivity(String key,String activityName){
-        RemoteFactory.requestRemote(RemoteFragment.class, this, new Intent(activityName),
-                new RemoteFactory.OnRemoteStateListener<RemoteFragment>() {
-                    @Override
-                    public void onRemotePrepared(RemoteFragment iRemote) {
-                        getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.content, iRemote)
-                                .commit();
-                    }
-
-                    @Override
-                    public void onFailed(String s) {
-                        Log.e("UserRemoteActivity", s);
-                    }
-                });
-//        Intent intent = new Intent();
-//        intent.setClassName(getBaseContext(),activityName);
-//        mActivityDelegate.startChildActivity(mActivityGroupContainer,key,intent);
+    public void switchToActivity(String activityName){
+//        RemoteFactory.requestRemote(RemoteFragment.class, this, new Intent(activityName),
+//                new RemoteFactory.OnRemoteStateListener<RemoteFragment>() {
+//                    @Override
+//                    public void onRemotePrepared(RemoteFragment iRemote) {
+//                        getSupportFragmentManager().beginTransaction()
+//                                .replace(R.id.content, iRemote)
+//                                .commit();
+//                    }
+//
+//                    @Override
+//                    public void onFailed(String s) {
+//                        Log.e("UserRemoteActivity", s);
+//                    }
+//                });
+        Intent intent = new Intent();
+        intent.setClassName(getBaseContext(),activityName);
+        startActivity(intent);
     }
 
     @Override
@@ -165,22 +155,7 @@ public class MainActivity extends AppCompatActivity
             dialog.show();
 
 
-        } else if (id == R.id.nav_dex_patch) {
-            new AsyncTask<Void, Void, Boolean>() {
-                @Override
-                protected Boolean doInBackground(Void... voids) {
-                    boolean update = Updater.dexPatchUpdate(getBaseContext());
-                    return update;
-                }
-
-                @Override
-                protected void onPostExecute(Boolean aVoid) {
-                    if (aVoid) {
-                        android.os.Process.killProcess(android.os.Process.myPid());
-                    }
-                }
-            }.execute();
-        }else if (id == R.id.nav_databind_bundle) {
+        } else if (id == R.id.nav_databind_bundle) {
 
                 Intent intent = new Intent();
                 intent.setPackage(getPackageName());

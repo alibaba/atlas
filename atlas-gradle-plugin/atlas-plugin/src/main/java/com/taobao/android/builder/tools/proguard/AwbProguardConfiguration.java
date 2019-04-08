@@ -267,12 +267,17 @@ public class AwbProguardConfiguration {
             obuscateDir.mkdirs();
 
             //configs.add();
-            if (null != awbTransform.getInputDir() && awbTransform.getInputDir().exists()) {
-                configs.add(INJARS_OPTION + " " + awbTransform.getInputDir().getAbsolutePath());
-                bundleFiles.add(awbTransform.getInputDir());
-                File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
-                inputLibraries.add(obsJar);
-                configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+
+            if (null != awbTransform.getInputDirs() && awbTransform.getInputDirs().size() > 0) {
+                for (File dir : awbTransform.getInputDirs()) {
+                    if (dir.exists()) {
+                        configs.add(INJARS_OPTION + " " + dir.getAbsolutePath());
+                        File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
+                        inputLibraries.add(obsJar);
+                        configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+
+                    }
+                }
             }
 
             Set<String> classNames = new HashSet<>();
@@ -295,7 +300,7 @@ public class AwbProguardConfiguration {
             //            configs.add();
 
             awbTransform.setInputFiles(inputLibraries);
-            awbTransform.setInputDir(null);
+            awbTransform.getInputDirs().clear();
             awbTransform.getInputLibraries().clear();
             appVariantOutputContext.getAwbTransformMap().put(name, awbTransform);
         }

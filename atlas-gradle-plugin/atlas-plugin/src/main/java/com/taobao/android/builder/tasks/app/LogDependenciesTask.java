@@ -257,6 +257,9 @@ public class LogDependenciesTask extends BaseTask {
 
         File treeFile = new File(getProject().getBuildDir(),
                                  "outputs/dependencyTree-" + getVariantName() + ".json");
+        File treeFileWithFileSize = new File(
+                getProject().getBuildDir(),
+                "outputs/dependencyTree-fileSize-" + getVariantName() + ".json");
         File dependenciesFile = new File(getProject().getBuildDir(), "outputs/dependencies.txt");
         File versionProperties = new File(getProject().getBuildDir(), "outputs/version.properties");
         File buildInfo = new File(getProject().getBuildDir(), "outputs/build.txt");
@@ -281,6 +284,12 @@ public class LogDependenciesTask extends BaseTask {
             Collections.sort(dependencyJson.getMainDex());
 
             FileUtils.write(treeFile, JSON.toJSONString(dependencyJson, true));
+
+            dependencyJson = atlasDependencyTree.createDependencyJson(true);
+
+            Collections.sort(dependencyJson.getMainDex());
+
+            FileUtils.write(treeFileWithFileSize, JSON.toJSONString(dependencyJson, true));
 
             //add to ap
             appBuildInfo.getOtherFilesMap().put("awo/dependencyTree.json", treeFile);
@@ -381,7 +390,7 @@ public class LogDependenciesTask extends BaseTask {
 
     public static class ConfigAction extends MtlBaseTaskAction<LogDependenciesTask> {
 
-        private AppVariantContext appVariantContext;
+        private final AppVariantContext appVariantContext;
 
         public ConfigAction(AppVariantContext appVariantContext,
                             BaseVariantOutput baseVariantOutputData) {

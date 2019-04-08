@@ -211,7 +211,6 @@ package android.taobao.atlas.runtime;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Dialog;
-import android.app.PreVerifier;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -219,7 +218,6 @@ import android.content.res.Resources;
 import android.taobao.atlas.R;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.FrameworkProperties;
-import android.taobao.atlas.runtime.dialog.DefaultProgress;
 import android.text.TextUtils;
 import android.view.ViewGroup;
 import java.io.Serializable;
@@ -229,7 +227,7 @@ public class RuntimeVariables implements Serializable{
 
     public static Application         androidApplication;
 
-    public static DelegateClassLoader delegateClassLoader;
+    public static ClassLoader delegateClassLoader;
 
     public static Resources           delegateResources;
 
@@ -264,38 +262,6 @@ public class RuntimeVariables implements Serializable{
     public static Object      sDexLoadBooster;
     private static String launchActivityName;
 
-
-    static {
-        if (Boolean.FALSE.booleanValue()) {
-            String.valueOf(PreVerifier.class);
-        }
-    }
-    public static Dialog alertDialogUntilBundleProcessed(Activity activity,String bundleName){
-        if (activity != null) {
-            if(sReminder!=null){
-                return sReminder.createReminderDialog(activity,bundleName);
-            }else {
-                Dialog dialog = new Dialog(activity, R.style.atlas_default_dialog);
-                dialog.setCanceledOnTouchOutside(false);
-                dialog.setCancelable(true);
-                DefaultProgress progress = new DefaultProgress(activity);
-                float density = delegateResources.getDisplayMetrics().density;
-                int size = (int) (96 * density);
-                ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(size, size);
-                dialog.setContentView(progress, params);
-                return dialog;
-            }
-        }
-        return null;
-    }
-
-    public static boolean verifyBundle(String bundlePath){
-        if(sBundleVerifier == null){
-            return true;
-        }else{
-            return  sBundleVerifier.verifyBundle(bundlePath);
-        }
-    }
 
     public static Class FrameworkPropertiesClazz;
 
