@@ -1028,7 +1028,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             methods.put(methodNode.name + "." + methodNode.desc, methodNode);
         }
 
-        new StringSwitch() {
+        new TBStringSwitch() {
             @Override
             void visitString() {
                 mv.visitVarInsn(Opcodes.ALOAD, 1);

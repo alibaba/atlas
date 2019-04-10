@@ -453,7 +453,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         // implementation.
         // This will work fine as long as we don't support adding methods to a class.
 
-        new StringSwitch() {
+        new TBStringSwitch() {
             @Override
             void visitString() {
                 mv.visitVarInsn(Opcodes.ALOAD, 1);
