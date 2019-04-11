@@ -31,7 +31,7 @@ description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
 
 
-version "5.1.0.9-rc25"
+version "5.1.0.9-rc27"
 
 
 String getEnvValue(key, defValue) {

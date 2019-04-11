@@ -265,27 +265,12 @@ public final class Framework {
      */
     static boolean DEBUG_BUNDLES;
 
-    /**
-     * location -> bundle.
-     */
-    public static Map<String, Bundle> bundles = new ConcurrentHashMap<String, Bundle>();
-
-    /**
-     * bundle listeners.
-     */
-    static List<BundleListener> bundleListeners = new ArrayList<BundleListener>();
-
-    /**
-     * synchronous bundle listeners.
-     */
-    static List<BundleListener> syncBundleListeners = new ArrayList<BundleListener>();
 
     /**
      * framework listeners.
      */
     static List<FrameworkListener> frameworkListeners = new ArrayList<FrameworkListener>();
 
-    static HashMap<String,Integer> installingBundles = new HashMap<>();
 
     /**
      * system ClassLoader
@@ -333,20 +318,7 @@ public final class Framework {
         return systemClassLoader;
     }
 
-    public static List<Bundle> getBundles() {
-        final List<Bundle> res = new ArrayList<Bundle>(bundles.size());
-        synchronized (bundles) {
-            res.addAll(bundles.values());
-        }
-        return res;
-    }
 
-    public synchronized static Bundle getBundle(String location) {
-        if (location == null){
-            return null;
-        }
-        return bundles.get(location);
-    }
 
     /**
      * delete a directory with all subdirs.

@@ -249,9 +249,6 @@ public class RuntimeVariables implements Serializable{
 
     public static String              sApkPath;
 
-    public static Atlas.ExternalBundleInstallReminder sReminder;
-
-    public static Atlas.BundleVerifier sBundleVerifier;
 
     public static boolean             sCachePreVersionBundles = false;
 
