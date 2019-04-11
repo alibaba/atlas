@@ -24,6 +24,7 @@ import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.IntegerOption;
 import com.android.build.gradle.options.ProjectOptions;
 import com.android.build.gradle.tasks.ir.FastDeployRuntimeExtractorTask;
+import com.android.build.gradle.tasks.ir.GenerateInstantRunAppInfoTask;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
@@ -38,6 +39,7 @@ import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.hook.dex.DexByteCodeConverterHook;
 import com.taobao.android.builder.insant.*;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tasks.manager.transform.TransformManager;
 import com.taobao.android.builder.tasks.transform.dex.AtlasDexArchiveBuilderTransform;
 import com.taobao.android.builder.tasks.transform.dex.AtlasDexMergerTransform;
@@ -427,6 +429,13 @@ public class TransformReplacer {
             }
         }
 
+        variantContext.getProject().getTasks().withType(GenerateInstantRunAppInfoTask.class).forEach(generateInstantRunAppInfoTask -> generateInstantRunAppInfoTask.doLast(new Action<Task>() {
+            @Override
+            public void execute(Task task) {
+                AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getMainDexFiles().add(new BuildAtlasEnvTask.FileIdentity("instant-run-bootstrap",((GenerateInstantRunAppInfoTask)task).getOutputFile(),false,false));
+            }
+        }));
+
         List<TransformTask> transforms = TransformManager.findTransformTaskByTransformType(
                 variantContext, InstantRunTransform.class);
         if (transforms != null && transforms.size() > 0) {
@@ -436,6 +445,7 @@ public class TransformReplacer {
                 ReflectUtils.updateField(transformTask, "transform", taobaoInstantRunTransform);
             }
         }
+
 
 
         List<TransformTask> verifytransforms = TransformManager.findTransformTaskByTransformType(
