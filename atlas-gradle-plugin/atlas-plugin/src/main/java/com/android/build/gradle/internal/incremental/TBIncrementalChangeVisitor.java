@@ -25,7 +25,7 @@ import java.util.function.Consumer;
  */
 public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
-    List<TaobaoInstantRunTransform.CodeChange>changes = new ArrayList<>();
+    List<TaobaoInstantRunTransform.CodeChange> changes = new ArrayList<>();
 
     public static final VisitorBuilder VISITOR_BUILDER = new IncrementalVisitor.VisitorBuilder() {
         @NonNull
@@ -83,11 +83,11 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
     /**
      * Turns this class into an override class that can be loaded by our custom class loader:
-     *<ul>
-     *   <li>Make the class name be OriginalName$override</li>
-     *   <li>Ensure the class derives from java.lang.Object, no other inheritance</li>
-     *   <li>Ensure the class has a public parameterless constructor that is a noop.</li>
-     *</ul>
+     * <ul>
+     * <li>Make the class name be OriginalName$override</li>
+     * <li>Ensure the class derives from java.lang.Object, no other inheritance</li>
+     * <li>Ensure the class has a public parameterless constructor that is a noop.</li>
+     * </ul>
      */
     @Override
     public void visit(int version, int access, String name, String signature, String superName,
@@ -142,10 +142,10 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
      * are static methods that do the same thing the visited code does, but from outside the class.
      * For instance methods, the instance is passed as the first argument. Note that:
      * <ul>
-     *   <li>We ignore the class constructor as we don't support it right now</li>
-     *   <li>We skip abstract methods.</li>
-     *   <li>For constructors split the method body into super arguments and the rest of
-     *   the method body, see {@link ConstructorBuilder}</li>
+     * <li>We ignore the class constructor as we don't support it right now</li>
+     * <li>We skip abstract methods.</li>
+     * <li>For constructors split the method body into super arguments and the rest of
+     * the method body, see {@link ConstructorBuilder}</li>
      * </ul>
      */
     @Override
@@ -207,13 +207,14 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
     /**
      * Creates a method adapter that will instrument to original code in such a way that it can
      * patch live code.
-     * @param access the method access flags.
-     * @param name the method name
-     * @param originalDesc the original description.
-     * @param newDesc the modified method description that suits the InstantRun patching algorithms
-     * @param signature the method signature.
-     * @param exceptions the exceptions thrown by the method
-     * @param isStatic true if the method is static, false otherwise.
+     *
+     * @param access        the method access flags.
+     * @param name          the method name
+     * @param originalDesc  the original description.
+     * @param newDesc       the modified method description that suits the InstantRun patching algorithms
+     * @param signature     the method signature.
+     * @param exceptions    the exceptions thrown by the method
+     * @param isStatic      true if the method is static, false otherwise.
      * @param isConstructor true if a constructor. false otherwise.
      * @return the method adapter visitor.
      */
@@ -228,7 +229,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             boolean isConstructor) {
 
         MethodVisitor methodVisitor =
-                super.visitMethod(access, name, originalDesc, signature,  exceptions);
+                super.visitMethod(access, name, originalDesc, signature, exceptions);
         methodVisitor = new TBIncrementalChangeVisitor.ISVisitor(methodVisitor, access, name, newDesc, isStatic, isConstructor);
         // Install the Jsr/Ret inliner adapter, we have had reports of code still using the
         // Jsr/Ret deprecated byte codes.
@@ -247,9 +248,9 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
     public void setCodeChange(TaobaoInstantRunTransform.CodeChange codeChange) {
         this.codeChange = codeChange;
-        if (codeChange.getCodeChanges()!= null && codeChange.getCodeChanges().size() > 0){
+        if (codeChange.getCodeChanges() != null && codeChange.getCodeChanges().size() > 0) {
             changes = codeChange.getCodeChanges();
-            changes.forEach(codeChange1 -> System.err.println(TBIncrementalChangeVisitor.this.codeChange.getCode()+" codechange:"+ codeChange1.getCode()));
+            changes.forEach(codeChange1 -> System.err.println(TBIncrementalChangeVisitor.this.codeChange.getCode() + " codechange:" + codeChange1.getCode()));
 
         }
 
@@ -262,11 +263,12 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
         /**
          * Instrument a method.
-         * @param mv the parent method visitor.
-         * @param access the method access flags.
-         * @param name method name.
-         * @param desc method signature.
-         * @param isStatic true if the instrumented method was originally a static method.
+         *
+         * @param mv            the parent method visitor.
+         * @param access        the method access flags.
+         * @param name          method name.
+         * @param desc          method signature.
+         * @param isStatic      true if the instrumented method was originally a static method.
          * @param isConstructor true if  the instrumented code was originally a constructor body.
          */
         public ISVisitor(
@@ -313,7 +315,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             }
 
             boolean handled = false;
-            switch(opcode) {
+            switch (opcode) {
                 case Opcodes.PUTSTATIC:
                 case Opcodes.GETSTATIC:
                     handled = visitStaticFieldAccess(opcode, owner, name, desc, accessRight);
@@ -339,28 +341,27 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * <p>
          * Pseudo code for Get:
          * <code>
-         *   value = $instance.fieldName;
+         * value = $instance.fieldName;
          * </code>
          * becomes:
          * <code>
-         *   value = (unbox)$package/AndroidInstantRuntime.getPrivateField($instance, $fieldName);
+         * value = (unbox)$package/AndroidInstantRuntime.getPrivateField($instance, $fieldName);
          * </code>
          * <p>
          * Pseudo code for Set:
          * <code>
-         *   $instance.fieldName = value;
+         * $instance.fieldName = value;
          * </code>
          * becomes:
          * <code>
-         *   $package/AndroidInstantRuntime.setPrivateField($instance, value, $fieldName);
+         * $package/AndroidInstantRuntime.setPrivateField($instance, value, $fieldName);
          * </code>
          *
-         *
-         * @param opcode the field access opcode, can only be {@link Opcodes#PUTFIELD} or
-         *               {@link Opcodes#GETFIELD}
-         * @param owner the field declaring class
-         * @param name the field name
-         * @param desc the field type
+         * @param opcode      the field access opcode, can only be {@link Opcodes#PUTFIELD} or
+         *                    {@link Opcodes#GETFIELD}
+         * @param owner       the field declaring class
+         * @param name        the field name
+         * @param desc        the field type
          * @param accessRight the {@link AccessRight} for the field.
          * @return true if the field access was handled or false otherwise.
          */
@@ -439,33 +440,33 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * resets a static field value, we don't know if the current field value was set through
          * the initial class initializer or some code path, should we change the field value to the
          * new one ?
-         *
+         * <p>
          * For private static fields, the access instruction is rewritten to calls to reflection
          * to access the fields value:
          * <p>
          * Pseudo code for Get:
          * <code>
-         *   value = $type.fieldName;
+         * value = $type.fieldName;
          * </code>
          * becomes:
          * <code>
-         *   value = (unbox)$package/AndroidInstantRuntime.getStaticPrivateField(
-         *       $type.class, $fieldName);
+         * value = (unbox)$package/AndroidInstantRuntime.getStaticPrivateField(
+         * $type.class, $fieldName);
          * </code>
          * <p>
          * Pseudo code for Set:
          * <code>
-         *   $type.fieldName = value;
+         * $type.fieldName = value;
          * </code>
          * becomes:
          * <code>
-         *   $package/AndroidInstantRuntime.setStaticPrivateField(value, $type.class $fieldName);
+         * $package/AndroidInstantRuntime.setStaticPrivateField(value, $type.class $fieldName);
          * </code>
          *
-         * @param opcode the field access opcode, can only be {@link Opcodes#PUTSTATIC} or
-         *               {@link Opcodes#GETSTATIC}
-         * @param name the field name
-         * @param desc the field type
+         * @param opcode      the field access opcode, can only be {@link Opcodes#PUTSTATIC} or
+         *                    {@link Opcodes#GETSTATIC}
+         * @param name        the field name
+         * @param desc        the field type
          * @param accessRight the {@link AccessRight} for the field.
          * @return true if the field access was handled or false
          */
@@ -517,18 +518,17 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
                                     boolean itf) {
 
             boolean visitAddMethod = false;
-            if (changes.size() > 0){
-                for (TaobaoInstantRunTransform.CodeChange codeChange:changes){
-                        if (codeChange.getCode().equals(name+"|"+desc)){
-                            System.err.println("Generic Method dispatch : " + opcode +
-                                    ":" + owner + ":" + name + ":" + desc + ":" + itf + ":" + isStatic);
-                            visitAddMethod = true;
-                            break;
-                        }
-                 }
+            if (changes.size() > 0) {
+                for (TaobaoInstantRunTransform.CodeChange codeChange : changes) {
+                    if (codeChange.getCode().equals(name + "|" + desc)) {
+                        System.err.println("Generic Method dispatch : " + opcode +
+                                ":" + owner + ":" + name + ":" + desc + ":" + itf + ":" + isStatic);
+                        visitAddMethod = true;
+                        break;
+                    }
+                }
 
             }
-
 
 
             if (DEBUG) {
@@ -547,34 +547,18 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
                 System.out.println("Opcode handled ? " + opcodeHandled);
             }
 
-            if (visitAddMethod){
-                String newDesc = computeOverrideMethodDesc(desc,opcode == Opcodes.INVOKESTATIC ? true:false);
-                String newName = opcode == Opcodes.INVOKESTATIC ? computeOverrideMethodName(name,desc):name;
-                if (opcode == Opcodes.INVOKESTATIC){
+            if (visitAddMethod && !opcodeHandled) {
+                String newDesc = computeOverrideMethodDesc(desc, opcode == Opcodes.INVOKESTATIC ? true : false);
+                String newName = opcode == Opcodes.INVOKESTATIC ? computeOverrideMethodName(name, desc) : name;
+                if (opcode == Opcodes.INVOKESTATIC) {
                     pushMethodRedirectArgumentsOnStack(name, desc);
                     visitLdcInsn(Type.getType("L" + visitedClassName + OVERRIDE_SUFFIX + ";"));
                     invokeStatic(ALI_RUNTIME_TYPE, Method.getMethod(
                             "Object invokeProtectedStaticMethod(Object[], Class[], String, Class)"));
                     handleReturnType(desc);
 
-//                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + OVERRIDE_SUFFIX,newName , newDesc, itf);
                     return;
-                }else {
-
-//                    pushMethodRedirectArgumentsOnStack(name, newDesc);
-//                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, name + OVERRIDE_SUFFIX, isStatic ? computeOverrideMethodName(name, desc) : name, newDesc, itf);
-//                    handleReturnType(newDesc);
-
-
-//                    Type[] args = Type.getArgumentTypes(newDesc);
-//                    int argc = 0;
-//                    for (Type t : args) {
-//                        visitVarInsn(Opcodes.ALOAD, 2);
-//                        push(argc);
-//                        visitInsn(Opcodes.AALOAD);
-//                        ByteCodeUtils.unbox(this, t);
-//                        argc++;
-//                    }
+                } else {
                     mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + OVERRIDE_SUFFIX, newName, newDesc, itf);
 
                     return;
@@ -594,14 +578,14 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         /**
          * Rewrites INVOKESPECIAL method calls:
          * <ul>
-         *  <li>calls to constructors are handled specially (see below)</li>
-         *  <li>calls to super methods are rewritten to call the 'access$super' trampoline we
-         *      injected into the original code</li>
-         *  <li>calls to methods in this class are rewritten to call the mathcin $override class
-         *  static method</li>
+         * <li>calls to constructors are handled specially (see below)</li>
+         * <li>calls to super methods are rewritten to call the 'access$super' trampoline we
+         * injected into the original code</li>
+         * <li>calls to methods in this class are rewritten to call the mathcin $override class
+         * static method</li>
          * </ul>
          */
-        private boolean  handleSpecialOpcode(String owner, String name, String desc,
+        private boolean handleSpecialOpcode(String owner, String name, String desc,
                                             boolean itf) {
             if (name.equals("<init>")) {
                 return handleConstructor(owner, name, desc);
@@ -639,13 +623,13 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * Virtual calls to protected methods are rewritten according to the following pseudo code:
          * before:
          * <code>
-         *   $value = $instance.protectedVirtual(arg1, arg2);
+         * $value = $instance.protectedVirtual(arg1, arg2);
          * </code>
          * after:
          * <code>
-         *   $value = (unbox)$package/AndroidInstantRuntime.invokeProtectedMethod($instance,
-         *          new object[] {arg1, arg2}, new Class[] { String.class, Integer.class },
-         *          "protectedVirtual");
+         * $value = (unbox)$package/AndroidInstantRuntime.invokeProtectedMethod($instance,
+         * new object[] {arg1, arg2}, new Class[] { String.class, Integer.class },
+         * "protectedVirtual");
          * </code>
          */
         private boolean handleVirtualOpcode(String owner, String name, String desc, boolean itf) {
@@ -686,13 +670,13 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * Static calls to non-public methods are rewritten according to the following pseudo code:
          * before:
          * <code>
-         *   $value = $type.protectedStatic(arg1, arg2);
+         * $value = $type.protectedStatic(arg1, arg2);
          * </code>
          * after:
          * <code>
-         *   $value = (unbox)$package/AndroidInstantRuntime.invokeProtectedStaticMethod(
-         *          new object[] {arg1, arg2}, new Class[] { String.class, Integer.class },
-         *          "protectedStatic", $type.class);
+         * $value = (unbox)$package/AndroidInstantRuntime.invokeProtectedStaticMethod(
+         * new object[] {arg1, arg2}, new Class[] { String.class, Integer.class },
+         * "protectedStatic", $type.class);
          * </code>
          */
         private boolean handleStaticOpcode(String owner, String name, String desc, boolean itf) {
@@ -771,14 +755,13 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * <p>
          * before:
          * <code>
-         *   $value = new $type(arg1, arg2);
+         * $value = new $type(arg1, arg2);
          * </code>
          * after:
          * <code>
-         *   $value = ($type)$package/AndroidInstantRuntime.newForClass(new Object[] {arg1, arg2 },
-         *       new Class[]{ String.class, Integer.class }, $type.class);
+         * $value = ($type)$package/AndroidInstantRuntime.newForClass(new Object[] {arg1, arg2 },
+         * new Class[]{ String.class, Integer.class }, $type.class);
          * </code>
-         *
          */
         private boolean handleConstructor(String owner, String name, String desc) {
 
@@ -826,9 +809,10 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         /**
          * Returns the actual method access right or a best guess if we don't have access to the
          * method definition.
+         *
          * @param owner the method owner class
-         * @param name the method name
-         * @param desc the method signature
+         * @param name  the method name
+         * @param desc  the method signature
          * @return the {@link AccessRight} for that method.
          */
         private AccessRight getMethodAccessRight(String owner, String name, String desc) {
@@ -854,21 +838,22 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * Push arguments necessary to invoke one of the method redirect function :
          * <ul>{@link GenericInstantRuntime#invokeProtectedMethod(Object, Object[], Class[], String)}</ul>
          * <ul>{@link GenericInstantRuntime#invokeProtectedStaticMethod(Object[], Class[], String, Class)}</ul>
-         *
+         * <p>
          * This function will only push on the stack the three common arguments :
-         *      Object[] the boxed parameter values
-         *      Class[] the parameter types
-         *      String the original method name
-         *
+         * Object[] the boxed parameter values
+         * Class[] the parameter types
+         * String the original method name
+         * <p>
          * Stack before :
-         *          <param1>
-         *          <param2>
-         *          ...
-         *          <paramN>
+         * <param1>
+         * <param2>
+         * ...
+         * <paramN>
          * Stack After :
-         *          <array of parameters>
-         *          <array of parameter types>
-         *          <method name>
+         * <array of parameters>
+         * <array of parameter types>
+         * <method name>
+         *
          * @param name the original method name.
          * @param desc the original method signature.
          */
@@ -893,7 +878,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * push the actual {@link Type} object on the stack and let ASM do the rest. For non
          * intrinsic type use a {@link MethodVisitor#visitLdcInsn(Object)} to ensure the
          * referenced class's presence in this class constant pool.
-         *
+         * <p>
          * Stack Before : nothing of interest
          * Stack After : <array of {@link Class}>
          *
@@ -906,7 +891,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             for (int i = 0; i < parameterTypes.length; i++) {
                 dup();
                 push(i);
-                switch(parameterTypes[i].getSort()) {
+                switch (parameterTypes[i].getSort()) {
                     case Type.OBJECT:
                     case Type.ARRAY:
                         visitLdcInsn(parameterTypes[i]);
@@ -932,6 +917,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
         /**
          * Handle method return logic.
+         *
          * @param desc the method signature
          */
         private void handleReturnType(String desc) {
@@ -972,23 +958,23 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
      * <p>
      * Pseudo code:
      * <code>
-     *   Object access$dispatch(String name, object[] args) {
-     *      if (name.equals(
-     *          "firstMethod.(L$type;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;")) {
-     *        return firstMethod(($type)arg[0], (String)arg[1], arg[2]);
-     *      }
-     *      if (name.equals("secondMethod.(L$type;Ljava/lang/String;I;)V")) {
-     *        secondMethod(($type)arg[0], (String)arg[1], (int)arg[2]);
-     *        return;
-     *      }
-     *      ...
-     *      StringBuilder $local1 = new StringBuilder();
-     *      $local1.append("Method not found ");
-     *      $local1.append(name);
-     *      $local1.append(" in " + visitedClassName +
-     *          "$dispatch implementation, restart the application");
-     *      throw new $package/InstantReloadException($local1.toString());
-     *   }
+     * Object access$dispatch(String name, object[] args) {
+     * if (name.equals(
+     * "firstMethod.(L$type;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;")) {
+     * return firstMethod(($type)arg[0], (String)arg[1], arg[2]);
+     * }
+     * if (name.equals("secondMethod.(L$type;Ljava/lang/String;I;)V")) {
+     * secondMethod(($type)arg[0], (String)arg[1], (int)arg[2]);
+     * return;
+     * }
+     * ...
+     * StringBuilder $local1 = new StringBuilder();
+     * $local1.append("Method not found ");
+     * $local1.append(name);
+     * $local1.append(" in " + visitedClassName +
+     * "$dispatch implementation, restart the application");
+     * throw new $package/InstantReloadException($local1.toString());
+     * }
      * </code>
      */
     private void addDispatchMethod() {
@@ -1130,7 +1116,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
     /**
      * Prevent method name collisions.
-     *
+     * <p>
      * A static method that takes an instance of this class as the first argument might clash with
      * a rewritten instance method, and this rewrites all methods like that. This is an
      * over-approximation of the necessary renames, but it has the advantage of neither adding
