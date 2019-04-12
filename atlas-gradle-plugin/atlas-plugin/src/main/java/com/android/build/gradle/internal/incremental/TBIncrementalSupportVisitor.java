@@ -11,6 +11,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodNode;
+
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -46,7 +47,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
     private List<MethodNode>methodNodes = new ArrayList<>();
 
-    private List<String>visitSuperMethods = new ArrayList<>();
+    private Map<String,String>visitSuperMethods = new HashMap<>();
 
 
     public boolean isSupportEachMethod() {
@@ -155,9 +156,9 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 @Override
                 public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
                     if (opcode == Opcodes.INVOKESPECIAL && !owner.equals(visitedClassName)) {
-                        String newDesc = name + "." +desc;
-                        if (!visitSuperMethods.contains(newDesc)) {
-                            visitSuperMethods.add(newDesc);
+                        String newDesc = name + "." + desc;
+                        if (!visitSuperMethods.containsKey(newDesc)){
+                            visitSuperMethods.put(newDesc,owner);
                         }
                     }
                     super.visitMethodInsn(opcode, owner, name, desc, itf);
@@ -425,7 +426,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
             for (ClassNode parentNode : parentNodes) {
 
-                addAllNewMethods(classNode, parentNode, uniqueMethods,supportAddCallSuper? null : visitSuperMethods);
+                addAllNewMethods(classNode, parentNode, uniqueMethods,supportAddCallSuper? null:visitSuperMethods);
             }
         }
 
@@ -449,7 +450,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         // implementation.
         // This will work fine as long as we don't support adding methods to a class.
 
-        new TBStringSwitch() {
+        new StringSwitch() {
             @Override
             void visitString() {
                 mv.visitVarInsn(Opcodes.ALOAD, 1);
@@ -484,7 +485,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 // Call super on the other object, yup this works cos we are on the right place to
                 // call from.
                 mv.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                        parentName,
+                        visitSuperMethods.get(methodName),
                         methodRef.method.name,
                         methodRef.method.desc, false);
 
@@ -743,7 +744,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     public static void addAllNewMethods(
             ClassNode instrumentedClass,
             ClassNode superClass,
-            Map<String, MethodReference> methods, List<String> visitSuperMethods) {
+            Map<String, MethodReference> methods, Map<String,String> visitSuperMethods) {
 
         //noinspection unchecked
         if (superClass.name.equals("java/lang/Object")){
@@ -761,7 +762,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                     ) {
                 if (visitSuperMethods == null){
                     methods.put(name, new MethodReference(method, superClass));
-                }else if (visitSuperMethods.contains(name)) {
+                }else if (visitSuperMethods.containsKey(name)) {
                     methods.put(name, new MethodReference(method, superClass));
                 }
             }
