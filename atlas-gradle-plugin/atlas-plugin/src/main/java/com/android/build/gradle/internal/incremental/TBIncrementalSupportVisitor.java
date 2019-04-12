@@ -46,7 +46,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
     private List<MethodNode>methodNodes = new ArrayList<>();
 
-    private Map<String,List<String>>visitSuperMethods = new HashMap<>();
+    private List<String>visitSuperMethods = new ArrayList<>();
 
 
     public boolean isSupportEachMethod() {
@@ -155,13 +155,9 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 @Override
                 public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
                     if (opcode == Opcodes.INVOKESPECIAL && !owner.equals(visitedClassName)) {
-                        if (visitSuperMethods.containsKey(owner)) {
-                            visitSuperMethods.get(owner).add(name + "." + desc);
-                        }else {
-                            List<String> list = new ArrayList();
-                            list.add(name+"."+desc);
-                            visitSuperMethods.put(owner,list);
-
+                        String newDesc = name + "." +desc;
+                        if (!visitSuperMethods.contains(newDesc)) {
+                            visitSuperMethods.add(newDesc);
                         }
                     }
                     super.visitMethodInsn(opcode, owner, name, desc, itf);
@@ -747,7 +743,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     public static void addAllNewMethods(
             ClassNode instrumentedClass,
             ClassNode superClass,
-            Map<String, MethodReference> methods, Map<String,List<String>> visitSuperMethods) {
+            Map<String, MethodReference> methods, List<String> visitSuperMethods) {
 
         //noinspection unchecked
         if (superClass.name.equals("java/lang/Object")){
@@ -765,7 +761,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                     ) {
                 if (visitSuperMethods == null){
                     methods.put(name, new MethodReference(method, superClass));
-                }else if (visitSuperMethods.containsKey(superClass.name) && visitSuperMethods.get(superClass.name).contains(name)) {
+                }else if (visitSuperMethods.contains(name)) {
                     methods.put(name, new MethodReference(method, superClass));
                 }
             }
