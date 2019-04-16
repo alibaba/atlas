@@ -13,6 +13,7 @@ import com.android.build.gradle.internal.ide.AtlasDependencyGraph;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.publishing.AtlasAndroidArtifacts;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.tasks.factory.AndroidJavaCompile;
 import com.google.common.collect.*;
 
 import com.taobao.android.builder.AtlasBuildContext;
@@ -507,6 +508,9 @@ public class BuildAtlasEnvTask extends BaseTask {
 //                                .getArtifacts();
                 }
             });
+
+
+            variantContext.getProject().getTasks().withType(AndroidJavaCompile.class).forEach((Consumer<JavaCompile>) javaCompile -> AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().add(javaCompile.getDestinationDir()));
 
         }
     }
