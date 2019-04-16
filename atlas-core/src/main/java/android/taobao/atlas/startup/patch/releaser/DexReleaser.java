@@ -240,7 +240,7 @@ public class DexReleaser {
 
     private static final String CLASS_SUFFIX = "classes";
 
-    public static boolean   releaseDexes(File bundleFile, File reversionDir, boolean externalStorage) throws IOException {
+    public static boolean releaseDexes(File bundleFile, File reversionDir, boolean externalStorage) throws IOException {
         boolean dexPatch = bundleFile.getAbsolutePath().contains("dexpatch");
         ZipFile zipFile = null;
         try {
@@ -251,65 +251,33 @@ public class DexReleaser {
             }
             if (externalStorage || !isArt()) {
 
-
-
-            if (Build.VERSION.SDK_INT > 27){
-
                 return true;
             }
 
 
-            if (!isArt()) {
-                Enumeration entryEnumeration = zipFile.entries();
-                while (entryEnumeration.hasMoreElements()) {
-                    ZipEntry zipEntry = (ZipEntry) entryEnumeration.nextElement();
-                    if (zipEntry.getName().endsWith(DEX_SUFFIX)) {
-                        File dexFile = new File(reversionDir, zipEntry.getName());
-                        FileOutputStream fileOutputStream = new FileOutputStream(dexFile);
-                        copy(zipFile.getInputStream(zipEntry), fileOutputStream);
-                        fileOutputStream.close();
-                    }
-                }
-            }else {
-                File sourceFile;
-                if (dexPatch) {
-                    //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
-                    sourceFile = null == KernalBundle.kernalBundle
-                            ? new File(KernalConstants.APK_PATH)
-                            : KernalBundle.kernalBundle.getRevisionZip();
-                } else {
-                    sourceFile = new File(KernalConstants.APK_PATH);
-                }
-                File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", bundleFile.getParentFile());
-                CombineDexMerger combineDexMerger = new CombineDexMerger(new CombineDexVerifier());
-                boolean result = combineDexMerger.merge(sourceFile, bundleFile, targetFile);
-                if (result && bundleFile.delete() && targetFile.renameTo(bundleFile)) {
-                    return true;
-                } else {
-                    return false;
-                }
+            if (Build.VERSION.SDK_INT > 27) {
+                return true;
             }
 
+            File sourceFile;
+            if (dexPatch) {
+                //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
+                sourceFile = null == KernalBundle.kernalBundle
+                        ? new File(KernalConstants.APK_PATH)
+                        : KernalBundle.kernalBundle.getRevisionZip();
+            } else {
+                sourceFile = new File(KernalConstants.APK_PATH);
+            }
+            File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", bundleFile.getParentFile());
+            CombineDexMerger combineDexMerger = new CombineDexMerger(new CombineDexVerifier());
+            boolean result = combineDexMerger.merge(sourceFile, bundleFile, targetFile);
+            if (result && bundleFile.delete() && targetFile.renameTo(bundleFile)) {
                 return true;
             } else {
-                File sourceFile;
-                if (dexPatch) {
-                    //如果kernalBundle==null，说明主dex没有被升级过，那么就和base.apk做merge
-                    sourceFile = null == KernalBundle.kernalBundle
-                            ? new File(KernalConstants.APK_PATH)
-                            : KernalBundle.kernalBundle.getRevisionZip();
-                } else {
-                    sourceFile = new File(KernalConstants.APK_PATH);
-                }
-                File targetFile = File.createTempFile(sourceFile.getName(), ".tmp", bundleFile.getParentFile());
-                CombineDexMerger combineDexMerger = new CombineDexMerger(new CombineDexVerifier());
-                boolean result = combineDexMerger.merge(sourceFile, bundleFile, targetFile);
-                if (result && bundleFile.delete() && targetFile.renameTo(bundleFile)) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return false;
             }
+
+
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -320,7 +288,6 @@ public class DexReleaser {
         }
         return false;
     }
-
 
 
     public static boolean isArt() {
