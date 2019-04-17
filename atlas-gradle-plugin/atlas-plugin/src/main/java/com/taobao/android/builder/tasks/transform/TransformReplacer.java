@@ -47,6 +47,7 @@ import com.taobao.android.builder.tasks.transform.dex.AtlasMultiDexListTransform
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
 import groovy.transform.PackageScope;
+import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.internal.tasks.DefaultTaskOutputs;
@@ -299,6 +300,7 @@ public class TransformReplacer {
             AtlasMergeJavaResourcesTransform atlasMergeJavaResourcesTransform = new AtlasMergeJavaResourcesTransform(appVariantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)), packagingOptions, mergeScopes, mergedType.iterator().next(), name, appVariantContext.getScope());
             ReflectUtils.updateField(transformTask, "transform",
                     atlasMergeJavaResourcesTransform);
+
         }
 
     }

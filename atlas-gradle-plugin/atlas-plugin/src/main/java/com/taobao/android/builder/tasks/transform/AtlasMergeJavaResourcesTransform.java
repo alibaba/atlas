@@ -25,6 +25,9 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import com.taobao.android.builder.tools.zip.ZipUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.gradle.api.Action;
+import org.gradle.api.Task;
 import org.gradle.internal.impldep.org.apache.tools.zip.ZipUtil;
 
 import java.io.*;
@@ -598,8 +601,40 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
 
         }
 
+        if (!StringUtils.isEmpty(appVariantOutputContext.getVariantContext().getBuildType().getMergeAbis())){
+            String s = appVariantOutputContext.getVariantContext().getBuildType().getMergeAbis();
+            String[]mergePolicy = s.split("->");
+            if (mergePolicy != null && mergePolicy.length > 0){
+                Collection<File>files = org.apache.commons.io.FileUtils.listFiles(new File(outputLocation,"lib/"+mergePolicy[0]),new String[]{"so"},true);
+
+
+                Collection<File>copyFiles = org.apache.commons.io.FileUtils.listFiles(new File(outputLocation,"lib/"+mergePolicy[1]),new String[]{"so"},true);
+
+
+                files.forEach(file -> {
+                    boolean find = false;
+                    for (File s1 :copyFiles){
+                        if (s1.getName().equals(file.getName())){
+                            find = true;
+                            break;
+                        }
+                    }
+                    if (!find){
+                        try {
+                            org.apache.commons.io.FileUtils.copyFileToDirectory(file,new File(outputLocation,"lib/"+mergePolicy[1]));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+            }
+        }
 
         paths.parallelStream().forEach(s ->  processAtlasNativeSo(s));
+
+
+
 
 
     }
