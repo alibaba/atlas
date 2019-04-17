@@ -212,6 +212,9 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 for (DirectoryInput dirInput : input.getDirectoryInputs()) {
                     mainJars.add(dirInput.getFile());
                     logger.verbose("Dir input %s", dirInput.getFile().toString());
+                    if (!dirInput.getFile().exists()){
+                        continue;
+                    }
                     List<File>dirFiles = convertToDexArchive(
                             transformInvocation.getContext(),
                             dirInput,
@@ -271,6 +274,9 @@ public class AtlasDexArchiveBuilderTransform extends Transform {
                 }else {
                     DirectoryInput dirInput = TransformInputUtils.makeDirectoryInput(file,variantContext);
                     logger.verbose("Dir input %s", dirInput.getFile().toString());
+                    if (!dirInput.getFile().exists()){
+                        continue;
+                    }
                     List<File>files = convertToDexArchive(
                             transformInvocation.getContext(),
                             dirInput,
