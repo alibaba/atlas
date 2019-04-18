@@ -520,6 +520,7 @@ public class BundleReleaser {
                 if(!new File(optimizedPath).exists()){
                     Log.e(TAG,"odex not exist");
                 }
+                dexFile = DexFileCompat.loadDex(KernalConstants.baseContext, validDex.getPath(), optimizedPath, 0);
             }else{
                 //interpretOnly
                 if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {
