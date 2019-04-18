@@ -292,6 +292,9 @@ public class BundleReleaser {
                 isReleasing = false;
                 if (processCallBack != null)
                     processCallBack.onFinish(MSG_ID_DEX_OPT_DONE);
+                if (apkFile.getAbsolutePath().contains("dexpatch")){
+                    processCallBack.onAllFinish();
+                }
                 try {
                     release(ReleaseType.RESOURCE);
                 } catch (IOException e) {
@@ -520,7 +523,7 @@ public class BundleReleaser {
                 if(!new File(optimizedPath).exists()){
                     Log.e(TAG,"odex not exist");
                 }
-                dexFile = DexFileCompat.loadDex(KernalConstants.baseContext, validDex.getPath(), optimizedPath, 0);
+                dexFile = DexFile.loadDex( validDex.getPath(), optimizedPath, 0);
             }else{
                 //interpretOnly
                 if(Build.VERSION.SDK_INT>=21 && isVMMultidexCapable(System.getProperty("java.vm.version"))) {

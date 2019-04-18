@@ -212,6 +212,7 @@ import android.content.Context;
 import android.os.Looper;
 import android.taobao.atlas.startup.patch.releaser.BundleReleaser;
 import android.text.TextUtils;
+import android.util.Log;
 import dalvik.system.DexFile;
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -289,6 +290,8 @@ import java.util.zip.ZipFile;
         boolean success = new KernalBundleRelease(revisionDir,false).release(bundleFile,false);
         if (!success||odexFile == null){
             throw new IOException("process mainDex failed!");
+        }else {
+            Log.e("KernalBundleArchive","process mainDex success!");
         }
     }
 
