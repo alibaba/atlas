@@ -601,10 +601,16 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
 
         }
 
-        if (!StringUtils.isEmpty(appVariantOutputContext.getVariantContext().getBuildType().getMergeAbis())){
+        if (!StringUtils.isEmpty(appVariantOutputContext.getVariantContext().getBuildType().getMergeAbis()) && mergedType.contains(ExtendedContentType.NATIVE_LIBS)){
             String s = appVariantOutputContext.getVariantContext().getBuildType().getMergeAbis();
-            String[]mergePolicy = s.split("->");
+            String[]mergePolicy = s.split(">");
             if (mergePolicy != null && mergePolicy.length > 0){
+
+                appVariantOutputContext.getVariantContext().getProject().getLogger().warn(outputLocation.getAbsolutePath() + mergePolicy[0]);
+
+                appVariantOutputContext.getVariantContext().getProject().getLogger().warn(new File(outputLocation,"lib/"+mergePolicy[0]).getAbsolutePath());
+
+
                 Collection<File>files = org.apache.commons.io.FileUtils.listFiles(new File(outputLocation,"lib/"+mergePolicy[0]),new String[]{"so"},true);
 
 
