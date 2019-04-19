@@ -331,13 +331,14 @@ public class AtlasConfigurationHelper {
 
         if (atlasExtension.isAtlasEnabled() && !(project.getPlugins().hasPlugin(FeaturePlugin.class) || project.getPlugins().hasPlugin(AtlasFeaturePlugin.class))) {
             TBuildConfig tBuildConfig = atlasExtension.getTBuildConfig();
-            //            tBuildConfig.setAaptConstantId(false);
-            //tBuildConfig.setClassInject(true);
-            // tBuildConfig.setCreateAP(true);
             tBuildConfig.setUseCustomAapt(true);
-            atlasExtension.getManifestOptions().setAddMultiDexMetaData(true);
-            //atlasExtension.getManifestOptions().setAddBundleLocation(true);
-            atlasExtension.getManifestOptions().setReplaceApplication(true);
+            if (atlasExtension.getManifestOptions().isAddMultiDexMetaData()) {
+                atlasExtension.getManifestOptions().setAddMultiDexMetaData(true);
+            }
+
+            if (atlasExtension.getManifestOptions().isReplaceApplication()) {
+                atlasExtension.getManifestOptions().setReplaceApplication(true);
+            }
         } else {
             atlasExtension.getManifestOptions().setReplaceApplication(false);
         }
