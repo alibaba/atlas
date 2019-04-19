@@ -246,6 +246,17 @@ public class TBuildType {
 
     private boolean debuggable;
 
+
+    public String getMergeAbis() {
+        return mergeAbis;
+    }
+
+    public void setMergeAbis(String mergeAbis) {
+        this.mergeAbis = mergeAbis;
+    }
+
+    private String mergeAbis;
+
     private PatchConfig patchConfig;
 
     private DefaultChannelConfig channelConfig;
