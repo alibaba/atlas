@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
+
 def mini = getEnvValue("mini", 'false')
 def commitTag = getEnvValue("commitTag", 'false')
 
@@ -30,7 +31,7 @@ description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
 
 
-version "5.1.0.9-rc32"
+version "5.1.0.9-rc30"
 
 
 String getEnvValue(key, defValue) {

@@ -389,8 +389,9 @@ public final class Framework {
                     if(upgrade) {
                         cons.newInstance(bundleDir, files[i], makeMainDexUniqueTag(newBaselineVersion,newBundleTag[i]), -1l);
                     }else{
-                        cons.newInstance(bundleDir, files[i],null,dexPatchVersions[i]);
-                    }
+                        cons.newInstance(bundleDir, files[i],null,dexPatchVersions[i]);                    }
+                } else {
+
                 }
                 if(upgrade){
                     updateBundles.put(locations[i],newBundleTag[i]);

@@ -218,6 +218,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Process;
+import android.support.multidex.MultiDex;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.Framework;
 import android.taobao.atlas.hack.AndroidHack;
@@ -368,15 +369,21 @@ public class BridgeApplicationDelegate {
         }
 
 
+        // *2 init atlas use reflect
+        boolean multidexEnable = false;
         try {
             ApplicationInfo appInfo = mRawApplication.getPackageManager()
                     .getApplicationInfo(mRawApplication.getPackageName(),
                             PackageManager.GET_META_DATA);
             mRealApplicationName = appInfo.metaData.getString("REAL_APPLICATION");
+            multidexEnable = appInfo.metaData.getBoolean("multidex_enable");
         }catch(PackageManager.NameNotFoundException e){
             throw new RuntimeException(e);
         }
 
+        if(multidexEnable){
+            MultiDex.install(mRawApplication);
+        }
 
         mRealApplicationName = TextUtils.isEmpty(mRealApplicationName) ? "android.app.Application" : mRealApplicationName;
         if(mRealApplicationName.startsWith(".")){
