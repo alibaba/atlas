@@ -212,7 +212,9 @@ import android.content.Context;
 import android.os.Looper;
 import android.taobao.atlas.startup.patch.releaser.BundleReleaser;
 import android.text.TextUtils;
+import android.util.Log;
 import dalvik.system.DexFile;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -221,7 +223,7 @@ import java.util.zip.ZipFile;
 /**
  * Created by guanjie on 15/6/4.
  */
- class KernalBundleArchive {
+class KernalBundleArchive {
 
     public static final String TAG = "KernalBundleArchive";
     private static final String BUNDLE_NAME = "com_taobao_maindex.zip";
@@ -234,41 +236,41 @@ import java.util.zip.ZipFile;
     /**
      * the bundle revision file location.
      */
-    private File   revisionDir;
-    private File   libraryDirectory;
+    private File revisionDir;
+    private File libraryDirectory;
     private DexFile[] odexFile;
     private boolean hasResources = false;
     private Context mContext;
 
     //reload
-    public KernalBundleArchive(Context context, File bundleDir,String version,long dexPatchVersion,String process) throws IOException {
+    public KernalBundleArchive(Context context, File bundleDir, String version, long dexPatchVersion, String process) throws IOException {
         mContext = context;
         this.bundleDir = bundleDir;
-        if(process.equals(KernalConstants.baseContext.getPackageName())) {
+        if (process.equals(KernalConstants.baseContext.getPackageName())) {
             purge(version, dexPatchVersion);
         }
-        if(dexPatchVersion>0){
-            revisionDir = new File(bundleDir,DEXPATCH_DIR+dexPatchVersion);
-        }else {
+        if (dexPatchVersion > 0) {
+            revisionDir = new File(bundleDir, DEXPATCH_DIR + dexPatchVersion);
+        } else {
             revisionDir = new File(bundleDir, version);
         }
-        if (revisionDir==null || !revisionDir.exists()) {
+        if (revisionDir == null || !revisionDir.exists()) {
             throw new IOException("can not find kernal bundle");
         }
-        libraryDirectory = new File(mappingInternalDirectory(),"lib");
+        libraryDirectory = new File(mappingInternalDirectory(), "lib");
         File bundleFile = new File(revisionDir, BUNDLE_NAME);
-        boolean success = new KernalBundleRelease(revisionDir,true).release(bundleFile,true);
-        if (!success||odexFile == null){
+        boolean success = new KernalBundleRelease(revisionDir, true).release(bundleFile, true);
+        if (!success || odexFile == null) {
             throw new IOException("process patch failed!");
         }
     }
 
     //create
-    public KernalBundleArchive(final File bundleDir, File file,String version,long dexPatchVersion) throws IOException {
+    public KernalBundleArchive(final File bundleDir, File file, String version, long dexPatchVersion) throws IOException {
         this.bundleDir = bundleDir;
-        if(dexPatchVersion>0) {
-            revisionDir = new File(bundleDir, DEXPATCH_DIR+dexPatchVersion);
-        }else{
+        if (dexPatchVersion > 0) {
+            revisionDir = new File(bundleDir, DEXPATCH_DIR + dexPatchVersion);
+        } else {
             revisionDir = new File(bundleDir, version);
         }
         if (!revisionDir.exists()) {
@@ -286,10 +288,13 @@ import java.util.zip.ZipFile;
         }
         zip.close();
         libraryDirectory = new File(mappingInternalDirectory(), "lib");
-        boolean success = new KernalBundleRelease(revisionDir,false).release(bundleFile,false);
-        if (!success||odexFile == null){
+        boolean success = new KernalBundleRelease(revisionDir, false).release(bundleFile, false);
+        if (!success || odexFile == null) {
             throw new IOException("process mainDex failed!");
+        } else {
+            Log.e("KernalBundleArchive", "process mainDex success!");
         }
+
     }
 
     /**
@@ -311,7 +316,7 @@ import java.util.zip.ZipFile;
             });
             if (dexPatchs != null) {
                 for (File patch : dexPatchs) {
-                    if(patch.isDirectory()) {
+                    if (patch.isDirectory()) {
                         deleteDirectory(patch);
                     }
                 }
@@ -324,11 +329,10 @@ import java.util.zip.ZipFile;
                     deleteDirectory(dir);
                 }
             }
-        }catch(Throwable e){
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
-
 
 
     /**
@@ -343,25 +347,25 @@ import java.util.zip.ZipFile;
     }
 
 
-    public File getLibraryDirectory(){
+    public File getLibraryDirectory() {
         return libraryDirectory;
     }
 
-    public DexFile[] getOdexFile(){
+    public DexFile[] getOdexFile() {
         return odexFile;
     }
 
-    public File getArchiveFile(){
-        return new File(revisionDir,BUNDLE_NAME);
+    public File getArchiveFile() {
+        return new File(revisionDir, BUNDLE_NAME);
     }
 
-    public File getRevisionDir(){
+    public File getRevisionDir() {
         return revisionDir;
     }
 
     public static void deleteDirectory(final File path) {
         final File[] files = path.listFiles();
-        if (files == null){
+        if (files == null) {
             return;
         }
         for (int i = 0; i < files.length; i++) {
@@ -419,11 +423,11 @@ import java.util.zip.ZipFile;
         }
     }
 
-    private File mappingInternalDirectory(){
-        if(!revisionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())){
-            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(),String.format("storage/com.taobao.maindex_internal/%s",revisionDir.getName()));
+    private File mappingInternalDirectory() {
+        if (!revisionDir.getAbsolutePath().startsWith(KernalConstants.baseContext.getFilesDir().getAbsolutePath())) {
+            File internalLibDir = new File(KernalConstants.baseContext.getFilesDir(), String.format("storage/com.taobao.maindex_internal/%s", revisionDir.getName()));
             return internalLibDir;
-        }else{
+        } else {
             return revisionDir;
         }
     }
@@ -432,13 +436,14 @@ import java.util.zip.ZipFile;
      * 写这个类而不用匿名内部类的原因：
      * 如果之前发生过动态部署，则再次进行update的时候饮用的第二个内部类与Archive不同于同一个dex，会引发PRE_VERIFY
      */
-    public class KernalBundleRelease{
+    public class KernalBundleRelease {
         private BundleReleaser mBundlereleaser;
-        public KernalBundleRelease(File dir,boolean hasReleasedBefore) {
-            mBundlereleaser = new BundleReleaser(dir,hasReleasedBefore);
+
+        public KernalBundleRelease(File dir, boolean hasReleasedBefore) {
+            mBundlereleaser = new BundleReleaser(dir, hasReleasedBefore);
         }
 
-        public boolean release(final File bundleFile,final boolean start) throws IOException{
+        public boolean release(final File bundleFile, final boolean start) throws IOException {
             final Boolean[] success = {true};
             mBundlereleaser.release(new BundleReleaser.ProcessCallBack() {
                 @Override
@@ -451,7 +456,7 @@ import java.util.zip.ZipFile;
 
                 @Override
                 public void onFinish(int event) {
-                    if (event == BundleReleaser.MSG_ID_DEX_OPT_DONE){
+                    if (event == BundleReleaser.MSG_ID_DEX_OPT_DONE) {
                         odexFile = mBundlereleaser.getDexFile();
                     }
                 }
@@ -460,8 +465,8 @@ import java.util.zip.ZipFile;
                 public void onAllFinish() {
                     mBundlereleaser.close();
                 }
-            },bundleFile,start);
-            if(Thread.currentThread().getId()!=Looper.getMainLooper().getThread().getId()) {
+            }, bundleFile, start);
+            if (Thread.currentThread().getId() != Looper.getMainLooper().getThread().getId()) {
                 Looper.loop();
             }
             return success[0];

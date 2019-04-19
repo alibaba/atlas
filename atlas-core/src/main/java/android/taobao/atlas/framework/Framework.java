@@ -227,6 +227,7 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
 import org.osgi.framework.FrameworkEvent;
 import org.osgi.framework.FrameworkListener;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -238,6 +239,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 import android.os.*;
 import android.widget.Toast;
 
@@ -319,7 +321,6 @@ public final class Framework {
     }
 
 
-
     /**
      * delete a directory with all subdirs.
      *
@@ -327,10 +328,10 @@ public final class Framework {
      */
     public static void deleteDirectory(final File path) {
         final File[] files = path.listFiles();
-        if (files == null){
+        if (files == null) {
             return;
         }
-        Log.e("delete",path.getAbsolutePath());
+        Log.e("delete", path.getAbsolutePath());
         for (int i = 0; i < files.length; i++) {
             if (files[i].isDirectory()) {
                 deleteDirectory(files[i]);
@@ -341,32 +342,32 @@ public final class Framework {
         path.delete();
     }
 
-    public static void update(boolean upgrade,final String[] locations, final File[] files, String[] newBundleTag,long[] dexPatchVersions,String newBaselineVersion,boolean lowInternalDisk) throws BundleException {
+    public static void update(boolean upgrade, final String[] locations, final File[] files, String[] newBundleTag, long[] dexPatchVersions, String newBaselineVersion, boolean lowInternalDisk) throws BundleException {
         if (locations == null || files == null || locations.length != files.length) {
             throw new IllegalArgumentException("locations and files must not be null and must be same length");
         }
         Class KernalBundleClass = null;
-        HashMap<String,String> updateBundles = new HashMap<>();
+        HashMap<String, String> updateBundles = new HashMap<>();
         File updateStorageDir = new File(STORAGE_LOCATION);
-        if(lowInternalDisk){
+        if (lowInternalDisk) {
             updateStorageDir = null;
-            File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication,"storage");
-            if(externalStorages!=null && externalStorages.length>0){
-                for(File externalStorage : externalStorages){
-                    if(externalStorage!=null && getStorageState(externalStorage).equals(Environment.MEDIA_MOUNTED) && externalStorage.getUsableSpace()>50*1024*1024) {
+            File[] externalStorages = getExternalFilesDirs(RuntimeVariables.androidApplication, "storage");
+            if (externalStorages != null && externalStorages.length > 0) {
+                for (File externalStorage : externalStorages) {
+                    if (externalStorage != null && getStorageState(externalStorage).equals(Environment.MEDIA_MOUNTED) && externalStorage.getUsableSpace() > 50 * 1024 * 1024) {
                         updateStorageDir = externalStorage;
                     }
                 }
             }
         }
-        if(updateStorageDir==null){
+        if (updateStorageDir == null) {
             throw new BundleException("no enough space");
         }
         updateHappend = true;
         for (int i = 0; i < locations.length; i++) {
             //reset
-            if(!upgrade && dexPatchVersions[i]==-1){
-                updateBundles.put(locations[i],"-1");
+            if (!upgrade && dexPatchVersions[i] == -1) {
+                updateBundles.put(locations[i], "-1");
                 continue;
             }
 
@@ -380,28 +381,21 @@ public final class Framework {
                     BundleLock.WriteLock(locations[i]);
                     KernalBundleClass = RuntimeVariables.getRawClassLoader().loadClass("android.taobao.atlas.startup.patch.KernalBundle");
                     bundleDir = new File(updateStorageDir, "com.taobao.maindex");
-                    if (!bundleDir.exists()){
+                    if (!bundleDir.exists()) {
                         bundleDir.mkdirs();
                     }
                     AtlasFileLock.getInstance().LockExclusive(bundleDir);
-                    Constructor cons = KernalBundleClass.getDeclaredConstructor(File.class,File.class,String.class,long.class);
+                    Constructor cons = KernalBundleClass.getDeclaredConstructor(File.class, File.class, String.class, long.class);
                     cons.setAccessible(true);
-                    if(upgrade) {
-                        cons.newInstance(bundleDir, files[i], makeMainDexUniqueTag(newBaselineVersion,newBundleTag[i]), -1l);
-                    }else{
-                        cons.newInstance(bundleDir, files[i],null,dexPatchVersions[i]);                    }
-                } else {
 
+                    cons.newInstance(bundleDir, files[i], null, dexPatchVersions[i]);
                 }
-                if(upgrade){
-                    updateBundles.put(locations[i],newBundleTag[i]);
-                }else{
-                    updateBundles.put(locations[i],Long.toString(dexPatchVersions[i]));
-                }
+
+
+                updateBundles.put(locations[i], Long.toString(dexPatchVersions[i]));
+
             } catch (Exception e) {
-                if(upgrade) {
-                    throw new BundleException("failed to installOrUpdate bundles ", e);
-                }
+
             } finally {
                 if (bundleDir != null) {
                     AtlasFileLock.getInstance().unLock(bundleDir);
@@ -410,24 +404,24 @@ public final class Framework {
             }
         }
 
-            if(updateBundles.size()>0){
-                try {
-                    BaselineInfoManager.instance().saveDexPathInfo(updateBundles,lowInternalDisk ? updateStorageDir.getAbsolutePath() : "");
-                } catch (IOException e) {
-                    throw new BundleException("save dexpatch info fail");
-                }
+        if (updateBundles.size() > 0) {
+            try {
+                BaselineInfoManager.instance().saveDexPathInfo(updateBundles, lowInternalDisk ? updateStorageDir.getAbsolutePath() : "");
+            } catch (IOException e) {
+                throw new BundleException("save dexpatch info fail");
             }
+        }
 
     }
 
-    private static String makeMainDexUniqueTag(String appVersion,String maindexTag){
-        if(maindexTag.startsWith(appVersion)){
+    private static String makeMainDexUniqueTag(String appVersion, String maindexTag) {
+        if (maindexTag.startsWith(appVersion)) {
             return maindexTag;
         }
-        return appVersion+"_"+maindexTag;
+        return appVersion + "_" + maindexTag;
     }
 
-    public static void rollback(){
+    public static void rollback() {
         BaselineInfoManager.instance().rollback();
     }
 
@@ -439,17 +433,11 @@ public final class Framework {
     }
 
 
-
-
-
-
-
-
     /**
      * notify all framework listeners.
      *
-     * @param state the new state.
-     * @param bundle the bundle.
+     * @param state     the new state.
+     * @param bundle    the bundle.
      * @param throwable a throwable.
      */
     static void notifyFrameworkListeners(final int state, final Bundle bundle, final Throwable throwable) {
@@ -475,7 +463,7 @@ public final class Framework {
             //返回结果可能存在null值
             return context.getExternalFilesDirs(type);
         } else {
-            return new File[] { context.getExternalFilesDir(type) };
+            return new File[]{context.getExternalFilesDir(type)};
         }
     }
 
@@ -498,8 +486,6 @@ public final class Framework {
 
         return MEDIA_UNKNOWN;
     }
-
-
 
 
     public static boolean isDeubgMode() {
