@@ -284,7 +284,6 @@ public class MainDexLister {
         Set<String> headClasses = new LinkedHashSet<>();
 
         headClasses.add(applicationName);
-        headClasses.add("android.taobao.atlas.bridge.BridgeApplicationDelegate");
         headClasses.addAll(multiDexConfig.getFirstDexClasses());
         List<String> maindexListClazz = new ArrayList<String>();
 
