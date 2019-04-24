@@ -504,8 +504,11 @@ public class BridgeApplicationDelegate {
         }catch(Throwable e){
             if(e instanceof InvocationTargetException){
                 throw new RuntimeException(((InvocationTargetException)e).getTargetException());
+            }else if (e instanceof NoClassDefFoundError && e.getMessage().contains("Lcom/android/tools/ir/server/AppInfo")){
+                android.os.Process.killProcess(android.os.Process.myPid());
             }else {
                 throw new RuntimeException(e);
+
             }
         }
 

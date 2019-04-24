@@ -232,6 +232,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import com.uc.browser.aerie.DalvikPatch;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -259,6 +260,9 @@ public class AtlasBridgeApplication extends Application{
         super.attachBaseContext(base);
         if (!isApplicationNormalCreate(base)) {
             android.os.Process.killProcess(android.os.Process.myPid());
+        }
+        if (Build.VERSION.SDK_INT < 21){
+            DalvikPatch.patchIfPossible();
         }
         System.setProperty("BOOT_TIME",System.currentTimeMillis()+"");
         // *0 checkload kernalpatch
@@ -413,6 +417,8 @@ public class AtlasBridgeApplication extends Application{
             }
         } catch (Exception e) {
         }
+
+
         if(TextUtils.isEmpty(KernalConstants.PROCESS)){
             Log.e("AtlasBridgeApplication","getProcess failed");
             return false;
