@@ -307,12 +307,21 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                         Collections.sort((List<File>) files);
                         cacheInputs = builder.putString("hash", MD5Util.getFileMd5(files)).build();
                     }
+
+
                     try {
-                        fileCache.createFile(outPutFolder, cacheInputs, () -> {
-                            logger.warning("maindex inputFile missCache:" + file.getAbsolutePath());
+
+                        if (outPutFolder.getName().equals("classes")){
                             outPutFolder.mkdirs();
                             DexByteCodeConverterHook.super.convertByteCode(Arrays.asList(file), outPutFolder, true, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
-                        });
+
+                        }else {
+                            fileCache.createFile(outPutFolder, cacheInputs, () -> {
+                                logger.warning("maindex inputFile missCache:" + file.getAbsolutePath());
+                                outPutFolder.mkdirs();
+                                DexByteCodeConverterHook.super.convertByteCode(Arrays.asList(file), outPutFolder, true, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+                            });
+                        }
                     } catch (Exception e) {
                         failures.add(e);
                         e.printStackTrace();
