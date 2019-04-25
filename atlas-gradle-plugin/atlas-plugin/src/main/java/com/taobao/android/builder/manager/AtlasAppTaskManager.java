@@ -497,6 +497,28 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                                   InstantRunTransform.class));
                                                               }
 
+                                                              if (variantScope.getInstantRunBuildContext().isInInstantRunMode()){
+                                                                  project.getTasks().withType(GenerateBuildConfig.class).forEach(new Consumer<GenerateBuildConfig>() {
+                                                                      @Override
+                                                                      public void accept(GenerateBuildConfig generateBuildConfig) {
+                                                                          generateBuildConfig.doFirst(new Action<Task>() {
+                                                                              @Override
+                                                                              public void execute(Task task) {
+
+                                                                                  ReflectUtils.updateField(task, "debuggable", new Supplier<Boolean>() {
+                                                                                      @Override
+                                                                                      public Boolean get() {
+
+                                                                                          return appVariantContext.getBuildType().isDebuggable();
+                                                                                      }
+                                                                                  });
+
+                                                                              }
+                                                                          });
+                                                                      }
+                                                                  });
+
+                                                              }
 
                                                               if (!mtlTransformContextList.isEmpty()) {
                                                                   new MtlTransformInjector(appVariantContext).injectTasks(mtlTransformContextList);

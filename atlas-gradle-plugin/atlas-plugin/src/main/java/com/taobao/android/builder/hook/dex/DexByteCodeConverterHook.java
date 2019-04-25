@@ -141,6 +141,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
     public void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, final File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler, int minSdkVersion) throws IOException, InterruptedException, ProcessException {
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 variantContext.getVariantName());
+        outDexFolder.mkdirs();
 
         if (null != atlasDependencyTree) {
 
@@ -237,7 +238,11 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                 FileCache.Inputs inputsKey = globalCacheBuilder.putString("md5", MD5Util.getFileMd5(inputFile)).build();
 
                 try {
-                    fileCache.createFile(outDexFolder, inputsKey, () -> DexByteCodeConverterHook.super.convertByteCode(inputFile, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion));
+                    fileCache.createFile(outDexFolder, inputsKey, () -> {
+                        outDexFolder.mkdirs();
+                        DexByteCodeConverterHook.super.convertByteCode(inputFile, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+                    });
+
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                     failures.add(e);
