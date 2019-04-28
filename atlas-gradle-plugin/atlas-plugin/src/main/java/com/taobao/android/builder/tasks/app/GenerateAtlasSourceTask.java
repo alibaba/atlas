@@ -268,24 +268,11 @@ public class GenerateAtlasSourceTask extends BaseTask {
     void generate() {
 
         InjectParam injectParam = getInput();
-        boolean supportRemoteComponent = true;
-        if (AtlasBuildContext.androidDependencyTrees.get(getVariantName())!= null) {
-            List<AndroidLibrary> libraries = AtlasBuildContext.androidDependencyTrees.get(getVariantName()).getMainBundle().getAndroidLibraries();
-            if (libraries.size() > 0) {
-                for (AndroidLibrary library : libraries) {
-                    MavenCoordinates coordinates = library.getResolvedCoordinates();
-                    if (coordinates.getArtifactId().equals("atlas_core") && coordinates.getGroupId().equals("com.taobao.android")) {
-                        if (coordinates.getVersion().compareTo("5.0.8") < 0) {
-                            supportRemoteComponent = false;
-                        }
-                    }
-                }
-            }
-        }
         List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
         File outputSourceGeneratorFile = new File(outputDir,"com/android/tools/bundleInfo/BundleInfoGenerator.java");
         StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info);
         outputSourceGeneratorFile.getParentFile().mkdirs();
+        getLogger().info(infoGeneratorSourceStr.toString());
         try {
             FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
         } catch (IOException e) {

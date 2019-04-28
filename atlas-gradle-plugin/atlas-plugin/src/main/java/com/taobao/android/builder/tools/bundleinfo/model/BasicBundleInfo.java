@@ -251,37 +251,11 @@ public class BasicBundleInfo {
 
     private List<String> contentProviders = Lists.newArrayList();
 
-    private HashMap<String,String> remoteFragments= new HashMap<String,String>();
 
-    private HashMap<String,String> remoteViews = new HashMap<String,String>();
-
-    private HashMap<String,String> remoteTransactors = new HashMap<String,String>();
 
     private Boolean isInternal = true;
 
-    public HashMap<String, String> getRemoteViews() {
-        return remoteViews;
-    }
 
-    public void setRemoteViews(HashMap<String, String> remoteViews) {
-        this.remoteViews = remoteViews;
-    }
-
-    public HashMap<String, String> getRemoteTransactors() {
-        return remoteTransactors;
-    }
-
-    public void setRemoteTransactors(HashMap<String, String> remoteTransactors) {
-        this.remoteTransactors = remoteTransactors;
-    }
-
-    public HashMap<String, String> getRemoteFragments() {
-        return remoteFragments;
-    }
-
-    public void setRemoteFragments(HashMap<String, String> remoteFragments) {
-        this.remoteFragments = remoteFragments;
-    }
 
     public String getPkgName() {
         return pkgName;

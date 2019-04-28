@@ -320,15 +320,6 @@ public class ApkInjectInfoCreator {
             if (!bundleInfo.getServices().isEmpty()) {
                 basicBundleInfo.setServices(bundleInfo.getServices());
             }
-            if (!bundleInfo.getRemoteFragments().isEmpty()) {
-                basicBundleInfo.setRemoteFragments(bundleInfo.getRemoteFragments());
-            }
-            if (!bundleInfo.getRemoteViews().isEmpty()) {
-                basicBundleInfo.setRemoteViews(bundleInfo.getRemoteViews());
-            }
-            if (!bundleInfo.getRemoteTransactors().isEmpty()) {
-                basicBundleInfo.setRemoteTransactors(bundleInfo.getRemoteTransactors());
-            }
 
             basicBundleInfos.add(basicBundleInfo);
             basicBundleInfoMap.put(bundleInfo.getPkgName(), basicBundleInfo);
@@ -342,7 +333,6 @@ public class ApkInjectInfoCreator {
 //            }
 //        });
 
-       basicBundleInfos.forEach(basicBundleInfo -> checkDependency(basicBundleInfo,atlasDependencyTree.getAwbBundles()));
 
                 injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
 
@@ -369,18 +359,7 @@ public class ApkInjectInfoCreator {
         return injectParam;
     }
 
-    private void checkDependency(BasicBundleInfo basicBundleInfo, List<AwbBundle> awbBundles) {
-        if (basicBundleInfo.getIsMBundle()){
-           basicBundleInfo.getDependency().parallelStream().forEach(s -> awbBundles.stream().forEach(awbBundle -> {
-               if (awbBundle.getPackageName().equals(s)){
-                   if (!awbBundle.isMBundle){
-                       throw new IllegalArgumentException(basicBundleInfo.getPkgName()+" mbundle can not dependent local bundle or remote Bundle" +s);
-                   }
-               }
-           }));
-        }
 
-    }
 
 
 
@@ -427,15 +406,6 @@ public class ApkInjectInfoCreator {
                                                            basicBundleInfo.getServices()));
                 }
 
-                if(!baseBundleInfo.getRemoteFragments().isEmpty()){
-                    basicBundleInfo.getRemoteFragments().putAll(baseBundleInfo.getRemoteFragments());
-                }
-                if(!baseBundleInfo.getRemoteViews().isEmpty()){
-                    basicBundleInfo.getRemoteViews().putAll(baseBundleInfo.getRemoteViews());
-                }
-                if(!baseBundleInfo.getRemoteTransactors().isEmpty()){
-                    basicBundleInfo.getRemoteTransactors().putAll(baseBundleInfo.getRemoteTransactors());
-                }
             }
             injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
             injectParam.autoStartBundles = atlasFrameworkProperties.autoStartBundles;
