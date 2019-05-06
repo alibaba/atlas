@@ -64,6 +64,7 @@ public class TaobaoInstantRunTransform extends Transform {
     private File injectFailedFile;
     private List<String> errors = new ArrayList<>();
     private List<String> success = new ArrayList<>();
+    public static List<String>sAnnotations = new ArrayList<>();
 
     MappingReaderProcess mappingReaderProcess = new MappingReaderProcess();
 
@@ -212,11 +213,14 @@ public class TaobaoInstantRunTransform extends Transform {
                         continue;
                     }
                     CodeChange codeChange = new CodeChange();
+                    String path = FileUtils.relativePath(file, inputDir);
+                    String className = path.replace("/", ".").substring(0, path.length() - 6);
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
                         parseClassPolicy(file,codeChange);
                     }
-                    String path = FileUtils.relativePath(file, inputDir);
-                    String className = path.replace("/", ".").substring(0, path.length() - 6);
+                    if (codeChange.isAnnotation()){
+                        sAnnotations.add(className);
+                    }
 
                     boolean isAdd = false;
                     switch (codeChange.py) {
@@ -274,11 +278,15 @@ public class TaobaoInstantRunTransform extends Transform {
                         continue;
                     }
                     CodeChange codeChange = new CodeChange();
+                    String path = FileUtils.relativePath(file, dir);
+                    String className = path.replace("/", ".").substring(0, path.length() - 6);
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
                          parseClassPolicy(file,codeChange);
                     }
-                    String path = FileUtils.relativePath(file, dir);
-                    String className = path.replace("/", ".").substring(0, path.length() - 6);
+                    if (codeChange.isAnnotation()){
+                        sAnnotations.add(className);
+                    }
+
                     boolean isAdd = false;
                     switch (codeChange.py) {
                         case ADD:
@@ -379,12 +387,6 @@ public class TaobaoInstantRunTransform extends Transform {
 
     private void parseClassPolicy(File file,CodeChange codeChange) {
 
-        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
-            codeChange.py = PatchPolicy.NONE;
-            return ;
-        }
-
-
         final PatchPolicy[] patchPolicy = {PatchPolicy.NONE};
         BufferedInputStream inputStream = null;
         try {
@@ -400,6 +402,10 @@ public class TaobaoInstantRunTransform extends Transform {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+            codeChange.py = PatchPolicy.NONE;
+            return ;
         }
     }
 
@@ -756,6 +762,16 @@ public class TaobaoInstantRunTransform extends Transform {
     public static class CodeChange {
 
         private String code;
+
+        public boolean isAnnotation() {
+            return annotation;
+        }
+
+        public void setAnnotation(boolean annotation) {
+            this.annotation = annotation;
+        }
+
+        private boolean annotation;
 
         public String getCode() {
             return code;

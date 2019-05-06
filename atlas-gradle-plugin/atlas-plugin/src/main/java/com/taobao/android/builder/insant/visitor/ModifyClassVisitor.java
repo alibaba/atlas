@@ -26,6 +26,7 @@ public class ModifyClassVisitor extends ClassVisitor {
     @Override
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
             codeChange.setCode(name);
+            codeChange.setAnnotation((access&Opcodes.ACC_ANNOTATION)!=0);
             super.visit(version, access, name, signature, superName, interfaces);
         }
 

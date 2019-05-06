@@ -216,6 +216,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.google.common.base.Joiner;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.extension.TBuildConfig;
+import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -230,6 +231,7 @@ import proguard.obfuscate.MappingReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
@@ -280,11 +282,10 @@ public class MainDexLister {
 
         TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
 
-        HashSet handleList = new HashSet<String>();
         Set<String> headClasses = new LinkedHashSet<>();
 
         headClasses.add(applicationName);
-        headClasses.addAll(multiDexConfig.getFirstDexClasses());
+        headClasses.addAll(getAllReal(multiDexConfig.getFirstDexClasses()));
         List<String> maindexListClazz = new ArrayList<String>();
 
         String preLaunchStr = tBuildConfig.getPreLaunch();
@@ -305,18 +306,38 @@ public class MainDexLister {
         }
 
         for (String headClass : headClasses) {
-            addRefClazz(classPool, headClass, mainDexList, handleList,"");
+            addRefClazz(classPool, headClass, mainDexList,"");
         }
 
-        //get manifest
         for (String newLine : mainDexList) {
             newLine = newLine.replaceAll("\\.", "/") + ".class";
             maindexListClazz.add(newLine);
         }
-        for (String className :headClasses) {
-            className = className.replaceAll("\\.", "/") + ".class";
-            maindexListClazz.add(className);
+        try {
+
+            for (String clazz : TaobaoInstantRunTransform.sAnnotations) {
+                if (classPool.get(clazz).getRefClasses() == null || classPool.get(clazz).getRefClasses().size() == 0) {
+                    continue;
+                } else {
+
+                    for (Object ref : classPool.get(clazz).getRefClasses()) {
+                        if (ref.toString().startsWith("java")||ref.toString().startsWith("android")){
+                            continue;
+                        }
+                        String newRef = ((String) ref).replaceAll("\\.", "/") + ".class";
+                        maindexListClazz.add(newRef);
+                    }
+
+                    clazz = clazz.replaceAll("\\.", "/") + ".class";
+                    maindexListClazz.add(clazz);
+                }
+            }
+        }catch (Exception e){
+
         }
+        //get manifest
+
+
 
         if (multiDexConfig.getMainDexListCount()!=0){
             maindexListClazz = maindexListClazz.subList(0,multiDexConfig.getMainDexListCount());
@@ -330,6 +351,17 @@ public class MainDexLister {
         }
 
         return maindexListClazz;
+    }
+
+    private Collection<? extends String> getAllReal(Set<String> firstDexClasses) {
+        Set<String> realClazz = new HashSet<>();
+        Map<String,String> obfMap = getClassObfMap(appVariantContext.getVariantConfiguration());
+        for (String s : firstDexClasses) {
+                String newClazz = getRealClazz(obfMap,s);
+                logger.warn("replace "+s + " to "+newClazz);
+            realClazz.add(newClazz);
+        }
+        return realClazz;
     }
 
     private Map<String, String> getClassObfMap(GradleVariantConfiguration config) {
@@ -362,9 +394,12 @@ public class MainDexLister {
         return realClazz;
     }
 
-    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, Set<String> handleList, String root) {
 
-        if (handleList.contains(clazz)) {
+
+
+    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, String root) {
+
+        if (classList.contains(clazz)) {
             return;
         }
 
@@ -385,10 +420,7 @@ public class MainDexLister {
 
                 logger.info("[MainDex] add " + clazz + " to main dex list , because of " + root);
                 classList.add(clazz);
-                handleList.add(clazz);
-                if (classList.size() > JarRefactor.MAX_CLASSES){
-                    return;
-                }
+
                 Collection<String> references = ctClass.getRefClasses();
 
                 if (null == references) {
@@ -396,7 +428,7 @@ public class MainDexLister {
                 }
 
                 for (String clazz2 : references) {
-                    addRefClazz(classPool, clazz2, classList, handleList , root + "->" + clazz);
+                    addRefClazz(classPool, clazz2, classList , root + "->" + clazz);
                 }
             }
         } catch (Throwable e) {

@@ -58,7 +58,7 @@ public class AtlasD8DexArchiveBuilder extends DexArchiveBuilder{
                 builder.addClassProgramData(data.next());
             }
 
-            if (!awb && isDebug && minSdkVersion < 21){
+            if (!awb && minSdkVersion < 21){
                 if (!mainDexList.toFile().exists()){
                     createNew(mainDexList);
                 }
