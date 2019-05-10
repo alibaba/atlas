@@ -306,6 +306,7 @@ public class PackageAwbsTask extends BaseTask {
         long startTime = System.currentTimeMillis();
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
             if (awbBundle.isMBundle){
+                mLogger.warning("skip package awb:"+awbBundle.getPackageName());
                 continue;
             }
             runnables.add(() -> {

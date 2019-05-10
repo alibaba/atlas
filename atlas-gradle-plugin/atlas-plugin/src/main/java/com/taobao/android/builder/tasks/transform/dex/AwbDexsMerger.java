@@ -121,7 +121,8 @@ public class AwbDexsMerger extends AtlasDexMerger {
                 e.printStackTrace();
             }
         }
-        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex() && !awbBundle.isRemote && awbBundle.isMBundle){
+        if ((variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex())&&(awbBundle.isMBundle)){
+            logger.warning("awb:"+awbBundle.getPackageName() + " is mbundle!");
             allDexsArchives.addAll(Arrays.asList(mergeDexs));
             return;
         }

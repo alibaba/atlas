@@ -138,7 +138,8 @@ public class AtlasDexMergerTransform extends Transform {
         transformOutputProvider.deleteAll();
         atlasMainDexMerger.merge(transformInvocation);
         awbDexMerger.merge(transformInvocation);
-        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
+        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex()
+                &&(variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getBundleToMdex().size() > 0||variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getAllBundlesToMdex())) {
             atlasMainDexMerger.getAllDexsArchives().addAll(awbDexMerger.getAllDexsArchives());
             atlasMainDexMerger.mergeAll(transformInvocation);
         }

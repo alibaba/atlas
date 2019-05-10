@@ -144,7 +144,8 @@ public class AtlasMainDexMerger extends AtlasDexMerger {
             }
         }
 
-        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex()){
+        if (variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getMergeBundlesDex()
+                &&(variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getBundleToMdex().size() > 0||variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getAllBundlesToMdex())) {
             allDexsArchives.addAll(Arrays.asList(mergeDexs[0]));
             return;
         }
