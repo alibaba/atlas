@@ -560,6 +560,7 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        File resTempDir = new File(outputLocation.getParentFile(), "unzip");
 
         appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
             if (awbTransform.getAwbBundle().isMBundle) {
@@ -577,10 +578,9 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
 
                 } else {
                     File bundleOutputLocation = new File(appVariantOutputContext.getAwbJavaResFolder(awbTransform.getAwbBundle()), "res.jar");
-                    File tempDir = new File(outputLocation.getParentFile(), "unzip");
                     try {
                         if (bundleOutputLocation.exists() && ZipUtils.isZipFile(bundleOutputLocation)) {
-                            BetterZip.unzipDirectory(bundleOutputLocation, tempDir);
+                            BetterZip.unzipDirectory(bundleOutputLocation, resTempDir);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -588,6 +588,9 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                 }
             }
         });
+
+        org.apache.commons.io.FileUtils.deleteDirectory(new File(resTempDir,"main"));
+
 
         if (!mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
             File tempDir = new File(outputLocation.getParentFile(), "unzip");

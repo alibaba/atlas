@@ -1,5 +1,6 @@
 package com.taobao.android.builder.tasks.app;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -146,7 +147,11 @@ public class ScanDupResTask extends BaseTask {
                             String folderName = null;
                             Preconditions.checkState(item.getSource() != null);
                             file = item.getFile();
+
                             folderName = getFolderName(item);
+                            if (file.getName().equals("detail_gradient_color_orange.xml")){
+                                getLogger().error("add item:"+file.getAbsolutePath());
+                            }
 //                            if (ResourceItem.isTouched()) {
                             String tag= folderName+"/"+file.getName();
 
@@ -189,9 +194,10 @@ public class ScanDupResTask extends BaseTask {
                         DataFile.FileType replacedType = replacedBy != null ? replacedBy.getSourceType() : null;
                         switch(removedType) {
                             case SINGLE_FILE:
+
                             case GENERATED_FILES:
                                 if (replacedType == DataFile.FileType.SINGLE_FILE || replacedType == DataFile.FileType.GENERATED_FILES) {
-//                                    System.out.println(removedItem.getQualifiers()+":"+removedItem.getQualifiers());
+                                    getLogger().error("replace :" + removedItem.getFile().getAbsolutePath() + " to: " + replacedBy.getFile().getAbsolutePath());
 //                                    File removedFile = getResourceOutputFile(removedItem);
 //                                    File replacedFile = getResourceOutputFile(replacedBy);
 //                                    if (removedFile.equals(replacedFile)) {
@@ -222,6 +228,10 @@ public class ScanDupResTask extends BaseTask {
                             Preconditions.checkState(item.getSource() != null);
                             file = item.getFile();
                             folderName = getFolderName(item);
+                            if (file.getName().equals("detail_gradient_color_orange.xml")){
+                                getLogger().error("ignoreItemInMerge item:"+folderName+" "+file.getAbsolutePath());
+
+                            }
 //                            if (ResourceItem.isTouched()) {
                             String tag= folderName+"/"+file.getName();
 
@@ -242,11 +252,11 @@ public class ScanDupResTask extends BaseTask {
 //                                        throw new ConsumerException(var6, ((ResourceFile)item.getSource()).getFile());
 //                                    }
                             }else if (type == DataFile.FileType.SINGLE_FILE){
-                                if (!map.containsKey(tag)){
-                                    map.put(tag,file);
-                                    if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
+                                if (!map.containsKey(tag)) {
+                                    map.put(tag, file);
+                                }else if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
                                             && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
-                                            && !isSameFile(map.get(tag),file))
+                                            && !isSameFile(map.get(tag),file)){
                                         exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
                             }
@@ -405,6 +415,9 @@ public class ScanDupResTask extends BaseTask {
                 ||resourceItem.getType().getName().equals("string")
                 ||resourceItem.getType().getName().equals("public");
     }
+
+
+
 
 
 
