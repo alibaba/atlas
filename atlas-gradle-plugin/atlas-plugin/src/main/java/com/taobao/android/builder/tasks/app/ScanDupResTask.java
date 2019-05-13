@@ -242,11 +242,11 @@ public class ScanDupResTask extends BaseTask {
 //                                        throw new ConsumerException(var6, ((ResourceFile)item.getSource()).getFile());
 //                                    }
                             }else if (type == DataFile.FileType.SINGLE_FILE){
-                                if (!map.containsKey(tag)){
-                                    map.put(tag,file);
-                                    if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
+                                if (!map.containsKey(tag)) {
+                                    map.put(tag, file);
+                                }else if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
                                             && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
-                                            && !isSameFile(map.get(tag),file))
+                                            && !isSameFile(map.get(tag),file)){
                                         exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
                             }
