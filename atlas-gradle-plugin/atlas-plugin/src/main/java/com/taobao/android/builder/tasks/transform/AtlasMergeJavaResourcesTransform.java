@@ -54,6 +54,8 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
     private static final Pattern JAR_ABI_PATTERN = Pattern.compile("lib/([^/]+)/[^/]+");
     private static final Pattern ABI_FILENAME_PATTERN = Pattern.compile(".*\\.so");
 
+    private static final String[]EXCLUDE_RES = new String[]{"main","drawable-xhdpi","drawable","layout","mipmap-xhdpi","values"};
+
     @NonNull
     private final PackagingOptions packagingOptions;
 
@@ -589,7 +591,10 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
             }
         });
 
-        org.apache.commons.io.FileUtils.deleteDirectory(new File(resTempDir,"main"));
+        for (String s:EXCLUDE_RES){
+            org.apache.commons.io.FileUtils.deleteDirectory(new File(resTempDir,s));
+
+        }
 
 
         if (!mergedType.contains(ExtendedContentType.NATIVE_LIBS)) {
