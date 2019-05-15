@@ -282,24 +282,24 @@ public final class Framework {
     /**
      * bundle listeners.
      */
-    static List<BundleListener> bundleListeners = new ArrayList<BundleListener>();
+    public static List<BundleListener> bundleListeners = new ArrayList<BundleListener>();
 
     /**
      * synchronous bundle listeners.
      */
-    static List<BundleListener> syncBundleListeners = new ArrayList<BundleListener>();
+    public static List<BundleListener> syncBundleListeners = new ArrayList<BundleListener>();
 
     /**
      * framework listeners.
      */
-    static List<FrameworkListener> frameworkListeners = new ArrayList<FrameworkListener>();
+    public static List<FrameworkListener> frameworkListeners = new ArrayList<FrameworkListener>();
 
-    static HashMap<String,Integer> installingBundles = new HashMap<>();
+    public static HashMap<String,Integer> installingBundles = new HashMap<>();
 
     /**
      * system ClassLoader
      */
-    static ClassLoader systemClassLoader;
+    public static ClassLoader systemClassLoader;
 
     private static boolean bundleUpdated = false;
     public static boolean updateHappend = false;
@@ -734,7 +734,7 @@ public final class Framework {
      * @param state the new state.
      * @param bundle the bundle.
      */
-    static void notifyBundleListeners(final int state, final Bundle bundle) {
+    public static void notifyBundleListeners(final int state, final Bundle bundle) {
         if (syncBundleListeners.isEmpty() && bundleListeners.isEmpty()) {
             return;
         }
@@ -793,7 +793,7 @@ public final class Framework {
      * @param bundle the bundle.
      * @param throwable a throwable.
      */
-    static void notifyFrameworkListeners(final int state, final Bundle bundle, final Throwable throwable) {
+    public static void notifyFrameworkListeners(final int state, final Bundle bundle, final Throwable throwable) {
 
         if (frameworkListeners.isEmpty()) {
             return;
