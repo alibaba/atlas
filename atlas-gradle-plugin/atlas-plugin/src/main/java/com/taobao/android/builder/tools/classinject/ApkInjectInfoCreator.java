@@ -342,7 +342,7 @@ public class ApkInjectInfoCreator {
 //            }
 //        });
 
-       basicBundleInfos.forEach(basicBundleInfo -> checkDependency(basicBundleInfo,atlasDependencyTree.getAwbBundles()));
+//       basicBundleInfos.forEach(basicBundleInfo -> checkDependency(basicBundleInfo,atlasDependencyTree.getAwbBundles()));
 
                 injectParam.bundleInfo = JSON.toJSONString(basicBundleInfos);
 
