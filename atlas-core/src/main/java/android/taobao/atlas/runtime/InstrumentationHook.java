@@ -408,7 +408,7 @@ public class InstrumentationHook extends Instrumentation {
 				return callback.execStartActivity();
 
 
-			}else if (Atlas.getInstance().getBundle(bundleName) == null && !AtlasBundleInfoManager.instance().getBundleInfo(bundleName).isInternal() && Framework.getInstalledBundle(bundleName,AtlasBundleInfoManager.instance().getBundleInfo(bundleName).unique_tag) == null) {
+			}else if (Atlas.getInstance().getBundle(bundleName) == null && !AtlasBundleInfoManager.instance().getBundleInfo(bundleName).isInternal() && Framework.getInstalledBundle(bundleName,AtlasBundleInfoManager.instance().getBundleInfo(bundleName).unique_tag) == null && !AtlasBundleInfoManager.instance().getBundleInfo(bundleName).isMBundle) {
 
 				fallBackToClassNotFoundCallback(context,intent,componentName);
 				return null;
@@ -459,6 +459,9 @@ public class InstrumentationHook extends Instrumentation {
 
 	private void asyncStartActivity(final Context context,final String bundleName,final Intent intent,
 										   final int requestCode,final String component,final ExecStartActivityCallback callback){
+
+		Log.e(this.getClass().getSimpleName(),"asyncStartActivity :"+intent.toString());
+
 		final Activity current = ActivityTaskMgr.getInstance().peekTopActivity();
 		final Dialog dialog = current!=null ? RuntimeVariables.alertDialogUntilBundleProcessed(current,bundleName) : null;
 		if(current!=null && dialog==null){
@@ -551,7 +554,10 @@ public class InstrumentationHook extends Instrumentation {
     public Activity newActivity(Class<?> clazz, Context context, IBinder token, Application application, Intent intent,
                                 ActivityInfo info, CharSequence title, Activity parent, String id,
                                 Object lastNonConfigurationInstance) throws InstantiationException,
+
                                                                     IllegalAccessException {
+
+		Log.e(this.getClass().getSimpleName(),"newActivity clazz:"+clazz.getSimpleName());
 
         Activity activity = mBase.newActivity(clazz, context, token, application, intent, info, title, parent, id,
                 lastNonConfigurationInstance);
@@ -568,7 +574,9 @@ public class InstrumentationHook extends Instrumentation {
     @Override
     public Activity newActivity(ClassLoader cl, String className, Intent intent) throws InstantiationException,
                                                                                 IllegalAccessException,
+
                                                                                 ClassNotFoundException {
+
 
         Activity activity = null;
         try{
@@ -589,6 +597,7 @@ public class InstrumentationHook extends Instrumentation {
 			// 		throw new ClassNotFoundException("bundleInvalid");
 			// 	}
 			// }
+			Log.e(this.getClass().getSimpleName(),"newActivity:"+className);
 			activity = mBase.newActivity(cl, className, intent);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();

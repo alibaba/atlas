@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
+apply from: 'publish_mvn.gradle'
 
 def mini = getEnvValue("mini", 'false')
 def commitTag = getEnvValue("commitTag", 'false')
@@ -8,6 +9,9 @@ def commitTag = getEnvValue("commitTag", 'false')
 buildscript {
 
     repositories {
+        maven {
+            url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+        }
         mavenCentral()
         jcenter()
         google()
@@ -20,6 +24,9 @@ buildscript {
     }
 }
 repositories {
+    maven {
+        url "http://mvnrepo.alibaba-inc.com/mvn/repository"
+    }
     mavenCentral()
     jcenter()
 
@@ -30,7 +37,7 @@ group = 'com.taobao.android'
 description = """atlas_core"""
 String postFix = mini=='true' ? "-mini" : "";
 
-version "5.1.0.9-rc23-yz"
+version "5.1.0.9-rc23-yz-SNAPSHOT"
 
 
 String getEnvValue(key, defValue) {
