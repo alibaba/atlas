@@ -209,6 +209,7 @@
 package android.taobao.atlas.runtime;
 
 
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.res.AssetManager;
 import android.content.res.ColorStateList;
@@ -665,6 +666,10 @@ public class DelegateResources extends Resources {
          * @throws Exception
          */
         private static String sWebviewPath = null;
+
+        private static String[] sWebviewPaths = null;
+
+
         private AssetManager createNewAssetManager(AssetManager srcManager,String newAssetPath,boolean append,int type) throws Exception{
             AssetManager newAssetManager = AssetManager.class.newInstance();
             List<String> runtimeAdditionalAssets = new ArrayList<String>();
@@ -677,7 +682,33 @@ public class DelegateResources extends Resources {
                     }
                 }
             }
-            if(Build.VERSION.SDK_INT>=24) {
+
+            if(VERSION.SDK_INT > 28){
+                //android Q版本 webivew 特殊path下的兜底策略
+                if(sWebviewPaths == null || sWebviewPaths.length == 0) {
+                    try {
+                        PackageInfo info = (PackageInfo) Class.forName("android.webkit.WebViewFactory").getDeclaredMethod("getLoadedPackageInfo").invoke(null);
+                        if (info != null && info.applicationInfo != null) {
+                            ApplicationInfo applicationInfo = info.applicationInfo;
+                            Method method = ApplicationInfo.class.getDeclaredMethod("getAllApkPaths");
+                            method.setAccessible(true);
+                            sWebviewPaths = (String[]) method.invoke(applicationInfo);
+                            if (sWebviewPaths!= null && sWebviewPaths.length > 0){
+                                for (String path:sWebviewPaths){
+                                    if (!runtimeAdditionalAssets.contains(path))
+                                        runtimeAdditionalAssets.add(path);
+
+                                }
+                            }
+
+                        }
+                    } catch (Throwable throwable) {
+                        throwable.printStackTrace();
+                    }
+                }
+
+
+            }else if(Build.VERSION.SDK_INT>=24) {
                 //7.0版本 webivew 特殊path下的兜底策略
                 if(TextUtils.isEmpty(sWebviewPath)) {
                     try {
@@ -864,7 +895,7 @@ public class DelegateResources extends Resources {
     }
 
     public static String getGetCookieName(AssetManager manager, int i)
-        throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         if (VERSION.SDK_INT >= 28) {
             Method method = AssetManager.class.getDeclaredMethod("getApkAssets");
             method.setAccessible(true);
