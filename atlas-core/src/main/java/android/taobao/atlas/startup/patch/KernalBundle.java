@@ -429,7 +429,6 @@ public class KernalBundle {
             Field pathListField = findField(loader, "pathList");
             Object dexPathList = pathListField.get(loader);
             patchLibrary(dexPathList, dir);
-            nativeLibPatched = true;
         } catch (Throwable e) {
             e.printStackTrace();
         }

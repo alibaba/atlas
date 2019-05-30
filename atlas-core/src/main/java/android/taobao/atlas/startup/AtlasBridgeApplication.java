@@ -340,9 +340,9 @@ public class AtlasBridgeApplication extends Application{
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
-        if (KernalBundle.hasNativeLibPatch(this)){
+//        if (KernalBundle.hasNativeLibPatch(this)){
             KernalBundle.patchNativeLib(this);
-        }
+//        }
     }
 
     @Override
