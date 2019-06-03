@@ -1,8 +1,6 @@
 package com.taobao.android.builder.hook.dex;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.BuildCacheUtils;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -13,7 +11,6 @@ import com.android.builder.core.*;
 import com.android.builder.dexing.*;
 import com.android.builder.internal.compiler.DexWrapper;
 import com.android.builder.sdk.TargetInfo;
-import com.android.builder.utils.ExceptionRunnable;
 import com.android.builder.utils.FileCache;
 import com.android.builder.utils.PerformanceUtils;
 import com.android.ide.common.blame.Message;
@@ -23,43 +20,24 @@ import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.process.*;
 import com.android.utils.ILogger;
-import com.android.utils.NdkUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-import com.taobao.android.builder.tasks.transform.dex.AtlasDexMerger;
-import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.JarUtils;
 import com.taobao.android.builder.tools.MD5Util;
-import com.taobao.android.builder.tools.cache.FileCacheCenter;
-import com.taobao.android.builder.tools.cache.FileCacheException;
 import com.taobao.android.builder.tools.multidex.FastMultiDexer;
-import it.unimi.dsi.fastutil.Hash;
-import org.apache.commons.compress.compressors.FileNameUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
-import org.gradle.caching.configuration.BuildCache;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
 
 
 /**
@@ -177,13 +155,25 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
 
                                 if (variantContext.getScope().getDexer() == DexerTool.DX) {
-                                    AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
-                                            .convertByteCode(inputFiles,
-                                                    dexOutputFile,
-                                                    false,
-                                                    null,
-                                                    dexOptions,
-                                                    outputHandler, true);
+                                    if (awbBundle.getPackageName().equals("com.taobao.wangxin")){
+                                        logger.warning("dx "+awbBundle.getPackageName() + ".......");
+                                        AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
+                                                .convertByteCode(inputFiles,
+                                                        dexOutputFile,
+                                                        true,
+                                                        null,
+                                                        dexOptions,
+                                                        outputHandler, true,dexPaths);
+                                    }else {
+
+                                        AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
+                                                .convertByteCode(inputFiles,
+                                                        dexOutputFile,
+                                                        false,
+                                                        null,
+                                                        dexOptions,
+                                                        outputHandler, true, dexPaths);
+                                    }
                                 } else if (variantContext.getScope().getDexer() == DexerTool.D8) {
 
 
@@ -356,7 +346,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
             Collection<File> dexFiles = FileUtils.listFiles(tempDexFolder, new String[]{"dex"}, true);
             if (dexFiles != null) {
                 logger.warning("maindex outDexFiles size:" + dexFiles.size());
-                dexPaths = dexFiles.stream().map(file -> file.toPath()).collect(Collectors.toList());
+                dexPaths.addAll(dexFiles.stream().map(file -> file.toPath()).collect(Collectors.toList()));
             }
             mainforkJoinPool = new ForkJoinPool();
             atlasDexArchiveMerger = new AtlasDexArchiveMerger(mainforkJoinPool);
@@ -377,14 +367,16 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
         logger.warning("maindex final dexs size:" + atomicInteger.get());
 
 
-        for (AwbBundle bundle : mBundleSets) {
-            File awbDex = new File(((AppVariantContext) variantContext).getAwbDexOutput(bundle.getName()), "classes.dex");
-            if (awbDex.exists() && !variantContext.getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
-                FileUtils.moveFile(awbDex, new File(outDexFolder, "classes" + atomicInteger.incrementAndGet() + ".dex"));
-            } else if (awbDex.exists() && variantContext.getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
-                dexPaths.add(awbDex.toPath());
-            } else {
-                logger.warning(awbDex.getAbsoluteFile() + " is not exist!");
+        if (!variantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()) {
+            for (AwbBundle bundle : mBundleSets) {
+                File awbDex = new File(((AppVariantContext) variantContext).getAwbDexOutput(bundle.getName()), "classes.dex");
+                if (awbDex.exists() && !variantContext.getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
+                    FileUtils.moveFile(awbDex, new File(outDexFolder, "classes" + atomicInteger.incrementAndGet() + ".dex"));
+                } else if (awbDex.exists() && variantContext.getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
+                    dexPaths.add(awbDex.toPath());
+                } else {
+                    logger.warning(awbDex.getAbsoluteFile() + " is not exist!");
+                }
             }
         }
 

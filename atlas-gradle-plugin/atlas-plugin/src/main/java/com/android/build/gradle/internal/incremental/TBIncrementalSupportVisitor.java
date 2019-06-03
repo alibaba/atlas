@@ -485,7 +485,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 // Call super on the other object, yup this works cos we are on the right place to
                 // call from.
                 mv.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                        visitSuperMethods.get(methodName),
+                        visitSuperMethods.size() > 0 ? visitSuperMethods.get(methodName):parentName,
                         methodRef.method.name,
                         methodRef.method.desc, false);
 
@@ -761,7 +761,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                     && isCallableFromSubclass(method, superClass, instrumentedClass)
                     ) {
                 if (visitSuperMethods == null){
-                    methods.put(name, new MethodReference(method, superClass));
+                        methods.put(name, new MethodReference(method, superClass));
                 }else if (visitSuperMethods.containsKey(name)) {
                     methods.put(name, new MethodReference(method, superClass));
                 }

@@ -246,10 +246,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * 1. Custom Android BuilderTool classes that support custom aapt operations
@@ -271,7 +272,7 @@ public class AtlasBuilder extends AndroidBuilder {
 
     private final JavaProcessExecutor javaProcessExecutor;
 
-    public List<ManifestProvider>manifestProviders;
+    public List<ManifestProvider> manifestProviders;
 
     private final ILogger logger;
 
@@ -302,26 +303,26 @@ public class AtlasBuilder extends AndroidBuilder {
                         @NonNull ILogger logger,
                         boolean verboseExec) {
         super(projectId,
-              createdBy,
-              processExecutor,
-              javaProcessExecutor,
-              errorReporter,
-              logger,
-              verboseExec);
+                createdBy,
+                processExecutor,
+                javaProcessExecutor,
+                errorReporter,
+                logger,
+                verboseExec);
         this.javaProcessExecutor = javaProcessExecutor;
         this.verboseExec = verboseExec;
         this.logger = logger;
     }
 
-    public void initAapt(ProjectOptions projectOptions){
+    public void initAapt(ProjectOptions projectOptions) {
         super.setTargetInfo(defaultBuilder.getTargetInfo());
         super.setSdkInfo(defaultBuilder.getSdkInfo());
-        super.setLibraryRequests((Collection<LibraryRequest>) ReflectUtils.getField(defaultBuilder,"mLibraryRequests"));
+        super.setLibraryRequests((Collection<LibraryRequest>) ReflectUtils.getField(defaultBuilder, "mLibraryRequests"));
         boolean updateAapt = atlasExtension.getTBuildConfig().getUseCustomAapt();
         aaptGeneration = AaptGeneration.fromProjectOptions(projectOptions);
-        switch (aaptGeneration){
+        switch (aaptGeneration) {
             case AAPT_V1:
-                if (updateAapt){
+                if (updateAapt) {
                     updateAapt(PathId.AAPT);
                 }
                 break;
@@ -341,7 +342,8 @@ public class AtlasBuilder extends AndroidBuilder {
             //         updateAapt(PathId.DAEMON_AAPT2);
             //     }
             //     break;
-                default:break;
+            default:
+                break;
         }
 
     }
@@ -365,7 +367,7 @@ public class AtlasBuilder extends AndroidBuilder {
     @Override
     public void processResources(Aapt aapt,
                                  Builder aaptConfigBuilder)
-        throws IOException, InterruptedException, ProcessException {
+            throws IOException, InterruptedException, ProcessException {
         String s;
 
         if (aaptGeneration == AaptGeneration.AAPT_V1) {
@@ -376,12 +378,12 @@ public class AtlasBuilder extends AndroidBuilder {
         }
 
         if (!atlasExtension.getTBuildConfig().getAaptConstantId() && !aaptConfigBuilder.build()
-            .getOptions()
-            .getAdditionalParameters()
-            .contains(s)) {
+                .getOptions()
+                .getAdditionalParameters()
+                .contains(s)) {
             aaptConfigBuilder.build().getOptions().getAdditionalParameters().add(s);
         } else {
-            while (aaptConfigBuilder.build().getOptions().getAdditionalParameters().contains(s)){
+            while (aaptConfigBuilder.build().getOptions().getAdditionalParameters().contains(s)) {
                 aaptConfigBuilder.build().getOptions().getAdditionalParameters().remove(s);
             }
         }
@@ -389,8 +391,8 @@ public class AtlasBuilder extends AndroidBuilder {
         super.processResources(aapt, aaptConfigBuilder);
 
 
-        File symboFile = new File(aaptConfigBuilder.build().getSymbolOutputDir(),"R.txt");
-        if (!symboFile.exists()){
+        File symboFile = new File(aaptConfigBuilder.build().getSymbolOutputDir(), "R.txt");
+        if (!symboFile.exists()) {
             throw new ProcessException(symboFile.getAbsolutePath() + "is not exist!");
         }
 
@@ -398,22 +400,21 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
 
-
-
     /**
      * Deal with awb resources
-     *  @param aaptCommand
+     *
+     * @param aaptCommand
      * @param enforceUniquePackageName
      * @param processOutputHandler
      * @param mainSymbolFile
      */
-    public void processAwbResources(Aapt aapt,AaptPackageConfig.Builder aaptConfigBuilder,
-                                    File mainSymbolFile,File awbSymbolFile,String pacakgeName) throws IOException, ProcessException {
+    public void processAwbResources(Aapt aapt, AaptPackageConfig.Builder aaptConfigBuilder,
+                                    File mainSymbolFile, File awbSymbolFile, String pacakgeName) throws IOException, ProcessException {
         aaptConfigBuilder.setBuildToolInfo(getTargetInfo().getBuildTools());
         aaptConfigBuilder.setAndroidTarget(getTargetInfo().getTarget());
         aaptConfigBuilder.setLogger(logger);
-            logger.info("Aapt output file {}");
-            AaptPackageConfig aaptConfig = aaptConfigBuilder.build();
+        logger.info("Aapt output file {}");
+        AaptPackageConfig aaptConfig = aaptConfigBuilder.build();
 
         try {
             aapt.link(aaptConfig).get();
@@ -436,12 +437,12 @@ public class AtlasBuilder extends AndroidBuilder {
                 sLogger.info("awbSymbolFile:" + mainRTxt);
                 if (null != mainRTxt && mainRTxt.exists()) {
                     FileUtils.copyFile(mainRTxt, mergedSymbolFile);
-                }else {
+                } else {
                     throw new ProcessException(mainRTxt.getAbsolutePath() + "is not exist, maybe no resources in this bundle! ");
                 }
 
-                SymbolTable awbSymbols = build(awbSymbolFile,mainPackageName,mainRTxt,mainSymbolFile,pacakgeName);
-                if (awbSymbols!= null) {
+                SymbolTable awbSymbols = build(awbSymbolFile, mainPackageName, mainRTxt, mainSymbolFile, pacakgeName);
+                if (awbSymbols != null) {
                     AtlasSymbolIo.write(awbSymbols, mergedSymbolFile);
                 }
 
@@ -475,7 +476,6 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
 
-
     /**
      * Get the custom buildToolInfo
      *
@@ -488,18 +488,18 @@ public class AtlasBuilder extends AndroidBuilder {
 
         if (null == defaultBuilder.getTargetInfo()) {
             return;
-            }
-            BuildToolInfo defaultBuildToolInfo = defaultBuilder.getTargetInfo().getBuildTools();
-            File customAaptFile = getAapt();
-            try {
-                Method method = defaultBuildToolInfo.getClass()
+        }
+        BuildToolInfo defaultBuildToolInfo = defaultBuilder.getTargetInfo().getBuildTools();
+        File customAaptFile = getAapt();
+        try {
+            Method method = defaultBuildToolInfo.getClass()
                     .getDeclaredMethod("add", PathId.class, File.class);
-                method.setAccessible(true);
-                method.invoke(defaultBuildToolInfo, pathId, customAaptFile);
-            } catch (Throwable e) {
-                throw new GradleException(e.getMessage());
-            }
-     }
+            method.setAccessible(true);
+            method.invoke(defaultBuildToolInfo, pathId, customAaptFile);
+        } catch (Throwable e) {
+            throw new GradleException(e.getMessage());
+        }
+    }
 
     @Override
     @NonNull
@@ -531,13 +531,13 @@ public class AtlasBuilder extends AndroidBuilder {
 
         File jarFile = PathUtil.getJarFile(AaptLib.class);
         File jarFolder = new File(jarFile.getParentFile(),
-                                  FilenameUtils.getBaseName(jarFile.getName()));
+                FilenameUtils.getBaseName(jarFile.getName()));
         jarFolder.mkdirs();
         aaptFile = new File(jarFolder, fileName);
 
         if (!aaptFile.exists()) {
             aaptFile = ZipUtils.extractZipFileToFolder(jarFile, aaptPath,
-                                                       aaptFile.getParentFile());
+                    aaptFile.getParentFile());
             aaptFile.setExecutable(true);
         }
         return aaptFile;
@@ -549,8 +549,8 @@ public class AtlasBuilder extends AndroidBuilder {
                                 boolean multidex,
                                 File mainDexList,
                                 DexOptions dexOptions,
-                                ProcessOutputHandler processOutputHandler, boolean awb)
-        throws IOException, InterruptedException, ProcessException {
+                                ProcessOutputHandler processOutputHandler, boolean awb, List<Path> dexPaths)
+            throws IOException, InterruptedException, ProcessException {
 
         boolean fastMultiDex = false;
 
@@ -571,26 +571,39 @@ public class AtlasBuilder extends AndroidBuilder {
 
             List<File> outputs = new ArrayList<>();
 
-                for (File input : inputs) {
-                    logger.warning("Dex input File:%s",input.getAbsolutePath());
+            for (File input : inputs) {
+                logger.warning("Dex input File:%s", input.getAbsolutePath());
 
-                    final File dexDir = getDexOutputDir(input, tmpDir, outputs);
-                    dexDir.mkdirs();
+                final File dexDir = getDexOutputDir(input, tmpDir, outputs);
+                dexDir.mkdirs();
 
-                    preDexLibrary(input, dexDir, multidex, dexOptions, processOutputHandler);
+                preDexLibrary(input, dexDir, multidex, dexOptions, processOutputHandler);
 
-                    outputs.add(dexDir);
+                outputs.add(dexDir);
             }
 
-                for (File dexDir : outputs) {
-                Collection<File> files = FileUtils.listFiles(dexDir,new String[]{"dex"},true);
-                for (File dexFile : files) {
-                    if (dexFile.exists() && dexFile.length() > 0) {
-                        Dex dex = new Dex(dexFile);
-                        dexs.add(dex);
-                        fileDexMap.put(dexFile, dex);
+            for (File dexDir : outputs) {
+                Collection<File> files = FileUtils.listFiles(dexDir, new String[]{"dex"}, true);
+                if (atlasExtension.getTBuildConfig().getAllBundlesToMdex()) {
+                    files.forEach(new Consumer<File>() {
+                        @Override
+                        public void accept(File file) {
+                            dexPaths.add(file.toPath());
+                        }
+                    });
+                } else {
+                    for (File dexFile : files) {
+                        if (dexFile.exists() && dexFile.length() > 0) {
+                            Dex dex = new Dex(dexFile);
+                            dexs.add(dex);
+                            fileDexMap.put(dexFile, dex);
+                        }
                     }
                 }
+            }
+
+            if (atlasExtension.getTBuildConfig().getAllBundlesToMdex()){
+                return;
             }
 
             Profiler.release();
@@ -599,25 +612,24 @@ public class AtlasBuilder extends AndroidBuilder {
             Profiler.enter("dexmerge");
             if (dexs.size() > 0) {
 
-                    if (multidex && !awb) {
+                if (multidex && !awb) {
 
-                        throw new GradleException("can't support~");
+                    throw new GradleException("can't support~");
 
-                    } else {
+                } else {
 
-                        DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
-                                                            CollisionPolicy.KEEP_FIRST, new DxContext());
-                        Dex dex = dexMerger.merge();
+                    DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
+                            CollisionPolicy.KEEP_FIRST, new DxContext());
+                    Dex dex = dexMerger.merge();
 
-                        File dexFile = new File(outDexFolder, "classes.dex");
+                    File dexFile = new File(outDexFolder, "classes.dex");
 
-                        dex.writeTo(dexFile);
+                    dex.writeTo(dexFile);
 
-                        if (!dexFile.exists()) {
-                            sLogger.error("dexmerge failed, not dex file found , inputs : " + dexs.size());
-                        }
+                    if (!dexFile.exists()) {
+                        sLogger.error("dexmerge failed, not dex file found , inputs : " + dexs.size());
                     }
-
+                }
 
 
             } else {
@@ -630,8 +642,8 @@ public class AtlasBuilder extends AndroidBuilder {
             long finishTime = System.currentTimeMillis();
 
             sLogger.info("[mtldex] dex consume {} , dexmerge consume {}",
-                         endDexTime - startTime,
-                         finishTime - endDexTime);
+                    endDexTime - startTime,
+                    finishTime - endDexTime);
         }
         Profiler.release();
         if (fastMultiDex) {
@@ -651,16 +663,15 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
 
-
     public void preDexLibrary(@NonNull File inputFile,
                               @NonNull File outFile,
                               boolean multiDex,
                               @NonNull DexOptions dexOptions,
                               @NonNull ProcessOutputHandler processOutputHandler)
-        throws IOException, InterruptedException, ProcessException {
+            throws IOException, InterruptedException, ProcessException {
 
         if (!atlasExtension.getTBuildConfig().isDexCacheEnabled() || multiDex) {
-            super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler,14);
+            super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler, 14);
             return;
         }
 
@@ -668,21 +679,21 @@ public class AtlasBuilder extends AndroidBuilder {
         File dexFile = new File(outFile, "classes.dex");
 
         if (!inputFile.getName().startsWith("combined") && !(inputFile.getName().startsWith("main") && inputFile
-            .getName().endsWith("jar")) && inputFile.isFile()) {
+                .getName().endsWith("jar")) && inputFile.isFile()) {
 
             if (inputFile.isFile()) {
                 md5 = MD5Util.getFileMD5(inputFile);
             } else if (inputFile.isDirectory()) {
                 md5 = MD5Util.getFileMd5(FileUtils.listFiles(inputFile,
-                                                             new String[] {"class"},
-                                                             true));
+                        new String[]{"class"},
+                        true));
             }
 
             //TODO md5 with other
             if (StringUtils.isNotEmpty(md5)) {
 
                 String other = "" + dexOptions.getAdditionalParameters().contains("--useMyDex") + dexOptions
-                    .getJumboMode() + dexOptions.getKeepRuntimeAnnotatedClasses();
+                        .getJumboMode() + dexOptions.getKeepRuntimeAnnotatedClasses();
 
                 try {
                     md5 = MD5Util.getMD5(other + md5);
@@ -692,15 +703,15 @@ public class AtlasBuilder extends AndroidBuilder {
 
                 try {
                     FileCacheCenter.fetchFile(PRE_DEXCACHE_TYPE, md5, false,
-                                              atlasExtension.getTBuildConfig().isDexNetworkCacheEnabled(), dexFile);
+                            atlasExtension.getTBuildConfig().isDexNetworkCacheEnabled(), dexFile);
                 } catch (FileCacheException e) {
                     sLogger.error(e.getMessage(), e);
                 }
 
                 if (dexFile.exists() && dexFile.length() > 0) {
                     sLogger.info("[mtldex] hit cache dex for {} , {}",
-                                 inputFile.getAbsolutePath(),
-                                 dexFile.getAbsolutePath());
+                            inputFile.getAbsolutePath(),
+                            dexFile.getAbsolutePath());
                     return;
                 } else {
                     sLogger.info("[mtldex] discache dex for {}", inputFile.getAbsolutePath());
@@ -724,10 +735,10 @@ public class AtlasBuilder extends AndroidBuilder {
         }
 
         sLogger.info("[mtldex] pre dex for {} {}",
-                     inputFile.getAbsolutePath(),
-                     outFile.getAbsolutePath());
+                inputFile.getAbsolutePath(),
+                outFile.getAbsolutePath());
 
-        super.preDexLibrary(inputFile, outFile, multiDex, defaultDexOptions, processOutputHandler,14);
+        super.preDexLibrary(inputFile, outFile, multiDex, defaultDexOptions, processOutputHandler, 14);
 
         if (multiDex) {
             return;
@@ -743,8 +754,8 @@ public class AtlasBuilder extends AndroidBuilder {
         if (StringUtils.isNotEmpty(md5) && dexFile.exists()) {
             try {
                 FileCacheCenter.cacheFile(PRE_DEXCACHE_TYPE, md5, dexFile,
-                                          AtlasBuildContext.sBuilderAdapter.pushCacheToNetwork && atlasExtension
-                                              .getTBuildConfig().isDexNetworkCacheEnabled());
+                        AtlasBuildContext.sBuilderAdapter.pushCacheToNetwork && atlasExtension
+                                .getTBuildConfig().isDexNetworkCacheEnabled());
             } catch (FileCacheException e) {
                 sLogger.error(e.getMessage(), e);
             }
@@ -809,13 +820,14 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
 
-    private SymbolTable build(File awbSymbolFile, String mainPackageName,File mainRTxt,File mainSymbolFile,String pacakgeName) throws IOException {
+    private SymbolTable build(File awbSymbolFile, String mainPackageName, File mainRTxt, File mainSymbolFile, String pacakgeName) throws IOException {
         SymbolTable.Builder builder = new SymbolTable.Builder();
         SymbolTable awbSymbols = null;
-        if (awbSymbolFile.exists()){
+        if (awbSymbolFile.exists()) {
             awbSymbols = AtlasSymbolIo.readFromAapt(awbSymbolFile, mainPackageName);
             awbSymbols.getSymbols().values().forEach(symbol -> builder.add(symbol));
-        };
+        }
+        ;
 
         if (mainRTxt.exists()) {
             SymbolTable generateAwbSymbols = AtlasSymbolIo.readFromAapt(mainRTxt, mainPackageName);
@@ -831,8 +843,8 @@ public class AtlasBuilder extends AndroidBuilder {
 
         SymbolTable mainSymbols = AtlasSymbolIo.readFromAapt(mainSymbolFile, pacakgeName);
         mainSymbols.getSymbols().values().forEach(symbol -> {
-            if (builder.contains(symbol)){
-                removeSymbol(builder,symbol);
+            if (builder.contains(symbol)) {
+                removeSymbol(builder, symbol);
                 builder.add(symbol);
             }
         });
@@ -842,28 +854,24 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
     private void removeSymbol(SymbolTable.Builder builder, Symbol symbol) {
-        Table table = (Table) ReflectUtils.getField(builder,"symbols");
-        table.remove(symbol.getResourceType(),symbol.getName());
+        Table table = (Table) ReflectUtils.getField(builder, "symbols");
+        table.remove(symbol.getResourceType(), symbol.getName());
     }
 
 
-
-
-    public void writeLines(File file,List<String>lines,boolean append){
-         Set<String>mergeLines = new LinkedHashSet<>();
+    public void writeLines(File file, List<String> lines, boolean append) {
+        Set<String> mergeLines = new LinkedHashSet<>();
         try {
             List<String> readLines = FileUtils.readLines(file);
             mergeLines.addAll(readLines);
             mergeLines.addAll(lines);
-            FileUtils.writeLines(file,mergeLines,append);
+            FileUtils.writeLines(file, mergeLines, append);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
 
     }
-
-
 
 
 }
