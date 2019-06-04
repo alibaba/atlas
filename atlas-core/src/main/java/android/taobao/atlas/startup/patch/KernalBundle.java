@@ -234,6 +234,7 @@ import android.taobao.atlas.startup.AtlasBridgeApplication;
 import android.taobao.atlas.startup.KernalVersionManager;
 import android.taobao.atlas.startup.NClassLoader;
 import android.taobao.atlas.startup.patch.releaser.PatchDexProfile;
+import android.taobao.atlas.util.FileUtils;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -425,6 +426,9 @@ public class KernalBundle {
     public static void patchNativeLib(Context base) {
         try {
             File dir = new File(base.getFilesDir(), String.format("nativeLib-%s", base.getPackageManager().getPackageInfo(base.getPackageName(), 0).versionName));
+            if (!dir.exists()){
+                dir.mkdirs();
+            }
             ClassLoader loader = KernalBundle.class.getClassLoader();
             Field pathListField = findField(loader, "pathList");
             Object dexPathList = pathListField.get(loader);

@@ -209,6 +209,8 @@
 package android.taobao.atlas.runtime;
 
 import android.annotation.TargetApi;
+import android.content.*;
+import com.taobao.android.yuzhuang.helper.*;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningTaskInfo;
@@ -217,13 +219,6 @@ import android.app.Dialog;
 import android.app.Fragment;
 import android.app.Instrumentation;
 import android.app.UiAutomation;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ResolveInfo;
 import android.content.res.AssetManager;
@@ -250,6 +245,8 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -576,9 +573,22 @@ public class InstrumentationHook extends Instrumentation {
                                                                                 IllegalAccessException,
 
                                                                                 ClassNotFoundException {
+		try {
+			if (YuzhuangHelper.check()) {
+				if (className.equals("com.taobao.tao.welcome.Welcome") || YuzhuangHelper.shouldCreateTrafficPrompt()) {
+					className = "com.taobao.android.yuzhuang.helper.YuzhuangWelcomeActivity";
+				}
+				if (className.equals("com.taobao.tao.welcome.Welcome1")) {
+					className = "com.taobao.android.yuzhuang.helper.YuzhuangWelcome1Activity";
+				}
+			}
+
+		} catch (Exception e) {
+		}
 
 
-        Activity activity = null;
+
+		Activity activity = null;
         try{
 	        if (intent!=null && intent.getAction()!=null&& intent.getAction().equals("android.intent.action.MAIN")){
 	        	intent.putExtra("android.taobao.atlas.mainAct.wait", false);
@@ -1122,6 +1132,30 @@ public class InstrumentationHook extends Instrumentation {
 
     @Override
     public void callActivityOnNewIntent(Activity activity, Intent intent) {
+
+//    	if (intent.getComponent()!= null && intent.getComponent().getClassName().equals("com.taobao.android.auth.AuthEntranceActivity") && activity.getClass().getSimpleName().equals("YuzhuangWelcomeActivity")) {
+//			try {
+//				activity = newActivity(getClass().getClassLoader(), "com.taobao.android.auth.AuthEntranceActivity", intent);
+//
+//				Method m = ContextWrapper.class.getDeclaredMethod("attachBaseContext",Context.class);
+//
+//				m.setAccessible(true);
+//				m.invoke(activity,RuntimeVariables.androidApplication);
+//
+//			} catch (InstantiationException e) {
+//				e.printStackTrace();
+//			} catch (IllegalAccessException e) {
+//				e.printStackTrace();
+//			} catch (ClassNotFoundException e) {
+//				e.printStackTrace();
+//			} catch (NoSuchMethodException e) {
+//				e.printStackTrace();
+//			} catch (InvocationTargetException e) {
+//				e.printStackTrace();
+//			}
+//		}
+
+		Log.e(getClass().getSimpleName()+"callActivityOnNewIntent"+activity.getClass().getSimpleName(),intent.toString());
         mBase.callActivityOnNewIntent(activity, intent);
     }
 

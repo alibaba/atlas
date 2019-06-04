@@ -232,6 +232,7 @@ import com.android.build.gradle.internal.transforms.*;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;
 import com.android.build.gradle.tasks.*;
+import com.android.build.gradle.tasks.factory.AndroidJavaCompile;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexByteCodeConverter;
@@ -426,6 +427,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   });
                                                               }
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessResAwbsTask.ConfigAction.class, null));
+
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(AndroidJavaCompile.class));
+
 
                                                               mtlTaskContextList.add(new MtlTaskContext(JavacAwbsTask.ConfigAction.class, null));
 
