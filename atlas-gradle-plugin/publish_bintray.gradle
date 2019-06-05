@@ -1,6 +1,7 @@
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
+apply from: 'publish_mvn.gradle'
 def siteUrl = 'https://github.com/alibaba/atlas'
 // 项目的主页
 def gitUrl = 'https://github.com/alibaba/atlas'
