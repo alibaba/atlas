@@ -102,7 +102,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 //                    "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
 
             super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
-                            | Opcodes.ACC_TRANSIENT |Opcodes.ACC_SYNTHETIC,
+                    |Opcodes.ACC_VOLATILE| Opcodes.ACC_TRANSIENT |Opcodes.ACC_SYNTHETIC,
                     "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
         }
         access = transformClassAccessForInstantRun(access);
