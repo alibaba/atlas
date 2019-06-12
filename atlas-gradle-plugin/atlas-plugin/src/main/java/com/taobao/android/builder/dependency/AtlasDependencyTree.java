@@ -209,14 +209,6 @@
 
 package com.taobao.android.builder.dependency;
 
-import java.io.File;
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import com.android.builder.model.AndroidBundle;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
@@ -229,6 +221,13 @@ import com.taobao.android.builder.dependency.model.SoLibrary;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.tasks.incremental.ApDependencies;
+import java.io.File;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 import org.gradle.api.artifacts.ModuleIdentifier;
 
 /**
@@ -241,6 +240,7 @@ import org.gradle.api.artifacts.ModuleIdentifier;
  * @author shenghua.nish, wuzhong
  */
 public class AtlasDependencyTree {
+
     private List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
 
     /**
@@ -299,16 +299,14 @@ public class AtlasDependencyTree {
 
     /**
      * 获取所有的 aar 和 awb 依赖
-     *
-     * @return
      */
     public List<AndroidLibrary> getAllAndroidLibrarys() {
         if (null == allAndroidLibrarys) {
             allAndroidLibrarys = new ArrayList<>();
 
-            allAndroidLibrarys.addAll(this.getMainBundle().getAndroidLibraries());
+            allAndroidLibrarys.addAll(getMainBundle().getAndroidLibraries());
 
-            for (AwbBundle awbBundle : this.getAwbBundles()) {
+            for (AwbBundle awbBundle : getAwbBundles()) {
                 allAndroidLibrarys.add(awbBundle.getAndroidLibrary());
                 allAndroidLibrarys.addAll(awbBundle.getAndroidLibraries());
             }
@@ -319,12 +317,10 @@ public class AtlasDependencyTree {
 
     /**
      * 获取所有awb依赖类型的依赖清单
-     *
-     * @return
      */
     public Set<AndroidLibrary> getAllAwbLibrarys() {
         Set<AndroidLibrary> sets = new HashSet<>();
-        for (AwbBundle awbBundle : this.getAwbBundles()) {
+        for (AwbBundle awbBundle : getAwbBundles()) {
             sets.add(awbBundle.getAndroidLibrary());
         }
         return sets;
@@ -332,7 +328,7 @@ public class AtlasDependencyTree {
 
     public Set<File> getAllLibraryManifests() {
         Set<File> libManifests = new HashSet<File>();
-        for (AndroidLibrary manifestDependency : this.getAllAndroidLibrarys()) {
+        for (AndroidLibrary manifestDependency : getAllAndroidLibrarys()) {
             libManifests.add(manifestDependency.getManifest());
         }
         return libManifests;
@@ -340,8 +336,8 @@ public class AtlasDependencyTree {
 
     public List<SoLibrary> getAllSoLibraries() {
         List<SoLibrary> soLibraries = new ArrayList<>();
-        soLibraries.addAll(this.getMainBundle().getSoLibraries());
-        for (AwbBundle awbBundle : this.getAwbBundles()) {
+        soLibraries.addAll(getMainBundle().getSoLibraries());
+        for (AwbBundle awbBundle : getAwbBundles()) {
             soLibraries.addAll(awbBundle.getSoLibraries());
         }
         return soLibraries;
@@ -353,8 +349,6 @@ public class AtlasDependencyTree {
 
     /**
      * 转换为ependencyJSon对象
-     *
-     * @return
      */
     public DependencyJson getDependencyJson() {
         if (dependencyJson == null) {
@@ -396,19 +390,19 @@ public class AtlasDependencyTree {
             sb.append(":").append(coordinates.getVersion());
         }
         File libraryFile = getLibraryFile(library);
-        sb.append(" -> ").append(libraryFile).append(" [").append(DateFormat.getDateTimeInstance()
-                                                                      .format(libraryFile.lastModified())).append("]");
+        sb.append(" -> ").append(library).append(" [")
+                .append(DateFormat.getDateTimeInstance().format(libraryFile.lastModified())).append("]");
 
         return sb.toString();
     }
 
     private static File getLibraryFile(Library library) {
         if (library instanceof AndroidBundle) {
-            return ((AndroidBundle)library).getBundle();
+            return ((AndroidBundle) library).getBundle();
         } else if (library instanceof JavaLibrary) {
-            return ((JavaLibrary)library).getJarFile();
+            return ((JavaLibrary) library).getJarFile();
         } else if (library instanceof SoLibrary) {
-            return ((SoLibrary)library).getSoLibFile();
+            return ((SoLibrary) library).getSoLibFile();
         }
         return null;
     }
