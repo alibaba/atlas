@@ -578,7 +578,7 @@ public class InstrumentationHook extends Instrumentation {
 				if (className.equals("com.taobao.tao.welcome.Welcome") || YuzhuangHelper.shouldCreateTrafficPrompt()) {
 					className = "com.taobao.android.yuzhuang.helper.YuzhuangWelcomeActivity";
 				}
-				if (className.equals("com.taobao.tao.welcome.Welcome1")) {
+				if (className.equals("com.taobao.tao.welcome.Welcome_1")) {
 					className = "com.taobao.android.yuzhuang.helper.YuzhuangWelcome1Activity";
 				}
 			}
