@@ -213,9 +213,6 @@ package com.taobao.android.builder.tasks.app.prepare;
  * Created by wuzhong on 16/6/13.
  */
 
-import java.io.File;
-import java.util.ArrayList;
-
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.AaptOptions;
@@ -223,6 +220,8 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import java.io.File;
+import java.util.ArrayList;
 import org.gradle.api.tasks.TaskAction;
 
 public class PrepareAaptTask extends BaseTask {
@@ -259,9 +258,9 @@ public class PrepareAaptTask extends BaseTask {
                 aaptOptions.getAdditionalParameters().add(baseApk.getAbsolutePath());
             }
             if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && (
-                appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                    .getPatchConfig().isCreateTPatch())) {
-                aaptOptions.getAdditionalParameters().add("--vm-safemode");
+                    appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
+                            .getPatchConfig().isCreateTPatch())) {
+                //                aaptOptions.getAdditionalParameters().add("--vm-safemode");
                 aaptOptions.getAdditionalParameters().add("--merge");
             }
             //AndroidManifest文件不能有修改OR在patch的时候忽略,目前选择在patch的时候忽略
