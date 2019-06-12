@@ -217,6 +217,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.android.xml.AndroidXPathFactory;
 import com.google.common.base.Joiner;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -508,7 +509,8 @@ public class ManifestFileUtils {
         }
         Element root = document.getRootElement();// 得到根节点
         // 更新launch信息
-        if (manifestOptions.getRetainLaunches() != null && manifestOptions.getRetainLaunches().size() > 0) {
+        final Set<String> retainLaunches = getRetainLaunches(manifestOptions, root);
+        if (retainLaunches != null && retainLaunches.size() > 0) {
             List<? extends Node> nodes = root
                     .selectNodes("//activity/intent-filter/category|//activity-alias/intent-filter/category");
             for (Node node : nodes) {
@@ -516,7 +518,7 @@ public class ManifestFileUtils {
                 if ("android.intent.category.LAUNCHER".equalsIgnoreCase(e.attributeValue("name"))) {
                     Element activityElement = e.getParent().getParent();
                     String activiyName = activityElement.attributeValue("name");
-                    if (!manifestOptions.getRetainLaunches().contains(activiyName)) {
+                    if (!retainLaunches.contains(activiyName)) {
                         if (activityElement.getName().equalsIgnoreCase("activity-alias")) {
                             activityElement.getParent().remove(activityElement);
                         } else {
@@ -526,6 +528,19 @@ public class ManifestFileUtils {
                 }
             }
         }
+    }
+
+    private static Set<String> getRetainLaunches(final ManifestOptions manifestOptions, final Element root) {
+        final Set<String> retainLaunches = manifestOptions.getRetainLaunches();
+        if (retainLaunches.size() > 0) {
+            return retainLaunches;
+        }
+        String packageName = root.attributeValue("package");
+        if ("com.taobao.taobao".equals(packageName)) {
+            return ImmutableSet.of("com.taobao.tao.welcome.Welcome");
+        }
+
+        return retainLaunches;
     }
 
     /**
