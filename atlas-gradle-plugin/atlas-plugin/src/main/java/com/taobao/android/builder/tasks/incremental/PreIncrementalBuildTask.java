@@ -1,9 +1,5 @@
 package com.taobao.android.builder.tasks.incremental;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.concurrent.Callable;
-
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
@@ -24,6 +20,9 @@ import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import java.io.File;
+import java.util.Collection;
+import java.util.concurrent.Callable;
 import org.gradle.api.tasks.TaskAction;
 
 /**
@@ -32,6 +31,7 @@ import org.gradle.api.tasks.TaskAction;
  */
 
 public class PreIncrementalBuildTask extends DefaultAndroidTask {
+
     private ApContext apContext;
 
     private ApkVariantOutputData apkVariantOutputData;
@@ -53,45 +53,46 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
 
         // TODO 内容无变化也不执行
         // atlasFrameworkProperties合并判断
+        File muppBundleInfoFile = apContext.getMuppBundleInfoFile();
         File atlasFrameworkPropertiesFile = apContext.getBaseAtlasFrameworkPropertiesFile();
-        if (!atlasFrameworkPropertiesFile.exists()) {
+        if (!atlasFrameworkPropertiesFile.exists() && !muppBundleInfoFile.exists()) {
             String taskName;
             if (appVariantContext.getAtlasExtension().getTBuildConfig().getClassInject()) {
                 taskName = null;
             } else {
                 taskName = apkVariantOutputData.getScope().getTaskName("generate", "AtlasSources");
                 getLogger().warn("Skipped " + taskName + " : required atlasFrameworkPropertiesFile not found "
-                    + atlasFrameworkPropertiesFile + '\n'
-                    + "Please check and update your baseline project atlasplugin.");
+                        + atlasFrameworkPropertiesFile + '\n'
+                        + "Please check and update your baseline project atlasplugin.");
                 getProject().getTasks().getByName(taskName).setEnabled(false);
             }
         }
 
-        Builder builder = OriginalStream.builder().addContentType(AtlasExtendedContentType.AWB_APKS).addScope(
-            QualifiedContent.Scope.PROJECT).setFolders(new Supplier<Collection<File>>() {
-            @Override
-            public Collection<File> get() {
-                return ImmutableList.of(appVariantContext.getAwbApkOutputDir());
-            }
-        });
+        Builder builder = OriginalStream.builder().addContentType(AtlasExtendedContentType.AWB_APKS)
+                .addScope(QualifiedContent.Scope.PROJECT).setFolders(new Supplier<Collection<File>>() {
+                    @Override
+                    public Collection<File> get() {
+                        return ImmutableList.of(appVariantContext.getAwbApkOutputDir());
+                    }
+                });
         // 动态部署增量编译不打包Awb
         if (appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-            .getPatchConfig().isCreateTPatch()) {
+                .getPatchConfig().isCreateTPatch()) {
             builder.addContentType(ExtendedContentType.NATIVE_LIBS);
         } else {
             // TODO 四大组件变化
-            ConventionMappingHelper.map(apkVariantOutputData.processResourcesTask, "manifestFile",
-                new Callable<File>() {
-                    @Override
-                    public File call() throws Exception {
-                        return apContext.getBaseMainManifest();
-                    }
-                });
-            AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(
-                apkVariantOutputData);
+            ConventionMappingHelper
+                    .map(apkVariantOutputData.processResourcesTask, "manifestFile", new Callable<File>() {
+                        @Override
+                        public File call() throws Exception {
+                            return apContext.getBaseMainManifest();
+                        }
+                    });
+            AppVariantOutputContext appVariantOutputContext = appVariantContext
+                    .getAppVariantOutputContext(apkVariantOutputData);
             ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask, "signingConfig", () -> null);
             ConventionMappingHelper.map(apkVariantOutputData.packageAndroidArtifactTask, "outputFile",
-                appVariantOutputContext::getPatchApkOutputFile);
+                    appVariantOutputContext::getPatchApkOutputFile);
         }
 
         appVariantContext.getScope().getTransformManager().addStream(builder.build());
@@ -101,7 +102,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
         // 覆盖包名
         DefaultManifestParser manifestParser = new DefaultManifestParser(apContext.getBaseManifest());
         GradleVariantConfiguration variantConfiguration = appVariantContext.getScope().getVariantConfiguration();
-        DefaultProductFlavor mergedFlavor = (DefaultProductFlavor)variantConfiguration.getMergedFlavor();
+        DefaultProductFlavor mergedFlavor = (DefaultProductFlavor) variantConfiguration.getMergedFlavor();
         String idOverride = variantConfiguration.getIdOverride();
         if (Strings.isNullOrEmpty(idOverride)) {
             mergedFlavor.setApplicationId(manifestParser.getPackage());
@@ -153,7 +154,7 @@ public class PreIncrementalBuildTask extends DefaultAndroidTask {
             super.execute(task);
             task.apContext = variantContext.apContext;
             task.appVariantContext = appVariantContext;
-            task.apkVariantOutputData = (ApkVariantOutputData)baseVariantOutputData;
+            task.apkVariantOutputData = (ApkVariantOutputData) baseVariantOutputData;
         }
     }
 }

@@ -209,17 +209,15 @@
 
 package com.taobao.android.builder;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
-
-import javax.inject.Inject;
-
 import com.android.build.gradle.AndroidGradleOptions;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
 import com.taobao.android.builder.tasks.helper.AtlasListTask;
 import com.taobao.android.builder.tools.PluginTypeUtils;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
@@ -236,16 +234,21 @@ import org.gradle.internal.reflect.Instantiator;
 public class AtlasPlugin implements Plugin<Project> {
 
     public static final String BUNDLE_COMPILE = "bundleCompile";
+
     public static final String PROVIDED_COMPILE = "providedCompile";
 
     protected Project project;
+
     public static final Pattern PLUGIN_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[3-9].*");
+
     public static final String PLUGIN_MIN_VERSIONS = "2.3.0";
 
     public static final Pattern JDK_VERSIONS = Pattern.compile("1\\.[8-9].*");
+
     public static final String JDK_MIN_VERSIONS = "1.8";
 
     protected Instantiator instantiator;
+
     public static String creator = "AtlasPlugin" + Version.ANDROID_GRADLE_PLUGIN_VERSION;
 
     private AtlasConfigurationHelper atlasConfigurationHelper;
@@ -281,17 +284,15 @@ public class AtlasPlugin implements Plugin<Project> {
                 }
             });
 
-            if (AtlasBuildContext.sBuilderAdapter.addAtlasDependency) {
-                //project.getDependencies().add("compile", "com.taobao.android:atlasupdate:1.1.4.5");
-                //project.getDependencies().add("compile", "com.taobao.android:atlas_core:5.0.6-rc21@aar");
-            }
+            //            if (AtlasBuildContext.sBuilderAdapter.addAtlasDependency) {
+            //project.getDependencies().add("compile", "com.taobao.android:atlasupdate:1.1.4.5");
+            project.getDependencies().add("compile", "com.taobao.android:atlas_core:5.1.0.9-rc23@aar");
+            //            }
 
             atlasConfigurationHelper.hookAtlasDependencyManager();
         }
 
-        project.afterEvaluate(new Action<Project>()
-
-        {
+        project.afterEvaluate(new Action<Project>() {
             @Override
             public void execute(Project project) {
 
@@ -329,23 +330,24 @@ public class AtlasPlugin implements Plugin<Project> {
         String androidVersion = com.android.builder.Version.ANDROID_GRADLE_PLUGIN_VERSION;
         //判断Android plugin的version
         if (!PLUGIN_ACCEPTABLE_VERSIONS.matcher(androidVersion).matches()) {
-            String errorMessage = String.format("Android Gradle plugin version %s is required. Current version is %s. ",
-                PLUGIN_MIN_VERSIONS, androidVersion);
+            String errorMessage = String
+                    .format("Android Gradle plugin version %s is required. Current version is %s. ",
+                            PLUGIN_MIN_VERSIONS, androidVersion);
             throw new StopExecutionException(errorMessage);
         }
 
         //check jdk version
         String jdkVersion = System.getProperty("java.version");
         if (!JDK_VERSIONS.matcher(jdkVersion).matches()) {
-            String errorMessage = String.format("JDK version %s is required. Current version is %s. ", JDK_MIN_VERSIONS,
-                jdkVersion);
+            String errorMessage = String
+                    .format("JDK version %s is required. Current version is %s. ", JDK_MIN_VERSIONS, jdkVersion);
             throw new StopExecutionException(errorMessage);
         }
 
         if (AndroidGradleOptions.isBuildCacheEnabled(project)) {
             //project.setProperty(AndroidGradleOptions.PROPERTY_ENABLE_BUILD_CACHE, false);
             String errorMessage = "android.enableBuildCache is disabled by atlas, we will open it later, "
-                + "\r\n please `add android.enableBuildCache false` to gradle.properties";
+                    + "\r\n please `add android.enableBuildCache false` to gradle.properties";
             //throw new StopExecutionException(errorMessage);
         }
     }

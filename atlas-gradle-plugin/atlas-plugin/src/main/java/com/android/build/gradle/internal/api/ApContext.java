@@ -209,12 +209,11 @@
 
 package com.android.build.gradle.internal.api;
 
-import java.io.File;
+import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 
 import com.android.utils.FileUtils;
 import com.taobao.android.builder.dependency.model.AwbBundle;
-
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import java.io.File;
 
 /**
  * Created by wuzhong on 2016/10/3.
@@ -222,175 +221,183 @@ import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
  * @author wuzhong
  */
 public class ApContext {
-  public static final String AP_INLINE_APK_FILENAME = "android.apk";
 
-  public static final String AP_INLINE_APK_EXTRACT_DIRECTORY = "android.apk_";
+    public static final String AP_INLINE_APK_FILENAME = "android.apk";
 
-  public static final String AP_REMOTE_BUNDLES_DIRECTORY = "remotebundles";
+    public static final String AP_INLINE_APK_EXTRACT_DIRECTORY = "android.apk_";
 
-  public static final String AP_INLINE_AWB_EXPLODED_DIRECTORY = "exploded-awb";
+    public static final String AP_REMOTE_BUNDLES_DIRECTORY = "remotebundles";
 
-  public static final String AP_INLINE_AWO_DIRECTORY = "awo";
+    public static final String AP_INLINE_AWB_EXPLODED_DIRECTORY = "exploded-awb";
 
-  public static final String AP_INLINE_AWB_DIRECTORY = "awbs";
+    public static final String AP_INLINE_AWO_DIRECTORY = "awo";
 
-  public static final String APK_FILE_LIST = "apk-files.txt";
+    public static final String AP_INLINE_AWB_DIRECTORY = "awbs";
 
-  public static final String APK_FILE_MD5 = "apk-files.txt";
+    public static final String APK_FILE_LIST = "apk-files.txt";
 
-  public static final String PACKAGE_ID_PROPERTIES_FILENAME = "packageIdFile.properties";
+    public static final String APK_FILE_MD5 = "apk-files.txt";
 
-  public static final String ATLAS_FRAMEWORK_PROPERTIES_FILENAME = "atlasFrameworkProperties.json";
+    public static final String PACKAGE_ID_PROPERTIES_FILENAME = "packageIdFile.properties";
 
-  public static final String DEPENDENCIES_FILENAME = "dependencies.txt";
+    public static final String ATLAS_FRAMEWORK_PROPERTIES_FILENAME = "atlasFrameworkProperties.json";
 
-  public static final String INCREMENTAL_DIR_NAME = "incremental/";
+    public static final String DEPENDENCIES_FILENAME = "dependencies.txt";
 
-  public static final String MUPP_BUNDLE_INFO_FILENAME = "muppBundleInfo.json";
+    public static final String INCREMENTAL_DIR_NAME = "incremental/";
+
+    public static final String MUPP_BUNDLE_INFO_FILENAME = "muppBundleInfo.json";
 
 
-  private String apDependency;
+    private String apDependency;
 
-  private File apFile;
+    private File apFile;
 
-  private File apIncrementalFolder;
+    private File apIncrementalFolder;
 
-  private File apExploredFolder;
+    private File apExploredFolder;
 
-  private File baseApk;
+    private File baseApk;
 
-  private File baseIncrementalApk;
+    private File baseIncrementalApk;
 
-  private File extractedBaseApkFolder;
+    private File extractedBaseApkFolder;
 
-  private File baseRemoteBundlesFolder;
+    private File baseRemoteBundlesFolder;
 
-  private File baseAwosFolder;
+    private File baseAwosFolder;
 
-  private File baseAwbsFolder;
+    private File baseAwbsFolder;
 
-  private File baseIncrementalAwbsFolder;
+    private File baseIncrementalAwbsFolder;
 
-  private File baseManifest;
+    private File baseManifest;
 
-  private File baseMainManifest;
+    private File baseMainManifest;
 
-  private File baseAtlasFrameworkPropertiesFile;
+    private File baseAtlasFrameworkPropertiesFile;
 
-  private File basePackageIdFile;
+    private File basePackageIdFile;
 
-  private File baseDependenciesFile;
+    private File baseDependenciesFile;
 
-  // 解压前
-  public String getApDependency() {
-    return apDependency;
-  }
+    private File muppBundleInfoFile;
 
-  public void setApDependency(String apDependency) {
-    this.apDependency = apDependency;
-  }
-
-  public File getApFile() {
-    return apFile;
-  }
-
-  public void setApFile(File apFile) {
-    this.apFile = apFile;
-  }
-
-  // 解压后
-  public File getApExploredFolder() {
-    return apExploredFolder;
-  }
-
-  public void setApExploredFolder(File apExploredFolder) {
-    this.apExploredFolder = apExploredFolder;
-    baseManifest = new File(apExploredFolder, ANDROID_MANIFEST_XML);
-    baseMainManifest = new File(apExploredFolder, INCREMENTAL_DIR_NAME + ANDROID_MANIFEST_XML);
-    baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
-    extractedBaseApkFolder = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
-    baseRemoteBundlesFolder = new File(apExploredFolder, AP_REMOTE_BUNDLES_DIRECTORY);
-    baseAwosFolder = new File(apExploredFolder, AP_INLINE_AWO_DIRECTORY);
-    baseAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_DIRECTORY);
-    baseIncrementalAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
-    basePackageIdFile = new File(apExploredFolder, PACKAGE_ID_PROPERTIES_FILENAME);
-    baseAtlasFrameworkPropertiesFile = new File(apExploredFolder, ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
-    baseDependenciesFile = new File(apExploredFolder, DEPENDENCIES_FILENAME);
-
-    apIncrementalFolder = new File(apExploredFolder, INCREMENTAL_DIR_NAME);
-    baseIncrementalApk = new File(apIncrementalFolder, AP_INLINE_APK_FILENAME);
-  }
-
-  public File getBaseApk() {
-    return baseApk;
-  }
-
-  public File getBaseIncrementalApk() {
-    return baseIncrementalApk;
-  }
-
-  public File getBaseAwbsFolder() {
-    return baseAwbsFolder;
-  }
-
-  public File getBaseRemoteBundlesFolder() {
-    return baseRemoteBundlesFolder;
-  }
-
-  public File getBaseManifest() {
-    return baseManifest;
-  }
-
-  public File getBaseMainManifest() {
-    return baseMainManifest;
-  }
-
-  public File getBaseAtlasFrameworkPropertiesFile() {
-    return baseAtlasFrameworkPropertiesFile;
-  }
-
-  public File getPackageIdFile() {
-    return basePackageIdFile;
-  }
-
-  public File getBaseDependenciesFile() {
-    return baseDependenciesFile;
-  }
-
-  public File getBaseAwb(String soFileName) {
-    if (soFileName == null) {
-      return null;
+    // 解压前
+    public String getApDependency() {
+        return apDependency;
     }
 
-    File file = FileUtils.join(baseAwbsFolder, soFileName);
-    if (!file.exists()) {
-      file = FileUtils.join(baseRemoteBundlesFolder, soFileName);
-      if (!file.exists()) {
-        return null;
-      }
-    }
-    return file;
-  }
-
-  public File getBaseAwbTextSymbol(AwbBundle awbBundle) {
-    String packageName = awbBundle.getPackageName();
-    // 没有解压
-    if (packageName == null) {
-      return null;
+    public void setApDependency(String apDependency) {
+        this.apDependency = apDependency;
     }
 
-    return FileUtils.join(baseAwosFolder, packageName + ".R.txt");
-  }
+    public File getApFile() {
+        return apFile;
+    }
 
-  public File getIncrementalBaseAwbFile(String awbSoName) {
-    if (awbSoName == null) {
-      return null;
+    public void setApFile(File apFile) {
+        this.apFile = apFile;
     }
-    // remove the extension
-    int pos = awbSoName.lastIndexOf('.');
-    if (pos != -1) {
-      awbSoName = awbSoName.substring(0, pos);
+
+    // 解压后
+    public File getApExploredFolder() {
+        return apExploredFolder;
     }
-    return new File(FileUtils.join(baseIncrementalAwbsFolder, awbSoName), AP_INLINE_APK_FILENAME);
-  }
+
+    public void setApExploredFolder(File apExploredFolder) {
+        this.apExploredFolder = apExploredFolder;
+        baseManifest = new File(apExploredFolder, ANDROID_MANIFEST_XML);
+        baseMainManifest = new File(apExploredFolder, INCREMENTAL_DIR_NAME + ANDROID_MANIFEST_XML);
+        baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
+        extractedBaseApkFolder = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
+        baseRemoteBundlesFolder = new File(apExploredFolder, AP_REMOTE_BUNDLES_DIRECTORY);
+        baseAwosFolder = new File(apExploredFolder, AP_INLINE_AWO_DIRECTORY);
+        baseAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_DIRECTORY);
+        baseIncrementalAwbsFolder = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
+        basePackageIdFile = new File(apExploredFolder, PACKAGE_ID_PROPERTIES_FILENAME);
+        baseAtlasFrameworkPropertiesFile = new File(apExploredFolder, ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
+        baseDependenciesFile = new File(apExploredFolder, DEPENDENCIES_FILENAME);
+        muppBundleInfoFile = new File(apExploredFolder, MUPP_BUNDLE_INFO_FILENAME);
+
+        apIncrementalFolder = new File(apExploredFolder, INCREMENTAL_DIR_NAME);
+        baseIncrementalApk = new File(apIncrementalFolder, AP_INLINE_APK_FILENAME);
+    }
+
+    public File getBaseApk() {
+        return baseApk;
+    }
+
+    public File getBaseIncrementalApk() {
+        return baseIncrementalApk;
+    }
+
+    public File getBaseAwbsFolder() {
+        return baseAwbsFolder;
+    }
+
+    public File getBaseRemoteBundlesFolder() {
+        return baseRemoteBundlesFolder;
+    }
+
+    public File getBaseManifest() {
+        return baseManifest;
+    }
+
+    public File getBaseMainManifest() {
+        return baseMainManifest;
+    }
+
+    public File getBaseAtlasFrameworkPropertiesFile() {
+        return baseAtlasFrameworkPropertiesFile;
+    }
+
+    public File getPackageIdFile() {
+        return basePackageIdFile;
+    }
+
+    public File getBaseDependenciesFile() {
+        return baseDependenciesFile;
+    }
+
+    public File getMuppBundleInfoFile() {
+        return muppBundleInfoFile;
+    }
+
+    public File getBaseAwb(String soFileName) {
+        if (soFileName == null) {
+            return null;
+        }
+
+        File file = FileUtils.join(baseAwbsFolder, soFileName);
+        if (!file.exists()) {
+            file = FileUtils.join(baseRemoteBundlesFolder, soFileName);
+            if (!file.exists()) {
+                return null;
+            }
+        }
+        return file;
+    }
+
+    public File getBaseAwbTextSymbol(AwbBundle awbBundle) {
+        String packageName = awbBundle.getPackageName();
+        // 没有解压
+        if (packageName == null) {
+            return null;
+        }
+
+        return FileUtils.join(baseAwosFolder, packageName + ".R.txt");
+    }
+
+    public File getIncrementalBaseAwbFile(String awbSoName) {
+        if (awbSoName == null) {
+            return null;
+        }
+        // remove the extension
+        int pos = awbSoName.lastIndexOf('.');
+        if (pos != -1) {
+            awbSoName = awbSoName.substring(0, pos);
+        }
+        return new File(FileUtils.join(baseIncrementalAwbsFolder, awbSoName), AP_INLINE_APK_FILENAME);
+    }
 }

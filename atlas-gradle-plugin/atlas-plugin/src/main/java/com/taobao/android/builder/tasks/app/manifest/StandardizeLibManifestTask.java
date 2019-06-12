@@ -209,6 +209,20 @@
 
 package com.taobao.android.builder.tasks.app.manifest;
 
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.model.AndroidLibrary;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.extension.ManifestOptions;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
+import com.taobao.android.builder.tools.manifest.ManifestInfo;
+import com.taobao.android.builder.tools.xml.XmlHelper;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -217,19 +231,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-
-import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.model.AndroidLibrary;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.dependency.AtlasDependencyTree;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
-import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
-import com.taobao.android.builder.tools.manifest.ManifestInfo;
-import com.taobao.android.builder.tools.xml.XmlHelper;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Attribute;
 import org.dom4j.Document;
@@ -293,7 +294,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
     public void preProcess() throws IOException, DocumentException, InterruptedException {
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("StandardizeLibManifestTask",
-            getLogger(), 0);
+                getLogger(), 0);
         List<Runnable> runnables = new ArrayList<>();
 
         ManifestInfo mainManifestFileObject = getManifestFileObject(mainManifestFile);
@@ -306,7 +307,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
             if (!file.exists()) {
                 getLogger().error(androidLibrary.getResolvedCoordinates().toString() + " not has manifest : " + file
-                    .getAbsolutePath());
+                        .getAbsolutePath());
                 return;
             }
 
@@ -321,8 +322,9 @@ public class StandardizeLibManifestTask extends DefaultTask {
                         //getLogger().error(file.getAbsolutePath() + " -> " + modifyManifest
                         //    .getAbsolutePath());
 
-                        ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file, mainManifestFileObject,
-                            true, appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental());
+                        ManifestFileUtils
+                                .updatePreProcessManifestFile(modifyManifest, file, mainManifestFileObject, true,
+                                        appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental());
                     } catch (Throwable e) {
                         e.printStackTrace();
                         throw new GradleException("preprocess manifest failed " + file.getAbsolutePath(), e);
@@ -336,9 +338,6 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
     /**
      * 获取mainifest文件的内容
-     *
-     * @param manifestFile
-     * @return
      */
     public static ManifestInfo getManifestFileObject(File manifestFile) throws DocumentException {
 
@@ -350,7 +349,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
             for (Attribute attribute : root.attributes()) {
                 if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
                     manifestFileObject.addManifestProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
-                        attribute.getValue());
+                            attribute.getValue());
                 } else {
                     manifestFileObject.addManifestProperty(attribute.getName(), attribute.getValue());
                 }
@@ -360,8 +359,9 @@ public class StandardizeLibManifestTask extends DefaultTask {
             if (null != useSdkElement) {
                 for (Attribute attribute : useSdkElement.attributes()) {
                     if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                        manifestFileObject.addUseSdkProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
-                            attribute.getValue());
+                        manifestFileObject
+                                .addUseSdkProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
+                                        attribute.getValue());
                     } else {
                         manifestFileObject.addUseSdkProperty(attribute.getName(), attribute.getValue());
                     }
@@ -370,8 +370,9 @@ public class StandardizeLibManifestTask extends DefaultTask {
             if (null != applicationElement) {
                 for (Attribute attribute : applicationElement.attributes()) {
                     if (StringUtils.isNotBlank(attribute.getNamespacePrefix())) {
-                        manifestFileObject.addApplicationProperty(
-                            attribute.getNamespacePrefix() + ":" + attribute.getName(), attribute.getValue());
+                        manifestFileObject
+                                .addApplicationProperty(attribute.getNamespacePrefix() + ":" + attribute.getName(),
+                                        attribute.getValue());
                     } else {
                         manifestFileObject.addApplicationProperty(attribute.getName(), attribute.getValue());
                     }
@@ -388,7 +389,7 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
         public ConfigAction(AppVariantContext variantContext, BaseVariantOutputData baseVariantOutputData) {
             super(variantContext, baseVariantOutputData);
-            this.appVariantContext = variantContext;
+            appVariantContext = variantContext;
         }
 
         @Override
@@ -415,29 +416,34 @@ public class StandardizeLibManifestTask extends DefaultTask {
 
             for (AndroidLibrary androidLibrary : task.androidLibraries) {
                 appVariantContext.manifestMap.put(androidLibrary.getManifest().getAbsolutePath(),
-                    appVariantContext.getModifyManifest(androidLibrary));
+                        appVariantContext.getModifyManifest(androidLibrary));
             }
 
             /*baseVariantOutputData.manifestProcessorTask.doFirst(*/
-            new PreProcessManifestAction(appVariantContext, baseVariantOutputData).execute(
-                baseVariantOutputData.manifestProcessorTask)/*)*/;
+            new PreProcessManifestAction(appVariantContext, baseVariantOutputData)
+                    .execute(baseVariantOutputData.manifestProcessorTask)/*)*/;
 
-            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-                baseVariantOutputData.manifestProcessorTask.doLast(
-                    new PostProcessManifestAction(appVariantContext, baseVariantOutputData));
+            final AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
+            if (!atlasExtension.getTBuildConfig().isIncremental()) {
+                baseVariantOutputData.manifestProcessorTask
+                        .doLast(new PostProcessManifestAction(appVariantContext, baseVariantOutputData));
             } else {
                 baseVariantOutputData.manifestProcessorTask.doLast(new Action<Task>() {
                     @Override
                     public void execute(Task task) {
                         try {
                             File manifestOutputFile = baseVariantOutputData.manifestProcessorTask
-                                .getManifestOutputFile();
+                                    .getManifestOutputFile();
                             Document document = XmlHelper.readXml(manifestOutputFile);// 读取XML文件
-
+                            final ManifestOptions manifestOptions = atlasExtension.manifestOptions;
+                            if (null != manifestOptions && manifestOptions.isReplaceApplication()) {
+                                ManifestFileUtils.replaceManifestApplicationName(document);
+                            }
+                            ManifestFileUtils.removeCustomLaunches(document, manifestOptions);
                             Element root = document.getRootElement();// 得到根节点
                             Element applicationElement = root.element("application");
-                            Collections.sort(applicationElement.content(),
-                                Comparator.comparing(Node::getName, Comparator.nullsFirst(Comparator.naturalOrder())));
+                            Collections.sort(applicationElement.content(), Comparator
+                                    .comparing(Node::getName, Comparator.nullsFirst(Comparator.naturalOrder())));
 
                             XmlHelper.saveDocument(document, manifestOutputFile);
                         } catch (Exception e) {
