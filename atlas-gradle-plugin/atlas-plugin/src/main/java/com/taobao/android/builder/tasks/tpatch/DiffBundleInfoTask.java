@@ -496,7 +496,9 @@ public class DiffBundleInfoTask extends BaseTask {
 
             super.execute(diffBundleInfoTask);
 
-            if (!appVariantContext.getAtlasExtension().isAtlasEnabled()){
+            if (!appVariantContext.getAtlasExtension().isAtlasEnabled() ||
+                    appVariantContext.getBuildType().getPatchConfig() == null ||
+                    !appVariantContext.getBuildType().getPatchConfig().isCreateTPatch()){
                 diffBundleInfoTask.setEnabled(false);
             }
 
