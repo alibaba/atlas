@@ -209,15 +209,9 @@
 
 package com.taobao.android.builder.dependency.parser;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 
 import com.alibaba.fastjson.JSON;
-
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -239,6 +233,12 @@ import com.taobao.android.builder.dependency.parser.helper.DependencyGroup;
 import com.taobao.android.builder.dependency.parser.helper.DependencyResolver;
 import com.taobao.android.builder.tasks.incremental.ApDependencies;
 import com.taobao.android.builder.tasks.incremental.ParsedModuleStringNotation;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -252,8 +252,6 @@ import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.internal.artifacts.DefaultModuleIdentifier;
 import org.gradle.api.specs.Specs;
 
-import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
-
 /**
  * A manager to resolve configuration dependencies.
  *
@@ -261,271 +259,274 @@ import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
  */
 public class AtlasDepTreeParser {
 
-  private final Project project;
+    private final Project project;
 
-  private final ExtraModelInfo extraModelInfo;
+    private final ExtraModelInfo extraModelInfo;
 
-  private final List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
+    private final List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
 
-  private final ApDependencies apDependencies;
+    private final ApDependencies apDependencies;
 
-  private final ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
+    private final ILogger logger = LoggerWrapper.getLogger(AtlasDepTreeParser.class);
 
-  public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo,
-                            ApDependencies apDependencies) {
-    this.project = project;
-    this.extraModelInfo = extraModelInfo;
-    this.apDependencies = apDependencies;
-  }
-
-  public AtlasDependencyTree parseDependencyTree(@NonNull VariantDependencies variantDeps) {
-
-    String name = variantDeps.getName().toLowerCase();
-    if (!name.endsWith("debug") && !name.endsWith("release")) {
-      return new AtlasDependencyTree(new ArrayList<>(), null);
+    public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo,
+            ApDependencies apDependencies) {
+        this.project = project;
+        this.extraModelInfo = extraModelInfo;
+        this.apDependencies = apDependencies;
     }
 
-    Configuration compileClasspath = variantDeps.getCompileConfiguration();
-    Configuration packageClasspath = variantDeps.getPackageConfiguration();
-    Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
+    public AtlasDependencyTree parseDependencyTree(@NonNull VariantDependencies variantDeps) {
 
-    ensureConfigured(compileClasspath);
-    ensureConfigured(packageClasspath);
-    ensureConfigured(bundleClasspath);
-    if (apDependencies != null) {
-      apDependencies.configureAwbDependencies(variantDeps.getCompileConfiguration());
-      apDependencies.configureAwbDependencies(variantDeps.getPackageConfiguration());
-    }
-
-    Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
-    collectArtifacts(compileClasspath, artifacts);
-    collectArtifacts(packageClasspath, artifacts);
-    collectArtifacts(bundleClasspath, artifacts);
-
-    //依赖分组
-    DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath);
-
-    DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts,
-                                                                   dependencyGroup.bundleProvidedMap, apDependencies);
-
-    mResolvedDependencies.addAll(dependencyResolver.resolve(dependencyGroup.compileDependencies, true));
-
-    for (DependencyResult dependencyResult : dependencyGroup.bundleDependencies) {
-      mResolvedDependencies.addAll(dependencyResolver.resolve(Arrays.asList(dependencyResult), false));
-    }
-
-    AtlasDependencyTree atlasDependencyTree = toAtlasDependencyTree();
-
-    check(atlasDependencyTree);
-
-    return atlasDependencyTree;
-  }
-
-  private void ensureConfigured(Configuration config) {
-    for (Dependency dependency : config.getAllDependencies()) {
-      if (dependency instanceof ProjectDependency) {
-        ProjectDependency projectDependency = (ProjectDependency)dependency;
-        project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
-      }
-    }
-  }
-
-  private void collectArtifacts(Configuration configuration,
-                                Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
-
-    Set<ResolvedArtifact> allArtifacts;
-    if (!extraModelInfo.getMode().equals(STANDARD)) {
-      allArtifacts = configuration.getResolvedConfiguration().getLenientConfiguration().getArtifacts(
-        Specs.satisfyAll());
-    }
-    else {
-      allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
-    }
-
-    for (ResolvedArtifact artifact : allArtifacts) {
-      ModuleVersionIdentifier id = artifact.getModuleVersion().getId();
-      List<ResolvedArtifact> moduleArtifacts = artifacts.get(id);
-
-      if (moduleArtifacts == null) {
-        moduleArtifacts = Lists.newArrayList();
-        artifacts.put(id, moduleArtifacts);
-      }
-
-      if (!moduleArtifacts.contains(artifact)) {
-        moduleArtifacts.add(artifact);
-      }
-    }
-  }
-
-  private AtlasDependencyTree toAtlasDependencyTree() {
-    AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies, apDependencies);
-
-    //设置依赖关系
-    for (ResolvedDependencyInfo dependencyInfo : mResolvedDependencies) {
-
-      if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType()) && !apDependencies.isMainDexAwb(
-        dependencyInfo.getName())) {
-
-        AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo, project);
-        atlasDependencyTree.getAwbBundles().add(bundle);
-
-        collect(dependencyInfo, bundle);
-      }
-      else {
-
-        collect(dependencyInfo, atlasDependencyTree.getMainBundle());
-      }
-    }
-
-    if (apDependencies != null) {
-      adjustAwbLibraryDependencies(atlasDependencyTree);
-      for (AwbBundle bundle : atlasDependencyTree.getAwbBundles()) {
-        MavenCoordinates coordinates = bundle.getResolvedCoordinates();
-        bundle.setBaseAwbDependencies(
-          apDependencies.getAwbDependencies(coordinates.getGroupId(), coordinates.getArtifactId()));
-      }
-    }
-
-    return atlasDependencyTree;
-  }
-
-  //Awb依赖修正
-  private void adjustAwbLibraryDependencies(AtlasDependencyTree atlasDependencyTree) {
-    AwbBundle mainBundle = atlasDependencyTree.getMainBundle();
-    ArrayList<Library> librariesToRemove = new ArrayList<Library>();
-    //扫描主dex依赖
-    for (Library library : mainBundle.getAndroidLibraries()) {
-      ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
-        library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
-      //主dex包含Awb间接依赖
-      if (apDependencies.isAwbLibrary(moduleIdentifier)) {
-        librariesToRemove.add(library);
-        //修正到正确Awb的位置
-        AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
-        if (awbBundle != null) {
-          awbBundle.getAndroidLibraries().add((AndroidLibrary)library);
-        }
-      }
-    }
-    //移除主dex包含Awb间接依赖
-    mainBundle.getAndroidLibraries().removeAll(librariesToRemove);
-
-    //扫描主dex依赖
-    librariesToRemove.clear();
-    for (Library library : mainBundle.getJavaLibraries()) {
-      ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
-        library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
-      if (apDependencies.isAwbLibrary(moduleIdentifier)) {
-        librariesToRemove.add(library);
-        AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
-        if (awbBundle != null) {
-          awbBundle.getJavaLibraries().add((JavaLibrary)library);
-        }
-      }
-    }
-    //移除主dex包含Awb间接依赖
-    mainBundle.getJavaLibraries().removeAll(librariesToRemove);
-
-    //扫描主dex依赖
-    librariesToRemove.clear();
-    for (Library library : mainBundle.getSoLibraries()) {
-      ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier.newId(
-        library.getResolvedCoordinates().getGroupId(), library.getResolvedCoordinates().getArtifactId());
-      if (apDependencies.isAwbLibrary(moduleIdentifier)) {
-        librariesToRemove.add(library);
-        AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
-        if (awbBundle != null) {
-          awbBundle.getSoLibraries().add((SoLibrary)library);
-        }
-      }
-    }
-    //移除主dex包含Awb间接依赖
-    mainBundle.getSoLibraries().removeAll(librariesToRemove);
-  }
-
-  private AwbBundle getAwbBundle(AtlasDependencyTree atlasDependencyTree, ModuleIdentifier moduleIdentifier) {
-    ParsedModuleStringNotation awbParsedNotation = apDependencies.getAwb(moduleIdentifier);
-    if (awbParsedNotation == null) {
-      return null;
-    }
-    return atlasDependencyTree.getAwbBundle(
-      DefaultModuleIdentifier.newId(awbParsedNotation.getGroup(), awbParsedNotation.getName()));
-  }
-
-  private void collect(ResolvedDependencyInfo dependencyInfo, AwbBundle awbBundle) {
-    switch (DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
-      case AAR:
-        //case AWB:
-        //添加到主dex中去
-        awbBundle.getAndroidLibraries().add(
-          DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
-        break;
-      case JAR:
-        awbBundle.getJavaLibraries().add(DependencyConvertUtils.toJavaLib(dependencyInfo));
-        break;
-      case SOLIB:
-        awbBundle.getSoLibraries().add(new SoLibrary(dependencyInfo));
-        return;
-      case AWB:
-
-        if (awbBundle.isMainBundle()) {
-          awbBundle.getAndroidLibraries().add(
-            DependencyConvertUtils.toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
+        String name = variantDeps.getName().toLowerCase();
+        if (!name.endsWith("debug") && !name.endsWith("release")) {
+            return new AtlasDependencyTree(new ArrayList<>(), null);
         }
 
-        break;
-      default:
-        return;
+        Configuration compileClasspath = variantDeps.getCompileConfiguration();
+        Configuration packageClasspath = variantDeps.getPackageConfiguration();
+        Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
+
+        ensureConfigured(compileClasspath);
+        ensureConfigured(packageClasspath);
+        ensureConfigured(bundleClasspath);
+        if (apDependencies != null) {
+            apDependencies.configureAwbDependencies(variantDeps.getCompileConfiguration());
+            apDependencies.configureAwbDependencies(variantDeps.getPackageConfiguration());
+            apDependencies.configureAtlasDependencies(variantDeps.getCompileConfiguration());
+            apDependencies.configureAtlasDependencies(variantDeps.getPackageConfiguration());
+        }
+
+        Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
+        collectArtifacts(compileClasspath, artifacts);
+        collectArtifacts(packageClasspath, artifacts);
+        collectArtifacts(bundleClasspath, artifacts);
+
+        //依赖分组
+        DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath);
+
+        DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts,
+                dependencyGroup.bundleProvidedMap, apDependencies);
+
+        mResolvedDependencies.addAll(dependencyResolver.resolve(dependencyGroup.compileDependencies, true));
+
+        for (DependencyResult dependencyResult : dependencyGroup.bundleDependencies) {
+            mResolvedDependencies.addAll(dependencyResolver.resolve(Arrays.asList(dependencyResult), false));
+        }
+
+        AtlasDependencyTree atlasDependencyTree = toAtlasDependencyTree();
+
+        check(atlasDependencyTree);
+
+        return atlasDependencyTree;
     }
 
-    if (null != dependencyInfo.getChildren() && !dependencyInfo.getChildren().isEmpty()) {
-      for (ResolvedDependencyInfo resolvedDependencyInfo : dependencyInfo.getChildren()) {
-        collect(resolvedDependencyInfo, awbBundle);
-      }
-    }
-  }
-
-  private void check(AtlasDependencyTree atlasDependencyTree) {
-
-    Map<String, List<String>> dependeys = new HashMap<>();
-    for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
-      String gav = awbBundle.getAndroidLibrary().getResolvedCoordinates().toString();
-
-      for (AndroidLibrary androidLibrary : awbBundle.getAndroidLibraries()) {
-        addValuetoList(dependeys, gav, androidLibrary.getResolvedCoordinates().toString());
-      }
-
-      for (JavaLibrary javaLibrary : awbBundle.getJavaLibraries()) {
-        addValuetoList(dependeys, gav, javaLibrary.getResolvedCoordinates().toString());
-      }
-
-      for (SoLibrary soLibrary : awbBundle.getSoLibraries()) {
-        addValuetoList(dependeys, gav, soLibrary.getResolvedCoordinates().toString());
-      }
+    private void ensureConfigured(Configuration config) {
+        for (Dependency dependency : config.getAllDependencies()) {
+            if (dependency instanceof ProjectDependency) {
+                ProjectDependency projectDependency = (ProjectDependency) dependency;
+                project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
+            }
+        }
     }
 
-    List<String> warnings = new ArrayList<>();
-    for (String key : dependeys.keySet()) {
-      List<String> values = dependeys.get(key);
-      if (values.size() > 1) {
-        String msg = key + ":" + StringUtils.join(values, ",");
-        warnings.add(msg);
-        logger.warning(msg);
-      }
+    private void collectArtifacts(Configuration configuration,
+            Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts) {
+
+        Set<ResolvedArtifact> allArtifacts;
+        if (!extraModelInfo.getMode().equals(STANDARD)) {
+            allArtifacts = configuration.getResolvedConfiguration().getLenientConfiguration()
+                    .getArtifacts(Specs.satisfyAll());
+        } else {
+            allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
+        }
+
+        for (ResolvedArtifact artifact : allArtifacts) {
+            ModuleVersionIdentifier id = artifact.getModuleVersion().getId();
+            List<ResolvedArtifact> moduleArtifacts = artifacts.get(id);
+
+            if (moduleArtifacts == null) {
+                moduleArtifacts = Lists.newArrayList();
+                artifacts.put(id, moduleArtifacts);
+            }
+
+            if (!moduleArtifacts.contains(artifact)) {
+                moduleArtifacts.add(artifact);
+            }
+        }
     }
 
-    if (warnings.size() > 0) {
-      logger.warning(JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
-      throw new GradleException("decency冲突 : " + StringUtils.join(warnings, "\r\n"));
-    }
-  }
+    private AtlasDependencyTree toAtlasDependencyTree() {
+        AtlasDependencyTree atlasDependencyTree = new AtlasDependencyTree(mResolvedDependencies, apDependencies);
 
-  private void addValuetoList(Map<String, List<String>> dependeys, String gav, String key) {
-    List<String> value = dependeys.get(key);
-    if (null == value) {
-      value = new ArrayList<>();
-      dependeys.put(key, value);
+        //设置依赖关系
+        for (ResolvedDependencyInfo dependencyInfo : mResolvedDependencies) {
+
+            if (Type.AWB == DependencyConvertUtils.Type.getType(dependencyInfo.getType()) && !apDependencies
+                    .isMainDexAwb(dependencyInfo.getName())) {
+
+                AwbBundle bundle = DependencyConvertUtils.toBundle(dependencyInfo, project);
+                atlasDependencyTree.getAwbBundles().add(bundle);
+
+                collect(dependencyInfo, bundle);
+            } else {
+
+                collect(dependencyInfo, atlasDependencyTree.getMainBundle());
+            }
+        }
+
+        if (apDependencies != null) {
+            adjustAwbLibraryDependencies(atlasDependencyTree);
+            for (AwbBundle bundle : atlasDependencyTree.getAwbBundles()) {
+                MavenCoordinates coordinates = bundle.getResolvedCoordinates();
+                bundle.setBaseAwbDependencies(
+                        apDependencies.getAwbDependencies(coordinates.getGroupId(), coordinates.getArtifactId()));
+            }
+        }
+
+        return atlasDependencyTree;
     }
-    value.add(gav);
-  }
+
+    //Awb依赖修正
+    private void adjustAwbLibraryDependencies(AtlasDependencyTree atlasDependencyTree) {
+        AwbBundle mainBundle = atlasDependencyTree.getMainBundle();
+        ArrayList<Library> librariesToRemove = new ArrayList<Library>();
+        //扫描主dex依赖
+        for (Library library : mainBundle.getAndroidLibraries()) {
+            ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier
+                    .newId(library.getResolvedCoordinates().getGroupId(),
+                            library.getResolvedCoordinates().getArtifactId());
+            //主dex包含Awb间接依赖
+            if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                librariesToRemove.add(library);
+                //修正到正确Awb的位置
+                AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
+                if (awbBundle != null) {
+                    awbBundle.getAndroidLibraries().add((AndroidLibrary) library);
+                }
+            }
+        }
+        //移除主dex包含Awb间接依赖
+        mainBundle.getAndroidLibraries().removeAll(librariesToRemove);
+
+        //扫描主dex依赖
+        librariesToRemove.clear();
+        for (Library library : mainBundle.getJavaLibraries()) {
+            ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier
+                    .newId(library.getResolvedCoordinates().getGroupId(),
+                            library.getResolvedCoordinates().getArtifactId());
+            if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                librariesToRemove.add(library);
+                AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
+                if (awbBundle != null) {
+                    awbBundle.getJavaLibraries().add((JavaLibrary) library);
+                }
+            }
+        }
+        //移除主dex包含Awb间接依赖
+        mainBundle.getJavaLibraries().removeAll(librariesToRemove);
+
+        //扫描主dex依赖
+        librariesToRemove.clear();
+        for (Library library : mainBundle.getSoLibraries()) {
+            ModuleIdentifier moduleIdentifier = DefaultModuleIdentifier
+                    .newId(library.getResolvedCoordinates().getGroupId(),
+                            library.getResolvedCoordinates().getArtifactId());
+            if (apDependencies.isAwbLibrary(moduleIdentifier)) {
+                librariesToRemove.add(library);
+                AwbBundle awbBundle = getAwbBundle(atlasDependencyTree, moduleIdentifier);
+                if (awbBundle != null) {
+                    awbBundle.getSoLibraries().add((SoLibrary) library);
+                }
+            }
+        }
+        //移除主dex包含Awb间接依赖
+        mainBundle.getSoLibraries().removeAll(librariesToRemove);
+    }
+
+    private AwbBundle getAwbBundle(AtlasDependencyTree atlasDependencyTree, ModuleIdentifier moduleIdentifier) {
+        ParsedModuleStringNotation awbParsedNotation = apDependencies.getAwb(moduleIdentifier);
+        if (awbParsedNotation == null) {
+            return null;
+        }
+        return atlasDependencyTree.getAwbBundle(
+                DefaultModuleIdentifier.newId(awbParsedNotation.getGroup(), awbParsedNotation.getName()));
+    }
+
+    private void collect(ResolvedDependencyInfo dependencyInfo, AwbBundle awbBundle) {
+        switch (DependencyConvertUtils.Type.getType(dependencyInfo.getType())) {
+            case AAR:
+                //case AWB:
+                //添加到主dex中去
+                awbBundle.getAndroidLibraries().add(DependencyConvertUtils
+                        .toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
+                break;
+            case JAR:
+                awbBundle.getJavaLibraries().add(DependencyConvertUtils.toJavaLib(dependencyInfo));
+                break;
+            case SOLIB:
+                awbBundle.getSoLibraries().add(new SoLibrary(dependencyInfo));
+                return;
+            case AWB:
+
+                if (awbBundle.isMainBundle()) {
+                    awbBundle.getAndroidLibraries().add(DependencyConvertUtils
+                            .toAndroidLibrary(dependencyInfo, project, !awbBundle.isMainBundle()));
+                }
+
+                break;
+            default:
+                return;
+        }
+
+        if (null != dependencyInfo.getChildren() && !dependencyInfo.getChildren().isEmpty()) {
+            for (ResolvedDependencyInfo resolvedDependencyInfo : dependencyInfo.getChildren()) {
+                collect(resolvedDependencyInfo, awbBundle);
+            }
+        }
+    }
+
+    private void check(AtlasDependencyTree atlasDependencyTree) {
+
+        Map<String, List<String>> dependeys = new HashMap<>();
+        for (AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
+            String gav = awbBundle.getAndroidLibrary().getResolvedCoordinates().toString();
+
+            for (AndroidLibrary androidLibrary : awbBundle.getAndroidLibraries()) {
+                addValuetoList(dependeys, gav, androidLibrary.getResolvedCoordinates().toString());
+            }
+
+            for (JavaLibrary javaLibrary : awbBundle.getJavaLibraries()) {
+                addValuetoList(dependeys, gav, javaLibrary.getResolvedCoordinates().toString());
+            }
+
+            for (SoLibrary soLibrary : awbBundle.getSoLibraries()) {
+                addValuetoList(dependeys, gav, soLibrary.getResolvedCoordinates().toString());
+            }
+        }
+
+        List<String> warnings = new ArrayList<>();
+        for (String key : dependeys.keySet()) {
+            List<String> values = dependeys.get(key);
+            if (values.size() > 1) {
+                String msg = key + ":" + StringUtils.join(values, ",");
+                warnings.add(msg);
+                logger.warning(msg);
+            }
+        }
+
+        if (warnings.size() > 0) {
+            logger.warning(JSON.toJSONString(atlasDependencyTree.getDependencyJson(), true));
+            throw new GradleException("decency冲突 : " + StringUtils.join(warnings, "\r\n"));
+        }
+    }
+
+    private void addValuetoList(Map<String, List<String>> dependeys, String gav, String key) {
+        List<String> value = dependeys.get(key);
+        if (null == value) {
+            value = new ArrayList<>();
+            dependeys.put(key, value);
+        }
+        value.add(gav);
+    }
 }
