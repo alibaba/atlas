@@ -31,10 +31,7 @@ import org.dom4j.DocumentException;
 import org.gradle.api.logging.Logger;
 
 import java.io.*;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -95,6 +92,9 @@ public class TaobaoInstantRunDex extends Transform {
     public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
+        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()){
+            return;
+        }
         File outputFolder = variantScope.getReloadDexOutputFolder();
 //        boolean changesAreCompatible =
 //                variantScope.getInstantRunBuildContext().hasPassedVerification();
@@ -147,44 +147,66 @@ public class TaobaoInstantRunDex extends Transform {
         // if no files were added, clean up and return.
         if (jarClassesBuilder.isEmpty()) {
             FileUtils.cleanOutputDir(outputFolder);
-            return;
+//            return;
         }
 
-        if (preloadJarHooker != null){
+        if (preloadJarHooker != null && classesJar.exists()){
            classesJar = preloadJarHooker.process(classesJar);
         }
 
-        final ImmutableList.Builder<File> inputFiles = ImmutableList.builder();
-        inputFiles.add(classesJar);
 
-        try {
-            variantScope
-                    .getInstantRunBuildContext()
-                    .startRecording(InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
-            convertByteCode(inputFiles.build(), outputFolder);
-            variantScope
-                    .getInstantRunBuildContext()
-                    .addChangedFile(FileType.RELOAD_DEX, new File(outputFolder, "classes.dex"));
-        } catch (ProcessException e) {
-            throw new TransformException(e);
-        } finally {
-            variantScope
-                    .getInstantRunBuildContext()
-                    .stopRecording(InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
+        if (classesJar.exists()) {
+            final ImmutableList.Builder<File> inputFiles = ImmutableList.builder();
+            inputFiles.add(classesJar);
+
+
+            try {
+                variantScope
+                        .getInstantRunBuildContext()
+                        .startRecording(InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
+                convertByteCode(inputFiles.build(), outputFolder);
+                variantScope
+                        .getInstantRunBuildContext()
+                        .addChangedFile(FileType.RELOAD_DEX, new File(outputFolder, "classes.dex"));
+            } catch (ProcessException e) {
+                throw new TransformException(e);
+            } finally {
+                variantScope
+                        .getInstantRunBuildContext()
+                        .stopRecording(InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
+            }
+
         }
 
-        variantScope.getInstantRunBuildContext().close();
+
+
+            variantScope.getInstantRunBuildContext().close();
+
 
         if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
+            List<File>patchFiles = new ArrayList<>();
             InstantRunBuildContext instantRunBuildContext = variantContext.getScope().getInstantRunBuildContext();
             InstantRunBuildContext.Artifact artifact = instantRunBuildContext.getLastBuild().getArtifactForType(FileType.RELOAD_DEX);
-            File patchFile = artifact.getLocation();
+            if (artifact!= null) {
+                File patchFile = artifact.getLocation();
+                if (patchFile!= null && patchFile.exists()) {
+                    patchFiles.add(patchFile);
+                }
+            }
+            InstantRunBuildContext.Artifact resArtifact = instantRunBuildContext.getLastBuild().getArtifactForType(FileType.RESOURCES);
+            if (resArtifact!= null) {
+                File resFile = resArtifact.getLocation();
+                if (resFile!= null && resFile.exists()) {
+                    patchFiles.add(resFile);
+
+                }
+            }
             String baseVersion = ApkDataUtils.get(variantOutput).getVersionName();
-            if (artifact!= null && patchFile.exists()) {
+            if (patchFiles.size() > 0) {
                 File finalFile = variantContext.getAppVariantOutputContext(ApkDataUtils.get(variantOutput)).getIPatchFile(baseVersion);
-                zipPatch(finalFile, patchFile);
+                zipPatch(finalFile, patchFiles);
             }else {
-                logger.warning("patchFile is not exist or no classes is modified!");
+                logger.warning("patchFiles is not exist or no classes is modified!");
             }
             return;
         }
@@ -301,20 +323,25 @@ public class TaobaoInstantRunDex extends Transform {
         return true;
     }
 
-    public static void zipPatch(File file, File dexFile) throws IOException {
-        BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(dexFile));
-        byte[] BUFFER = new byte[4096];
+    public static void zipPatch(File file, List<File> patchFiles) throws IOException {
         FileOutputStream fOutputStream = new FileOutputStream(file);
         ZipOutputStream zoutput = new ZipOutputStream(fOutputStream);
-        ZipEntry zEntry = new ZipEntry(dexFile.getName());
-        zoutput.putNextEntry(zEntry);
-        int len;
-        while ((len = inputStream.read(BUFFER)) > 0) {
-            zoutput.write(BUFFER, 0, len);
+        for (File patchFile:patchFiles) {
+            BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(patchFile));
+            byte[] BUFFER = new byte[4096];
+
+
+            ZipEntry zEntry = new ZipEntry(patchFile.getName());
+            zoutput.putNextEntry(zEntry);
+            int len;
+            while ((len = inputStream.read(BUFFER)) > 0) {
+                zoutput.write(BUFFER, 0, len);
+            }
+
+            inputStream.close();
         }
         zoutput.closeEntry();
         zoutput.close();
-        inputStream.close();
     }
 
 

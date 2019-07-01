@@ -268,13 +268,10 @@ public class PrepareAaptTask extends BaseTask {
                 aaptOptions.getAdditionalParameters().add("--stable-ids");
                 aaptOptions.getAdditionalParameters().add(apContext.getBaseStableIdsFile().getAbsolutePath());
             }
-            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && (
-                appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                    .getPatchConfig()
-                    .isCreateTPatch())) {
-                aaptOptions.getAdditionalParameters().add("--vm-safemode");
-                aaptOptions.getAdditionalParameters().add("--merge");
-            }
+//            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()||appVariantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
+//                aaptOptions.getAdditionalParameters().add("--vm-safemode");
+//                aaptOptions.getAdditionalParameters().add("--merge");
+//            }
             //AndroidManifestThe file cannot e modified OR ignored when patch, so the current selection is ignored when patch
         }
 

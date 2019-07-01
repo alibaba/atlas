@@ -6,6 +6,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.incremental.TBIncrementalSupportVisitor;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -34,8 +35,10 @@ import com.taobao.android.builder.insant.visitor.ModifyClassVisitor;
 import com.taobao.android.builder.tools.multidex.mutli.MappingReaderProcess;
 import org.gradle.api.logging.Logging;
 import org.objectweb.asm.*;
+import proguard.classfile.util.AccessUtil;
 
 import java.io.*;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -64,7 +67,7 @@ public class TaobaoInstantRunTransform extends Transform {
     private File injectFailedFile;
     private List<String> errors = new ArrayList<>();
     private List<String> success = new ArrayList<>();
-    public static List<String>sAnnotations = new ArrayList<>();
+    public static List<String> sAnnotations = new ArrayList<>();
 
     MappingReaderProcess mappingReaderProcess = new MappingReaderProcess();
 
@@ -199,12 +202,13 @@ public class TaobaoInstantRunTransform extends Transform {
         AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().add(classesTwoOutput);
         AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().add(classesThreeOutput);
 
+        List<File> mainRFiles = new ArrayList<>();
         List<TransformException> exceptions = new ArrayList<>();
         List<WorkItem> workItems = new ArrayList<>();
         for (TransformInput input : invocation.getInputs()) {
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                 File inputDir = directoryInput.getFile();
-                LOGGER.warning("inputDir:", inputDir.getAbsolutePath());
+                LOGGER.info("inputDir:"+inputDir.getAbsolutePath());
                 // non incremental mode, we need to traverse the TransformInput#getFiles()
                 // folder
                 FileUtils.cleanOutputDir(classesTwoOutput);
@@ -215,10 +219,15 @@ public class TaobaoInstantRunTransform extends Transform {
                     CodeChange codeChange = new CodeChange();
                     String path = FileUtils.relativePath(file, inputDir);
                     String className = path.replace("/", ".").substring(0, path.length() - 6);
-                    if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
-                        parseClassPolicy(file,codeChange);
+                    if (isMainRClass(className)) {
+                        LOGGER.info("mainRclass:"+className + path);
+                        mainRFiles.add(file);
                     }
-                    if (codeChange.isAnnotation()){
+
+                    if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
+                        parseClassPolicy(file, codeChange);
+                    }
+                    if (codeChange.isAnnotation()) {
                         sAnnotations.add(className);
                     }
 
@@ -281,9 +290,9 @@ public class TaobaoInstantRunTransform extends Transform {
                     String path = FileUtils.relativePath(file, dir);
                     String className = path.replace("/", ".").substring(0, path.length() - 6);
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
-                         parseClassPolicy(file,codeChange);
+                        parseClassPolicy(file, codeChange);
                     }
-                    if (codeChange.isAnnotation()){
+                    if (codeChange.isAnnotation()) {
                         sAnnotations.add(className);
                     }
 
@@ -383,9 +392,67 @@ public class TaobaoInstantRunTransform extends Transform {
 
         wrapUpOutputs(classesTwoOutput, classesThreeOutput);
 
+        if (variantContext.getBuildType().getPatchConfig().isCreateIPatch() && variantContext.getBuildType().getPatchConfig().isPatchResourceEnabled()) {
+
+            inlineFinalResource(classesThreeOutput, mainRFiles);
+        }
+
     }
 
-    private void parseClassPolicy(File file,CodeChange codeChange) {
+    private boolean isMainRClass(String className) {
+        return className.endsWith(".R") || className.contains(".R$");
+    }
+
+    private void inlineFinalResource(File classesThreeOutput, List<File> files) {
+        Collection<File> classFiles = org.apache.commons.io.FileUtils.listFiles(classesThreeOutput, new String[]{"class"}, true);
+        Map<String, Object> resFields = new HashMap<>();
+        if (files.size() > 0) {
+            files.forEach(file -> {
+                byte[] classBytes = new byte[0];
+                try {
+                    classBytes = Files.toByteArray(file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                ClassReader classReader = new ClassReader(classBytes);
+                classReader.accept(new ClassVisitor(Opcodes.ASM5) {
+                    @Override
+                    public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
+                        if (Modifier.isFinal(access) && Modifier.isStatic(access) && ConstPool.contains(desc) && value != null) {
+                            resFields.put(classReader.getClassName().replace("/",".") + ":" + name, value);
+                        }
+                        return super.visitField(access, name, desc, signature, value);
+                    }
+                }, ClassReader.SKIP_FRAMES);
+            });
+
+        }
+
+        variantContext.getProject().getLogger().warn("resFields size:"+resFields.size());
+        classFiles.forEach(file -> {
+            byte[] classBytes = new byte[0];
+            variantContext.getProject().getLogger().warn("visit File :"+file.getAbsolutePath());
+            try {
+                classBytes = Files.toByteArray(file);
+                ClassReader classReader = new ClassReader(classBytes);
+                ClassWriter classWriter = new ClassWriter(classReader, ClassReader.SKIP_FRAMES);
+                ModifyFinalFieldVisitor modifyFinalFieldVisitor = new ModifyFinalFieldVisitor(Opcodes.ASM5, classWriter, resFields);
+                classReader.accept(modifyFinalFieldVisitor, ClassReader.SKIP_FRAMES);
+                File outFile = null;
+                outFile = File.createTempFile(file.getName(), null, file.getParentFile());
+                Files.write(classWriter.toByteArray(), outFile);
+                org.apache.commons.io.FileUtils.deleteQuietly(file);
+                org.apache.commons.io.FileUtils.moveFile(outFile, file);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        });
+
+    }
+
+    private void parseClassPolicy(File file, CodeChange codeChange) {
 
         final PatchPolicy[] patchPolicy = {PatchPolicy.NONE};
         BufferedInputStream inputStream = null;
@@ -405,7 +472,7 @@ public class TaobaoInstantRunTransform extends Transform {
         }
         if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
             codeChange.py = PatchPolicy.NONE;
-            return ;
+            return;
         }
     }
 
@@ -801,6 +868,32 @@ public class TaobaoInstantRunTransform extends Transform {
 
         private List<CodeChange> codeChanges = new ArrayList<>();
 
+    }
+
+
+    public static class ConstPool {
+
+        static List<String> consts = new ArrayList();
+
+        public ConstPool() {
+        }
+
+        public static boolean contains(String s) {
+            return consts.contains(s);
+        }
+
+        static {
+            consts.add("Ljava/lang/String;");
+            consts.add("B");
+            consts.add("C");
+            consts.add("D");
+            consts.add("F");
+            consts.add("I");
+            consts.add("J");
+            consts.add("S");
+            consts.add("Z");
+            consts.add("V");
+        }
     }
 
 }

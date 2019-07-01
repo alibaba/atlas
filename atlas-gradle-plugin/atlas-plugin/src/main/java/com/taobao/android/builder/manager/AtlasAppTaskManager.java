@@ -270,8 +270,8 @@ import com.taobao.android.builder.tasks.manager.transform.MtlTransformContext;
 import com.taobao.android.builder.tasks.manager.transform.MtlTransformInjector;
 import com.taobao.android.builder.tasks.manager.transform.TransformManager;
 import com.taobao.android.builder.tasks.tpatch.DiffBundleInfoTask;
+import com.taobao.android.builder.tasks.tpatch.PatchDiffResAPBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchDiffApkBuildTask;
-import com.taobao.android.builder.tasks.tpatch.TPatchDiffResAPBuildTask;
 import com.taobao.android.builder.tasks.tpatch.TPatchTask;
 import com.taobao.android.builder.tasks.transform.AtlasDesugarTransform;
 import com.taobao.android.builder.tasks.transform.AtlasProguardTransform;
@@ -405,26 +405,32 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                       .getProcessResourcesTask()
                                                                       .get(new TaskContainerAdaptor(appVariantContext.getProject()
                                                                               .getTasks()));
-                                                              if (processAndroidResources.isAapt2Enabled()) {
-                                                                  processAndroidResources.doLast(new Action<Task>() {
-                                                                      @Override
-                                                                      public void execute(Task task) {
-                                                                          File processResourcePackageOutputDirectory
-                                                                                  = appVariantContext.getScope()
-                                                                                  .getProcessResourcePackageOutputDirectory();
-                                                                          File[] files
-                                                                                  = processResourcePackageOutputDirectory.listFiles(
-                                                                                  (file, name) -> name.endsWith(SdkConstants.DOT_RES));
-                                                                          for (File file : files) {
-                                                                              try {
-                                                                                  ResourcePatch.makePatchable(file);
-                                                                              } catch (IOException e) {
-                                                                                  throw new UncheckedIOException(e);
-                                                                              }
-                                                                          }
-                                                                      }
-                                                                  });
+
+                                                              if (appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
+                                                                  mtlTaskContextList.add(new MtlTaskContext(PatchDiffResAPBuildTask.ConfigAction.class,null));
+
                                                               }
+
+//                                                              if (processAndroidResources.isAapt2Enabled()) {
+//                                                                  processAndroidResources.doLast(new Action<Task>() {
+//                                                                      @Override
+//                                                                      public void execute(Task task) {
+//                                                                          File processResourcePackageOutputDirectory
+//                                                                                  = appVariantContext.getScope()
+//                                                                                  .getProcessResourcePackageOutputDirectory();
+//                                                                          File[] files
+//                                                                                  = processResourcePackageOutputDirectory.listFiles(
+//                                                                                  (file, name) -> name.endsWith(SdkConstants.DOT_RES));
+//                                                                          for (File file : files) {
+//                                                                              try {
+//                                                                                  ResourcePatch.makePatchable(file);
+//                                                                              } catch (IOException e) {
+//                                                                                  throw new UncheckedIOException(e);
+//                                                                              }
+//                                                                          }
+//                                                                      }
+//                                                                  });
+//                                                              }
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessResAwbsTask.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(JavacAwbsTask.ConfigAction.class, null));
@@ -438,9 +444,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PackageAwbsTask.ConfigAction.class, null));
 
-                                                              if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental() && (
-                                                                      appVariantContext.getBuildType().getPatchConfig() == null || !appVariantContext.getBuildType()
-                                                                              .getPatchConfig().isCreateTPatch())) {
+                                                              if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()||appVariantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
 //                                                                  mtlTaskContextList.add(new MtlTaskContext(PrepareBaseApkTask.ConfigAction.class, null));
                                                                   final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
                                                                   VariantScope variantScope = appVariantContext.getVariantData().getScope();
@@ -474,7 +478,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(DiffBundleInfoTask.ConfigAction.class, null));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(TPatchDiffResAPBuildTask.ConfigAction.class, null));
+//                                                              mtlTaskContextList.add(new MtlTaskContext(TPatchDiffResAPBuildTask.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(TPatchDiffApkBuildTask.ConfigAction.class, null));
 

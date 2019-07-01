@@ -245,58 +245,57 @@ public class DiffResExtractor {
      * @param destDir
      * @throws IOException
      */
-    public static void extractDiff(AppVariantContext appVariantContext, Set<String> diffResFiles, File currentApk,
-                                   File baseApk, File fullResDir, File destDir, boolean fullValues) throws IOException {
+    public static void extractDiff(AppVariantContext appVariantContext, Set<String> diffResFiles, File fullResDir, File destDir, boolean fullValues) throws IOException {
 
-        if (!currentApk.exists() || !baseApk.exists() || !fullResDir.exists()) {
+        if (!fullResDir.exists() || diffResFiles.size() == 0) {
             return;
         }
 
         FileUtils.deleteDirectory(destDir);
         destDir.mkdirs();
 
-        File tmpFolder = new File(destDir.getParentFile(), "tmp-diffRes");
-        FileUtils.deleteDirectory(tmpFolder);
-        tmpFolder.mkdirs();
-
-        File apkDir = new File(tmpFolder, "newApkDir");
-        File baseApkDir = new File(tmpFolder, "baseApkDir");
-
-        ZipUtils.unzip(currentApk, apkDir.getAbsolutePath());
-        ZipUtils.unzip(baseApk, baseApkDir.getAbsolutePath());
-
-        //compare res and assets
-        Collection<File> files = FileUtils.listFiles(apkDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-
-        int basePathLength = apkDir.getAbsolutePath().length();
-
-        //List<String> diffResPath = new ArrayList<String>();
-
-        //Calculate the assets
-        for (File file : files) {
-
-            String relativePath = file.getAbsolutePath().substring(basePathLength);
-
-            if (!relativePath.startsWith("/assets/")) {
-                continue;
-            }
-
-            File baseFile = new File(baseApkDir, relativePath);
-            if (!baseFile.exists() || !MD5Util.getFileMD5(file).equals(MD5Util.getFileMD5(baseFile))) {
-                FileUtils.copyFile(file, new File(destDir, relativePath));
-            }
-        }
+//        File tmpFolder = new File(destDir.getParentFile(), "tmp-diffRes");
+//        FileUtils.deleteDirectory(tmpFolder);
+//        tmpFolder.mkdirs();
+//
+//        File apkDir = new File(tmpFolder, "newApkDir");
+//        File baseApkDir = new File(tmpFolder, "baseApkDir");
+//
+//        ZipUtils.unzip(currentApk, apkDir.getAbsolutePath());
+//        ZipUtils.unzip(baseApk, baseApkDir.getAbsolutePath());
+//
+//        //compare res and assets
+//        Collection<File> files = FileUtils.listFiles(apkDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+//
+//        int basePathLength = apkDir.getAbsolutePath().length();
+//
+//        //List<String> diffResPath = new ArrayList<String>();
+//
+//        //Calculate the assets
+//        for (File file : files) {
+//
+//            String relativePath = file.getAbsolutePath().substring(basePathLength);
+//
+//            if (!relativePath.startsWith("/assets/")) {
+//                continue;
+//            }
+//
+//            File baseFile = new File(baseApkDir, relativePath);
+//            if (!baseFile.exists() || !MD5Util.getFileMD5(file).equals(MD5Util.getFileMD5(baseFile))) {
+//                FileUtils.copyFile(file, new File(destDir, relativePath));
+//            }
+//        }
 
         //Calculate the res
         for (String diffFile : diffResFiles) {
 
-            File baseFile = new File(baseApkDir, diffFile);
-            File currentFile = new File(apkDir, diffFile);
-
-            if (baseFile.exists() && currentFile.exists() && MD5Util.getFileMD5(baseFile).equals(MD5Util.getFileMD5(
-                currentFile))) {
-                continue;
-            }
+//            File baseFile = new File(baseApkDir, diffFile);
+//            File currentFile = new File(apkDir, diffFile);
+//
+//            if (baseFile.exists() && currentFile.exists() && MD5Util.getFileMD5(baseFile).equals(MD5Util.getFileMD5(
+//                currentFile))) {
+//                continue;
+//            }
 
             //copy file
             File rawFile = new File(fullResDir, diffFile);
@@ -306,60 +305,60 @@ public class DiffResExtractor {
         }
 
         // //Resource. Arsc must be generated
-        File resDir = new File(destDir, "res");
-        File valuesDir = new File(resDir, "values");
-        if (fullValues) {
-            FileUtils.forceMkdir(valuesDir);
-            appVariantContext.getProject().copy(new Closure(DiffResExtractor.class) {
-                public Object doCall(CopySpec cs) {
-                    cs.from(fullResDir);
-                    cs.into(destDir);
-                    cs.include("res/values*/**");
-
-                    return cs;
-                }
-            });
-
-            // FileUtils.copyFile(new File(fullResDir, "res/values/values.xml"),
-            //                    new File(destDir, "res/values/values.xml"));
-        } else {
-            if (!resDir.exists()) {
-                FileUtils.forceMkdir(valuesDir);
-                File stringsFile = new File(valuesDir, "strings.xml");
-                UUID uuid = UUID.randomUUID();
-                FileUtils.writeStringToFile(stringsFile,
-                                            String.format(
-                                                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <string "
-                                                    + "name=\"%s\">%s</string>\n</resources>\n",
-                                                uuid,
-                                                uuid),
-                                            "UTF-8",
-                                            false);
-            }
-        }
-
-        //XML Settings values.
-        File valuesXml = new File(resDir, "values/values.xml");
-
-        AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.injectTpatchValuesRes(appVariantContext, valuesXml);
-        try {
-            removeStringValue(valuesXml, "ttid");
-            removeStringValue(valuesXml, "config_channel");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        final Pattern densityOnlyPattern = Pattern.compile("[a-zA-Z]+-[a-zA-Z]+dpi");
-        if (resDir.exists()) {
-            File[] resDirs = resDir.listFiles();
-            if (resDirs != null) {
-                for (File file : resDirs) {
-                    Matcher m = densityOnlyPattern.matcher(file.getName());
-                    if (m.matches()) {
-                        FileUtils.moveDirectory(file, new File(file.getAbsolutePath() + "-v3"));
-                    }
-                }
-            }
-        }
+//        File resDir = new File(destDir, "res");
+//        File valuesDir = new File(resDir, "values");
+//        if (fullValues) {
+//            FileUtils.forceMkdir(valuesDir);
+//            appVariantContext.getProject().copy(new Closure(DiffResExtractor.class) {
+//                public Object doCall(CopySpec cs) {
+//                    cs.from(fullResDir);
+//                    cs.into(destDir);
+//                    cs.include("res/values*/**");
+//
+//                    return cs;
+//                }
+//            });
+//
+//            // FileUtils.copyFile(new File(fullResDir, "res/values/values.xml"),
+//            //                    new File(destDir, "res/values/values.xml"));
+//        } else {
+//            if (!resDir.exists()) {
+//                FileUtils.forceMkdir(valuesDir);
+//                File stringsFile = new File(valuesDir, "strings.xml");
+//                UUID uuid = UUID.randomUUID();
+//                FileUtils.writeStringToFile(stringsFile,
+//                                            String.format(
+//                                                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <string "
+//                                                    + "name=\"%s\">%s</string>\n</resources>\n",
+//                                                uuid,
+//                                                uuid),
+//                                            "UTF-8",
+//                                            false);
+//            }
+//        }
+//
+//        //XML Settings values.
+//        File valuesXml = new File(resDir, "values/values.xml");
+//
+//        AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.injectTpatchValuesRes(appVariantContext, valuesXml);
+//        try {
+//            removeStringValue(valuesXml, "ttid");
+//            removeStringValue(valuesXml, "config_channel");
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//
+//        final Pattern densityOnlyPattern = Pattern.compile("[a-zA-Z]+-[a-zA-Z]+dpi");
+//        if (resDir.exists()) {
+//            File[] resDirs = resDir.listFiles();
+//            if (resDirs != null) {
+//                for (File file : resDirs) {
+//                    Matcher m = densityOnlyPattern.matcher(file.getName());
+//                    if (m.matches()) {
+//                        FileUtils.moveDirectory(file, new File(file.getAbsolutePath() + "-v3"));
+//                    }
+//                }
+//            }
+//        }
     }
 }

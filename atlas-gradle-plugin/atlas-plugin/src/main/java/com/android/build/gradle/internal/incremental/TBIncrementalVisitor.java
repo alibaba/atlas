@@ -161,16 +161,16 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
         ClassNode classNode = AsmUtils.readClass(classReader);
 
-        boolean hasOtherMethod = false;
-        if (classNode != null && classNode.methods != null) {
-            for (Object methodNode : classNode.methods) {
-                if (methodNode instanceof MethodNode) {
-                    if (!((MethodNode) methodNode).name.equals(ByteCodeUtils.CLASS_INITIALIZER) && !((MethodNode) methodNode).name.equals(ByteCodeUtils.CONSTRUCTOR)) {
-                        hasOtherMethod = true;
-                    }
-                }
-            }
-        }
+//        boolean hasOtherMethod = false;
+//        if (classNode != null && classNode.methods != null) {
+//            for (Object methodNode : classNode.methods) {
+//                if (methodNode instanceof MethodNode) {
+//                    if (!((MethodNode) methodNode).name.equals(ByteCodeUtils.CLASS_INITIALIZER) && !((MethodNode) methodNode).name.equals(ByteCodeUtils.CONSTRUCTOR)) {
+//                        hasOtherMethod = true;
+//                    }
+//                }
+//            }
+//        }
 
 
         // when dealing with interface, we just copy the inputFile over without any changes unless
@@ -178,16 +178,16 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         AccessRight accessRight = AccessRight.fromNodeAccess(classNode.access);
         File outputFile = new File(outputDirectory, path);
 
-        if (!hasOtherMethod) {
-            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
-                Files.createParentDirs(outputFile);
-                Files.write(classBytes, outputFile);
-                return outputFile;
-            } else {
-                return null;
-            }
-
-        }
+//        if (!hasOtherMethod) {
+//            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+//                Files.createParentDirs(outputFile);
+//                Files.write(classBytes, outputFile);
+//                return outputFile;
+//            } else {
+//                return null;
+//            }
+//
+//        }
 
         if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {

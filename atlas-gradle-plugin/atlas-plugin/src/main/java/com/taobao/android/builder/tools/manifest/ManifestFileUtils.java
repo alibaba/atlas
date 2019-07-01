@@ -1142,31 +1142,31 @@ public class ManifestFileUtils {
         throws IOException, DocumentException {
 
         Document document = XmlHelper.readXml(mainManifest);
-        Document baseDoc = XmlHelper.readXml(originalManifest);
+//        Document baseDoc = XmlHelper.readXml(originalManifest);
 
-        List<Node> newNodes = selectComponents(document.getRootElement());
-        List<Node> baseNodes = selectComponents(baseDoc.getRootElement());
+//        List<Node> newNodes = selectComponents(document.getRootElement());
+//        List<Node> baseNodes = selectComponents(baseDoc.getRootElement());
 
-        Map<String, Node> baseNodeMap = new HashMap<>();
-        for (Node node : baseNodes) {
-            Element el = (Element)node;
-            String key = el.attributeValue("process") + el.attributeValue("name");
-            baseNodeMap.put(key, node);
-        }
+//        Map<String, Node> baseNodeMap = new HashMap<>();
+//        for (Node node : baseNodes) {
+//            Element el = (Element)node;
+//            String key = el.attributeValue("process") + el.attributeValue("name");
+//            baseNodeMap.put(key, node);
+//        }
 
         Element applicationElement = document.getRootElement().element("application");
         applicationElement.clearContent();
         document.getRootElement().clearContent();
         document.getRootElement().add(applicationElement);
 
-        for (Node node : newNodes) {
-            Element el = (Element)node;
-            String key = el.attributeValue("process") + el.attributeValue("name");
-            if (!baseNodeMap.containsKey(key) && !el.attributeValue("name").startsWith(
-                AtlasProxy.ATLAS_PROXY_PACKAGE)) {
-                applicationElement.add(node);
-            }
-        }
+//        for (Node node : newNodes) {
+//            Element el = (Element)node;
+//            String key = el.attributeValue("process") + el.attributeValue("name");
+//            if (!baseNodeMap.containsKey(key) && !el.attributeValue("name").startsWith(
+//                AtlasProxy.ATLAS_PROXY_PACKAGE)) {
+//                applicationElement.add(node);
+//            }
+//        }
 
         XmlHelper.saveDocument(document, destManifest);
     }

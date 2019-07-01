@@ -326,6 +326,17 @@ public class PatchConfig {
 
     private boolean diffBundleSo = false;
 
+
+    public boolean isPatchResourceEnabled() {
+        return patchResourceEnabled;
+    }
+
+    public void setPatchResourceEnabled(boolean patchResourceEnabled) {
+        this.patchResourceEnabled = patchResourceEnabled;
+    }
+
+    private boolean patchResourceEnabled = false;
+
     private boolean onlyIncrementInMain = true;
 
     private boolean onlyIncrementInAwb = true;

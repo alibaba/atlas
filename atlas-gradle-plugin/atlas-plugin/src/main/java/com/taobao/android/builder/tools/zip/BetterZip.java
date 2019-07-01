@@ -265,7 +265,7 @@ public class BetterZip {
         return true;
     }
 
-    public static boolean zipDirectory(File folder, File dest) throws IOException {
+    public static boolean   zipDirectory(File folder, File dest) throws IOException {
 
         if (!folder.isDirectory()) {
             return false;

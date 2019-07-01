@@ -221,9 +221,14 @@ import java.util.HashMap;
 import java.util.List;
 
 import android.aapt.pb.internal.ResourcesInternal.CompiledFile;
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.ApkDataUtils;
+import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.ApkFiles;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.scope.TaskOutputHolder;
+import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.CodedInputStream;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -231,12 +236,17 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.MD5Util;
 import com.taobao.android.builder.tools.PathUtil;
+import com.taobao.android.builder.tools.zip.BetterZip;
+import com.taobao.android.builder.tools.zip.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.UncheckedIOException;
 import org.gradle.api.tasks.StopExecutionException;
+
+import static com.android.SdkConstants.FN_RES_BASE;
+import static com.android.SdkConstants.RES_QUALIFIER_SEP;
 
 /**
  * Created by wuzhong on 16/6/15.
@@ -249,15 +259,30 @@ public class ApkFileListUtils {
     public static ApkFiles recordApkFileInfos(AppVariantContext appVariantContext) {
 
         ApkFiles apkFiles = new ApkFiles();
-
+        ProcessAndroidResources processAndroidResources = appVariantContext.getScope()
+                .getProcessResourcesTask()
+                .get(new TaskContainerAdaptor(appVariantContext.getScope().getGlobalScope().getProject().getTasks()));
         List<File> mainBundleResFolders = new ArrayList<File>();
-        mainBundleResFolders.add(appVariantContext.getScope().getVariantData().mergeResourcesTask.getOutputDir());
-        prepareApkFileList(appVariantContext.getScope().getVariantData().mergeAssetsTask.getOutputDir(),
-                           "assets", apkFiles);
-        for (File resFolder : mainBundleResFolders) {
-            prepareApkFileList(resFolder, "res", apkFiles);
-        }
+        if (!processAndroidResources.isAapt2Enabled()) {
+            mainBundleResFolders.add(appVariantContext.getScope().getVariantData().mergeResourcesTask.getOutputDir());
+            for (File resFolder : mainBundleResFolders) {
+                prepareApkFileList(resFolder, "res", apkFiles);
+            }
+        }else {
+            File file = FileUtils.listFiles(appVariantContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.PROCESSED_RES).getSingleFile(),new String[]{SdkConstants.EXT_RES},true).iterator().next();
 
+            File tempFile = new File(file.getParentFile(),"res-temp");
+            try {
+                BetterZip.unzipDirectory(file,tempFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            prepareApkFileList(new File(tempFile,"res"),"res",apkFiles);
+            apkFiles.finalApkFileList.put("resources.arsc", MD5Util.getFileMD5(new File(tempFile,"resources.arsc")));
+
+        }
+        prepareApkFileList(appVariantContext.getScope().getVariantData().mergeAssetsTask.getOutputDir(),
+                "assets", apkFiles);
         // Record the resource information for each bundle
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getScope().
             getVariantConfiguration().getFullName());
