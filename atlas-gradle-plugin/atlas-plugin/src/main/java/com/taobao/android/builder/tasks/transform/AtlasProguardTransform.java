@@ -296,7 +296,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
     private List<File> nonConsumerProguardFiles = new ArrayList<>();
 
     private File proguardOut;
-    private List configList;
+
+    private ConfigurableFileCollection oldConfigurableFileCollection;
 
     @Override
     public Set<ContentType> getOutputTypes() {
@@ -333,7 +334,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
     @Override
     public void transform(TransformInvocation invocation) throws TransformException {
         firstTime = true;
-        ConfigurableFileCollection oldConfigurableFileCollection = (ConfigurableFileCollection) ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
+         oldConfigurableFileCollection = (ConfigurableFileCollection) ReflectUtils.getField(ProguardConfigurable.class, oldTransform,
                 "configurationFiles");
 
         //原本官方支持consumerproguardFiles,但是在手淘环境下，业务方胡乱配置优化参数，会导致各种问题，所以在fastprogaurd情况下,我们认为consumerproguardfiles无效，只能在app工程下统一配置proguard
@@ -498,10 +499,10 @@ public class AtlasProguardTransform extends ProGuardTransform {
             mkdirs(proguardOut);
 
 
-            for (Object configFile : configList) {
-                for (File file:(Collection<File>)((Supplier)configFile).get()){
-                    applyConfigurationFile(file);
-                }
+            for (File configFile : oldConfigurableFileCollection.getFiles()) {
+//                for (File file:(Collection<File>)((Supplier)configFile).get()){
+                    applyConfigurationFile(configFile);
+//                }
             }
 
             configuration.printMapping = printMapping;
@@ -721,11 +722,11 @@ public class AtlasProguardTransform extends ProGuardTransform {
     @Override
     public void applyConfigurationFile(File file) throws IOException, ParseException {
         //appVariantContext.getVariantConfiguration().getProguardFiles(false, new ArrayList<>());
-        if (buildConfig.isLibraryProguardKeepOnly() && !nonConsumerProguardFiles.contains(file)) {
-            appVariantContext.getProject().getLogger().info("applyConfigurationFile keep only :" + file);
-            applyLibConfigurationFile(file);
-            return;
-        }
+//        if (buildConfig.isLibraryProguardKeepOnly() && !nonConsumerProguardFiles.contains(file)) {
+//            appVariantContext.getProject().getLogger().info("applyConfigurationFile keep only :" + file);
+//            applyLibConfigurationFile(file);
+//            return;
+//        }
         appVariantContext.getProject().getLogger().info("applyConfigurationFile :" + file);
         super.applyConfigurationFile(file);
     }

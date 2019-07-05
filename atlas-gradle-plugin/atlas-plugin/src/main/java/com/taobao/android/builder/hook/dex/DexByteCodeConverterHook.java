@@ -241,7 +241,11 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                 FileCache.Inputs inputsKey = globalCacheBuilder.putString("md5", MD5Util.getFileMd5(inputFile)).build();
 
                 try {
-                    fileCache.createFile(outDexFolder, inputsKey, () -> DexByteCodeConverterHook.super.convertByteCode(inputFile, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion));
+                    fileCache.createFile(outDexFolder, inputsKey, () -> {
+                        logger.warning("dex inputFile missCache: " + inputFile.toString());
+                        outDexFolder.mkdirs();
+                        DexByteCodeConverterHook.super.convertByteCode(inputFile, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler, minSdkVersion);
+                    });
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                     failures.add(e);
