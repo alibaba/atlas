@@ -281,8 +281,11 @@ public class LocalSignHelper {
                     if (certificateInfo == null) {
                         throw new SigningException("Failed to read key from keystore");
                     }
+                    System.err.println("LocalSign:"+signingConfig.toString());
+                } else {
+                    throw new SigningException("SigningConfig not found or incomplete");
                 }
-                System.err.println("LocalSign:"+signingConfig.toString());
+
 
                 Predicate<String> noCompressPredicate = getNoCompressPredicate(inputFile.getAbsolutePath());
                         ApkCreatorFactory.CreationData creationData =
