@@ -257,5 +257,5 @@ jar {
 }
 
 
-version = '3.0.1-rc88'
+version = '3.0.1-rc88-fix2'
 
