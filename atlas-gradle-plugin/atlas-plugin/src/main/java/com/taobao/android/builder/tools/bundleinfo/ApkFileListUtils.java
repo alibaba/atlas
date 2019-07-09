@@ -308,7 +308,7 @@ public class ApkFileListUtils {
      *
      * @return
      */
-    protected static void prepareApkFileList(File folder, String prefixName, ApkFiles apkFiles) {
+    public static void prepareApkFileList(File folder, String prefixName, ApkFiles apkFiles) {
         if (!folder.exists()) {
             return;
         }

@@ -341,13 +341,15 @@ public class ManifestFileUtils {
             Element element = (Element)node;
             String value = element.attributeValue("name");
             if (value.equals(INSTANT_RUN_CONTENTPROVIDER)){
-                element.addAttribute("name",ALI_INSTANT_RUN_CONTENTPROVIDER);
-                element.addAttribute("authorities",applicationId+"."+ALI_INSTANT_RUN_CONTENTPROVIDER);
-                Attribute attribute = element.attribute("multiprocess");
-                if (attribute!= null) {
-                    attribute.setValue("false");
-                    logger.warn("singleProcess  com.android.tools.ir.server.InstantRunContentProvider.......");
-                }
+                logger.warn("[InstantPatch provider] remove " + value);
+                element.getParent().remove(element);
+//                element.addAttribute("name",ALI_INSTANT_RUN_CONTENTPROVIDER);
+//                element.addAttribute("authorities",applicationId+"."+ALI_INSTANT_RUN_CONTENTPROVIDER);
+//                Attribute attribute = element.attribute("multiprocess");
+//                if (attribute!= null) {
+//                    attribute.setValue("false");
+//                    logger.warn("singleProcess  com.android.tools.ir.server.InstantRunContentProvider.......");
+//                }
 
             }
 
