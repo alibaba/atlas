@@ -255,7 +255,7 @@ public class MainDexLister {
 
         GradleVariantConfiguration config = appVariantContext.getVariantConfiguration();
 
-        Set<String> mainDexList = new HashSet<String>();
+        List<String> mainDexList = new ArrayList<>();
 
         //Confusion of the map
         //Map<String, String> classMap = getClassObfMap(config);
@@ -397,7 +397,7 @@ public class MainDexLister {
 
 
 
-    private void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, String root) {
+    private void addRefClazz(ClassPool classPool, String clazz, Collection<String> classList, String root) {
 
         if (classList.contains(clazz)) {
             return;
