@@ -2,7 +2,6 @@ package com.taobao.android.builder.tasks.app.bundle.actions;
 
 import com.android.SdkConstants;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.scope.TaskOutputHolder;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tools.ReflectUtils;
@@ -52,7 +51,7 @@ public class FirstApkAction implements Action<Task> {
                         ".json");
         File resOutBaseNameFile =
                 new File(
-                        packageApplication.getResourceFiles().getSingleFile(),
+                        packageApplication.getResourceFiles().getFiles().iterator().next(),
                         FN_RES_BASE
                                 + RES_QUALIFIER_SEP
                                 + appVariantOutputContext.getVariantContext().getVariantName()
@@ -69,11 +68,8 @@ public class FirstApkAction implements Action<Task> {
         }
         if (dexs!= null && dexs.length == 1) {
             File androidManifest = null;
-            if (appVariantOutputContext.getApkData().getFilterName() == null){
-                androidManifest = com.android.utils.FileUtils.join(appVariantOutputContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).getSingleFile(),"AndroidManifest.xml");
-            }else {
-                androidManifest = com.android.utils.FileUtils.join(appVariantOutputContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.MERGED_MANIFESTS).getSingleFile(),appVariantOutputContext.getApkData().getDirName(),"AndroidManifest.xml");
-            }
+                androidManifest = new File(appVariantOutputContext.getScope().getManifestOutputDirectory(),"AndroidManifest.xml");
+
             File file = AtlasBuildContext.atlasApkProcessor.securitySignApk(dexs[0], androidManifest,appVariantOutputContext.getVariantContext().getBuildType(),false);
             if (file!= null && file.exists()){
                 try {

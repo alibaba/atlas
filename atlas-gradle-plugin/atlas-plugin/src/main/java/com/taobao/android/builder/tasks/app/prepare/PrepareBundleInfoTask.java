@@ -212,7 +212,7 @@ package com.taobao.android.builder.tasks.app.prepare;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
@@ -233,7 +233,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class PrepareBundleInfoTask extends BaseTask {
+public class PrepareBundleInfoTask extends AndroidBuilderTask {
 
     AppVariantOutputContext appVariantOutputContext;
 

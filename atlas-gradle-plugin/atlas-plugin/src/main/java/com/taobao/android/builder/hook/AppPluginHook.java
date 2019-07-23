@@ -209,21 +209,20 @@
 
 package com.taobao.android.builder.hook;
 
-import com.android.build.gradle.AppPlugin;
-import com.android.build.gradle.BasePlugin;
-import com.android.build.gradle.LibraryPlugin;
+import com.android.build.gradle.*;
 import com.android.builder.core.AndroidBuilder;
-import com.taobao.android.builder.tools.ReflectUtils;
+
 import org.gradle.api.Project;
 
+import java.lang.reflect.Method;
+
+
+
+
 /**
- * Created by wuzhong on 2017/3/10.
  *
- * 1. Replace dependencyManager
- * 2. Replace androidBuilder
- *
- * @author wuzhong
- * @date 2017/03/10
+ * @author  zhayu.ll
+ * @date 2019/07/19
  */
 public class AppPluginHook {
 
@@ -233,48 +232,32 @@ public class AppPluginHook {
         this.project = project;
     }
 
-//    public void replaceTaskManager() throws Exception {
-//
-//        AppPlugin appPlugin = project.getPlugins().findPlugin(AppPlugin.class);
-//
-//        if (null == appPlugin) {
-//            return;
-//        }
-//
-//        TaskManager taskManager =
-//            (TaskManager)ReflectUtils.getField(BasePlugin.class, appPlugin, "taskManager");
-//
-//        DependencyManager dependencyManager = (DependencyManager)ReflectUtils.getField(TaskManager.class, taskManager,
-//                                                                                       "dependencyManager");
-//
-//        AtlasDependencyManager atlasDependencyManager = new AtlasDependencyManager(project,
-//                                                                                   (ExtraModelInfo)ReflectUtils
-//                                                                                       .getField(dependencyManager,
-//                                                                                                 "extraModelInfo"),
-//                                                                                   (SdkHandler)ReflectUtils
-//                                                                                       .getField(dependencyManager,
-//                                                                                                 "sdkHandler"));
-//
-//        ReflectUtils.updateField(TaskManager.class, taskManager, "dependencyManager", atlasDependencyManager);
-//
-//    }
 
     public AndroidBuilder getAndroidBuilder() throws Exception {
 
-        BasePlugin basePlugin = project.getPlugins().findPlugin(AppPlugin.class);
 
+
+        Method method = BasePlugin.class.getDeclaredMethod("getAndroidBuilder");
+        method.setAccessible(true);
+
+//
+      BasePlugin basePlugin = project.getPlugins().findPlugin(AppPlugin.class);
+//
         if (null == basePlugin) {
             basePlugin = project.getPlugins().findPlugin(LibraryPlugin.class);
         }
 
         if (null == basePlugin){
-            return null;
+            basePlugin = project.getPlugins().findPlugin(DynamicFeaturePlugin.class);
+
         }
 
-        AndroidBuilder androidBuilder =
-            (AndroidBuilder)ReflectUtils.getField(BasePlugin.class, basePlugin, "androidBuilder");
+        if (null == basePlugin){
+            basePlugin = project.getPlugins().findPlugin(FeaturePlugin.class);
+        }
 
-        return androidBuilder;
+        return (AndroidBuilder) method.invoke(basePlugin,"getAndroidBuilder");
+
 
     }
 

@@ -1,11 +1,12 @@
+/*
 package com.android.build.gradle.internal.ide;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.attributes.VariantAttr;
 import com.android.build.gradle.internal.dependency.ArtifactCollectionWithExtraArtifact;
 import com.android.build.gradle.internal.dependency.ConfigurationDependencyGraphs;
 import com.android.build.gradle.internal.dependency.FilteredArtifactCollection;
-import com.android.build.gradle.internal.dependency.VariantAttr;
 import com.android.build.gradle.internal.ide.level2.*;
 import com.android.build.gradle.internal.ide.level2.JavaLibraryImpl;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
@@ -23,6 +24,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ImmutableCollectors;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.*;
+import com.google.wireless.android.sdk.stats.GradleBuildVariant;
 import com.taobao.android.builder.AtlasPlugin;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -50,14 +52,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.android.SdkConstants.*;
-import static com.android.build.gradle.internal.ide.ModelBuilder.EMPTY_DEPENDENCIES_IMPL;
-import static com.android.build.gradle.internal.ide.ModelBuilder.EMPTY_DEPENDENCY_GRAPH;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ARTIFACT_TYPE;
 
+*/
 /**
  * @author lilong
  * @create 2017-12-01 下午1:24
- */
+ *//*
+
 
 public class AtlasDependencyGraph{
 
@@ -99,6 +101,7 @@ public class AtlasDependencyGraph{
                                         ? artifact.bundleResult.getFile()
                                         : explodedFolder, // fallback so that the value is non-null
                                 explodedFolder,
+                                findResStaticLibrary(explodedFolder),
                                 findLocalJarsAsStrings(explodedFolder));
             } else {
                 library = new JavaLibraryImpl(address, artifact.getFile());
@@ -107,6 +110,7 @@ public class AtlasDependencyGraph{
             library =
                     new ModuleLibraryImpl(
                             address,
+                            null,
                             ((ProjectComponentIdentifier) id).getProjectPath(),
                             getVariant(artifact));
         }
@@ -127,6 +131,18 @@ public class AtlasDependencyGraph{
         VariantAttr variantAttr =
                 artifact.getVariant().getAttributes().getAttribute(VariantAttr.ATTRIBUTE);
         return variantAttr == null ? null : variantAttr.getName();
+    }
+
+
+    private  static File findResStaticLibrary(File explodedFolder){
+        if (explodedFolder == null) {
+            return null;
+        }
+
+        File file = new File(explodedFolder, FN_RESOURCE_STATIC_LIBRARY);
+       if (!file.exists()) {
+            return null;
+        } else return file;
     }
 
     @NonNull
@@ -264,7 +280,7 @@ public class AtlasDependencyGraph{
                 .getArtifacts();
 
         if (configType == AtlasAndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
-                && variantScope.getVariantConfiguration().getType() == VariantType.FEATURE
+                && variantScope.getVariantConfiguration().getType().isFeatureSplit()
                 && artifactType != AtlasAndroidArtifacts.AtlasArtifactType.FEATURE_TRANSITIVE_DEPS) {
             artifacts =
                     new FilteredArtifactCollection(
@@ -297,11 +313,13 @@ public class AtlasDependencyGraph{
         }
     }
 
-    /**
+    */
+/**
      * Returns a set of HashableResolvedArtifactResult where the {@link
      * ArtifactDependencyGraph.HashableResolvedArtifactResult#getDependencyType()} and {@link
      * ArtifactDependencyGraph.HashableResolvedArtifactResult#isWrappedModule()} fields have been setup properly.
-     */
+     *//*
+
     public static Set<AtlasDependencyGraph.HashableResolvedArtifactResult> getAllArtifacts(
             @NonNull VariantScope variantScope,
             @NonNull AtlasAndroidArtifacts.ConsumedConfigType consumedConfigType,
@@ -498,11 +516,13 @@ public class AtlasDependencyGraph{
         return artifacts;
     }
 
-    /**
+    */
+/**
      * Create a level 4 dependency graph.
      *
      * @see AndroidProject#MODEL_LEVEL_4_NEW_DEP_MODEL
-     */
+     *//*
+
     public DependencyGraphs createLevel4DependencyGraph(
             @NonNull VariantScope variantScope,
             boolean withFullDependency,
@@ -614,7 +634,9 @@ public class AtlasDependencyGraph{
         }
     }
 
-    /** Create a level 1 dependency list. */
+    */
+/** Create a level 1 dependency list. *//*
+
     @NonNull
     public DependenciesImpl createDependencies(
             @NonNull VariantScope variantScope,
@@ -666,10 +688,16 @@ public class AtlasDependencyGraph{
                             new com.android.build.gradle.internal.ide.JavaLibraryImpl(
                                     artifact.getFile(),
                                     null,
-                                    ImmutableList.of(), /* dependencies */
-                                    null, /* requestedCoordinates */
+                                    ImmutableList.of(), */
+/* dependencies *//*
+
+                                    null, */
+/* requestedCoordinates *//*
+
                                     Preconditions.checkNotNull(sMavenCoordinatesCache.get(artifact)),
-                                    false, /* isSkipped */
+                                    false, */
+/* isSkipped *//*
+
                                     isProvided));
                 } else {
                     if (artifact.isWrappedModule()) {
@@ -689,12 +717,20 @@ public class AtlasDependencyGraph{
                                             ? artifact.bundleResult.getFile()
                                             : explodedFolder,
                                     // fallback so that the value is non-null
-                                    explodedFolder, /*exploded folder*/
+                                    explodedFolder, */
+/*exploded folder*//*
+
                                     getVariant(artifact),
                                     isProvided,
-                                    false, /* dependencyItem.isSkipped() */
-                                    ImmutableList.of(), /* androidLibraries */
-                                    ImmutableList.of(), /* javaLibraries */
+                                    false, */
+/* dependencyItem.isSkipped() *//*
+
+                                    ImmutableList.of(), */
+/* androidLibraries *//*
+
+                                    ImmutableList.of(), */
+/* javaLibraries *//*
+
                                     findLocalJarsAsFiles(explodedFolder)));
                 }
             }
@@ -863,10 +899,12 @@ public class AtlasDependencyGraph{
             return bundleResult;
         }
 
-        /**
+        */
+/**
          * An optional sub-result that represents the bundle file, when the current result
          * represents an exploded aar
-         */
+         *//*
+
         private final ResolvedArtifactResult bundleResult;
 
         public HashableResolvedArtifactResult(
@@ -931,3 +969,4 @@ public class AtlasDependencyGraph{
         }
     }
 }
+*/

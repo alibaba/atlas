@@ -291,7 +291,7 @@ public final class AtlasAndroidLibraryImpl extends LibraryImpl implements Androi
             @NonNull List<AndroidLibrary> androidLibraries,
             @NonNull Collection<JavaLibrary> javaLibraries,
             @NonNull Collection<File> localJavaLibraries) {
-        super(
+        super(null,
                 clonedLibrary.getProjectPath(),
                 null,
                 clonedLibrary.getCoordinates(),
@@ -385,11 +385,21 @@ public final class AtlasAndroidLibraryImpl extends LibraryImpl implements Androi
         return jarFile;
     }
 
+    @Override
+    public File getCompileJarFile() {
+        return null;
+    }
+
     @NonNull
     @Override
     public File getResFolder() {
         this.resFolder = androidLibrary.getResFolder();
         return resFolder;
+    }
+
+    @Override
+    public File getResStaticLibrary() {
+        return null;
     }
 
     @NonNull

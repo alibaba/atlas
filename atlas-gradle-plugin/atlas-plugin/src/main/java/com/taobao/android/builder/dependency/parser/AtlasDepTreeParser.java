@@ -239,7 +239,6 @@ import org.gradle.api.specs.Specs;
 
 import java.util.*;
 
-import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 
 /**
  * A manager to resolve configuration dependencies.
@@ -252,7 +251,7 @@ public class AtlasDepTreeParser {
 
     private String flavorName;
 
-    private final ExtraModelInfo extraModelInfo;
+//    private final ExtraModelInfo extraModelInfo;
 
     private final List<ResolvedDependencyInfo> mResolvedDependencies = Lists.newArrayList();
 
@@ -262,9 +261,9 @@ public class AtlasDepTreeParser {
 
     private Set<String>awbs = new HashSet<>();
 
-    public AtlasDepTreeParser(@NonNull Project project, @NonNull ExtraModelInfo extraModelInfo, Set<String> awbs) {
+    public AtlasDepTreeParser(@NonNull Project project, Set<String> awbs) {
         this.project = project;
-        this.extraModelInfo = extraModelInfo;
+//        this.extraModelInfo = extraModelInfo;
         this.awbs =awbs;
 //        this.apDependencies = apDependencies;
     }
@@ -286,28 +285,28 @@ public class AtlasDepTreeParser {
 
         Configuration compileClasspath = variantDeps.getCompileClasspath();
         Configuration runtimeClasspath = variantDeps.getRuntimeClasspath();
-        Configuration apiClasspath = variantDeps.getApiElements();
+//        Configuration apiClasspath = variantDeps.();
         Configuration  configuration = variantDeps.getAnnotationProcessorConfiguration();
         Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
 
         ensureConfigured(compileClasspath,project);
         ensureConfigured(runtimeClasspath,project);
         ensureConfigured(bundleClasspath,project);
-        ensureConfigured(apiClasspath,project);
+//        ensureConfigured(apiClasspath,project);
         ensureConfigured(configuration,project);
 
 
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
         collectArtifacts(compileClasspath, artifacts);
         collectArtifacts(runtimeClasspath, artifacts);
-        collectArtifacts(apiClasspath,artifacts);
+//        collectArtifacts(apiClasspath,artifacts);
         collectArtifacts(bundleClasspath, artifacts);
         collectArtifacts(configuration, artifacts);
 
         unEnsureConfigured(compileClasspath);
         unEnsureConfigured(runtimeClasspath);
         unEnsureConfigured(bundleClasspath);
-        unEnsureConfigured(apiClasspath);
+//        unEnsureConfigured(apiClasspath);
         unEnsureConfigured(configuration);
 
 
@@ -391,12 +390,12 @@ public class AtlasDepTreeParser {
         if (configuration.getState().equals(Configuration.State.UNRESOLVED) && !configuration.getName().equals(AtlasPlugin.BUNDLE_COMPILE)) {
             configuration.setCanBeResolved(true);
         }
-        if (!extraModelInfo.getMode().equals(STANDARD)) {
-            allArtifacts = configuration.getResolvedConfiguration().getLenientConfiguration().getArtifacts(
-                Specs.satisfyAll());
-        } else {
+//        if (!extraModelInfo.getMode().equals(STANDARD)) {
+//            allArtifacts = configuration.getResolvedConfiguration().getLenientConfiguration().getArtifacts(
+//                Specs.satisfyAll());
+//        } else {
             allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
-        }
+//        }
         for (ResolvedArtifact artifact : allArtifacts) {
             ModuleVersionIdentifier id = artifact.getModuleVersion().getId();
             List<ResolvedArtifact> moduleArtifacts = artifacts.get(id);

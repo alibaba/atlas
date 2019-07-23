@@ -211,51 +211,43 @@ package com.taobao.android.builder.tasks.app.bundle;
 
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.api.AnnotationProcessorOptions;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
-import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.factory.TaskConfigAction;
 import com.android.build.gradle.tasks.factory.AbstractCompilesUtil;
-import com.android.build.gradle.tasks.factory.AndroidJavaCompile;
 import com.android.build.gradle.tasks.factory.AwbAndroidJavaCompile;
 import com.android.builder.profile.ProcessProfileWriter;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
-import com.google.wireless.android.sdk.stats.GradleBuildProject;
 import com.google.wireless.android.sdk.stats.GradleBuildVariant;
 import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.ReflectUtils;
-import org.gradle.api.Action;
-import org.gradle.api.Task;
-import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
-import java.io.IOException;
-import java.sql.Ref;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.*;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH;
-import static com.android.build.gradle.internal.scope.TaskOutputHolder.TaskOutputType.ANNOTATION_PROCESSOR_LIST;
-import static com.android.build.gradle.internal.scope.TaskOutputHolder.TaskOutputType.DATA_BINDING_DEPENDENCY_ARTIFACTS;
 /**
  * @author lilong
  * @create 2017-12-08 上午3:43
  */
 
-public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJavaCompile> {
+public class AwbJavaCompileConfigAction extends MtlBaseTaskAction<AwbAndroidJavaCompile> {
 
     private static final ILogger LOG = LoggerWrapper.getLogger(AwbJavaCompileConfigAction.class);
 
@@ -265,12 +257,16 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
 
     private VariantScope scope;
 
-    public AwbJavaCompileConfigAction(AwbBundle awbBundle,
-                                      AppVariantOutputContext appVariantOutputContext) {
+    public AwbJavaCompileConfigAction(AwbBundle awbBundle, AppVariantContext variantContext,
+                                      AppVariantOutputContext appVariantOutputContext,BaseVariantOutput baseVariantOutput) {
+
+        super(variantContext, baseVariantOutput);
         this.awbBundle = awbBundle;
         this.appVariantOutputContext = appVariantOutputContext;
         this.scope = appVariantOutputContext.getScope();
     }
+
+
 
     @Override
     public String getName() {
@@ -288,7 +284,7 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
      * @param javacTask
      */
     @Override
-    public void execute(AwbAndroidJavaCompile javacTask) {
+    public void configure(AwbAndroidJavaCompile javacTask) {
 
         appVariantOutputContext.getAwbJavacTasks().put(awbBundle.getName(), javacTask);
         ProcessAwbAndroidResources processAwbAndroidResources = appVariantOutputContext.getAwbAndroidResourcesMap()
@@ -308,16 +304,15 @@ public class AwbJavaCompileConfigAction implements TaskConfigAction<AwbAndroidJa
 
         javacTask.setDestinationDir(appVariantOutputContext.getJAwbavaOutputDir(awbBundle));
 
-        final boolean keepDefaultBootstrap = scope.keepDefaultBootstrap();
+        final boolean keepDefaultBootstrap = scope.();
 
         if (!keepDefaultBootstrap) {
             // Set boot classpath if we don't need to keep the default.  Otherwise, this is added as
             // normal classpath.
             javacTask
                     .getOptions()
-                    .setBootClasspath(
-                            Joiner.on(File.pathSeparator)
-                                    .join(
+                    .setBootstrapClasspath(variantContext.getProject().files(
+
                                             scope.getGlobalScope()
                                                     .getAndroidBuilder()
                                                     .getBootClasspathAsStrings(false)));

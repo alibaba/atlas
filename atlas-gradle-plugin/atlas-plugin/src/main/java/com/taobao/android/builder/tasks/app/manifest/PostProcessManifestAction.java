@@ -267,23 +267,23 @@ public class PostProcessManifestAction implements Action<Task> {
         GradleVariantConfiguration config = variantScope.getVariantConfiguration();
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
 
-        File androidManifest = null;
+        File androidManifest = appVariantContext.getScope().getManifestOutputDirectory();
 
-        File file = variantScope
-                .getInstantRunManifestOutputDirectory();
-        if (null != file && file.exists() && variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
-
-            androidManifest = FileUtils.join(
-                    baseVariantOutputData.getProcessManifest().getInstantRunManifestOutputDirectory(),
-                    baseVariantOutputData.getDirName(),
-                    SdkConstants.ANDROID_MANIFEST_XML);
-
-        } else {
-            androidManifest = FileUtils.join(
-                    baseVariantOutputData.getProcessManifest().getManifestOutputDirectory(),
-                    baseVariantOutputData.getDirName(),
-                    SdkConstants.ANDROID_MANIFEST_XML);
-        }
+//        File file = variantScope
+//                .getInstantRunManifestOutputDirectory();
+//        if (null != file && file.exists() && variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
+//
+//            androidManifest = FileUtils.join(
+//                    baseVariantOutputData.getProcessManifest().getInstantRunManifestOutputDirectory(),
+//                    baseVariantOutputData.getDirName(),
+//                    SdkConstants.ANDROID_MANIFEST_XML);
+//
+//        } else {
+//            androidManifest = FileUtils.join(
+//                    baseVariantOutputData.getProcessManifest().getManifestOutputDirectory(),
+//                    baseVariantOutputData.getDirName(),
+//                    SdkConstants.ANDROID_MANIFEST_XML);
+//        }
         try {
 
             Result result = ManifestFileUtils.postProcessManifests(androidManifest,

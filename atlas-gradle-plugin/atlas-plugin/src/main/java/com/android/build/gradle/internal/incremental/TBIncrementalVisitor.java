@@ -31,8 +31,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
     protected TaobaoInstantRunTransform.CodeChange codeChange;
 
-    public TBIncrementalVisitor(ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor, ILogger logger) {
-        super(classNode, parentNodes, classVisitor, logger);
+    public TBIncrementalVisitor(AsmClassNode classNode, ClassVisitor classVisitor, ILogger logger) {
+        super(classNode, classVisitor, logger);
     }
 
     public interface InjectErrorListener {
@@ -243,19 +243,21 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         AsmUtils.DirectoryBasedClassReader directoryClassReader =
                 new AsmUtils.DirectoryBasedClassReader(getBinaryFolder(inputFile, classNode));
 
-        // if we are targeting a more recent version than the current device, disable instant run
-        // for that class.
-        List<ClassNode> parentsNodes =
-                isClassTargetingNewerPlatform(
-                        targetApiLevel, TARGET_API_TYPE, directoryClassReader, classNode, logger)
-                        ? ImmutableList.of()
-                        : AsmUtils.parseParents(
-                        logger, directoryClassReader, classNode, targetApiLevel);
+        AsmClassNode parentedClassNode = null;
+        try {
+            parentedClassNode =
+                    AsmUtils.loadClass(logger, directoryClassReader, classNode, targetApiLevel);
+        } catch (AsmUtils.ByteCodeNotFoundException e) {
+            logger.verbose(
+                    "unable to load byte code for %s, skipping instrumentation of this class for instant run",
+                    classNode.name);
+        }
+
         // if we could not determine the parent hierarchy, disable instant run.
-        if (parentsNodes.isEmpty() || isPackageInstantRunDisabled(inputFile)) {
+        if (parentedClassNode == null || isPackageInstantRunDisabled(inputFile)) {
             if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
                 if (injectErrorListener != null) {
-                    if (parentsNodes.isEmpty()) {
+                    if (parentedClassNode == null) {
                         injectErrorListener.onError(ErrorType.NEW_API);
                     } else {
                         injectErrorListener.onError(ErrorType.PACKAGE_DISABLED);
@@ -268,6 +270,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
                 return null;
             }
         }
+
+
 
 //        Map<String, TBIncrementalSupportVisitor.MethodReference> methods = new HashMap<>();
 //        for (ClassNode pN : parentsNodes) {
@@ -289,10 +293,9 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         outputFile = new File(outputDirectory, visitorBuilder.getMangledRelativeClassFilePath(path));
         Files.createParentDirs(outputFile);
         IncrementalVisitor visitor =
-                visitorBuilder.build(classNode, parentsNodes, classWriter, logger);
+                visitorBuilder.build(parentedClassNode, classWriter, logger);
         if (visitor instanceof TBIncrementalSupportVisitor) {
             ((TBIncrementalSupportVisitor) visitor).setPatchInitMethod(patchInitMethod);
-            ((TBIncrementalSupportVisitor) visitor).setSupportEachMethod(patchEachMethod);
             ((TBIncrementalSupportVisitor) visitor).setSupportAddCallSuper(supportAddCallSuper);
 
         }else if (visitor instanceof TBIncrementalChangeVisitor){
@@ -355,32 +358,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
                 inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
     }
 
-    @VisibleForTesting
-    static boolean isClassTargetingNewerPlatform(
-            int targetApiLevel,
-            @NonNull Type targetApiAnnotationType,
-            @NonNull AsmUtils.ClassReaderProvider locator,
-            @NonNull ClassNode classNode,
-            @NonNull ILogger logger) throws IOException {
 
-        List<AnnotationNode> invisibleAnnotations =
-                AsmUtils.getInvisibleAnnotationsOnClassOrOuterClasses(locator, classNode, logger);
-        for (AnnotationNode classAnnotation : invisibleAnnotations) {
-            if (classAnnotation.desc.equals(targetApiAnnotationType.getDescriptor())) {
-                int valueIndex = 0;
-                List values = classAnnotation.values;
-                while (valueIndex < values.size()) {
-                    String name = (String) values.get(valueIndex);
-                    if (name.equals("value")) {
-                        Object value = values.get(valueIndex + 1);
-                        return Integer.class.cast(value) > targetApiLevel;
-                    }
-                    valueIndex = valueIndex + 2;
-                }
-            }
-        }
-        return false;
-    }
 
     private static boolean isPackageInstantRunDisabled(@NonNull File inputFile) throws IOException {
 

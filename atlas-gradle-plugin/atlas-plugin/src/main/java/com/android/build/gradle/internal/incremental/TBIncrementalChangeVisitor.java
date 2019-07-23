@@ -1,6 +1,7 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
 import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
@@ -28,13 +29,10 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
     List<TaobaoInstantRunTransform.CodeChange> changes = new ArrayList<>();
 
     public static final VisitorBuilder VISITOR_BUILDER = new IncrementalVisitor.VisitorBuilder() {
-        @NonNull
+
         @Override
-        public IncrementalVisitor build(@NonNull ClassNode classNode,
-                                        @NonNull List<ClassNode> parentNodes,
-                                        @NonNull ClassVisitor classVisitor,
-                                        @NonNull ILogger logger) {
-            return new TBIncrementalChangeVisitor(classNode, parentNodes, classVisitor, logger);
+        public IncrementalVisitor build(AsmClassNode classNode, ClassVisitor classVisitor, ILogger logger) {
+            return new IncrementalChangeVisitor(classNode, classVisitor, logger);
         }
 
         @NonNull
@@ -74,11 +72,10 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
     }
 
     public TBIncrementalChangeVisitor(
-            @NonNull ClassNode classNode,
-            @NonNull List<ClassNode> parentNodes,
+            @NonNull AsmClassNode classNode,
             @NonNull ClassVisitor classVisitor,
             @NonNull ILogger logger) {
-        super(classNode, parentNodes, classVisitor, logger);
+        super(classNode, classVisitor, logger);
     }
 
     /**
@@ -179,7 +176,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         // Do not carry on any access flags from the original method. For example synchronized
         // on the original method would translate into a static synchronized method here.
         access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
-        MethodNode method = getMethodByNameInClass(name, desc, classNode);
+        MethodNode method = getMethodByNameInClass(name, desc, classAndInterfaceNode);
         if (name.equals(ByteCodeUtils.CONSTRUCTOR)) {
             Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
 
@@ -304,13 +301,11 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
                 accessRight = AccessRight.PUBLIC;
             } else {
                 // check the field access bits.
-                FieldNode fieldNode = getFieldByName(name);
-                if (fieldNode == null) {
+                 accessRight = getFieldAccessRightByName(name);
+                if (accessRight == null) {
                     // If this is an inherited field, we might not have had access to the parent
                     // bytecode. In such a case, treat it as private.
-                    accessRight = AccessRight.PACKAGE_PRIVATE;
-                } else {
-                    accessRight = AccessRight.fromNodeAccess(fieldNode.access);
+                    accessRight = TBIncrementalVisitor.AccessRight.PACKAGE_PRIVATE;
                 }
             }
 
@@ -365,6 +360,15 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * @param accessRight the {@link AccessRight} for the field.
          * @return true if the field access was handled or false otherwise.
          */
+
+
+        @Nullable
+        TBIncrementalVisitor.AccessRight getFieldAccessRightByName(@NonNull String fieldName) {
+            FieldNode fieldNode = getFieldByNameInClass(fieldName, classAndInterfaceNode);
+            return fieldNode != null ? TBIncrementalVisitor.AccessRight.fromNodeAccess(fieldNode.access) : null;
+        }
+
+
         private boolean visitFieldAccess(
                 int opcode, String owner, String name, String desc, AccessRight accessRight) {
 
@@ -818,20 +822,19 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         private AccessRight getMethodAccessRight(String owner, String name, String desc) {
             AccessRight accessRight;
             if (owner.equals(visitedClassName)) {
-                MethodNode methodByName = getMethodByName(name, desc);
-                if (methodByName == null) {
+                accessRight = getMethodAccessRightByName(name, desc);
+                if (accessRight == null) {
                     // we did not find the method invoked on ourselves, which mean that it really
                     // is a parent class method invocation and we just don't have access to it.
                     // the most restrictive access right in that case is protected.
-                    return AccessRight.PROTECTED;
+                    return TBIncrementalVisitor.AccessRight.PROTECTED;
                 }
-                accessRight = AccessRight.fromNodeAccess(methodByName.access);
+                return accessRight;
             } else {
                 // we are accessing another class method, and since we make all protected and
                 // package-private methods public, we can safely assume it is public.
-                accessRight = AccessRight.PUBLIC;
+                return TBIncrementalVisitor.AccessRight.PUBLIC;
             }
-            return accessRight;
         }
 
         /**
@@ -869,6 +872,13 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             pushParameterTypesOnStack(parameterTypes);
 
             push(name);
+        }
+
+
+        @Nullable
+        protected TBIncrementalVisitor.AccessRight getMethodAccessRightByName(String methodName, String desc) {
+            MethodNode methodNode = getMethodByNameInClass(methodName, desc, classAndInterfaceNode);
+            return methodNode != null ? TBIncrementalVisitor.AccessRight.fromNodeAccess(methodNode.access) : null;
         }
 
         /**
@@ -999,7 +1009,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         // if invoked which should never happen.
         if (!instantRunDisabled) {
             //noinspection unchecked
-            allMethods.addAll(classNode.methods);
+            allMethods.addAll(classAndInterfaceNode.getClassNode().methods);
             allMethods.addAll(addedMethods);
         }
 
@@ -1092,14 +1102,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
      * @param className a / separated class name
      * @return true if it is an ancestor, false otherwise.
      */
-    private boolean isAnAncestor(@NonNull String className) {
-        for (ClassNode parentNode : parentNodes) {
-            if (parentNode.name.equals(className)) {
-                return true;
-            }
-        }
-        return false;
-    }
+
 
     /**
      * Instance methods, when converted to static methods need to have the subject object as

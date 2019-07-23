@@ -219,11 +219,11 @@ import java.util.Set;
 
 import com.android.build.api.transform.JarInput;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.tasks.PackageApplication;
-import com.android.ide.common.build.ApkData;
 import com.android.utils.FileUtils;
 import com.google.common.collect.Maps;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -231,7 +231,6 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
 import com.taobao.android.builder.tasks.transform.AtlasMergeJavaResourcesTransform;
-import com.taobao.android.object.ArtifactBundleInfo;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import static com.android.SdkConstants.FD_ASSETS;
@@ -436,7 +435,7 @@ public class AppVariantOutputContext {
 
         Set<String> assetsSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames();
         if (!assetsSoNames.isEmpty() && assetsSoNames.contains(awbOutputName)) {
-            file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
+            file = new File(variantContext.getVariantData().getTaskContainer().getMergeAssetsTask().get().getOutputDir().get().getAsFile(), awbOutputName);
         }
 
         awbBundle.outputBundleFile = file;

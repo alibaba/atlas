@@ -10,12 +10,18 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.incremental.FileType;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.pipeline.AtlasIntermediateFolderUtils;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.InstantRunBuildType;
 import com.android.build.gradle.internal.transforms.InstantRunDex;
-import com.android.builder.core.DexByteCodeConverter;
+import com.android.build.gradle.internal.transforms.TransformInputUtil;
 import com.android.builder.core.DexOptions;
+import com.android.builder.dexing.ClassFileInput;
+import com.android.builder.dexing.ClassFileInputs;
+import com.android.builder.dexing.DexArchiveBuilder;
+import com.android.builder.dexing.r8.ClassFileProviderFactory;
 import com.android.builder.model.OptionalCompilationStep;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
@@ -28,13 +34,16 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.taobao.android.builder.tools.MD5Util;
 import org.dom4j.DocumentException;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -53,9 +62,11 @@ public class TaobaoInstantRunDex extends Transform {
     @NonNull
     private final ILogger logger;
 
-    private DexByteCodeConverter dexByteCodeConverter;
 
     private BaseVariantOutput variantOutput;
+
+    private FileCollection bootClasspath;
+    private boolean enableDesugaring;
 
     public PreloadJarHooker getPreloadJarHooker() {
         return preloadJarHooker;
@@ -74,18 +85,18 @@ public class TaobaoInstantRunDex extends Transform {
     public TaobaoInstantRunDex(
             AppVariantContext variantContext,
             @NonNull InstantRunVariantScope transformVariantScope,
-            DexByteCodeConverter dexByteCodeConverter,
             @NonNull DexOptions dexOptions,
             @NonNull Logger logger,
             int minSdkForDx,
             BaseVariantOutput variantOutput) {
         this.variantScope = transformVariantScope;
         this.variantContext = variantContext;
-        this.dexByteCodeConverter = dexByteCodeConverter;
         this.dexOptions = dexOptions;
         this.logger = new LoggerWrapper(logger);
         this.minSdkForDx = minSdkForDx;
         this.variantOutput = variantOutput;
+        this.bootClasspath = variantContext.getScope().getBootClasspath();
+        this.enableDesugaring = variantContext.getScope().getJava8LangSupportType() == VariantScope.Java8LangSupport.D8;
     }
 
     @Override
@@ -112,7 +123,7 @@ public class TaobaoInstantRunDex extends Transform {
             FileUtils.delete(classesJar);
         }
         Files.createParentDirs(classesJar);
-        final TaobaoInstantRunDex.JarClassesBuilder jarClassesBuilder = getJarClassBuilder(classesJar);
+        final JarClassesBuilder jarClassesBuilder = getJarClassBuilder(classesJar);
 
         try {
             for (TransformInput input : invocation.getReferencedInputs()) {
@@ -164,11 +175,11 @@ public class TaobaoInstantRunDex extends Transform {
                 variantScope
                         .getInstantRunBuildContext()
                         .startRecording(InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
-                convertByteCode(inputFiles.build(), outputFolder);
+                convertByteCode(classesJar, getClasspath(invocation),outputFolder);
                 variantScope
                         .getInstantRunBuildContext()
                         .addChangedFile(FileType.RELOAD_DEX, new File(outputFolder, "classes.dex"));
-            } catch (ProcessException e) {
+            } catch (Exception e) {
                 throw new TransformException(e);
             } finally {
                 variantScope
@@ -212,6 +223,14 @@ public class TaobaoInstantRunDex extends Transform {
         }
     }
 
+    public Collection<Path> getBootClasspath() {
+        if (!enableDesugaring) {
+            return Collections.emptyList();
+        }
+
+        return bootClasspath.getFiles().stream().map(File::toPath).collect(Collectors.toList());
+    }
+
 
 
     @VisibleForTesting
@@ -245,23 +264,28 @@ public class TaobaoInstantRunDex extends Transform {
         }
     }
 
-    @VisibleForTesting
-    protected void convertByteCode(List<File> inputFiles, File outputFolder)
-            throws InterruptedException, ProcessException, IOException {
-        dexByteCodeConverter
-                .convertByteCode(
-                        inputFiles,
-                        outputFolder,
-                        false /* multiDexEnabled */,
-                        null /*getMainDexListFile */,
-                        dexOptions,
-                        new LoggedProcessOutputHandler(logger),
-                        minSdkForDx);
+    protected void convertByteCode(File inputJar, List<Path> classpath, File outputFolder)
+            throws IOException {
+        try (ClassFileProviderFactory bootClasspathProvider =
+                     new ClassFileProviderFactory(getBootClasspath());
+             ClassFileProviderFactory libraryClasspathProvider =
+                     new ClassFileProviderFactory(classpath);
+             ClassFileInput classInput = ClassFileInputs.fromPath(inputJar.toPath())) {
+            DexArchiveBuilder d8DexBuilder =
+                    DexArchiveBuilder.createD8DexBuilder(
+                            minSdkForDx,
+                            true,
+                            bootClasspathProvider,
+                            libraryClasspathProvider,
+                            enableDesugaring,
+                            variantContext.getScope().getGlobalScope().getAndroidBuilder().getMessageReceiver());
+            d8DexBuilder.convert(classInput.entries(p -> true), outputFolder.toPath(), false);
+        }
     }
 
     @VisibleForTesting
-    protected TaobaoInstantRunDex.JarClassesBuilder getJarClassBuilder(File outputFile) {
-        return new TaobaoInstantRunDex.JarClassesBuilder(outputFile);
+    protected JarClassesBuilder getJarClassBuilder(File outputFile) {
+        return new JarClassesBuilder(outputFile);
     }
 
     private static void copyFileInJar(File inputDir, File inputFile, JarOutputStream jarOutputStream)
@@ -316,6 +340,16 @@ public class TaobaoInstantRunDex extends Transform {
     @Override
     public Collection<File> getSecondaryDirectoryOutputs() {
         return ImmutableList.of(variantScope.getReloadDexOutputFolder());
+    }
+
+    private List<Path> getClasspath(@NonNull TransformInvocation transformInvocation) {
+        if (!enableDesugaring) {
+            return Collections.emptyList();
+        }
+
+        Collection<File> allFiles =
+                TransformInputUtil.getAllFiles(transformInvocation.getReferencedInputs());
+        return allFiles.stream().map(File::toPath).collect(Collectors.toList());
     }
 
     @Override

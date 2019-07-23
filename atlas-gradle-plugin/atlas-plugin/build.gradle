@@ -233,8 +233,8 @@ dependencies {
     compile localGroovy()
     compile gradleApi()
 
-    compile "com.taobao.android:dex_patch:3.0.0-rc16"
-    compile "com.android.tools.build:gradle:3.0.1"
+//    compile "com.taobao.android:dex_patch:3.0.0-rc16"
+    compile "com.android.tools.build:gradle:3.4.2"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
     compile "com.alibaba:fastjson:1.2.6"
@@ -242,12 +242,12 @@ dependencies {
     compile 'jaxen:jaxen:1.1.6'
     compile 'commons-beanutils:commons-beanutils:1.9.0'
     compile 'org.javassist:javassist:3.19.0-GA'
-    compile "com.taobao.android:preverify:1.0.0"
+//    compile "com.taobao.android:preverify:1.0.0"
     compile "org.codehaus.plexus:plexus-utils:3.0.24"
-    compile "com.taobao.android:aapt:2.3.1.rc4"
+//    compile "com.taobao.android:aapt:2.3.1.rc4"
     compile "com.google.inject:guice:4.0"
     compile "com.google.auto.value:auto-value:1.0"
-    compile "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.41"
+//    compile "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.41"
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
     testCompile "junit:junit:4.11"

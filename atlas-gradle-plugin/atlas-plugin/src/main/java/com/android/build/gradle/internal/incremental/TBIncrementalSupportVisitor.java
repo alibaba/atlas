@@ -1,8 +1,10 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
@@ -13,6 +15,7 @@ import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -25,54 +28,66 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
     private boolean disableRedirectionForClass = false;
+    private boolean isInterface = false;
+    private boolean classInitializerAdded = false;
+    private boolean patchInitMethod = true;
+    private boolean supportAddCallSuper = true;
+    private boolean patchInterface = false;
 
+    private List<MethodNode>methodNodes = new ArrayList<>();
+
+    private static Map<String,String>visitSuperMethods = new HashMap<>();
 
 
     public void setPatchInitMethod(boolean patchInitMethod) {
         this.patchInitMethod = patchInitMethod;
     }
 
-    private boolean patchInitMethod = false;
-
-
-    public boolean isSupportAddCallSuper() {
-        return supportAddCallSuper;
-    }
-
     public void setSupportAddCallSuper(boolean supportAddCallSuper) {
         this.supportAddCallSuper = supportAddCallSuper;
     }
 
-    private boolean supportAddCallSuper = false;
+    private static final class VisitorBuilder implements TBIncrementalVisitor.VisitorBuilder {
 
-    private List<MethodNode>methodNodes = new ArrayList<>();
+        private VisitorBuilder() {
+        }
 
-    private Map<String,String>visitSuperMethods = new HashMap<>();
+        @NonNull
+        @Override
+        public IncrementalVisitor build(
+                @NonNull AsmClassNode classNode,
+                @NonNull ClassVisitor classVisitor,
+                @NonNull ILogger logger) {
+            return new IncrementalSupportVisitor(classNode, classVisitor, logger);
+        }
 
+        @Override
+        @NonNull
+        public String getMangledRelativeClassFilePath(@NonNull String originalClassFilePath) {
+            return originalClassFilePath;
+        }
 
-    public boolean isSupportEachMethod() {
-        return supportEachMethod;
+        @NonNull
+        @Override
+        public OutputType getOutputType() {
+            return OutputType.INSTRUMENT;
+        }
     }
 
-    public void setSupportEachMethod(boolean supportEachMethod) {
-        this.supportEachMethod = supportEachMethod;
-    }
-
-    private boolean supportEachMethod = false;
-
-
+    @NonNull
+    public static final TBIncrementalVisitor.VisitorBuilder VISITOR_BUILDER = new VisitorBuilder();
 
     public TBIncrementalSupportVisitor(
-            @NonNull ClassNode classNode,
-            @NonNull List<ClassNode> parentNodes,
+            @NonNull AsmClassNode classNode,
             @NonNull ClassVisitor classVisitor,
             @NonNull ILogger logger) {
-        super(classNode, parentNodes, classVisitor, logger);
-        classNode.methods.forEach((Consumer<MethodNode>) o -> {
+        super(classNode, classVisitor, logger);
+        classNode.getClassNode().methods.forEach((Consumer<MethodNode>) o -> {
             if (!o.name.equals(ByteCodeUtils.CONSTRUCTOR) &&! o.name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
                 methodNodes.add(o);
             }
         });
+
     }
 
     /**
@@ -87,23 +102,30 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                       String[] interfaces) {
         visitedClassName = name;
         visitedSuperName = superName;
+        isInterface = (access & Opcodes.ACC_INTERFACE) != 0;
+        int fieldAccess =
+                isInterface
+                        ? Opcodes.ACC_PUBLIC
+                        | Opcodes.ACC_STATIC
+                        | Opcodes.ACC_SYNTHETIC
+                        | Opcodes.ACC_FINAL
+                        : Opcodes.ACC_PUBLIC
+                        | Opcodes.ACC_STATIC
+                        | Opcodes.ACC_VOLATILE
+                        | Opcodes.ACC_SYNTHETIC
+                        | Opcodes.ACC_TRANSIENT;
 
-        if (supportEachMethod){
-            methodNodes.forEach(methodNode -> {
-                String fullName = methodNode.name + "." + methodNode.desc;
-                super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
-                                | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
-                        "$ipChange"+"$"+ fullName.hashCode(), getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
-            });
-
-        }else {
-//            super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
-//                            | Opcodes.ACC_VOLATILE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_TRANSIENT,
-//                    "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
-
-            super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
-                    |Opcodes.ACC_VOLATILE| Opcodes.ACC_TRANSIENT |Opcodes.ACC_SYNTHETIC,
-                    "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
+        // when dealing with interfaces, the $change field is an AtomicReference to the CHANGE_TYPE
+        // since fields in interface must be final. For classes, it's the CHANGE_TYPE directly.
+        if (isInterface && patchInterface) {
+            super.visitField(
+                    fieldAccess,
+                    "$change",
+                    getRuntimeTypeName(Type.getType(AtomicReference.class)),
+                    null,
+                    null);
+        } else {
+            super.visitField(fieldAccess, "$change", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
         }
         access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
@@ -145,11 +167,17 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         access = transformAccessForInstantRun(access);
 
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
+
+
+        // Install the Jsr/Ret inliner adapter, we have had reports of code still using the
+        // Jsr/Ret deprecated byte codes.
+        // see https://code.google.com/p/android/issues/detail?id=220019
+        defaultVisitor =
+                new JSRInlinerAdapter(defaultVisitor, access, name, desc, signature, exceptions);
         MethodNode method =
                 checkNotNull(
-                        getMethodByNameInClass(name, desc, classNode),
+                        getMethodByNameInClass(name, desc, classAndInterfaceNode),
                         "Method found by visitor but not in the pre-parsed class node.");
-        // does the method use blacklisted APIs.
 
         if (!supportAddCallSuper) {
             method.instructions.accept(new MethodVisitor(api) {
@@ -166,96 +194,88 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             });
         }
 
-        //this is method generaged by visualMachine
 
-        if ((access & Opcodes.ACC_SYNTHETIC) != 0){
-            return defaultVisitor;
-        }
-
+        // does the method use blacklisted APIs.
         boolean hasIncompatibleChange = InstantRunMethodVerifier.verifyMethod(method)
                 != InstantRunVerifierStatus.COMPATIBLE;
 
-        if (hasIncompatibleChange || disableRedirectionForClass
+        if (hasIncompatibleChange
+                || disableRedirectionForClass
                 || !isAccessCompatibleWithInstantRun(access)
-                || name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
+                || (isInterface && !patchInterface)) {
             return defaultVisitor;
-        } else {
-            ArrayList<Type> args = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(desc)));
-            boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
-            if (!isStatic) {
-                args.add(0, Type.getType(Object.class));
-            }
-
-            // Install the Jsr/Ret inliner adapter, we have had reports of code still using the
-            // Jsr/Ret deprecated byte codes.
-            // see https://code.google.com/p/android/issues/detail?id=220019
-            JSRInlinerAdapter jsrInlinerAdapter = new JSRInlinerAdapter(
-                    defaultVisitor, access, name, desc, signature, exceptions);
-
-            ISMethodVisitor mv = new ISMethodVisitor(jsrInlinerAdapter, access, name, desc);
-            if (name.equals(ByteCodeUtils.CONSTRUCTOR)) {
-
-                if (patchInitMethod) {
-                    Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
-                    LabelNode start = new LabelNode();
-                    method.instructions.insert(constructor.loadThis, start);
-                    if (constructor.lineForLoad != -1) {
-                        // Record the line number from the start of LOAD_0 for uninitialized 'this'.
-                        // This allows a breakpoint to be set at the line with this(...) or super(...)
-                        // call in the constructor.
-                        method.instructions.insert(constructor.loadThis,
-                                new LineNumberNode(constructor.lineForLoad, start));
-                    }
-                    mv.addRedirection(new TBConstructorRedirection(start, constructor, args));
-
-                } else {
-                    return defaultVisitor;
-                }
-
-            } else {
-                mv.addRedirection(new TBMethodRedirection(
-                        new LabelNode(mv.getStartLabel()),
-                        name + "." + desc,
-                        args,
-                        Type.getReturnType(desc)));
-            }
-            method.accept(mv);
-            return null;
         }
+        if (name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
+            classInitializerAdded = true;
+            return isInterface
+                    ? new ISInterfaceStaticInitializerMethodVisitor(
+                    defaultVisitor, access, name, desc)
+                    : defaultVisitor;
+        }
+
+        ArrayList<Type> args = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(desc)));
+        boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
+        if (!isStatic) {
+            args.add(0, Type.getType(Object.class));
+        }
+
+        ISAbstractMethodVisitor mv =
+                isInterface
+                        ? new ISDefaultMethodVisitor(defaultVisitor, access, name, desc)
+                        : new ISMethodVisitor(defaultVisitor, access, name, desc);
+
+        if (name.equals(ByteCodeUtils.CONSTRUCTOR)) {
+            if ((access & Opcodes.ACC_SYNTHETIC) != 0
+                    || ByteCodeUtils.isAnnotatedWith(method, "Lkotlin/jvm/JvmOverloads;")
+                    || !patchInitMethod) {
+                return defaultVisitor;
+            }
+            Constructor constructor = ConstructorBuilder.build(visitedClassName, method);
+            LabelNode start = new LabelNode();
+            method.instructions.insert(constructor.loadThis, start);
+            if (constructor.lineForLoad != -1) {
+                // Record the line number from the start of LOAD_0 for uninitialized 'this'.
+                // This allows a breakpoint to be set at the line with this(...) or super(...)
+                // call in the constructor.
+                method.instructions.insert(
+                        constructor.loadThis, new LineNumberNode(constructor.lineForLoad, start));
+            }
+            mv.addRedirection(new TBConstructorRedirection(start, constructor, args));
+        } else {
+            mv.addRedirection(
+                    new TBMethodRedirection(
+                            new LabelNode(mv.getStartLabel()),
+                            name + "." + desc,
+                            args,
+                            Type.getReturnType(desc)));
+        }
+        method.accept(mv);
+        return null;
     }
 
     /**
      * If a class is package private, make it public so instrumented code living in a different
      * class loader can instantiate them.
      *
-     * <p>We also set the {@code ACC_SUPER} flag on every class, since otherwise the
-     * {@code invokespecial} bytecodes in access$super get compiled to invoke-direct, which fails
-     * at runtime (on KitKat). See the VM spec (4.1) for the whole story of {@code ACC_SUPER}. It
-     * is only missing in classes generated by third-party tools, e.g. AspectJ.
-     *
      * @param access the original class/method/field access.
      * @return the new access or the same one depending on the original access rights.
      */
     private static int transformClassAccessForInstantRun(int access) {
         AccessRight accessRight = AccessRight.fromNodeAccess(access);
-        int fixedVisibility = accessRight == AccessRight.PACKAGE_PRIVATE
-                ? access | Opcodes.ACC_PUBLIC
-                : access;
 
-        // TODO: only do this on KitKat?
-        return fixedVisibility | Opcodes.ACC_SUPER;
+        return accessRight == AccessRight.PACKAGE_PRIVATE ? access | Opcodes.ACC_PUBLIC : access;
     }
 
     /**
      * If a method/field is not private, make it public. This is to workaround the fact
-     * <ul>Our restart.dex files are loaded with a different class loader than the main dex file
-     * class loader on restart. so we need methods/fields to be public</ul>
-     * <ul>Our reload.dex are loaded from a different class loader as well but methods/fields
-     * are accessed through reflection, yet you need class visibility.</ul>
-     * <p>
-     * remember that in Java, protected methods or fields can be acessed by classes in the same
-     * package :
-     * {@see https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html}
+     *
+     * <ul>
+     *   reload.dex are loaded from a different class loader but private methods/fields are accessed
+     *   through reflection, therefore you need visibility.
+     * </ul>
+     *
+     * remember that in Java, protected methods or fields can be accessed by classes in the same
+     * package : {@see https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html}
      *
      * @param access the original class/method/field access.
      * @return the new access or the same one depending on the original access rights.
@@ -270,17 +290,16 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         return access;
     }
 
-    private class ISMethodVisitor extends GeneratorAdapter {
+    private abstract static class ISAbstractMethodVisitor extends GeneratorAdapter {
 
-        private boolean disableRedirection = false;
-        private int change;
-        private final List<Type> args;
-        private final List<Redirection> redirections;
-        private final Map<Label, Redirection> resolvedRedirections;
-        private final Label start;
-        private String fullName;
+        protected boolean disableRedirection = false;
+        protected int change;
+        protected final List<Type> args;
+        protected final List<Redirection> redirections;
+        protected final Map<Label, Redirection> resolvedRedirections;
+        protected final Label start;
 
-        public ISMethodVisitor(MethodVisitor mv, int access, String name, String desc) {
+        public ISAbstractMethodVisitor(MethodVisitor mv, int access, String name, String desc) {
             super(Opcodes.ASM5, mv, access, name, desc);
             this.change = -1;
             this.redirections = new ArrayList<>();
@@ -288,8 +307,6 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             this.args = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(desc)));
             this.start = new Label();
             boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
-             fullName = name + "." + desc;
-
             // if this is not a static, we add a fictional first parameter what will contain the
             // "this" reference which can be loaded with ILOAD_0 bytecode.
             if (!isStatic) {
@@ -311,7 +328,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
          * <p>
          * Pseudo code:
          * <code>
-         * $package/IncrementalChange $local1 = $className$.$change;
+         *   $package/IncrementalChange $local1 = $className$.$change;
          * </code>
          */
         @Override
@@ -325,13 +342,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
                 super.visitLabel(start);
                 change = newLocal(ALI_CHANGE_TYPE);
-                if (supportEachMethod){
-                    visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$ipChange"+"$"+fullName.hashCode(),
-                            getRuntimeTypeName(ALI_CHANGE_TYPE));
-                }else {
-                    visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$ipChange",
-                            getRuntimeTypeName(ALI_CHANGE_TYPE));
-                }
+                visitChangeField();
                 storeLocal(change);
 
                 redirectAt(start);
@@ -339,14 +350,18 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             super.visitCode();
         }
 
+        protected abstract void visitChangeField();
+
         @Override
         public void visitLabel(Label label) {
             super.visitLabel(label);
             redirectAt(label);
         }
 
-        private void redirectAt(Label label) {
-            if (disableRedirection) return;
+        protected void redirectAt(Label label) {
+            if (disableRedirection) {
+                return;
+            }
             Redirection redirection = resolvedRedirections.get(label);
             if (redirection != null) {
                 // A special line number to mark this area of code.
@@ -359,10 +374,9 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             redirections.add(redirection);
         }
 
-
         @Override
-        public void visitLocalVariable(String name, String desc, String signature, Label start,
-                                       Label end, int index) {
+        public void visitLocalVariable(
+                String name, String desc, String signature, Label start, Label end, int index) {
             // In dex format, the argument names are separated from the local variable names. It
             // seems to be needed to declare the local argument variables from the beginning of
             // the methods for dex to pick that up. By inserting code before the first label we
@@ -379,10 +393,61 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         }
     }
 
+    private class ISMethodVisitor extends ISAbstractMethodVisitor {
+
+        public ISMethodVisitor(MethodVisitor mv, int access, String name, String desc) {
+            super(mv, access, name, desc);
+        }
+
+        @Override
+        protected void visitChangeField() {
+            visitFieldInsn(
+                    Opcodes.GETSTATIC,
+                    visitedClassName,
+                    "$change",
+                    getRuntimeTypeName(ALI_CHANGE_TYPE));
+        }
+    }
+
+    private class ISDefaultMethodVisitor extends ISAbstractMethodVisitor {
+
+        public ISDefaultMethodVisitor(MethodVisitor mv, int access, String name, String desc) {
+            super(mv, access, name, desc);
+        }
+
+        @Override
+        protected void visitChangeField() {
+            visitFieldInsn(
+                    Opcodes.GETSTATIC,
+                    visitedClassName,
+                    "$change",
+                    getRuntimeTypeName(Type.getType(AtomicReference.class)));
+            mv.visitMethodInsn(
+                    Opcodes.INVOKEVIRTUAL,
+                    "java/util/concurrent/atomic/AtomicReference",
+                    "get",
+                    "()Ljava/lang/Object;",
+                    false);
+        }
+    }
+
+    private class ISInterfaceStaticInitializerMethodVisitor extends GeneratorAdapter {
+        public ISInterfaceStaticInitializerMethodVisitor(
+                MethodVisitor mv, int access, String name, String desc) {
+            super(Opcodes.ASM5, mv, access, name, desc);
+        }
+
+        @Override
+        public void visitCode() {
+            addInterfaceClassInitializerCode(this);
+            super.visitCode();
+        }
+    }
+
     /**
      * Decorated {@link MethodNode} that maintains a reference to the class declaring the method.
      */
-    public static class MethodReference {
+    private static class MethodReference {
         final MethodNode method;
         final ClassNode owner;
 
@@ -390,8 +455,15 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             this.method = method;
             this.owner = owner;
         }
-    }
 
+        private String getDefautlDispatchName() {
+            return getDefaultDispatchName(method);
+        }
+
+        private static String getDefaultDispatchName(MethodNode method) {
+            return method.name + "." + method.desc;
+        }
+    }
     /***
      * Inserts a trampoline to this class so that the updated methods can make calls to super
      * class methods.
@@ -415,26 +487,6 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
      * </code>
      */
     private void createAccessSuper() {
-
-        final Map<String, MethodReference> uniqueMethods = new HashMap<>();
-        if (parentNodes.isEmpty()) {
-            // if we cannot determine the parents for this class, let's blindly add all the
-            // method of the current class as a gateway to a possible parent version.
-            addAllNewMethods(classNode, classNode, uniqueMethods,null);
-        } else {
-            // otherwise, use the parent list.
-
-            for (ClassNode parentNode : parentNodes) {
-
-                addAllNewMethods(classNode, parentNode, uniqueMethods,supportAddCallSuper? null:visitSuperMethods);
-            }
-        }
-
-        if (uniqueMethods.size() == 0){
-            return;
-        }
-
-
         int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC
                 | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_VARARGS;
         Method m = new Method("ipc$super", "(L" + visitedClassName
@@ -446,9 +498,41 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
-        // Gather all methods from itself and its superclasses to generate a giant access$super
+        // Gather all methods from itself and its superclasses to generate a giant ipc$super
         // implementation.
         // This will work fine as long as we don't support adding methods to a class.
+        final Map<String, MethodReference> uniqueMethods = new HashMap<>();
+        if (classAndInterfaceNode.hasParent()) {
+            addAllNewMethods(
+                    classAndInterfaceNode.getClassNode(),
+                    classAndInterfaceNode.getParent(),
+                    uniqueMethods);
+        } else {
+            // if we cannot determine the parents for this class, let's blindly add all the
+            // method of the current class as a gateway to a possible parent version.
+            addAllNewMethods(
+                    classAndInterfaceNode.getClassNode(),
+                    classAndInterfaceNode.getClassNode(),
+                    uniqueMethods);
+        }
+
+        // and gather all default methods of all directly/inherited implemented interfaces.
+
+        if (patchInterface) {
+            for (AsmInterfaceNode implementedInterface : classAndInterfaceNode.getInterfaces()) {
+                addDefaultMethods(
+                        classAndInterfaceNode.getClassNode(), implementedInterface, uniqueMethods);
+
+
+                implementedInterface.onAll(
+                        interfaceNode -> {
+                            addAllNewMethods(
+                                    classAndInterfaceNode.getClassNode(), interfaceNode, uniqueMethods);
+                            return null;
+                        });
+            }
+        }
+
 
         new TBStringSwitch() {
             @Override
@@ -500,9 +584,6 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
             @Override
             void visitDefault() {
-//                mv.visitInsn(Opcodes.RETURN);
-
-
                 writeMissingMessageWithHash(mv, visitedClassName);
             }
         }.visit(mv, uniqueMethods.keySet());
@@ -544,15 +625,21 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         // This will work fine as long as we don't support adding constructors to classes.
         final Map<String, MethodNode> uniqueMethods = new HashMap<>();
 
-        addAllNewConstructors(uniqueMethods, classNode, true /*keepPrivateConstructors*/);
-        for (ClassNode parentNode : parentNodes) {
-            addAllNewConstructors(uniqueMethods, parentNode, false /*keepPrivateConstructors*/);
-        }
+        addAllNewConstructors(
+                uniqueMethods,
+                classAndInterfaceNode.getClassNode(),
+                true /*keepPrivateConstructors*/);
+        classAndInterfaceNode.onParents(
+                parentClassNode -> {
+                    addAllNewConstructors(
+                            uniqueMethods, parentClassNode, false /*keepPrivateConstructors*/);
+                    return null;
+                });
 
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
 
         Method m = new Method(ByteCodeUtils.CONSTRUCTOR,
-                ALI_DISPATCHING_THIS_SIGNATURE);
+                TBConstructorRedirection.DISPATCHING_THIS_SIGNATURE);
         MethodVisitor visitor = super.visitMethod(0, m.getName(), m.getDescriptor(), null, null);
         final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
@@ -569,7 +656,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         final int constructorCanonicalName = mv.newLocal(Type.getType("Ljava/lang/String;"));
         mv.storeLocal(constructorCanonicalName);
 
-        new StringSwitch() {
+        new TBStringSwitch() {
 
             @Override
             void visitString() {
@@ -601,27 +688,57 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
             @Override
             void visitDefault() {
-//                mv.visitInsn(Opcodes.RETURN);
                 writeMissingMessageWithHash(mv, visitedClassName);
             }
-
-            @Override
-            void visit(GeneratorAdapter mv, Set<String> strings) {
-                super.visit(mv, strings);
-
-            }
-        }.visit(mv, uniqueMethods.keySet());
+        }.visit(mv,uniqueMethods.keySet());
 
         mv.visitMaxs(1, 3);
         mv.visitEnd();
     }
 
+    /**
+     * add a static initializer to java8 interfaces (this visitor will only be called when default
+     * methods are present).
+     */
+    private void addInterfaceClassInitializer() {
+        if (classInitializerAdded) {
+            return;
+        }
+        MethodVisitor mv = super.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
+        mv.visitCode();
+        addInterfaceClassInitializerCode(mv);
+        mv.visitInsn(Opcodes.RETURN);
+        mv.visitMaxs(3, 0);
+        mv.visitEnd();
+    }
+
+    private void addInterfaceClassInitializerCode(MethodVisitor mv) {
+        mv.visitTypeInsn(Opcodes.NEW, "java/util/concurrent/atomic/AtomicReference");
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitMethodInsn(
+                Opcodes.INVOKESPECIAL,
+                "java/util/concurrent/atomic/AtomicReference",
+                "<init>",
+                "(Ljava/lang/Object;)V",
+                false);
+        mv.visitFieldInsn(
+                Opcodes.PUTSTATIC,
+                visitedClassName,
+                "$change",
+                "Ljava/util/concurrent/atomic/AtomicReference;");
+    }
+
     @Override
     public void visitEnd() {
+
         if (!visitedSuperName.equals("java/lang/Object")) {
             createAccessSuper();
         }
-        if (patchInitMethod) {
+
+        if (isInterface && patchInterface) {
+            addInterfaceClassInitializer();
+        } else if (patchInitMethod){
             createDispatchingThis();
         }
         super.visitEnd();
@@ -633,45 +750,45 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
      * <code>
      * package a;
      * public class A {
-     * public void publicMethod();
+     *     public void publicMethod();
      * }
-     * <p>
+     *
      * package a;
      * class B extends A {
-     * public void publicMethod();
+     *     public void publicMethod();
      * }
-     * <p>
+     *
      * package b;
      * public class C extends B {
-     * ...
+     *     ...
      * }
      * </code>
      * when instrumenting C, the first method reference for "publicMethod" is on class B which we
      * cannot invoke directly since it's present on a private package B which is not located in the
      * same package as C. However C can still call the "publicMethod" since it's defined on A which
      * is a public class.
-     * <p>
+     *
      * We cannot just blindly take the top most definition of "publicMethod" hoping this is the
      * accessible one since you can very well do :
      * <code>
      * package a;
      * class A {
-     * public void publicMethod();
+     *     public void publicMethod();
      * }
-     * <p>
+     *
      * package a;
      * public class B extends A {
-     * public void publicMethod();
+     *     public void publicMethod();
      * }
-     * <p>
+     *
      * package b;
      * public class C extends B {
-     * ...
+     *     ...
      * }
      * </code>
-     * <p>
+     *
      * In that case, the top most parent class is the one defined the unaccessible method reference.
-     * <p>
+     *
      * Therefore, the solution is to walk up the hierarchy until we find the same method defined on
      * an accessible class, if we cannot find such a method, the suitable parent is the parent class
      * of the visited class which is legal (but might consume a DEX id).
@@ -686,87 +803,238 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 methodReference.method.name, methodReference.method.access,
                 methodReference.owner.name, methodReference.owner.access);
         // if the method owner class is accessible from the visited class, just use that.
-        if (isParentClassVisible(methodReference.owner, classNode)) {
+        if (isParentClassVisible(methodReference.owner, classAndInterfaceNode.getClassNode())) {
             return methodReference.owner.name;
         }
         logger.verbose("Found an inaccessible methodReference %1$s", methodReference.method.name);
+
         // walk up the hierarchy, starting at the method reference owner.
-        Iterator<ClassNode> parentIterator = parentNodes.iterator();
-        ClassNode parent = parentIterator.next();
-        while (!parent.name.equals(methodReference.owner.name)
-                && parentIterator.hasNext()) {
-            parent = parentIterator.next();
-        }
-        while (parentIterator.hasNext()) {
-            ClassNode node = parentIterator.next();
-            // check that this parent is visible, there might be several layers of package
-            // private classes.
-            if (isParentClassVisible(node, classNode)) {
-                //noinspection unchecked: ASM API
-                for (MethodNode methodNode : (List<MethodNode>) node.methods) {
-                    // do not reference bridge methods, they might not be translated into dex, or
-                    // might disappear in the next javac compiler for that use case.
-                    if (methodNode.name.equals(methodReference.method.name)
-                            && methodNode.desc.equals(methodReference.method.desc)
-                            && (methodNode.access
-                            & (Opcodes.ACC_BRIDGE | Opcodes.ACC_ABSTRACT)) == 0) {
-                        logger.verbose(
-                                "Using class %1$s for dispatching %2$s:%3$s",
-                                node.name,
-                                methodReference.method.name,
-                                methodReference.method.desc);
-                        return node.name;
-                    }
+        if (classAndInterfaceNode.hasParent()) {
+            AsmClassNode asmClassNode = classAndInterfaceNode.getParent();
+            while (!asmClassNode.getClassNode().name.equals(methodReference.owner.name)
+                    && asmClassNode.hasParent()) {
+                asmClassNode = asmClassNode.getParent();
+            }
+            if (asmClassNode.hasParent()) {
+                String selectedParent =
+                        asmClassNode.onParents(
+                                parentClassNode -> {
+
+                                    // check that this parent is visible, there might be several layers of package
+                                    // private classes.
+                                    if (isParentClassVisible(
+                                            parentClassNode,
+                                            classAndInterfaceNode.getClassNode())) {
+                                        //noinspection unchecked: ASM API
+                                        for (MethodNode methodNode :
+                                                (List<MethodNode>) parentClassNode.methods) {
+                                            // do not reference bridge methods, they might not be translated into dex, or
+                                            // might disappear in the next javac compiler for that use case.
+                                            if (methodNode.name.equals(methodReference.method.name)
+                                                    && methodNode.desc.equals(
+                                                    methodReference.method.desc)
+                                                    && (methodNode.access
+                                                    & (Opcodes.ACC_BRIDGE
+                                                    | Opcodes.ACC_ABSTRACT))
+                                                    == 0) {
+                                                logger.verbose(
+                                                        "Using class %1$s for dispatching %2$s:%3$s",
+                                                        parentClassNode.name,
+                                                        methodReference.method.name,
+                                                        methodReference.method.desc);
+                                                return parentClassNode.name;
+                                            }
+                                        }
+                                    }
+                                    return null;
+                                });
+                if (selectedParent != null) {
+                    return selectedParent;
                 }
             }
         }
         logger.verbose("Using immediate parent for dispatching %1$s", methodReference.method.desc);
-        return classNode.superName;
+        return classAndInterfaceNode.getClassNode().superName;
     }
 
     private static boolean isParentClassVisible(@NonNull ClassNode parent,
                                                 @NonNull ClassNode child) {
 
         return ((parent.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0 ||
-                com.google.common.base.Objects.equal(ByteCodeUtils.getPackageName(parent.name),
+                Objects.equal(ByteCodeUtils.getPackageName(parent.name),
                         ByteCodeUtils.getPackageName(child.name)));
+    }
+
+    /**
+     * Add all unseen method from the passed ClassNode's methods and implemented interfaces.
+     *
+     * @see ClassNode#methods
+     * @param instrumentedClass class that is being visited
+     * @param superClass the class to save all directly implemented methods as well as default
+     *     methods from implemented interfaces from
+     * @param methods the methods already encountered in the ClassNode hierarchy
+     */
+    private void addAllNewMethods(
+            ClassNode instrumentedClass,
+            AsmClassNode superClass,
+            Map<String, MethodReference> methods) {
+
+        superClass.onAll(
+                classNode -> {
+                    addAllNewMethods(instrumentedClass, classNode, methods);
+                    return null;
+                });
     }
 
     /**
      * Add all unseen methods from the passed ClassNode's methods.
      *
-     * @param instrumentedClass class that is being visited
-     * @param superClass        the class to save all new methods from
-     * @param methods           the methods already encountered in the ClassNode hierarchy
-     * @param visitSuperMethods
      * @see ClassNode#methods
+     * @param instrumentedClass class that is being visited
+     * @param superClass the class to save all new methods from
+     * @param methods the methods already encountered in the ClassNode hierarchy
      */
-    public static void addAllNewMethods(
+    private List<MethodReference> addAllNewMethods(
             ClassNode instrumentedClass,
             ClassNode superClass,
-            Map<String, MethodReference> methods, Map<String,String> visitSuperMethods) {
+            Map<String, MethodReference> methods) {
+
+        ImmutableList.Builder<MethodReference> methodRefs = ImmutableList.builder();
+
+        if (superClass.name.equals("java/lang/Object")){
+            return methodRefs.build();
+        }
 
         //noinspection unchecked
-        if (superClass.name.equals("java/lang/Object")){
-            return;
-        }
         for (MethodNode method : (List<MethodNode>) superClass.methods) {
-            if (method.name.equals(ByteCodeUtils.CONSTRUCTOR) || method.name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
-                continue;
-            }
-            String name = method.name + "." + method.desc;
-            if (isAccessCompatibleWithInstantRun(method.access)
-                    && !methods.containsKey(name)
-                    && (method.access & Opcodes.ACC_STATIC) == 0
-                    && isCallableFromSubclass(method, superClass, instrumentedClass)
-                    ) {
-                if (visitSuperMethods == null){
-                    methods.put(name, new MethodReference(method, superClass));
-                }else if (visitSuperMethods.containsKey(name)) {
-                    methods.put(name, new MethodReference(method, superClass));
-                }
+            MethodReference methodRef =
+                    addNewMethod(instrumentedClass, superClass, method, methods);
+            if (methodRef != null) {
+                methodRefs.add(methodRef);
             }
         }
+        return methodRefs.build();
+    }
+
+    /**
+     * Adds all default method for the passed implemented interface of a class as well as all
+     * default methods from any interface extended by the passed implemented interface.
+     *
+     * @param instrumentedClass the class we are bytecode instrumenting.
+     * @param implementedInterface the interface that might contain default methods.
+     * @param methods map of methods we already encountered on the instrumentedClass implementation.
+     * @return nothing
+     */
+    private Void addDefaultMethods(
+            ClassNode instrumentedClass,
+            AsmInterfaceNode implementedInterface,
+            Map<String, MethodReference> methods) {
+
+        Map<String, MethodReference> visitedInterfaceMethods = new HashMap<>();
+        implementedInterface.onAll(
+                interfaceNode -> {
+                    addAllNewMethods(instrumentedClass, interfaceNode, methods)
+                            .forEach(
+                                    methodRef -> {
+                                        visitedInterfaceMethods.put(
+                                                methodRef.getDefautlDispatchName(), methodRef);
+                                    });
+                    return null;
+                });
+
+        // now make sure we have a gateway for inherited default methods that are not present
+        // on the derived interface as calls can be made using the derived interface as the owner.
+        for (MethodNode methodNode :
+                (List<MethodNode>) implementedInterface.getClassNode().methods) {
+            visitedInterfaceMethods.remove(MethodReference.getDefaultDispatchName(methodNode));
+        }
+        // all the remaining methods should be added under this interface to make sure we calling
+        // all possible owners for this method.
+        for (MethodReference methodReference : visitedInterfaceMethods.values()) {
+            addNewMethod(
+                    implementedInterface.getClassNode().name
+                            + "."
+                            + methodReference.getDefautlDispatchName(),
+                    instrumentedClass,
+                    implementedInterface.getClassNode(),
+                    methodReference.method,
+                    methods);
+        }
+        return null;
+    }
+
+    /**
+     * Add a new method in the list of unseen methods in the instrumentedClass hierarchy.
+     *
+     * @param instrumentedClass class that is being visited
+     * @param superClass the class or interface defining the passed method.
+     * @param method the method to study
+     * @param methods the methods arlready encountered in the ClassNode hierarchy
+     * @return the newly added {@link MethodReference} of null if the method was not added for any
+     *     reason.
+     */
+    @Nullable
+    private static MethodReference addNewMethod(
+            ClassNode instrumentedClass,
+            ClassNode superClass,
+            MethodNode method,
+            Map<String, MethodReference> methods) {
+
+        if (method.name.equals(ByteCodeUtils.CONSTRUCTOR)
+                || method.name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
+            return null;
+        }
+
+        String name = MethodReference.getDefaultDispatchName(method);
+
+        // if we are dealing with an interface default method we should always provide a
+        // way to invoke it through the access$super. It is possible that this default method
+        // is overriden by a super class but since several interfaces can implement the same
+        // method name, you can easily end up with a partial override (overriding some of the
+        // implemented interfaces methods but not all of them).
+        if ((superClass.access & Opcodes.ACC_INTERFACE) != 0
+                && isParentClassVisible(superClass, instrumentedClass)) {
+            // all default methods name will use the defining interface name for the hashcode
+            // to avoid name collision when dealing with 2 methods with the same names coming
+            // from 2 distinct interfaces.
+            name = superClass.name + "." + name;
+        }
+
+        return addNewMethod(name, instrumentedClass, superClass, method, methods);
+    }
+
+    /**
+     * Add a new method in the list of unseen methods in the instrumentedClass hierarchy.
+     *
+     * @param name the dispatching name that will be used for matching callers to the passed method.
+     * @param instrumentedClass class that is being visited
+     * @param superClass the class or interface defining the passed method.
+     * @param method the method to study
+     * @param methods the methods arlready encountered in the ClassNode hierarchy
+     * @return the newly added {@link MethodReference} of null if the method was not added for any
+     *     reason.
+     */
+    @Nullable
+    private static MethodReference addNewMethod(
+            String name,
+            ClassNode instrumentedClass,
+            ClassNode superClass,
+            MethodNode method,
+            Map<String, MethodReference> methods) {
+        if (isAccessCompatibleWithInstantRun(method.access)
+                && !methods.containsKey(name)
+                && (method.access & Opcodes.ACC_STATIC) == 0
+                && isCallableFromSubclass(method, superClass, instrumentedClass)) {
+
+            if (visitSuperMethods.containsKey(name)) {
+                MethodReference methodReference = new MethodReference(method, superClass);
+                methods.put(name, methodReference);
+                return methodReference;
+
+            }
+
+        }
+        return null;
     }
 
     @SuppressWarnings("SimplifiableIfStatement")
@@ -788,9 +1056,8 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
     /**
      * Add all constructors from the passed ClassNode's methods. {@see ClassNode#methods}
-     *
-     * @param methods                 the constructors already encountered in the ClassNode hierarchy
-     * @param classNode               the class to save all new methods from.
+     * @param methods the constructors already encountered in the ClassNode hierarchy
+     * @param classNode the class to save all new methods from.
      * @param keepPrivateConstructors whether to keep the private constructors.
      */
     private void addAllNewConstructors(Map<String, MethodNode> methods, ClassNode classNode,
@@ -819,36 +1086,4 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             methods.put(key, method);
         }
     }
-
-
-    private static final class TBVisitorBuilder implements IncrementalVisitor.VisitorBuilder {
-
-        private TBVisitorBuilder() {
-        }
-
-        @NonNull
-        @Override
-        public IncrementalVisitor build(
-                @NonNull ClassNode classNode,
-                @NonNull List<ClassNode> parentNodes,
-                @NonNull ClassVisitor classVisitor,
-                @NonNull ILogger logger) {
-            return new TBIncrementalSupportVisitor(classNode, parentNodes, classVisitor, logger);
-        }
-
-        @Override
-        @NonNull
-        public String getMangledRelativeClassFilePath(@NonNull String originalClassFilePath) {
-            return originalClassFilePath;
-        }
-
-        @NonNull
-        @Override
-        public OutputType getOutputType() {
-            return OutputType.INSTRUMENT;
-        }
-    }
-
-    @NonNull
-    public static final IncrementalVisitor.VisitorBuilder VISITOR_BUILDER = new TBIncrementalSupportVisitor.TBVisitorBuilder();
 }

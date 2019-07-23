@@ -212,8 +212,8 @@ package com.taobao.android.builder.manager;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.build.gradle.internal.TaskContainerAdaptor;
-import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
+import com.android.build.gradle.internal.tasks.factory.TaskFactory;
+import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl;
 import com.android.build.gradle.options.ProjectOptions;
 import com.android.builder.core.AtlasBuilder;
 import com.android.utils.ILogger;
@@ -237,9 +237,7 @@ public abstract class AtlasBaseTaskManager<T extends BaseExtension> {
 
     protected final Project project;
 
-    protected final AndroidTaskRegistry androidTasks = new AndroidTaskRegistry();
-
-    protected final TaskContainerAdaptor tasks;
+    protected final TaskFactory tasks;
 
     protected final AtlasExtension atlasExtension;
 
@@ -254,10 +252,9 @@ public abstract class AtlasBaseTaskManager<T extends BaseExtension> {
         this.tAndroidBuilder = androidBuilder;
         this.androidExtension = androidExtension;
         this.project = project;
-        this.tasks = new TaskContainerAdaptor(project.getTasks());
+        this.tasks = new TaskFactoryImpl(project.getTasks());
         this.atlasExtension = atlasExtension;
         this.logger = new LoggerWrapper(Logging.getLogger(AtlasBaseTaskManager.class));
-        this.extraModelInfo = new ExtraModelInfo(new ProjectOptions(project), Logging.getLogger(AtlasBaseTaskManager.class));
 
         //this.dependencyManager = new DependencyManager(androidExtension, project, atlasExtension);
     }

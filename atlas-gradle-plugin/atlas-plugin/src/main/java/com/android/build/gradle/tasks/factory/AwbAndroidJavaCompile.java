@@ -1,6 +1,7 @@
 package com.android.build.gradle.tasks.factory;
 
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.tasks.AndroidJavaCompile;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.FileUtils;
@@ -33,26 +34,18 @@ public class AwbAndroidJavaCompile extends AndroidJavaCompile {
                 getTargetCompatibility());
         if (isPostN()) {
             if (!JavaVersion.current().isJava8Compatible()) {
-                throw new RuntimeException("compileSdkVersion '" + compileSdkVersion + "' requires "
+                throw new RuntimeException("compileSdkVersion '" + getCompileSdkVersion() + "' requires "
                         + "JDK 1.8 or later to compile.");
             }
         }
 
-        if (awbBundle.isDataBindEnabled() && !analyticsed) {
-            processAnalytics();
-            analyticsed = true;
-        }
 
-        // Create directory for output of annotation processor.
-        FileUtils.mkdirs(annotationProcessorOutputFolder);
 
-        mInstantRunBuildContext.startRecording(InstantRunBuildContext.TaskType.JAVAC);
         compile();
-        mInstantRunBuildContext.stopRecording(InstantRunBuildContext.TaskType.JAVAC);
     }
 
     private boolean isPostN() {
-        final AndroidVersion hash = AndroidTargetHash.getVersionFromHash(compileSdkVersion);
+        final AndroidVersion hash = AndroidTargetHash.getVersionFromHash(getCompileSdkVersion());
         return hash != null && hash.getApiLevel() >= 24;
     }
 }

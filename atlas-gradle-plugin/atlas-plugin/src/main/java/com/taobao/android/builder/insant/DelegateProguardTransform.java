@@ -10,17 +10,18 @@ import com.android.build.gradle.internal.pipeline.InjectTransform;
 import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
+import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.WorkLimiter;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
-import com.android.build.gradle.internal.transforms.ProguardConfigurable;
-import com.android.build.gradle.tasks.SimpleWorkQueue;
+
 import com.android.builder.model.AndroidLibrary;
-import com.android.builder.tasks.Job;
-import com.android.builder.tasks.JobContext;
-import com.android.ide.common.build.ApkData;
+
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import com.google.common.util.concurrent.SettableFuture;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -35,8 +36,6 @@ import com.taobao.android.builder.tools.proguard.AwbProguardConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.jf.util.ImmutableUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -44,6 +43,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -108,7 +108,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         defaultProguardFiles.addAll(appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
 
         if (buildConfig.getConsumerProguardEnabled()){
-            defaultProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.PROGUARD_RULES).getFiles());
+            defaultProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES).getFiles());
         }
 
         List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
@@ -154,47 +154,27 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         File proguardOutFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
         proGuardTransform.printconfiguration(proguardOutFile);
         SettableFuture<TransformOutputProvider> resultFuture = SettableFuture.create();
-        final Job<Void> job = new Job<>(getName(),
-                new com.android.builder.tasks.Task<Void>() {
-                    @Override
-                    public void run(@NonNull Job<Void> job,
-                                    @NonNull JobContext<Void> context) throws IOException {
 
-                        try {
-                            Method m = ProGuardTransform.class.getDeclaredMethod("doMinification", Collection.class, Collection.class, TransformOutputProvider.class);
-                            m.setAccessible(true);
-                            m.invoke(proGuardTransform, getAllInput(), transformInvocation.getReferencedInputs(), transformInvocation.getOutputProvider());
-                        }catch (Exception e){
-                            e.printStackTrace();
-                        }
+        new WorkLimiter(4).limit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                try {
+                    Method m = ProGuardTransform.class.getDeclaredMethod("doMinification", Collection.class, Collection.class, TransformOutputProvider.class);
+                    m.setAccessible(true);
+                    m.invoke(proGuardTransform, getAllInput(), transformInvocation.getReferencedInputs(), transformInvocation.getOutputProvider());
+                    if (!appVariantContext.getScope().getOutputProguardMappingFile().isFile()) {
+                        Files.asCharSink(appVariantContext.getScope().getOutputProguardMappingFile(), Charsets.UTF_8).write("");
                     }
-
-                    @Override
-                    public void finished() {
-                        resultFuture.set(transformInvocation.getOutputProvider());
-                    }
-
-                    @Override
-                    public void error(Throwable e) {
-                        resultFuture.setException(e);
-                    }
-                }, resultFuture);
-        try {
-            SimpleWorkQueue.push(job);
-
-            // wait for the task completion.
-            try {
-                job.awaitRethrowExceptions();
-            } catch (ExecutionException e) {
-                throw new RuntimeException("Job failed, see logs for details", e.getCause());
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+                return null;
             }
+        });
 
             IntermediateFolderUtils folderUtils = (IntermediateFolderUtils) ReflectUtils.getField(transformInvocation.getOutputProvider(),"folderUtils");
             AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addAllMainDexJars(FileUtils.listFiles(folderUtils.getRootFolder(),new String[]{"jar"},true));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+
     }
 
     private Collection<TransformInput> getAllInput() {

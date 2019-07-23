@@ -250,9 +250,9 @@ public class MergeResAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTask>
     }
 
     @Override
-    public void execute(MtlParallelTask parallelTask) {
+    public void configure(MtlParallelTask parallelTask) {
 
-        super.execute(parallelTask);
+        super.configure(parallelTask);
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
                 parallelTask.getVariantName());

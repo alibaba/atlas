@@ -209,7 +209,6 @@
 
 package com.android.build.gradle.internal.api;
 
-import com.taobao.android.object.ApkFileList;
 
 /**
  * Created by wuzhong on 2017/6/7.

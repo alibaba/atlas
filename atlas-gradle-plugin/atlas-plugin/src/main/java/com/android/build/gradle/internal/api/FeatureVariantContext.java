@@ -2,7 +2,7 @@ package com.android.build.gradle.internal.api;
 
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.FeatureExtension;
-import com.android.build.gradle.tasks.MergeManifests;
+import com.android.build.gradle.tasks.ProcessApplicationManifest;
 import com.taobao.android.builder.extension.AtlasExtension;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
@@ -25,7 +25,7 @@ public class FeatureVariantContext extends VariantContext {
 
     public File getModifiedManifest(ResolvedArtifactResult artifact) {
         return new File(getModifyManifestDir(),
-                MergeManifests.getArtifactName(artifact) +
+                ProcessApplicationManifest.getArtifactName(artifact) +
                         ".xml");
 
     }

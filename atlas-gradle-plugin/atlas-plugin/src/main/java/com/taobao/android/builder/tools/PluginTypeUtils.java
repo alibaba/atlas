@@ -276,6 +276,8 @@ public class PluginTypeUtils {
         return hasPlugins(project, APP_SUPPORT_PLUGINS);
     }
 
+
+
     /**
      * Decide if you are using taobao's androidPlugin
      *

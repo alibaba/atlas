@@ -228,6 +228,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -295,7 +298,7 @@ public class MtlProcessExecutor extends DefaultProcessExecutor {
                 public void onFailure(@Nullable Throwable t) {
                     result.set(new ProcessResultImpl(command, t));
                 }
-            });
+            }, ForkJoinPool.commonPool());
         } catch (Exception e) {
             result.set(new ProcessResultImpl(command, e));
         }

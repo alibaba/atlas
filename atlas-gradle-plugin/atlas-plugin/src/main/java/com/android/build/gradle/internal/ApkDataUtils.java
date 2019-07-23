@@ -2,7 +2,7 @@ package com.android.build.gradle.internal;
 
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl;
-import com.android.ide.common.build.ApkData;
+import com.android.build.gradle.internal.scope.ApkData;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

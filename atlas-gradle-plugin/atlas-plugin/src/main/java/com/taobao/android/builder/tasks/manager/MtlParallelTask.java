@@ -209,20 +209,24 @@
 
 package com.taobao.android.builder.tasks.manager;
 
-import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.workers.ExecutorServiceAdapter;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.internal.project.DefaultProject;
+import org.gradle.api.internal.tasks.TaskExecuter;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.internal.impldep.aQute.bnd.build.Run;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Created by wuzhong on 2016/10/13.
  */
-public class MtlParallelTask extends BaseTask {
+public class MtlParallelTask extends AndroidBuilderTask {
 
     public String uniqueTaskName;
 
@@ -230,8 +234,10 @@ public class MtlParallelTask extends BaseTask {
 
     public boolean concurrent = true;
 
+    ExecutorServiceAdapter executorServiceAdapter = new ExecutorServiceAdapter(ForkJoinPool.commonPool());
 
-    WaitableExecutor waitableExecutor = WaitableExecutor.useGlobalSharedThreadPool();
+
+
 
     @TaskAction
     void run() {
@@ -247,23 +253,36 @@ public class MtlParallelTask extends BaseTask {
                 taskName = parallelTask.get(0).getClass().getSimpleName();
             }
 
-            parallelTask.forEach(task -> waitableExecutor.execute((Callable) () -> {
-                task.execute();
-                return null;
-            }));
+
+            parallelTask.forEach(task -> executorServiceAdapter.submit(TaskRunner.class,DefaultTask.class));
 
             try {
-                waitableExecutor.waitForTasksWithQuickFail(true);
-            } catch (InterruptedException e) {
+                executorServiceAdapter.await();
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
 
 
         } else {
             for (final DefaultTask task : parallelTask) {
-                task.execute();
+                task.getTaskIdentity();
             }
         }
 
+    }
+
+
+    private class TaskRunner implements Runnable{
+
+        private DefaultTask defaultTask;
+
+        public TaskRunner(DefaultTask task) {
+            this.defaultTask = task;
+        }
+
+        @Override
+        public void run() {
+            defaultTask.
+        }
     }
 }

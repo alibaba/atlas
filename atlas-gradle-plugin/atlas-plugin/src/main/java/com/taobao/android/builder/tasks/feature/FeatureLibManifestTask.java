@@ -4,13 +4,16 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.FeatureVariantContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.core.VariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.scope.BuildOutput;
 import com.android.build.gradle.internal.scope.BuildOutputs;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.tasks.MergeManifests;
+import com.android.build.gradle.tasks.ProcessApplicationManifest;
 import com.android.builder.core.VariantConfiguration;
 import com.android.manifmerger.ManifestProvider;
 import com.google.common.collect.Lists;
@@ -49,7 +52,7 @@ import static com.taobao.android.builder.tasks.app.manifest.StandardizeLibManife
  * @time 下午4:28
  * @description  
  */
-public class FeatureLibManifestTask extends DefaultAndroidTask{
+public class FeatureLibManifestTask extends AndroidBuilderTask {
 
 
     private ArtifactCollection manifests;
@@ -83,9 +86,9 @@ public class FeatureLibManifestTask extends DefaultAndroidTask{
             ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, manifestFile, mainManifestFileObject,
                     true, featureVariantContext.getAtlasExtension()
                             .getTBuildConfig().isIncremental());
-            providers.add(new MergeManifests.ConfigAction.ManifestProviderImpl(
+            providers.add(new ProcessApplicationManifest.CreationAction.ManifestProviderImpl(
                     modifyManifest,
-                    MergeManifests.getArtifactName(artifact)));
+                    ProcessApplicationManifest.getArtifactName(artifact)));
         }
 
 
@@ -104,9 +107,9 @@ public class FeatureLibManifestTask extends DefaultAndroidTask{
                                 .getTBuildConfig().isIncremental());
 
                 providers.add(
-                        new MergeManifests.ConfigAction.ManifestProviderImpl(
+                        new ProcessApplicationManifest.CreationAction.ManifestProviderImpl(
                                 modifyManifest,
-                                MergeManifests.getArtifactName(artifact)));
+                                ProcessApplicationManifest.getArtifactName(artifact)));
             }
         }
         AtlasBuildContext.androidBuilderMap.get(getProject()).manifestProviders = providers;
@@ -139,7 +142,7 @@ public class FeatureLibManifestTask extends DefaultAndroidTask{
                     scope.getArtifactCollection(RUNTIME_CLASSPATH, ALL, MANIFEST);
             task.packageManifest =
                     scope.getArtifactFileCollection(
-                            METADATA_VALUES, MODULE, METADATA_APP_ID_DECLARATION);
+                            METADATA_VALUES, MODULE, METADATA_FEATURE_MANIFEST);
 
             final GradleVariantConfiguration config = scope.getVariantData().getVariantConfiguration();
 

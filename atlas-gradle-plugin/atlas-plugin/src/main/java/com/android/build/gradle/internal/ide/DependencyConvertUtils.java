@@ -250,6 +250,7 @@ public class DependencyConvertUtils {
 
         JavaLibrary jarInfo = new JavaLibraryImpl(artifact.getFile(),
                                                   null,
+                                                    null,
                                                   ImmutableList.<JavaLibrary>of(),
                                                   null,
                                                   convert(artifact,Type.JAR),

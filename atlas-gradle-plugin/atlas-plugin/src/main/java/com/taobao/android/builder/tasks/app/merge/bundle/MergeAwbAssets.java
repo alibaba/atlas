@@ -5,18 +5,19 @@ import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
+import com.android.build.gradle.internal.tasks.Workers;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.ResourceException;
-import com.android.build.gradle.tasks.WorkerExecutorAdapter;
-import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.SourceProvider;
-import com.android.ide.common.res2.*;
+import com.android.ide.common.resources.AssetMerger;
+import com.android.ide.common.resources.AssetSet;
 import com.android.ide.common.workers.WorkerExecutorFacade;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
@@ -82,7 +83,8 @@ public class MergeAwbAssets extends IncrementalTask{
 
     @Inject
     public MergeAwbAssets(WorkerExecutor workerExecutor) {
-        this.workerExecutor = new WorkerExecutorAdapter<>(workerExecutor, MergeSourceSetFolders.AssetWorkAction.class);
+        this.workerExecutor = new WorkerExecutorFacade<>(workerExecutor, MergeSourceSetFolders.AssetWorkAction.class);
+
     }
 
     @Override
@@ -378,9 +380,9 @@ public class MergeAwbAssets extends IncrementalTask{
         }
 
         @Override
-        public void execute(@NonNull MergeAwbAssets mergeAssetsTask) {
+        public void configure(@NonNull MergeAwbAssets mergeAssetsTask) {
             BaseVariantData variantData = scope.getVariantData();
-            VariantConfiguration variantConfig = variantData.getVariantConfiguration();
+            GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
             mergeAssetsTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             mergeAssetsTask.setVariantName(variantConfig.getFullName());
             mergeAssetsTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
@@ -437,12 +439,10 @@ public class MergeAwbAssets extends IncrementalTask{
         }
 
         @Override
-        public void execute(@NonNull MergeAwbAssets mergeAssetsTask) {
+        public void configure(@NonNull MergeAwbAssets mergeAssetsTask) {
             BaseVariantData variantData = scope.getVariantData();
-            VariantConfiguration variantConfig = variantData.getVariantConfiguration();
-
+            GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
             mergeAssetsTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-            mergeAssetsTask.setVariantName(variantConfig.getFullName());
             mergeAssetsTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
 //            final Project project = scope.getGlobalScope().getProject();
 //            final Function<SourceProvider, Collection<File>> assetDirFunction =
@@ -484,9 +484,10 @@ public class MergeAwbAssets extends IncrementalTask{
         }
 
         @Override
-        public void execute(@NonNull MergeAwbAssets mergeAssetsTask) {
+        public void configure(@NonNull MergeAwbAssets mergeAssetsTask) {
+            super.configure(mergeAssetsTask);
             BaseVariantData variantData = scope.getVariantData();
-            VariantConfiguration variantConfig = variantData.getVariantConfiguration();
+            GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
 
             mergeAssetsTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             mergeAssetsTask.setVariantName(variantConfig.getFullName());
@@ -504,7 +505,7 @@ public class MergeAwbAssets extends IncrementalTask{
             mergeAssetsTask.sourceFolderInputs = () -> ImmutableList.of();
 
             mergeAssetsTask.awbBundle = awbBundle;
-            if (!variantConfig.getType().equals(VariantType.LIBRARY)) {
+            if (variantConfig.getType().isApk()) {
                 mergeAssetsTask.libraries = awbBundle.getAndroidLibraries();
             }
             mergeAssetsTask.setOutputDir(variantContext.getMergeShadersOutputDir(awbBundle));

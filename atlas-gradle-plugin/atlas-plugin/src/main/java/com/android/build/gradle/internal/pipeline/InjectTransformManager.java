@@ -215,7 +215,7 @@ import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
@@ -277,12 +277,12 @@ public class InjectTransformManager {
     public <T extends InjectTransform> TransformTask addInjectTransformBeforeTransform(Class<? extends Transform> transformClazz,
                                                                                        T injectTransform,
                                                                                        @NonNull VariantScope scope) {
-        TaskCollection<DefaultAndroidTask> androidTasks = project.getTasks()
-                .withType(DefaultAndroidTask.class);
-        SortedMap<String, DefaultAndroidTask> androidTaskSortedMap = androidTasks.getAsMap();
+        TaskCollection<AndroidBuilderTask> androidTasks = project.getTasks()
+                .withType(AndroidBuilderTask.class);
+        SortedMap<String, AndroidBuilderTask> androidTaskSortedMap = androidTasks.getAsMap();
         TransformTask oprTransformTask = null; // The task to be inserted
         for (String taskName : androidTaskSortedMap.keySet()) {
-            DefaultAndroidTask androidTask = androidTaskSortedMap.get(taskName);
+            AndroidBuilderTask androidTask = androidTaskSortedMap.get(taskName);
             if (variantName.equals(androidTask.getVariantName())) {
                 if (androidTask instanceof TransformTask &&
                         ((TransformTask) androidTask).getTransform()
@@ -309,14 +309,14 @@ public class InjectTransformManager {
 
             // Configuration TransformTask
             TransformTaskParam transformTaskParam = getTransformParam(oprTransformTask);
-            TransformTask.ConfigAction<T> configAction = new TransformTask.ConfigAction<T>(
+            TransformTask.CreationAction<T> configAction = new TransformTask.CreationAction<T>(
                     variantName,
                     taskName,
                     injectTransform,
                     transformTaskParam.consumedInputStreams,
                     transformTaskParam.referencedInputStreams,
                     outputStream,
-                    ThreadRecorder.get(),null);
+                    ThreadRecorder.get());
 
             TransformTask injectTransformTask = project.getTasks()
                     .create(configAction.getName(), configAction.getType());
@@ -337,7 +337,7 @@ public class InjectTransformManager {
                 injectTransformTask.dependsOn(transformTaskList.get(transformTaskList.size() - 1));
             }
             transformTaskList.add(taskName);
-            configAction.execute(injectTransformTask);
+            configAction.configure(injectTransformTask);
 
             //Modify the input of the oprTransformTask
             if (injectTransform.updateNextTransformInput()) {
@@ -377,10 +377,9 @@ public class InjectTransformManager {
         Set<? super Scope> requestedScopes = injectTransform.getScopes();
 
         // create the output
-        return IntermediateStream.builder(project,injectTransform.getName())
+        return IntermediateStream.builder(project,injectTransform.getName() + "-" + scope.getFullVariantName(),taskName)
                 .addContentTypes(injectTransform.getOutputTypes())
                 .addScopes(requestedScopes)
-                .setTaskName(taskName)
                 .setRootLocation(outRootFolder).build();
 
     }

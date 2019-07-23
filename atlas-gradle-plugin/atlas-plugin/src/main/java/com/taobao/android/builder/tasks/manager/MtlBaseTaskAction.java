@@ -214,20 +214,32 @@ import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.MutableTaskContainer;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
+import com.android.build.gradle.internal.tasks.VariantAwareTask;
+import com.android.build.gradle.internal.tasks.factory.PreConfigAction;
+import com.android.build.gradle.internal.tasks.factory.TaskConfigAction;
+import com.android.build.gradle.internal.tasks.factory.TaskProviderCallback;
+import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.taobao.android.builder.AtlasBuildContext;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.StopExecutionException;
+import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.tasks.TaskProvider;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
 /**
- * Created by wuzhong on 16/7/5.
+ * Created by zhayu.ll 7/22/2019.
  */
-public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAction<T> {
+
+
+
+public abstract class MtlBaseTaskAction<T extends Task & VariantAwareTask> extends VariantTaskCreationAction<T> {
 
     protected VariantScope scope;
 
@@ -239,11 +251,16 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
 
     public MtlBaseTaskAction(VariantContext variantContext,
                              BaseVariantOutput baseVariantOutput) {
+        super(variantContext.getScope());
         this.variantContext = variantContext;
         this.baseVariantData = variantContext.getBaseVariantData();
         this.scope = baseVariantData.getScope();
         this.baseVariantOutput = baseVariantOutput;
     }
+
+//    public MtlBaseTaskAction(@NotNull VariantScope variantScope) {
+//        super(variantScope);
+//    }
 
     protected AppVariantOutputContext getAppVariantOutputContext() {
 
@@ -270,28 +287,8 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
     }
 
     @Override
-    public void execute(T task) {
-
-        if (task instanceof DefaultAndroidTask) {
-            DefaultAndroidTask defaultAndroidTask = (DefaultAndroidTask) task;
-            defaultAndroidTask.setVariantName(baseVariantData
-                                                      .getVariantConfiguration()
-                                                      .getFullName());
-        }
-
-        //        ConventionMappingHelper.map(task, "appVariantContext", new Callable<AppVariantContext>() {
-        //            @Override
-        //            public AppVariantContext call() throws Exception {
-        //                return appVariantContext;
-        //            }
-        //        });
-        //
-        //        ConventionMappingHelper.map(task, "baseVariantOutputData", new Callable<BaseVariantOutputData>() {
-        //            @Override
-        //            public BaseVariantOutputData call() throws Exception {
-        //                return baseVariantOutputData;
-        //            }
-        //        });
+    public void configure(T task) {
+        super.configure(task);
 
     }
 
@@ -308,5 +305,15 @@ public abstract class MtlBaseTaskAction<T extends Task> implements TaskConfigAct
         } catch (IllegalAccessException e) {
             throw new StopExecutionException(e.getMessage());
         }
+    }
+
+    @Override
+    public void preConfigure(@NotNull String s) {
+
+    }
+
+    @Override
+    public void handleProvider(@NotNull TaskProvider<? extends T> taskProvider) {
+
     }
 }

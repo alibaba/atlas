@@ -214,8 +214,7 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
-import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.tasks.factory.AndroidJavaCompile;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.tasks.factory.AwbAndroidJavaCompile;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -225,7 +224,6 @@ import com.taobao.android.builder.tasks.manager.TaskCreater;
 import com.taobao.android.builder.tools.concurrent.ExecutorServicesHelper;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -234,11 +232,13 @@ import java.util.concurrent.ExecutionException;
 /**
  * compiling awb the R file
  */
-public class JavacAwbsTask extends BaseTask {
+public class JavacAwbsTask extends AndroidBuilderTask {
 
     static final String taskName = "javacAwbs";
 
     private AppVariantOutputContext appVariantOutputContext;
+
+    private BaseVariantOutput baseVariantOutputData;
 
     @TaskAction
     void run() throws ExecutionException, InterruptedException {
@@ -250,14 +250,11 @@ public class JavacAwbsTask extends BaseTask {
         }
 
         BaseExtension androidExtension = appVariantOutputContext.getVariantContext().getAppExtension();
-        boolean isDatabindEnabled = null != androidExtension.getDataBinding() && androidExtension.getDataBinding()
-            .isEnabled();
+
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(taskName, getLogger(),0);
-        ExecutorServicesHelper executorServicesHelper2 = new ExecutorServicesHelper(taskName+"databinding", getLogger(),
-                                                                                    1);
+
         List<Runnable> runnables = new ArrayList<>();
-        List<Runnable> runnables2 = new ArrayList<>();
 
         for (final AwbBundle awbBundle : atlasDependencyTree.getAwbBundles()) {
             if (awbBundle.isMBundle){
@@ -270,13 +267,13 @@ public class JavacAwbsTask extends BaseTask {
                     try {
 
                         AwbJavaCompileConfigAction awbJavaCompileConfigAction = new AwbJavaCompileConfigAction(
-                            awbBundle, appVariantOutputContext);
+                            awbBundle, appVariantOutputContext.getVariantContext(),appVariantOutputContext,baseVariantOutputData);
 
                         AwbAndroidJavaCompile awbJavaCompile = TaskCreater.create(getProject(),
                                                                         awbJavaCompileConfigAction.getName(),
                                                                         awbJavaCompileConfigAction.getType());
 
-                        awbJavaCompileConfigAction.execute(awbJavaCompile);
+                        awbJavaCompileConfigAction.configure(awbJavaCompile);
 
                         awbJavaCompile.execute();
 
@@ -293,16 +290,12 @@ public class JavacAwbsTask extends BaseTask {
                 }
             };
 
-            if (appVariantOutputContext.getVariantContext().isDataBindEnabled(awbBundle)){
-                runnables2.add(runnable);
-            }else {
+
                 runnables.add(runnable);
-            }
 
         }
 
         executorServicesHelper.execute(runnables);
-        executorServicesHelper2.execute(runnables2);
 
     }
 
@@ -323,11 +316,12 @@ public class JavacAwbsTask extends BaseTask {
         }
 
         @Override
-        public void execute(JavacAwbsTask javacAwbsTask) {
+        public void configure(JavacAwbsTask javacAwbsTask) {
 
-            super.execute(javacAwbsTask);
+            super.configure(javacAwbsTask);
 
             javacAwbsTask.appVariantOutputContext = getAppVariantOutputContext();
+            javacAwbsTask.baseVariantOutputData = baseVariantOutput;
 
         }
     }

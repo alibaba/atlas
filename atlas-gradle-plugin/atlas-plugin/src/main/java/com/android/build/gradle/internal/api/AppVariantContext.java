@@ -216,9 +216,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.builder.model.AndroidLibrary;
-import com.android.ide.common.build.ApkData;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -242,7 +242,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static com.android.build.gradle.internal.scope.TaskOutputHolder.TaskOutputType.ANNOTATION_PROCESSOR_LIST;
 
 /**
  * ApplicaitonThe compiled context
@@ -377,7 +376,7 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     public File getAwbDataBindingMergeArtifacts(AwbBundle awbBundle) {
 
         return new File(scope.getGlobalScope().getIntermediatesDir().getAbsolutePath() + "/awb-data-binding-compiler/" +
-                getVariantConfiguration().getDirName()+"/"+awbBundle.getName()+"/"+ DataBindingBuilder.ARTIFACT_FILES_DIR_FROM_LIBS);
+                getVariantConfiguration().getDirName()+"/"+awbBundle.getName()+"/"+ DataBindingBuilder.ARTIFACT_BASE_CLASSES_DIR_FROM_LIBS);
     }
 
         //return new File(scope.getBuildFolderForDataBindingCompiler() +  "-" + awbBundle.getName(),

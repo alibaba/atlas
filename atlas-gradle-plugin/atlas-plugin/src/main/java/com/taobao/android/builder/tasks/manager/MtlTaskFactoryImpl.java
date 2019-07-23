@@ -243,7 +243,7 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
             if (null == task) {
                 task = variantContext.getProject().getTasks().create(mtlBaseTaskAction.getName(),
                                                                      mtlBaseTaskAction.getType());
-                mtlBaseTaskAction.execute(task);
+                mtlBaseTaskAction.configure(task);
             } else {
                 sLogger.info(mtlBaseTaskAction.getName() + " is already added");
             }

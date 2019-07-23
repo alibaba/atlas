@@ -218,6 +218,7 @@ import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.transforms.BaseProguardAction;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
@@ -253,9 +254,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
-import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.EXTERNAL;
-import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES;
-import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.PROGUARD_RULES;
+
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH;
 
@@ -314,7 +313,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
         }
 
         if (buildConfig.getConsumerProguardEnabled()){
-            nonConsumerProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(COMPILE_CLASSPATH,ALL,PROGUARD_RULES).getFiles());
+            nonConsumerProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(COMPILE_CLASSPATH,ALL, AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES).getFiles());
 
         }
 

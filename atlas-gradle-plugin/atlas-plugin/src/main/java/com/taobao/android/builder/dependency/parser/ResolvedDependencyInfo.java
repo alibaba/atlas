@@ -210,6 +210,8 @@
 package com.taobao.android.builder.dependency.parser;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -345,7 +347,15 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
     }
 
     public ModuleVersionIdentifier getModuleVersionIdentifier() {
-        return new DefaultModuleVersionIdentifier(group, name, version);
+        try {
+            Constructor constructor = DefaultModuleVersionIdentifier.class.getDeclaredConstructor(String.class, String.class, String.class);
+            constructor.setAccessible(true);
+
+            return (ModuleVersionIdentifier) constructor.newInstance(group, name, version);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public ResolvedArtifact getResolvedArtifact() {
@@ -400,7 +410,7 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
             return false;
         }
 
-        ResolvedDependencyInfo that = (ResolvedDependencyInfo)o;
+        ResolvedDependencyInfo that = (ResolvedDependencyInfo) o;
 
         if (version != null ? !version.equals(that.version) : that.version != null) {
             return false;
@@ -462,8 +472,8 @@ public class ResolvedDependencyInfo implements Comparable<ResolvedDependencyInfo
     /**
      * Gets a character description of DependencyInfo
      *
-     * @return //TODO , do this later
      * @param printFileSize
+     * @return //TODO , do this later
      */
     public String getDependencyString(boolean printFileSize) {
         StringBuilder sb = new StringBuilder();

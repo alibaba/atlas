@@ -225,12 +225,11 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by shenghua.nish on 2016-05-17 Often in the morning.
- *
- * @author shenghua.nish, wuzhong
- */
+
 public class AtlasPlugin extends AtlasBasePlugin {
+
+    public static final String BUNDLE_COMPILE = "bundleCompile" ;
+    public static final String PROVIDED_COMPILE = "providedCompile";
 
     @Inject
     public AtlasPlugin(Instantiator instantiator) {
@@ -247,19 +246,19 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
         project.afterEvaluate(project1 -> {
 
-            if (PluginTypeUtils.isAppProject(project) && atlasExtension.isAtlasEnabled()) {
+//            if (PluginTypeUtils.isAppProject(project) && atlasExtension.isAtlasEnabled()) {
+//
+//                Map<String, String> multiDex = new HashMap<>();
+//                multiDex.put("group", "com.android.support");
+//                multiDex.put("module", "multidex");
+//                project1.getConfigurations().all(configuration -> configuration.exclude(multiDex));
+//
+//            }
 
-                Map<String, String> multiDex = new HashMap<>();
-                multiDex.put("group", "com.android.support");
-                multiDex.put("module", "multidex");
-                project1.getConfigurations().all(configuration -> configuration.exclude(multiDex));
-
-            }
-
-            Plugin plugin = project.getPlugins().findPlugin("kotlin-android");
-            if (plugin != null) {
-                project.getDependencies().add("compile", "org.jetbrains.kotlin:kotlin-stdlib:1.2.41");
-            }
+//            Plugin plugin = project.getPlugins().findPlugin("kotlin-android");
+//            if (plugin != null) {
+//                project.getDependencies().add("compile", "org.jetbrains.kotlin:kotlin-stdlib:1.2.41");
+//            }
 
             atlasConfigurationHelper.registAtlasStreams();
 
@@ -289,8 +288,7 @@ public class AtlasPlugin extends AtlasBasePlugin {
     @Override
     protected AtlasConfigurationHelper getConfigurationHelper(Project project) {
         return new AtlasConfigurationHelper(project,
-                                            instantiator,
-                                            creator);
+                                            instantiator);
     }
 
 }

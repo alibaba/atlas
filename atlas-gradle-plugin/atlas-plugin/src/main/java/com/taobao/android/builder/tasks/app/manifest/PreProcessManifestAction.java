@@ -216,7 +216,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
-import com.android.build.gradle.tasks.MergeManifests;
+import com.android.build.gradle.tasks.ProcessApplicationManifest;
 import com.android.builder.core.DefaultManifestParser;
 import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.model.ProductFlavor;
@@ -261,7 +261,7 @@ public class PreProcessManifestAction implements Action<Task> {
 
         AtlasExtension atlasExtension = appVariantContext.getAtlasExtension();
 
-        ManifestProcessorTask manifestProcessorTask = baseVariantOutput.getProcessManifest();
+        ManifestProcessorTask manifestProcessorTask = baseVariantOutput.getProcessManifestProvider().get();
 
         Set<String> notMergedArtifacts = Sets.newHashSet();
 
@@ -270,9 +270,9 @@ public class PreProcessManifestAction implements Action<Task> {
             notMergedArtifacts = atlasExtension.getManifestOptions().getNotMergedBundles();
         }
 
-        if (manifestProcessorTask instanceof MergeManifests) {
+        if (manifestProcessorTask instanceof ProcessApplicationManifest) {
 
-            MergeManifests mergeManifests = (MergeManifests)manifestProcessorTask;
+            ProcessApplicationManifest mergeManifests = (ProcessApplicationManifest)manifestProcessorTask;
 
             VariantScope variantScope = appVariantContext.getScope();
             GradleVariantConfiguration config = variantScope.getVariantConfiguration();
@@ -285,7 +285,7 @@ public class PreProcessManifestAction implements Action<Task> {
                     atlasExtension);
 
             List<ManifestProvider> allManifest = new ArrayList<>();
-            modifyForIncremental(mergeManifests, allManifest);
+//            modifyForIncremental(mergeManifests, allManifest);
 //            allManifest.addAll(ManifestHelper.convert(mergeManifests.getProviders(), appVariantContext));
             allManifest.addAll(bundleProviders);
             allManifest.addAll(mainDexProviders);
@@ -304,37 +304,37 @@ public class PreProcessManifestAction implements Action<Task> {
         }
     }
 
-    private void modifyForIncremental(MergeManifests mergeManifests, List<ManifestProvider> allManifest) {
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-            File mainManifest = mergeManifests.getMainManifest();
-            File baseManifest = appVariantContext.apContext.getBaseModifyManifest();
-            // allManifest.add(new ManifestHelper.MainManifestProvider(mainManifest, "main-manifest"));
-            ConventionMappingHelper.map(mergeManifests, "mainManifest", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return baseManifest;
-                }
-            });
-            if (baseVariantOutput instanceof ApkVariantOutput) {
-                // TODO Improve performance
-                ApkVariantOutput variantOutputData = (ApkVariantOutput)baseVariantOutput;
-                DefaultManifestParser manifestParser = new DefaultManifestParser(baseManifest);
-                String versionNameOverride = variantOutputData.getVersionNameOverride();
-                if (Strings.isNullOrEmpty(versionNameOverride)) {
-                    variantOutputData.setVersionNameOverride(manifestParser.getVersionName());
-                    GradleVariantConfiguration variantConfiguration = appVariantContext.getScope()
-                        .getVariantConfiguration();
-                    ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
-                    String versionName = mergedFlavor.getVersionName();
-                    if (versionName == null) {
-                        ((DefaultProductFlavor)mergedFlavor).setVersionName(manifestParser.getVersionName());
-                    }
-                }
-                int versionCodeOverride = variantOutputData.getVersionCodeOverride();
-                if (versionCodeOverride == -1) {
-                    variantOutputData.setVersionCodeOverride(manifestParser.getVersionCode());
-                }
-            }
-        }
-    }
+//    private void modifyForIncremental(MergeManifests mergeManifests, List<ManifestProvider> allManifest) {
+//        if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
+//            File mainManifest = mergeManifests.getMainManifest();
+//            File baseManifest = appVariantContext.apContext.getBaseModifyManifest();
+//            // allManifest.add(new ManifestHelper.MainManifestProvider(mainManifest, "main-manifest"));
+//            ConventionMappingHelper.map(mergeManifests, "mainManifest", new Callable<File>() {
+//                @Override
+//                public File call() throws Exception {
+//                    return baseManifest;
+//                }
+//            });
+//            if (baseVariantOutput instanceof ApkVariantOutput) {
+//                // TODO Improve performance
+//                ApkVariantOutput variantOutputData = (ApkVariantOutput)baseVariantOutput;
+//                DefaultManifestParser manifestParser = new DefaultManifestParser(baseManifest);
+//                String versionNameOverride = variantOutputData.getVersionNameOverride();
+//                if (Strings.isNullOrEmpty(versionNameOverride)) {
+//                    variantOutputData.setVersionNameOverride(manifestParser.getVersionName());
+//                    GradleVariantConfiguration variantConfiguration = appVariantContext.getScope()
+//                        .getVariantConfiguration();
+//                    ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
+//                    String versionName = mergedFlavor.getVersionName();
+//                    if (versionName == null) {
+//                        ((DefaultProductFlavor)mergedFlavor).setVersionName(manifestParser.getVersionName());
+//                    }
+//                }
+//                int versionCodeOverride = variantOutputData.getVersionCodeOverride();
+//                if (versionCodeOverride == -1) {
+//                    variantOutputData.setVersionCodeOverride(manifestParser.getVersionCode());
+//                }
+//            }
+//        }
+//    }
 }

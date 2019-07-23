@@ -211,17 +211,19 @@ package com.android.builder.core;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.aapt.AaptGeneration;
 import com.android.build.gradle.options.ProjectOptions;
+import com.android.builder.errors.EvalIssueReporter;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.builder.internal.aapt.AaptPackageConfig.Builder;
+import com.android.builder.internal.aapt.BlockingResourceLinker;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.symbols.*;
 import com.android.dex.Dex;
 import com.android.dx.command.dexer.DxContext;
 import com.android.dx.merge.CollisionPolicy;
 import com.android.dx.merge.DexMerger;
+import com.android.ide.common.blame.MessageReceiver;
 import com.android.ide.common.process.*;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.ManifestProvider;
@@ -230,10 +232,8 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.BuildToolInfo.PathId;
 import com.android.utils.ILogger;
 import com.google.common.collect.Table;
-import com.taobao.android.AaptLib;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.tasks.app.bundle.AtlasSymbolIo;
 import com.taobao.android.builder.tools.*;
 import com.taobao.android.builder.tools.cache.FileCacheCenter;
 import com.taobao.android.builder.tools.cache.FileCacheException;
@@ -267,82 +267,96 @@ public class AtlasBuilder extends AndroidBuilder {
 
     protected AndroidBuilder defaultBuilder;
 
-    private DexByteCodeConverter dexByteCodeConverter;
 
     private final JavaProcessExecutor javaProcessExecutor;
 
-    public List<ManifestProvider>manifestProviders;
+    public List<ManifestProvider> manifestProviders;
 
     private final ILogger logger;
 
-    private final boolean verboseExec;
-    private boolean useMyDex;
-
-    private AaptGeneration aaptGeneration;
 
     /**
      * Creates an AndroidBuilder.
-     * <p/>
-     * <var>verboseExec</var> is needed on top of the ILogger due to remote exec tools not being
+     *
+     * <p><var>verboseExec</var> is needed on top of the ILogger due to remote exec tools not being
      * able to output info and verbose messages separately.
      *
      * @param projectId
      * @param createdBy           the createdBy String for the apk manifest.
      * @param processExecutor
      * @param javaProcessExecutor
-     * @param errorReporter
+     * @param issueReporter
+     * @param messageReceiver
      * @param logger              the Logger
-     * @param verboseExec         whether external tools are launched in verbose mode
      */
-    public AtlasBuilder(@NonNull String projectId,
-                        @Nullable String createdBy,
-                        @NonNull ProcessExecutor processExecutor,
-                        @NonNull JavaProcessExecutor javaProcessExecutor,
-                        @NonNull ErrorReporter errorReporter,
-                        @NonNull ILogger logger,
-                        boolean verboseExec) {
-        super(projectId,
-              createdBy,
-              processExecutor,
-              javaProcessExecutor,
-              errorReporter,
-              logger,
-              verboseExec);
-        this.javaProcessExecutor = javaProcessExecutor;
-        this.verboseExec = verboseExec;
+    public AtlasBuilder(String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, EvalIssueReporter issueReporter, MessageReceiver messageReceiver, ILogger logger) {
+
+        super(projectId, createdBy, processExecutor, javaProcessExecutor, issueReporter, messageReceiver, logger);
         this.logger = logger;
+        this.javaProcessExecutor = javaProcessExecutor;
+
     }
 
-    public void initAapt(ProjectOptions projectOptions){
+
+    public MergingReport mergeManifestsForApplication(
+            @NonNull File mainManifest,
+            @NonNull List<File> manifestOverlays,
+            @NonNull List<? extends ManifestProvider> dependencies,
+            @NonNull List<File> navigationFiles,
+            @Nullable String featureName,
+            String packageOverride,
+            int versionCode,
+            String versionName,
+            @Nullable String minSdkVersion,
+            @Nullable String targetSdkVersion,
+            @Nullable Integer maxSdkVersion,
+            @NonNull String outManifestLocation,
+            @Nullable String outAaptSafeManifestLocation,
+            @Nullable String outInstantRunManifestLocation,
+            @Nullable String outMetadataFeatureManifestLocation,
+            @Nullable String outBundleManifestLocation,
+            @Nullable String outInstantAppManifestLocation,
+            ManifestMerger2.MergeType mergeType,
+            Map<String, Object> placeHolders,
+            @NonNull Collection<ManifestMerger2.Invoker.Feature> optionalFeatures,
+            @Nullable File reportFile) {
+        return super.mergeManifestsForApplication(mainManifest,
+                manifestOverlays,
+                dependencies,
+                navigationFiles,
+                featureName,
+                packageOverride,
+                versionCode,
+                versionName,
+                minSdkVersion,
+                targetSdkVersion,
+                maxSdkVersion,
+                outManifestLocation,
+                outAaptSafeManifestLocation,
+                outInstantRunManifestLocation,
+                outMetadataFeatureManifestLocation,
+                outBundleManifestLocation,
+                outInstantAppManifestLocation,
+                mergeType,
+                placeHolders,
+                optionalFeatures,
+                reportFile);
+    }
+
+
+    public void processResources(
+            @NonNull BlockingResourceLinker aapt,
+            @NonNull AaptPackageConfig.Builder aaptConfigBuilder)
+            throws IOException, ProcessException {
+        super.processResources(aapt, aaptConfigBuilder);
+    }
+
+
+    public void init(ProjectOptions projectOptions) {
         super.setTargetInfo(defaultBuilder.getTargetInfo());
         super.setSdkInfo(defaultBuilder.getSdkInfo());
-        super.setLibraryRequests((Collection<LibraryRequest>) ReflectUtils.getField(defaultBuilder,"mLibraryRequests"));
-        boolean updateAapt = atlasExtension.getTBuildConfig().getUseCustomAapt();
-        aaptGeneration = AaptGeneration.fromProjectOptions(projectOptions);
-        switch (aaptGeneration){
-            case AAPT_V1:
-                if (updateAapt){
-                    updateAapt(PathId.AAPT);
-                }
-                break;
-            // case AAPT_V2:
-            //     if (updateAapt){
-            //         updateAapt(PathId.AAPT2);
-            //     }
-            //     break;
-            // case AAPT_V2_DAEMON_MODE:
-            //     if (updateAapt){
-            //         updateAapt(PathId.DAEMON_AAPT2);
-            //     }
-            //     break;
-            //
-            // case AAPT_V2_JNI:
-            //     if (updateAapt) {
-            //         updateAapt(PathId.DAEMON_AAPT2);
-            //     }
-            //     break;
-                default:break;
-        }
+        super.setLibraryRequests((Collection<LibraryRequest>) ReflectUtils.getField(defaultBuilder, "mLibraryRequests"));
+
 
     }
 
@@ -362,144 +376,6 @@ public class AtlasBuilder extends AndroidBuilder {
         this.defaultBuilder = defaultBuilder;
     }
 
-    @Override
-    public void processResources(Aapt aapt,
-                                 Builder aaptConfigBuilder)
-        throws IOException, InterruptedException, ProcessException {
-        String s;
-
-        if (aaptGeneration == AaptGeneration.AAPT_V1) {
-            s = "--non-constant-id";
-
-        } else {
-            s = "--non-final-ids";
-        }
-
-        if (!atlasExtension.getTBuildConfig().getAaptConstantId() && !aaptConfigBuilder.build()
-            .getOptions()
-            .getAdditionalParameters()
-            .contains(s)) {
-            aaptConfigBuilder.build().getOptions().getAdditionalParameters().add(s);
-        } else {
-            while (aaptConfigBuilder.build().getOptions().getAdditionalParameters().contains(s)){
-                aaptConfigBuilder.build().getOptions().getAdditionalParameters().remove(s);
-            }
-        }
-
-        super.processResources(aapt, aaptConfigBuilder);
-
-
-        File symboFile = new File(aaptConfigBuilder.build().getSymbolOutputDir(),"R.txt");
-        if (!symboFile.exists()){
-            throw new ProcessException(symboFile.getAbsolutePath() + "is not exist!");
-        }
-
-
-    }
-
-
-
-
-    /**
-     * Deal with awb resources
-     *  @param aaptCommand
-     * @param enforceUniquePackageName
-     * @param processOutputHandler
-     * @param mainSymbolFile
-     */
-    public void processAwbResources(Aapt aapt,AaptPackageConfig.Builder aaptConfigBuilder,
-                                    File mainSymbolFile,File awbSymbolFile,String pacakgeName) throws IOException, ProcessException {
-        aaptConfigBuilder.setBuildToolInfo(getTargetInfo().getBuildTools());
-        aaptConfigBuilder.setAndroidTarget(getTargetInfo().getTarget());
-        aaptConfigBuilder.setLogger(logger);
-            logger.info("Aapt output file {}");
-            AaptPackageConfig aaptConfig = aaptConfigBuilder.build();
-
-        try {
-            aapt.link(aaptConfig).get();
-        } catch (Exception e) {
-            throw new ProcessException("Failed to execute aapt", e);
-        }
-        File sourceOut = aaptConfig.getSourceOutputDir();
-        if (sourceOut != null) {
-            // Figure out what the main symbol file's package is.
-            String mainPackageName = aaptConfig.getCustomPackageForR();
-            if (mainPackageName == null) {
-                mainPackageName =
-                        SymbolUtils.getPackageNameFromManifest(aaptConfig.getManifestFile());
-            }
-
-            // Load the main symbol file.
-            File mainRTxt = new File(aaptConfig.getSymbolOutputDir(), "R.txt");
-            File mergedSymbolFile = new File(aaptConfig.getSymbolOutputDir(), "R-all.txt");
-            try {
-                sLogger.info("awbSymbolFile:" + mainRTxt);
-                if (null != mainRTxt && mainRTxt.exists()) {
-                    FileUtils.copyFile(mainRTxt, mergedSymbolFile);
-                }else {
-                    throw new ProcessException(mainRTxt.getAbsolutePath() + "is not exist, maybe no resources in this bundle! ");
-                }
-
-                SymbolTable awbSymbols = build(awbSymbolFile,mainPackageName,mainRTxt,mainSymbolFile,pacakgeName);
-                if (awbSymbols!= null) {
-                    AtlasSymbolIo.write(awbSymbols, mergedSymbolFile);
-                }
-
-                //why do this? youku need use this !
-//                FileUtils.writeLines(mergedSymbolFile, FileUtils.readLines(mainSymbolFile), true);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not load file ", e);
-            }
-
-            SymbolTable mainSymbols =
-                    mergedSymbolFile.isFile()
-                            ? AtlasSymbolIo.readFromAapt(mergedSymbolFile, mainPackageName)
-                            : SymbolTable.builder().tablePackage(mainPackageName).build();
-
-
-            // For each dependency, load its symbol file.
-            Set<SymbolTable> depSymbolTables =
-                    SymbolUtils.loadDependenciesSymbolTables(
-                            aaptConfig.getLibrarySymbolTableFiles(), mainPackageName);
-
-            boolean finalIds = true;
-            if (aaptConfig.getVariantType() == VariantType.LIBRARY) {
-                finalIds = false;
-            }
-
-
-            SymbolIo.exportToJava(mainSymbols, sourceOut, finalIds);
-
-            RGeneration.generateRForLibraries(mainSymbols, depSymbolTables, sourceOut, finalIds);
-        }
-    }
-
-
-
-    /**
-     * Get the custom buildToolInfo
-     *
-     * @param targetInfo
-     * @return
-     */
-
-
-    public void updateAapt(PathId pathId) {
-
-        if (null == defaultBuilder.getTargetInfo()) {
-            return;
-            }
-            BuildToolInfo defaultBuildToolInfo = defaultBuilder.getTargetInfo().getBuildTools();
-            File customAaptFile = getAapt();
-            try {
-                Method method = defaultBuildToolInfo.getClass()
-                    .getDeclaredMethod("add", PathId.class, File.class);
-                method.setAccessible(true);
-                method.invoke(defaultBuildToolInfo, pathId, customAaptFile);
-            } catch (Throwable e) {
-                throw new GradleException(e.getMessage());
-            }
-     }
 
     @Override
     @NonNull
@@ -510,293 +386,9 @@ public class AtlasBuilder extends AndroidBuilder {
     }
 
 
-    private File getAapt() {
-
-        String osName = "mac";
-        String fileName = "aapt";
-
-        if (StringUtils.containsIgnoreCase(System.getProperty("os.name"), "Mac")) {
-            osName = "mac";
-        } else if (StringUtils.containsIgnoreCase(System.getProperty("os.name"), "Linux")) {
-            osName = "linux";
-        } else if (StringUtils.containsIgnoreCase(System.getProperty("os.name"), "windows")) {
-            osName = "win";
-            fileName = "aapt.exe";
-        }
-        String aaptPath = "aapt/" + osName + "/" + fileName;
-        File aaptFile = new File(AaptLib.class.getClassLoader().getResource(aaptPath).getFile());
-        if (aaptFile.isFile()) {
-            return aaptFile;
-        }
-
-        File jarFile = PathUtil.getJarFile(AaptLib.class);
-        File jarFolder = new File(jarFile.getParentFile(),
-                                  FilenameUtils.getBaseName(jarFile.getName()));
-        jarFolder.mkdirs();
-        aaptFile = new File(jarFolder, fileName);
-
-        if (!aaptFile.exists()) {
-            aaptFile = ZipUtils.extractZipFileToFolder(jarFile, aaptPath,
-                                                       aaptFile.getParentFile());
-            aaptFile.setExecutable(true);
-        }
-        return aaptFile;
-    }
-
-    //dexMain entrance
-    public void convertByteCode(Collection<File> inputs,
-                                File outDexFolder,
-                                boolean multidex,
-                                File mainDexList,
-                                DexOptions dexOptions,
-                                ProcessOutputHandler processOutputHandler, boolean awb)
-        throws IOException, InterruptedException, ProcessException {
-
-        boolean fastMultiDex = false;
-
-        Profiler.start();
-
-        if (atlasExtension.getTBuildConfig().isDexCacheEnabled() && inputs.size() > 0) {
-
-            Profiler.enter("jar2dex");
-
-            List<Dex> dexs = new ArrayList<>();
-            Map<File, Dex> fileDexMap = new HashMap<>();
-
-            //Do dexMerge
-            File tmpDir = new File(outDexFolder, "tmp");
-            tmpDir.mkdirs();
-
-            long startTime = System.currentTimeMillis();
-
-            List<File> outputs = new ArrayList<>();
-
-                for (File input : inputs) {
-                    logger.warning("Dex input File:%s",input.getAbsolutePath());
-
-                    final File dexDir = getDexOutputDir(input, tmpDir, outputs);
-                    dexDir.mkdirs();
-
-                    preDexLibrary(input, dexDir, multidex, dexOptions, processOutputHandler);
-
-                    outputs.add(dexDir);
-            }
-
-                for (File dexDir : outputs) {
-                Collection<File> files = FileUtils.listFiles(dexDir,new String[]{"dex"},true);
-                for (File dexFile : files) {
-                    if (dexFile.exists() && dexFile.length() > 0) {
-                        Dex dex = new Dex(dexFile);
-                        dexs.add(dex);
-                        fileDexMap.put(dexFile, dex);
-                    }
-                }
-            }
-
-            Profiler.release();
-            long endDexTime = System.currentTimeMillis();
-
-            Profiler.enter("dexmerge");
-            if (dexs.size() > 0) {
-
-                    if (multidex && !awb) {
-
-                        throw new GradleException("can't support~");
-
-                    } else {
-
-                        DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
-                                                            CollisionPolicy.KEEP_FIRST, new DxContext());
-                        Dex dex = dexMerger.merge();
-
-                        File dexFile = new File(outDexFolder, "classes.dex");
-
-                        dex.writeTo(dexFile);
-
-                        if (!dexFile.exists()) {
-                            sLogger.error("dexmerge failed, not dex file found , inputs : " + dexs.size());
-                        }
-                    }
-
-
-
-            } else {
-                sLogger.error("no dex found to  " + outDexFolder.getAbsolutePath());
-            }
-            Profiler.release();
-
-            FileUtils.deleteDirectory(tmpDir);
-
-            long finishTime = System.currentTimeMillis();
-
-            sLogger.info("[mtldex] dex consume {} , dexmerge consume {}",
-                         endDexTime - startTime,
-                         finishTime - endDexTime);
-        }
-        Profiler.release();
-        if (fastMultiDex) {
-            sLogger.error("[mtldex] main dex consume {} ", Profiler.dump());
-        }
-
-    }
-
-    private File getDexOutputDir(File input, File rootDir, List<File> outputs) {
-        File dexDir = null;
-        if (input.isFile() && input.getName().endsWith("jar")) {
-            dexDir = new File(rootDir, FileNameUtils.getUniqueJarName(input));
-        } else {
-            dexDir = new File(rootDir, "dexDir" + outputs.size());
-        }
-        return dexDir;
-    }
-
-
-
-    public void preDexLibrary(@NonNull File inputFile,
-                              @NonNull File outFile,
-                              boolean multiDex,
-                              @NonNull DexOptions dexOptions,
-                              @NonNull ProcessOutputHandler processOutputHandler)
-        throws IOException, InterruptedException, ProcessException {
-
-        if (!atlasExtension.getTBuildConfig().isDexCacheEnabled() || multiDex) {
-            super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler,14);
-            return;
-        }
-
-        String md5 = "";
-        File dexFile = new File(outFile, "classes.dex");
-
-        if (!inputFile.getName().startsWith("combined") && !(inputFile.getName().startsWith("main") && inputFile
-            .getName().endsWith("jar")) && inputFile.isFile()) {
-
-            if (inputFile.isFile()) {
-                md5 = MD5Util.getFileMD5(inputFile);
-            } else if (inputFile.isDirectory()) {
-                md5 = MD5Util.getFileMd5(FileUtils.listFiles(inputFile,
-                                                             new String[] {"class"},
-                                                             true));
-            }
-
-            //TODO md5 with other
-            if (StringUtils.isNotEmpty(md5)) {
-
-                String other = "" + dexOptions.getAdditionalParameters().contains("--useMyDex") + dexOptions
-                    .getJumboMode() + dexOptions.getKeepRuntimeAnnotatedClasses();
-
-                try {
-                    md5 = MD5Util.getMD5(other + md5);
-                } catch (Exception e) {
-                    throw new GradleException(e.getMessage(), e);
-                }
-
-                try {
-                    FileCacheCenter.fetchFile(PRE_DEXCACHE_TYPE, md5, false,
-                                              atlasExtension.getTBuildConfig().isDexNetworkCacheEnabled(), dexFile);
-                } catch (FileCacheException e) {
-                    sLogger.error(e.getMessage(), e);
-                }
-
-                if (dexFile.exists() && dexFile.length() > 0) {
-                    sLogger.info("[mtldex] hit cache dex for {} , {}",
-                                 inputFile.getAbsolutePath(),
-                                 dexFile.getAbsolutePath());
-                    return;
-                } else {
-                    sLogger.info("[mtldex] discache dex for {}", inputFile.getAbsolutePath());
-                }
-            }
-        } else {
-            //R Too much, you need to start multi-dex
-        }
-
-        multiDex = false;
-
-        dexFile.delete();
-
-        //todo  Set the dexOptions
-        DefaultDexOptions defaultDexOptions = DefaultDexOptions.copyOf(dexOptions);
-
-        if (!multiDex) {
-            defaultDexOptions.setJavaMaxHeapSize("500m");
-            defaultDexOptions.setDexInProcess(true);
-            defaultDexOptions.getAdditionalParameters().remove("--multi-dex");
-        }
-
-        sLogger.info("[mtldex] pre dex for {} {}",
-                     inputFile.getAbsolutePath(),
-                     outFile.getAbsolutePath());
-
-        super.preDexLibrary(inputFile, outFile, multiDex, defaultDexOptions, processOutputHandler,14);
-
-        if (multiDex) {
-            return;
-        }
-
-        if (!dexFile.exists() || dexFile.length() == 0) {
-            sLogger.warn("dex failed " + dexFile.getAbsolutePath() + "->" + inputFile.getAbsolutePath());
-            return;
-        }
-
-        sLogger.warn("dex success " + dexFile.getAbsolutePath() + "->" + inputFile.getAbsolutePath());
-
-        if (StringUtils.isNotEmpty(md5) && dexFile.exists()) {
-            try {
-                FileCacheCenter.cacheFile(PRE_DEXCACHE_TYPE, md5, dexFile,
-                                          AtlasBuildContext.sBuilderAdapter.pushCacheToNetwork && atlasExtension
-                                              .getTBuildConfig().isDexNetworkCacheEnabled());
-            } catch (FileCacheException e) {
-                sLogger.error(e.getMessage(), e);
-            }
-
-        }
-    }
-
     @Override
     public SdkInfo getSdkInfo() {
         return defaultBuilder.getSdkInfo();
-    }
-
-    @Override
-    public MergingReport mergeManifestsForApplication(
-            @NonNull File mainManifest,
-            @NonNull List<File> manifestOverlays,
-            @NonNull List<? extends ManifestProvider> dependencies,
-            @Nullable String featureName,
-            String packageOverride,
-            int versionCode,
-            String versionName,
-            @Nullable String minSdkVersion,
-            @Nullable String targetSdkVersion,
-            @Nullable Integer maxSdkVersion,
-            @NonNull String outManifestLocation,
-            @Nullable String outAaptSafeManifestLocation,
-            @Nullable String outInstantRunManifestLocation,
-            ManifestMerger2.MergeType mergeType,
-            Map<String, Object> placeHolders,
-            @NonNull List<ManifestMerger2.Invoker.Feature> optionalFeatures,
-            @Nullable File reportFile) {
-
-
-        return super.mergeManifestsForApplication(
-                mainManifest,
-                manifestOverlays,
-                manifestProviders,
-                featureName,
-                packageOverride,
-                versionCode,
-                versionName,
-                minSdkVersion,
-                targetSdkVersion,
-                maxSdkVersion,
-                outManifestLocation,
-                outAaptSafeManifestLocation,
-                outInstantRunManifestLocation,
-                mergeType,
-                placeHolders,
-                optionalFeatures,
-                reportFile);
-
     }
 
 
@@ -807,63 +399,5 @@ public class AtlasBuilder extends AndroidBuilder {
         public void dexMerge(Map<File, Dex> fileDexMap, File outDexFolder) throws IOException;
 
     }
-
-
-    private SymbolTable build(File awbSymbolFile, String mainPackageName,File mainRTxt,File mainSymbolFile,String pacakgeName) throws IOException {
-        SymbolTable.Builder builder = new SymbolTable.Builder();
-        SymbolTable awbSymbols = null;
-        if (awbSymbolFile.exists()){
-            awbSymbols = AtlasSymbolIo.readFromAapt(awbSymbolFile, mainPackageName);
-            awbSymbols.getSymbols().values().forEach(symbol -> builder.add(symbol));
-        };
-
-        if (mainRTxt.exists()) {
-            SymbolTable generateAwbSymbols = AtlasSymbolIo.readFromAapt(mainRTxt, mainPackageName);
-            generateAwbSymbols.getSymbols().values().forEach(symbol -> {
-                if (builder.contains(symbol)) {
-                    removeSymbol(builder, symbol);
-                }
-                builder.add(symbol);
-
-            });
-
-        }
-
-        SymbolTable mainSymbols = AtlasSymbolIo.readFromAapt(mainSymbolFile, pacakgeName);
-        mainSymbols.getSymbols().values().forEach(symbol -> {
-            if (builder.contains(symbol)){
-                removeSymbol(builder,symbol);
-                builder.add(symbol);
-            }
-        });
-
-
-        return builder.build();
-    }
-
-    private void removeSymbol(SymbolTable.Builder builder, Symbol symbol) {
-        Table table = (Table) ReflectUtils.getField(builder,"symbols");
-        table.remove(symbol.getResourceType(),symbol.getName());
-    }
-
-
-
-
-    public void writeLines(File file,List<String>lines,boolean append){
-         Set<String>mergeLines = new LinkedHashSet<>();
-        try {
-            List<String> readLines = FileUtils.readLines(file);
-            mergeLines.addAll(readLines);
-            mergeLines.addAll(lines);
-            FileUtils.writeLines(file,mergeLines,append);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-    }
-
-
-
 
 }

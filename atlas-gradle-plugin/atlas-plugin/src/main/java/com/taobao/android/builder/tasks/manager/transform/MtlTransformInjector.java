@@ -213,9 +213,12 @@ import com.android.build.VariantOutput;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.internal.tasks.factory.TaskFactoryUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskCollection;
+import org.gradle.api.tasks.TaskProvider;
 
 import java.util.List;
 
@@ -249,7 +252,8 @@ public class MtlTransformInjector {
                                                                                             .getTransformTask(), (BaseVariantOutput) vod),
                                                        appVariantContext.getScope());
 
-                injectedTask.dependsOn(appVariantContext.getVariantData().compileTask);
+
+                injectedTask.dependsOn(appVariantContext.getVariantData().getScope().getTaskContainer().javacTask.get());
 
             }
 

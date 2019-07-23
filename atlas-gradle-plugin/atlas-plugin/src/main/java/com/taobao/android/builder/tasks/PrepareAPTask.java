@@ -217,7 +217,7 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.tasks.VariantAwareTask;
 import com.android.utils.FileUtils;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -225,6 +225,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildType;
+import com.taobao.android.builder.tasks.manager.ConventionVariantAwareTask;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.BetterZip;
@@ -236,7 +237,9 @@ import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.internal.ConventionTask;
 import org.gradle.api.tasks.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -251,7 +254,8 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
  */
-public class PrepareAPTask extends BaseTask {
+
+public class PrepareAPTask extends ConventionVariantAwareTask {
 
     private ApContext apContext;
 
@@ -262,6 +266,7 @@ public class PrepareAPTask extends BaseTask {
     private File explodedDir;
 
     Set<String> awbBundles;
+
 
     @InputFile
     @Optional
@@ -384,9 +389,9 @@ public class PrepareAPTask extends BaseTask {
         }
 
         @Override
-        public void execute(PrepareAPTask prepareAPTask) {
+        public void configure(PrepareAPTask prepareAPTask) {
 
-            super.execute(prepareAPTask);
+            super.configure(prepareAPTask);
 
             //
             TBuildType tBuildType = variantContext.getBuildType();

@@ -244,9 +244,9 @@ public class MergeAssetAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTas
     }
 
     @Override
-    public void execute(MtlParallelTask parallelTask) {
+    public void configure(MtlParallelTask parallelTask) {
 
-        super.execute(parallelTask);
+        super.configure(parallelTask);
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(parallelTask.getVariantName());
 
@@ -265,7 +265,7 @@ public class MergeAssetAwbsConfigAction extends MtlBaseTaskAction<MtlParallelTas
 
             MergeAwbAssets mergeTask = TaskCreater.create(appVariantContext.getProject(), mergeAwbAssetConfigAction.getName(), mergeAwbAssetConfigAction.getType());
 
-            mergeAwbAssetConfigAction.execute(mergeTask);
+            mergeAwbAssetConfigAction.configure(mergeTask);
 
             tasks.add(mergeTask);
 

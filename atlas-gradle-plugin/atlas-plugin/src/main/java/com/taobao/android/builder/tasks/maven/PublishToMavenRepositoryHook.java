@@ -277,7 +277,6 @@ public class PublishToMavenRepositoryHook extends AbstractPublishToMaven {
 
                 try {
                     MavenPublisher remotePublisher = new MavenRemotePublisher(
-                            getLoggingManagerFactory(),
                             getMavenRepositoryLocator(),
                             getTemporaryDirFactory(),
                             getRepositoryTransportFactory());

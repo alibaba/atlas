@@ -211,7 +211,7 @@ package com.taobao.android.builder.tasks.app.prepare;
 
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.builder.model.AndroidLibrary;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -236,7 +236,7 @@ import static com.android.SdkConstants.FD_AAR_LIBS;
  *
  * @author wuzhong
  */
-public class AddLocalJarTask extends BaseTask {
+public class AddLocalJarTask extends AndroidBuilderTask {
 
     static final String taskName = "addLocalJar";
 
@@ -327,13 +327,13 @@ public class AddLocalJarTask extends BaseTask {
             return AddLocalJarTask.class;
         }
 
-        @Override
-        public void execute(AddLocalJarTask localJarTask) {
 
-            super.execute(localJarTask);
+        @Override
+        public void configure(AddLocalJarTask localJarTask) {
+            super.configure(localJarTask);
             localJarTask.appVariantContext =appVariantContext;
             localJarTask.atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
-                localJarTask.getVariantName());
+                    localJarTask.getVariantName());
         }
     }
 }

@@ -1,16 +1,9 @@
 package com.taobao.android.builder.tasks.execution;
 
-import com.google.common.collect.ImmutableList;
 import org.gradle.api.internal.TaskInternal;
-import org.gradle.api.internal.tasks.TaskExecuter;
-import org.gradle.api.internal.tasks.TaskExecutionContext;
-import org.gradle.api.internal.tasks.TaskExecutionOutcome;
-import org.gradle.api.internal.tasks.TaskStateInternal;
+import org.gradle.api.internal.tasks.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * SkipUpdateToDateExecuter
@@ -27,8 +20,8 @@ public class SkipExecuter implements TaskExecuter{
     public SkipExecuter(TaskExecuter executer) {
         this.executer = executer;
     }
-    public void execute(TaskInternal task, TaskStateInternal state, TaskExecutionContext context) {
+    public TaskExecuterResult execute(TaskInternal task, TaskStateInternal state, TaskExecutionContext context) {
         LOGGER.info("skip SkipExecuter");
-        executer.execute(task, state, context);
+        return executer.execute(task, state, context);
     }
 }

@@ -5,13 +5,11 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
-import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.tasks.MergeManifests;
-import com.android.build.gradle.tasks.ResourceException;
-import com.android.builder.core.BuilderConstants;
-import com.android.builder.model.AndroidLibrary;
-import com.android.ide.common.res2.*;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
+import com.android.build.gradle.tasks.ProcessApplicationManifest;
+import com.android.ide.common.resources.*;
 import com.android.resources.ResourceType;
+import com.android.tools.analytics.Percentiles;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -41,7 +39,7 @@ import java.util.function.Consumer;
  * @author zhayu.ll
  * @date 18/8/10
  */
-public class ScanDupResTask extends BaseTask {
+public class ScanDupResTask extends AndroidBuilderTask {
 
     private AppVariantOutputContext appVariantOutputContext;
 
@@ -103,7 +101,7 @@ public class ScanDupResTask extends BaseTask {
             for (ResolvedArtifactResult artifact : libArtifacts) {
                 ResourceSet resourceSet =
                         new ResourceSet(
-                                MergeManifests.getArtifactName(artifact),
+                                ProcessApplicationManifest.getArtifactName(artifact),
                                 null,
                                 null,
                                 true);
@@ -116,16 +114,16 @@ public class ScanDupResTask extends BaseTask {
             resourceSetList.forEach(resourceSet -> {
                 try {
                     resourceSet.loadFromFiles(getILogger());
-                } catch (MergingException e) {
+                } catch (Percentiles.MergeException e) {
                     e.printStackTrace();
                 }
                 resourceMerger.addDataSet(resourceSet);
             });
 
-            ListMultimap<String, ResourceItem> mValuesResMap = ArrayListMultimap.create();
+            ListMultimap<String, ResourceMergerItem> mValuesResMap = ArrayListMultimap.create();
 
             try {
-                resourceMerger.mergeData(new MergeConsumer<ResourceItem>() {
+                resourceMerger.mergeData(new MergeConsumer<ResourceMergerItem>() {
                     @Override
                     public void start(DocumentBuilderFactory documentBuilderFactory) throws ConsumerException {
 
@@ -137,7 +135,7 @@ public class ScanDupResTask extends BaseTask {
                     }
 
                     @Override
-                    public void addItem(ResourceItem item) throws ConsumerException {
+                    public void addItem(ResourceMergerItem item) throws ConsumerException {
                         DataFile.FileType type = item.getSourceType();
                         if (type == DataFile.FileType.XML_VALUES) {
                             mValuesResMap.put(item.getQualifiers(), item);
@@ -184,7 +182,7 @@ public class ScanDupResTask extends BaseTask {
                     }
 
                     @Override
-                    public void removeItem(ResourceItem removedItem, ResourceItem replacedBy) throws ConsumerException {
+                    public void removeItem(ResourceMergerItem removedItem, ResourceMergerItem replacedBy) throws ConsumerException {
                         DataFile.FileType removedType = removedItem.getSourceType();
                         DataFile.FileType replacedType = replacedBy != null ? replacedBy.getSourceType() : null;
                         switch(removedType) {
@@ -212,7 +210,7 @@ public class ScanDupResTask extends BaseTask {
                     }
 
                     @Override
-                    public boolean ignoreItemInMerge(ResourceItem item) {
+                    public boolean ignoreItemInMerge(ResourceMergerItem item) {
                         DataFile.FileType type = item.getSourceType();
                         if (type == DataFile.FileType.XML_VALUES) {
                             mValuesResMap.put(item.getQualifiers(), item);
@@ -245,24 +243,26 @@ public class ScanDupResTask extends BaseTask {
                                 if (!map.containsKey(tag)) {
                                     map.put(tag, file);
                                 }else if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
-                                            && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
-                                            && !isSameFile(map.get(tag),file)){
-                                        exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
+                                        && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
+                                        && !isSameFile(map.get(tag),file)){
+                                    exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
                             }
 
 //                                this.mCompileResourceRequests.add(new CompileResourceRequest(file, this.getRootFolder(), folderName));
 //                            }
                         }
-                        return false;
-                    }
+                        return false;                    }
+
+
+
                 },false);
             } catch (MergingException e) {
                 e.printStackTrace();
             }
 
             mValuesResMap.asMap().values().forEach(resourceItems -> {
-                for (ResourceItem resourceItem:resourceItems){
+                for (ResourceMergerItem resourceItem:resourceItems){
                     String tag = null;
                     if (resourceItem.getSource() == null){
                         tag = resourceItem.getQualifiers() + ":" +resourceItem.getType().getName()+":"+resourceItem.getName();
@@ -320,8 +320,8 @@ public class ScanDupResTask extends BaseTask {
         }
 
         @Override
-        public void execute(ScanDupResTask scanDupResTask) {
-            super.execute(scanDupResTask);
+        public void configure(ScanDupResTask scanDupResTask) {
+            super.configure(scanDupResTask);
             if (!variantContext.getAtlasExtension().getTBuildConfig().getScanDupRes()){
                 scanDupResTask.setEnabled(false);
                 return;
@@ -350,7 +350,7 @@ public class ScanDupResTask extends BaseTask {
 
 
 
-    private static String getFolderName(ResourceItem resourceItem) {
+    private static String getFolderName(ResourceMergerItem resourceItem) {
         ResourceType itemType = resourceItem.getType();
         String folderName = itemType.getName();
         String qualifiers = resourceItem.getQualifiers();

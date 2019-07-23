@@ -211,8 +211,7 @@ package com.taobao.android.builder.tasks.manager;
 
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.builder.core.AndroidBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
@@ -267,8 +266,8 @@ public class MtlTaskInjector {
                     Task task = mtlTaskFactory.createTask(variantContext, vod, mtlTaskContext.getTaskActionClazz());
                     if (null != task) {
 
-                        if (null != androidBuilder && task instanceof BaseTask) {
-                            ((BaseTask)task).setAndroidBuilder(androidBuilder);
+                        if (null != androidBuilder && task instanceof AndroidBuilderTask) {
+                            ((AndroidBuilderTask)task).setAndroidBuilder(androidBuilder);
                         }
 
                         tasks.add(task);
@@ -325,9 +324,9 @@ public class MtlTaskInjector {
             if (variantName.contains("-")){
                 variantName = variantName.replace("-","");
             }
-            if (task instanceof DefaultAndroidTask) {
+            if (task instanceof AndroidBuilderTask) {
 
-                if (variantName.toLowerCase().equals(((DefaultAndroidTask)task).getVariantName().toLowerCase())) {
+                if (variantName.toLowerCase().equals(((AndroidBuilderTask)task).getVariantName().toLowerCase())) {
                     taskList.add(task);
                 }
             } else {

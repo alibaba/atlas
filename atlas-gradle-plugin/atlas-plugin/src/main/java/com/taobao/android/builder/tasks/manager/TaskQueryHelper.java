@@ -212,7 +212,7 @@ package com.taobao.android.builder.tasks.manager;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -230,8 +230,8 @@ public class TaskQueryHelper<T extends Task> {
 
         List<Task> taskList = new ArrayList();
         for (Task task : androidTasks) {
-            if (task instanceof DefaultAndroidTask) {
-                if (variantName.equals(((DefaultAndroidTask)task).getVariantName())) {
+            if (task instanceof AndroidBuilderTask) {
+                if (variantName.equals(((AndroidBuilderTask)task).getVariantName())) {
                     taskList.add(task);
                 }
             } else {

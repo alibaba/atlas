@@ -213,8 +213,8 @@ import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
+import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.VariantScopeImpl;
-import com.android.ide.common.build.ApkData;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -376,8 +376,8 @@ public class ClassInjectTransform extends MtlInjectTransform {
         final ClassPool pool = ClassPool.getDefault();
 
         try {
-            File verifyFile = PathUtil.getJarFile(com.taobao.verify.Verifier.class);
-            pool.insertClassPath(verifyFile.getAbsolutePath());
+//            File verifyFile = PathUtil.getJarFile(com.taobao.verify.Verifier.class);
+//            pool.insertClassPath(verifyFile.getAbsolutePath());
             for (File file : scope.getJavaClasspath(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactType.CLASSES)) {
                 if (file.isFile()) {
                     pool.insertClassPath(file.getAbsolutePath());
