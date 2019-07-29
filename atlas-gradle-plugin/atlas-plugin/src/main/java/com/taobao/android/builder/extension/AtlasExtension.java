@@ -221,9 +221,12 @@ import org.gradle.api.Project;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.internal.reflect.Instantiator;
 
 public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
+
+    private  ObjectFactory objectFactory;
 
     @ConfigGroup(order = 1, advance = false)
     public Z tBuildConfig;
@@ -238,7 +241,6 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     @ConfigGroup(order = 12, advance = false)
     public NamedDomainObjectContainer<PatchConfig> patchConfigs;
 
-    public NamedDomainObjectContainer<DexConfig> dexConfigs;
 
 
     public NamedDomainObjectContainer<DefaultChannelConfig> atlasChannelConfigs;
@@ -277,25 +279,22 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     }
 
     public AtlasExtension(@NonNull final ProjectInternal project,
-                          @NonNull Instantiator instantiator,
+                          @NonNull ObjectFactory instantiator,
                           @NonNull NamedDomainObjectContainer<T> buildTypes,
-                          @NonNull NamedDomainObjectContainer<PatchConfig> patchConfigs,
-                          @NonNull NamedDomainObjectContainer<DexConfig> dexConfigs) {
+                          @NonNull NamedDomainObjectContainer<PatchConfig> patchConfigs) {
 
         logger = Logging.getLogger(this.getClass());
         this.project = project;
-
+        objectFactory = instantiator;
         this.patchConfigs = patchConfigs;
-        this.dexConfigs = dexConfigs;
         this.buildTypes = buildTypes;
         this.multiDexConfigs = project.container(MultiDexConfig.class, new MultiDexConfigFactory(
-
-            instantiator,project, project.getLogger()));
-        this.atlasChannelConfigs = project.container(DefaultChannelConfig.class, new DefaultChannelConfigFactory(instantiator, project, project.getLogger()));
-        this.enhanceConfigs = project.container(EnhanceConfig.class, new EnhanceConfigFactory(instantiator, project, project.getLogger()));
-        tBuildConfig = (Z) instantiator.newInstance(TBuildConfig.class);
-        manifestOptions = instantiator.newInstance(ManifestOptions.class);
-        bundleConfig = instantiator.newInstance(BundleConfig.class);
+                objectFactory,project, project.getLogger()));
+        this.atlasChannelConfigs = project.container(DefaultChannelConfig.class, new DefaultChannelConfigFactory(objectFactory, project, project.getLogger()));
+        this.enhanceConfigs = project.container(EnhanceConfig.class, new EnhanceConfigFactory(objectFactory, project, project.getLogger()));
+        tBuildConfig = (Z) objectFactory.newInstance(TBuildConfig.class);
+        manifestOptions = objectFactory.newInstance(ManifestOptions.class);
+        bundleConfig = objectFactory.newInstance(BundleConfig.class);
     }
 
     public void buildTypes(Action<? super NamedDomainObjectContainer<T>> action) {
@@ -310,9 +309,6 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         action.execute(tBuildConfig);
     }
 
-    public void dexConfigs(Action<? super NamedDomainObjectContainer<DexConfig>> action) {
-        action.execute(dexConfigs);
-    }
 
     public void manifestOptions(Action<ManifestOptions> action) {
         action.execute(manifestOptions);
@@ -353,10 +349,6 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     public TBuildConfig getTBuildConfig() {
         return tBuildConfig;
-    }
-
-    public NamedDomainObjectContainer<DexConfig> getDexConfig() {
-        return dexConfigs;
     }
 
     public boolean isAtlasEnabled() {

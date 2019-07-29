@@ -1,5 +1,6 @@
 package com.taobao.android.builder.extension;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ public class DefaultChannelConfig {
 
     private String channelFolder = "dev-adaptation";
 
+    @Inject
     public DefaultChannelConfig(String name) {
         this.name = name;
     }

@@ -283,36 +283,30 @@ public class AtlasDepTreeParser {
         }
 
 
-        Configuration compileClasspath = variantDeps.getCompileClasspath();
+//        Configuration compileClasspath = variantDeps.getCompileClasspath();
         Configuration runtimeClasspath = variantDeps.getRuntimeClasspath();
-//        Configuration apiClasspath = variantDeps.();
         Configuration  configuration = variantDeps.getAnnotationProcessorConfiguration();
-        Configuration bundleClasspath = project.getConfigurations().maybeCreate(AtlasPlugin.BUNDLE_COMPILE);
 
-        ensureConfigured(compileClasspath,project);
+//        ensureConfigured(compileClasspath,project);
         ensureConfigured(runtimeClasspath,project);
-        ensureConfigured(bundleClasspath,project);
-//        ensureConfigured(apiClasspath,project);
         ensureConfigured(configuration,project);
 
 
         Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap();
-        collectArtifacts(compileClasspath, artifacts);
+//        collectArtifacts(compileClasspath, artifacts);
         collectArtifacts(runtimeClasspath, artifacts);
 //        collectArtifacts(apiClasspath,artifacts);
-        collectArtifacts(bundleClasspath, artifacts);
         collectArtifacts(configuration, artifacts);
 
-        unEnsureConfigured(compileClasspath);
+//        unEnsureConfigured(compileClasspath);
         unEnsureConfigured(runtimeClasspath);
-        unEnsureConfigured(bundleClasspath);
 //        unEnsureConfigured(apiClasspath);
         unEnsureConfigured(configuration);
 
 
 
         //Rely on the group
-        DependencyGroup dependencyGroup = new DependencyGroup(compileClasspath, bundleClasspath,artifacts,awbs);
+        DependencyGroup dependencyGroup = new DependencyGroup(runtimeClasspath,artifacts,awbs);
 
         DependencyResolver dependencyResolver = new DependencyResolver(project, variantDeps, artifacts,
                                                                        dependencyGroup.bundleProvidedMap,dependencyGroup.bundleCompileMap);
@@ -387,15 +381,8 @@ public class AtlasDepTreeParser {
 
 
         Set<ResolvedArtifact> allArtifacts;
-        if (configuration.getState().equals(Configuration.State.UNRESOLVED) && !configuration.getName().equals(AtlasPlugin.BUNDLE_COMPILE)) {
-            configuration.setCanBeResolved(true);
-        }
-//        if (!extraModelInfo.getMode().equals(STANDARD)) {
-//            allArtifacts = configuration.getResolvedConfiguration().getLenientConfiguration().getArtifacts(
-//                Specs.satisfyAll());
-//        } else {
+
             allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
-//        }
         for (ResolvedArtifact artifact : allArtifacts) {
             ModuleVersionIdentifier id = artifact.getModuleVersion().getId();
             List<ResolvedArtifact> moduleArtifacts = artifacts.get(id);

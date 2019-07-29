@@ -210,9 +210,14 @@
 package com.taobao.android.builder;
 
 import com.android.build.gradle.LibraryPlugin;
+import com.android.tools.lint.gradle.api.ToolingRegistryProvider;
 import com.taobao.android.builder.manager.PluginManager;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+import org.jetbrains.annotations.NotNull;
+
+import javax.inject.Inject;
 
 /**
  * Created by wuzhong on 2017/3/15.
@@ -221,7 +226,14 @@ import org.gradle.api.Project;
  * @date 2017/03/15
  *
  */
-public class AtlasLibPlugin implements Plugin<Project> {
+public class AtlasLibPlugin implements Plugin<Project>, ToolingRegistryProvider {
+
+    private ToolingModelBuilderRegistry toolingModelBuilderRegistry;
+
+    @Inject
+    public AtlasLibPlugin(ToolingModelBuilderRegistry toolingModelBuilderRegistry) {
+        this.toolingModelBuilderRegistry = toolingModelBuilderRegistry;
+    }
 
     @Override
     public void apply(Project project) {
@@ -232,4 +244,9 @@ public class AtlasLibPlugin implements Plugin<Project> {
 
     }
 
+    @NotNull
+    @Override
+    public ToolingModelBuilderRegistry getModelBuilderRegistry() {
+        return toolingModelBuilderRegistry;
+    }
 }

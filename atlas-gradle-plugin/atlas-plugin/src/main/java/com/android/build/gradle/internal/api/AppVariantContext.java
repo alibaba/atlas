@@ -228,8 +228,6 @@ import com.taobao.android.builder.dependency.diff.DependencyDiff;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.tasks.app.bundle.ProcessAwbAndroidResources;
-import com.taobao.android.builder.tasks.app.bundle.ProcessResAwbsTask;
 import com.taobao.android.builder.tools.bundleinfo.ApkFileListUtils;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileTree;
@@ -254,12 +252,10 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
     private final ApplicationVariantData variantData;
 
-    public final Map<String, ProcessAwbAndroidResources> awbsProcessResourcesTask = new HashMap<>();
 
     private final Map<String, AppVariantOutputContext> outputContextMap = Maps.newHashMap();
 
 
-    public ProcessResAwbsTask processResAwbsTask = null;
 
     /**
      * buildCache The manifest of the directory cannot be changed, So save the modified manifest reference
@@ -269,6 +265,8 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
 
     public DependencyDiff dependencyDiff;
+
+
 
     /**
      * bundleList file
@@ -450,6 +448,10 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
         return appVariantOutputContext;
     }
+
+
+
+
 
     public File getAtlaSourceDir() {
         return new File(scope.getGlobalScope().getGeneratedDir(),

@@ -228,6 +228,12 @@ public class AppPluginHook {
 
     private Project project;
 
+    public BaseExtension getBaseExtension() {
+        return baseExtension;
+    }
+
+    private BaseExtension baseExtension;
+
     public AppPluginHook(Project project) {
         this.project = project;
     }
@@ -256,7 +262,12 @@ public class AppPluginHook {
             basePlugin = project.getPlugins().findPlugin(FeaturePlugin.class);
         }
 
-        return (AndroidBuilder) method.invoke(basePlugin,"getAndroidBuilder");
+
+        if (basePlugin != null) {
+            baseExtension = basePlugin.getExtension();
+        }
+
+        return (AndroidBuilder) method.invoke(basePlugin);
 
 
     }

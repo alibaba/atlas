@@ -17,7 +17,6 @@ version = '1.0.0'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '26.0.2'
 
     defaultConfig {
         minSdkVersion 14
@@ -45,10 +44,10 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    providedCompile project(':middlewarelibrary')
+    implementation project(':middlewarelibrary')
 //    bundleCompile project(':publicbundle')
 
-    providedCompile 'com.android.support:support-v4:25.3.0'
-    providedCompile 'com.android.support:appcompat-v7:25.1.0'
-    providedCompile 'com.android.support.constraint:constraint-layout:1.0.2'
+    implementation 'com.android.support:support-v4:25.3.0'
+    implementation 'com.android.support:appcompat-v7:25.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
 }

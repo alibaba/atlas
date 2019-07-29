@@ -229,7 +229,7 @@ import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -243,7 +243,7 @@ import org.gradle.api.tasks.TaskAction;
 /**
  * Distribution packageId
  */
-public class PreparePackageIdsTask extends BaseTask {
+public class PreparePackageIdsTask extends AndroidBuilderTask {
 
 
     AppVariantContext appVariantContext;
@@ -432,9 +432,9 @@ public class PreparePackageIdsTask extends BaseTask {
         }
 
         @Override
-        public void execute(PreparePackageIdsTask packageIdsTask) {
+        public void configure(PreparePackageIdsTask packageIdsTask) {
 
-            super.execute(packageIdsTask);
+            super.configure(packageIdsTask);
 
             packageIdsTask.appVariantContext = appVariantContext;
             packageIdsTask.appBuildInfo = getAppVariantOutputContext().appBuildInfo;

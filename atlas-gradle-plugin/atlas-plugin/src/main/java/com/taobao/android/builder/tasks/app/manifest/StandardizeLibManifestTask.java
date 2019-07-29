@@ -214,6 +214,7 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.builder.model.AndroidLibrary;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
@@ -252,7 +253,7 @@ import java.util.List;
  *
  * @author shenghua.nish, wuzhong
  */
-public class StandardizeLibManifestTask extends DefaultTask {
+public class StandardizeLibManifestTask extends AndroidBuilderTask {
 
     @InputFile
     File mainManifestFile;
@@ -397,7 +398,8 @@ public class StandardizeLibManifestTask extends DefaultTask {
         }
 
         @Override
-        public void execute(StandardizeLibManifestTask task) {
+        public void configure(StandardizeLibManifestTask task) {
+            super.configure(task);
             VariantScope variantScope = appVariantContext.getScope();
             final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
 
@@ -406,15 +408,13 @@ public class StandardizeLibManifestTask extends DefaultTask {
             task.appVariantContext = appVariantContext;
 
 
-            baseVariantOutput.getProcessManifest().doFirst(
+            baseVariantOutput.getProcessManifestProvider().get().doFirst(
                 new PreProcessManifestAction(appVariantContext, baseVariantOutput));
 
 //            if (!appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()) {
-            baseVariantOutput.getProcessManifest().doLast(
+            baseVariantOutput.getProcessManifestProvider().get().doLast(
                     new PostProcessManifestAction(appVariantContext, baseVariantOutput));
 
-            File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
-            appVariantContext.getVariantData().javacTask.source(proxySrcDir);
 
         }
 

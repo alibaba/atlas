@@ -216,7 +216,7 @@ import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
-import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
+import com.android.build.gradle.internal.tasks.VariantAwareTask;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import org.apache.commons.io.FileUtils;
@@ -224,6 +224,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.internal.ConventionTask;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -233,7 +234,7 @@ import java.util.concurrent.Callable;
  * APTask to package files
  * Created by shenghua.nish on 2015-10-20 7:01 PM.
  */
-public class ApBuildTask extends ConventionTask {
+public class ApBuildTask extends ConventionTask implements VariantAwareTask {
 
     private File apkFile;
 
@@ -244,6 +245,8 @@ public class ApBuildTask extends ConventionTask {
     private AppVariantOutputContext.AppBuildInfo appBuildInfo;
 
     private File apUnzipDir;
+
+    private String variantName;
 
     @InputFile
     public File getApkFile() {
@@ -293,7 +296,7 @@ public class ApBuildTask extends ConventionTask {
         int index = path.lastIndexOf(".apk");
         File APFile = new File(path.substring(0, index) + ".ap");
 
-        addFile(com.android.utils.FileUtils.join(baseVariantOutputData.getProcessManifest().getManifestOutputDirectory().get().getAsFile(),ApkDataUtils.get(baseVariantOutputData).getDirName(),"AndroidManifest.xml"),
+        addFile(com.android.utils.FileUtils.join(baseVariantOutputData.getProcessManifestProvider().get().getManifestOutputDirectory().get().getAsFile(),ApkDataUtils.get(baseVariantOutputData).getDirName(),"AndroidManifest.xml"),
                 "AndroidManifest.xml");
         addFile(apkFile, ApContext.AP_INLINE_APK_FILENAME);
         addFile(new File(
@@ -401,6 +404,28 @@ public class ApBuildTask extends ConventionTask {
 
         FileUtils.copyFile(file, dest);
     }
+
+    @NotNull
+    @Override
+    public String getVariantName() {
+        return variantName;
+    }
+
+    @Override
+    public void setVariantName(@NotNull String s) {
+        this.variantName = s;
+    }
+
+//    @NotNull
+//    @Override
+//    public String getVariantName() {
+//        return null;
+//    }
+//
+//    @Override
+//    public void setVariantName(@NotNull String s) {
+//
+//    }
 
     /**
      * Configure Ap files

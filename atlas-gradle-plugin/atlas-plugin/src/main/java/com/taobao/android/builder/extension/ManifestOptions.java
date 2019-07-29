@@ -215,6 +215,8 @@ import java.util.Set;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.extension.annotation.Config;
 
+import javax.inject.Inject;
+
 /**
  * Created by shenghua.nish on 2016-05-17 And in the morning.
  */
@@ -260,6 +262,10 @@ public class ManifestOptions {
 
     @Config(order = 10, title = "Do not do bundle for manifest merge" ,message = "Non-participating in the manifest merge dependent coordinates, group:name,group2:name2", advance = true, group = "atlas")
     private Set<String> notMergedBundles = Sets.newHashSet();
+
+    @Inject
+    public ManifestOptions() {
+    }
 
     public Set<String> getNotMergedBundles() {
         return notMergedBundles;

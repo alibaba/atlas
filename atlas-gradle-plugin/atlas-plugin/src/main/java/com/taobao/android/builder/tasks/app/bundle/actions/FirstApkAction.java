@@ -68,7 +68,7 @@ public class FirstApkAction implements Action<Task> {
         }
         if (dexs!= null && dexs.length == 1) {
             File androidManifest = null;
-                androidManifest = new File(appVariantOutputContext.getScope().getManifestOutputDirectory(),"AndroidManifest.xml");
+                androidManifest = new File(appVariantOutputContext.getVariantContext().getVariantOutput(appVariantOutputContext.getApkData()).getProcessManifestProvider().get().getManifestOutputDirectory().get().getAsFile(),"AndroidManifest.xml");
 
             File file = AtlasBuildContext.atlasApkProcessor.securitySignApk(dexs[0], androidManifest,appVariantOutputContext.getVariantContext().getBuildType(),false);
             if (file!= null && file.exists()){

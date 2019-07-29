@@ -214,11 +214,11 @@ package com.taobao.android.builder.tasks.app.prepare;
  */
 
 import com.android.build.gradle.api.BaseVariantOutput;
-import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.AaptOptions;
-import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.TaskAction;
@@ -226,7 +226,7 @@ import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 import java.util.ArrayList;
 
-public class PrepareAaptTask extends BaseTask {
+public class PrepareAaptTask extends AndroidBuilderTask {
 
     AppVariantContext appVariantContext;
 
@@ -236,38 +236,40 @@ public class PrepareAaptTask extends BaseTask {
     @TaskAction
     public void doExecute() {
 
-        AaptOptions aaptOptions = processAndroidResources.getAaptOptions();
+        AaptOptions aaptOptions = ((LinkApplicationAndroidResourcesTask)processAndroidResources).getAaptOptions();
         if (null == aaptOptions) {
-            aaptOptions = new AaptOptions();
+            aaptOptions = new AaptOptions(false);
         }
         if (null == aaptOptions.getAdditionalParameters()) {
             aaptOptions.setAdditionalParameters(new ArrayList<String>());
         }
 
-        processAndroidResources.setAndroidBuilder(getBuilder());
-        processAndroidResources.setAaptOptions(aaptOptions);
+//        processAndroidResources.setAndroidBuilder(getBuilder());
+        ((LinkApplicationAndroidResourcesTask)processAndroidResources).setAaptOptions(aaptOptions);
 
         ApContext apContext = appVariantContext.apContext;
-        if (processAndroidResources.isAapt2Enabled()) {
+
+        //default use aapt2
+//        if (((LinkApplicationAndroidResourcesTask)processAndroidResources).()) {
             aaptOptions.getAdditionalParameters().add("--emit-ids");
             aaptOptions.getAdditionalParameters().add(new File(getProject().getBuildDir(),
                 "outputs/public.txt").getAbsolutePath());
-        }
+//        }
         if (null != apContext && apContext.getBaseApk() != null && apContext.getBaseApk().exists()) {
             File baseApk = appVariantContext.apContext.getBaseApk();
             //You need to increase the -b parameter
-            if (processAndroidResources.isAapt2Enabled()) {
+//            if (processAndroidResources.isAapt2Enabled()) {
                 aaptOptions.getAdditionalParameters().add("-I");
-            } else {
-                if (!aaptOptions.getAdditionalParameters().contains("-B")) {
-                    aaptOptions.getAdditionalParameters().add("-B");
-                }
-            }
+//            } else {
+//                if (!aaptOptions.getAdditionalParameters().contains("-B")) {
+//                    aaptOptions.getAdditionalParameters().add("-B");
+//                }
+//            }
             aaptOptions.getAdditionalParameters().add(baseApk.getAbsolutePath());
-            if (processAndroidResources.isAapt2Enabled()) {
+//            if (processAndroidResources.isAapt2Enabled()) {
                 aaptOptions.getAdditionalParameters().add("--stable-ids");
                 aaptOptions.getAdditionalParameters().add(apContext.getBaseStableIdsFile().getAbsolutePath());
-            }
+//            }
 //            if (appVariantContext.getAtlasExtension().getTBuildConfig().isIncremental()||appVariantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
 //                aaptOptions.getAdditionalParameters().add("--vm-safemode");
 //                aaptOptions.getAdditionalParameters().add("--merge");
@@ -290,7 +292,7 @@ public class PrepareAaptTask extends BaseTask {
 
         @Override
         public String getName() {
-            return scope.getTaskName("prepare", "Aapt");
+            return scope.getTaskName("prepare", "Aapt2");
         }
 
         @Override
@@ -299,19 +301,12 @@ public class PrepareAaptTask extends BaseTask {
         }
 
         @Override
-        public void execute(PrepareAaptTask prepareAaptTask) {
+        public void configure(PrepareAaptTask prepareAaptTask) {
 
-            super.execute(prepareAaptTask);
-
-            if (!appVariantContext.getAtlasExtension().getTBuildConfig().getUseCustomAapt()) {
-                prepareAaptTask.setEnabled(false);
-                return;
-            }
+            super.configure(prepareAaptTask);
 
             prepareAaptTask.appVariantContext = appVariantContext;
-            prepareAaptTask.processAndroidResources = appVariantContext.getScope()
-                .getProcessResourcesTask()
-                .get(new TaskContainerAdaptor(scope.getGlobalScope().getProject().getTasks()));
+            prepareAaptTask.processAndroidResources = variantContext.getScope().getTaskContainer().getProcessAndroidResTask().get();
 
             //prepareAaptTask.mergeResources = appVariantContext.getVariantData().mergeResourcesTask;
 

@@ -5,16 +5,19 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.*;
+import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.incremental.TBIncrementalSupportVisitor;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.incremental.*;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
+import com.android.build.gradle.internal.pipeline.TransformManagerDelegate;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
+import com.android.build.gradle.internal.transforms.DexArchiveBuilderTransform;
 import com.android.build.gradle.options.DeploymentDevice;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.AndroidVersion;
@@ -32,10 +35,11 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.android.build.gradle.internal.incremental.TBIncrementalVisitor;
 import com.taobao.android.builder.insant.matcher.MatcherCreator;
 import com.taobao.android.builder.insant.visitor.ModifyClassVisitor;
+import com.taobao.android.builder.tasks.manager.transform.MtlDexArchiveBuilderTransform;
 import com.taobao.android.builder.tools.multidex.mutli.MappingReaderProcess;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logging;
 import org.objectweb.asm.*;
-import proguard.classfile.util.AccessUtil;
 
 import java.io.*;
 import java.lang.reflect.Modifier;
@@ -202,6 +206,8 @@ public class TaobaoInstantRunTransform extends Transform {
         AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().add(classesTwoOutput);
         AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().add(classesThreeOutput);
 
+        FileCollection fileCollection = variantContext.getProject().files();
+
         List<File> mainRFiles = new ArrayList<>();
         List<TransformException> exceptions = new ArrayList<>();
         List<WorkItem> workItems = new ArrayList<>();
@@ -212,7 +218,7 @@ public class TaobaoInstantRunTransform extends Transform {
                 // non incremental mode, we need to traverse the TransformInput#getFiles()
                 // folder
                 FileUtils.cleanOutputDir(classesTwoOutput);
-                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)) {
+                for (File file : Files.fileTraverser().depthFirstPostOrder(inputDir)) {
                     if (file.isDirectory()) {
                         continue;
                     }
@@ -222,6 +228,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     if (isMainRClass(className)) {
                         LOGGER.info("mainRclass:"+className + path);
                         mainRFiles.add(file);
+//                        continue;
                     }
 
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
@@ -282,7 +289,7 @@ public class TaobaoInstantRunTransform extends Transform {
             }
             awbTransform.getInputDirs().forEach(dir -> {
                 LOGGER.warning("InstantAwbclassDir[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + dir.getAbsolutePath());
-                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(dir)) {
+                for (File file : Files.fileTraverser().depthFirstPostOrder(dir)) {
                     if (!file.exists() || file.isDirectory()) {
                         continue;
                     }
@@ -396,6 +403,46 @@ public class TaobaoInstantRunTransform extends Transform {
 
             inlineFinalResource(classesThreeOutput, mainRFiles);
         }
+
+
+        //when we finish instantruntransform update
+
+        TransformManagerDelegate.findTransformTaskByTransformType(variantContext,MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+            @Override
+            public void accept(TransformTask transformTask) {
+                (variantContext.getTransformManager()).consumeStreamsForTask(transformTask,Sets.newHashSet(QualifiedContent.Scope.EXTERNAL_LIBRARIES),Sets.newHashSet(QualifiedContent.DefaultContentType.CLASSES));
+
+            }
+        });
+
+
+        TransformManagerDelegate.findTransformTaskByTransformType(variantContext,MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+            @Override
+            public void accept(TransformTask transformTask) {
+                (variantContext.getTransformManager()).consumeStreamsForTask(transformTask,Sets.newHashSet(QualifiedContent.Scope.PROJECT),Sets.newHashSet(QualifiedContent.DefaultContentType.CLASSES));
+
+            }
+        });
+
+
+
+        TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+            @Override
+            public void accept(TransformTask transformTask) {
+                (variantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT,QualifiedContent.DefaultContentType.CLASSES,"awb-instantpatch-classess",variantContext.getProject().files(awbBundleFileMap.values()));
+
+            }
+        });
+
+        TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+            @Override
+            public void accept(TransformTask transformTask) {
+                (variantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT,QualifiedContent.DefaultContentType.CLASSES,"instantpatch-classess",variantContext.getProject().files(classesTwoOutput));
+
+            }
+        });
+
+
 
     }
 

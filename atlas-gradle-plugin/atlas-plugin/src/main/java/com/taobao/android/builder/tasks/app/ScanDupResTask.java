@@ -114,7 +114,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
             resourceSetList.forEach(resourceSet -> {
                 try {
                     resourceSet.loadFromFiles(getILogger());
-                } catch (Percentiles.MergeException e) {
+                } catch (MergingException e) {
                     e.printStackTrace();
                 }
                 resourceMerger.addDataSet(resourceSet);
@@ -375,10 +375,10 @@ public class ScanDupResTask extends AndroidBuilderTask {
 
     private boolean isSameValue(ResourceItem resourceItem,String value){
 
-       return getOtherString(resourceItem).equals(value);
+       return getOtherString((ResourceMergerItem) resourceItem).equals(value);
     }
 
-    private String getOtherString(ResourceItem resourceItem){
+    private String getOtherString(ResourceMergerItem resourceItem){
 
         if (resourceItem.getValue().getFirstChild() != null && hasValues(resourceItem)){
             return resourceItem.getValue().getFirstChild().toString();

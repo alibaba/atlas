@@ -220,6 +220,8 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -228,12 +230,10 @@ import java.util.Map;
 
 public class AtlasPlugin extends AtlasBasePlugin {
 
-    public static final String BUNDLE_COMPILE = "bundleCompile" ;
-    public static final String PROVIDED_COMPILE = "providedCompile";
 
     @Inject
-    public AtlasPlugin(Instantiator instantiator) {
-        super(instantiator);
+    public AtlasPlugin(ToolingModelBuilderRegistry toolingModelBuilderRegistry) {
+        super(toolingModelBuilderRegistry);
     }
 
     @Override
@@ -260,6 +260,12 @@ public class AtlasPlugin extends AtlasBasePlugin {
 //                project.getDependencies().add("compile", "org.jetbrains.kotlin:kotlin-stdlib:1.2.41");
 //            }
 
+            try {
+                atlasConfigurationHelper.createBuilderAfterEvaluate();
+            } catch (Exception e) {
+                throw new GradleException("update builder failed", e);
+            }
+
             atlasConfigurationHelper.registAtlasStreams();
 
 
@@ -270,11 +276,7 @@ public class AtlasPlugin extends AtlasBasePlugin {
             atlasConfigurationHelper.updateExtensionAfterEvaluate();
 
             //4. Set up the android builder
-            try {
-                atlasConfigurationHelper.createBuilderAfterEvaluate();
-            } catch (Exception e) {
-                throw new GradleException("update builder failed", e);
-            }
+
 
             //5. Configuration tasks
            atlasConfigurationHelper.configTasksAfterEvaluate();
@@ -287,8 +289,13 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
     @Override
     protected AtlasConfigurationHelper getConfigurationHelper(Project project) {
-        return new AtlasConfigurationHelper(project,
-                                            instantiator);
+        return new AtlasConfigurationHelper(project);
     }
 
+    @NotNull
+    @Override
+    public ToolingModelBuilderRegistry getModelBuilderRegistry() {
+
+        return toolingModelBuilderRegistry;
+    }
 }

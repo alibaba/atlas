@@ -282,7 +282,7 @@ public class MtlParallelTask extends AndroidBuilderTask {
 
         @Override
         public void run() {
-            defaultTask.
+
         }
     }
 }

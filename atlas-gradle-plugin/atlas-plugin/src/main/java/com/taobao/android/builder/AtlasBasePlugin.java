@@ -1,5 +1,6 @@
 package com.taobao.android.builder;
 
+import com.android.tools.lint.gradle.api.ToolingRegistryProvider;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.Version;
@@ -11,7 +12,10 @@ import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.StopExecutionException;
+import org.gradle.internal.reflect.DirectInstantiator;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
 import javax.inject.Inject;
 import java.util.regex.Pattern;
 
@@ -20,11 +24,10 @@ import java.util.regex.Pattern;
  * @create 2017-08-23 When in the morning
  */
 
-public abstract class AtlasBasePlugin implements Plugin<Project> {
+public abstract class AtlasBasePlugin implements Plugin<Project>, ToolingRegistryProvider {
 
 
-
-    protected Instantiator instantiator;
+    protected ToolingModelBuilderRegistry toolingModelBuilderRegistry;
 
     protected AtlasConfigurationHelper atlasConfigurationHelper;
 
@@ -33,9 +36,9 @@ public abstract class AtlasBasePlugin implements Plugin<Project> {
     protected Project project;
 
     @Inject
-    public AtlasBasePlugin(Instantiator instantiator) {
+    public AtlasBasePlugin(ToolingModelBuilderRegistry toolingModelBuilderRegistry) {
 
-        this.instantiator = instantiator;
+        this.toolingModelBuilderRegistry = toolingModelBuilderRegistry;
 
     }
     @Override

@@ -1,5 +1,6 @@
 package com.taobao.android.builder.extension;
 
+import javax.inject.Inject;
 import java.io.File;
 
 /**
@@ -141,6 +142,7 @@ public class EnhanceConfig {
 
         private File j2cpolicy;
 
+        @Inject
         public EnhanceConfig(String name) {
             this.name = name;
 

@@ -218,6 +218,8 @@ import java.util.Set;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.extension.annotation.Config;
 
+import javax.inject.Inject;
+
 /**
  * Created by shenghua.nish on 2016-05-17 At 10:15.
  */
@@ -225,6 +227,10 @@ public class TBuildConfig {
 
     @Config(message = "Remote bundle list, artifactId", advance = false, order = 1, group = "atlas")
     private Set<String> outOfApkBundles = Sets.newHashSet();
+
+    @Inject
+    public TBuildConfig() {
+    }
 
     public Set<String> getBundleToMdex() {
         return bundleToMdex;

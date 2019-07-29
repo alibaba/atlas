@@ -824,12 +824,12 @@ public class KeepOnlyConfigurationParser {
                         strippedWord.equals(JavaConstants.ACC_INTERFACE) ? ClassConstants.ACC_INTERFACE :
                             strippedWord.equals(JavaConstants.ACC_ABSTRACT) ? ClassConstants.ACC_ABSTRACT :
                                 strippedWord.equals(JavaConstants.ACC_SYNTHETIC) ? ClassConstants.ACC_SYNTHETIC :
-                                    strippedWord.equals(JavaConstants.ACC_ANNOTATION) ? ClassConstants.ACC_ANNOTATTION :
+                                    strippedWord.equals(JavaConstants.ACC_ANNOTATION) ? ClassConstants.ACC_ANNOTATION :
                                         strippedWord.equals(JavaConstants.ACC_ENUM) ? ClassConstants.ACC_ENUM :
                                             unknownAccessFlag();
 
             // Is it an annotation modifier?
-            if (accessFlag == ClassConstants.ACC_ANNOTATTION) {
+            if (accessFlag == ClassConstants.ACC_ANNOTATION) {
                 // Already read the next word.
                 readNextWord("annotation type or keyword '" + JavaConstants.ACC_INTERFACE + "'",
                              false, false);
@@ -872,7 +872,7 @@ public class KeepOnlyConfigurationParser {
             }
 
             // Should we read the next word?
-            if (accessFlag != ClassConstants.ACC_ANNOTATTION) {
+            if (accessFlag != ClassConstants.ACC_ANNOTATION) {
                 readNextWord("keyword '" + AtlasProguardConstants.CLASS_KEYWORD +
                                  "', '" + JavaConstants.ACC_INTERFACE +
                                  "', or '" + JavaConstants.ACC_ENUM + "'",
@@ -1369,7 +1369,7 @@ public class KeepOnlyConfigurationParser {
      * Reads the next word of the configuration in the 'nextWord' field.
      */
     private void readNextWord(boolean isFileName) throws IOException {
-        nextWord = reader.nextWord(isFileName);
+        nextWord = reader.nextWord(isFileName,false);
     }
 
     /**

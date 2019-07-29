@@ -214,6 +214,8 @@ import java.util.Set;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.extension.annotation.Config;
 
+import javax.inject.Inject;
+
 /**
  * Created by wuzhong on 2017/5/8.
  */
@@ -221,6 +223,7 @@ public class MultiDexConfig {
 
     private String name;
 
+    @Inject
     public MultiDexConfig(String name) {
         this.name = name;
     }

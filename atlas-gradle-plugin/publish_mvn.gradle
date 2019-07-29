@@ -1,6 +1,6 @@
 //是否需要把项目发送到远程maven库
 ext.publishToRemote = true
-ext.publishDefaultArtifact = !"true".equals(project.getProperties().get("org.gradle.parallel"))
+ext.publishDefaultArtifact = true
 ext.publishApk = false
 ext.isApplication = false
 
@@ -11,7 +11,7 @@ if (!project.getBuildFile().exists()) {
 def versionFile = new File(project.getRootDir(), "version.properties");
 HashMap<String, String> versionMap = new HashMap<String, String>();
 if (versionFile.exists()) {
-    versionFile.eachLine {line ->
+    versionFile.eachLine { line ->
         String[] arr = line.split(".version=");
         if (arr.length == 2) {
             StringBuilder b = new StringBuilder(arr[0]);
@@ -53,45 +53,28 @@ def deployVersion = System.getProperty('deployVersion')
 def mtlVersion = System.getenv("MUPP_VERSION_NAME");
 
 project.afterEvaluate {
-
-    if (project.plugins.hasPlugin("com.taobao.android.library") || project.plugins.hasPlugin("com.android.library")) {
-        project.getRootProject().aarMap.add(project.name)
-    }
-
-    ext.isApplication = (project.plugins.hasPlugin("com.android.application") || project.plugins.hasPlugin(
-            "com.taobao.android.application"))
-
-    tasks.whenTaskAdded {task ->
+    tasks.whenTaskAdded { task ->
         if (task.name.startsWith("generatePomFileForMavenPublication")) {
-            task.mustRunAfter(project.getTasks().withType(Zip.class));
-            task.doFirst {
-                project.publishing.publications.maven(MavenPublication) {
-                    if (!components.hasWithName("java") && !isApplication) {
-                        File publishFile = file("${project.buildDir}/outputs/awb/${project.name}-release.awb");
-                        if (!publishFile.exists()) {
-                            publishFile = file("${project.buildDir}/outputs/aar/${project.name}-release.aar");
-                        }
-                        if (!publishFile.exists()) {
-                            publishFile = file("${project.buildDir}/outputs/awb/${project.name}-debug.awb");
-                        }
-                        if (!publishFile.exists()) {
-                            publishFile = file("${project.buildDir}/outputs/aar/${project.name}-debug.aar");
-                        }
-                        artifact publishFile.getPath()
-                    }
-                }
-            }
-        }
-
-        if (isApplication && !publishApk) {
-            if (task.name.startsWith("publish")) {
-                task.setEnabled(false)
-            }
+            task.mustRunAfter(project.getTasks().withType(Zip.class))
         }
     }
+
 }
 
 
+task sourceJar(type: Jar) {
+
+    archiveClassifier = 'source'
+    version = version
+    try {
+        if (components.hasWithName("java")) {
+            from sourceSets.main.allJava
+        } else {
+            from android.sourceSets.main.java.srcDirs
+        }
+    } catch (Throwable e) {
+    }
+}
 
 publishing {
 
@@ -103,67 +86,40 @@ publishing {
 
     publications {
         maven(MavenPublication) {
-            version version
 
-            task sourceJar(type: Jar) {
-                classifier = 'source'
-                version = version
-                try {
-                    if (components.hasWithName("java")) {
-                        from sourceSets.main.allJava
-                    } else {
-                        from android.sourceSets.main.java.srcDirs
-                    }
-                } catch (Throwable e) {
-                }
-            }
-
-            artifact sourceJar
+            artifact project.file("/Users/lilong/Documents/atlas/atlas-gradle-plugin/atlas-plugin/build/libs/atlasplugin-5.5.1-rc1-SNAPSHOT.jar")
+//            artifact sourceJar {
+//                classifier "sources"
+//            }
 
             if (components.hasWithName("java")) {
                 from components.java
-            } else if (components.hasWithName("android") && !isApplication) {
-                from components.android
-
-                updatePom(pom, versionMap, groupId)
-
-                if (components.hasWithName("android")) {
-                    pom.withXml {
-                        def dependenciesNode = asNode().dependencies[0]
-                        if (getGradle().startParameter.toString().contains("assembleDebug")) {
-                            configurations.debugCompile.allDependencies.each {
-                                appendBuildTypeDependency(it, versionMap, dependenciesNode, groupId)
-                            }
-                        } else {
-                            configurations.releaseCompile.allDependencies.each {
-                                appendBuildTypeDependency(it, versionMap, dependenciesNode, groupId)
-                            }
-                        }
-                    }
-                }
             } else if (!isApplication) {
 
                 pom.withXml {
 
                     def dependenciesNode = asNode().appendNode('dependencies')
                     def providedCompiles = new HashSet();
-                    configurations.providedCompile.allDependencies.each {
-                        addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles , true)
+                    configurations.compileOnly.allDependencies.each {
+                        System.out.println("compileOnly:"+it.toString())
+
+                        addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles, true)
                     }
 
-                    configurations.compile.allDependencies.each {
+                    configurations.implementation.allDependencies.each {
+                        System.out.println("implementation:"+it.toString())
+                        addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles)
+                    }
+//                    configurations.api.allDependencies.each {
+//                        System.out.println("api:"+it.toString())
+//                        addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles)
+//                    }
+                    configurations.runtimeOnly.allDependencies.each {
+                        System.out.println("runtimeOnly:"+it.toString())
+
                         addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles)
                     }
 
-                    if (getGradle().startParameter.toString().contains("assembleDebug")) {
-                        configurations.debugCompile.allDependencies.each {
-                            addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles)
-                        }
-                    } else {
-                        configurations.releaseCompile.allDependencies.each {
-                            addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles)
-                        }
-                    }
                 }
             }
         }
@@ -207,7 +163,7 @@ private HashMap getAccount() {
             parsedSettingsXml = (new XmlParser()).parse(defaultSettingsFile);
         }
 
-        parsedSettingsXml.servers[0].server.each {server ->
+        parsedSettingsXml.servers[0].server.each { server ->
             if ("releases" == server.id.text()) {
                 accountMap.put("id", server.id.text())
                 accountMap.put("username", server.username.text())
@@ -226,7 +182,7 @@ private HashMap getAccount() {
 private void updatePom(pom, versionMap, groupId) {
     pom.withXml {
         asNode().dependencies.'*'.each {
-            if (it.groupId.text() == "" || it.artifactId.text() == "" ){
+            if (it.groupId.text() == "" || it.artifactId.text() == "") {
                 it.parent().remove(it)
                 return
             }
@@ -236,9 +192,9 @@ private void updatePom(pom, versionMap, groupId) {
                 it.version*.value = version
             }
 
-            if (project.configurations.providedCompile.allDependencies.find {dep -> dep.name == it.artifactId.text()}) {
+            if (project.configurations.providedCompile.allDependencies.find { dep -> dep.name == it.artifactId.text() }) {
                 it.scope*.value = 'provided'
-            } else if (project.configurations.compile.allDependencies.find {dep -> dep.name == it.artifactId.text()}) {
+            } else if (project.configurations.compile.allDependencies.find { dep -> dep.name == it.artifactId.text() }) {
                 it.scope*.value = 'compile'
             }
 
@@ -263,7 +219,7 @@ private void appendBuildTypeDependency(it, versionMap, dependenciesNode, groupId
     }
 }
 
-private void addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles , provided = false) {
+private void addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, providedCompiles, provided = false) {
     if (it.group != null && (it.name != null || "unspecified" == it.name) && it.version != null) {
         if (providedCompiles.contains(it.group + "." + it.name)) {
             return
@@ -276,9 +232,9 @@ private void addBuildTypeDependency(it, versionMap, dependenciesNode, groupId, p
         dependencyNode.appendNode('scope', provided ? 'provided' : 'compile')
         if (it.group == groupId && project.getRootProject().aarMap.contains(it.name)) {
             dependencyNode.appendNode('type', 'aar')
-        }else{
+        } else {
             Set types = it.artifacts;
-            if (types && types.size()>0){
+            if (types && types.size() > 0) {
                 dependencyNode.appendNode('type', types[0].type)
             }
         }

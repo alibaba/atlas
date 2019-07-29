@@ -207,113 +207,168 @@
  *
  */
 
-package com.taobao.android.builder.tasks.app;
+package com.android.build.gradle.internal.pipeline;
 
-import com.alibaba.fastjson.JSON;
+import com.android.annotations.NonNull;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.MavenCoordinates;
-import com.taobao.android.builder.AtlasBuildContext;
-import com.taobao.android.builder.tasks.app.prepare.BundleInfoSourceCreator;
-import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
-import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
-import com.taobao.android.builder.tools.classinject.InjectParam;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.gradle.api.GradleException;
-import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.TaskAction;
-import org.gradle.internal.impldep.org.codehaus.plexus.util.Base64;
+import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.ApkData;
+import com.android.builder.errors.EvalIssueReporter;
+import com.android.builder.profile.Recorder;
+import com.google.common.collect.Lists;
+import com.taobao.android.builder.tools.ReflectUtils;
+import org.gradle.api.Project;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.tasks.TaskCollection;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPOutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.function.Consumer;
 
-public class GenerateAtlasSourceTask extends BaseTask {
 
-    private AppVariantContext appVariantContext;
+/**
+ * TransformManager
+ *
+ * @author zhayu.ll
+ * @date 19/7/28
+ */
+public class TransformManagerDelegate {
 
-    private File outputDir;
+    private TransformManager transformManager;
 
-    @OutputDirectory
-    public File getOutputDir() {
-        return outputDir;
+    private Project project;
+
+    private EvalIssueReporter issueReporter;
+
+    private Recorder recorder;
+
+    public TransformManagerDelegate(Project project, EvalIssueReporter issueReporter, Recorder recorder, TransformManager oldTransformManager) {
+        this.project = project;
+        this.issueReporter = issueReporter;
+        this.recorder = recorder;
+        this.transformManager = oldTransformManager;
     }
 
-    private InjectParam injectParam;
+    public static List<TransformTask> findTransformTaskByTransformType(VariantContext appVariantContext, Class<?>
+            transformClass) {
+        List<TransformTask> transformTasksList = Lists.newArrayList();
+        GradleVariantConfiguration config = appVariantContext.getVariantConfiguration();
+        TaskCollection<TransformTask> transformTasks = appVariantContext.getProject().getTasks().withType(
+                TransformTask.class);
+        SortedMap<String, TransformTask> transformTaskSortedMap = transformTasks.getAsMap();
+        String variantName = config.getFullName();
+        for (String taskName : transformTaskSortedMap.keySet()) {
+            TransformTask transformTask = transformTaskSortedMap.get(taskName);
+            if (variantName == transformTask.getVariantName()) {
+                if (transformTask.getTransform().getClass() == transformClass) {
+                    transformTasksList.add(transformTask);
+                }
+            }
+        }
+        return transformTasksList;
+    }
 
-    @Input
-    public InjectParam getInput() {
-        if (null != injectParam) {
-            return injectParam;
+
+    public static <T extends Transform> T createTransform(AppVariantContext appVariantContext,
+                                                          Class<T> clazz, BaseVariantOutput vod) {
+
+        if (null == clazz) {
+            return null;
         }
         try {
-            injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
-        } catch (Exception e) {
+
+            return (T) getConstructor(appVariantContext, clazz, ApkDataUtils.get(vod)).newInstance(
+                    appVariantContext, ApkDataUtils.get(vod));
+
+        } catch (Throwable e) {
             e.printStackTrace();
         }
-        return injectParam;
+        return null;
+
     }
 
-    @TaskAction
-    void generate() {
-
-        InjectParam injectParam = getInput();
-        List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
-        File outputSourceGeneratorFile = new File(outputDir,"com/android/tools/bundleInfo/BundleInfoGenerator.java");
-        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info);
-        outputSourceGeneratorFile.getParentFile().mkdirs();
-        getLogger().info(infoGeneratorSourceStr.toString());
+    private static Constructor<? extends Transform> getConstructor(AppVariantContext appVariantContext,
+                                                                   Class<? extends Transform>
+                                                                           transformClazz, ApkData apkData)
+            throws NoSuchMethodException {
         try {
-            FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
-        } catch (IOException e) {
-            throw new GradleException(e.getMessage(), e);
+            return transformClazz.getConstructor(appVariantContext.getClass(), ApkData.class);
+        } catch (NoSuchMethodException e) {
+            return transformClazz.getConstructor(appVariantContext.getClass().getSuperclass(), ApkData.class);
         }
+    }
 
+
+    public void consumeStreamsForTask(TransformTask transformTask,
+            @NonNull Set<QualifiedContent.Scope> requestedScopes, @NonNull Set<QualifiedContent.ContentType> requestedTypes) {
+        try {
+            InjectTransformManager.TransformTaskParam  transformTaskParam = InjectTransformManager.getTransformParam(transformTask);
+            Collection<TransformStream>consumeStreams = new ArrayList<>();
+//            transformTaskParam.outputStream.getScopes().removeAll(requestedScopes);
+//            transformTaskParam.outputStream.getContentTypes().removeAll(requestedScopes);
+            transformTaskParam.consumedInputStreams.forEach(transformStream -> requestedScopes.forEach(scope -> {
+                if (transformStream.getScopes().contains(scope) && transformStream.getContentTypes().containsAll(requestedTypes)) {
+                    consumeStreams.add(transformStream);
+                }
+            }));
+
+            transformTaskParam.consumedInputStreams.removeAll(consumeStreams);
+
+            ReflectUtils.updateField(transformTask,"consumeStreams",transformTaskParam.consumedInputStreams);
+            ReflectUtils.updateField(transformTask,"outputStream",transformTaskParam.outputStream);
+
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        this.consumeStreams(requestedScopes, requestedTypes, new ArrayList<>());
+
+    }
+
+    public void addStreamsForTask(TransformTask transformTask,
+                                  @NonNull QualifiedContent.ScopeType scope, @NonNull QualifiedContent.ContentType contentType, String streamName , FileCollection fileCollection) {
+
+
+        OriginalStream originalStream =  OriginalStream.builder(transformTask.getProject(),streamName).
+                addContentType(contentType).
+                addScope(scope).
+                setFileCollection(fileCollection).build();
+        try {
+            InjectTransformManager.TransformTaskParam  transformTaskParam = InjectTransformManager.getTransformParam(transformTask);
+            transformTaskParam.consumedInputStreams.add(originalStream);
+//            transformTaskParam.outputStream.getScopes().add(scope);
+            com.taobao.android.builder.tools.ReflectUtils.updateField(transformTask,"consumeStreams",transformTaskParam.consumedInputStreams);
+//            com.taobao.android.builder.tools.ReflectUtils.updateField(transformTask,"outputStream",transformTaskParam.outputStream);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+//        this.consumeStreams(requestedScopes, requestedTypes, new ArrayList<>());
 
     }
 
 
-    public static class ConfigAction extends MtlBaseTaskAction<GenerateAtlasSourceTask> {
-
-        private AppVariantContext appVariantContext;
-
-        public ConfigAction(AppVariantContext appVariantContext,
-                            BaseVariantOutput baseVariantOutputData) {
-            super(appVariantContext, baseVariantOutputData);
-            this.appVariantContext = appVariantContext;
+    public void consumeStreams(
+            @NonNull Set<? super QualifiedContent.Scope> requestedScopes,
+            @NonNull Set<QualifiedContent.ContentType> requestedTypes,
+            @NonNull List<TransformStream> inputStreams) {
+        try {
+            Method method = transformManager.getClass().getDeclaredMethod("consumeStreams",Set.class,Set.class,List.class);
+            method.setAccessible(true);
+            method.invoke(transformManager,requestedScopes,requestedTypes,inputStreams);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
         }
 
-        @Override
-        public String getName() {
-            return scope.getTaskName("generate", "bundleInfoSources");
-        }
-
-        @Override
-        public Class<GenerateAtlasSourceTask> getType() {
-            return GenerateAtlasSourceTask.class;
-        }
-
-        @Override
-        public void execute(GenerateAtlasSourceTask atlasSourceTask) {
-
-            super.execute(atlasSourceTask);
-
-            File srcDir = appVariantContext.getAtlaSourceDir();
-            appVariantContext.getVariantData().javacTask.source(srcDir);
-
-            atlasSourceTask.outputDir = srcDir;
-            atlasSourceTask.appVariantContext = appVariantContext;
-
-        }
     }
+
 }

@@ -2,7 +2,7 @@ package com.taobao.android.builder.tasks.feature;
 
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
-import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.TaskAction;
 
@@ -16,7 +16,7 @@ import javax.xml.ws.Action;
  * @time 下午4:32
  * @description  
  */
-public class PrePareFeatureTask extends BaseTask {
+public class PrePareFeatureTask extends AndroidBuilderTask {
 
     private VariantContext variantContext;
 
@@ -48,7 +48,8 @@ public class PrePareFeatureTask extends BaseTask {
         }
 
         @Override
-        public void execute(PrePareFeatureTask task) {
+        public void configure(PrePareFeatureTask task) {
+            super.configure(task);
             task.setVariantName(variantContext.getVariantName());
             task.variantContext = variantContext;
 

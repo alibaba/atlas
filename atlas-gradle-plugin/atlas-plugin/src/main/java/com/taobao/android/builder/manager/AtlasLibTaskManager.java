@@ -209,39 +209,25 @@
 
 package com.taobao.android.builder.manager;
 
-import com.android.build.api.transform.Transform;
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.BaseVariantOutput;
-import com.android.build.gradle.api.LibraryVariant;
 import com.android.build.gradle.api.LibraryVariantOutput;
 import com.android.build.gradle.internal.api.LibVariantContext;
 import com.android.build.gradle.internal.api.LibraryVariantImpl;
-import com.android.build.gradle.internal.pipeline.TransformTask;
-import com.android.build.gradle.internal.scope.AndroidTask;
-import com.android.build.gradle.internal.transforms.LibraryAarJarsTransform;
-import com.android.build.gradle.internal.transforms.LibraryBaseTransform;
-import com.android.build.gradle.tasks.MergeResources;
 import com.android.builder.core.AtlasBuilder;
-import com.google.common.collect.Lists;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.library.AwbGenerator;
 import com.taobao.android.builder.tasks.library.JarExtractTask;
 import com.taobao.android.builder.tasks.library.publish.UpdatePomTask;
-import com.taobao.android.builder.tasks.manager.transform.TransformManager;
-import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.ideaplugin.AwoPropHandler;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
 import org.gradle.api.tasks.bundling.Zip;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * MTLThe plug-in compiles the lib library's task management
@@ -411,15 +397,5 @@ public class AtlasLibTaskManager extends AtlasBaseTaskManager {
 //    }
 //
 //    private LibraryExtension libraryExtension;
-
-    public class AtlasExcludeListProvider implements LibraryBaseTransform.ExcludeListProvider{
-        public List<String> getExcludeList(){
-            ArrayList arrayList = new ArrayList();
-            arrayList.add(".*/DataBindingComponent.class$");
-            arrayList.add(".*/DataBindingInfo.class$");
-            arrayList.add(".*/baseAdapters/BR.class$");
-        return arrayList;
-        }
-
-    }
+    
 }

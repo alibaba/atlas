@@ -217,8 +217,6 @@ import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.artifacts.result.UnresolvedArtifactResult;
 import org.gradle.api.internal.artifacts.DefaultResolvedArtifact;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
-import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
-import org.gradle.api.internal.artifacts.result.DefaultResolvedDependencyResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -241,23 +239,23 @@ public class DependencyGroup {
     public Map<String, Set<String>> bundleProvidedMap = new HashMap<>();
     public static Map<ModuleVersionIdentifier,ResolvedArtifact> bundleCompileId = new HashMap();
 
-    public DependencyGroup(Configuration compileClasspath,
-                           Configuration bundleClasspath,
+    public DependencyGroup(Configuration runtimeClasspath ,
+//                           Configuration bundleClasspath,
                            Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts, Set<String> awbs) {
 
-        Set<? extends DependencyResult> compileDependencies = compileClasspath.getIncoming()
+        Set<? extends DependencyResult> compileDependencies = runtimeClasspath.getIncoming()
                                                                                 .getResolutionResult()
                                                                                 .getRoot()
                                                                                 .getDependencies();
 
-        Set<? extends DependencyResult> bundleCompileDependencies = bundleClasspath.getIncoming()
-                                                                            .getResolutionResult()
-                                                                            .getRoot()
-                                                                            .getDependencies();
+//        Set<? extends DependencyResult> bundleCompileDependencies = bundleClasspath.getIncoming()
+//                                                                            .getResolutionResult()
+//                                                                            .getRoot()
+//                                                                            .getDependencies();
 
 
 
-        Set<String> bundleSets = getBundleDependencies(compileClasspath, bundleCompileDependencies,awbs);
+        Set<String> bundleSets = getBundleDependencies(runtimeClasspath,awbs);
         //Analysis of the compileDependencies Bundle dependency
         for (DependencyResult dependencyResult : compileDependencies) {
             if (DependencyConvertUtils.isAwbDependency(dependencyResult, artifacts,awbs)) {
@@ -283,25 +281,24 @@ public class DependencyGroup {
 
             }
         }
-        for (DependencyResult dependencyResult : bundleCompileDependencies) {
-            if (!bundleAddedSets.contains(dependencyResult.toString())) {
-                this.bundleDependencies.add(dependencyResult);
-                bundleAddedSets.add(dependencyResult.toString());
-            }
-        }
+//        for (DependencyResult dependencyResult : bundleCompileDependencies) {
+//            if (!bundleAddedSets.contains(dependencyResult.toString())) {
+//                this.bundleDependencies.add(dependencyResult);
+//                bundleAddedSets.add(dependencyResult.toString());
+//            }
+//        }
 
-        this.bundleProvidedMap = getBundleProvidedMap(bundleClasspath);
+//        this.bundleProvidedMap = getBundleProvidedMap(bundleClasspath);
 
 
 
     }
 
-    private Set<String> getBundleDependencies(Configuration compileClasspath,
-                                              Set<? extends DependencyResult> bundleDependencies, Set<String> awbs) {
+    private Set<String> getBundleDependencies(Configuration compileClasspath,Set<String> awbs) {
         Set<String> bundleSets = new HashSet<>();
-        for (DependencyResult dependencyResult : bundleDependencies) {
-            bundleSets.add(dependencyResult.toString());
-        }
+//        for (DependencyResult dependencyResult : bundleDependencies) {
+//            bundleSets.add(dependencyResult.toString());
+//        }
         for (Dependency dependency : compileClasspath.getAllDependencies()) {
             if (dependency instanceof DefaultExternalModuleDependency) {
                 DefaultExternalModuleDependency externalModuleDependency = (DefaultExternalModuleDependency)dependency;
@@ -323,87 +320,87 @@ public class DependencyGroup {
      * @param bundleClasspath
      * @return
      */
-    private Map<String, Set<String>> getBundleProvidedMap(Configuration bundleClasspath) {
-        Map<String, Set<String>> bundleMap = new HashMap<>();
-        bundleClasspath.getDependencies().forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof DefaultProjectDependency) {
-                    DefaultProjectDependency projectDependency = (DefaultProjectDependency)dependency;
-                    String key = projectDependency.getGroup() + ":" + projectDependency.getName();
-                    Set<String> providedSets = new HashSet<>();
-                    try {
-                        projectDependency.getDependencyProject().getConfigurations().getByName("compile")
-                            .getDependencies().forEach(
-                            new Consumer<Dependency>() {
-                                @Override
-                                public void accept(Dependency dependency) {
-                                    if ("com.android.support".equals(dependency.getGroup()) || "com.android.databinding"
-                                        .equals(dependency.getGroup())) {
-                                        providedSets.add(dependency.getGroup() + ":" + dependency.getName());
-                                    }
+//    private Map<String, Set<String>> getBundleProvidedMap(Configuration bundleClasspath) {
+//        Map<String, Set<String>> bundleMap = new HashMap<>();
+//        bundleClasspath.getDependencies().forEach(new Consumer<Dependency>() {
+//            @Override
+//            public void accept(Dependency dependency) {
+//                if (dependency instanceof DefaultProjectDependency) {
+//                    DefaultProjectDependency projectDependency = (DefaultProjectDependency)dependency;
+//                    String key = projectDependency.getGroup() + ":" + projectDependency.getName();
+//                    Set<String> providedSets = new HashSet<>();
+//                    try {
+//                        projectDependency.getDependencyProject().getConfigurations().getByName("compile")
+//                            .getDependencies().forEach(
+//                            new Consumer<Dependency>() {
+//                                @Override
+//                                public void accept(Dependency dependency) {
+//                                    if ("com.android.support".equals(dependency.getGroup()) || "com.android.databinding"
+//                                        .equals(dependency.getGroup())) {
+//                                        providedSets.add(dependency.getGroup() + ":" + dependency.getName());
+//                                    }
+//
+//                                }
+//                            });
+////                        projectDependency.getDependencyProject().getConfigurations().getByName(
+////                            AtlasPlugin.PROVIDED_COMPILE)
+////                            .getDependencies().forEach(
+////                            new Consumer<Dependency>() {
+////                                @Override
+////                                public void accept(Dependency dependency) {
+////                                    providedSets.add(dependency.getGroup() + ":" + dependency.getName());
+////                                }
+////                            });
+//                    } catch (UnknownConfigurationException e) {
+//
+//                    }
+//                    bundleMap.put(key, providedSets);
+//                }
+//            }
+//        });
+//        return bundleMap;
+//    }
 
-                                }
-                            });
-                        projectDependency.getDependencyProject().getConfigurations().getByName(
-                            AtlasPlugin.PROVIDED_COMPILE)
-                            .getDependencies().forEach(
-                            new Consumer<Dependency>() {
-                                @Override
-                                public void accept(Dependency dependency) {
-                                    providedSets.add(dependency.getGroup() + ":" + dependency.getName());
-                                }
-                            });
-                    } catch (UnknownConfigurationException e) {
+//    private Map<String, Set<DependencyResult>>getProjectBundleCompile(Configuration configuration, Set<String> bundleAddedSets){
+//        Map<String,Set<DependencyResult>>bundleMap = new HashMap<>();
+//        configuration.getAllDependencies().forEach(new Consumer<Dependency>() {
+//            @Override
+//            public void accept(Dependency dependency) {
+//                if (dependency instanceof DefaultProjectDependency) {
+//                    DefaultProjectDependency projectDependency = (DefaultProjectDependency)dependency;
+//                    String key = "project " + ":" + projectDependency.getName();
+//                    if (!bundleAddedSets.contains(key)){
+//                        return;
+//                    }
+//                    Set<DependencyResult> compileSets = new HashSet<>();
+//                    try {
+//                        Set<ResolvedArtifact> resolvedArtifacts = projectDependency.getDependencyProject().getConfigurations().getByName("compile").getResolvedConfiguration().getResolvedArtifacts();
+//                        projectDependency.getDependencyProject().getConfigurations().getByName("compile").getIncoming().getResolutionResult().getRoot().getDependencies().forEach(new Consumer<DependencyResult>() {
+//                            @Override
+//                            public void accept(DependencyResult dependencyResult) {
+//                                if (!mainDexs.contains(dependencyResult.toString())){
+//                                        compileSets.add(dependencyResult);
+//                                        if (dependencyResult instanceof DefaultResolvedDependencyResult){
+//                                            ModuleVersionIdentifier moduleVersionIdentifier = ((DefaultResolvedDependencyResult) dependencyResult).getSelected().getModuleVersion();
+//                                            for (ResolvedArtifact resolvedArtifact:resolvedArtifacts) {
+//                                                if (resolvedArtifact.getModuleVersion().getId().equals(moduleVersionIdentifier)) {
+//                                                    bundleCompileId.put(moduleVersionIdentifier, resolvedArtifact);
+//                                                }
+//                                            }
+//                                        }
+//                                }
+//                            }
+//                        });
+//
+//                    } catch (UnknownConfigurationException e) {
+//
+//                    }
+//                    bundleMap.put(projectDependency.getGroup()+":"+projectDependency.getName(), compileSets);
+//                }
+//            }
+//        });
+//        return bundleMap;
 
-                    }
-                    bundleMap.put(key, providedSets);
-                }
-            }
-        });
-        return bundleMap;
-    }
 
-    private Map<String, Set<DependencyResult>>getProjectBundleCompile(Configuration configuration, Set<String> bundleAddedSets){
-        Map<String,Set<DependencyResult>>bundleMap = new HashMap<>();
-        configuration.getAllDependencies().forEach(new Consumer<Dependency>() {
-            @Override
-            public void accept(Dependency dependency) {
-                if (dependency instanceof DefaultProjectDependency) {
-                    DefaultProjectDependency projectDependency = (DefaultProjectDependency)dependency;
-                    String key = "project " + ":" + projectDependency.getName();
-                    if (!bundleAddedSets.contains(key)){
-                        return;
-                    }
-                    Set<DependencyResult> compileSets = new HashSet<>();
-                    try {
-                        Set<ResolvedArtifact> resolvedArtifacts = projectDependency.getDependencyProject().getConfigurations().getByName("compile").getResolvedConfiguration().getResolvedArtifacts();
-                        projectDependency.getDependencyProject().getConfigurations().getByName("compile").getIncoming().getResolutionResult().getRoot().getDependencies().forEach(new Consumer<DependencyResult>() {
-                            @Override
-                            public void accept(DependencyResult dependencyResult) {
-                                if (!mainDexs.contains(dependencyResult.toString())){
-                                        compileSets.add(dependencyResult);
-                                        if (dependencyResult instanceof DefaultResolvedDependencyResult){
-                                            ModuleVersionIdentifier moduleVersionIdentifier = ((DefaultResolvedDependencyResult) dependencyResult).getSelected().getModuleVersion();
-                                            for (ResolvedArtifact resolvedArtifact:resolvedArtifacts) {
-                                                if (resolvedArtifact.getModuleVersion().getId().equals(moduleVersionIdentifier)) {
-                                                    bundleCompileId.put(moduleVersionIdentifier, resolvedArtifact);
-                                                }
-                                            }
-                                        }
-                                }
-                            }
-                        });
-
-                    } catch (UnknownConfigurationException e) {
-
-                    }
-                    bundleMap.put(projectDependency.getGroup()+":"+projectDependency.getName(), compileSets);
-                }
-            }
-        });
-        return bundleMap;
-
-    }
 
 }

@@ -214,6 +214,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.extension.annotation.Config;
 import org.apache.commons.lang.StringUtils;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -374,6 +375,7 @@ public class PatchConfig {
 
     private List<String> patchVersions = new ArrayList<>();
 
+    @Inject
     public PatchConfig(String name) {
         this.name = name;
     }

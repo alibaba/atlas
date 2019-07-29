@@ -8,13 +8,9 @@ import com.android.build.gradle.internal.core.VariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.scope.BuildOutput;
-import com.android.build.gradle.internal.scope.BuildOutputs;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
-import com.android.build.gradle.tasks.MergeManifests;
 import com.android.build.gradle.tasks.ProcessApplicationManifest;
-import com.android.builder.core.VariantConfiguration;
 import com.android.manifmerger.ManifestProvider;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -38,7 +34,6 @@ import java.util.Set;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.MODULE;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.MANIFEST;
-import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.METADATA_APP_ID_DECLARATION;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.METADATA_FEATURE_MANIFEST;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.METADATA_VALUES;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH;
@@ -95,14 +90,10 @@ public class FeatureLibManifestTask extends AndroidBuilderTask {
         if (featureManifests != null) {
             final Set<ResolvedArtifactResult> featureArtifacts = featureManifests.getArtifacts();
             for (ResolvedArtifactResult artifact : featureArtifacts) {
-                File directory = artifact.getFile();
+                File file = artifact.getFile();
                 File modifyManifest = featureVariantContext.getModifiedManifest(artifact);
-                Collection<BuildOutput> splitOutputs =
-                        BuildOutputs.load(VariantScope.TaskOutputType.MERGED_MANIFESTS, directory);
-                if (splitOutputs.isEmpty()) {
-                    throw new GradleException("Could not load manifest from " + directory);
-                }
-                ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, splitOutputs.iterator().next().getOutputFile(), mainManifestFileObject,
+
+                ManifestFileUtils.updatePreProcessManifestFile(modifyManifest, file, mainManifestFileObject,
                         true, featureVariantContext.getAtlasExtension()
                                 .getTBuildConfig().isIncremental());
 
@@ -133,9 +124,9 @@ public class FeatureLibManifestTask extends AndroidBuilderTask {
         }
 
         @Override
-        public void execute(FeatureLibManifestTask task) {
+        public void configure(FeatureLibManifestTask task) {
 
-            task.setVariantName(variantContext.getVariantName());
+            super.configure(task);
 
             task.featureVariantContext = featureVariantContext;
             task.manifests =
@@ -150,7 +141,6 @@ public class FeatureLibManifestTask extends AndroidBuilderTask {
             task.featureManifests =
                     scope.getArtifactCollection(
                             METADATA_VALUES, MODULE, METADATA_FEATURE_MANIFEST);
-            super.execute(task);
         }
 
         @Override

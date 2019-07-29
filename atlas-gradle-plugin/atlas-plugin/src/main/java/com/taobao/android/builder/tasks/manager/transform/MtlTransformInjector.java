@@ -212,6 +212,7 @@ package com.taobao.android.builder.tasks.manager.transform;
 import com.android.build.VariantOutput;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.pipeline.TransformManagerDelegate;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryUtils;
 import org.gradle.api.GradleException;
@@ -247,7 +248,7 @@ public class MtlTransformInjector {
 
                 TransformTask injectedTask = appVariantContext.getInjectTransformManager()
                     .addInjectTransformBeforeTransform(transformTask.getTransform().getClass(),
-                                                       TransformManager.createTransform(appVariantContext,
+                                                       TransformManagerDelegate.createTransform(appVariantContext,
                                                                                         mtlTransformContext
                                                                                             .getTransformTask(), (BaseVariantOutput) vod),
                                                        appVariantContext.getScope());

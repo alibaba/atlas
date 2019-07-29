@@ -214,18 +214,21 @@ import com.android.build.gradle.internal.AtlasDependencyManager;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.VariantManager;
-import com.android.build.gradle.internal.dependency.AarTransform;
-import com.android.build.gradle.internal.dependency.LibrarySymbolTableTransform;
+import com.android.build.gradle.internal.dependency.*;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.publishing.AtlasAndroidArtifacts;
 import com.android.build.gradle.internal.transforms.*;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;
+import com.android.build.gradle.options.StringOption;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.AtlasBuilder;
 import com.android.builder.errors.EvalIssueReporter;
 import com.android.ide.common.blame.MessageReceiver;
+import com.google.common.base.Strings;
+import com.taobao.android.builder.AtlasBasePlugin;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.AtlasFeaturePlugin;
 import com.taobao.android.builder.AtlasPlugin;
@@ -241,6 +244,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.artifacts.transform.TransformSpec;
+import org.gradle.api.attributes.Usage;
 import org.gradle.internal.reflect.Instantiator;
 
 import java.io.File;
@@ -249,21 +253,25 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.AAR;
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.EXPLODED_AAR;
 import static org.gradle.api.internal.artifacts.ArtifactAttributes.ARTIFACT_FORMAT;
 
 /**
- * Created by wuzhong on 2017/3/7.
- *
- * @author wuzhong zhayu.ll
- * @date 2017/03/07
+
+ * @author zhayu.ll
+ * @date 2019/07/21
  */
 public class AtlasConfigurationHelper {
 
     private final AppPluginHook appPluginHook;
 
-    public AtlasConfigurationHelper(Project project, Instantiator instantiator) {
+
+    private static final String TYPE_PROCESSED_AWB = "processed-awb";
+
+
+    public AtlasConfigurationHelper(Project project) {
         this.project = project;
-        this.instantiator = instantiator;
 
         this.appPluginHook = new AppPluginHook(project);
     }
@@ -306,7 +314,7 @@ public class AtlasConfigurationHelper {
 
         this.atlasExtension = AtlasBuildContext.sBuilderAdapter.extensionFactory.createExtendsion(
                 project,
-                instantiator);
+                project.getObjects());
 
         return atlasExtension;
     }
@@ -453,9 +461,41 @@ public class AtlasConfigurationHelper {
 
         final String explodedSolibType = AtlasAndroidArtifacts.TYPE_EXPLODED_SOLIB;
 
+        final String jetifierBlackList =
+                new ProjectOptions(project).get(StringOption.JETIFIER_BLACKLIST);
+
+
+        boolean sharedLibSupport =
+                new ProjectOptions(project)
+                        .get(BooleanOption.CONSUME_DEPENDENCIES_AS_SHARED_LIBRARIES);
+
+        boolean autoNamespaceDependencies = appPluginHook.getBaseExtension().getAaptOptions().getNamespaced() &&
+                new ProjectOptions(project)
+                        .get(BooleanOption.CONVERT_NON_NAMESPACED_DEPENDENCIES);
+
+        Usage apiUsage = project.getObjects().named(Usage.class, Usage.JAVA_API);
+
+
+
+
+        dependencyHandler.registerTransform(
+                transform -> {
+                    transform.getFrom().attribute(ARTIFACT_FORMAT, AtlasAndroidArtifacts.TYPE_AWB);
+                    transform.getTo().attribute(ARTIFACT_FORMAT, TYPE_PROCESSED_AWB);
+                    if (new ProjectOptions(project).get(BooleanOption.ENABLE_JETIFIER)) {
+                        transform.artifactTransform(
+                                JetifyTransform.class, config -> config.params(jetifierBlackList));
+                    } else {
+                        transform.artifactTransform(IdentityTransform.class);
+                    }
+                });
+
+
+
+
         dependencyHandler.registerTransform(
                 reg -> {
-                    reg.getFrom().attribute(ARTIFACT_FORMAT, AtlasAndroidArtifacts.TYPE_AWB);
+                    reg.getFrom().attribute(ARTIFACT_FORMAT,TYPE_PROCESSED_AWB);
                     reg.getTo().attribute(ARTIFACT_FORMAT, explodedAwbType);
                     reg.artifactTransform(ExtractAwbTransform.class);
                 });
@@ -467,7 +507,53 @@ public class AtlasConfigurationHelper {
                         reg.getFrom().attribute(ARTIFACT_FORMAT, explodedAwbType);
                         reg.getTo().attribute(ARTIFACT_FORMAT, transformTarget.getType());
                         reg.artifactTransform(
-                                AarTransform.class, config -> config.params(transformTarget));
+                                AarTransform.class,
+                                config ->
+                                        config.params(
+                                                transformTarget,
+                                                sharedLibSupport,
+                                                autoNamespaceDependencies));
+                    });
+        }
+
+
+        dependencyHandler.registerTransform(
+                reg -> {
+                    reg.getFrom().attribute(ARTIFACT_FORMAT, explodedAwbType);
+                    reg.getFrom().attribute(Usage.USAGE_ATTRIBUTE, apiUsage);
+                    reg.getTo().attribute(ARTIFACT_FORMAT, AndroidArtifacts.ArtifactType.CLASSES.getType());
+                    reg.getTo().attribute(Usage.USAGE_ATTRIBUTE, apiUsage);
+                    reg.artifactTransform(
+                            AarCompileClassesTransform.class,
+                            config -> config.params(autoNamespaceDependencies));
+                });
+
+        // Runtime jars
+        Usage runtimeUsage = project.getObjects().named(Usage.class, Usage.JAVA_RUNTIME);
+        dependencyHandler.registerTransform(
+                reg -> {
+                    reg.getFrom().attribute(ARTIFACT_FORMAT, explodedAwbType);
+                    reg.getFrom().attribute(Usage.USAGE_ATTRIBUTE, runtimeUsage);
+                    reg.getTo().attribute(ARTIFACT_FORMAT, AndroidArtifacts.ArtifactType.CLASSES.getType());
+                    reg.getTo().attribute(Usage.USAGE_ATTRIBUTE, runtimeUsage);
+                    reg.artifactTransform(
+                            AarTransform.class,
+                            config ->
+                                    config.params(
+                                            AndroidArtifacts.ArtifactType.CLASSES,
+                                            sharedLibSupport,
+                                            autoNamespaceDependencies));
+                });
+
+        if (autoNamespaceDependencies) {
+            dependencyHandler.registerTransform(
+                    reg -> {
+                        reg.getFrom().attribute(ARTIFACT_FORMAT, explodedAwbType);
+                        reg.getTo()
+                                .attribute(
+                                        ARTIFACT_FORMAT,
+                                        AndroidArtifacts.ArtifactType.DEFINED_ONLY_SYMBOL_LIST.getType());
+                        reg.artifactTransform(LibraryDefinedSymbolTableTransform.class);
                     });
         }
 

@@ -209,13 +209,19 @@
 
 package com.android.build.gradle.internal.api;
 
+import com.android.build.VariantOutput;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.pipeline.InjectTransformManager;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformManagerDelegate;
+import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.builder.profile.ThreadRecorder;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
@@ -227,6 +233,9 @@ import org.gradle.api.Project;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Created by shenghua.nish on 2016-05-19 Whether in the afternoon.
@@ -238,10 +247,15 @@ public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, 
     protected VariantDependencies variantDependency;
     protected GradleVariantConfiguration variantConfiguration;
     protected VariantScope scope;
+    protected Map<ApkData, BaseVariantOutput> variantOutputMap = new HashMap<ApkData, BaseVariantOutput>();
     protected Project project;
     protected InjectTransformManager injectTransformManager;
     protected E atlasExtension;
     protected Z appExtension;
+
+
+
+    protected TransformManagerDelegate transformManager;
 
     public ApContext apContext = new ApContext();
 
@@ -268,7 +282,7 @@ public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, 
         this.injectTransformManager = new InjectTransformManager(project, variantConfiguration.getFullName());
         this.atlasExtension = atlasExtension;
         this.appExtension = appExtension;
-
+        this.transformManager = new TransformManagerDelegate(project,scope.getGlobalScope().getErrorHandler(), ThreadRecorder.get(),scope.getTransformManager());
     }
 
     public T getBaseVariant() {
@@ -311,6 +325,11 @@ public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, 
         return appExtension;
     }
 
+
+    public TransformManagerDelegate getTransformManager() {
+        return transformManager;
+    }
+
     public TBuildType getBuildType() {
         TBuildType tBuildType = (TBuildType) atlasExtension.getBuildTypes().findByName(variantConfiguration.getBuildType().getName());
         if (null == tBuildType) {
@@ -325,9 +344,21 @@ public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, 
     }
 
     public Collection<BaseVariantOutput> getVariantOutputData() {
+
+        Collection<BaseVariantOutput> baseVariantOutputs = baseVariant.getOutputs();
+
+        baseVariantOutputs.forEach(baseVariantOutput -> variantOutputMap.put(ApkDataUtils.get(baseVariantOutput),baseVariantOutput));
+
         return baseVariant.getOutputs();
     }
 
+
+    public BaseVariantOutput getVariantOutput(ApkData apkData) {
+            if (variantOutputMap.isEmpty()){
+                getVariantOutputData();
+            }
+            return variantOutputMap.get(apkData);
+    }
 
     public File getMergeAssets(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getIntermediatesDir(),

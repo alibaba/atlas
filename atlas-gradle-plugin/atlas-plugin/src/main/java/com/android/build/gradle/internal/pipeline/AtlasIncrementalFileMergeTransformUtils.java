@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.android.ide.common.resources.FileStatus;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 
 import java.io.File;
@@ -172,7 +173,7 @@ public class AtlasIncrementalFileMergeTransformUtils {
      * @return a mapping from all files that have changed to the type of change
      */
     @NonNull
-    private static ImmutableMap<RelativeFile, FileStatus> computeUpdates(
+    private static ImmutableMap<RelativeFile, com.android.ide.common.resources.FileStatus> computeUpdates(
             @NonNull JarInput jarInput,
             @NonNull FileCacheByPath zipCache) {
         try {

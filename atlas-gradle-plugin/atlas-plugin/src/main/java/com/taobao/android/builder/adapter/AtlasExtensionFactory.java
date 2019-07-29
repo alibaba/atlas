@@ -218,6 +218,7 @@ import com.taobao.android.builder.extension.factory.PatchConfigFactory;
 import com.taobao.android.builder.extension.factory.TBuildTypeFactory;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
@@ -225,7 +226,7 @@ import org.gradle.internal.reflect.Instantiator;
  */
 public class AtlasExtensionFactory {
 
-    public AtlasExtension createExtendsion(Project project, Instantiator instantiator) {
+    public AtlasExtension createExtendsion(Project project, ObjectFactory instantiator) {
 
         AtlasExtension atlasExtension = getExtendsion(project);
 
@@ -242,10 +243,9 @@ public class AtlasExtensionFactory {
                                                                                                    instantiator,
                                                                                                    project, project
                                                                                                        .getLogger()));
-        final NamedDomainObjectContainer<DexConfig>dexConfigContainer = project.container(DexConfig.class,new DexConfigFactory(instantiator,project,project.getLogger()));
 
         return project.getExtensions().create("atlas", AtlasExtension.class, project, instantiator,
-                                              buildTypeContainer, patchConfigContainer,dexConfigContainer);
+                                              buildTypeContainer, patchConfigContainer);
 
     }
 

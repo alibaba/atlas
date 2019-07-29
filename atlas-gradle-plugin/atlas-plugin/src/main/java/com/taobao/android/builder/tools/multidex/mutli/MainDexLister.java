@@ -210,9 +210,11 @@
 package com.taobao.android.builder.tools.multidex.mutli;
 
 
+import com.android.build.api.artifact.BuildableArtifact;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.google.common.base.Joiner;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.extension.TBuildConfig;
@@ -259,11 +261,22 @@ public class MainDexLister {
 
         //Confusion of the map
         //Map<String, String> classMap = getClassObfMap(config);
-        Collection<BaseVariantOutput> collection = appVariantContext.getVariantOutputData();
-        File manifest = com.android.utils.FileUtils.join(collection.iterator().next().getProcessManifest().getManifestOutputDirectory(),new String[]{collection.iterator().next().getDirName(),"AndroidManifest.xml"});
-        if (appVariantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()){
-            manifest = com.android.utils.FileUtils.join(collection.iterator().next().getProcessManifest().getInstantRunManifestOutputDirectory(),new String[]{collection.iterator().next().getDirName(),"AndroidManifest.xml"});
+//        Collection<BaseVariantOutput> collection = appVariantContext.getVariantOutputData();
+
+        BuildableArtifact bm = appVariantContext.getScope().getArtifacts().getFinalArtifactFilesIfPresent(InternalArtifactType.MERGED_MANIFESTS);
+
+
+        if (bm == null ||bm.get() == null){
+             bm = appVariantContext.getScope().getArtifacts().getFinalArtifactFilesIfPresent(InternalArtifactType.INSTANT_RUN_MERGED_MANIFESTS);
+
         }
+
+        File manifest = bm.get().getSingleFile();
+//        File manifest = new File(appVariantContext.getScope().get())
+//        File manifest = com.android.utils.FileUtils.join(collection.iterator().next().getProcessManifest().getManifestOutputDirectory(),new String[]{collection.iterator().next().getDirName(),"AndroidManifest.xml"});
+//        if (appVariantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()){
+//            manifest = com.android.utils.FileUtils.join(collection.iterator().next().getProcessManifest().getInstantRunManifestOutputDirectory(),new String[]{collection.iterator().next().getDirName(),"AndroidManifest.xml"});
+//        }
         String applicationName = ManifestFileUtils.getApplicationName(manifest);
 
         ClassPool classPool = new ClassPool();

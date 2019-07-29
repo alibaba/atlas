@@ -236,11 +236,6 @@ import com.taobao.android.builder.insant.DelegateProguardTransform;
 import com.taobao.android.builder.tasks.PrepareAPTask;
 import com.taobao.android.builder.tasks.app.*;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
-import com.taobao.android.builder.tasks.app.bundle.JavacAwbsTask;
-import com.taobao.android.builder.tasks.app.bundle.ProcessResAwbsTask;
-import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingExportBuildInfoTask;
-import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingMergeArtifactsTask;
-import com.taobao.android.builder.tasks.app.databinding.AwbDataBindingRenameTask;
 import com.taobao.android.builder.tasks.app.manifest.StandardizeLibManifestTask;
 import com.taobao.android.builder.tasks.app.merge.*;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
@@ -320,9 +315,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
 
-                                                              if (!atlasExtension.getTBuildConfig().getClassInject() && atlasExtension.isAtlasEnabled()) {
-                                                                  mtlTaskContextList.add(new MtlTaskContext(GenerateAtlasSourceTask.ConfigAction.class, null));
-                                                              }
+
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
 
@@ -332,25 +325,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(MergeResAwbsConfigAction.class, null));
-
-                                                              mtlTaskContextList.add(new MtlTaskContext(MergeAssetAwbsConfigAction.class, null));
-
-                                                              if (null != androidExtension.getDataBinding() && androidExtension.getDataBinding().isEnabled() && !appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex()) {
-
-//                                                                  mtlTaskContextList.add(
-//                                                                          new MtlTaskContext(AwbDataBindingProcessLayoutTask.ConfigAction.class, null));
-                                                                  mtlTaskContextList.add(
-                                                                          new MtlTaskContext(AwbDataBindingExportBuildInfoTask.ConfigAction.class, null));
-                                                                  mtlTaskContextList.add(
-                                                                          new MtlTaskContext(AwbDataBindingMergeArtifactsTask.ConfigAction.class, null));
-
-
-                                                              }
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessApplicationManifest.class));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(MergeManifestAwbsConfigAction.class, null));
 
                                                               //mtlTaskContextList.add(new MtlTaskContext(MergeResV4Dir.ConfigAction.class, null));
 
@@ -381,14 +358,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 //                                                                      }
 //                                                                  });
 //                                                              }
-                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessResAwbsTask.ConfigAction.class, null));
-
-                                                              mtlTaskContextList.add(new MtlTaskContext(JavacAwbsTask.ConfigAction.class, null));
-
 
                                                               mtlTaskContextList.add(new MtlTaskContext(TransformTask.class));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(PackageAwbsTask.ConfigAction.class, null));
 
                                                               VariantScope variantScope = appVariantContext.getVariantData().getScope();
 
@@ -448,6 +420,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               for (final BaseVariantOutput vod : baseVariantOutputDataList) {
                                                                   transformReplacer.replaceMergeJavaResourcesTransform(appVariantContext, vod);
+                                                                  transformReplacer.replaceDexExternalLibMerge(vod);
+                                                                  transformReplacer.replaceDexArchiveBuilderTransform(vod);
+                                                                  transformReplacer.replaceDexMergeTransform(vod);
+
                                                                   transformReplacer.repalaceSomeInstantTransform(vod);
 
                                                                   if (atlasExtension.getTBuildConfig().isIncremental()) {
@@ -463,7 +439,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               }
 
-                                                              appVariantContext.getScope().getTaskContainer().compileTask.get().doLast(new Action<Task>() {
+                                                              appVariantContext.getScope().getTaskContainer().javacTask.get().doLast(new Action<Task>() {
                                                                   @Override
                                                                   public void execute(Task task) {
                                                                       JavaCompile compile = (JavaCompile) task;

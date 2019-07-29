@@ -57,6 +57,8 @@ public class AtlasAndroidArtifacts extends AndroidArtifacts{
 
     // types for main artifacts
     public static final String TYPE_AAR = "aar";
+
+
     private static final String TYPE_APK = "apk";
     private static final String TYPE_JAR = ArtifactTypeDefinition.JAR_TYPE;
 

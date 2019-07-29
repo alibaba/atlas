@@ -11,7 +11,6 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.taobao.atlas.runtime.RuntimeVariables;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -34,7 +33,7 @@ public class MainActivity extends AppCompatActivity
                 switch (item.getItemId()) {
                     case R.id.navigation_home:
                         switchToActivity("com.taobao.firstbundle.FirstBundleActivity");
-                        Toast.makeText(RuntimeVariables.androidApplication,"on click",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this,"on click",Toast.LENGTH_SHORT).show();
                         return true;
                     case R.id.navigation_dashboard:
                         switchToActivity("com.taobao.secondbundle.SecondBundleActivity");
@@ -87,7 +86,7 @@ public class MainActivity extends AppCompatActivity
 //                    }
 //                });
         Intent intent = new Intent();
-        intent.setClassName(getBaseContext(),activityName);
+        intent.setClassName(MainActivity.this,activityName);
         startActivity(intent);
     }
 

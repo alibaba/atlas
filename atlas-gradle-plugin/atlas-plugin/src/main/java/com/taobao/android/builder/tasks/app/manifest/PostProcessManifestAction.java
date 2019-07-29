@@ -266,8 +266,11 @@ public class PostProcessManifestAction implements Action<Task> {
         VariantScope variantScope = appVariantContext.getScope();
         GradleVariantConfiguration config = variantScope.getVariantConfiguration();
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(config.getFullName());
-
-        File androidManifest = appVariantContext.getScope().getManifestOutputDirectory();
+        File androidManifest = null;
+        androidManifest = new File(baseVariantOutputData.getProcessManifestProvider().get().getInstantRunManifestOutputDirectory().get().getAsFile(),SdkConstants.ANDROID_MANIFEST_XML);
+        if (!androidManifest.exists()) {
+            androidManifest = new File(baseVariantOutputData.getProcessManifestProvider().get().getManifestOutputDirectory().get().getAsFile(), SdkConstants.ANDROID_MANIFEST_XML);
+        }
 
 //        File file = variantScope
 //                .getInstantRunManifestOutputDirectory();
@@ -298,10 +301,7 @@ public class PostProcessManifestAction implements Action<Task> {
                             .getOutOfApkBundles(), atlasExtension.getTBuildConfig().getInsideOfApkBundles(), atlasExtension.getTBuildConfig().isPushInstall());
 
 
-            File proxySrcDir = appVariantContext.getAtlasProxySourceDir();
-            if (AtlasProxy.genProxyJavaSource(proxySrcDir, result)) {
-//                appVariantContext.getVariantData().javacTask.source(proxySrcDir);
-            }
+
 
             ManifestHelper.checkManifest(appVariantContext,
                     androidManifest, dependencyTree,

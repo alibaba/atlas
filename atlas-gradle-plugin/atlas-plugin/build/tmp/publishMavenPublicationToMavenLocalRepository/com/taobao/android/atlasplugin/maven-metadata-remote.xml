@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>com.taobao.android</groupId>
+  <artifactId>atlasplugin</artifactId>
+  <versioning>
+    <release>unspecified</release>
+    <versions>
+      <version>3.0.1-rc112-SNAPSHOT</version>
+      <version>unspecified</version>
+      <version>5.5.1-rc1-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20190729021825</lastUpdated>
+  </versioning>
+</metadata>

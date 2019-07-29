@@ -209,12 +209,7 @@
 
 package com.taobao.android.builder.tools.bundleinfo;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -224,10 +219,12 @@ import android.aapt.pb.internal.ResourcesInternal.CompiledFile;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.ApkDataUtils;
-import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.api.ApkFiles;
 import com.android.build.gradle.internal.api.AppVariantContext;
-import com.android.build.gradle.internal.scope.TaskOutputHolder;
+import com.android.build.gradle.internal.publishing.AndroidArtifacts;
+import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask;
+import com.android.build.gradle.internal.scope.ExistingBuildElements;
+import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.CodedInputStream;
@@ -259,17 +256,15 @@ public class ApkFileListUtils {
     public static ApkFiles recordApkFileInfos(AppVariantContext appVariantContext) {
 
         ApkFiles apkFiles = new ApkFiles();
-        ProcessAndroidResources processAndroidResources = appVariantContext.getScope()
-                .getProcessResourcesTask()
-                .get(new TaskContainerAdaptor(appVariantContext.getScope().getGlobalScope().getProject().getTasks()));
+        ProcessAndroidResources processAndroidResources = appVariantContext.getScope().getTaskContainer().getProcessAndroidResTask().get();
         List<File> mainBundleResFolders = new ArrayList<File>();
-        if (!processAndroidResources.isAapt2Enabled()) {
-            mainBundleResFolders.add(appVariantContext.getScope().getVariantData().mergeResourcesTask.getOutputDir());
-            for (File resFolder : mainBundleResFolders) {
-                prepareApkFileList(resFolder, "res", apkFiles);
+
+        File file = appVariantContext.getScope().getArtifacts().getFinalArtifactFiles(InternalArtifactType.PROCESSED_RES).get().getSingleFile().listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".ap_");
             }
-        }else {
-            File file = FileUtils.listFiles(appVariantContext.getScope().getOutput(TaskOutputHolder.TaskOutputType.PROCESSED_RES).getSingleFile(),new String[]{SdkConstants.EXT_RES},true).iterator().next();
+        })[0];
 
             File tempFile = new File(file.getParentFile(),"res-temp");
             try {
@@ -280,8 +275,8 @@ public class ApkFileListUtils {
             prepareApkFileList(new File(tempFile,"res"),"res",apkFiles);
             apkFiles.finalApkFileList.put("resources.arsc", MD5Util.getFileMD5(new File(tempFile,"resources.arsc")));
 
-        }
-        prepareApkFileList(appVariantContext.getScope().getVariantData().mergeAssetsTask.getOutputDir(),
+
+        prepareApkFileList(appVariantContext.getScope().getTaskContainer().mergeAssetsTask.get().getOutputDir().get().getAsFile(),
                 "assets", apkFiles);
         // Record the resource information for each bundle
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getScope().

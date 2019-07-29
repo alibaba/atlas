@@ -5,7 +5,7 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.scope.*;
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.internal.variant.MultiOutputPolicy;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.builder.signing.SigningException;
@@ -28,7 +28,7 @@ import java.util.zip.ZipOutputStream;
 import static com.android.SdkConstants.DOT_ANDROID_PACKAGE;
 import static com.android.SdkConstants.DOT_ZIP;
 
-public class AtlasBundleInstantApp extends DefaultAndroidTask {
+public class AtlasBundleInstantApp extends AndroidBuilderTask {
 
     private File apkFile;
 
@@ -124,10 +124,10 @@ public class AtlasBundleInstantApp extends DefaultAndroidTask {
         }
 
         @Override
-        public void execute(@NonNull AtlasBundleInstantApp bundleInstantApp) {
+        public void configure(@NonNull AtlasBundleInstantApp bundleInstantApp) {
+            super.configure(bundleInstantApp);
             bundleInstantApp.setVariantName(scope.getFullVariantName());
-            final boolean splitsArePossible =
-                    scope.getOutputScope().getMultiOutputPolicy() == MultiOutputPolicy.SPLITS;
+            final boolean splitsArePossible = false;
             File finalApkLocation = scope.getApkLocation();
             File outputDirectory =
                     splitsArePossible

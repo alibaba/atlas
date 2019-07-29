@@ -7,6 +7,9 @@ import com.taobao.android.builder.manager.AtlasConfigurationHelper;
 import com.taobao.android.builder.manager.PluginManager;
 import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
+import javax.inject.Inject;
 
 /**
  * AtlasInstantAppPlugin
@@ -19,8 +22,9 @@ import org.gradle.internal.reflect.Instantiator;
 public class AtlasInstantAppPlugin extends AtlasPlugin {
 
 
-    public AtlasInstantAppPlugin(Instantiator instantiator) {
-        super(instantiator);
+    @Inject
+    public AtlasInstantAppPlugin(ToolingModelBuilderRegistry toolingModelBuilderRegistry) {
+        super(toolingModelBuilderRegistry);
     }
 
     @Override

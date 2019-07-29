@@ -297,18 +297,15 @@ public class ManifestFileUtils {
             addApplicationMetaData(document, libManifestMap, baseBunfleInfoFile, manifestOptions, remoteBundles,insideBundles);
         }
 
-        if (null != manifestOptions && manifestOptions.isAddAtlasProxyComponents()) {
-            AtlasProxy.addAtlasProxyClazz(document, manifestOptions.getAtlasProxySkipChannels(), result);
-        }
 
             addAndroidLabel(document,pushInstall);
 
         if (null != manifestOptions && manifestOptions.isAddBundleLocation()) {
             addBundleLocationToDestManifest(document, libManifestMap, libDependenciesMaps, manifestOptions);
         }
-        if (null != manifestOptions && manifestOptions.isReplaceApplication()) {
-            replaceManifestApplicationName(document);
-        }
+//        if (null != manifestOptions && manifestOptions.isReplaceApplication()) {
+//            replaceManifestApplicationName(document);
+//        }
 
         if ((null != manifestOptions && manifestOptions.isAddMultiDexMetaData()) || addMultiDex) {
             addMultiDexMetaData(document);

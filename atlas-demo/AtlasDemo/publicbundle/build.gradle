@@ -11,7 +11,6 @@ version = '1.0.0'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '26.0.2'
 
     defaultConfig {
         minSdkVersion 14
@@ -31,6 +30,6 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.1.0'
+    api fileTree(dir: 'libs', include: ['*.jar'])
+    api 'com.android.support:appcompat-v7:25.1.0'
 }

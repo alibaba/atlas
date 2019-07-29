@@ -209,18 +209,24 @@
 
 package com.taobao.android.builder.extension;
 
+import javax.inject.Inject;
+
 /**
  * Created by wuzhong on 2016/9/30.
  */
 public class BundleConfig {
 
-    private boolean jarEnabled = false;
 
     private Boolean awbBundle = false;
     private Boolean awoBuildEnabled = false;
     private boolean awoDynDeploy = true;
     private boolean awoApkBuild = true;
     private boolean mergeRes = true;
+    private boolean jarEnabled = false;
+
+    @Inject
+    public BundleConfig() {
+    }
 
     public Boolean isAwbBundle() {
         return awbBundle;

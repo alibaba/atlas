@@ -435,7 +435,7 @@ public class InjectTransformManager {
      * @return
      * @throws IllegalAccessException
      */
-    private TransformTaskParam getTransformParam(TransformTask transformTask) throws IllegalAccessException {
+    public static TransformTaskParam getTransformParam(TransformTask transformTask) throws IllegalAccessException {
         TransformTaskParam transformTaskParam = new TransformTaskParam();
         Field consumedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class,
                                                                       "consumedInputStreams",
@@ -474,13 +474,13 @@ public class InjectTransformManager {
     /**
      * TransformTaskParameter combination
      */
-    static class TransformTaskParam {
+    public static class TransformTaskParam {
 
-        Collection<TransformStream> consumedInputStreams;
+        public Collection<TransformStream> consumedInputStreams;
 
-        Collection<TransformStream> referencedInputStreams;
+        public Collection<TransformStream> referencedInputStreams;
 
-        IntermediateStream outputStream;
+        public IntermediateStream outputStream;
     }
 
     @NonNull
@@ -500,4 +500,7 @@ public class InjectTransformManager {
 
         return sb.toString();
     }
+
+
+
 }

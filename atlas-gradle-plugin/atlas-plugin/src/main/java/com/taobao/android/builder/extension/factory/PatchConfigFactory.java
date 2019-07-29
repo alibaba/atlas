@@ -214,6 +214,7 @@ import com.taobao.android.builder.extension.PatchConfig;
 import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
@@ -222,14 +223,14 @@ import org.gradle.internal.reflect.Instantiator;
 public class PatchConfigFactory implements NamedDomainObjectFactory<PatchConfig> {
 
     @NonNull
-    private final Instantiator instantiator;
+    private final ObjectFactory instantiator;
     @NonNull
     private final Project project;
 
     @NonNull
     private final Logger logger;
 
-    public PatchConfigFactory(@NonNull Instantiator instantiator, @NonNull Project project, @NonNull Logger logger) {
+    public PatchConfigFactory(@NonNull ObjectFactory instantiator, @NonNull Project project, @NonNull Logger logger) {
         this.instantiator = instantiator;
         this.project = project;
         this.logger = logger;

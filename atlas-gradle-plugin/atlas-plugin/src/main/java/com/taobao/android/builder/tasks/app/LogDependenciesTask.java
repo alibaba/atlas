@@ -217,7 +217,8 @@ import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
-import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
+import com.android.builder.model.Version;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.output.DependencyJson;
@@ -240,7 +241,7 @@ import java.util.Set;
 /**
  * Record the build dependency information, facilitate the analysis and analysis
  */
-public class LogDependenciesTask extends BaseTask {
+public class LogDependenciesTask extends AndroidBuilderTask {
 
     private AppVariantOutputContext.AppBuildInfo appBuildInfo;
 
@@ -327,7 +328,7 @@ public class LogDependenciesTask extends BaseTask {
         try {
             List<String> lines = new ArrayList<>();
             lines.add("gradleVersion:" + getProject().getGradle().getGradleVersion());
-            lines.add("androidPluginVersion:" + com.android.builder.Version.ANDROID_GRADLE_PLUGIN_VERSION);
+            lines.add("androidPluginVersion:" + Version.ANDROID_GRADLE_PLUGIN_VERSION);
             lines.add("buildToolsVersion:" + appVariantContext.getAppExtension().getBuildToolsVersion());
             lines.add("compileSdkVersion:" + appVariantContext.getAppExtension().getCompileSdkVersion());
             lines.add("atlasPluginVersion:" + FileNameUtils.getJarVersionName(LogDependenciesTask.class));
@@ -409,8 +410,8 @@ public class LogDependenciesTask extends BaseTask {
         }
 
         @Override
-        public void execute(LogDependenciesTask logDependenciesTask) {
-            super.execute(logDependenciesTask);
+        public void configure(LogDependenciesTask logDependenciesTask) {
+            super.configure(logDependenciesTask);
             logDependenciesTask.appBuildInfo = getAppVariantOutputContext().appBuildInfo;
             logDependenciesTask.appVariantContext = appVariantContext;
         }

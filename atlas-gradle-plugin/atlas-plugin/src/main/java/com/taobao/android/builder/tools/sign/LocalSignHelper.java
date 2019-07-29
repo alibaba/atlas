@@ -209,20 +209,22 @@
 
 package com.taobao.android.builder.tools.sign;
 
-import com.android.apkzlib.zfile.ApkCreator;
-import com.android.apkzlib.zfile.ApkCreatorFactory;
-import com.android.apkzlib.zfile.ApkZFileCreatorFactory;
-import com.android.apkzlib.zfile.NativeLibrariesPackagingMode;
-import com.android.apkzlib.zip.ZFileOptions;
-import com.android.apkzlib.zip.compress.BestAndDefaultDeflateExecutorCompressor;
-
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.builder.signing.SigningException;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
+import com.android.tools.build.apkzlib.sign.SigningOptions;
+import com.android.tools.build.apkzlib.zfile.ApkCreator;
+import com.android.tools.build.apkzlib.zfile.ApkCreatorFactory;
+import com.android.tools.build.apkzlib.zfile.ApkZFileCreatorFactory;
+import com.android.tools.build.apkzlib.zfile.NativeLibrariesPackagingMode;
+import com.android.tools.build.apkzlib.zip.ZFileOptions;
+import com.android.tools.build.apkzlib.zip.compress.BestAndDefaultDeflateExecutorCompressor;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.taskdefs.Zip;
 
@@ -233,6 +235,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -269,11 +272,11 @@ public class LocalSignHelper {
                 FileUtils.forceMkdir(outputFile.getParentFile());
             }
 
+//        final CertificateInfo certificateInfo = null;
             try {
 
-                CertificateInfo certificateInfo = null;
                 if (signingConfig != null && signingConfig.isSigningReady()) {
-                    certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
+                    CertificateInfo certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
                             Preconditions.checkNotNull(signingConfig.getStoreFile()),
                             Preconditions.checkNotNull(signingConfig.getStorePassword()),
                             Preconditions.checkNotNull(signingConfig.getKeyPassword()),
@@ -281,34 +284,63 @@ public class LocalSignHelper {
                     if (certificateInfo == null) {
                         throw new SigningException("Failed to read key from keystore");
                     }
+
+                    System.err.println("LocalSign:" + signingConfig.toString());
+
+                    Predicate<String> noCompressPredicate = getNoCompressPredicate(inputFile.getAbsolutePath());
+                    SigningOptions signingOptions = new SigningOptions() {
+                        @Override
+                        public PrivateKey getKey() {
+                            return certificateInfo.getKey();
+                        }
+
+                        @Override
+                        public ImmutableList<X509Certificate> getCertificates() {
+                            return ImmutableList.<X509Certificate>builder().add(certificateInfo.mCertificate).build();
+                        }
+
+                        @Override
+                        public boolean isV1SigningEnabled() {
+                            return signingConfig.isV1SigningEnabled();
+                        }
+
+                        @Override
+                        public boolean isV2SigningEnabled() {
+                            return signingConfig.isV2SigningEnabled();
+                        }
+
+                        @Override
+                        public int getMinSdkVersion() {
+                            return 14;
+                        }
+
+                        @Override
+                        public Validation getValidation() {
+                            return null;
+                        }
+                    };
+                    ApkCreatorFactory.CreationData creationData =
+                            new ApkCreatorFactory.CreationData(
+                                    outputFile,
+                                    Optional.of(signingOptions),
+                                    null,
+                                    null,
+                                    nativeLibrariesPackagingMode,
+                                    noCompressPredicate);
+
+                    ApkCreatorFactory apkCreatorFactory = createFactory();
+
+                    ApkCreator mApkCreator = apkCreatorFactory.make(creationData);
+
+                    mApkCreator.writeZip(inputFile, null, null);
+
+                    mApkCreator.hasPendingChangesWithWait();
+
+                    mApkCreator.close();
+
+                }else {
+                    throw new SigningException("signConfig is null");
                 }
-                System.err.println("LocalSign:"+signingConfig.toString());
-
-                Predicate<String> noCompressPredicate = getNoCompressPredicate(inputFile.getAbsolutePath());
-                        ApkCreatorFactory.CreationData creationData =
-                        new ApkCreatorFactory.CreationData(
-                                outputFile,
-                                certificateInfo.getKey(),
-                                certificateInfo.getCertificate(),
-                                signingConfig.isV1SigningEnabled(),
-                                signingConfig.isV2SigningEnabled(),
-                                null,
-                                null,
-                                14,
-                                nativeLibrariesPackagingMode,
-                                noCompressPredicate);
-
-                ApkCreatorFactory apkCreatorFactory = createFactory();
-
-                ApkCreator mApkCreator = apkCreatorFactory.make(creationData);
-
-                mApkCreator.writeZip(inputFile,null,null);
-
-                mApkCreator.hasPendingChangesWithWait();
-
-                mApkCreator.close();
-
-
             } catch (Exception e) {
 
                 throw new SigningException(e.getMessage(), e);
@@ -337,7 +369,6 @@ public class LocalSignHelper {
         options.setCompressor(
                 new BestAndDefaultDeflateExecutorCompressor(
                         compressionExecutor,
-                        options.getTracker(),
                         1.0));
         options.setAutoSortFiles(true);
         return new ApkZFileCreatorFactory(options);

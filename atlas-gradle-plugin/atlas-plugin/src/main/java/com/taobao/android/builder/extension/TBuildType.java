@@ -212,6 +212,7 @@ package com.taobao.android.builder.extension;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.taobao.android.builder.extension.annotation.Config;
 
+import javax.inject.Inject;
 import java.io.File;
 
 /**
@@ -295,6 +296,7 @@ public class TBuildType {
 
     private DefaultChannelConfig atlasChannelConfig;
 
+    @Inject
     public TBuildType(String name) {
         this.name = name;
     }
@@ -324,6 +326,9 @@ public class TBuildType {
     }
 
     public PatchConfig getPatchConfig() {
+        if (patchConfig == null){
+            patchConfig = new PatchConfig(name);
+        }
         return patchConfig;
     }
 

@@ -5,8 +5,7 @@ version = '1.0.0'
 
 android {
   compileSdkVersion 25
-  buildToolsVersion "26.0.2"
-  resourcePrefix 'lottie_'
+    resourcePrefix 'lottie_'
 
   defaultConfig {
     minSdkVersion 14
@@ -23,5 +22,5 @@ android {
 }
 
 dependencies {
-  compile 'com.android.support:appcompat-v7:25.2.0'
+  api 'com.android.support:appcompat-v7:25.2.0'
 }

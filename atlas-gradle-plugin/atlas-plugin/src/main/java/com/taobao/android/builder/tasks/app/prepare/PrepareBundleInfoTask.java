@@ -304,9 +304,9 @@ public class PrepareBundleInfoTask extends AndroidBuilderTask {
         }
 
         @Override
-        public void execute(PrepareBundleInfoTask prepareBundleInfoTask) {
+        public void configure(PrepareBundleInfoTask prepareBundleInfoTask) {
 
-            super.execute(prepareBundleInfoTask);
+            super.configure(prepareBundleInfoTask);
 
             prepareBundleInfoTask.appVariantOutputContext = getAppVariantOutputContext();
         }

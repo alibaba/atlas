@@ -230,25 +230,25 @@ tasks.findByName("test").enabled = false
 
 
 dependencies {
-    compile localGroovy()
-    compile gradleApi()
+    implementation localGroovy()
+    implementation gradleApi()
 
 //    compile "com.taobao.android:dex_patch:3.0.0-rc16"
-    compile "com.android.tools.build:gradle:3.4.2"
-    compile "org.apache.commons:commons-lang3:3.4"
-    compile "commons-lang:commons-lang:2.6"
-    compile "com.alibaba:fastjson:1.2.6"
-    compile 'org.dom4j:dom4j:2.0.0'
-    compile 'jaxen:jaxen:1.1.6'
-    compile 'commons-beanutils:commons-beanutils:1.9.0'
-    compile 'org.javassist:javassist:3.19.0-GA'
+    implementation "com.android.tools.build:gradle:3.4.2"
+    implementation "org.apache.commons:commons-lang3:3.4"
+    implementation "commons-lang:commons-lang:2.6"
+    implementation "com.alibaba:fastjson:1.2.6"
+    implementation 'org.dom4j:dom4j:2.0.0'
+    implementation 'jaxen:jaxen:1.1.6'
+    implementation 'commons-beanutils:commons-beanutils:1.9.0'
+    implementation 'org.javassist:javassist:3.19.0-GA'
 //    compile "com.taobao.android:preverify:1.0.0"
-    compile "org.codehaus.plexus:plexus-utils:3.0.24"
+    implementation "org.codehaus.plexus:plexus-utils:3.0.24"
 //    compile "com.taobao.android:aapt:2.3.1.rc4"
-    compile "com.google.inject:guice:4.0"
-    compile "com.google.auto.value:auto-value:1.0"
+    implementation "com.google.inject:guice:4.0"
+    implementation "com.google.auto.value:auto-value:1.0"
 //    compile "org.jetbrains.kotlin:kotlin-gradle-plugin:1.2.41"
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     testCompile "junit:junit:4.11"
 }
@@ -256,5 +256,5 @@ jar {
     from zipTree("libs/libarsc.jar")
 }
 
-version = '3.0.1-rc113'
+version = '5.5.1-rc1-SNAPSHOT'
 

@@ -23,8 +23,7 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.1.0'
+    api fileTree(dir: 'libs', include: ['*.jar'])
+    api 'com.android.support:appcompat-v7:25.1.0'
 //    compile('com.taobao.android:atlas_core:5.0.7.55')
-    compile project(':atlas_core')
 }
