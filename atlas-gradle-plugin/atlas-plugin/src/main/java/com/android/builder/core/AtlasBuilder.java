@@ -322,7 +322,7 @@ public class AtlasBuilder extends AndroidBuilder {
             @Nullable File reportFile) {
         return super.mergeManifestsForApplication(mainManifest,
                 manifestOverlays,
-                dependencies,
+                manifestProviders,
                 navigationFiles,
                 featureName,
                 packageOverride,

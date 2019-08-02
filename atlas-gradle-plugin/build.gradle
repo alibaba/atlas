@@ -234,6 +234,8 @@ description = """atlas gradle plugin"""
 //    distributionUrl = 'http://services.gradle.org/distributions/gradle-5.5.1-all.zip'
 //}
 
+version = '5.5.1-rc1-SNAPSHOT'
+
 subprojects {
 
     if (!project.getBuildFile().exists()) {

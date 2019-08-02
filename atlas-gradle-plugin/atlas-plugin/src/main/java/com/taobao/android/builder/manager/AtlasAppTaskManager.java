@@ -385,6 +385,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   mtlTransformContextList.add(
                                                                           new MtlTransformContext(DelegateProguardTransform.class, ExtractJarsTransform.class,
                                                                                   InstantRunTransform.class));
+
                                                               }
 
                                                               if (variantScope.getInstantRunBuildContext().isInInstantRunMode()){

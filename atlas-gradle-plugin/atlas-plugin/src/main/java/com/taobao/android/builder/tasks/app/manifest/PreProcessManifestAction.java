@@ -226,6 +226,7 @@ import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
+import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.manifest.ManifestHelper;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
@@ -263,13 +264,6 @@ public class PreProcessManifestAction implements Action<Task> {
 
         ManifestProcessorTask manifestProcessorTask = baseVariantOutput.getProcessManifestProvider().get();
 
-        Set<String> notMergedArtifacts = Sets.newHashSet();
-
-        if (null != atlasExtension.getManifestOptions() && null != atlasExtension.getManifestOptions()
-            .getNotMergedBundles()) {
-            notMergedArtifacts = atlasExtension.getManifestOptions().getNotMergedBundles();
-        }
-
         if (manifestProcessorTask instanceof ProcessApplicationManifest) {
 
             ProcessApplicationManifest mergeManifests = (ProcessApplicationManifest)manifestProcessorTask;
@@ -293,6 +287,9 @@ public class PreProcessManifestAction implements Action<Task> {
             AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).manifestProviders = allManifest;
 
             mergeManifests.setAndroidBuilder(AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()));
+
+//            ReflectUtils.updateField(mergeManifests,"manifests",appVariantContext.getProject().files(allManifest));
+
             //if (sLogger.isInfoEnabled()) {
             //    for (ManifestProvider manifestProvider : allManifest) {
             //        sLogger.warn("[manifestLibs] " + manifestProvider.getManifest().getAbsolutePath());

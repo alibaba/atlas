@@ -310,6 +310,8 @@ public class StandardizeLibManifestTask extends AndroidBuilderTask {
 
                         File modifyManifest = appVariantContext.getModifyManifest(androidLibrary);
 
+                        appVariantContext.manifestMap.put(file.getAbsolutePath(),modifyManifest);
+
                         //getLogger().error(file.getAbsolutePath() + " -> " + modifyManifest
                         //    .getAbsolutePath());
 
@@ -404,7 +406,7 @@ public class StandardizeLibManifestTask extends AndroidBuilderTask {
             final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
 
             task.mainManifestFile = config.getMainManifest();
-            task.libraryManifests = variantScope.getArtifactCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.MANIFEST);
+            task.libraryManifests = variantScope.getArtifactCollection(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.MANIFEST);
             task.appVariantContext = appVariantContext;
 
 
