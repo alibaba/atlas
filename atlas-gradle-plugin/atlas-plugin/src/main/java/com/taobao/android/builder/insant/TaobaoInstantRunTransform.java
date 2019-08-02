@@ -74,6 +74,9 @@ public class TaobaoInstantRunTransform extends Transform {
     private Map<String, String> modifyClasses = new HashMap<>();
 
 
+    private Map<String, List<String>> generatePatchInfo = new HashMap<>();
+
+
     public TaobaoInstantRunTransform(AppVariantContext variantContext, AppVariantOutputContext variantOutputContext, WaitableExecutor executor, InstantRunVariantScope transformScope) {
         this.variantContext = variantContext;
         this.variantOutputContext = variantOutputContext;
@@ -208,7 +211,7 @@ public class TaobaoInstantRunTransform extends Transform {
         for (TransformInput input : invocation.getInputs()) {
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                 File inputDir = directoryInput.getFile();
-                LOGGER.info("inputDir:"+inputDir.getAbsolutePath());
+                LOGGER.info("inputDir:" + inputDir.getAbsolutePath());
                 // non incremental mode, we need to traverse the TransformInput#getFiles()
                 // folder
                 FileUtils.cleanOutputDir(classesTwoOutput);
@@ -220,7 +223,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     String path = FileUtils.relativePath(file, inputDir);
                     String className = path.replace("/", ".").substring(0, path.length() - 6);
                     if (isMainRClass(className)) {
-                        LOGGER.info("mainRclass:"+className + path);
+                        LOGGER.info("mainRclass:" + className + path);
                         mainRFiles.add(file);
                     }
 
@@ -246,6 +249,13 @@ public class TaobaoInstantRunTransform extends Transform {
                         case MODIFY:
                             if (errors.contains(path)) {
                                 exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
+                            }
+                            List<String> methodDescs = new ArrayList<>();
+                            for (CodeChange cg : codeChange.getCodeChanges()) {
+                                if (cg.py == PatchPolicy.MODIFY) {
+                                    methodDescs.add(cg.code);
+                                }
+                                generatePatchInfo.put(className, methodDescs);
                             }
                             modifyClasses.put(className, PatchPolicy.MODIFY.name());
                             workItems.add(() -> transformToClasses3Format(
@@ -419,7 +429,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     @Override
                     public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
                         if (Modifier.isFinal(access) && Modifier.isStatic(access) && ConstPool.contains(desc) && value != null) {
-                            resFields.put(classReader.getClassName().replace("/",".") + ":" + name, value);
+                            resFields.put(classReader.getClassName().replace("/", ".") + ":" + name, value);
                         }
                         return super.visitField(access, name, desc, signature, value);
                     }
@@ -428,10 +438,10 @@ public class TaobaoInstantRunTransform extends Transform {
 
         }
 
-        variantContext.getProject().getLogger().warn("resFields size:"+resFields.size());
+        variantContext.getProject().getLogger().warn("resFields size:" + resFields.size());
         classFiles.forEach(file -> {
             byte[] classBytes = new byte[0];
-            variantContext.getProject().getLogger().warn("visit File :"+file.getAbsolutePath());
+            variantContext.getProject().getLogger().warn("visit File :" + file.getAbsolutePath());
             try {
                 classBytes = Files.toByteArray(file);
                 ClassReader classReader = new ClassReader(classBytes);
@@ -759,8 +769,24 @@ public class TaobaoInstantRunTransform extends Transform {
             File patchClassInfo = new File(variantContext.getProject().getBuildDir(), "outputs/patchClassInfo.json");
             org.apache.commons.io.FileUtils.writeStringToFile(patchClassInfo, JSON.toJSONString(modifyClasses));
             modifyClasses.entrySet().forEach(stringStringEntry -> LOGGER.warning(stringStringEntry.getKey() + ":" + stringStringEntry.getValue()));
+
+
+            ImmutableList.Builder<String> builder = ImmutableList.builder();
+
+            for (Map.Entry<String, List<String>> entry:generatePatchInfo.entrySet()){
+                    String className = entry.getKey();
+                    StringBuilder methodDesc = new StringBuilder();
+                    entry.getValue().forEach(new Consumer<String>() {
+                        @Override
+                        public void accept(String s) {
+                            methodDesc.append(s).append("|");
+                        }
+                    });
+                    builder.add(className+"|"+methodDesc.toString());
+            }
+
             writePatchFileContents(
-                    generatedClassNames,
+                    builder.build(),
                     classes3Folder,
                     transformScope.getInstantRunBuildContext().getBuildId());
         }
