@@ -322,6 +322,13 @@ public class TaobaoInstantRunTransform extends Transform {
                             if (errors.contains(path)) {
                                 exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
                             }
+                            List<String> methodDescs = new ArrayList<>();
+                            for (CodeChange cg : codeChange.getCodeChanges()) {
+                                if (cg.py == PatchPolicy.MODIFY) {
+                                    methodDescs.add(cg.code);
+                                }
+                                generatePatchInfo.put(className, methodDescs);
+                            }
                             modifyClasses.put(className, PatchPolicy.MODIFY.name());
                             workItems.add(() -> transformToClasses3Format(codeChange,
                                     dir,
