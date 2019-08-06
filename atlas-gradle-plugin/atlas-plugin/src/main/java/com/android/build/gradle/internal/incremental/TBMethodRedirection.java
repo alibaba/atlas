@@ -1,5 +1,8 @@
 package com.android.build.gradle.internal.incremental;
 
+import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -18,6 +21,33 @@ public class TBMethodRedirection extends MethodRedirection {
     TBMethodRedirection(LabelNode label, String name, List<Type> types, Type type) {
         super(label, name, types, type);
         this.name = name;
+    }
+
+    @Override
+    void redirect(GeneratorAdapter mv, int change) {
+        // code to check if a new implementation of the current class is available.
+        Label l0 = new Label();
+        mv.loadLocal(change);
+        mv.visitJumpInsn(Opcodes.IFNULL, l0);
+
+
+        mv.loadLocal(change);
+        mv.visitTypeInsn(Opcodes.INSTANCEOF,TBIncrementalVisitor.ALI_CHANGE_TYPE.getInternalName());
+        mv.visitJumpInsn(Opcodes.IFEQ,l0);
+
+        doRedirect(mv, change);
+
+        // Return
+        if (type == Type.VOID_TYPE) {
+            mv.pop();
+        } else {
+            ByteCodeUtils.unbox(mv, type);
+        }
+        mv.returnValue();
+
+        // jump label for classes without any new implementation, just invoke the original
+        // method implementation.
+        mv.visitLabel(l0);
     }
 
     @Override
