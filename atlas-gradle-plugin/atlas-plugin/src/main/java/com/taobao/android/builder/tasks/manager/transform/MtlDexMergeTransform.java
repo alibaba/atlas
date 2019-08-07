@@ -37,6 +37,7 @@ import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipFile;
 
 /**
  * @ClassName MtlDexMergeTransform
@@ -178,6 +179,8 @@ public class MtlDexMergeTransform extends Transform {
         List<ForkJoinTask<Void>> mergeTasks;
         try (Closeable ignored = output = outputHandler.createOutput()) {
             if (dexingType == DexingType.NATIVE_MULTIDEX && isDebuggable) {
+
+                logger.warning("use NATIVE_MULTIDEX");
                 mergeTasks =
                         handleNativeMultiDexDebug(
                                 transformInvocation.getInputs(),
@@ -185,6 +188,7 @@ public class MtlDexMergeTransform extends Transform {
                                 outputProvider,
                                 transformInvocation.isIncremental());
             } else {
+                logger.warning("use mono-dex");
                 mergeTasks = mergeDex(transformInvocation.getInputs(), output, outputProvider);
             }
 
@@ -223,7 +227,7 @@ public class MtlDexMergeTransform extends Transform {
         Iterator<Path> jarInputs =
                 inputs.stream()
                         .flatMap(transformInput -> transformInput.getJarInputs().stream())
-                        .filter(jarInput -> jarInput.getStatus() != Status.REMOVED)
+                        .filter(jarInput -> jarInput.getStatus() != Status.REMOVED && isValidJar(jarInput))
                         .map(jarInput -> jarInput.getFile().toPath())
                         .iterator();
         Iterator<Path> dexArchives = Iterators.concat(dirInputs, jarInputs);
@@ -244,6 +248,34 @@ public class MtlDexMergeTransform extends Transform {
         }
 
         return ImmutableList.of(submitForMerging(output, outputDir, dexArchives, mainDexClasses));
+    }
+
+    private static boolean isValidJar(JarInput jarInput) {
+       File f =  jarInput.getFile();
+       if (!f.exists()){
+           return false;
+       }
+        ZipFile zipFile = null;
+        try {
+             zipFile = new ZipFile(f);
+            if (zipFile.getEntry("classes.dex")!= null){
+                return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            if (zipFile!= null){
+                try {
+                    zipFile.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return false;
+
+
     }
 
     /**
@@ -272,16 +304,19 @@ public class MtlDexMergeTransform extends Transform {
                         output, outputProvider, isIncremental, directoryInputs, mergeAllInputs));
 
         if (!nonExternalJars.isEmpty()) {
-            if (mergeAllInputs) {
-                subTasks.addAll(
-                        processNonExternalJarsTogether(
-                                output, outputProvider, isIncremental, nonExternalJars));
-            } else {
-                subTasks.addAll(
-                        processNonExternalJarsSeparately(
-                                output, outputProvider, isIncremental, nonExternalJars));
-            }
+
+            subTasks.addAll(
+                       processNonExternalJarsSeparately(
+                               output, outputProvider, isIncremental, nonExternalJars));
+//            if (mergeAllInputs) {
+//            subTasks.addAll(
+//                    processNonExternalJarsTogether(
+//                            output, outputProvider, isIncremental, nonExternalJars));
         }
+//            } else {
+//
+//            }
+
 
         subTasks.addAll(processExternalJars(output, outputProvider, isIncremental, externalLibs));
         return subTasks.build();
@@ -302,15 +337,17 @@ public class MtlDexMergeTransform extends Transform {
     private boolean shouldMergeInputsForNative(
             @NonNull Collection<DirectoryInput> directories,
             @NonNull Collection<JarInput> nonExternalJars) {
-        if (minSdkVersion > 22) {
-            return false;
-        }
 
-        long dirInputsCount = directories.stream().filter(d -> d.getFile().exists()).count();
-        long nonExternalJarCount =
-                nonExternalJars.stream().filter(d -> d.getStatus() != Status.REMOVED).count();
-        return dirInputsCount + nonExternalJarCount
-                > ANDROID_L_MAX_DEX_FILES - EXTERNAL_DEPS_DEX_FILES;
+        return true;
+//        if (minSdkVersion > 22) {
+//            return false;
+//        }
+//
+//        long dirInputsCount = directories.stream().filter(d -> d.getFile().exists()).count();
+//        long nonExternalJarCount =
+//                nonExternalJars.stream().filter(d -> d.getStatus() != Status.REMOVED).count();
+//        return dirInputsCount + nonExternalJarCount
+//                > ANDROID_L_MAX_DEX_FILES - EXTERNAL_DEPS_DEX_FILES;
     }
 
     /**
@@ -326,6 +363,10 @@ public class MtlDexMergeTransform extends Transform {
             directoryInputs.addAll(input.getDirectoryInputs());
 
             for (JarInput jarInput : input.getJarInputs()) {
+                if (!isValidJar(jarInput)){
+                    continue;
+                }
+
                 if (jarInput.getScopes().equals(Collections.singleton(QualifiedContent.Scope.EXTERNAL_LIBRARIES))) {
                     externalLibs.add(jarInput);
                 } else {

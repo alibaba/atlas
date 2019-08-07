@@ -19,7 +19,10 @@ public class AtlasIntermediateStreamHelper{
 
     private IntermediateStream intermediateStream;
 
+    private TransformTask task;
+
     public AtlasIntermediateStreamHelper(TransformTask transformTask) {
+        this.task = transformTask;
 
         this.intermediateStream = (IntermediateStream) ReflectUtils.getField(transformTask,"outputStream");
     }
@@ -37,8 +40,10 @@ public class AtlasIntermediateStreamHelper{
             ReflectUtils.updateField(transformOutputProvider,"folderUtils",atlasIntermediateFolderUtils);
 
         }catch (Exception e){
-
+        e.printStackTrace();
         }
+
+        task.getLogger().warn("replace replaceProvider success 111!");
 
 
     }

@@ -8,6 +8,7 @@ import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.crash.PluginCrashReporter;
+import com.android.build.gradle.internal.pipeline.AtlasIntermediateStreamHelper;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -34,6 +35,7 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.*;
+import org.apache.tools.ant.taskdefs.Zip;
 import org.gradle.tooling.BuildException;
 import org.gradle.workers.IsolationMode;
 
@@ -49,8 +51,11 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipFile;
 
 import static com.android.build.gradle.internal.workeractions.WorkerActionServiceRegistry.INSTANCE;
 
@@ -74,42 +79,54 @@ public class MtlDexArchiveBuilderTransform extends Transform {
     private static final int DEFAULT_NUM_BUCKETS =
             Math.max(Runtime.getRuntime().availableProcessors() / 2, 1);
 
-    @NonNull private final Supplier<List<File>> androidJarClasspath;
-    @NonNull private final DexOptions dexOptions;
-    @NonNull private final MessageReceiver messageReceiver;
+    @NonNull
+    private final Supplier<List<File>> androidJarClasspath;
+    @NonNull
+    private final DexOptions dexOptions;
+    @NonNull
+    private final MessageReceiver messageReceiver;
     @VisibleForTesting
-    @NonNull final WaitableExecutor executor;
+    @NonNull
+    final WaitableExecutor executor;
     private final int minSdkVersion;
-    @NonNull private final DexerTool dexer;
-    @NonNull private String projectVariant;
-    @NonNull private final DexArchiveHandler cacheHandler;
+    @NonNull
+    private final DexerTool dexer;
+    @NonNull
+    private String projectVariant;
+    @NonNull
+    private final DexArchiveHandler cacheHandler;
     private final boolean useGradleWorkers;
     private final int inBufferSize;
     private final int outBufferSize;
     private final boolean isDebuggable;
-    @NonNull private final VariantScope.Java8LangSupport java8LangSupportType;
+    @NonNull
+    private final VariantScope.Java8LangSupport java8LangSupportType;
     private final int numberOfBuckets;
     private final boolean includeFeaturesInScopes;
     private boolean isInstantRun;
 
     private boolean enableDexingArtifactTransform;
 
-    public MtlDexArchiveBuilderTransform( @NonNull Supplier<List<File>> androidJarClasspath,
-                                          @NonNull DexOptions dexOptions,
-                                          @NonNull MessageReceiver messageReceiver,
-                                          @Nullable FileCache userLevelCache,
-                                          int minSdkVersion,
-                                          @NonNull DexerTool dexer,
-                                          boolean useGradleWorkers,
-                                          @Nullable Integer inBufferSize,
-                                          @Nullable Integer outBufferSize,
-                                          boolean isDebuggable,
-                                          @NonNull VariantScope.Java8LangSupport java8LangSupportType,
-                                          @NonNull String projectVariant,
-                                          @Nullable Integer numberOfBuckets,
-                                          boolean includeFeaturesInScopes,
-                                          boolean isInstantRun,
-                                          boolean enableDexingArtifactTransform) {
+
+    private AtlasIntermediateStreamHelper atlasIntermediateStreamHelper;
+
+    public MtlDexArchiveBuilderTransform(@NonNull Supplier<List<File>> androidJarClasspath,
+                                         @NonNull DexOptions dexOptions,
+                                         @NonNull MessageReceiver messageReceiver,
+                                         @Nullable FileCache userLevelCache,
+                                         int minSdkVersion,
+                                         @NonNull DexerTool dexer,
+                                         boolean useGradleWorkers,
+                                         @Nullable Integer inBufferSize,
+                                         @Nullable Integer outBufferSize,
+                                         boolean isDebuggable,
+                                         @NonNull VariantScope.Java8LangSupport java8LangSupportType,
+                                         @NonNull String projectVariant,
+                                         @Nullable Integer numberOfBuckets,
+                                         boolean includeFeaturesInScopes,
+                                         boolean isInstantRun,
+                                         boolean enableDexingArtifactTransform,
+                                         AtlasIntermediateStreamHelper atlasIntermediateStreamHelper) {
 
 
         this.androidJarClasspath = androidJarClasspath;
@@ -129,15 +146,12 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 (outBufferSize == null ? DEFAULT_BUFFER_SIZE_IN_KB : outBufferSize) * 1024;
         this.isDebuggable = isDebuggable;
         this.java8LangSupportType = java8LangSupportType;
-        if (isInstantRun) {
-            this.numberOfBuckets = NUMBER_OF_SLICES_FOR_PROJECT_CLASSES;
-        } else {
-            this.numberOfBuckets = numberOfBuckets == null ? DEFAULT_NUM_BUCKETS : numberOfBuckets;
-        }
+        this.numberOfBuckets = 1;
         this.includeFeaturesInScopes = includeFeaturesInScopes;
         this.isInstantRun = isInstantRun;
         this.enableDexingArtifactTransform = enableDexingArtifactTransform;
 
+        this.atlasIntermediateStreamHelper = atlasIntermediateStreamHelper;
 
 
     }
@@ -175,7 +189,9 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         }
     }
 
-    /** Wrapper around the {@link com.android.builder.dexing.r8.ClassFileProviderFactory}. */
+    /**
+     * Wrapper around the {@link com.android.builder.dexing.r8.ClassFileProviderFactory}.
+     */
     public static final class ClasspathService
             implements WorkerActionServiceRegistry.RegisteredService<ClassFileProviderFactory> {
 
@@ -196,9 +212,6 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             // nothing to be done, as providerFactory is a closable
         }
     }
-
-
-
 
 
     @NonNull
@@ -275,6 +288,10 @@ public class MtlDexArchiveBuilderTransform extends Transform {
     public void transform(@NonNull TransformInvocation transformInvocation)
             throws TransformException, IOException, InterruptedException {
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
+        if (atlasIntermediateStreamHelper != null) {
+            atlasIntermediateStreamHelper.replaceProvider(transformInvocation);
+
+        }
         Preconditions.checkNotNull(outputProvider, "Missing output provider.");
         if (dexOptions.getAdditionalParameters().contains("--no-optimize")) {
             logger.warning(DefaultDexOptions.OPTIMIZE_WARNING);
@@ -363,6 +380,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                                     classpathServiceKey,
                                     additionalPaths,
                                     cacheInfo);
+
                     if (cacheInfo != MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo.DONT_CACHE && !dexArchives.isEmpty()) {
                         cacheableItems.add(
                                 new DexArchiveHandler.CacheableItem(
@@ -557,6 +575,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                     cacheHandler.getCachedVersionIfPresent(
                             toConvert, cacheInfo.orderedD8DesugaringDependencies);
             if (cachedVersion != null) {
+                logger.warning("hit cache:" + toConvert.getFile().getAbsolutePath() + " -> " + cachedVersion.getAbsolutePath());
                 File outputFile = getOutputForJar(transformOutputProvider, toConvert, null);
                 Files.copy(
                         cachedVersion.toPath(),
@@ -565,7 +584,11 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 // no need to try to cache an already cached version.
                 return ImmutableList.of();
             }
+            logger.warning("miss cache:" + toConvert.getFile().getAbsolutePath());
+
         }
+
+
         return convertToDexArchive(
                 context,
                 toConvert,
@@ -591,7 +614,8 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         private final boolean isDebuggable;
         private final boolean isIncremental;
         private final VariantScope.Java8LangSupport java8LangSupportType;
-        @NonNull private final Set<File> additionalPaths;
+        @NonNull
+        private final Set<File> additionalPaths;
         @Nonnull
         private final MessageReceiver messageReceiver;
         private final boolean isInstantRun;
@@ -675,7 +699,8 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         private static final MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo DONT_CACHE =
                 new MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo(Collections.emptyList());
 
-        @NonNull private final List<Path> orderedD8DesugaringDependencies;
+        @NonNull
+        private final List<Path> orderedD8DesugaringDependencies;
 
         private D8DesugaringCacheInfo(@NonNull List<Path> orderedD8DesugaringDependencies) {
             this.orderedD8DesugaringDependencies = orderedD8DesugaringDependencies;
@@ -739,6 +764,10 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             @NonNull Set<File> additionalPaths) {
 
         logger.verbose("Dexing %s", input.getFile().getAbsolutePath());
+
+        if (!input.getFile().isDirectory() && isNotVilid(input.getFile())) {
+            return ImmutableList.of();
+        }
 
         ImmutableList.Builder<File> dexArchives = ImmutableList.builder();
         for (int bucketId = 0; bucketId < numberOfBuckets; bucketId++) {
@@ -811,6 +840,36 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             }
         }
         return dexArchives.build();
+    }
+
+    private boolean isNotVilid(File file) {
+        if (file == null || !file.exists()) {
+            return true;
+        }
+        JarFile jarFile = null;
+        try {
+            jarFile = new JarFile(file);
+
+            Enumeration<JarEntry> entryEnumeration = jarFile.entries();
+            while (entryEnumeration.hasMoreElements()) {
+                JarEntry jarEntry = entryEnumeration.nextElement();
+                if (jarEntry.getName().endsWith(".class")) {
+                    return false;
+                }
+            }
+        } catch (IOException e) {
+
+        } finally {
+            try {
+                if (jarFile!= null)
+                jarFile.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return true;
+
     }
 
     private static void launchProcessing(
@@ -921,7 +980,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             @NonNull JarInput qualifiedContent,
             @Nullable Integer bucketId) {
         return output.getContentLocation(
-                qualifiedContent.getFile().toString() + (bucketId == null ? "" : ("-" + bucketId)),
+                qualifiedContent.getFile().getName().split("\\.")[0] + (bucketId == null ? "" : ("-" + bucketId)),
                 ImmutableSet.of(ExtendedContentType.DEX_ARCHIVE),
                 qualifiedContent.getScopes(),
                 Format.JAR);
@@ -939,7 +998,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 .isEmpty()) {
             name = getSliceName(bucketId);
         } else {
-            name = directoryInput.getFile().toString();
+            name = directoryInput.getFile().getName();
         }
         return output.getContentLocation(
                 name,

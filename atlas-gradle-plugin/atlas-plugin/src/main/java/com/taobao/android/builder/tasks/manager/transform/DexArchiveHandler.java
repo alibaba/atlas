@@ -86,6 +86,7 @@ public class DexArchiveHandler {
     @Nullable
     File getCachedVersionIfPresent(@NonNull JarInput input, @NonNull List<Path> dependencies)
             throws IOException {
+
         FileCache cache = getBuildCache(input.getFile(), isExternalLib(input), userLevelCache);
 
         if (cache == null) {

@@ -7,9 +7,7 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.pipeline.OriginalStream;
-import com.android.build.gradle.internal.pipeline.TransformManagerDelegate;
-import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.internal.pipeline.*;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.InstantRunSplitApkResourcesBuilder;
@@ -25,15 +23,19 @@ import com.android.builder.utils.FileCache;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.collect.ImmutableSet;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.AtlasMainDexHelper;
 import com.taobao.android.builder.insant.*;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tasks.manager.transform.MtlDexArchiveBuilderTransform;
 import com.taobao.android.builder.tasks.manager.transform.MtlDexArchiveBuilderTransformBuilder;
 import com.taobao.android.builder.tasks.manager.transform.MtlDexMergeTransform;
 import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.multidex.mutli.JarRefactor;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -91,6 +93,7 @@ public class TransformReplacer {
                                 .setIsInstantRun(
                                         variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode())
                                 .setEnableDexingArtifactTransform(false)
+                                .setIntermediateStreamHelper(new AtlasIntermediateStreamHelper(transformTask))
                                 .createDexArchiveBuilderTransform();
 
                 ReflectUtils.updateField(transformTask, "transform", preDexTransform);
@@ -136,9 +139,7 @@ public class TransformReplacer {
     }
 
 
-
-
-        private static String getProjectVariantId(@NonNull VariantScope variantScope) {
+    private static String getProjectVariantId(@NonNull VariantScope variantScope) {
         return variantScope.getGlobalScope().getProject().getName()
                 + ":"
                 + variantScope.getFullVariantName();
@@ -169,7 +170,6 @@ public class TransformReplacer {
         List<TransformTask> list = TransformManagerDelegate.findTransformTaskByTransformType(variantContext,
                 ExternalLibsMergerTransform.class);
         for (TransformTask transformTask : list) {
-            if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode())
             transformTask.setEnabled(false);
 
 
@@ -277,5 +277,53 @@ public class TransformReplacer {
         }
 
 
+    }
+
+    public void replaceMultidexTransform(BaseVariantOutput vod) {
+        List<TransformTask> transforms = TransformManagerDelegate.findTransformTaskByTransformType(
+                variantContext, D8MainDexListTransform.class);
+        transforms.forEach(new Consumer<TransformTask>() {
+            @Override
+            public void accept(TransformTask transformTask) {
+                transformTask.setEnabled(false);
+
+                File mainDexListFile = null;
+                if (variantContext.getScope()
+                        .getVariantConfiguration()
+                        .getMinSdkVersionWithTargetDeviceApi()
+                        .getFeatureLevel()
+                        < 21 && variantContext.getScope().getVariantConfiguration().isMultiDexEnabled()) {
+
+                    mainDexListFile =
+                            variantContext.getScope()
+                                    .getArtifacts()
+                                    .appendArtifact(
+                                            InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST,
+                                            transformTask.getName(),
+                                            "mainDexList.txt");
+
+                }
+
+                if (mainDexListFile == null) {
+                    return;
+                }
+
+                if (!mainDexListFile.getParentFile().exists()){
+                    mainDexListFile.getParentFile().mkdirs();
+                }
+
+                List<TransformTask> transforms1 = TransformManagerDelegate.findTransformTaskByTransformType(
+                        variantContext, DexMergerTransform.class);
+                File finalMainDexListFile = mainDexListFile;
+                transforms1.forEach(transformTask1 -> transformTask1.doFirst(task -> {
+                    try {
+                        transformTask1.getLogger().warn("begain to generate maindexlist :"+finalMainDexListFile.getAbsolutePath());
+                        new JarRefactor(variantContext, variantContext.getBuildType().getMultiDexConfig()).repackageJarList(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars(), finalMainDexListFile, variantContext.getVariantConfiguration().getBuildType().isMinifyEnabled());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }));
+            }
+        });
     }
 }

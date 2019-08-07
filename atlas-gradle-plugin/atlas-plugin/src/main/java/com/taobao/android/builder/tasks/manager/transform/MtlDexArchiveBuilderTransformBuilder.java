@@ -2,6 +2,8 @@ package com.taobao.android.builder.tasks.manager.transform;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.pipeline.AtlasIntermediateStreamHelper;
+import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.DexArchiveBuilderTransform;
 import com.android.build.gradle.internal.transforms.DexArchiveBuilderTransformBuilder;
@@ -39,11 +41,20 @@ public class MtlDexArchiveBuilderTransformBuilder  {
     private boolean includeFeaturesInScopes;
     private boolean isInstantRun;
     private boolean enableDexingArtifactTransform;
+    private AtlasIntermediateStreamHelper atlasIntermediateStreamHelper;
 
     @NonNull
     public MtlDexArchiveBuilderTransformBuilder setAndroidJarClasspath(
             @NonNull Supplier<List<File>> androidJarClasspath) {
         this.androidJarClasspath = androidJarClasspath;
+        return this;
+    }
+
+
+    @NonNull
+    public MtlDexArchiveBuilderTransformBuilder setIntermediateStreamHelper(
+            @NonNull AtlasIntermediateStreamHelper atlasIntermediateStreamHelper) {
+        this.atlasIntermediateStreamHelper = atlasIntermediateStreamHelper;
         return this;
     }
 
@@ -164,7 +175,8 @@ public class MtlDexArchiveBuilderTransformBuilder  {
                 numberOfBuckets,
                 includeFeaturesInScopes,
                 isInstantRun,
-                enableDexingArtifactTransform);
+                enableDexingArtifactTransform,
+                atlasIntermediateStreamHelper);
 
     }
 }

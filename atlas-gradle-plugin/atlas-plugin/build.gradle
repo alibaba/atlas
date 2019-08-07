@@ -212,6 +212,7 @@ apply plugin: 'java'
 
 repositories {
     //本地库，local repository(${user.home}/.m2/repository)
+
     mavenLocal()
     jcenter()
     google()
@@ -256,5 +257,5 @@ jar {
     from zipTree("libs/libarsc.jar")
 }
 
-version = '5.5.1-rc2-SNAPSHOT'
+version = '5.5.1-rc3-SNAPSHOT'
 

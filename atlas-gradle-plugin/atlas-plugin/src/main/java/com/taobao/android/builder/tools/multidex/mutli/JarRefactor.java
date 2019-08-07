@@ -246,11 +246,11 @@ public class JarRefactor {
         this.multiDexConfig = multiDexConfig;
     }
 
-    public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile, boolean release) throws IOException {
+    public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile, boolean minifyEnabled) throws IOException {
 
 
         List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files,mainDexListFile);
-        if (release){
+        if (minifyEnabled){
             return generateFirstDexJar(mainDexList,files);
 
         }else {

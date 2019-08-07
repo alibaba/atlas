@@ -424,6 +424,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   transformReplacer.replaceDexExternalLibMerge(vod);
                                                                   transformReplacer.replaceDexArchiveBuilderTransform(vod);
                                                                   transformReplacer.replaceDexMergeTransform(vod);
+                                                                  transformReplacer.replaceMultidexTransform(vod);
 
                                                                   transformReplacer.repalaceSomeInstantTransform(vod);
 

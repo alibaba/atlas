@@ -213,7 +213,18 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
+import com.android.builder.dexing.*;
+import com.android.dx.command.dexer.DxContext;
+import com.android.dx.command.dexer.Main;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.MessageReceiver;
+import com.android.ide.common.blame.parser.DexParser;
+import com.android.tools.r8.*;
 import com.taobao.android.builder.extension.MultiDexConfig;
 import com.taobao.android.builder.tools.multidex.dex.DexGroup;
 import com.taobao.android.builder.tools.multidex.dex.DexMerger;
@@ -226,22 +237,70 @@ import org.junit.Test;
 public class FastDexMergeTest {
 
     @Test
-    public void test() throws IOException {
+    public void test() throws IOException, CompilationFailedException {
 
         //String dir
         //    = "/Users/wuzhong/workspace/ali_android/cainiao/guoguo_android/guoguo_app/build/intermediates/transforms"
         //    + "/dex/debug/folders/1000/1f/main";
 
-        String dir = "/Users/wuzhong/Downloads/alipay";
+        File file = new File("/Users/lilong/Downloads/1.jar");
+        Main.Arguments arguments = new Main.Arguments(new DxContext());
+        arguments.fileNames = new String[]{file.getAbsolutePath()};
+        arguments.outName = new File("/Users/lilong/Downloads/1.dex").getAbsolutePath();
+        int result = new Main(new DxContext()).runDx(arguments);
+
+        //        File out = new File("/Users/lilong/Downloads/2.jar");
+//        D8DiagnosticsHandler d8DiagnosticsHandler = new InterceptingDiagnosticsHandler();
+//
+//        D8Command.Builder builder = D8Command.builder(d8DiagnosticsHandler);
+//
+//
+//        OutputMode outputMode =
+//                OutputMode.DexIndexed;
+//        builder.setMode(CompilationMode.DEBUG)
+//                .setMinApiLevel(14)
+//                .setIntermediate(true)
+//                .setOutput(out.toPath(), outputMode);
+//        ClassFileInput input = ClassFileInputs.fromPath(file.toPath());
+//        Stream<ClassFileEntry> entryStream =  input.entries(new Predicate<String>() {
+//            @Override
+//            public boolean test(String s) {
+//                return s.endsWith(".class");
+//            }
+//        });
+////        if (desugaring) {
+////            builder.addLibraryResourceProvider(bootClasspath.getOrderedProvider());
+////            builder.addClasspathResourceProvider(classpath.getOrderedProvider());
+////        } else {
+//            builder.setDisableDesugaring(false);
+//            builder.setIntermediate(true);
+//            builder.setOptimizeMultidexForLinearAlloc(true);
+////        }
+//
+//        entryStream.forEach(new Consumer<ClassFileEntry>() {
+//            @Override
+//            public void accept(ClassFileEntry classFileEntry) {
+//                System.out.println("parse classFile : "+classFileEntry.name());
+//                try {
+//                    builder.addClassProgramData(classFileEntry.readAllBytes(),D8DiagnosticsHandler.getOrigin(classFileEntry));
+//                    D8.run(builder.setOutput(out.toPath(), OutputMode.DexIndexed).build());
+//
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
+
+
 
         //String dir = "/Users/wuzhong/Downloads/guoguo";
-        Collection<File> files = FileUtils.listFiles(new File(dir), new String[] {"dex"}, true);
+//        Collection<File> files = FileUtils.listFiles(new File(dir), new String[] {"dex"}, true);
 
         //testA(files);
         //
         //testB(files);
 
-        testC(files);
+//        testC(files);
 
     }
 
@@ -276,5 +335,30 @@ public class FastDexMergeTest {
         new File("/Users/wuzhong/Downloads/dex").mkdirs();
         dexMerger.executeMerge(new File("/Users/wuzhong/Downloads/dex"),dexDtos);
     }
+
+
+    private class InterceptingDiagnosticsHandler extends D8DiagnosticsHandler {
+        public InterceptingDiagnosticsHandler() {
+            super(new MessageReceiver() {
+                @Override
+                public void receiveMessage(Message message) {
+                    System.out.println(message.toString());
+                }
+            });
+        }
+
+        @Override
+        protected Message convertToMessage(Message.Kind kind, Diagnostic diagnostic) {
+
+            if (diagnostic.getDiagnosticMessage().startsWith("Invoke-customs are only supported starting with Android O")) {
+                addHint(DexParser.ENABLE_DESUGARING);
+            }
+
+            return super.convertToMessage(kind, diagnostic);
+        }
+    }
+
+
+
 
 }

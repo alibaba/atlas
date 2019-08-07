@@ -66,7 +66,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
                     && scopes.equals(subStream.getScopes())
                     && format == subStream.getFormat()) {
                     subStreams.add(subStream);
-                return new File(rootFolder, name+"-"+subStream.getFilename());
+                return new File(rootFolder, subStream.getFilename());
             }
         }
         // didn't find a matching output. create the new output
@@ -74,7 +74,8 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
 
         subStreams.add(newSubStream);
 
-        return new File(rootFolder, name+"-"+newSubStream.getFilename());    }
+        return new File(rootFolder, newSubStream.getFilename());
+    }
 
     @Override
     public TransformInput computeNonIncrementalInputFromFolder() {
@@ -86,7 +87,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
                 directoryInputs.add(
                         new ImmutableDirectoryInput(
                                 subStream.getName(),
-                                new File(rootFolder, subStream.getName()+"-"+subStream.getFilename()),
+                                new File(rootFolder, subStream.getFilename()),
                                 subStream.getTypes(),
                                 subStream.getScopes()));
 
@@ -94,7 +95,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
                 jarInputs.add(
                         new ImmutableJarInput(
                                 subStream.getName(),
-                                new File(rootFolder, subStream.getName()+"-"+subStream.getFilename()),
+                                new File(rootFolder, subStream.getFilename()),
                                 Status.NOTCHANGED,
                                 subStream.getTypes(),
                                 subStream.getScopes()));
@@ -110,7 +111,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
         List<File> files = Lists.newArrayListWithExpectedSize(subStreams.size());
         for (SubStream stream : subStreams) {
             if (streamFilter.accept(stream.getTypes(), stream.getScopes())) {
-                files.add(new File(rootFolder, stream.getName()+"-"+stream.getFilename()));
+                files.add(new File(rootFolder, stream.getFilename()));
             }
         }
 
@@ -149,7 +150,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
 
             // First loop on sub-streams we care about and on match, create a new Input
             for (SubStream subStream : subStreams) {
-                if ((subStream.getName()+"-"+subStream.getFilename()).equals(foldername)
+                if ((subStream.getFilename()).equals(foldername)
                         && subStream.getFormat() == Format.DIRECTORY) {
 
                     // create the mutable folder for it?
@@ -174,7 +175,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
             // now loop on removed sub-streams. These can contain matching and non matching-streams
             // so we may create an input or not.
             for (SubStream subStream : removedSubStreams) {
-                if ((subStream.getName()+"-"+subStream.getFilename()).equals(foldername)
+                if ((subStream.getFilename()).equals(foldername)
                         && subStream.getFormat() == Format.DIRECTORY) {
                     // we need to check if the type/scope of this file matches this stream,
                     // as we could be using a sub-stream.
@@ -206,7 +207,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
             // then loop on the out of scope/type sub-streams and just acknowledge the file
             // is part of the stream if it's a name match.
             for (SubStream subStream : outOfScopeStreams) {
-                if ((subStream.getName()+"-"+subStream.getFilename()).equals(foldername)
+                if ((subStream.getFilename()).equals(foldername)
                         && subStream.getFormat() == Format.DIRECTORY) {
                     return true;
                 }
@@ -239,7 +240,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
 
             // First loop on sub-streams we care about and on match, create a new Input
             for (SubStream subStream : subStreams) {
-                if ((subStream.getName()+"-"+subStream.getFilename()).equals(filename)
+                if ((subStream.getFilename()).equals(filename)
                         && subStream.getFormat() == Format.JAR) {
                     // create the jar input
                     addImmutableJar(
@@ -256,7 +257,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
             // now loop on removed sub-streams. These can contain matching and non matching-streams
             // so we may create an input or not.
             for (SubStream subStream : removedSubStreams) {
-                if ((subStream.getName()+"-"+subStream.getFilename()).equals(filename)
+                if ((subStream.getFilename()).equals(filename)
                         && subStream.getFormat() == Format.JAR) {
                     // we need to check if the type/scope of this file matches this stream,
                     // as we could be using a sub-stream.
@@ -281,7 +282,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
             // then loop on the out of scope/type sub-streams and just acknowledge the file
             // is part of the stream if it's a name match.
             for (SubStream subStream : outOfScopeStreams) {
-                if ((subStream.getName()+"-"+subStream.getFilename()).equals(filename)
+                if ((subStream.getFilename()).equals(filename)
                         && subStream.getFormat() == Format.JAR) {
                     return true;
                 }
@@ -323,7 +324,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
                 input.addFolderInput(
                         new MutableDirectoryInput(
                                 subStream.getName(),
-                                new File(rootFolder, subStream.getName()+"-"+subStream.getFilename()),
+                                new File(rootFolder, subStream.getFilename()),
                                 subStream.getTypes(),
                                 subStream.getScopes()));
 
@@ -331,7 +332,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
                 input.addJarInput(
                         new QualifiedContentImpl(
                                 subStream.getName(),
-                                new File(rootFolder, subStream.getName()+"-"+subStream.getFilename()),
+                                new File(rootFolder, subStream.getFilename()),
                                 subStream.getTypes(),
                                 subStream.getScopes()));
             }
@@ -352,7 +353,7 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
             }
             copyList.add(
                     subStream.duplicateWithPresent(
-                            new File(rootFolder, subStream.getName()+"-"+subStream.getFilename()).exists()));
+                            new File(rootFolder, subStream.getFilename()).exists()));
         }
 
         // save that list.

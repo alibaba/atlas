@@ -1,5 +1,6 @@
 package com.airbnb.lottie;
 
+import android.annotation.SuppressLint;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -132,6 +133,7 @@ abstract class BaseLayer implements DrawingContent, BaseKeyframeAnimation.Animat
     }
   }
 
+  @SuppressLint("WrongConstant")
   @Override
   public void draw(Canvas canvas, Matrix parentMatrix, int parentAlpha) {
     if (!visible) {
@@ -163,7 +165,7 @@ abstract class BaseLayer implements DrawingContent, BaseKeyframeAnimation.Animat
     }
 
     if (hasMatteOnThisLayer()) {
-      canvas.saveLayer(rect, mattePaint, SAVE_FLAGS);
+      canvas.saveLayer(rect, mattePaint, 0x1F);
       canvas.drawRect(rect, clearPaint);
       //noinspection ConstantConditions
       matteLayer.draw(canvas, parentMatrix, alpha);
@@ -175,8 +177,9 @@ abstract class BaseLayer implements DrawingContent, BaseKeyframeAnimation.Animat
 
   abstract void drawLayer(Canvas canvas, Matrix parentMatrix, int parentAlpha);
 
+  @SuppressLint("WrongConstant")
   private void applyMasks(Canvas canvas, Matrix matrix) {
-    canvas.saveLayer(rect, maskPaint, SAVE_FLAGS);
+    canvas.saveLayer(rect, maskPaint, 0x1F);
     canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), clearPaint);
 
     //noinspection ConstantConditions
