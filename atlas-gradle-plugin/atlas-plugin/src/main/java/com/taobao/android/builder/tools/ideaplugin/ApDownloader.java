@@ -209,13 +209,8 @@
 
 package com.taobao.android.builder.tools.ideaplugin;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.repository.api.Channel;
@@ -227,13 +222,20 @@ import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
 import com.android.sdklib.repository.legacy.LegacyDownloader;
 import com.android.utils.StdLogger;
+
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tools.MD5Util;
+
 import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author wuzhong
@@ -250,10 +252,10 @@ public class ApDownloader {
 
     public File downloadAP(String mtlConfigUrl, File root) throws IOException {
         String downloadUrl = getDownloadUrl(mtlConfigUrl);
-        checkNotNull(downloadUrl,
-                     "Missing ap downloadUrl for mtlConfigUrl " + mtlConfigUrl + " " + "<<<<< 请确保选择的是整包ap,并且至少打出一个包");
-        checkState(!"null".equals(downloadUrl),
-                   "Missing ap downloadUrl for mtlConfigUrl " + mtlConfigUrl + " " + "<<<<< 请确保选择的是整包ap,并且至少打出一个包");
+        String errorMessage = "Missing ap downloadUrl for mtlConfigUrl " + mtlConfigUrl + " "
+                + "<<<<< 请确保选择的是整包ap,并且至少打出一个包<<<<<请查看开发文档 https://yuque.antfin-inc.com/chenzhong.cz/yzq9kz/gqkeg9#wylRo";
+        checkNotNull(downloadUrl, errorMessage);
+        checkState(!"null".equals(downloadUrl), errorMessage);
 
         File file = new File(root, MD5Util.getMD5(downloadUrl) + ".ap");
         if (file.exists()) {
