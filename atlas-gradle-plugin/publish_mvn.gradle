@@ -75,6 +75,7 @@ task sourceJar(type: Jar) {
     } catch (Throwable e) {
     }
 }
+version = '5.5.1-rc3-SNAPSHOT'
 
 publishing {
 
@@ -87,7 +88,7 @@ publishing {
     publications {
         maven(MavenPublication) {
 
-            artifact project.file("/Users/lilong/Documents/atlas/atlas-gradle-plugin/atlas-plugin/build/libs/atlasplugin-5.5.1-rc1-SNAPSHOT.jar")
+            artifact project.file("/Users/lilong/Documents/atlas/atlas-gradle-plugin/atlas-plugin/build/libs/atlasplugin-5.5.1-rc3-SNAPSHOT.jar")
 //            artifact sourceJar {
 //                classifier "sources"
 //            }
