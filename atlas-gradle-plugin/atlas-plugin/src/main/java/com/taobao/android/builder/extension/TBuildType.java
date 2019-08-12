@@ -260,7 +260,6 @@ public class TBuildType {
 
     private PatchConfig patchConfig;
 
-    private DefaultChannelConfig channelConfig;
 
     public EnhanceConfig getEnhanceConfig() {
         return enhanceConfig;
@@ -283,6 +282,7 @@ public class TBuildType {
     private DexConfig dexConfig;
 
     private MultiDexConfig multiDexConfig;
+
 
     private DefaultSigningConfig signingConfig;
 

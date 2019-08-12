@@ -212,7 +212,9 @@ apply plugin: 'java'
 
 repositories {
     //本地库，local repository(${user.home}/.m2/repository)
-
+    maven {
+        url 'http://storage.googleapis.com/r8-releases/raw'
+    }
     mavenLocal()
     jcenter()
     google()
@@ -235,6 +237,7 @@ dependencies {
     implementation gradleApi()
 
 //    compile "com.taobao.android:dex_patch:3.0.0-rc16"
+    implementation 'com.android.tools:r8:1.5.65'
     implementation "com.android.tools.build:gradle:3.4.2"
     implementation "org.apache.commons:commons-lang3:3.4"
     implementation "commons-lang:commons-lang:2.6"

@@ -188,7 +188,6 @@ public class MtlDexMergeTransform extends Transform {
                                 outputProvider,
                                 transformInvocation.isIncremental());
             } else {
-                logger.warning("use mono-dex");
                 mergeTasks = mergeDex(transformInvocation.getInputs(), output, outputProvider);
             }
 
@@ -235,6 +234,7 @@ public class MtlDexMergeTransform extends Transform {
         if (!dexArchives.hasNext()) {
             return ImmutableList.of();
         }
+
 
         File outputDir = getDexOutputLocation(outputProvider, "main", getScopes());
         // this deletes and creates the dir for the output
@@ -293,33 +293,39 @@ public class MtlDexMergeTransform extends Transform {
 
         ImmutableList.Builder<ForkJoinTask<Void>> subTasks = ImmutableList.builder();
 
-        List<DirectoryInput> directoryInputs = new ArrayList<>();
-        List<JarInput> externalLibs = new ArrayList<>();
-        List<JarInput> nonExternalJars = new ArrayList<>();
-        collectInputsForNativeMultiDex(inputs, directoryInputs, externalLibs, nonExternalJars);
+        Iterator<Path> dirInputs =
+                TransformInputUtil.getDirectories(inputs).stream().map(File::toPath).iterator();
+        Iterator<Path> jarInputs =
+                inputs.stream()
+                        .flatMap(transformInput -> transformInput.getJarInputs().stream())
+                        .filter(jarInput -> jarInput.getStatus() != Status.REMOVED && isValidJar(jarInput))
+                        .map(jarInput -> jarInput.getFile().toPath())
+                        .iterator();
 
-        boolean mergeAllInputs = shouldMergeInputsForNative(directoryInputs, nonExternalJars);
-        subTasks.addAll(
-                processDirectories(
-                        output, outputProvider, isIncremental, directoryInputs, mergeAllInputs));
 
-        if (!nonExternalJars.isEmpty()) {
+        Iterator<Path> dexArchives = Iterators.concat(dirInputs, jarInputs);
 
-            subTasks.addAll(
-                       processNonExternalJarsSeparately(
-                               output, outputProvider, isIncremental, nonExternalJars));
-//            if (mergeAllInputs) {
-//            subTasks.addAll(
-//                    processNonExternalJarsTogether(
-//                            output, outputProvider, isIncremental, nonExternalJars));
+        if (!dexArchives.hasNext()) {
+            return ImmutableList.of();
         }
-//            } else {
-//
-//            }
 
 
-        subTasks.addAll(processExternalJars(output, outputProvider, isIncremental, externalLibs));
-        return subTasks.build();
+        File outputDir = getDexOutputLocation(outputProvider, "main", getScopes());
+        // this deletes and creates the dir for the output
+        FileUtils.cleanOutputDir(outputDir);
+
+        Path mainDexClasses;
+        if (mainDexListFile == null) {
+            mainDexClasses = null;
+        } else {
+            mainDexClasses = BuildableArtifactUtil.singleFile(mainDexListFile).toPath();
+        }
+
+        return ImmutableList.of(submitForMerging(output, outputDir, dexArchives, mainDexClasses));
+
+
+//        subTasks.addAll(processExternalJars(output, outputProvider, isIncremental, externalLibs));
+//        return subTasks.build();
     }
 
     /**
@@ -367,11 +373,11 @@ public class MtlDexMergeTransform extends Transform {
                     continue;
                 }
 
-                if (jarInput.getScopes().equals(Collections.singleton(QualifiedContent.Scope.EXTERNAL_LIBRARIES))) {
+//                if (jarInput.getScopes().equals(Collections.singleton(QualifiedContent.Scope.EXTERNAL_LIBRARIES))) {
                     externalLibs.add(jarInput);
-                } else {
-                    nonExternalJars.add(jarInput);
-                }
+//                } else {
+//                    nonExternalJars.add(jarInput);
+//                }
             }
         }
     }
@@ -461,34 +467,20 @@ public class MtlDexMergeTransform extends Transform {
             if (!Files.isDirectory(rootFolder)) {
                 deleted.add(directoryInput);
             } else {
-                boolean runAgain = !isIncremental;
-
-                if (!runAgain) {
-                    // check the incremental case
-                    Collection<Status> statuses = directoryInput.getChangedFiles().values();
-                    runAgain =
-                            statuses.contains(Status.ADDED)
-                                    || statuses.contains(Status.REMOVED)
-                                    || statuses.contains(Status.CHANGED);
-                }
+                boolean runAgain = true;
 
                 if (runAgain) {
                     changed.add(directoryInput);
-                } else {
-                    notChanged.add(directoryInput);
                 }
             }
         }
 
-        if (isIncremental && deleted.isEmpty() && changed.isEmpty()) {
-            return subTasks.build();
-        }
 
         if (mergeAllInputs) {
             File dexOutput =
                     getDexOutputLocation(
                             outputProvider,
-                            isInInstantRunMode ? "slice_0" : "directories",
+                           "directories",
                             ImmutableSet.of(QualifiedContent.Scope.PROJECT));
             FileUtils.cleanOutputDir(dexOutput);
 
@@ -498,23 +490,6 @@ public class MtlDexMergeTransform extends Transform {
                             i -> Objects.requireNonNull(i).getFile().toPath());
             if (toMerge.hasNext()) {
                 subTasks.add(submitForMerging(output, dexOutput, toMerge, null));
-            }
-        } else {
-            for (DirectoryInput directoryInput : deleted) {
-                File dexOutput = getDexOutputLocation(outputProvider, directoryInput);
-                FileUtils.cleanOutputDir(dexOutput);
-            }
-            for (DirectoryInput directoryInput : changed) {
-                File dexOutput = getDexOutputLocation(outputProvider, directoryInput);
-
-
-                FileUtils.cleanOutputDir(dexOutput);
-                subTasks.add(
-                        submitForMerging(
-                                output,
-                                dexOutput,
-                                Iterators.singletonIterator(directoryInput.getFile().toPath()),
-                                null));
             }
         }
         return subTasks.build();
@@ -532,9 +507,6 @@ public class MtlDexMergeTransform extends Transform {
                 getDexOutputLocation(
                         outputProvider, "externalLibs", ImmutableSet.of(QualifiedContent.Scope.EXTERNAL_LIBRARIES));
 
-        if (!isIncremental
-                || externalLibs.stream().anyMatch(i -> i.getStatus() != Status.NOTCHANGED)) {
-            // if non-incremental, or inputs have changed, merge again
             FileUtils.cleanOutputDir(externalLibsOutput);
             Iterator<Path> externalLibsToMerge =
                     externalLibs
@@ -546,7 +518,6 @@ public class MtlDexMergeTransform extends Transform {
                 subTasks.add(
                         submitForMerging(output, externalLibsOutput, externalLibsToMerge, null));
             }
-        }
 
         return subTasks.build();
     }
@@ -570,14 +541,14 @@ public class MtlDexMergeTransform extends Transform {
         DexMergerTransformCallable callable =
                 new DexMergerTransformCallable(
                         messageReceiver,
-                        dexingType,
+                        DexingType.MONO_DEX,
                         output,
                         dexOutputDir,
                         dexArchives,
                         mainDexList,
                         forkJoinPool,
                         dexMerger,
-                        minSdkVersion,
+                        14,
                         isDebuggable);
         return forkJoinPool.submit(callable);
     }
@@ -586,11 +557,11 @@ public class MtlDexMergeTransform extends Transform {
     private File getDexOutputLocation(
             @NonNull TransformOutputProvider outputProvider, @NonNull QualifiedContent content) {
         String name;
-        if (content.getName().startsWith("slice_")) {
-            name = content.getName();
-        } else {
+//        if (content.getName().startsWith("slice_")) {
+//            name = content.getName();
+//        } else {
             name = content.getFile().toString();
-        }
+//        }
         return outputProvider.getContentLocation(
                 name, getOutputTypes(), content.getScopes(), Format.DIRECTORY);
     }

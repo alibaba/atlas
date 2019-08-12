@@ -232,8 +232,7 @@ import com.taobao.android.builder.AtlasBasePlugin;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.AtlasFeaturePlugin;
 import com.taobao.android.builder.AtlasPlugin;
-import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.extension.TBuildConfig;
+import com.taobao.android.builder.extension.*;
 import com.taobao.android.builder.hook.AppPluginHook;
 import com.taobao.android.builder.tools.PluginTypeUtils;
 import com.taobao.android.builder.tools.ReflectUtils;
@@ -318,6 +317,39 @@ public class AtlasConfigurationHelper {
 
         return atlasExtension;
     }
+
+
+
+
+        public void autoSetBuildTypes(AtlasExtension atlasExtension) {
+
+            String[] arr = {"debug", "release"};
+
+            if (atlasExtension.getClass() != AtlasExtension.class){
+                return;
+            }
+
+            for (String variantName : arr) {
+
+                 TBuildType buildType = (TBuildType) atlasExtension.getBuildTypes().maybeCreate(variantName);
+
+
+                if (null == buildType.getPatchConfig()) {
+                    buildType.setPatchConfig((PatchConfig) atlasExtension.patchConfigs.maybeCreate(variantName));
+                }
+
+                if ( null == buildType.getSigningConfig()){
+                    buildType.setSigningConfig(appPluginHook.getBaseExtension().getSigningConfigs().maybeCreate(variantName));
+                }
+
+                if (null == buildType.getMultiDexConfig()) {
+                    buildType.setMultiDexConfig((MultiDexConfig) atlasExtension.multiDexConfigs.maybeCreate(variantName));
+                }
+
+            }
+        }
+
+
 
 //    public void hookAtlasDependencyManager() {
 //

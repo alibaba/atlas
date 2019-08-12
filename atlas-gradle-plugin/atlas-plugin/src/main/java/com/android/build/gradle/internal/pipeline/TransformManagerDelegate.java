@@ -220,6 +220,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.ApkData;
 import com.android.builder.errors.EvalIssueReporter;
 import com.android.builder.profile.Recorder;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.tools.ReflectUtils;
 import org.gradle.api.Project;
@@ -307,10 +308,10 @@ public class TransformManagerDelegate {
 
 
     public void consumeStreamsForTask(TransformTask transformTask,
-            @NonNull Set<QualifiedContent.Scope> requestedScopes, @NonNull Set<QualifiedContent.ContentType> requestedTypes) {
+                                      @NonNull Set<QualifiedContent.Scope> requestedScopes, @NonNull Set<QualifiedContent.ContentType> requestedTypes) {
         try {
-            InjectTransformManager.TransformTaskParam  transformTaskParam = InjectTransformManager.getTransformParam(transformTask);
-            Collection<TransformStream>consumeStreams = new ArrayList<>();
+            InjectTransformManager.TransformTaskParam transformTaskParam = InjectTransformManager.getTransformParam(transformTask);
+            Collection<TransformStream> consumeStreams = new ArrayList<>();
 //            transformTaskParam.outputStream.getScopes().removeAll(requestedScopes);
 //            transformTaskParam.outputStream.getContentTypes().removeAll(requestedScopes);
             transformTaskParam.consumedInputStreams.forEach(transformStream -> requestedScopes.forEach(scope -> {
@@ -321,8 +322,8 @@ public class TransformManagerDelegate {
 
             transformTaskParam.consumedInputStreams.removeAll(consumeStreams);
 
-            ReflectUtils.updateField(transformTask,"consumeStreams",transformTaskParam.consumedInputStreams);
-            ReflectUtils.updateField(transformTask,"outputStream",transformTaskParam.outputStream);
+            ReflectUtils.updateField(transformTask, "consumeStreams", transformTaskParam.consumedInputStreams);
+            ReflectUtils.updateField(transformTask, "outputStream", transformTaskParam.outputStream);
 
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -332,23 +333,76 @@ public class TransformManagerDelegate {
     }
 
     public void addStreamsForTask(TransformTask transformTask,
-                                  @NonNull QualifiedContent.ScopeType scope, @NonNull QualifiedContent.ContentType contentType, String streamName , FileCollection fileCollection) {
+                                  @NonNull QualifiedContent.ScopeType scope, @NonNull QualifiedContent.ContentType contentType, String streamName, FileCollection fileCollection) {
 
 
-        OriginalStream originalStream =  OriginalStream.builder(transformTask.getProject(),streamName).
+        OriginalStream originalStream = OriginalStream.builder(transformTask.getProject(), streamName).
                 addContentType(contentType).
                 addScope(scope).
                 setFileCollection(fileCollection).build();
         try {
-            InjectTransformManager.TransformTaskParam  transformTaskParam = InjectTransformManager.getTransformParam(transformTask);
+            InjectTransformManager.TransformTaskParam transformTaskParam = InjectTransformManager.getTransformParam(transformTask);
             transformTaskParam.consumedInputStreams.add(originalStream);
 //            transformTaskParam.outputStream.getScopes().add(scope);
-            com.taobao.android.builder.tools.ReflectUtils.updateField(transformTask,"consumeStreams",transformTaskParam.consumedInputStreams);
+            com.taobao.android.builder.tools.ReflectUtils.updateField(transformTask, "consumeStreams", transformTaskParam.consumedInputStreams);
 //            com.taobao.android.builder.tools.ReflectUtils.updateField(transformTask,"outputStream",transformTaskParam.outputStream);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
 //        this.consumeStreams(requestedScopes, requestedTypes, new ArrayList<>());
+
+    }
+
+    public TransformTask findNextTransformTask(VariantContext variantContext, Set<QualifiedContent.ContentType> contentTypes, Transform transform) {
+
+        List<Transform> transforms = (List<Transform>) ReflectUtils.getField(transformManager, "transforms");
+
+        boolean findSelfTransform = false;
+
+        Transform nextTransform = null;
+
+        for (int i = 0; i < transforms.size(); i++) {
+            if (findSelfTransform) {
+                if (contentTypes.equals(transforms.get(i).getInputTypes())) {
+                    nextTransform = transforms.get(i);
+                    break;
+                } else {
+                    continue;
+                }
+
+            }
+            if (transforms.get(i).getClass() == transform.getClass()) {
+                findSelfTransform = true;
+            }
+        }
+
+        if (nextTransform == null) {
+            return null;
+        }
+
+
+        return findTransformTaskByTransformType(variantContext, nextTransform.getClass()).get(0);
+
+
+    }
+
+    public void injectTransformBeforeTransform(Transform injectTransform , Transform ...beforeTransforms){
+        List<Transform> transforms = (List<Transform>) ReflectUtils.getField(transformManager, "transforms");
+        boolean find = false;
+        int k  = 0;
+        for (int i = 0; i < transforms.size(); i++) {
+            for (int j = 0 ; j < beforeTransforms.length; j ++) {
+                if (transforms.get(i).getClass() == beforeTransforms[j].getClass()) {
+                    find = true;
+                    k = i;
+                    break;
+                }
+            }
+        }
+        if (find){
+            transforms.add(k,injectTransform);
+        }
+
 
     }
 
@@ -358,9 +412,9 @@ public class TransformManagerDelegate {
             @NonNull Set<QualifiedContent.ContentType> requestedTypes,
             @NonNull List<TransformStream> inputStreams) {
         try {
-            Method method = transformManager.getClass().getDeclaredMethod("consumeStreams",Set.class,Set.class,List.class);
+            Method method = transformManager.getClass().getDeclaredMethod("consumeStreams", Set.class, Set.class, List.class);
             method.setAccessible(true);
-            method.invoke(transformManager,requestedScopes,requestedTypes,inputStreams);
+            method.invoke(transformManager, requestedScopes, requestedTypes, inputStreams);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {

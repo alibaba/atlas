@@ -288,41 +288,52 @@ public class LocalSignHelper {
                     System.err.println("LocalSign:" + signingConfig.toString());
 
                     Predicate<String> noCompressPredicate = getNoCompressPredicate(inputFile.getAbsolutePath());
-                    SigningOptions signingOptions = new SigningOptions() {
-                        @Override
-                        public PrivateKey getKey() {
-                            return certificateInfo.getKey();
-                        }
 
-                        @Override
-                        public ImmutableList<X509Certificate> getCertificates() {
-                            return ImmutableList.<X509Certificate>builder().add(certificateInfo.mCertificate).build();
-                        }
 
-                        @Override
-                        public boolean isV1SigningEnabled() {
-                            return signingConfig.isV1SigningEnabled();
-                        }
-
-                        @Override
-                        public boolean isV2SigningEnabled() {
-                            return signingConfig.isV2SigningEnabled();
-                        }
-
-                        @Override
-                        public int getMinSdkVersion() {
-                            return 14;
-                        }
-
-                        @Override
-                        public Validation getValidation() {
-                            return null;
-                        }
-                    };
+                    Optional<SigningOptions> signingOptions =
+                            Optional.of(
+                                    SigningOptions.builder()
+                                            .setKey(certificateInfo.getKey())
+                                            .setCertificates(certificateInfo.getCertificate())
+                                            .setV1SigningEnabled(signingConfig.isV1SigningEnabled())
+                                            .setV2SigningEnabled(signingConfig.isV2SigningEnabled())
+                                            .setMinSdkVersion(14)
+                                            .build());
+//                    SigningOptions signingOptions = new SigningOptions() {
+//                        @Override
+//                        public PrivateKey getKey() {
+//                            return certificateInfo.getKey();
+//                        }
+//
+//                        @Override
+//                        public ImmutableList<X509Certificate> getCertificates() {
+//                            return ImmutableList.<X509Certificate>builder().add(certificateInfo.mCertificate).build();
+//                        }
+//
+//                        @Override
+//                        public boolean isV1SigningEnabled() {
+//                            return signingConfig.isV1SigningEnabled();
+//                        }
+//
+//                        @Override
+//                        public boolean isV2SigningEnabled() {
+//                            return signingConfig.isV2SigningEnabled();
+//                        }
+//
+//                        @Override
+//                        public int getMinSdkVersion() {
+//                            return 14;
+//                        }
+//
+//                        @Override
+//                        public Validation getValidation() {
+//                            return null;
+//                        }
+//                    };
                     ApkCreatorFactory.CreationData creationData =
                             new ApkCreatorFactory.CreationData(
                                     outputFile,
-                                    Optional.of(signingOptions),
+                                    signingOptions,
                                     null,
                                     null,
                                     nativeLibrariesPackagingMode,

@@ -216,10 +216,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
+import com.android.build.gradle.internal.transforms.ProGuardTransform;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
+import com.taobao.android.builder.tools.ReflectUtils;
 import org.apache.commons.io.FileUtils;
+import proguard.ClassPath;
+import proguard.ClassPathEntry;
+import proguard.Configuration;
 
 /**
  * Add Awb configuration to confusing configuration
@@ -228,15 +237,19 @@ import org.apache.commons.io.FileUtils;
 @Deprecated
 public class AwbProguardConfiguration {
 
-    public static final String INJARS_OPTION = "-injars";
-
-    public static final String OUTJARS_OPTION = "-outjars";
 
     public static final String OBUSCATED_JAR = "obfuscated.jar";
+
+
+    public static final String INJARS_OPTION       = "-injars";
+    public static final String OUTJARS_OPTION      = "-outjars";
 
     private final Collection<AwbTransform> awbTransforms;
 
     private final File awbObfuscatedDir;
+
+    ListMultimap<File, List<String>> fileToFilter = ArrayListMultimap.create();
+
 
     private final AppVariantOutputContext appVariantOutputContext;
 
@@ -252,6 +265,7 @@ public class AwbProguardConfiguration {
      * Print the proguard config file to the specified file
      *
      * @param outConfigFile
+     * @param proGuardTransform
      */
     public void printConfigFile(File outConfigFile) throws IOException {
         List<String> configs = Lists.newArrayList();
@@ -269,9 +283,11 @@ public class AwbProguardConfiguration {
                 for (File dir : awbTransform.getInputDirs()) {
                     if (dir.exists()) {
                         configs.add(INJARS_OPTION + " " + dir.getAbsolutePath());
+
                         File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
                         inputLibraries.add(obsJar);
                         configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+
 
                     }
                 }
@@ -293,14 +309,19 @@ public class AwbProguardConfiguration {
 
                 inputLibraries.add(obsJar);
                 configs.add(OUTJARS_OPTION + " " + obsJar.getAbsolutePath());
+
             }
-            //            configs.add();
+
 
             awbTransform.setInputFiles(inputLibraries);
             awbTransform.getInputDirs().clear();
             awbTransform.getInputLibraries().clear();
             appVariantOutputContext.getAwbTransformMap().put(name, awbTransform);
         }
+
         FileUtils.writeLines(outConfigFile, configs);
     }
+
+
+
 }

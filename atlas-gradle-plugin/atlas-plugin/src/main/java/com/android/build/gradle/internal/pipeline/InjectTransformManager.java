@@ -214,6 +214,8 @@ import com.android.annotations.Nullable;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.Transform;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.builder.model.AndroidProject;
@@ -255,9 +257,12 @@ public class InjectTransformManager {
 
     private final String variantName;
 
-    public InjectTransformManager(Project project, @NonNull String variantName) {
+    private VariantContext variantContext;
+
+    public InjectTransformManager(VariantContext variantContext,Project project, @NonNull String variantName) {
         this.project = project;
         this.variantName = variantName;
+        this.variantContext = variantContext;
     }
 
     public void reset() {
@@ -348,6 +353,8 @@ public class InjectTransformManager {
                                           transformTaskParam.referencedInputStreams,
                                           transformTaskParam.outputStream);
             }
+
+            variantContext.getTransformManager().injectTransformBeforeTransform(injectTransform,oprTransformTask.getTransform());
 
             return injectTransformTask;
         } catch (IllegalAccessException e) {

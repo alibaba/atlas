@@ -8,6 +8,7 @@ import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.pipeline.*;
+import com.android.build.gradle.internal.scope.BuildArtifactsHolder;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.InstantRunSplitApkResourcesBuilder;
@@ -31,6 +32,7 @@ import com.taobao.android.builder.tasks.manager.transform.MtlDexArchiveBuilderTr
 import com.taobao.android.builder.tasks.manager.transform.MtlDexMergeTransform;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.multidex.mutli.JarRefactor;
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 
@@ -108,17 +110,23 @@ public class TransformReplacer {
         list.forEach(new Consumer<TransformTask>() {
             @Override
             public void accept(TransformTask transformTask) {
-                DexingType dexingType = variantContext.getScope().getDexingType();
+                DexingType dexingType = null;
+                if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()){
+                    dexingType = DexingType.LEGACY_MULTIDEX;
+                }else {
+                    dexingType = variantContext.getScope().getDexingType();
+
+                }
                 boolean isDebuggable = variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable();
                 MtlDexMergeTransform dexTransform =
                         new MtlDexMergeTransform(
                                 dexingType,
-                                dexingType == DexingType.LEGACY_MULTIDEX
-                                        ? variantContext.getScope()
+                                dexingType == DexingType.LEGACY_MULTIDEX ?
+                                        variantContext.getScope()
                                         .getArtifacts()
                                         .getFinalArtifactFiles(
-                                                InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST)
-                                        : null,
+                                                InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST):null
+                                        ,
                                 variantContext.getScope()
                                         .getArtifacts()
                                         .getFinalArtifactFiles(
@@ -282,48 +290,46 @@ public class TransformReplacer {
     public void replaceMultidexTransform(BaseVariantOutput vod) {
         List<TransformTask> transforms = TransformManagerDelegate.findTransformTaskByTransformType(
                 variantContext, D8MainDexListTransform.class);
-        transforms.forEach(new Consumer<TransformTask>() {
-            @Override
-            public void accept(TransformTask transformTask) {
-                transformTask.setEnabled(false);
+        transforms.forEach(transformTask -> {
+            transformTask.setEnabled(false);
 
-                File mainDexListFile = null;
-                if (variantContext.getScope()
-                        .getVariantConfiguration()
-                        .getMinSdkVersionWithTargetDeviceApi()
-                        .getFeatureLevel()
-                        < 21 && variantContext.getScope().getVariantConfiguration().isMultiDexEnabled()) {
+            File mainDexListFile = null;
+            if ((variantContext.getScope()
+                    .getVariantConfiguration()
+                    .getMinSdkVersionWithTargetDeviceApi()
+                    .getFeatureLevel()
+                    < 21 && variantContext.getScope().getVariantConfiguration().isMultiDexEnabled() )||variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
 
-                    mainDexListFile =
-                            variantContext.getScope()
-                                    .getArtifacts()
-                                    .appendArtifact(
-                                            InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST,
-                                            transformTask.getName(),
-                                            "mainDexList.txt");
+                mainDexListFile = variantContext.getScope()
+                        .getArtifacts()
+                        .createArtifactFile(
+                                InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST,
+                                BuildArtifactsHolder.OperationType.APPEND,
+                                transformTask.getName(),
+                                "mainDexList.txt").get().getAsFile();
 
-                }
-
-                if (mainDexListFile == null) {
-                    return;
-                }
-
-                if (!mainDexListFile.getParentFile().exists()){
-                    mainDexListFile.getParentFile().mkdirs();
-                }
-
-                List<TransformTask> transforms1 = TransformManagerDelegate.findTransformTaskByTransformType(
-                        variantContext, DexMergerTransform.class);
-                File finalMainDexListFile = mainDexListFile;
-                transforms1.forEach(transformTask1 -> transformTask1.doFirst(task -> {
-                    try {
-                        transformTask1.getLogger().warn("begain to generate maindexlist :"+finalMainDexListFile.getAbsolutePath());
-                        new JarRefactor(variantContext, variantContext.getBuildType().getMultiDexConfig()).repackageJarList(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars(), finalMainDexListFile, variantContext.getVariantConfiguration().getBuildType().isMinifyEnabled());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }));
             }
+
+            if (mainDexListFile == null) {
+                return;
+            }
+
+            if (!mainDexListFile.getParentFile().exists()){
+                mainDexListFile.getParentFile().mkdirs();
+            }
+
+            List<TransformTask> transforms1 = TransformManagerDelegate.findTransformTaskByTransformType(
+                    variantContext, MtlDexMergeTransform.class);
+            File finalMainDexListFile = mainDexListFile;
+            transforms1.forEach(transformTask1 -> transformTask1.doFirst(task -> {
+                try {
+                    transformTask1.getLogger().warn("begain to generate maindexlist :"+finalMainDexListFile.getAbsolutePath());
+                    new JarRefactor(variantContext, variantContext.getBuildType().getMultiDexConfig()).repackageJarList(AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getAllMainDexJars(), finalMainDexListFile, variantContext.getVariantConfiguration().getBuildType().isMinifyEnabled());
+                    FileUtils.copyFileToDirectory(finalMainDexListFile,variantContext.getScope().getGlobalScope().getOutputsDir());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }));
         });
     }
 }

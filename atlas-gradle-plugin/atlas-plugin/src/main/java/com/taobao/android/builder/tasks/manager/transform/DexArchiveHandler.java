@@ -253,7 +253,7 @@ public class DexArchiveHandler {
                 .putFile(
                         DexArchiveHandler.FileCacheInputParams.FILE.name(),
                         inputFile,
-                        FileCache.FileProperties.PATH_HASH)
+                        FileCache.FileProperties.HASH)
                 .putString(DexArchiveHandler.FileCacheInputParams.DX_VERSION.name(), Version.VERSION)
                 .putBoolean(DexArchiveHandler.FileCacheInputParams.JUMBO_MODE.name(), isJumboModeEnabledForDx())
                 .putBoolean(

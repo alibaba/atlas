@@ -247,6 +247,7 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
 
 
+
     public BundleConfig bundleConfig;
 
     @ConfigGroup(order = 3, advance = true)

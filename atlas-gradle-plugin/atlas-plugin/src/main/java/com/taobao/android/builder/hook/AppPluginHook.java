@@ -229,7 +229,16 @@ public class AppPluginHook {
     private Project project;
 
     public BaseExtension getBaseExtension() {
-        return baseExtension;
+        if (baseExtension!= null){
+            return baseExtension;
+        }else {
+            try {
+                getAndroidBuilder();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return baseExtension;
+        }
     }
 
     private BaseExtension baseExtension;

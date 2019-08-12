@@ -221,6 +221,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -248,6 +249,10 @@ public class JarRefactor {
 
     public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile, boolean minifyEnabled) throws IOException {
 
+        if (!minifyEnabled && new File(appVariantContext.getProject().getRootDir(),"mainDexList.txt").exists()){
+            FileUtils.copyFile(new File(appVariantContext.getProject().getRootDir(),"mainDexList.txt"),mainDexListFile);
+            return null;
+        }
 
         List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files,mainDexListFile);
         if (minifyEnabled){

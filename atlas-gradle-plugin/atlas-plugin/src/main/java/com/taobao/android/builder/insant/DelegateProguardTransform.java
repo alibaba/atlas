@@ -4,14 +4,17 @@ import com.android.annotations.NonNull;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.ApkDataUtils;
+import com.android.build.gradle.internal.PostprocessingFeatures;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.InjectTransform;
 import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.WorkLimiter;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
@@ -36,6 +39,7 @@ import com.taobao.android.builder.tools.proguard.AwbProguardConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
+import org.gradle.api.file.ConfigurableFileCollection;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -48,6 +52,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.MODULE;
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES;
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.METADATA_VALUES;
+import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 /**
@@ -73,6 +82,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         proGuardTransform = new ProGuardTransform(appVariantContext.getScope());
         this.buildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
         sLogger = appVariantContext.getProject().getLogger();
+
 
     }
 
@@ -104,17 +114,60 @@ public class DelegateProguardTransform extends MtlInjectTransform {
     @Override
     public void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
         super.transform(transformInvocation);
+
+
         firstTime = true;
+
+//        if (buildConfig.getConsumerProguardEnabled()){
+//            defaultProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES).getFiles());
+//        }
+
+
+        PostprocessingFeatures postprocessingFeatures = scope.getPostprocessingFeatures();
+        if (postprocessingFeatures != null) {
+            proGuardTransform.setActions(postprocessingFeatures);
+        }
+
+        Callable<Collection<File>> proguardConfigFiles = scope::getProguardFiles;
+
         defaultProguardFiles.addAll(appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
 
-        if (buildConfig.getConsumerProguardEnabled()){
-            defaultProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES).getFiles());
+        ConfigurableFileCollection configurationFiles = null;
+        final InternalArtifactType aaptProguardFileType =
+                scope.consumesFeatureJars()
+                        ? InternalArtifactType.MERGED_AAPT_PROGUARD_FILE
+                        : InternalArtifactType.AAPT_PROGUARD_FILE;
+
+//               if (buildConfig.getConsumerProguardEnabled()) {
+        configurationFiles =
+                appVariantContext.getProject().files(
+                        proguardConfigFiles,
+                        scope.getArtifacts().getFinalArtifactFiles(aaptProguardFileType),
+                        scope.getArtifactFileCollection(
+                                RUNTIME_CLASSPATH, ALL, CONSUMER_PROGUARD_RULES));
+//               }
+
+        if (scope.getType().isHybrid() && scope.getType().isBaseModule()) {
+            Callable<Collection<File>> consumerProguardFiles = scope::getConsumerProguardFiles;
+            configurationFiles.from(consumerProguardFiles);
+        }
+
+        maybeAddFeatureProguardRules(scope, configurationFiles);
+
+        if (buildConfig.getConsumerProguardEnabled()) {
+            defaultProguardFiles.addAll(configurationFiles.getFiles());
+        }
+//        proGuardTransform.setConfigurationFiles(configurationFiles);
+
+        if (scope.getVariantData().getType().isAar()) {
+            proGuardTransform.keep("class **.R");
+            proGuardTransform.keep("class **.R$*");
         }
 
         List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
                 appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
         if (awbBundles != null && awbBundles.size() > 0) {
-            File bundleRKeepFile = new File(appVariantContext.getBaseVariantData().getScope().getGlobalScope().getIntermediatesDir(), "awb-progrard/bundleRKeep.cfg");
+            File bundleRKeepFile = new File(appVariantContext.getBaseVariantData().getScope().getGlobalScope().getIntermediatesDir(), "awb-proguard/bundleRKeep.cfg");
             if (!bundleRKeepFile.getParentFile().exists()) {
                 bundleRKeepFile.getParentFile().mkdirs();
             }
@@ -141,7 +194,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         applyBundleInOutConfigration(appVariantContext);
 
         //apply bundle's configuration, Switch control
-        if (buildConfig.isBundleProguardConfigEnabled() &&! buildConfig.getConsumerProguardEnabled()) {
+        if (buildConfig.isBundleProguardConfigEnabled() && !buildConfig.getConsumerProguardEnabled()) {
             applyBundleProguardConfigration(appVariantContext);
         }
 
@@ -165,34 +218,34 @@ public class DelegateProguardTransform extends MtlInjectTransform {
                     if (!appVariantContext.getScope().getOutputProguardMappingFile().isFile()) {
                         Files.asCharSink(appVariantContext.getScope().getOutputProguardMappingFile(), Charsets.UTF_8).write("");
                     }
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 return null;
             }
         });
 
-            IntermediateFolderUtils folderUtils = (IntermediateFolderUtils) ReflectUtils.getField(transformInvocation.getOutputProvider(),"folderUtils");
-            AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addAllMainDexJars(FileUtils.listFiles(folderUtils.getRootFolder(),new String[]{"jar"},true));
+        IntermediateFolderUtils folderUtils = (IntermediateFolderUtils) ReflectUtils.getField(transformInvocation.getOutputProvider(), "folderUtils");
+        AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addAllMainDexJars(FileUtils.listFiles(folderUtils.getRootFolder(), new String[]{"jar"}, true));
 
     }
 
     private Collection<TransformInput> getAllInput() {
-        Collection <JarInput> jarInputs = new HashSet<>();
-        Collection<DirectoryInput>directoryInputs = new HashSet<>();
-        Collection<File>jars = AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getAllMainDexJars();
+        Collection<JarInput> jarInputs = new HashSet<>();
+        Collection<DirectoryInput> directoryInputs = new HashSet<>();
+        Collection<File> jars = AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getAllMainDexJars();
         jars.forEach(new Consumer<File>() {
             @Override
             public void accept(File file) {
-                jarInputs.add(TransformInputUtils.makeJarInput(file,appVariantContext));
+                jarInputs.add(TransformInputUtils.makeJarInput(file, appVariantContext));
             }
         });
 
-        Collection<File>dirs = AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs();
+        Collection<File> dirs = AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs();
         dirs.forEach(new Consumer<File>() {
             @Override
             public void accept(File file) {
-                directoryInputs.add(TransformInputUtils.makeDirectoryInput(file,appVariantContext));
+                directoryInputs.add(TransformInputUtils.makeDirectoryInput(file, appVariantContext));
             }
         });
 
@@ -214,11 +267,9 @@ public class DelegateProguardTransform extends MtlInjectTransform {
     public File applyBundleInOutConfigration(final AppVariantContext appVariantContext) {
 
         VariantScope variantScope = appVariantContext.getScope();
+        GlobalScope globalScope = appVariantContext.getScope().getGlobalScope();
 
-        GlobalScope globalScope = variantScope.getGlobalScope();
-        File proguardOut = new File(Joiner.on(File.separatorChar)
-                .join(String.valueOf(globalScope.getBuildDir()), FD_OUTPUTS, "mapping",
-                        variantScope.getVariantConfiguration().getDirName()));
+        File proguardOut = new File(appVariantContext.getBaseVariantData().getScope().getGlobalScope().getIntermediatesDir(), "awb-proguard");
 
         File awbInOutConfig = new File(proguardOut, "awb_inout_config.cfg");
 
@@ -298,5 +349,16 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         }
         defaultProguardFiles.addAll(proguardFiles);
 
+    }
+
+
+    private void maybeAddFeatureProguardRules(
+            @NonNull VariantScope variantScope,
+            @NonNull ConfigurableFileCollection configurationFiles) {
+        if (variantScope.consumesFeatureJars()) {
+            configurationFiles.from(
+                    variantScope.getArtifactFileCollection(
+                            METADATA_VALUES, MODULE, CONSUMER_PROGUARD_RULES));
+        }
     }
 }

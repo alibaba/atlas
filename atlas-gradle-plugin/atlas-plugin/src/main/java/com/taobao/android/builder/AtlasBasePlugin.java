@@ -54,6 +54,8 @@ public abstract class AtlasBasePlugin implements Plugin<Project>, ToolingRegistr
 
         atlasExtension =  atlasConfigurationHelper.createExtendsion();
 
+        atlasConfigurationHelper.autoSetBuildTypes(atlasExtension);
+
 
     }
 

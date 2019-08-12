@@ -279,7 +279,7 @@ public class VariantContext<T extends BaseVariantImpl, Z extends BaseExtension, 
 
         this.variantConfiguration = this.baseVariantData.getVariantConfiguration();
         this.project = project;
-        this.injectTransformManager = new InjectTransformManager(project, variantConfiguration.getFullName());
+        this.injectTransformManager = new InjectTransformManager(this,project, variantConfiguration.getFullName());
         this.atlasExtension = atlasExtension;
         this.appExtension = appExtension;
         this.transformManager = new TransformManagerDelegate(project,scope.getGlobalScope().getErrorHandler(), ThreadRecorder.get(),scope.getTransformManager());

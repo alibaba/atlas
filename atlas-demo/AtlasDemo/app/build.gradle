@@ -34,7 +34,7 @@ android {
         } else {
             buildConfigField "boolean", "API_ENV", "false"
         }
-        multiDexEnabled = false
+        multiDexEnabled = true
 
 
         signingConfigs { //配置签名信息，例如各个不同产品的签名文件位置、密码、昵称、昵称密码等，要放在 buildTypes 上面配置
@@ -88,7 +88,13 @@ atlas {
 
     }
 
-   
+    multiDexConfigs{
+	debug{
+
+}
+
+
+}   
 
     patchConfigs {
         debug {

@@ -12,7 +12,7 @@ buildscript {
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:5.5.1-rc1-SNAPSHOT"
+        classpath "com.taobao.android:atlasplugin:5.5.1-rc3-SNAPSHOT"
     }
 }
 

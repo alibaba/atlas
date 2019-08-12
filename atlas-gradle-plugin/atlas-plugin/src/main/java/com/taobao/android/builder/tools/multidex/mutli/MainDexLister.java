@@ -225,6 +225,8 @@ import javassist.CtClass;
 import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
+import org.gradle.api.file.Directory;
+import org.gradle.api.provider.Provider;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -262,16 +264,15 @@ public class MainDexLister {
         //Confusion of the map
         //Map<String, String> classMap = getClassObfMap(config);
 //        Collection<BaseVariantOutput> collection = appVariantContext.getVariantOutputData();
+        Provider<org.gradle.api.file.Directory> provider = appVariantContext.getScope().getArtifacts().getFinalProduct(InternalArtifactType.MERGED_MANIFESTS);
 
-        BuildableArtifact bm = appVariantContext.getScope().getArtifacts().getFinalArtifactFilesIfPresent(InternalArtifactType.MERGED_MANIFESTS);
-
-
-        if (bm == null ||bm.get() == null){
-             bm = appVariantContext.getScope().getArtifacts().getFinalArtifactFilesIfPresent(InternalArtifactType.INSTANT_RUN_MERGED_MANIFESTS);
-
+        if (provider == null || provider.get() == null){
+            provider = appVariantContext.getScope().getArtifacts().getFinalProduct(InternalArtifactType.INSTANT_RUN_MERGED_MANIFESTS);
         }
 
-        File manifest = bm.get().getSingleFile();
+
+
+        File manifest = new File(provider.get().getAsFile(),"AndroidManifest.xml");
 //        File manifest = new File(appVariantContext.getScope().get())
 //        File manifest = com.android.utils.FileUtils.join(collection.iterator().next().getProcessManifest().getManifestOutputDirectory(),new String[]{collection.iterator().next().getDirName(),"AndroidManifest.xml"});
 //        if (appVariantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()){

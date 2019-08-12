@@ -239,7 +239,7 @@ public class AtlasExtensionOutput extends AtlasExtension {
 
         this.tBuildType = new TBuildType(name);
 
-        TBuildType mtlBuildTypeValue = (TBuildType)atlasExtension.getBuildTypes().findByName(name);
+        TBuildType mtlBuildTypeValue = (TBuildType) atlasExtension.getBuildTypes().findByName(name);
         if (null == mtlBuildTypeValue) {
             return;
         }
@@ -250,11 +250,14 @@ public class AtlasExtensionOutput extends AtlasExtension {
         tBuildType.setSigningConfig(new DefaultSigningConfig(name));
         tBuildType.setPatchConfig(new PatchConfig(name));
         tBuildType.setDexConfig(new DexConfig(name));
+        tBuildType.setMultiDexConfig(new MultiDexConfig(name));
 
         copyProps(tBuildType.getSigningConfig(), mtlBuildTypeValue.getSigningConfig());
         copyProps(tBuildType.getPatchConfig(), mtlBuildTypeValue.getPatchConfig());
-        copyProps(tBuildType.getDexConfig(),mtlBuildTypeValue.getDexConfig());
+        copyProps(tBuildType.getDexConfig(), mtlBuildTypeValue.getDexConfig());
+        copyProps(tBuildType.getMultiDexConfig(), mtlBuildTypeValue.getMultiDexConfig());
     }
+
 
     private void copyProps(Object dest, Object orig) {
         if (orig == null) {
