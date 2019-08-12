@@ -780,7 +780,8 @@ public class TaobaoInstantRunTransform extends Transform {
 
             ImmutableList.Builder<String> builder = ImmutableList.builder();
 
-            for (Map.Entry<String, List<String>> entry:generatePatchInfo.entrySet()){
+            if (variantContext.getAtlasExtension().getTBuildConfig().isPatchEachMethod()) {
+                for (Map.Entry<String, List<String>> entry : generatePatchInfo.entrySet()) {
                     String className = entry.getKey();
                     StringBuilder methodDesc = new StringBuilder();
                     entry.getValue().forEach(new Consumer<String>() {
@@ -789,7 +790,15 @@ public class TaobaoInstantRunTransform extends Transform {
                             methodDesc.append(s).append("|");
                         }
                     });
-                    builder.add(className+"|"+methodDesc.toString());
+                    builder.add(className + "|" + methodDesc.toString());
+                }
+            }else {
+                generatePatchInfo.keySet().forEach(new Consumer<String>() {
+                    @Override
+                    public void accept(String s) {
+                        builder.add(s);
+                    }
+                });
             }
 
             writePatchFileContents(
