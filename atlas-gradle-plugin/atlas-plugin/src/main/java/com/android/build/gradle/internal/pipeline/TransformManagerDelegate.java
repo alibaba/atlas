@@ -357,6 +357,8 @@ public class TransformManagerDelegate {
 
         List<Transform> transforms = (List<Transform>) ReflectUtils.getField(transformManager, "transforms");
 
+        variantContext.getProject().getLogger().warn("findNextTransformTask:"+transforms.toString());
+
         boolean findSelfTransform = false;
 
         Transform nextTransform = null;
@@ -400,7 +402,10 @@ public class TransformManagerDelegate {
             }
         }
         if (find){
+            project.getLogger().warn("inject transform: "+injectTransform.getName() + " in " + k);
             transforms.add(k,injectTransform);
+            project.getLogger().warn("transforms: "+transforms.toString());
+
         }
 
 

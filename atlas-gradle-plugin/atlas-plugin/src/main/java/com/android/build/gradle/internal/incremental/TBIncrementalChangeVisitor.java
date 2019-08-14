@@ -28,11 +28,11 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
     List<TaobaoInstantRunTransform.CodeChange> changes = new ArrayList<>();
 
-    public static final VisitorBuilder VISITOR_BUILDER = new IncrementalVisitor.VisitorBuilder() {
+    public static final VisitorBuilder VISITOR_BUILDER = new TBIncrementalVisitor.VisitorBuilder() {
 
         @Override
         public IncrementalVisitor build(AsmClassNode classNode, ClassVisitor classVisitor, ILogger logger) {
-            return new IncrementalChangeVisitor(classNode, classVisitor, logger);
+            return new TBIncrementalChangeVisitor(classNode, classVisitor, logger);
         }
 
         @NonNull

@@ -5,6 +5,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.api.artifact.BuildableArtifact;
 import com.android.build.api.transform.*;
+import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.api.artifact.BuildableArtifactUtil;
 import com.android.build.gradle.internal.crash.PluginCrashReporter;
@@ -120,8 +121,14 @@ public class MtlDexMergeTransform extends Transform {
     public Set<? super QualifiedContent.Scope> getScopes() {
         if (includeFeaturesInScopes) {
             return TransformManager.SCOPE_FULL_WITH_IR_AND_FEATURES;
+        }else if (isInInstantRunMode){
+
+            return new ImmutableSet.Builder<QualifiedContent.ScopeType>()
+                    .add(InternalScope.MAIN_SPLIT)
+                    .build();
+        }else {
+            return TransformManager.SCOPE_FULL_WITH_IR_FOR_DEXING;
         }
-        return TransformManager.SCOPE_FULL_WITH_IR_FOR_DEXING;
     }
 
     @NonNull

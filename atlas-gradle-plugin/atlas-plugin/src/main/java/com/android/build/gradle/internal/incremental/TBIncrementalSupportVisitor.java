@@ -58,7 +58,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 @NonNull AsmClassNode classNode,
                 @NonNull ClassVisitor classVisitor,
                 @NonNull ILogger logger) {
-            return new IncrementalSupportVisitor(classNode, classVisitor, logger);
+            return new TBIncrementalSupportVisitor(classNode, classVisitor, logger);
         }
 
         @Override
@@ -344,6 +344,9 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 change = newLocal(ALI_CHANGE_TYPE);
                 visitChangeField();
                 storeLocal(change);
+
+
+
 
                 redirectAt(start);
             }
