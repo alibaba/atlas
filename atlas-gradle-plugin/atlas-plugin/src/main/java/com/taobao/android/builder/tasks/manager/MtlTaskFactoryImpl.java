@@ -211,8 +211,12 @@ package com.taobao.android.builder.tasks.manager;
 
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.tasks.factory.TaskFactory;
+import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl;
 import org.gradle.api.GradleException;
+import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.tasks.TaskProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -224,6 +228,13 @@ import java.lang.reflect.Constructor;
 public class MtlTaskFactoryImpl implements MtlTaskFactory {
 
     private static Logger sLogger = LoggerFactory.getLogger(MtlTaskFactory.class);
+
+    private TaskFactory taskFactory = null;
+
+    public MtlTaskFactoryImpl(Project project) {
+
+        taskFactory = new TaskFactoryImpl(project.getTasks());
+    }
 
     @Override
     public Task createTask(VariantContext variantContext, BaseVariantOutput vod,
@@ -256,6 +267,34 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
         }
 
         //return null;
+    }
+
+    @Override
+    public TaskProvider register(VariantContext variantContext, BaseVariantOutput vod, Class<? extends MtlBaseTaskAction> baseTaskAction) {
+        if (null == baseTaskAction) {
+            return null;
+        }
+
+        try {
+
+            MtlBaseTaskAction mtlBaseTaskAction = getConstructor(baseTaskAction, variantContext.getClass()).newInstance(
+                    variantContext, vod);
+
+            Task task = variantContext.getProject().getTasks().findByName(mtlBaseTaskAction.getName());
+
+            if (task == null){
+
+                TaskProvider<? extends Task>taskProvider = taskFactory.register(mtlBaseTaskAction);
+
+                return taskProvider;
+
+            }
+
+            return null;
+        }catch (Throwable e){
+            throw new GradleException(e.getMessage(),e);
+
+        }
     }
 
     private Constructor<? extends MtlBaseTaskAction> getConstructor(Class<? extends MtlBaseTaskAction> baseTaskAction,

@@ -216,6 +216,7 @@ import com.android.builder.core.AndroidBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.tasks.TaskProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -233,7 +234,7 @@ public class MtlTaskInjector {
     public MtlTaskInjector(VariantContext variantContext) {
         this.variantContext = variantContext;
         this.project = variantContext.getProject();
-        this.mtlTaskFactory = new MtlTaskFactoryImpl();
+        this.mtlTaskFactory = new MtlTaskFactoryImpl(project);
     }
 
     public void injectTasks(List<MtlTaskContext> mtlTaskContexts, AndroidBuilder androidBuilder) {
@@ -263,14 +264,14 @@ public class MtlTaskInjector {
                         }
                     }
                 } else {
-                    Task task = mtlTaskFactory.createTask(variantContext, vod, mtlTaskContext.getTaskActionClazz());
+                    TaskProvider<? extends Task> task = mtlTaskFactory.register(variantContext, vod, mtlTaskContext.getTaskActionClazz());
                     if (null != task) {
 
-                        if (null != androidBuilder && task instanceof AndroidBuilderTask) {
-                            ((AndroidBuilderTask)task).setAndroidBuilder(androidBuilder);
-                        }
+//                        if (null != androidBuilder && task instanceof AndroidBuilderTask) {
+//                            ((AndroidBuilderTask)task).setAndroidBuilder(androidBuilder);
+//                        }
 
-                        tasks.add(task);
+                        tasks.add(task.get());
                     }
                 }
 

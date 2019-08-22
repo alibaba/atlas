@@ -286,6 +286,16 @@ public class AwbBundle {
 
     private File keepProguardFile;
 
+    public String getFeatureName() {
+        return featureName;
+    }
+
+    public void setFeatureName(String featureName) {
+        this.featureName = featureName;
+    }
+
+    private String featureName;
+
     public AwbBundle() {
         mainBundle = true;
         this.name = "mainbundle";
@@ -298,7 +308,7 @@ public class AwbBundle {
     public AwbBundle(ResolvedDependencyInfo resolvedDependencyInfo, AndroidLibrary androidLibrary) {
 
         this.androidLibrary = androidLibrary;
-
+        this.featureName = resolvedDependencyInfo.getName().replace("-","_");
         this.name = resolvedDependencyInfo.getGroup() + "-" + resolvedDependencyInfo.getName();
         this.variantName = resolvedDependencyInfo.getVariantName();
     }
@@ -372,7 +382,7 @@ public class AwbBundle {
 
     private String packageName;
 
-    public boolean isRemote;
+    public boolean dynamicFeature;
 
     public boolean isMBundle;
 

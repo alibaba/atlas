@@ -375,11 +375,7 @@ public class TBuildConfig {
         group = "atlas")
     private Boolean aaptConstantId = true;
 
-    @Config(message = "Inject the core bundle information", advance = true, order = 10, group = "atlas")
-    private Boolean classInject = false;
 
-    @Config(title = "The main dex in pile", message = "The old version of the main dex dynamic deployment, has been deprecated", advance = true, order = 11, group = "atlas")
-    private Boolean doPreverify = false;
 
     @Deprecated
     private Boolean resV4Enabled = true;
@@ -487,6 +483,16 @@ public class TBuildConfig {
     private Set<String> keepInLibSoNames = new HashSet<>();
 
 
+    public Set<String> getDynamicFeatures() {
+        return dynamicFeatures;
+    }
+
+    public void setDynamicFeatures(Set<String> dynamicFeatures) {
+        this.dynamicFeatures = dynamicFeatures;
+    }
+
+    private Set<String> dynamicFeatures = new HashSet<>();
+
     public Set<String> getRemoveSoFiles() {
         return removeSoFiles;
     }
@@ -535,21 +541,7 @@ public class TBuildConfig {
         this.aaptConstantId = aaptConstantId;
     }
 
-    public Boolean getClassInject() {
-        return classInject;
-    }
 
-    public void setClassInject(Boolean classInject) {
-        this.classInject = classInject;
-    }
-
-    public Boolean getInjectBeforeProguard() {
-        return injectBeforeProguard;
-    }
-
-    public void setInjectBeforeProguard(Boolean injectBeforeProguard) {
-        this.injectBeforeProguard = injectBeforeProguard;
-    }
 
     public Boolean getCreateAP() {
         return createAP;
@@ -596,37 +588,12 @@ public class TBuildConfig {
         this.preLaunch = preLaunch;
     }
 
-    public Boolean getDoPreverify() {
-        return doPreverify;
-    }
 
-    public void setDoPreverify(Boolean doPreverify) {
-        this.doPreverify = doPreverify;
-    }
-
-    public Boolean getResV4Enabled() {
-        return resV4Enabled;
-    }
-
-    public void setResV4Enabled(Boolean resV4Enabled) {
-        this.resV4Enabled = resV4Enabled;
-    }
 
     public boolean isAbortIfDependencyConflict() {
         return abortIfDependencyConflict;
     }
 
-    public void setAbortIfDependencyConflict(boolean abortIfDependencyConflict) {
-        this.abortIfDependencyConflict = abortIfDependencyConflict;
-    }
-
-    public boolean isAbortIfClassConflict() {
-        return abortIfClassConflict;
-    }
-
-    public void setAbortIfClassConflict(boolean abortIfClassConflict) {
-        this.abortIfClassConflict = abortIfClassConflict;
-    }
 
     public Set<String> getDataBindingBundles() {
         return dataBindingBundles;

@@ -81,11 +81,12 @@ android {
 atlas {
     instantAppEnabled false
     atlasEnabled true
+    appBundlesEnabled true
     tBuildConfig {
 //        preLaunch = 'com.taobao.demo.DemoPreLaunch'
         aaptConstantId true
         allBundlesToMdex  true
-
+        dynamicFeatures=['remotebundle']
     }
 
     multiDexConfigs{

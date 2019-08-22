@@ -218,11 +218,13 @@ import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.internal.res.LinkAndroidResForBundleTask;
 import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.AppPreBuildTask;
 import com.android.build.gradle.internal.tasks.ExtractTryWithResourcesSupportJar;
+import com.android.build.gradle.internal.tasks.ProcessJavaResTask;
 import com.android.build.gradle.internal.transforms.*;
 import com.android.build.gradle.tasks.*;
 import com.android.builder.core.AtlasBuilder;
@@ -241,6 +243,10 @@ import com.taobao.android.builder.tasks.app.merge.*;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
+import com.taobao.android.builder.tasks.appbundles.BundleFeatureResourceTask;
+import com.taobao.android.builder.tasks.appbundles.FeaturesParallelTask;
+import com.taobao.android.builder.tasks.appbundles.MtlFeatureSetmetadataWriterTask;
+import com.taobao.android.builder.tasks.appbundles.MtlModuleMetadataWriterTask;
 import com.taobao.android.builder.tasks.instantapp.AtlasBundleInstantApp;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
@@ -307,7 +313,22 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
 
+                                                              if (atlasExtension.isAppBundlesEnabled()){
+                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlFeatureSetmetadataWriterTask.ConfigAction.class,null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlModuleMetadataWriterTask.CreationAction.class,null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationManifestsAction.class,null));
+
+
+                                                              }
+
                                                               mtlTaskContextList.add(new MtlTaskContext(MergeSourceSetFolders.class));
+
+
+                                                              if (atlasExtension.isAppBundlesEnabled()){
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationAssetsAction.class,null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.MergeResourceAction.class,null));
+
+                                                              }
 
                                                               mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
 
@@ -315,6 +336,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
 
+                                                              if (atlasExtension.isAtlasEnabled()) {
+                                                                  mtlTaskContextList.add(new MtlTaskContext(GenerateBundleInfoSourceTask.ConfigAction.class, null));
+                                                              }
 
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
@@ -328,13 +352,31 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessApplicationManifest.class));
 
+                                                              if (atlasExtension.isAppBundlesEnabled()){
+                                                                  mtlTaskContextList.add(new MtlTaskContext(LinkAndroidResForBundleTask.class));
+
+
+                                                              }
+
 
                                                               //mtlTaskContextList.add(new MtlTaskContext(MergeResV4Dir.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
 
+
+                                                              if (atlasExtension.isAppBundlesEnabled()) {
+                                                                  mtlTaskContextList.add(new MtlTaskContext(AndroidJavaCompile.class));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(ProcessJavaResTask.class));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleResourceAction.class,null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationProcessResourceAction.class,null));
+
+                                                              }
+
+
+
                                                               ProcessAndroidResources processAndroidResources
                                                                       = appVariantContext.getScope().getTaskContainer().getProcessAndroidResTask().get();
+
 
 
 

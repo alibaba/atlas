@@ -214,6 +214,7 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.pipeline.TransformManagerDelegate;
 import com.android.build.gradle.internal.pipeline.TransformTask;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -244,6 +245,8 @@ public class MtlTransformInjector {
 
             for (MtlTransformContext mtlTransformContext : mtlTaskContexts) {
 
+                
+
                 TransformTask transformTask = findTransformTask(mtlTransformContext);
 
                 TransformTask injectedTask = appVariantContext.getInjectTransformManager()
@@ -261,6 +264,7 @@ public class MtlTransformInjector {
         }
 
     }
+
 
     private TransformTask findTransformTask(MtlTransformContext mtlTransformContext) {
 

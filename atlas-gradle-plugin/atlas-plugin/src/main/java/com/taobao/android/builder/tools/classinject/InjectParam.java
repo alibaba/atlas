@@ -217,7 +217,6 @@ import java.io.Serializable;
  */
 public class InjectParam implements Serializable {
 
-    public String unit_tag;
 
     public String version;
 
@@ -235,7 +234,6 @@ public class InjectParam implements Serializable {
 
     public String blackDialogActivity;
 
-    public boolean removePreverify;
 
     public File outputFile;
 
@@ -247,7 +245,6 @@ public class InjectParam implements Serializable {
         InjectParam that = (InjectParam)o;
 
         if (outApp != that.outApp) { return false; }
-        if (removePreverify != that.removePreverify) { return false; }
         if (!version.equals(that.version)) { return false; }
         if (!bundleInfo.equals(that.bundleInfo)) { return false; }
         if (group != null ? !group.equals(that.group) : that.group != null) { return false; }
@@ -266,7 +263,6 @@ public class InjectParam implements Serializable {
         result = 31 * result + (autoStartBundles != null ? autoStartBundles.hashCode() : 0);
         result = 31 * result + (preLaunch != null ? preLaunch.hashCode() : 0);
         result = 31 * result + (outApp ? 1 : 0);
-        result = 31 * result + (removePreverify ? 1 : 0);
         return result;
     }
 }

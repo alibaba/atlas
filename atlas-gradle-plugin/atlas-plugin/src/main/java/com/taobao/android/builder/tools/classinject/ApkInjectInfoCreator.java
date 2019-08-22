@@ -244,9 +244,6 @@ public class ApkInjectInfoCreator {
     public InjectParam creteInjectParam(AppVariantContext appVariantContext) throws Exception {
         InjectParam injectParam = new InjectParam();
 
-        injectParam.removePreverify = !appVariantContext.getAtlasExtension()
-            .getTBuildConfig()
-            .getDoPreverify();
         injectParam.version = appVariantContext.getVariantConfiguration().getVersionName();
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
@@ -264,7 +261,6 @@ public class ApkInjectInfoCreator {
         });
         String mainMd532 = MD5Util.getMD5(StringUtils.join(mainDexDependencies));
         String md5base36 = new BigInteger(mainMd532.substring(8,24),16).toString(36);
-        injectParam.unit_tag = md5base36;
         appVariantContext.unit_tag = md5base36;
 
         //Depends on whether the change is sent
@@ -279,29 +275,14 @@ public class ApkInjectInfoCreator {
             BundleInfo bundleInfo = awbBundle.bundleInfo;
 
             BasicBundleInfo basicBundleInfo = new BasicBundleInfo();
-
+            basicBundleInfo.setDynamicFeature(awbBundle.dynamicFeature);
+            basicBundleInfo.setFeatureName(awbBundle.getFeatureName());
             basicBundleInfo.setApplicationName(bundleInfo.getApplicationName());
             basicBundleInfo.setVersion(bundleInfo.getVersion());
             basicBundleInfo.setPkgName(bundleInfo.getPkgName());
 
-            //set unique_tag
-            String bundleDependencyMd532 = MD5Util.getMD5(StringUtils.join(awbBundle.getAllDependencies()));
-            String bundleUnitTag = "";
 
-            if ( null != dependencyDiff && !dependencyDiff.isDiffBundle(awbBundle)){
-                bundleUnitTag = baseTagMap.get(awbBundle.getPackageName());
-            }
-            if (StringUtils.isEmpty(bundleUnitTag)){
-                String bundleMd532 = MD5Util.getMD5(mainMd532 + bundleDependencyMd532);
-                bundleUnitTag = new BigInteger(bundleMd532.substring(8,24),16).toString(36);
-            }
 
-            basicBundleInfo.setUnique_tag(bundleUnitTag);
-            bundleInfo.setUnique_tag(bundleUnitTag);
-
-            if (!bundleInfo.getIsInternal()) {
-                basicBundleInfo.setIsInternal(false);
-            }
             if (awbBundle.isMBundle){
                 basicBundleInfo.setIsMBundle(true);
             }
@@ -420,6 +401,4 @@ public class ApkInjectInfoCreator {
     }
 
 
-    public void injectTpatchValuesRes(AppVariantContext appVariantContext, File valuesXml) {
-    }
 }

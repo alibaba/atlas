@@ -211,7 +211,11 @@ package com.android.builder.core;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.api.VariantContext;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;
+import com.android.builder.dexing.DexingType;
 import com.android.builder.errors.EvalIssueReporter;
 import com.android.builder.internal.aapt.Aapt;
 import com.android.builder.internal.aapt.AaptPackageConfig;
@@ -262,6 +266,16 @@ public class AtlasBuilder extends AndroidBuilder {
     public static final String PRE_DEXCACHE_TYPE = "pre-dex-0.11";
 
     protected AtlasExtension atlasExtension;
+
+    public VariantContext getVariantContext() {
+        return variantContext;
+    }
+
+    public void setVariantContext(VariantContext variantContext) {
+        this.variantContext = variantContext;
+    }
+
+    private VariantContext variantContext;
 
     public MultiDexer multiDexer;
 
@@ -320,6 +334,7 @@ public class AtlasBuilder extends AndroidBuilder {
             Map<String, Object> placeHolders,
             @NonNull Collection<ManifestMerger2.Invoker.Feature> optionalFeatures,
             @Nullable File reportFile) {
+
         return super.mergeManifestsForApplication(mainManifest,
                 manifestOverlays,
                 manifestProviders,
@@ -339,7 +354,7 @@ public class AtlasBuilder extends AndroidBuilder {
                 outInstantAppManifestLocation,
                 mergeType,
                 placeHolders,
-                optionalFeatures,
+                atlasExtension.isAppBundlesEnabled()? getOptionalFeatures(variantContext.getScope()):optionalFeatures,
                 reportFile);
     }
 
@@ -398,6 +413,32 @@ public class AtlasBuilder extends AndroidBuilder {
 
         public void dexMerge(Map<File, Dex> fileDexMap, File outDexFolder) throws IOException;
 
+    }
+
+
+    private  EnumSet<ManifestMerger2.Invoker.Feature> getOptionalFeatures(
+            VariantScope variantScope) {
+        List<ManifestMerger2.Invoker.Feature> features = new ArrayList<>();
+
+            features.add(ManifestMerger2.Invoker.Feature.CREATE_BUNDLETOOL_MANIFEST);
+
+        if (variantScope.getVariantConfiguration().getBuildType().isDebuggable()) {
+            features.add(ManifestMerger2.Invoker.Feature.DEBUGGABLE);
+
+        }
+        if (variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
+            features.add(ManifestMerger2.Invoker.Feature.INSTANT_RUN_REPLACEMENT);
+        }
+
+
+        if (variantScope
+                .getGlobalScope()
+                .getProjectOptions()
+                .get(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES)) {
+            features.add(ManifestMerger2.Invoker.Feature.ENFORCE_UNIQUE_PACKAGE_NAME);
+        }
+
+        return features.isEmpty() ? EnumSet.noneOf(ManifestMerger2.Invoker.Feature.class) : EnumSet.copyOf(features);
     }
 
 }

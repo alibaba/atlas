@@ -332,7 +332,6 @@ public class LibVariantContext extends VariantContext<LibraryVariantImpl, Librar
         File outFolder = scope.getGlobalScope().getOutputsDir();
         String awbOutputName = getAwbSoName(packageName);
         File file = new File(outFolder, "awbs" + File.separator + awbOutputName);
-        awbBundle.isRemote = true;
         awbBundle.outputBundleFile = file;
         return file;
     }

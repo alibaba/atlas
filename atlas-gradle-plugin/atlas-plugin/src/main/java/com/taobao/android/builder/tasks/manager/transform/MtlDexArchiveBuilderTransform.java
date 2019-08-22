@@ -349,7 +349,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             for (TransformInput input : transformInvocation.getInputs()) {
 
                 for (DirectoryInput dirInput : input.getDirectoryInputs()) {
-                    logger.verbose("Dir input %s", dirInput.getFile().toString());
+                    logger.warning("Dir input %s", dirInput.getFile().toString());
                     convertToDexArchive(
                             transformInvocation.getContext(),
                             dirInput,
@@ -361,7 +361,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 }
 
                 for (JarInput jarInput : input.getJarInputs()) {
-                    logger.verbose("Jar input %s", jarInput.getFile().toString());
+                    logger.warning("Jar input %s", jarInput.getFile().toString());
 
                     MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
                             getD8DesugaringCacheInfo(
@@ -399,18 +399,14 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             }
 
             // if we are in incremental mode, delete all removed files.
-            if (transformInvocation.isIncremental()) {
-                for (TransformInput transformInput : transformInvocation.getInputs()) {
-                    removeDeletedEntries(outputProvider, transformInput);
-                }
-            }
+
 
             // and finally populate the caches.
             if (!cacheableItems.isEmpty()) {
                 cacheHandler.populateCache(cacheableItems);
             }
 
-            logger.verbose("Done with all dex archive conversions");
+            logger.warning("Done with all dex archive conversions");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TransformException(e);
@@ -477,33 +473,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         return new MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo(allDependencies);
     }
 
-    private void removeDeletedEntries(
-            @NonNull TransformOutputProvider outputProvider, @NonNull TransformInput transformInput)
-            throws IOException {
-        for (DirectoryInput input : transformInput.getDirectoryInputs()) {
-            for (Map.Entry<File, Status> entry : input.getChangedFiles().entrySet()) {
-                if (entry.getValue() != Status.REMOVED) {
-                    continue;
-                }
-                File file = entry.getKey();
 
-                Path relativePath = input.getFile().toPath().relativize(file.toPath());
-
-                String fileToDelete;
-                if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
-                    fileToDelete = ClassFileEntry.withDexExtension(relativePath.toString());
-                } else {
-                    fileToDelete = relativePath.toString();
-                }
-
-                int bucketId =
-                        getBucketForFile(input, file.toString(), numberOfBuckets, isInstantRun);
-                File outputFile = getOutputForDir(outputProvider, input, bucketId);
-                FileUtils.deleteRecursivelyIfExists(
-                        outputFile.toPath().resolve(fileToDelete).toFile());
-            }
-        }
-    }
 
     @NonNull
     private List<File> processJarInput(
@@ -516,7 +486,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             @NonNull Set<File> additionalPaths,
             @NonNull MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo)
             throws Exception {
-        if (!isIncremental) {
+//        if (!isIncremental) {
             Preconditions.checkState(
                     jarInput.getFile().exists(),
                     "File %s does not exist, yet it is reported as input. Try \n"
@@ -529,36 +499,36 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                     bootclasspath,
                     classpath,
                     cacheInfo);
-        } else if (jarInput.getStatus() != Status.NOTCHANGED
-                || additionalPaths.contains(jarInput.getFile())) {
-            // delete all preDex jars if they exists.
-            for (int bucketId = 0; bucketId < numberOfBuckets; bucketId++) {
-                File shardedOutput = getOutputForJar(transformOutputProvider, jarInput, bucketId);
-                FileUtils.deleteIfExists(shardedOutput);
-                if (jarInput.getStatus() != Status.REMOVED) {
-                    FileUtils.mkdirs(shardedOutput.getParentFile());
-                }
-            }
-            File nonShardedOutput = getOutputForJar(transformOutputProvider, jarInput, null);
-            FileUtils.deleteIfExists(nonShardedOutput);
-            if (jarInput.getStatus() != Status.REMOVED) {
-                FileUtils.mkdirs(nonShardedOutput.getParentFile());
-            }
-
-            // and perform dexing if necessary.
-            if (jarInput.getStatus() == Status.ADDED
-                    || jarInput.getStatus() == Status.CHANGED
-                    || additionalPaths.contains(jarInput.getFile())) {
-                return convertJarToDexArchive(
-                        context,
-                        jarInput,
-                        transformOutputProvider,
-                        bootclasspath,
-                        classpath,
-                        cacheInfo);
-            }
-        }
-        return ImmutableList.of();
+//        } else if (jarInput.getStatus() != Status.NOTCHANGED
+//                || additionalPaths.contains(jarInput.getFile())) {
+//            // delete all preDex jars if they exists.
+//            for (int bucketId = 0; bucketId < numberOfBuckets; bucketId++) {
+//                File shardedOutput = getOutputForJar(transformOutputProvider, jarInput, bucketId);
+//                FileUtils.deleteIfExists(shardedOutput);
+//                if (jarInput.getStatus() != Status.REMOVED) {
+//                    FileUtils.mkdirs(shardedOutput.getParentFile());
+//                }
+//            }
+//            File nonShardedOutput = getOutputForJar(transformOutputProvider, jarInput, null);
+//            FileUtils.deleteIfExists(nonShardedOutput);
+//            if (jarInput.getStatus() != Status.REMOVED) {
+//                FileUtils.mkdirs(nonShardedOutput.getParentFile());
+//            }
+//
+//            // and perform dexing if necessary.
+//            if (jarInput.getStatus() == Status.ADDED
+//                    || jarInput.getStatus() == Status.CHANGED
+//                    || additionalPaths.contains(jarInput.getFile())) {
+//                return convertJarToDexArchive(
+//                        context,
+//                        jarInput,
+//                        transformOutputProvider,
+//                        bootclasspath,
+//                        classpath,
+//                        cacheInfo);
+//            }
+//        }
+//        return ImmutableList.of();
     }
 
     private List<File> convertJarToDexArchive(
@@ -587,6 +557,9 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             logger.warning("miss cache:" + toConvert.getFile().getAbsolutePath());
 
         }
+
+
+
 
 
         return convertToDexArchive(

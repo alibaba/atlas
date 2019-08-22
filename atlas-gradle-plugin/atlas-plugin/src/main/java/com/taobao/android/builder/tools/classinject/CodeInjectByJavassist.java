@@ -205,7 +205,8 @@
  *     limitations under the License.
  *
  *
- */
+ *//*
+
 
 package com.taobao.android.builder.tools.classinject;
 
@@ -226,10 +227,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
+*/
 /**
  * Code injection is done through Javassist
  * Created by shenghua.nish on 2015-10-22 Again in the afternoon.
- */
+ *//*
+
 public class CodeInjectByJavassist {
 
     public static Map<String, ClazzInjecter> sInjecterMap = new HashMap<String, ClazzInjecter>();
@@ -362,7 +365,8 @@ public class CodeInjectByJavassist {
         }
     }
 
-    /**
+    */
+/**
      * Inject replacement operations for class files in the specified folder
      *
      * @param pool
@@ -373,7 +377,8 @@ public class CodeInjectByJavassist {
      * @throws CannotCompileException
      * @throws NotFoundException
      * @throws Exception
-     */
+     *//*
+
     public static List<String> injectFolder(ClassPool pool,
                                             File folder,
                                             File outFolder,
@@ -397,7 +402,8 @@ public class CodeInjectByJavassist {
         return errorFiles;
     }
 
-    /**
+    */
+/**
      * The injection of code for the specified jar package
      *
      * @param inJar
@@ -405,7 +411,8 @@ public class CodeInjectByJavassist {
      * @throws IOException
      * @throws NotFoundException
      * @throws CannotCompileException
-     */
+     *//*
+
     public static List<String> inject(ClassPool pool,
                                       File inJar,
                                       File outJar,
@@ -488,3 +495,4 @@ public class CodeInjectByJavassist {
         return relative;
     }
 }
+*/

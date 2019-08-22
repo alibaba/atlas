@@ -89,9 +89,6 @@ public interface ApkProcessor {
 
             for (AwbBundle awbBundle : awbBundles) {
                 DynamicBundleInfo dynamicBundleInfo = new DynamicBundleInfo();
-                if (awbBundle.isRemote && !awbBundle.isMBundle) {
-                    dynamicBundleInfo.url = awbBundle.bundleInfo.getUrl();
-                }
                 dynamicBundleInfo.md5 = awbBundle.bundleInfo.getMd5();
                 dynamicBundleInfo.size = awbBundle.bundleInfo.getSize();
                 dynamicBundleInfo.name = awbBundle.getPackageName();
@@ -118,9 +115,7 @@ public interface ApkProcessor {
 
         @Override
         public void removeBundle(AppVariantOutputContext appVariantOutputContext, AwbBundle awbBundle, File bundleFile) {
-            if (awbBundle.isRemote && !awbBundle.isMBundle) {
-                super.removeBundle(appVariantOutputContext, awbBundle, bundleFile);
-            }
+
         }
     }
 

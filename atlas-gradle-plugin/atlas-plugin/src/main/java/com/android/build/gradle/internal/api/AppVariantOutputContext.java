@@ -218,6 +218,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.android.utils.StringHelper;
 import com.taobao.android.object.ArtifactBundleInfo;
 import com.android.build.api.transform.JarInput;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -232,6 +233,8 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.transform.AtlasMergeJavaResourcesTransform;
+import org.gradle.api.file.Directory;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import static com.android.SdkConstants.FD_ASSETS;
@@ -309,14 +312,39 @@ public class AppVariantOutputContext {
                 "source/awb-r/" + config.getDirName() + "/" + awbBundle.getName());
     }
 
+
+    public File getFeatureManifestOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "feature-manifest/" + config.getDirName() + "/" + awbBundle.getName()+"/metadata-feature");
+    }
+
+
+    public File getBundleManifestOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "bundle-manifest/" + config.getDirName() + "/" + awbBundle.getName()+"/bundle-manifest");
+    }
+
+    public File geteBundledResFile(GradleVariantConfiguration config, AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "bundle-res/" + config.getDirName() + "/" + awbBundle.getName()+"/bundled-res.ap_");
+    }
+
     public File getAwbApplicationInjectClassOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
                 "awb-app-inject/" + config.getDirName() + "/" + awbBundle.getName());
     }
 
-    public File getAwbMergedResourceDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
+    public File getFeatureMergedResourceDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
-                "/awb-res/merged/" + config.getDirName() + "/" + awbBundle.getName());
+                "/feature-res/merged/" + config.getDirName() + "/" + awbBundle.getName());
+    }
+
+
+    public File getFeatureResourceBlameLogDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
+        return FileUtils.join(
+                variantScope.getGlobalScope().getIntermediatesDir(),
+                StringHelper.toStrings(
+                        "feature-blame", "res", config.getDirectorySegments(),awbBundle.getName()));
     }
 
     public File getAwbProcessResourcePackageOutputFile(AwbBundle awbBundle) {
@@ -632,6 +660,27 @@ public class AppVariantOutputContext {
                         variantData.getVariantConfiguration().getDirName() +
                         "/" +
                         awbBundle.getName());
+    }
+
+    public File getIncrementalDir(String name,AwbBundle awbBundle) {
+        return FileUtils.join(
+                variantScope.getGlobalScope().getIntermediatesDir(),
+                "incremental",
+                name,awbBundle.getName());
+    }
+
+    public File getFeatureDataBindingLayoutFolder(AwbBundle awbBundle) {
+        return FileUtils.join(
+                variantScope.getGlobalScope().getIntermediatesDir(),
+                "databinding-layout",
+                name,awbBundle.getName());
+    }
+
+    public File getFeatureMergeAssetsFolder(GradleVariantConfiguration variantConfiguration, AwbBundle awbBundle) {
+        return FileUtils.join(
+                variantScope.getGlobalScope().getIntermediatesDir(),
+                "feature-merge-assets",
+                variantConfiguration.getDirName(),awbBundle.getName());
     }
 
 

@@ -19,6 +19,7 @@ import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.InstantRunVariantScope;
 import com.android.build.gradle.internal.transforms.DexArchiveBuilderTransform;
 import com.android.build.gradle.options.DeploymentDevice;
+import com.android.builder.packaging.JarMerger;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.AndroidVersion;
 import com.android.utils.FileUtils;
@@ -35,6 +36,7 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.android.build.gradle.internal.incremental.TBIncrementalVisitor;
 import com.taobao.android.builder.insant.matcher.MatcherCreator;
 import com.taobao.android.builder.insant.visitor.ModifyClassVisitor;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tasks.manager.transform.MtlDexArchiveBuilderTransform;
 import com.taobao.android.builder.tools.multidex.mutli.MappingReaderProcess;
 import org.gradle.api.file.FileCollection;
@@ -46,6 +48,7 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -191,9 +194,9 @@ public class TaobaoInstantRunTransform extends Transform {
             throw new IllegalStateException("InstantRunTransform called with null output");
         }
 
-        File classesTwoOutput =
+        File classesTwoOutputJar =
                 outputProvider.getContentLocation(
-                        "classes", com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_CLASS, getScopes(), Format.DIRECTORY);
+                        "instant-patch-classes", com.android.build.gradle.internal.pipeline.TransformManager.CONTENT_CLASS, getScopes(), Format.JAR);
 
         File classesThreeOutput =
                 outputProvider.getContentLocation(
@@ -202,8 +205,10 @@ public class TaobaoInstantRunTransform extends Transform {
                         getScopes(),
                         Format.DIRECTORY);
 
+        File classesTwoOutput = new File(variantContext.getScope().getGlobalScope().getIntermediatesDir(),"instant-patch/"+variantContext.getVariantConfiguration().getDirName());
+        classesTwoOutput.mkdirs();
         AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().clear();
-        AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().add(classesTwoOutput);
+        AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getMainDexFiles().add(new BuildAtlasEnvTask.FileIdentity("instant-patch",classesTwoOutputJar,false,false));
         AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().add(classesThreeOutput);
 
         FileCollection fileCollection = variantContext.getProject().files();
@@ -340,7 +345,14 @@ public class TaobaoInstantRunTransform extends Transform {
 
             });
 
-            awbBundleFileMap.put(awbTransform.getAwbBundle(), awbClassesTwoOutout);
+
+            try {
+                awbBundleFileMap.put(awbTransform.getAwbBundle(), awbClassesTwoOutout);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+
         });
 
         // first get all referenced input to construct a class loader capable of loading those
@@ -385,11 +397,29 @@ public class TaobaoInstantRunTransform extends Transform {
         }
 
         variantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
-            awbTransform.getInputLibraries().clear();
-            awbTransform.getInputFiles().clear();
-            awbTransform.getInputDirs().clear();
-            awbTransform.getInputDirs().add(awbBundleFileMap.get(awbTransform.getAwbBundle()));
+            try {
+                File outJar = new File(awbBundleFileMap.get(awbTransform.getAwbBundle()).getParentFile(),awbTransform.getAwbBundle().getName()+".jar");
+                JarMerger jarMerger = new JarMerger(outJar.toPath(),null);
+                jarMerger.addDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()).toPath());
+                jarMerger.close();
+                awbTransform.getInputLibraries().clear();
+                awbTransform.getInputFiles().clear();
+                awbTransform.getInputDirs().clear();
+                awbTransform.getInputFiles().add(outJar);
+                org.apache.commons.io.FileUtils.deleteDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()));
+                awbBundleFileMap.put(awbTransform.getAwbBundle(),outJar);
+            }catch (Exception e){
+
+            }
         });
+
+
+
+        JarMerger jarMerger = new JarMerger(classesTwoOutputJar.toPath(),null);
+        jarMerger.addDirectory(classesTwoOutput.toPath());
+        jarMerger.close();
+        org.apache.commons.io.FileUtils.deleteDirectory(classesTwoOutput);
+
 
         // If our classes.2 transformations indicated that a cold swap was necessary,
         // clean up the classes.3 output folder as some new files may have been generated.
@@ -407,22 +437,22 @@ public class TaobaoInstantRunTransform extends Transform {
 
         //when we finish instantruntransform update
 
-        TransformManagerDelegate.findTransformTaskByTransformType(variantContext,MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
-            @Override
-            public void accept(TransformTask transformTask) {
-                (variantContext.getTransformManager()).consumeStreamsForTask(transformTask,Sets.newHashSet(QualifiedContent.Scope.EXTERNAL_LIBRARIES),Sets.newHashSet(QualifiedContent.DefaultContentType.CLASSES));
-
-            }
-        });
-
-
-        TransformManagerDelegate.findTransformTaskByTransformType(variantContext,MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
-            @Override
-            public void accept(TransformTask transformTask) {
-                (variantContext.getTransformManager()).consumeStreamsForTask(transformTask,Sets.newHashSet(QualifiedContent.Scope.PROJECT),Sets.newHashSet(QualifiedContent.DefaultContentType.CLASSES));
-
-            }
-        });
+//        TransformManagerDelegate.findTransformTaskByTransformType(variantContext,MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+//            @Override
+//            public void accept(TransformTask transformTask) {
+//                (variantContext.getTransformManager()).consumeStreamsForTask(transformTask,Sets.newHashSet(QualifiedContent.Scope.EXTERNAL_LIBRARIES),Sets.newHashSet(QualifiedContent.DefaultContentType.CLASSES));
+//
+//            }
+//        });
+//
+//
+//        TransformManagerDelegate.findTransformTaskByTransformType(variantContext,MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+//            @Override
+//            public void accept(TransformTask transformTask) {
+//                (variantContext.getTransformManager()).consumeStreamsForTask(transformTask,Sets.newHashSet(QualifiedContent.Scope.PROJECT),Sets.newHashSet(QualifiedContent.DefaultContentType.CLASSES));
+//
+//            }
+//        });
 
 
 
@@ -434,13 +464,15 @@ public class TaobaoInstantRunTransform extends Transform {
             }
         });
 
-        TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
-            @Override
-            public void accept(TransformTask transformTask) {
-                (variantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT,QualifiedContent.DefaultContentType.CLASSES,"instantpatch-classess",variantContext.getProject().files(classesTwoOutput));
+//        TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+//            @Override
+//            public void accept(TransformTask transformTask) {
+//                (variantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT,QualifiedContent.DefaultContentType.CLASSES,"instantpatch-classess",variantContext.getProject().files(classesTwoOutputJar));
+//
+//            }
+//        });
 
-            }
-        });
+
 
 
 

@@ -354,11 +354,13 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                     }
                 }
             });
-//            AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainSoFiles().put(appVariantContext.getScope().().getAbsolutePath(), true);
 
         } catch (Exception e) {
 
         }
+
+
+
 
         //process resources
         ProcessAndroidResources processAndroidResources = appVariantContext.getScope().getTaskContainer().getProcessAndroidResTask().get();
@@ -728,11 +730,10 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
     private boolean isMBundle(AppVariantContext appVariantContext, AwbBundle awbBundle) {
 
 
-        if (awbBundle.getPackageName().equals("com.taobao.android.customdetail")) {
-            return false;
-        }
+        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled() && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().contains(awbBundle.getResolvedCoordinates().getArtifactId())) {
 
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().getOutOfApkBundles().contains(awbBundle.getResolvedCoordinates().getArtifactId())) {
+            awbBundle.dynamicFeature = true;
+            awbBundle.bundleInfo.setDynamicFeature(true);
             return false;
         }
 

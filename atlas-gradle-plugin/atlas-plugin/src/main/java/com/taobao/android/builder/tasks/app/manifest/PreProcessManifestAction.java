@@ -288,6 +288,8 @@ public class PreProcessManifestAction implements Action<Task> {
 
             mergeManifests.setAndroidBuilder(AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()));
 
+            AtlasBuildContext.androidBuilderMap.get(appVariantContext.getProject()).setVariantContext(appVariantContext);
+
 //            ReflectUtils.updateField(mergeManifests,"manifests",appVariantContext.getProject().files(allManifest));
 
             //if (sLogger.isInfoEnabled()) {

@@ -2,6 +2,9 @@
 
 buildscript {
     repositories {
+        maven {
+            url 'http://storage.googleapis.com/r8-releases/raw'
+        }
         mavenLocal()
         jcenter()
         google()
@@ -12,7 +15,7 @@ buildscript {
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:5.5.1-rc3-SNAPSHOT"
+        classpath "com.taobao.android:atlasplugin:5.5.1-rc3-appbundles-SNAPSHOT"
     }
 }
 
@@ -20,6 +23,9 @@ buildscript {
 
 subprojects {
     repositories {
+        maven {
+            url 'http://storage.googleapis.com/r8-releases/raw'
+        }
         jcenter()
         google()
 

@@ -274,6 +274,17 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     private boolean instantAppEnabled;
 
+
+    public boolean isAppBundlesEnabled() {
+        return appBundlesEnabled;
+    }
+
+    public void setAppBundlesEnabled(boolean appBundlesEnabled) {
+        this.appBundlesEnabled = appBundlesEnabled;
+    }
+
+    private boolean appBundlesEnabled;
+
     protected Logger logger;
 
     public AtlasExtension() {

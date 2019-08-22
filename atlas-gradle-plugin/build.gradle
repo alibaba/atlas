@@ -229,12 +229,6 @@ buildscript {
 description = """atlas gradle plugin"""
 
 
-//task wrapper(type: Wrapper) {
-//    gradleVersion = '4.2.1'
-//    distributionUrl = 'http://services.gradle.org/distributions/gradle-5.5.1-all.zip'
-//}
-
-version = '5.5.1-rc1-SNAPSHOT'
 
 subprojects {
 

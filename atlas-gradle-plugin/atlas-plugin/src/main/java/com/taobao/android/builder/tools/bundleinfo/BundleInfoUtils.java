@@ -282,22 +282,17 @@ public class BundleInfoUtils {
             bundleInfo = awbBundle.bundleInfo;
         }
         bundleInfo.setIsMBundle(awbBundle.isMBundle);
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().getInsideOfApkBundles().size() > 0){
-            awbBundle.isRemote = !appVariantContext.getAtlasExtension()
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0){
+            awbBundle.dynamicFeature = !appVariantContext.getAtlasExtension()
                     .getTBuildConfig()
-                    .getInsideOfApkBundles()
-                    .contains(artifactId);
-        }else if (appVariantContext.getAtlasExtension().getTBuildConfig().getOutOfApkBundles().size() > 0) {
-            awbBundle.isRemote = appVariantContext.getAtlasExtension()
-                    .getTBuildConfig()
-                    .getOutOfApkBundles()
+                    .getDynamicFeatures()
                     .contains(artifactId);
         }
 
 
-        bundleInfo.setIsInternal(!awbBundle.isRemote);
         bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
         bundleInfo.setPkgName(awbBundle.getPackageName());
+        bundleInfo.setFeatureName(awbBundle.getFeatureName());
 
         String applicationName = ManifestFileUtils.getApplicationName(awbBundle.getManifest());
         if (StringUtils.isNotEmpty(applicationName)) {

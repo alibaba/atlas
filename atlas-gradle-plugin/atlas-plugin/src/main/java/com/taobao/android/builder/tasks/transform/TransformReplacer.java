@@ -129,7 +129,7 @@ public class TransformReplacer {
                 boolean instantRunMode = false;
                 DexingType dexingType = null;
                 FileCollection multidexFiles = null;
-                if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
+                if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode() && !variantContext.getProject().hasProperty("devMode")) {
                     dexingType = DexingType.LEGACY_MULTIDEX;
                     instantRunMode = true;
                     multidexFiles = variantContext.getProject().files(mainDexListProvider());
@@ -340,10 +340,16 @@ public class TransformReplacer {
             mainDexListFile[0] = mainDexListProvider().get();
         }
 
+        if (variantContext.getProject().hasProperty("devMode")){
+            return;
+        }
+
         List<TransformTask> transforms1 = TransformManagerDelegate.findTransformTaskByTransformType(
                 variantContext, MtlDexMergeTransform.class);
 
         File finalMainDexListFile = mainDexListFile[0];
+
+
         transforms1.forEach(transformTask1 -> transformTask1.doFirst(task -> {
             try {
                 if (!finalMainDexListFile.getParentFile().exists()) {

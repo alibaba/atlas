@@ -1,3 +1,12 @@
+package com.taobao.android.builder.tasks.app;
+
+/**
+ * @ClassName GenerateBundleInfoSourceTask
+ * @Description TODO
+ * @Author zhayu.ll
+ * @Date 2019-08-20 14:49
+ * @Version 1.0
+ */
 /*
  *
  *
@@ -207,20 +216,113 @@
  *
  */
 
-package com.taobao.android.builder.tasks.manager;
 
+import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.api.BaseVariantOutput;
-import com.android.build.gradle.internal.api.VariantContext;
-import org.gradle.api.Task;
-import org.gradle.api.tasks.TaskProvider;
+import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.MavenCoordinates;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.app.prepare.BundleInfoSourceCreator;
+import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.bundleinfo.model.BasicBundleInfo;
+import com.taobao.android.builder.tools.classinject.InjectParam;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.gradle.api.GradleException;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.TaskAction;
+import org.gradle.internal.impldep.org.codehaus.plexus.util.Base64;
 
-/**
- * Created by wuzhong on 16/6/24.
- */
-public interface MtlTaskFactory {
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
-    Task createTask(VariantContext variantContext, BaseVariantOutput vod, Class<? extends MtlBaseTaskAction> baseTaskAction);
+public class GenerateBundleInfoSourceTask extends AndroidBuilderTask {
+
+    private AppVariantContext appVariantContext;
+
+    private File outputDir;
+
+    @OutputDirectory
+    public File getOutputDir() {
+        return outputDir;
+    }
+
+    private InjectParam injectParam;
+
+    @Input
+    public InjectParam getInput() {
+        if (null != injectParam) {
+            return injectParam;
+        }
+        try {
+            injectParam = AtlasBuildContext.sBuilderAdapter.apkInjectInfoCreator.creteInjectParam(appVariantContext);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return injectParam;
+    }
+
+    @TaskAction
+    void generate() {
+
+        InjectParam injectParam = getInput();
+        List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
+        File outputSourceGeneratorFile = new File(outputDir,"com/android/tools/bundleInfo/BundleInfoGenerator.java");
+        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info);
+        outputSourceGeneratorFile.getParentFile().mkdirs();
+        getLogger().info(infoGeneratorSourceStr.toString());
+        try {
+            FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
+        } catch (IOException e) {
+            throw new GradleException(e.getMessage(), e);
+        }
 
 
-    TaskProvider register(VariantContext variantContext, BaseVariantOutput vod, Class<? extends MtlBaseTaskAction> baseTaskAction);
+    }
+
+
+    public static class ConfigAction extends MtlBaseTaskAction<GenerateBundleInfoSourceTask> {
+
+        private AppVariantContext appVariantContext;
+
+        public ConfigAction(AppVariantContext appVariantContext,
+                            BaseVariantOutput baseVariantOutputData) {
+            super(appVariantContext, baseVariantOutputData);
+            this.appVariantContext = appVariantContext;
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName("generate", "bundleInfoSources");
+        }
+
+        @Override
+        public Class<GenerateBundleInfoSourceTask> getType() {
+            return GenerateBundleInfoSourceTask.class;
+        }
+
+        @Override
+        public void configure(GenerateBundleInfoSourceTask atlasSourceTask) {
+
+            super.configure(atlasSourceTask);
+
+            File srcDir = appVariantContext.getAtlaSourceDir();
+            appVariantContext.getVariantData().getTaskContainer().getJavacTask().get().source(srcDir);
+
+            atlasSourceTask.outputDir = srcDir;
+            atlasSourceTask.appVariantContext = appVariantContext;
+
+        }
+    }
 }
+

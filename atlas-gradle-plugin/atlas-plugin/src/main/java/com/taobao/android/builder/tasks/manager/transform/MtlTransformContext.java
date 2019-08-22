@@ -213,6 +213,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.android.build.api.transform.Transform;
+import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 
 /**
  * Created by wuzhong on 16/6/24.
@@ -220,6 +221,16 @@ import com.android.build.api.transform.Transform;
 public class MtlTransformContext {
 
     private Class<? extends MtlInjectTransform> transformTask;
+
+    public Class<? extends AndroidBuilderTask> getBeforeAndroidTaskClazz() {
+        return beforeAndroidTaskClazz;
+    }
+
+    public void setBeforeAndroidTaskClazz(Class<? extends AndroidBuilderTask> beforeAndroidTaskClazz) {
+        this.beforeAndroidTaskClazz = beforeAndroidTaskClazz;
+    }
+
+    private Class<? extends AndroidBuilderTask> beforeAndroidTaskClazz;
 
     private List<Class<? extends Transform>> beforeClazzList = new ArrayList<Class<? extends Transform>>();
 
@@ -229,6 +240,14 @@ public class MtlTransformContext {
             for (Class<? extends Transform> cl : clazz) {
                 beforeClazzList.add(cl);
             }
+        }
+    }
+
+
+    public MtlTransformContext(Class<? extends MtlInjectTransform> transformTask, Class<? extends AndroidBuilderTask> clazz) {
+        this.transformTask = transformTask;
+        if (null != clazz) {
+            beforeAndroidTaskClazz = clazz;
         }
     }
 

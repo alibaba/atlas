@@ -221,14 +221,20 @@ public class BasicBundleInfo {
 
     private String pkgName;
 
-    /**
-     * The main dex depends on + the md5 that is currently dependent
-     */
-    private String unique_tag;
 
     private String applicationName;
 
     private String version;
+
+    public String getFeatureName() {
+        return featureName;
+    }
+
+    public void setFeatureName(String featureName) {
+        this.featureName = featureName;
+    }
+
+    private String featureName;
 
 
     public Boolean getIsMBundle() {
@@ -252,8 +258,15 @@ public class BasicBundleInfo {
     private List<String> contentProviders = Lists.newArrayList();
 
 
+    public Boolean getDynamicFeature() {
+        return dynamicFeature;
+    }
 
-    private Boolean isInternal = true;
+    public void setDynamicFeature(Boolean dynamicFeature) {
+        this.dynamicFeature = dynamicFeature;
+    }
+
+    private Boolean dynamicFeature = false;
 
 
 
@@ -321,19 +334,5 @@ public class BasicBundleInfo {
         this.contentProviders = contentProviders;
     }
 
-    public boolean getIsInternal() {
-        return isInternal;
-    }
 
-    public void setIsInternal(boolean internal) {
-        isInternal = internal;
-    }
-
-    public String getUnique_tag() {
-        return unique_tag;
-    }
-
-    public void setUnique_tag(String unique_tag) {
-        this.unique_tag = unique_tag;
-    }
 }
