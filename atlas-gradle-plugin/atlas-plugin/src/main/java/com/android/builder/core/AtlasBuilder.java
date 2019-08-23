@@ -586,7 +586,7 @@ public class AtlasBuilder extends AndroidBuilder {
                 Collection<File> files = FileUtils.listFiles(dexDir,new String[]{"dex"},true);
                 for (File dexFile : files) {
                     if (dexFile.exists() && dexFile.length() > 0) {
-                        FileUtils.moveDirectory(dexFile,outDexFolder);
+                        FileUtils.moveFileToDirectory(dexFile,outDexFolder,true);
 //                        Dex dex = new Dex(dexFile);
 //                        dexs.add(dex);
 //                        fileDexMap.put(dexFile, dex);
