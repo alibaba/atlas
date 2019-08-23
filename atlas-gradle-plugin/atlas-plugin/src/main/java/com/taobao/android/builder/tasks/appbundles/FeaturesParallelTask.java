@@ -5,6 +5,7 @@ import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.manager.FeatureBaseTaskAction;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskAction;
@@ -94,13 +95,28 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
                 break;
 
 
+            case PROCESS_RESOURCE:
+
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                    if (awbBundle.dynamicFeature) {
+                        TaskProvider<ProcessFeatureResource> provider = new TaskFactoryImpl(getProject().getTasks()).register(new ProcessFeatureResource.CreationAction(awbBundle, variantContext, variantOutput));
+                        try {
+                            provider.get().doFullTaskAction();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+
+
         }
 
 
     }
 
 
-    public static class CreationManifestsAction extends MtlBaseTaskAction<FeaturesParallelTask> {
+    public static class CreationManifestsAction extends FeaturesBaseAction {
 
 
         public CreationManifestsAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
@@ -112,8 +128,6 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
         public void configure(FeaturesParallelTask task) {
             super.configure(task);
             task.processType = ProcessType.MERGE_MANIFEST;
-            task.variantContext = variantContext;
-            task.variantOutput = baseVariantOutput;
 
         }
 
@@ -123,16 +137,11 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
             return scope.getTaskName("processFeatures", "Manifests");
         }
 
-        @NotNull
-        @Override
-        public Class<FeaturesParallelTask> getType() {
-            return FeaturesParallelTask.class;
-        }
 
     }
 
 
-    public static class CreationAssetsAction extends MtlBaseTaskAction<FeaturesParallelTask> {
+    public static class CreationAssetsAction extends FeaturesBaseAction {
 
 
         public CreationAssetsAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
@@ -155,16 +164,34 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
             return scope.getTaskName("processFeatures", "Assets");
         }
 
-        @NotNull
-        @Override
-        public Class<FeaturesParallelTask> getType() {
-            return FeaturesParallelTask.class;
-        }
 
     }
 
 
-    public static class MergeResourceAction extends MtlBaseTaskAction<FeaturesParallelTask> {
+    public static abstract class FeaturesBaseAction extends MtlBaseTaskAction<FeaturesParallelTask> {
+
+        public FeaturesBaseAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            super(variantContext, baseVariantOutput);
+        }
+
+        @Override
+        public void configure(FeaturesParallelTask task) {
+            super.configure(task);
+            task.variantContext = variantContext;
+            task.variantOutput = baseVariantOutput;
+        }
+
+        @NotNull
+        @Override
+        public Class<FeaturesParallelTask> getType() {
+            return FeaturesParallelTask.class;
+
+        }
+
+
+    }
+
+    public static class MergeResourceAction extends FeaturesBaseAction {
 
 
         public MergeResourceAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
@@ -176,10 +203,9 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
         public void configure(FeaturesParallelTask task) {
             super.configure(task);
             task.processType = ProcessType.MERGE_RESOURCE;
-            task.variantContext = variantContext;
-            task.variantOutput = baseVariantOutput;
 
         }
+
 
         @NotNull
         @Override
@@ -187,16 +213,11 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
             return scope.getTaskName("mergeFeatures", "Resource");
         }
 
-        @NotNull
-        @Override
-        public Class<FeaturesParallelTask> getType() {
-            return FeaturesParallelTask.class;
-        }
 
     }
 
 
-    public static class CreationBundleResourceAction extends MtlBaseTaskAction<FeaturesParallelTask> {
+    public static class CreationBundleResourceAction extends FeaturesBaseAction {
 
 
         public CreationBundleResourceAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
@@ -208,8 +229,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
         public void configure(FeaturesParallelTask task) {
             super.configure(task);
             task.processType = ProcessType.BUNDLE_RES;
-            task.variantContext = variantContext;
-            task.variantOutput = baseVariantOutput;
+
 
         }
 
@@ -219,10 +239,27 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
             return scope.getTaskName("processBundle", "resources");
         }
 
+
+
+    }
+
+
+    public static class CreationProcessResourceAction extends FeaturesBaseAction {
+
+        public CreationProcessResourceAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            super(variantContext, baseVariantOutput);
+        }
+
+        @Override
+        public void configure(FeaturesParallelTask task) {
+            super.configure(task);
+            task.processType = ProcessType.PROCESS_RESOURCE;
+        }
+
         @NotNull
         @Override
-        public Class<FeaturesParallelTask> getType() {
-            return FeaturesParallelTask.class;
+        public String getName() {
+            return scope.getTaskName("processFeatures", "resources");
         }
 
     }
@@ -243,6 +280,4 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
     }
 
 
-    public class CreationProcessResourceAction {
-    }
 }
