@@ -180,7 +180,7 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
                                     AtlasBuildContext.androidBuilderMap.get(variantContext.getProject())
                                             .convertByteCode(inputFiles,
                                                     dexOutputFile,
-                                                    false,
+                                                    true,
                                                     null,
                                                     dexOptions,
                                                     outputHandler, true);
@@ -378,13 +378,17 @@ public class DexByteCodeConverterHook extends DexByteCodeConverter {
 
 
         for (AwbBundle bundle : mBundleSets) {
-            File awbDex = new File(((AppVariantContext) variantContext).getAwbDexOutput(bundle.getName()), "classes.dex");
-            if (awbDex.exists() && !variantContext.getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
-                FileUtils.moveFile(awbDex, new File(outDexFolder, "classes" + atomicInteger.incrementAndGet() + ".dex"));
-            } else if (awbDex.exists() && variantContext.getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
-                dexPaths.add(awbDex.toPath());
+            Collection<File> awbDexes = FileUtils.listFiles(((AppVariantContext) variantContext).getAwbDexOutput(bundle.getName()),new String[]{"dex"},true);
+            if (awbDexes.size()> 0 && variantContext.getAtlasExtension().getTBuildConfig().getMergeBundlesDex()) {
+                awbDexes.forEach(new Consumer<File>() {
+                    @Override
+                    public void accept(File file) {
+                        dexPaths.add(file.toPath());
+
+                    }
+                });
             } else {
-                logger.warning(awbDex.getAbsoluteFile() + " is not exist!");
+//                logger.warning(awbDex.getAbsoluteFile() + " is not exist!");
             }
         }
 

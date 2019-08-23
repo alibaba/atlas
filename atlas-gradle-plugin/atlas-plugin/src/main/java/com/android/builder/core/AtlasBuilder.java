@@ -586,9 +586,10 @@ public class AtlasBuilder extends AndroidBuilder {
                 Collection<File> files = FileUtils.listFiles(dexDir,new String[]{"dex"},true);
                 for (File dexFile : files) {
                     if (dexFile.exists() && dexFile.length() > 0) {
-                        Dex dex = new Dex(dexFile);
-                        dexs.add(dex);
-                        fileDexMap.put(dexFile, dex);
+                        FileUtils.moveDirectory(dexFile,outDexFolder);
+//                        Dex dex = new Dex(dexFile);
+//                        dexs.add(dex);
+//                        fileDexMap.put(dexFile, dex);
                     }
                 }
             }
@@ -596,34 +597,34 @@ public class AtlasBuilder extends AndroidBuilder {
             Profiler.release();
             long endDexTime = System.currentTimeMillis();
 
-            Profiler.enter("dexmerge");
-            if (dexs.size() > 0) {
-
-                    if (multidex && !awb) {
-
-                        throw new GradleException("can't support~");
-
-                    } else {
-
-                        DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
-                                                            CollisionPolicy.KEEP_FIRST, new DxContext());
-                        Dex dex = dexMerger.merge();
-
-                        File dexFile = new File(outDexFolder, "classes.dex");
-
-                        dex.writeTo(dexFile);
-
-                        if (!dexFile.exists()) {
-                            sLogger.error("dexmerge failed, not dex file found , inputs : " + dexs.size());
-                        }
-                    }
-
-
-
-            } else {
-                sLogger.error("no dex found to  " + outDexFolder.getAbsolutePath());
-            }
-            Profiler.release();
+//            Profiler.enter("dexmerge");
+//            if (dexs.size() > 0) {
+//
+//                    if (multidex && !awb) {
+//
+//                        throw new GradleException("can't support~");
+//
+//                    } else {
+//
+//                        DexMerger dexMerger = new DexMerger(dexs.toArray(new Dex[0]),
+//                                                            CollisionPolicy.KEEP_FIRST, new DxContext());
+//                        Dex dex = dexMerger.merge();
+//
+//                        File dexFile = new File(outDexFolder, "classes.dex");
+//
+//                        dex.writeTo(dexFile);
+//
+//                        if (!dexFile.exists()) {
+//                            sLogger.error("dexmerge failed, not dex file found , inputs : " + dexs.size());
+//                        }
+//                    }
+//
+//
+//
+//            } else {
+//                sLogger.error("no dex found to  " + outDexFolder.getAbsolutePath());
+//            }
+//            Profiler.release();
 
             FileUtils.deleteDirectory(tmpDir);
 
