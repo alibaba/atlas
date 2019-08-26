@@ -250,6 +250,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 1. Custom Android BuilderTool classes that support custom aapt operations
@@ -581,12 +582,12 @@ public class AtlasBuilder extends AndroidBuilder {
 
                     outputs.add(dexDir);
             }
-
+            AtomicInteger atomicInteger = new AtomicInteger(1);
                 for (File dexDir : outputs) {
                 Collection<File> files = FileUtils.listFiles(dexDir,new String[]{"dex"},true);
                 for (File dexFile : files) {
                     if (dexFile.exists() && dexFile.length() > 0) {
-                        FileUtils.moveFileToDirectory(dexFile,outDexFolder,true);
+                        FileUtils.moveFile(dexFile,new File(outDexFolder,atomicInteger.getAndIncrement()+".dex"));
 //                        Dex dex = new Dex(dexFile);
 //                        dexs.add(dex);
 //                        fileDexMap.put(dexFile, dex);
