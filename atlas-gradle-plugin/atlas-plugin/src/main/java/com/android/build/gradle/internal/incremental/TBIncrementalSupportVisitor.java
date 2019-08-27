@@ -521,11 +521,10 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         // and gather all default methods of all directly/inherited implemented interfaces.
 
-        if (patchInterface) {
+//        if (patchInterface) {
             for (AsmInterfaceNode implementedInterface : classAndInterfaceNode.getInterfaces()) {
                 addDefaultMethods(
                         classAndInterfaceNode.getClassNode(), implementedInterface, uniqueMethods);
-
 
                 implementedInterface.onAll(
                         interfaceNode -> {
@@ -534,7 +533,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                             return null;
                         });
             }
-        }
+//        }
 
 
         new TBStringSwitch() {
