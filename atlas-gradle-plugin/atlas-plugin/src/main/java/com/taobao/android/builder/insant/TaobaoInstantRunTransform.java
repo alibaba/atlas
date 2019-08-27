@@ -255,8 +255,8 @@ public class TaobaoInstantRunTransform extends Transform {
                                 if (cg.py == PatchPolicy.MODIFY) {
                                     methodDescs.add(cg.code);
                                 }
-                                generatePatchInfo.put(className, methodDescs);
                             }
+                            generatePatchInfo.put(className, methodDescs);
                             modifyClasses.put(className, PatchPolicy.MODIFY.name());
                             workItems.add(() -> transformToClasses3Format(
                                     codeChange, inputDir,
@@ -327,8 +327,8 @@ public class TaobaoInstantRunTransform extends Transform {
                                 if (cg.py == PatchPolicy.MODIFY) {
                                     methodDescs.add(cg.code);
                                 }
-                                generatePatchInfo.put(className, methodDescs);
                             }
+                            generatePatchInfo.put(className, methodDescs);
                             modifyClasses.put(className, PatchPolicy.MODIFY.name());
                             workItems.add(() -> transformToClasses3Format(codeChange,
                                     dir,
