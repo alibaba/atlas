@@ -36,7 +36,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
     private List<MethodNode>methodNodes = new ArrayList<>();
 
-    private static Map<String,String>visitSuperMethods = new HashMap<>();
+    private Map<String,String>visitSuperMethods = new HashMap<>();
 
 
     public void setPatchInitMethod(boolean patchInitMethod) {
@@ -521,7 +521,6 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         // and gather all default methods of all directly/inherited implemented interfaces.
 
-//        if (patchInterface) {
             for (AsmInterfaceNode implementedInterface : classAndInterfaceNode.getInterfaces()) {
                 addDefaultMethods(
                         classAndInterfaceNode.getClassNode(), implementedInterface, uniqueMethods);
@@ -533,7 +532,20 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                             return null;
                         });
             }
-//        }
+
+
+            Map<String,MethodReference>shouldVisitMethods = new HashMap<>();
+
+            uniqueMethods.keySet().forEach(new Consumer<String>() {
+                @Override
+                public void accept(String s) {
+                    if (visitSuperMethods.containsKey(s)){
+                        shouldVisitMethods.put(s,uniqueMethods.get(s));
+                    }
+                }
+            });
+
+
 
 
         new TBStringSwitch() {
@@ -571,7 +583,8 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 // Call super on the other object, yup this works cos we are on the right place to
                 // call from.
                 mv.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                        visitSuperMethods.get(methodName),
+                        parentName,
+//                        visitSuperMethods.get(methodName),
                         methodRef.method.name,
                         methodRef.method.desc, false);
 
@@ -588,7 +601,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             void visitDefault() {
                 writeMissingMessageWithHash(mv, visitedClassName);
             }
-        }.visit(mv, uniqueMethods.keySet());
+        }.visit(mv, shouldVisitMethods.keySet());
 
         mv.visitMaxs(0, 0);
         mv.visitEnd();
@@ -903,7 +916,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         ImmutableList.Builder<MethodReference> methodRefs = ImmutableList.builder();
 
-        if (superClass.name.equals("java/lang/Object")){
+        if (superClass == null || superClass.name.equals("java/lang/Object")||(instrumentedClass.access& Opcodes.ACC_INTERFACE) != 0){
             return methodRefs.build();
         }
 
@@ -1000,6 +1013,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             // to avoid name collision when dealing with 2 methods with the same names coming
             // from 2 distinct interfaces.
             name = superClass.name + "." + name;
+            return null;
         }
 
         return addNewMethod(name, instrumentedClass, superClass, method, methods);
@@ -1028,12 +1042,12 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 && (method.access & Opcodes.ACC_STATIC) == 0
                 && isCallableFromSubclass(method, superClass, instrumentedClass)) {
 
-            if (visitSuperMethods.containsKey(name)) {
+//            if (visitSuperMethods.containsKey(MethodReference.getDefaultDispatchName(method))) {
                 MethodReference methodReference = new MethodReference(method, superClass);
-                methods.put(name, methodReference);
+                methods.put(MethodReference.getDefaultDispatchName(method), methodReference);
                 return methodReference;
 
-            }
+//            }
 
         }
         return null;
