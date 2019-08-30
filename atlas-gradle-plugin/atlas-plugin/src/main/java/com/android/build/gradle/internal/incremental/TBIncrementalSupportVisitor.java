@@ -583,8 +583,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 // Call super on the other object, yup this works cos we are on the right place to
                 // call from.
                 mv.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                        parentName,
-//                        visitSuperMethods.get(methodName),
+                        visitSuperMethods.get(methodName),
                         methodRef.method.name,
                         methodRef.method.desc, false);
 
