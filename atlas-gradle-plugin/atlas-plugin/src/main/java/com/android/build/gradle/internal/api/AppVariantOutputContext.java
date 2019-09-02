@@ -307,9 +307,9 @@ public class AppVariantOutputContext {
         return variantData;
     }
 
-    public File getAwbRClassSourceOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
+    public File getFeatureRClassSourceOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getGeneratedDir(),
-                "source/awb-r/" + config.getDirName() + "/" + awbBundle.getName());
+                "source/feature-r/" + config.getDirName() + "/" + awbBundle.getName());
     }
 
 
@@ -347,7 +347,7 @@ public class AppVariantOutputContext {
                         "feature-blame", "res", config.getDirectorySegments(),awbBundle.getName()));
     }
 
-    public File getAwbProcessResourcePackageOutputFile(AwbBundle awbBundle) {
+    public File getFeatureProcessResourcePackageOutputFile(AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
                 "res/" +
                         awbBundle.getName() +
@@ -385,6 +385,23 @@ public class AppVariantOutputContext {
     public File getAwbSolib(AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
                 "/awb-solib/" +
+                        variantData.getVariantConfiguration().getDirName() +
+                        "/" +
+                        awbBundle.getName());
+    }
+
+    public File getFeatureSymbols(AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/feature-symbols/" +
+                        variantData.getVariantConfiguration().getDirName() +
+                        "/" +
+                        awbBundle.getName());
+    }
+
+
+    public File getSymbolsWithPackageNameOutputFile(AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/feature-res/" +"symbol-table-with-package/"+
                         variantData.getVariantConfiguration().getDirName() +
                         "/" +
                         awbBundle.getName());
