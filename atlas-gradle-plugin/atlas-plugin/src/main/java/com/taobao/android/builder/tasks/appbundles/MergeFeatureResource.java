@@ -650,6 +650,7 @@ public class MergeFeatureResource extends AndroidBuilderTask {
                 if (getVariantScope().getGlobalScope().getExtension().getDataBinding().isEnabled()) {
                     // Keep as an output.
                     dataBindingLayoutInfoOutFolder = getAppVariantOutputContext().getFeatureDataBindingLayoutFolder(awbBundle);
+                    dataBindingLayoutInfoOutFolder.mkdirs();
                 }
             }
 

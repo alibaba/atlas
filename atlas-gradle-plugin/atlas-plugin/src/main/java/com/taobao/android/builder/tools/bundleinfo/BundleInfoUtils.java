@@ -283,7 +283,7 @@ public class BundleInfoUtils {
         }
         bundleInfo.setIsMBundle(awbBundle.isMBundle);
         if (appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0){
-            awbBundle.dynamicFeature = !appVariantContext.getAtlasExtension()
+            awbBundle.dynamicFeature = appVariantContext.getAtlasExtension()
                     .getTBuildConfig()
                     .getDynamicFeatures()
                     .contains(artifactId);

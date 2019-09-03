@@ -221,6 +221,7 @@ buildscript {
     dependencies {
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.3'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.31"
         //引入其他的插件
     }
 }

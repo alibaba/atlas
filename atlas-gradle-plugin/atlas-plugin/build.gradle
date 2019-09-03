@@ -209,6 +209,7 @@
 
 apply plugin: 'groovy'
 apply plugin: 'java'
+apply plugin: 'kotlin'
 
 repositories {
     //本地库，local repository(${user.home}/.m2/repository)
@@ -240,6 +241,7 @@ dependencies {
     implementation 'com.android.tools:r8:1.5.65'
     implementation "com.android.tools.build:gradle:3.4.2"
     implementation "org.apache.commons:commons-lang3:3.4"
+
     implementation "commons-lang:commons-lang:2.6"
     implementation "com.alibaba:fastjson:1.2.6"
     implementation 'org.dom4j:dom4j:2.0.0'

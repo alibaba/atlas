@@ -24,6 +24,7 @@ import com.android.builder.core.VariantType;
 import com.android.builder.core.VariantTypeImpl;
 import com.android.builder.internal.aapt.AaptPackageConfig;
 import com.android.ide.common.workers.ExecutorServiceAdapter;
+import com.android.ide.common.workers.WorkerExecutorFacade;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -33,8 +34,10 @@ import org.apache.commons.io.FileUtils;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.workers.WorkerExecutor;
 import org.jetbrains.annotations.NotNull;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -73,10 +76,14 @@ public class BundleFeatureResourceTask extends AndroidBuilderTask {
 
     private VariantContext variantContext;
 
-    private ExecutorServiceAdapter workers = new ExecutorServiceAdapter(ForkJoinPool.commonPool());
+    private WorkerExecutorFacade workers = null;
+
+    @Inject
+    public BundleFeatureResourceTask(WorkerExecutor workers) {
+        this.workers = Workers.INSTANCE.getWorker(workers);
+    }
 
 
-    @TaskAction
     public void taskAction(){
         try {
             FileUtils.forceMkdir(featureBundledResFile.getParentFile());
@@ -94,7 +101,7 @@ public class BundleFeatureResourceTask extends AndroidBuilderTask {
                 .setManifestFile(manifestFile)
                 .setOptions(DslAdaptersKt.convert(aaptOptions))
                 .setResourceOutputApk(featureBundledResFile)
-                .setVariantType(VariantTypeImpl.BASE_APK)
+                .setVariantType(VariantTypeImpl.OPTIONAL_APK)
                 .setDebuggable(debuggable)
                 .setPackageId(resIdSupplier.get())
                 .setAllowReservedPackageId(true)
@@ -106,7 +113,6 @@ public class BundleFeatureResourceTask extends AndroidBuilderTask {
         Aapt2ServiceKey aapt2ServiceKey = Aapt2DaemonManagerService.registerAaptService(aapt2FromMaven,null,getBuilder().getLogger());
 
         workers.submit(Aapt2ProcessResourcesRunnable.class,new Aapt2ProcessResourcesRunnable.Params(aapt2ServiceKey,aaptPackageConfig));
-        workers.await();
     }
 
     public static class CreationAction extends MtlBaseTaskAction<BundleFeatureResourceTask>{
@@ -130,6 +136,7 @@ public class BundleFeatureResourceTask extends AndroidBuilderTask {
             task.featureBundledResFile = featureBundledResFile;
             task.incrementalFolder = scope.getIncrementalDir(getName());
             task.baseVariantOutput = baseVariantOutput;
+            task.variantContext = variantContext;
             task.versionName = TaskInputHelper.memoizeToProvider(variantContext.getProject(), new Supplier<String>() {
 
 
@@ -148,7 +155,7 @@ public class BundleFeatureResourceTask extends AndroidBuilderTask {
 
             task.apkData = variantData.getOutputScope().getMainSplit();
 
-            task.manifestFile = getAppVariantOutputContext().getBundleManifestOutputDir(variantConfiguration,awbBundle);
+            task.manifestFile = new File(getAppVariantOutputContext().getBundleManifestOutputDir(variantConfiguration,awbBundle),"AndroidManifest.xml");
 
             task.inputResourcesDir = getAppVariantOutputContext().getFeatureMergedResourceDir(variantConfiguration,awbBundle);
 
@@ -157,8 +164,9 @@ public class BundleFeatureResourceTask extends AndroidBuilderTask {
                 public Integer get() {
                     try {
                         return FeatureSetMetadata.load(
-                                variantContext.getScope().getArtifacts().getFinalArtifactFilesIfPresent(
+                                variantContext.getScope().getArtifacts().getFinalArtifactFiles(
                                         InternalArtifactType.FEATURE_SET_METADATA).get().getSingleFile()).getResOffsetFor(awbBundle.getName());
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -192,7 +200,7 @@ public class BundleFeatureResourceTask extends AndroidBuilderTask {
         @NotNull
         @Override
         public String getName() {
-            return variantContext.getScope().getTaskName("bundleFeature", "Resources");
+            return variantContext.getScope().getTaskName("bundleFeature"+awbBundle.getFeatureName(), "Resources");
         }
 
         @NotNull

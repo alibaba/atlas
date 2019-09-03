@@ -338,6 +338,8 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
             }));
 
 
+
+
             //mergeSourcesSets
             MergeSourceSetFolders mergeSourceSetFolders = appVariantContext.getScope().getTaskContainer().getMergeAssetsTask().get();
             Field assetsField = MergeSourceSetFolders.class.getDeclaredField("libraries");
@@ -370,13 +372,13 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
             filesNames.add(fileName.substring(fileName.lastIndexOf(File.separatorChar) + 1));
         }
         FileCollection updateFileCollection = fileCollection.filter(element -> filesNames.contains(element.getParentFile().getParentFile().getName()));
-        ReflectUtils.updateField(processAndroidResources, "symbolListsWithPackageNames", updateFileCollection);
+        ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", updateFileCollection);
         appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
             if (isMBundle(appVariantContext, awbTransform.getAwbBundle())) {
                 awbTransform.getAwbBundle().isMBundle = true;
                 awbTransform.getAwbBundle().bundleInfo.setIsMBundle(true);
                 FileCollection fc = new AppendMainArtifactsCollection(appVariantContext.getProject(), ((LinkApplicationAndroidResourcesTask) processAndroidResources).getDependenciesFileCollection(), awbTransform.getAwbBundle(), SYMBOL_LIST_WITH_PACKAGE_NAME).getArtifactFiles();
-                ReflectUtils.updateField(processAndroidResources, "symbolListsWithPackageNames", fc);
+                ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", fc);
             }
         });
 

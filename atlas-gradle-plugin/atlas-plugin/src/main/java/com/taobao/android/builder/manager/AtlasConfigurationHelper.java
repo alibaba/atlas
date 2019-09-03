@@ -649,7 +649,7 @@ public class AtlasConfigurationHelper {
 
         if (variantManager!=null) {
 
-            variantManager.getVariantScopes().parallelStream().forEach(variantScope -> atlasDependencyManager.resolveDependencies(variantScope.getVariantDependencies()));
+            variantManager.getVariantScopes().stream().forEach(variantScope -> atlasDependencyManager.resolveDependencies(variantScope.getVariantDependencies()));
         }
     }
 

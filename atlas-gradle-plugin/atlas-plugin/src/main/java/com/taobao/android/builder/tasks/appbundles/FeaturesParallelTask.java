@@ -97,17 +97,15 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
 
             case PROCESS_RESOURCE:
 
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<ProcessFeatureResource> provider = new TaskFactoryImpl(getProject().getTasks()).register(new ProcessFeatureResource.CreationAction(awbBundle, variantContext, variantOutput));
-                        try {
                             provider.get().doFullTaskAction();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+
                     }
                 });
 
+                break;
 
 
         }

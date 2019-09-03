@@ -414,6 +414,9 @@ package com.taobao.android.object;
  *
  */
 
+import com.android.build.VariantOutput;
+import com.android.build.gradle.internal.scope.*;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 
 import java.util.HashMap;
@@ -457,6 +460,7 @@ public class ApkFileList {
     }
 
     public String getAwbFile(String awbName, String key) {
+
         if (null == awbs) {
             return null;
         }

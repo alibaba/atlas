@@ -321,7 +321,7 @@ public class AppVariantOutputContext {
 
     public File getBundleManifestOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
-                "bundle-manifest/" + config.getDirName() + "/" + awbBundle.getName()+"/bundle-manifest");
+                "feature-bundle-manifest/" + config.getDirName() + "/" + awbBundle.getName()+"/bundle-manifest");
     }
 
     public File geteBundledResFile(GradleVariantConfiguration config, AwbBundle awbBundle) {
@@ -349,7 +349,7 @@ public class AppVariantOutputContext {
 
     public File getFeatureProcessResourcePackageOutputFile(AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
-                "res/" +
+                "feature-res/" +
                         awbBundle.getName() +
                         "/resources-" +
                         variantData.getVariantConfiguration().getBaseName() +
@@ -404,7 +404,7 @@ public class AppVariantOutputContext {
                 "/feature-res/" +"symbol-table-with-package/"+
                         variantData.getVariantConfiguration().getDirName() +
                         "/" +
-                        awbBundle.getName());
+                        awbBundle.getName()+"/"+ "package-aware-r.txt");
     }
 
     public synchronized Map<String, AwbTransform> getAwbTransformMap() {

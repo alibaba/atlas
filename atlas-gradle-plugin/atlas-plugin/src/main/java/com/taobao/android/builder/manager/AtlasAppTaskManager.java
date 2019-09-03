@@ -225,6 +225,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.AppPreBuildTask;
 import com.android.build.gradle.internal.tasks.ExtractTryWithResourcesSupportJar;
 import com.android.build.gradle.internal.tasks.ProcessJavaResTask;
+import com.android.build.gradle.internal.tasks.featuresplit.FeatureSetMetadataWriterTask;
 import com.android.build.gradle.internal.transforms.*;
 import com.android.build.gradle.tasks.*;
 import com.android.builder.core.AtlasBuilder;

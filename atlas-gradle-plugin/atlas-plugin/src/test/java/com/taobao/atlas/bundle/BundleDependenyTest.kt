@@ -207,61 +207,55 @@
  *
  */
 
-package com.taobao.atlas.bundle;
+package com.taobao.atlas.bundle
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
+import java.io.File
+import java.io.IOException
+import java.util.*
 
-import com.google.common.collect.Sets;
-import com.taobao.android.builder.dependency.model.AwbBundle;
-import org.apache.commons.io.FileUtils;
-import org.junit.Test;
+import com.google.common.collect.Sets
+import com.taobao.android.builder.dependency.model.AwbBundle
+import org.apache.commons.io.FileUtils
+import org.junit.Test
 
 /**
  * Created by wuzhong on 2017/5/13.
  */
-public class BundleDependenyTest {
+class BundleDependenyTest {
 
     @Test
-    public void test(){
+    fun test() {
 
-        List<AwbBundle> awbBundles = new ArrayList<>();
+        val awbBundles = ArrayList<AwbBundle>()
 
-        AwbBundle awbBundle1 = new AwbBundle("Isolated bundle");
-        AwbBundle awbBundle2 = new AwbBundle("Isolated child bundleA");
-        AwbBundle awbBundle3 = new AwbBundle("Depends on the bundle");
-        awbBundle3.getBundleDependencies().add(awbBundle2);
+        val awbBundle1 = AwbBundle("Isolated bundle")
+        val awbBundle2 = AwbBundle("Isolated child bundleA")
+        val awbBundle3 = AwbBundle("Depends on the bundle")
+        awbBundle3.bundleDependencies.add(awbBundle2)
 
-        AwbBundle awbBundle4 = new AwbBundle("Cycle dependence A");
-        AwbBundle awbBundle5 = new AwbBundle("Cycle dependence B");
-        AwbBundle awbBundle6 = new AwbBundle("Cycle dependence C");
-        awbBundle5.getBundleDependencies().add(awbBundle6);
-        awbBundle6.getBundleDependencies().add(awbBundle4);
-        awbBundle4.getBundleDependencies().add(awbBundle5);
+        val awbBundle4 = AwbBundle("Cycle dependence A")
+        val awbBundle5 = AwbBundle("Cycle dependence B")
+        val awbBundle6 = AwbBundle("Cycle dependence C")
+        awbBundle5.bundleDependencies.add(awbBundle6)
+        awbBundle6.bundleDependencies.add(awbBundle4)
+        awbBundle4.bundleDependencies.add(awbBundle5)
 
-        awbBundles.add(awbBundle1);
-        awbBundles.add(awbBundle2);
-        awbBundles.add(awbBundle3);
-        awbBundles.add(awbBundle4);
-        awbBundles.add(awbBundle5);
-        awbBundles.add(awbBundle6);
+        awbBundles.add(awbBundle1)
+        awbBundles.add(awbBundle2)
+        awbBundles.add(awbBundle3)
+        awbBundles.add(awbBundle4)
+        awbBundles.add(awbBundle5)
+        awbBundles.add(awbBundle6)
 
         //Generate awbBundleGraph
 
         //Take the top one
-        for (AwbBundle awbBundle: awbBundles){
+        for (awbBundle in awbBundles) {
 
         }
 
 
-
-
-
-
-
     }
-
 
 
 }

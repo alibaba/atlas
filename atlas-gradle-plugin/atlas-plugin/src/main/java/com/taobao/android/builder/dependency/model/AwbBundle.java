@@ -382,7 +382,7 @@ public class AwbBundle {
 
     private String packageName;
 
-    public boolean dynamicFeature;
+    public boolean dynamicFeature = false;
 
     public boolean isMBundle;
 

@@ -1,5 +1,6 @@
 package com.taobao.splashscreen;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -9,7 +10,7 @@ import android.view.View;
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class WelcomeActivity extends AppCompatActivity {
+public class WelcomeActivity extends Activity {
 
     private View mContentView;
 

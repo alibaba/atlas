@@ -7,6 +7,7 @@ import com.android.annotations.Nullable;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.incremental.TBIncrementalSupportVisitor;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;

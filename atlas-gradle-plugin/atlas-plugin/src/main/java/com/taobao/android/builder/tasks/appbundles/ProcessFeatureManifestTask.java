@@ -600,7 +600,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
         @NotNull
         @Override
         public String getName() {
-            return scope.getTaskName("processFeature","manifest");
+            return scope.getTaskName("processFeature"+awbBundle.getFeatureName(),"manifest");
         }
 
         @NotNull

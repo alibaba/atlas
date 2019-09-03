@@ -80,7 +80,7 @@ android {
 
 atlas {
     instantAppEnabled false
-    atlasEnabled true
+    atlasEnabled false
     appBundlesEnabled true
     tBuildConfig {
 //        preLaunch = 'com.taobao.demo.DemoPreLaunch'

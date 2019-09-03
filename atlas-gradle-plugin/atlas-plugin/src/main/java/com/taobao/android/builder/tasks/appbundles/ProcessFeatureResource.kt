@@ -3,10 +3,12 @@ package com.taobao.android.builder.tasks.appbundles
 import com.android.SdkConstants
 import com.android.build.VariantOutput
 import com.android.build.api.artifact.BuildableArtifact
+import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.api.AppVariantContext
+import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.api.VariantContext
 import com.android.build.gradle.internal.api.artifact.singleFile
 import com.android.build.gradle.internal.dsl.AaptOptions
@@ -42,12 +44,18 @@ import com.android.utils.FileUtils
 import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
+import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.taobao.android.builder.dependency.model.AwbBundle
+import com.taobao.android.builder.extension.AtlasExtension
+import com.taobao.android.builder.extension.TBuildConfig
+import com.taobao.android.builder.extension.TBuildType
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction
 import com.taobao.android.builder.tools.ReflectUtils
+import it.unimi.dsi.fastutil.Hash
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Optional
 import org.gradle.tooling.BuildException
 import org.gradle.workers.WorkerExecutor
 import java.io.File
@@ -55,12 +63,14 @@ import java.io.IOException
 import java.io.Serializable
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.ArrayList
+import java.util.*
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Supplier
 import java.util.regex.Pattern
 import javax.inject.Inject
+import kotlin.Exception
+import kotlin.collections.HashMap
 
 /**
  * @ClassName ProcessFeatureResource
@@ -85,6 +95,8 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
     public lateinit var multiOutputPolicy: MultiOutputPolicy
 
+    private var mergedManifest: File? = null
+
 
     public var aapt2FromMaven: FileCollection? = null
 
@@ -94,6 +106,7 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
     private var sourceOutputDir: File? = null
 
+    private var scope: VariantScope? = null
 
 
     public lateinit var mergeBlameLogFolder: File
@@ -158,6 +171,14 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
     // FIX-ME : make me incremental !
     override fun doFullTaskAction() {
+
+
+        if (!resPackageOutputFolder.exists()){
+            resPackageOutputFolder.mkdirs()
+        }
+
+
+
         FileUtils.deleteDirectoryContents(resPackageOutputFolder)
 
 
@@ -182,8 +203,14 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
             // do a first pass at the list so we generate the code synchronously since it's required
             // by the full splits asynchronous processing below.
 
-            val mainOutput = BuildOutput.MAIN
-
+            val properties = HashMap<String, String>()
+            properties.put("packageId", scope?.variantConfiguration?.applicationId!!)
+            properties.put("split", "")
+            properties.put("minSdkVersion", scope?.variantConfiguration!!.minSdkVersion.toString())
+            val mainOutput = BuildOutput(InternalArtifactType.MERGED_MANIFESTS,
+                    ApkData.of(VariantOutput.OutputType.MAIN, ImmutableList.of(), -1, null, null, null, scope?.variantConfiguration!!.fullName, scope!!.variantConfiguration.fullName, true),
+                    mergedManifest,
+                    properties)
             AaptSplitInvoker(
                     AaptSplitInvokerParams(
                             mainOutput,
@@ -204,13 +231,9 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
     }
 
 
-
-
     fun setSourceOutputDir(sourceOutputDir: File?) {
         this.sourceOutputDir = sourceOutputDir
     }
-
-
 
 
     override fun getSourceOutputDir(): File? {
@@ -218,109 +241,77 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
     }
 
 
-private fun chooseOutput(manifestBuildElements: BuildElements): BuildOutput? {
-    when (multiOutputPolicy) {
-        MultiOutputPolicy.SPLITS -> {
-            val main = manifestBuildElements
-                    .stream()
-                    .filter { output -> output.apkData.type == VariantOutput.OutputType.MAIN }
-                    .findFirst()
-            if (!main.isPresent) {
-                throw RuntimeException("No main apk found")
-            }
-            return main.get()
-        }
-        MultiOutputPolicy.MULTI_APK -> {
-            val nonDensity = manifestBuildElements
-                    .stream()
-                    .filter { output ->
-                        output.apkData
-                                .getFilter(
-                                        VariantOutput.FilterType
-                                                .DENSITY
-                                ) == null
-                    }
-                    .findFirst()
-            if (!nonDensity.isPresent) {
-                throw RuntimeException("No non-density apk found")
-            }
-            return nonDensity.get()
+    abstract class BaseCreationAction(
+            val tempVariantContext: VariantContext<*, *, *>,
+            val variantOutput: BaseVariantOutput,
+            val awbBundle: AwbBundle
+    ) : MtlBaseTaskAction<ProcessFeatureResource>(tempVariantContext, variantOutput) {
+        private lateinit var resPackageOutputFolder: File
+
+        override val name: String
+            get() = variantScope.getTaskName("processFeature"+awbBundle.featureName, "Resources")
+
+        override val type: Class<ProcessFeatureResource>
+            get() = ProcessFeatureResource::class.java
+
+        protected open fun preconditionsCheck(variantData: BaseVariantData) {}
+
+        override fun preConfigure(taskName: String) {
+            super.preConfigure(taskName)
+
+            resPackageOutputFolder = appVariantOutputContext.getFeatureProcessResourcePackageOutputFile(awbBundle).parentFile
+
+
         }
 
-    }
-    return null
-}
 
-abstract class BaseCreationAction(
-        val variantContext: VariantContext<*,*,*>,
-        val variantOutput: BaseVariantOutput,
-        val awbBundle: AwbBundle
-) : MtlBaseTaskAction<ProcessFeatureResource>(variantContext, variantOutput) {
-    private lateinit var resPackageOutputFolder: File
+        override fun configure(task: ProcessFeatureResource) {
+            super.configure(task)
+            val variantScope = variantScope
+            task.scope = variantScope
+            val variantData = variantScope.variantData
+            val projectOptions = variantScope.globalScope.projectOptions
+            val config = variantData.variantConfiguration
 
-    override val name: String
-        get() = variantScope.getTaskName("processFeature", "Resources")
+            preconditionsCheck(variantData)
 
-    override val type: Class<ProcessFeatureResource>
-        get() = ProcessFeatureResource::class.java
+            task.resPackageOutputFolder = resPackageOutputFolder
+            task.aapt2FromMaven = getAapt2FromMaven(variantScope.globalScope)
 
-    protected open fun preconditionsCheck(variantData: BaseVariantData) {}
+            task.applicationId = TaskInputHelper.memoize { awbBundle.packageName }
 
-    override fun preConfigure(taskName: String) {
-        super.preConfigure(taskName)
-
-        resPackageOutputFolder = appVariantOutputContext.getFeatureProcessResourcePackageOutputFile(awbBundle)
-
-
-    }
-
-
-    override fun configure(task: ProcessFeatureResource) {
-        super.configure(task)
-        val variantScope = variantScope
-        val variantData = variantScope.variantData
-        val projectOptions = variantScope.globalScope.projectOptions
-        val config = variantData.variantConfiguration
-
-        preconditionsCheck(variantData)
-
-        task.resPackageOutputFolder = resPackageOutputFolder
-        task.aapt2FromMaven = getAapt2FromMaven(variantScope.globalScope)
-
-        task.applicationId = TaskInputHelper.memoize { config.applicationId }
-
-        task.incrementalFolder = appVariantOutputContext.getIncrementalDir(name, awbBundle)
+            task.incrementalFolder = appVariantOutputContext.getIncrementalDir(name, awbBundle)
 //        if (variantData.type.canHaveSplits) {
-        val splits = variantScope.globalScope.extension.splits
+            val splits = variantScope.globalScope.extension.splits
 
-        val densitySet = if (splits.density.isEnable)
-            ImmutableSet.copyOf(splits.densityFilters)
-        else
-            ImmutableSet.of()
-        val languageSet = if (splits.language.isEnable)
-            ImmutableSet.copyOf(splits.languageFilters)
-        else
-            ImmutableSet.of()
-        val abiSet = if (splits.abi.isEnable)
-            ImmutableSet.copyOf(splits.abiFilters)
-        else
-            ImmutableSet.of()
-        val resConfigSet = ImmutableSet.copyOf(
-                variantScope
-                        .variantConfiguration
-                        .mergedFlavor
-                        .resourceConfigurations
-        )
+            val densitySet = if (splits.density.isEnable)
+                ImmutableSet.copyOf(splits.densityFilters)
+            else
+                ImmutableSet.of()
+            val languageSet = if (splits.language.isEnable)
+                ImmutableSet.copyOf(splits.languageFilters)
+            else
+                ImmutableSet.of()
+            val abiSet = if (splits.abi.isEnable)
+                ImmutableSet.copyOf(splits.abiFilters)
+            else
+                ImmutableSet.of()
+            val resConfigSet = ImmutableSet.copyOf(
+                    variantScope
+                            .variantConfiguration
+                            .mergedFlavor
+                            .resourceConfigurations
+            )
 
-        task.splitList = SplitList(densitySet, languageSet, abiSet, resConfigSet)
+            task.splitList = SplitList(densitySet, languageSet, abiSet, resConfigSet)
 
 
-        task.multiOutputPolicy = variantData.multiOutputPolicy
+            task.multiOutputPolicy = variantData.multiOutputPolicy
 
-        task.variantScope = variantScope
+            task.variantScope = variantScope
 
-        ReflectUtils.updateField(task, "outputScope", variantData.outputScope)
-        task.originalApplicationId = TaskInputHelper.memoize { config.originalApplicationId }
+            ReflectUtils.updateField(task, "outputScope", variantData.outputScope)
+            task.originalApplicationId = TaskInputHelper.memoize { awbBundle.packageName }
 
 //        val aaptFriendlyManifestsFilePresent = variantScope
 //                .artifacts
@@ -334,461 +325,391 @@ abstract class BaseCreationAction(
 //        )
 
 //        task.setType(config.type)
-        task.debuggable = (config.buildType.isDebuggable)
-        task.aaptOptions = (variantScope.globalScope.extension.aaptOptions)
+            task.debuggable = (config.buildType.isDebuggable)
+            task.aaptOptions = (variantScope.globalScope.extension.aaptOptions)
 
-        task.buildTargetDensity = projectOptions.get(StringOption.IDE_BUILD_TARGET_DENSITY)
+            task.buildTargetDensity = projectOptions.get(StringOption.IDE_BUILD_TARGET_DENSITY)
 
 
-        task.mergeBlameLogFolder = (appVariantOutputContext.getFeatureResourceBlameLogDir(config, awbBundle))
+            task.mergeBlameLogFolder = (appVariantOutputContext.getFeatureResourceBlameLogDir(config, awbBundle))
 
-        task.buildContext = variantScope.instantRunBuildContext
+            task.buildContext = variantScope.instantRunBuildContext
 
 //        val variantType = variantScope.type
 
-        // Tests should not have feature dependencies, however because they include the
-        // tested production component in their dependency graph, we see the tested feature
-        // package in their graph. Therefore we have to manually not set this up for tests.
+            // Tests should not have feature dependencies, however because they include the
+            // tested production component in their dependency graph, we see the tested feature
+            // package in their graph. Therefore we have to manually not set this up for tests.
 //        task.featureResourcePackages = if (variantType.isForTesting)
 //            null
 //        else
-        task.featureResourcePackages = variantContext.project.files(appVariantOutputContext.geteBundledResFile(config,awbBundle))
+            task.featureResourcePackages = variantContext.project.files(scope.artifacts.getFinalArtifactFilesIfPresent(InternalArtifactType.PROCESSED_RES)?.get()!!.files)
 
 //        if (variantType.isFeatureSplit) {
-        task.resOffsetSupplier = Supplier {
+            task.resOffsetSupplier = Supplier {
+                try {
+                    return@Supplier FeatureSetMetadata.load(
+                            variantContext.getScope().getArtifacts().getFinalArtifactFilesIfPresent(
+                                    InternalArtifactType.FEATURE_SET_METADATA)!!.get().getSingleFile()).getResOffsetFor(awbBundle.name)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+
+                0
+            }
+            task.isLibrary = false;
+            task.supportDirectory = File(variantScope.instantRunSplitApkOutputFolder, "resources")
+        }
+    }
+
+    class CreationAction(
+            awbBundle: AwbBundle,
+            variantContext: VariantContext<*, *, *>,
+            baseVariantOutput: BaseVariantOutput
+    ) : BaseCreationAction(variantContext, baseVariantOutput, awbBundle) {
+        private var sourceOutputDir: File? = null
+
+        override fun preconditionsCheck(variantData: BaseVariantData) {
+
+        }
+
+        override fun preConfigure(taskName: String) {
+            super.preConfigure(taskName)
+            sourceOutputDir = appVariantOutputContext.getFeatureRClassSourceOutputDir(variantScope.variantConfiguration, awbBundle)
+
+        }
+
+        override fun configure(task: ProcessFeatureResource) {
+            super.configure(task)
+            task.mergedManifest = File(appVariantOutputContext.getFeatureManifestOutputDir(variantScope.variantConfiguration, awbBundle),"AndroidManifest.xml")
+            task.setSourceOutputDir(sourceOutputDir)
+
+            val symbles = ArrayList<File>()
+            awbBundle.allLibraryAars.forEach { androidLibrary -> symbles.add(androidLibrary.symbolFile) }
+
+            task.dependenciesFileCollection = variantContext.project.files(symbles)
+
+            task.inputResourcesDir = appVariantOutputContext.getFeatureMergedResourceDir(variantScope.variantConfiguration, awbBundle);
+
+            @Suppress("UNCHECKED_CAST")
+            task.textSymbolOutputDir = Supplier {
+                return@Supplier appVariantOutputContext.getFeatureSymbols(awbBundle)
+            }
+            task.symbolsWithPackageNameOutputFile = appVariantOutputContext.getSymbolsWithPackageNameOutputFile(awbBundle)
+        }
+    }
+
+
+    private class AaptSplitInvoker @Inject
+    internal constructor(private val params: AaptSplitInvokerParams) : Runnable {
+
+
+        override fun run() {
             try {
-                return@Supplier FeatureSetMetadata.load(
-                        variantContext.getScope().getArtifacts().getFinalArtifactFilesIfPresent(
-                                InternalArtifactType.FEATURE_SET_METADATA)!!.get().getSingleFile()).getResOffsetFor(awbBundle.name)
+                invokeAaptForSplit(params)
             } catch (e: IOException) {
-                e.printStackTrace()
+                throw RuntimeException(e)
             }
 
-            0
         }
-        task.isLibrary = false;
-        task.supportDirectory = File(variantScope.instantRunSplitApkOutputFolder, "resources")
-    }
-}
 
-class CreationAction(
-        variantContext: VariantContext<*,*,*>,
-        baseVariantOutput: BaseVariantOutput,
-        scope: VariantScope,
-        awbBundle: AwbBundle
-) : BaseCreationAction(variantContext, baseVariantOutput, awbBundle) {
-    private var sourceOutputDir: File? = null
 
-    override fun preconditionsCheck(variantData: BaseVariantData) {
-
-    }
-
-    override fun preConfigure(taskName: String) {
-        super.preConfigure(taskName)
-        sourceOutputDir = appVariantOutputContext.getFeatureRClassSourceOutputDir(variantScope.variantConfiguration,awbBundle)
-
-    }
-
-    override fun configure(task: ProcessFeatureResource) {
-        super.configure(task)
-
-        task.setSourceOutputDir(sourceOutputDir)
-
-        val symbles = ArrayList<File>()
-        awbBundle.allLibraryAars.forEach { androidLibrary -> symbles.add(androidLibrary.symbolFile) }
-
-        task.dependenciesFileCollection = variantContext.project.files(symbles)
-
-        task.inputResourcesDir = appVariantOutputContext.getFeatureMergedResourceDir(variantScope.variantConfiguration,awbBundle);
-
-        @Suppress("UNCHECKED_CAST")
-        task.textSymbolOutputDir = Supplier {
-            return@Supplier appVariantOutputContext.getFeatureSymbols(awbBundle)
+        private fun getOutputBaseNameFile(apkData: ApkData, resPackageOutputFolder: File): File {
+            return File(
+                    resPackageOutputFolder,
+                    SdkConstants.FN_RES_BASE + SdkConstants.RES_QUALIFIER_SEP + apkData.fullName + SdkConstants.DOT_RES
+            )
         }
-        task.symbolsWithPackageNameOutputFile = appVariantOutputContext.getSymbolsWithPackageNameOutputFile(awbBundle)
-    }
-}
 
-
-private class AaptSplitInvoker @Inject
-internal constructor(private val params: AaptSplitInvokerParams) : Runnable {
-
-    companion object {
-        @Synchronized
         @Throws(IOException::class)
-        fun appendOutput(
-                output: BuildOutput, resPackageOutputFolder: File
-        ) {
-            val buildOutputs = ArrayList(
-                    ExistingBuildElements.from(resPackageOutputFolder).elements
-            )
-            buildOutputs.add(output)
-            BuildElements(buildOutputs).save(resPackageOutputFolder)
-        }
-    }
+        private fun invokeAaptForSplit(params: AaptSplitInvokerParams) {
 
-    override fun run() {
-        try {
-            invokeAaptForSplit(params)
-        } catch (e: IOException) {
-            throw RuntimeException(e)
-        }
-
-    }
-
-
-    private fun getOutputBaseNameFile(apkData: ApkData, resPackageOutputFolder: File): File {
-        return File(
-                resPackageOutputFolder,
-                SdkConstants.FN_RES_BASE + SdkConstants.RES_QUALIFIER_SEP + apkData.fullName + SdkConstants.DOT_RES
-        )
-    }
-
-    @Throws(IOException::class)
-    private fun invokeAaptForSplit(params: AaptSplitInvokerParams) {
-
-        val featurePackagesBuilder = ImmutableList.builder<File>()
-        for (featurePackage in params.featureResourcePackages) {
-            val buildElements = ExistingBuildElements.from(
-                    InternalArtifactType.PROCESSED_RES, featurePackage
-            )
-            if (!buildElements.isEmpty()) {
-                val mainBuildOutput = buildElements.elementByType(VariantOutput.OutputType.MAIN)
-                if (mainBuildOutput != null) {
-                    featurePackagesBuilder.add(mainBuildOutput.outputFile)
-                } else {
-                    throw IOException(
-                            "Cannot find PROCESSED_RES output for " + params.variantScopeMainSplit
-                    )
+            val featurePackagesBuilder = ImmutableList.builder<File>()
+            for (featurePackage in params.featureResourcePackages) {
+                val buildElements = ExistingBuildElements.from(
+                        InternalArtifactType.PROCESSED_RES, featurePackage
+                )
+                if (!buildElements.isEmpty()) {
+                    val mainBuildOutput = buildElements.elementByType(VariantOutput.OutputType.MAIN)
+                    if (mainBuildOutput != null) {
+                        featurePackagesBuilder.add(mainBuildOutput.outputFile)
+                    } else {
+                        throw IOException(
+                                "Cannot find PROCESSED_RES output for " + params.variantScopeMainSplit
+                        )
+                    }
                 }
             }
-        }
 
-        val resOutBaseNameFile =
-                getOutputBaseNameFile(params.apkData, params.resPackageOutputFolder)
-        var manifestFile = params.manifestOutput.outputFile
+            val resOutBaseNameFile =
+                    getOutputBaseNameFile(params.apkData, params.resPackageOutputFolder)
+            var manifestFile = params.manifestOutput.outputFile
 
-        var packageForR: String? = null
-        var srcOut: File? = null
-        var symbolOutputDir: File? = null
-        var proguardOutputFile: File? = null
-        var mainDexListProguardOutputFile: File? = null
-        if (params.generateCode) {
-            // workaround for b/74068247. Until that's fixed, if it's a namespaced feature,
-            // an extra empty dummy R.java file will be generated as well
-            packageForR =
+            var packageForR: String? = null
+            var srcOut: File? = null
+            var symbolOutputDir: File? = null
+            var proguardOutputFile: File? = null
+            var mainDexListProguardOutputFile: File? = null
+            if (params.generateCode) {
+                // workaround for b/74068247. Until that's fixed, if it's a namespaced feature,
+                // an extra empty dummy R.java file will be generated as well
+                packageForR =
 //                    if (params.isNamespaced && params.variantDataType === VariantTypeImpl.FEATURE) {
 //                        "dummy"
 //                    } else {
-                    params.originalApplicationId
+                        params.originalApplicationId
 //                    }
 
-            // we have to clean the source folder output in case the package name changed.
-            srcOut = params.sourceOutputDir
-            if (srcOut != null) {
-                FileUtils.cleanOutputDir(srcOut)
-            }
-
-            symbolOutputDir = params.textSymbolOutputDir
-            proguardOutputFile = params.proguardOutputFile
-            mainDexListProguardOutputFile = params.mainDexListProguardOutputFile
-        }
-
-        val densityFilterData = params.apkData.getFilter(VariantOutput.FilterType.DENSITY)
-        // if resConfigs is set, we should not use our preferredDensity.
-        val preferredDensity =
-                densityFilterData?.identifier
-                        ?: if (params.resourceConfigs.isEmpty()) params.buildTargetDensity else null
-
-        try {
-
-            // If we are in instant run mode and we use a split APK for these resources.
-            if (params.isInInstantRunMode && params.patchingPolicy == InstantRunPatchingPolicy.MULTI_APK_SEPARATE_RESOURCES) {
-                params.supportDirectory.mkdirs()
-                // create a split identification manifest.
-                manifestFile = InstantRunSliceSplitApkBuilder.generateSplitApkManifest(
-                        params.supportDirectory,
-                        "resource",
-                        { params.applicationId },
-                        params.apkData.versionName,
-                        params.apkData.versionCode,
-                        params.manifestOutput.properties[SdkConstants.ATTR_MIN_SDK_VERSION]
-                )
-            }
-
-            // If the new resources flag is enabled and if we are dealing with a library process
-            // resources through the new parsers
-            run {
-                val configBuilder = AaptPackageConfig.Builder()
-                        .setManifestFile(manifestFile)
-                        .setOptions(params.aaptOptions)
-                        .setCustomPackageForR(packageForR)
-                        .setSymbolOutputDir(symbolOutputDir)
-                        .setSourceOutputDir(srcOut)
-                        .setResourceOutputApk(resOutBaseNameFile)
-                        .setProguardOutputFile(proguardOutputFile)
-                        .setMainDexListProguardOutputFile(mainDexListProguardOutputFile)
-                        .setVariantType(s)
-                        .setDebuggable(params.debuggable)
-                        .setResourceConfigs(params.resourceConfigs)
-                        .setSplits(params.multiOutputPolicySplitList)
-                        .setPreferredDensity(preferredDensity)
-                        .setPackageId(params.packageId)
-                        .setAllowReservedPackageId(
-                                params.packageId != null && params.packageId < FeatureSetMetadata.BASE_ID
-                        )
-                        .setDependentFeatures(featurePackagesBuilder.build())
-                        .setImports(params.imports)
-                        .setIntermediateDir(params.incrementalFolder)
-                        .setAndroidJarPath(params.androidJarPath)
-                        .setUseConditionalKeepRules(params.useConditionalKeepRules)
-
-                if (params.isNamespaced) {
-                    val packagedDependencies = ImmutableList.builder<File>()
-                    packagedDependencies.addAll(params.dependencies)
-                    if (params.convertedLibraryDependenciesPath != null) {
-                        Files.list(params.convertedLibraryDependenciesPath).map { it.toFile() }
-                                .forEach { packagedDependencies.add(it) }
-                    }
-                    configBuilder.setStaticLibraryDependencies(packagedDependencies.build())
-                } else {
-                    if (params.generateCode) {
-                        configBuilder.setLibrarySymbolTableFiles(params.dependencies)
-                    }
-                    configBuilder.setResourceDir(checkNotNull(params.inputResourcesDir))
+                // we have to clean the source folder output in case the package name changed.
+                srcOut = params.sourceOutputDir
+                if (srcOut != null) {
+                    FileUtils.cleanOutputDir(srcOut)
                 }
 
-                @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-                Preconditions.checkNotNull<Aapt2ServiceKey>(
-                        params.aapt2ServiceKey, "AAPT2 daemon manager service not initialized"
-                )
-                try {
-                    getAaptDaemon(params.aapt2ServiceKey!!).use { aaptDaemon ->
+                symbolOutputDir = params.textSymbolOutputDir
+                symbolOutputDir?.mkdirs()
+                proguardOutputFile = params.proguardOutputFile
+                mainDexListProguardOutputFile = params.mainDexListProguardOutputFile
+            }
 
-                        com.android.builder.core.AndroidBuilder.processResources(
-                                aaptDaemon,
-                                configBuilder.build(),
-                                LoggerWrapper(
-                                        Logging.getLogger(
-                                                ProcessFeatureResource::class.java
-                                        )
-                                )
-                        )
+            val densityFilterData = params.apkData.getFilter(VariantOutput.FilterType.DENSITY)
+            // if resConfigs is set, we should not use our preferredDensity.
+            val preferredDensity =
+                    densityFilterData?.identifier
+                            ?: if (params.resourceConfigs.isEmpty()) params.buildTargetDensity else null
+
+            try {
+
+                run {
+                    val configBuilder = AaptPackageConfig.Builder()
+                            .setManifestFile(manifestFile)
+                            .setOptions(params.aaptOptions)
+                            .setCustomPackageForR(packageForR)
+                            .setSymbolOutputDir(symbolOutputDir)
+                            .setSourceOutputDir(srcOut)
+                            .setResourceOutputApk(resOutBaseNameFile)
+                            .setProguardOutputFile(proguardOutputFile)
+                            .setMainDexListProguardOutputFile(mainDexListProguardOutputFile)
+                            .setVariantType(com.android.builder.core.VariantTypeImpl.OPTIONAL_APK)
+                            .setDebuggable(params.debuggable)
+                            .setResourceConfigs(params.resourceConfigs)
+                            .setSplits(params.multiOutputPolicySplitList)
+                            .setPreferredDensity(preferredDensity)
+                            .setPackageId(params.packageId)
+                            .setAllowReservedPackageId(
+                                    params.packageId != null && params.packageId < FeatureSetMetadata.BASE_ID
+                            )
+                            .setDependentFeatures(featurePackagesBuilder.build())
+                            .setImports(params.imports)
+                            .setIntermediateDir(params.incrementalFolder)
+                            .setAndroidJarPath(params.androidJarPath)
+                            .setUseConditionalKeepRules(params.useConditionalKeepRules)
+
+
+                    if (params.generateCode) {
+                        configBuilder.setLibrarySymbolTableFiles(null)
                     }
-                } catch (e: Aapt2Exception) {
-                    throw rewriteLinkException(
-                            e, MergingLog(params.mergeBlameFolder)
+                    configBuilder.setResourceDir(checkNotNull(params.inputResourcesDir))
+
+
+                    @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+                    Preconditions.checkNotNull<Aapt2ServiceKey>(
+                            params.aapt2ServiceKey, "AAPT2 daemon manager service not initialized"
+                    )
+                    try {
+                        getAaptDaemon(params.aapt2ServiceKey!!).use { aaptDaemon ->
+
+                            com.android.builder.core.AndroidBuilder.processResources(
+                                    aaptDaemon,
+                                    configBuilder.build(),
+                                    LoggerWrapper(
+                                            Logging.getLogger(
+                                                    ProcessFeatureResource::class.java
+                                            )
+                                    )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        throw e
+
+                    }
+
+
+                }
+                if (params.generateCode
+                        && (params.isLibrary || !params.dependencies.isEmpty())
+                        && params.symbolsWithPackageNameOutputFile != null
+                ) {
+                    params.symbolsWithPackageNameOutputFile.parentFile.mkdirs()
+                    SymbolIo.writeSymbolListWithPackageName(
+                            File(
+                                    params.textSymbolOutputDir!!,
+                                    SdkConstants.R_CLASS + SdkConstants.DOT_TXT
+                            )
+                                    .toPath(),
+                            manifestFile.toPath(),
+                            params.symbolsWithPackageNameOutputFile.toPath()
                     )
                 }
 
-                if (LOG.isInfoEnabled) {
-                    LOG.info("Aapt output file {}", resOutBaseNameFile.absolutePath)
-                }
-            }
-            if (params.generateCode
-                    && (params.isLibrary || !params.dependencies.isEmpty())
-                    && params.symbolsWithPackageNameOutputFile != null
-            ) {
-                SymbolIo.writeSymbolListWithPackageName(
-                        File(
-                                params.textSymbolOutputDir!!,
-                                SdkConstants.R_CLASS + SdkConstants.DOT_TXT
-                        )
-                                .toPath(),
-                        manifestFile.toPath(),
-                        params.symbolsWithPackageNameOutputFile.toPath()
+            } catch (e: ProcessException) {
+                throw BuildException(
+                        "Failed to process resources, see aapt output above for details.", e
                 )
             }
-            appendOutput(
-                    BuildOutput(
-                            InternalArtifactType.PROCESSED_RES,
-                            params.apkData,
-                            resOutBaseNameFile,
-                            params.manifestOutput.properties
-                    ),
-                    params.resPackageOutputFolder
-            )
-        } catch (e: ProcessException) {
-            throw BuildException(
-                    "Failed to process resources, see aapt output above for details.", e
-            )
+
         }
 
     }
 
-}
 
+    private class AaptSplitInvokerParams internal constructor(
+            val manifestOutput: BuildOutput,
+            val dependencies: Set<File>,
+            val imports: Set<File>,
+            splitList: SplitList,
+            val featureResourcePackages: Set<File>,
+            val apkData: ApkData,
+            val generateCode: Boolean,
+            val aapt2ServiceKey: Aapt2ServiceKey?,
+            task: ProcessFeatureResource
+    ) : Serializable {
+        val resourceConfigs: Set<String> = splitList.resourceConfigs
+        val multiOutputPolicySplitList: Set<String> = splitList.getSplits(task.multiOutputPolicy)
+        val variantScopeMainSplit: ApkData = task.variantScope.outputScope.mainSplit
+        val resPackageOutputFolder: File = task.resPackageOutputFolder
+        val isNamespaced: Boolean = false
+        val originalApplicationId: String? = task.originalApplicationId.get()
+        val sourceOutputDir: File? = task.getSourceOutputDir()
+        val textSymbolOutputDir: File? = task.textSymbolOutputDir.get()
+        val proguardOutputFile: File? = null
+        val mainDexListProguardOutputFile: File? = null
+        val buildTargetDensity: String? = task.buildTargetDensity
+        val applicationId: String? = task.applicationId.get()
+        val aaptOptions: com.android.builder.internal.aapt.AaptOptions = task.aaptOptions.convert()
+        val debuggable: Boolean = task.debuggable
+        val packageId: Int? = task.resOffsetSupplier!!.get()
+        val incrementalFolder: File = task.incrementalFolder
+        val androidJarPath: String = task.builder.target.getPath(IAndroidTarget.ANDROID_JAR)
+        val convertedLibraryDependenciesPath: Path? = if (task.convertedLibraryDependencies == null)
+            null
+        else
+            task.convertedLibraryDependencies!!.singleFile().toPath()
+        val inputResourcesDir: File? = task.inputResourcesDir;
 
-
-
-
-
-
-
-private class AaptSplitInvokerParams internal constructor(
-        val manifestOutput: BuildOutput,
-        val dependencies: Set<File>,
-        val imports: Set<File>,
-        splitList: SplitList,
-        val featureResourcePackages: Set<File>,
-        val apkData: ApkData,
-        val generateCode: Boolean,
-        val aapt2ServiceKey: Aapt2ServiceKey?,
-        task: ProcessFeatureResource
-) : Serializable {
-    val resourceConfigs: Set<String> = splitList.resourceConfigs
-    val multiOutputPolicySplitList: Set<String> = splitList.getSplits(task.multiOutputPolicy)
-    val variantScopeMainSplit: ApkData = task.variantScope.outputScope.mainSplit
-    val resPackageOutputFolder: File = task.resPackageOutputFolder
-    val isNamespaced: Boolean = false
-    val originalApplicationId: String? = task.originalApplicationId.get()
-    val sourceOutputDir: File? = task.getSourceOutputDir()
-    val textSymbolOutputDir: File? = task.textSymbolOutputDir.get()
-    val proguardOutputFile: File? = null
-    val mainDexListProguardOutputFile: File? = null
-    val buildTargetDensity: String? = task.buildTargetDensity
-    val isInInstantRunMode: Boolean = task.buildContext.isInInstantRunMode
-    val patchingPolicy: InstantRunPatchingPolicy = task.buildContext.patchingPolicy
-    val supportDirectory: File = task.supportDirectory
-    val applicationId: String? = task.applicationId.get()
-    val aaptOptions: com.android.builder.internal.aapt.AaptOptions = task.aaptOptions.convert()
-    val debuggable: Boolean = task.debuggable
-    val packageId: Int ? = task.resOffsetSupplier!!.get()
-    val incrementalFolder: File = task.incrementalFolder
-    val androidJarPath: String = task.builder.target.getPath(IAndroidTarget.ANDROID_JAR)
-    val convertedLibraryDependenciesPath: Path? = if (task.convertedLibraryDependencies == null)
-        null
-    else
-        task.convertedLibraryDependencies!!.singleFile().toPath()
-    val inputResourcesDir: File? = if (task.inputResourcesDir== null)
-        null
-    else
-        task.inputResourcesDir =
-    val mergeBlameFolder: File = task.mergeBlameLogFolder
-    val isLibrary: Boolean = task.isLibrary
-    val symbolsWithPackageNameOutputFile: File? = task.symbolsWithPackageNameOutputFile
-    val useConditionalKeepRules: Boolean = false
-}
-
-
-
-/**
- * To force the task to execute when the manifest file to use changes.
- *
- *
- * Fix for [b.android.com/209985](http://b.android.com/209985).
- */
-@Input
-fun isInstantRunMode(): Boolean {
-    return buildContext.isInInstantRunMode
-}
-
-
-
-
-@org.gradle.api.tasks.OutputFile
-@Optional
-fun getTextSymbolOutputFile(): File? {
-    val outputDir = textSymbolOutputDir.get()
-    return if (outputDir != null)
-        File(outputDir, SdkConstants.R_CLASS + SdkConstants.DOT_TXT)
-    else
-        null
-}
-
-
-
-
-@Input
-fun getBuildToolsVersion(): String {
-    return buildTools.revision.toString()
-}
-
-
-
-@InputFiles
-@Optional
-@PathSensitive(PathSensitivity.NONE)
-fun getSharedLibraryDependencies(): FileCollection? {
-    return sharedLibraryDependencies
-}
-
-
-
-
-
-
-
-@Input
-fun getOriginalApplicationId(): String? {
-    return originalApplicationId.get()
-}
-
-
-
-@Input
-fun isNamespaced(): Boolean {
-    return false
-}
-
-private fun findPackagedResForSplit(outputFolder: File?, apkData: ApkData): File? {
-    val resourcePattern = Pattern.compile(
-            SdkConstants.FN_RES_BASE + SdkConstants.RES_QUALIFIER_SEP + apkData.fullName + ".ap__(.*)"
-    )
-
-    if (outputFolder == null) {
-        return null
+        val mergeBlameFolder: File = task.mergeBlameLogFolder
+        val isLibrary: Boolean = task.isLibrary
+        val symbolsWithPackageNameOutputFile: File? = task.symbolsWithPackageNameOutputFile
+        val useConditionalKeepRules: Boolean = false
     }
-    val files = outputFolder.listFiles()
-    if (files != null) {
-        for (file in files) {
-            val match = resourcePattern.matcher(file.name)
-            // each time we match, we remove the associated filter from our copies.
-            if (match.matches()
-                    && !match.group(1).isEmpty()
-                    && isValidSplit(apkData, match.group(1))
-            ) {
-                return file
+
+
+    /**
+     * To force the task to execute when the manifest file to use changes.
+     *
+     *
+     * Fix for [b.android.com/209985](http://b.android.com/209985).
+     */
+    @Input
+    fun isInstantRunMode(): Boolean {
+        return buildContext.isInInstantRunMode
+    }
+
+
+    @org.gradle.api.tasks.OutputFile
+    @Optional
+    fun getTextSymbolOutputFile(): File? {
+        val outputDir = textSymbolOutputDir.get()
+        return if (outputDir != null)
+            File(outputDir, SdkConstants.R_CLASS + SdkConstants.DOT_TXT)
+        else
+            null
+    }
+
+
+    @Input
+    fun getBuildToolsVersion(): String {
+        return buildTools.revision.toString()
+    }
+
+
+    @InputFiles
+    @Optional
+    @PathSensitive(PathSensitivity.NONE)
+    fun getSharedLibraryDependencies(): FileCollection? {
+        return sharedLibraryDependencies
+    }
+
+
+    @Input
+    fun getOriginalApplicationId(): String? {
+        return originalApplicationId.get()
+    }
+
+
+    @Input
+    fun isNamespaced(): Boolean {
+        return false
+    }
+
+    private fun findPackagedResForSplit(outputFolder: File?, apkData: ApkData): File? {
+        val resourcePattern = Pattern.compile(
+                SdkConstants.FN_RES_BASE + SdkConstants.RES_QUALIFIER_SEP + apkData.fullName + ".ap__(.*)"
+        )
+
+        if (outputFolder == null) {
+            return null
+        }
+        val files = outputFolder.listFiles()
+        if (files != null) {
+            for (file in files) {
+                val match = resourcePattern.matcher(file.name)
+                // each time we match, we remove the associated filter from our copies.
+                if (match.matches()
+                        && !match.group(1).isEmpty()
+                        && isValidSplit(apkData, match.group(1))
+                ) {
+                    return file
+                }
             }
         }
+        return null
     }
-    return null
-}
 
-/**
- * Returns true if the passed split identifier is a valid identifier (valid mean it is a
- * requested split for this task). A density split identifier can be suffixed with characters
- * added by aapt.
- */
-private fun isValidSplit(apkData: ApkData, splitWithOptionalSuffix: String): Boolean {
+    /**
+     * Returns true if the passed split identifier is a valid identifier (valid mean it is a
+     * requested split for this task). A density split identifier can be suffixed with characters
+     * added by aapt.
+     */
+    private fun isValidSplit(apkData: ApkData, splitWithOptionalSuffix: String): Boolean {
 
-    var splitFilter = apkData.getFilter(VariantOutput.FilterType.DENSITY)
-    if (splitFilter != null) {
-        if (splitWithOptionalSuffix.startsWith(splitFilter.identifier)) {
-            return true
+        var splitFilter = apkData.getFilter(VariantOutput.FilterType.DENSITY)
+        if (splitFilter != null) {
+            if (splitWithOptionalSuffix.startsWith(splitFilter.identifier)) {
+                return true
+            }
         }
+        val mangledName = unMangleSplitName(splitWithOptionalSuffix)
+        splitFilter = apkData.getFilter(VariantOutput.FilterType.LANGUAGE)
+        return splitFilter != null && mangledName == splitFilter.identifier
     }
-    val mangledName = unMangleSplitName(splitWithOptionalSuffix)
-    splitFilter = apkData.getFilter(VariantOutput.FilterType.LANGUAGE)
-    return splitFilter != null && mangledName == splitFilter.identifier
-}
 
-/**
- * Un-mangle a split name as created by the aapt tool to retrieve a split name as configured in
- * the project's build.gradle.
- *
- *
- * when dealing with several split language in a single split, each language (+ optional
- * region) will be separated by an underscore.
- *
- *
- * note that there is currently an aapt bug, remove the 'r' in the region so for instance,
- * fr-rCA becomes fr-CA, temporarily put it back until it is fixed.
- *
- * @param splitWithOptionalSuffix the mangled split name.
- */
-private fun unMangleSplitName(splitWithOptionalSuffix: String): String {
-    val mangledName = splitWithOptionalSuffix.replace("_".toRegex(), ",")
-    return if (mangledName.contains("-r")) mangledName else mangledName.replace("-", "-r")
-}
+    /**
+     * Un-mangle a split name as created by the aapt tool to retrieve a split name as configured in
+     * the project's build.gradle.
+     *
+     *
+     * when dealing with several split language in a single split, each language (+ optional
+     * region) will be separated by an underscore.
+     *
+     *
+     * note that there is currently an aapt bug, remove the 'r' in the region so for instance,
+     * fr-rCA becomes fr-CA, temporarily put it back until it is fixed.
+     *
+     * @param splitWithOptionalSuffix the mangled split name.
+     */
+    private fun unMangleSplitName(splitWithOptionalSuffix: String): String {
+        val mangledName = splitWithOptionalSuffix.replace("_".toRegex(), ",")
+        return if (mangledName.contains("-r")) mangledName else mangledName.replace("-", "-r")
+    }
 }

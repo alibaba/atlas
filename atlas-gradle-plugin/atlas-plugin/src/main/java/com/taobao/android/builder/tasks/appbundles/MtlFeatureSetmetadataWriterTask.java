@@ -5,10 +5,12 @@ import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.tasks.AndroidVariantTask;
 import com.android.build.gradle.internal.tasks.TaskInputHelper;
+import com.android.build.gradle.internal.tasks.Workers;
 import com.android.build.gradle.internal.tasks.featuresplit.FeatureSetMetadata;
 import com.android.build.gradle.internal.tasks.featuresplit.FeatureSplitDeclaration;
 import com.android.build.gradle.options.IntegerOption;
 import com.android.ide.common.workers.ExecutorServiceAdapter;
+import com.android.ide.common.workers.WorkerExecutorFacade;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
@@ -16,6 +18,7 @@ import org.apache.commons.io.FileUtils;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.workers.WorkerExecutor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -47,7 +50,12 @@ public class MtlFeatureSetmetadataWriterTask extends AndroidVariantTask {
     @Input
     private Provider<Integer>minSdkVersion = null;
 
-    private ExecutorServiceAdapter workers = new ExecutorServiceAdapter(ForkJoinPool.commonPool());
+    private WorkerExecutorFacade workers = null;
+
+    @Inject
+    public MtlFeatureSetmetadataWriterTask(WorkerExecutor workers) {
+        this.workers = Workers.INSTANCE.getWorker(workers);
+    }
 
     @TaskAction
     public void fullTaskAction() {
@@ -151,10 +159,8 @@ public class MtlFeatureSetmetadataWriterTask extends AndroidVariantTask {
         @Override
         public void preConfigure(@NotNull String s) {
             super.preConfigure(s);
-            outputFile = variantContext.getScope().getArtifacts().appendArtifact(
-                    InternalArtifactType.FEATURE_SET_METADATA,
-                    s,
-                    "feature-metadata.json");
+            outputFile = variantContext.getScope().getArtifacts().getFinalArtifactFiles(
+                    InternalArtifactType.FEATURE_SET_METADATA).get().getSingleFile();
         }
     }
 
