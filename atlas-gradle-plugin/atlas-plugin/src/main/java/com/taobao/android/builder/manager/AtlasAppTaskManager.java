@@ -406,7 +406,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                       .get(new TaskContainerAdaptor(appVariantContext.getProject()
                                                                               .getTasks()));
 
-                                                              if (appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
+                                                              if (appVariantContext.getBuildType().getPatchConfig()!= null && appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
                                                                   mtlTaskContextList.add(new MtlTaskContext(PatchDiffResAPBuildTask.ConfigAction.class,null));
 
                                                               }
