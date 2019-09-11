@@ -2,6 +2,7 @@ package com.taobao.android.builder.tasks.manager.transform;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.pipeline.AtlasIntermediateStreamHelper;
 import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -26,6 +27,7 @@ import java.util.function.Supplier;
  */
 public class MtlDexArchiveBuilderTransformBuilder  {
     private Supplier<List<File>> androidJarClasspath;
+    private AppVariantOutputContext variantOutputContext;
     private DexOptions dexOptions;
     private MessageReceiver messageReceiver;
     private FileCache userLevelCache;
@@ -47,6 +49,14 @@ public class MtlDexArchiveBuilderTransformBuilder  {
     public MtlDexArchiveBuilderTransformBuilder setAndroidJarClasspath(
             @NonNull Supplier<List<File>> androidJarClasspath) {
         this.androidJarClasspath = androidJarClasspath;
+        return this;
+    }
+
+
+    @NonNull
+    public MtlDexArchiveBuilderTransformBuilder setAppVariantOutputContext(
+            @NonNull AppVariantOutputContext variantOutputContext) {
+        this.variantOutputContext = variantOutputContext;
         return this;
     }
 
@@ -160,6 +170,7 @@ public class MtlDexArchiveBuilderTransformBuilder  {
         Preconditions.checkNotNull(java8LangSupportType);
         Preconditions.checkNotNull(projectVariant);
         return new MtlDexArchiveBuilderTransform(
+                variantOutputContext,
                 androidJarClasspath,
                 dexOptions,
                 messageReceiver,

@@ -215,6 +215,7 @@ import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.dependency.*;
+import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
@@ -248,7 +249,9 @@ import org.gradle.internal.reflect.Instantiator;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -257,7 +260,6 @@ import static com.android.build.gradle.internal.publishing.AndroidArtifacts.Arti
 import static org.gradle.api.internal.artifacts.ArtifactAttributes.ARTIFACT_FORMAT;
 
 /**
-
  * @author zhayu.ll
  * @date 2019/07/21
  */
@@ -319,36 +321,53 @@ public class AtlasConfigurationHelper {
     }
 
 
+    public void autoSetBuildTypes(AtlasExtension atlasExtension) {
+
+        List<String> buildTypes = new ArrayList<>();
+
+        if (project.getExtensions().findByType(AppExtension.class) == null){
+
+            return;
+        }
+        project.getExtensions().findByType(AppExtension.class).getBuildTypes().forEach(new Consumer<BuildType>() {
+            @Override
+            public void accept(BuildType buildType) {
+                buildTypes.add(buildType.getName());
+            }
+        });
+
+        if (!buildTypes.contains("debug")) {
+            buildTypes.add("debug");
+        }
+
+        if (!buildTypes.contains("release")) {
+            buildTypes.add("release");
+        }
+
+        if (!atlasExtension.getClass().getName().equals("com.taobao.android.builder.extension.AtlasExtension_Decorated")){
+            return;
+        }
+
+        for (String variantName : buildTypes) {
+
+            TBuildType atlasBuildType = (TBuildType) atlasExtension.getBuildTypes().maybeCreate(variantName);
 
 
-        public void autoSetBuildTypes(AtlasExtension atlasExtension) {
-
-            String[] arr = {"debug", "release"};
-
-            if (atlasExtension.getClass() != AtlasExtension.class){
-                return;
+            if (null == atlasBuildType.getPatchConfig()) {
+                atlasBuildType.setPatchConfig((PatchConfig) atlasExtension.patchConfigs.maybeCreate(variantName));
             }
 
-            for (String variantName : arr) {
+            if (null == atlasBuildType.getSigningConfig()) {
+                atlasBuildType.setSigningConfig(appPluginHook.getBaseExtension().getSigningConfigs().maybeCreate(variantName));
+            }
 
-                 TBuildType buildType = (TBuildType) atlasExtension.getBuildTypes().maybeCreate(variantName);
-
-
-                if (null == buildType.getPatchConfig()) {
-                    buildType.setPatchConfig((PatchConfig) atlasExtension.patchConfigs.maybeCreate(variantName));
-                }
-
-                if ( null == buildType.getSigningConfig()){
-                    buildType.setSigningConfig(appPluginHook.getBaseExtension().getSigningConfigs().maybeCreate(variantName));
-                }
-
-                if (null == buildType.getMultiDexConfig()) {
-                    buildType.setMultiDexConfig((MultiDexConfig) atlasExtension.multiDexConfigs.maybeCreate(variantName));
-                }
-
+            if (null == atlasBuildType.getMultiDexConfig()) {
+                atlasBuildType.setMultiDexConfig((MultiDexConfig) atlasExtension.multiDexConfigs.maybeCreate(variantName));
             }
         }
 
+
+    }
 
 
 //    public void hookAtlasDependencyManager() {
@@ -508,8 +527,6 @@ public class AtlasConfigurationHelper {
         Usage apiUsage = project.getObjects().named(Usage.class, Usage.JAVA_API);
 
 
-
-
         dependencyHandler.registerTransform(
                 transform -> {
                     transform.getFrom().attribute(ARTIFACT_FORMAT, AtlasAndroidArtifacts.TYPE_AWB);
@@ -523,11 +540,9 @@ public class AtlasConfigurationHelper {
                 });
 
 
-
-
         dependencyHandler.registerTransform(
                 reg -> {
-                    reg.getFrom().attribute(ARTIFACT_FORMAT,TYPE_PROCESSED_AWB);
+                    reg.getFrom().attribute(ARTIFACT_FORMAT, TYPE_PROCESSED_AWB);
                     reg.getTo().attribute(ARTIFACT_FORMAT, explodedAwbType);
                     reg.artifactTransform(ExtractAwbTransform.class);
                 });
@@ -647,15 +662,15 @@ public class AtlasConfigurationHelper {
 
         VariantManager variantManager = getVariantManager();
 
-        if (variantManager!=null) {
+        if (variantManager != null) {
 
             variantManager.getVariantScopes().stream().forEach(variantScope -> atlasDependencyManager.resolveDependencies(variantScope.getVariantDependencies()));
         }
     }
 
     private Set<String> getAwbs(File awbConfigFile) {
-        Set<String>awbs = new HashSet<>();
-        if (awbConfigFile != null && awbConfigFile.exists()){
+        Set<String> awbs = new HashSet<>();
+        if (awbConfigFile != null && awbConfigFile.exists()) {
             try {
                 awbs.addAll(FileUtils.readLines(awbConfigFile));
             } catch (IOException e) {

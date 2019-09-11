@@ -112,6 +112,7 @@ public class TransformReplacer {
                                         variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode())
                                 .setEnableDexingArtifactTransform(false)
                                 .setIntermediateStreamHelper(new AtlasIntermediateStreamHelper(transformTask))
+                                .setAppVariantOutputContext(variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)))
                                 .createDexArchiveBuilderTransform();
 
                 ReflectUtils.updateField(transformTask, "transform", preDexTransform);
@@ -140,6 +141,7 @@ public class TransformReplacer {
                 boolean isDebuggable = variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable();
                 MtlDexMergeTransform dexTransform =
                         new MtlDexMergeTransform(
+                                variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),
                                 dexingType,
                                 instantRunMode ?
                                         new BuildableArtifactImpl(multidexFiles) :

@@ -234,8 +234,10 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.transform.AtlasMergeJavaResourcesTransform;
 import org.gradle.api.file.Directory;
+import org.gradle.api.file.RegularFile;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.jetbrains.annotations.NotNull;
 
 import static com.android.SdkConstants.FD_ASSETS;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
@@ -318,6 +320,11 @@ public class AppVariantOutputContext {
                 "feature-manifest/" + config.getDirName() + "/" + awbBundle.getName()+"/metadata-feature");
     }
 
+    public File getFeatureModuleBundleOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "feature-bundle/" + config.getDirName() + "/" + awbBundle.getName());
+    }
+
 
     public File getBundleManifestOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
@@ -366,9 +373,9 @@ public class AppVariantOutputContext {
     }
 
 
-    public File getJAwbavaOutputDir(AwbBundle awbBundle) {
+    public File getFeatureJavacOutputDir(AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
-                "/awb-classes/" +
+                "/feature-classes/" +
                         variantData.getVariantConfiguration().getDirName() +
                         "/" +
                         awbBundle.getName());
@@ -698,6 +705,28 @@ public class AppVariantOutputContext {
                 variantScope.getGlobalScope().getIntermediatesDir(),
                 "feature-merge-assets",
                 variantConfiguration.getDirName(),awbBundle.getName());
+    }
+
+    public File getFeatureDexArchiveFolder(AwbBundle awbBundle, String bucketId) {
+        return FileUtils.join(
+                variantScope.getGlobalScope().getIntermediatesDir(),
+                "feature-dex-archive",
+                variantContext.getVariantConfiguration().getDirName(),awbBundle.getName(), String.valueOf(bucketId));
+    }
+
+    public File getFeatureFinalDexFolder(AwbBundle awbBundle) {
+        return FileUtils.join(
+                variantScope.getGlobalScope().getIntermediatesDir(),
+                "feature-dex",
+                variantContext.getVariantConfiguration().getDirName(),awbBundle.getName());
+    }
+
+    @NotNull
+    public RegularFile getFeatureDepsFile(@NotNull AwbBundle awbBundle) {
+        return () -> FileUtils.join(
+                variantScope.getGlobalScope().getIntermediatesDir(),
+                "feature-deps",
+                variantContext.getVariantConfiguration().getDirName(),awbBundle.getName(),"dependencies.pb");
     }
 
 

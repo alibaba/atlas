@@ -7,6 +7,8 @@ import com.android.annotations.VisibleForTesting;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.crash.PluginCrashReporter;
 import com.android.build.gradle.internal.pipeline.AtlasIntermediateStreamHelper;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
@@ -35,7 +37,9 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.*;
-import org.apache.tools.ant.taskdefs.Zip;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.model.AwbBundle;
+import com.taobao.android.builder.tools.TransformInputUtils;
 import org.gradle.tooling.BuildException;
 import org.gradle.workers.IsolationMode;
 
@@ -49,13 +53,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipFile;
 
 import static com.android.build.gradle.internal.workeractions.WorkerActionServiceRegistry.INSTANCE;
 
@@ -104,13 +109,15 @@ public class MtlDexArchiveBuilderTransform extends Transform {
     private final int numberOfBuckets;
     private final boolean includeFeaturesInScopes;
     private boolean isInstantRun;
+    private AppVariantOutputContext variantOutputContext;
 
     private boolean enableDexingArtifactTransform;
 
 
     private AtlasIntermediateStreamHelper atlasIntermediateStreamHelper;
 
-    public MtlDexArchiveBuilderTransform(@NonNull Supplier<List<File>> androidJarClasspath,
+    public MtlDexArchiveBuilderTransform(AppVariantOutputContext variantOutputContext,
+                                         @NonNull Supplier<List<File>> androidJarClasspath,
                                          @NonNull DexOptions dexOptions,
                                          @NonNull MessageReceiver messageReceiver,
                                          @Nullable FileCache userLevelCache,
@@ -128,7 +135,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                                          boolean enableDexingArtifactTransform,
                                          AtlasIntermediateStreamHelper atlasIntermediateStreamHelper) {
 
-
+        this.variantOutputContext = variantOutputContext;
         this.androidJarClasspath = androidJarClasspath;
         this.dexOptions = dexOptions;
         this.messageReceiver = messageReceiver;
@@ -350,6 +357,9 @@ public class MtlDexArchiveBuilderTransform extends Transform {
 
                 for (DirectoryInput dirInput : input.getDirectoryInputs()) {
                     logger.warning("Dir input %s", dirInput.getFile().toString());
+                    if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled() && !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getInputDirs().contains(dirInput.getFile())) {
+                        continue;
+                    }
                     convertToDexArchive(
                             transformInvocation.getContext(),
                             dirInput,
@@ -362,7 +372,9 @@ public class MtlDexArchiveBuilderTransform extends Transform {
 
                 for (JarInput jarInput : input.getJarInputs()) {
                     logger.warning("Jar input %s", jarInput.getFile().toString());
-
+                    if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled() && !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getAllMainDexJars().contains(jarInput.getFile())) {
+                        continue;
+                    }
                     MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
                             getD8DesugaringCacheInfo(
                                     desugarIncrementalTransformHelper,
@@ -373,12 +385,10 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                     List<File> dexArchives =
                             processJarInput(
                                     transformInvocation.getContext(),
-                                    isIncremental,
                                     jarInput,
                                     outputProvider,
                                     bootclasspathServiceKey,
                                     classpathServiceKey,
-                                    additionalPaths,
                                     cacheInfo);
 
                     if (cacheInfo != MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo.DONT_CACHE && !dexArchives.isEmpty()) {
@@ -390,6 +400,86 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                     }
                 }
             }
+
+            if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled() && variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0){
+
+                ClasspathServiceKey finalBootclasspathServiceKey = bootclasspathServiceKey;
+                ClasspathServiceKey finalClasspathServiceKey = classpathServiceKey;
+                variantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
+                    @Override
+                    public void accept(AwbTransform awbTransform) {
+                        AtomicInteger atomicInteger = new AtomicInteger(1);
+                        if (awbTransform.getAwbBundle().dynamicFeature){
+                            awbTransform.getInputDirs().forEach(new Consumer<File>() {
+                                @Override
+                                public void accept(File file) {
+                                    convertFeatureToDexArchive(awbTransform.getAwbBundle(),transformInvocation.getContext(),TransformInputUtils.makeDirectoryInput(file),false, finalBootclasspathServiceKey,
+                                            finalClasspathServiceKey,
+                                            additionalPaths,atomicInteger);
+                                }
+                            });
+
+                            awbTransform.getInputFiles().forEach(new Consumer<File>() {
+                                @Override
+                                public void accept(File file) {
+                                    JarInput jarInput = TransformInputUtils.makeJarInput(file,variantOutputContext.getVariantContext());
+                                            MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
+                                            getD8DesugaringCacheInfo(
+                                                    desugarIncrementalTransformHelper,
+                                                    bootclasspath,
+                                                    classpath,
+                                                    jarInput);
+                                    try {
+                                        List<File> dexArchives =
+                                                processFeatureJarInput(
+                                                        awbTransform.getAwbBundle(),
+                                                        transformInvocation.getContext(),
+                                                        jarInput,
+                                                        finalBootclasspathServiceKey,
+                                                        finalClasspathServiceKey,
+                                                        cacheInfo,
+                                                        atomicInteger);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
+
+
+                            awbTransform.getInputLibraries().forEach(new Consumer<File>() {
+                                @Override
+                                public void accept(File file) {
+                                    JarInput jarInput = TransformInputUtils.makeJarInput(file,variantOutputContext.getVariantContext());
+                                    MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
+                                            getD8DesugaringCacheInfo(
+                                                    desugarIncrementalTransformHelper,
+                                                    bootclasspath,
+                                                    classpath,
+                                                    jarInput);
+                                    try {
+                                        List<File> dexArchives =
+                                                processFeatureJarInput(
+                                                        awbTransform.getAwbBundle(),
+                                                        transformInvocation.getContext(),
+                                                        jarInput,
+                                                        finalBootclasspathServiceKey,
+                                                        finalClasspathServiceKey,
+                                                        cacheInfo,
+                                                        atomicInteger);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
+
+                        }
+
+
+                    }
+                });
+
+            }
+
 
             // all work items have been submitted, now wait for completion.
             if (useGradleWorkers) {
@@ -474,62 +564,94 @@ public class MtlDexArchiveBuilderTransform extends Transform {
     }
 
 
-
     @NonNull
     private List<File> processJarInput(
             @NonNull Context context,
-            boolean isIncremental,
             @NonNull JarInput jarInput,
             @NonNull TransformOutputProvider transformOutputProvider,
             @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey bootclasspath,
             @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey classpath,
-            @NonNull Set<File> additionalPaths,
             @NonNull MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo)
             throws Exception {
-//        if (!isIncremental) {
-            Preconditions.checkState(
-                    jarInput.getFile().exists(),
-                    "File %s does not exist, yet it is reported as input. Try \n"
-                            + "cleaning the build directory.",
-                    jarInput.getFile().toString());
-            return convertJarToDexArchive(
-                    context,
-                    jarInput,
-                    transformOutputProvider,
-                    bootclasspath,
-                    classpath,
-                    cacheInfo);
-//        } else if (jarInput.getStatus() != Status.NOTCHANGED
-//                || additionalPaths.contains(jarInput.getFile())) {
-//            // delete all preDex jars if they exists.
-//            for (int bucketId = 0; bucketId < numberOfBuckets; bucketId++) {
-//                File shardedOutput = getOutputForJar(transformOutputProvider, jarInput, bucketId);
-//                FileUtils.deleteIfExists(shardedOutput);
-//                if (jarInput.getStatus() != Status.REMOVED) {
-//                    FileUtils.mkdirs(shardedOutput.getParentFile());
-//                }
-//            }
-//            File nonShardedOutput = getOutputForJar(transformOutputProvider, jarInput, null);
-//            FileUtils.deleteIfExists(nonShardedOutput);
-//            if (jarInput.getStatus() != Status.REMOVED) {
-//                FileUtils.mkdirs(nonShardedOutput.getParentFile());
-//            }
-//
-//            // and perform dexing if necessary.
-//            if (jarInput.getStatus() == Status.ADDED
-//                    || jarInput.getStatus() == Status.CHANGED
-//                    || additionalPaths.contains(jarInput.getFile())) {
-//                return convertJarToDexArchive(
-//                        context,
-//                        jarInput,
-//                        transformOutputProvider,
-//                        bootclasspath,
-//                        classpath,
-//                        cacheInfo);
-//            }
-//        }
-//        return ImmutableList.of();
+        Preconditions.checkState(
+                jarInput.getFile().exists(),
+                "File %s does not exist, yet it is reported as input. Try \n"
+                        + "cleaning the build directory.",
+                jarInput.getFile().toString());
+        return convertJarToDexArchive(
+                context,
+                jarInput,
+                transformOutputProvider,
+                bootclasspath,
+                classpath,
+                cacheInfo);
     }
+
+
+    @NonNull
+    private List<File> processFeatureJarInput(
+            AwbBundle awbBundle,
+            @NonNull Context context,
+            @NonNull JarInput jarFile,
+            @NonNull ClasspathServiceKey bootclasspath,
+            @NonNull ClasspathServiceKey classpath,
+            @NonNull D8DesugaringCacheInfo cacheInfo, AtomicInteger atomicInteger)
+            throws Exception {
+        Preconditions.checkState(
+                jarFile.getFile().exists(),
+                "File %s does not exist, yet it is reported as input. Try \n"
+                        + "cleaning the build directory.",
+                jarFile.toString());
+        return convertFeatureJarToDexArchive(
+                awbBundle,
+                context,
+                jarFile,
+                bootclasspath,
+                classpath,
+                cacheInfo,
+                atomicInteger);
+    }
+
+
+
+    private List<File> convertFeatureJarToDexArchive(
+            AwbBundle awbBundle,
+            @NonNull Context context,
+            @NonNull JarInput toConvert,
+            @NonNull ClasspathServiceKey bootclasspath,
+            @NonNull ClasspathServiceKey classpath,
+            @NonNull D8DesugaringCacheInfo cacheInfo, AtomicInteger atomicInteger)
+            throws Exception {
+
+        if (cacheInfo != MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo.DONT_CACHE) {
+            File cachedVersion =
+                    cacheHandler.getCachedVersionIfPresent(
+                            toConvert, cacheInfo.orderedD8DesugaringDependencies);
+            if (cachedVersion != null) {
+                logger.warning("hit cache:" + toConvert.getFile().getAbsolutePath() + " -> " + cachedVersion.getAbsolutePath());
+                File outputFile = getFeatureOutputJar(awbBundle,atomicInteger.getAndIncrement());
+                Files.copy(
+                        cachedVersion.toPath(),
+                        outputFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+                // no need to try to cache an already cached version.
+                return ImmutableList.of();
+            }
+            logger.warning("miss cache:" + toConvert.getFile().getAbsolutePath());
+
+        }
+
+
+        return convertFeatureToDexArchive(
+                awbBundle,
+                context,
+                toConvert,
+                false,
+                bootclasspath,
+                classpath,
+                ImmutableSet.of(),atomicInteger);
+    }
+
 
     private List<File> convertJarToDexArchive(
             @NonNull Context context,
@@ -557,9 +679,6 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             logger.warning("miss cache:" + toConvert.getFile().getAbsolutePath());
 
         }
-
-
-
 
 
         return convertToDexArchive(
@@ -815,6 +934,111 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         return dexArchives.build();
     }
 
+
+    private File getFeatureOutputForDir(AwbBundle awbBundle, Integer bucketId){
+
+        return variantOutputContext.getFeatureDexArchiveFolder(awbBundle,String.valueOf(bucketId));
+
+    }
+
+
+    private File getFeatureOutputJar(AwbBundle awbBundle, Integer bucketId){
+
+        return variantOutputContext.getFeatureDexArchiveFolder(awbBundle,bucketId+".jar");
+
+    }
+
+
+    private List<File> convertFeatureToDexArchive(AwbBundle awbBundle,
+                                                  @NonNull Context context,
+                                                  @NonNull QualifiedContent input,
+                                                  boolean isIncremental,
+                                                  @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey bootClasspath,
+                                                  @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey classpath,
+                                                  @NonNull Set<File> additionalPaths,AtomicInteger atomicInteger) {
+
+        logger.verbose("Dexing %s", input.getFile().getAbsolutePath());
+
+        if (!input.getFile().isDirectory() && isNotVilid(input.getFile())) {
+            return ImmutableList.of();
+        }
+
+        File file = input.getFile();
+
+        ImmutableList.Builder<File> dexArchives = ImmutableList.builder();
+        for (int bucketId = 0; bucketId < numberOfBuckets; bucketId++) {
+
+            File preDexOutputFile = null;
+            if (input instanceof DirectoryInput) {
+                preDexOutputFile =
+                        getFeatureOutputForDir(awbBundle, bucketId);
+                FileUtils.mkdirs(preDexOutputFile);
+            }else {
+                preDexOutputFile = getFeatureOutputJar(awbBundle, atomicInteger.getAndIncrement());
+
+            }
+
+            dexArchives.add(preDexOutputFile);
+            MtlDexArchiveBuilderTransform.DexConversionParameters parameters =
+                    new MtlDexArchiveBuilderTransform.DexConversionParameters(
+                            input,
+                            bootClasspath,
+                            classpath,
+                            preDexOutputFile,
+                            numberOfBuckets,
+                            bucketId,
+                            minSdkVersion,
+                            dexOptions.getAdditionalParameters(),
+                            inBufferSize,
+                            outBufferSize,
+                            dexer,
+                            isDebuggable,
+                            isIncremental,
+                            java8LangSupportType,
+                            additionalPaths,
+                            new SerializableMessageReceiver(messageReceiver),
+                            isInstantRun);
+
+            if (useGradleWorkers) {
+                context.getWorkerExecutor()
+                        .submit(
+                                MtlDexArchiveBuilderTransform.DexConversionWorkAction.class,
+                                configuration -> {
+                                    configuration.setIsolationMode(IsolationMode.NONE);
+                                    configuration.setParams(parameters);
+                                });
+            } else {
+                executor.execute(
+                        () -> {
+                            ProcessOutputHandler outputHandler =
+                                    new ParsingProcessOutputHandler(
+                                            new ToolOutputParser(
+                                                    new DexParser(), Message.Kind.ERROR, logger),
+                                            new ToolOutputParser(new DexParser(), logger),
+                                            messageReceiver);
+                            ProcessOutput output = null;
+                            try (Closeable ignored = output = outputHandler.createOutput()) {
+                                launchProcessing(
+                                        parameters,
+                                        output.getStandardOutput(),
+                                        output.getErrorOutput(),
+                                        messageReceiver);
+                            } finally {
+                                if (output != null) {
+                                    try {
+                                        outputHandler.handleOutput(output);
+                                    } catch (ProcessException e) {
+                                        // ignore this one
+                                    }
+                                }
+                            }
+                            return null;
+                        });
+            }
+        }
+        return dexArchives.build();
+    }
+
     private boolean isNotVilid(File file) {
         if (file == null || !file.exists()) {
             return true;
@@ -834,8 +1058,8 @@ public class MtlDexArchiveBuilderTransform extends Transform {
 
         } finally {
             try {
-                if (jarFile!= null)
-                jarFile.close();
+                if (jarFile != null)
+                    jarFile.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -965,14 +1189,9 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             @NonNull DirectoryInput directoryInput,
             int bucketId) {
         String name;
-        if (isInstantRun
-                && Sets.difference(
-                directoryInput.getScopes(), TransformManager.SCOPE_IR_FOR_SLICING)
-                .isEmpty()) {
-            name = getSliceName(bucketId);
-        } else {
+
             name = directoryInput.getFile().getName();
-        }
+
         return output.getContentLocation(
                 name,
                 ImmutableSet.of(ExtendedContentType.DEX_ARCHIVE),
@@ -980,9 +1199,6 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 Format.DIRECTORY);
     }
 
-    public static String getSliceName(int bucketId) {
-        return "slice_" + bucketId;
-    }
 
     /**
      * Returns the bucket for the specified path. For jar inputs, path in the jar file should be

@@ -12,6 +12,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.publishing.AtlasAndroidArtifacts;
 import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
+import com.android.build.gradle.internal.tasks.BundleReportDependenciesTask;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
@@ -44,6 +45,7 @@ import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.RegularFile;
 import org.gradle.api.internal.artifacts.DefaultProjectComponentIdentifier;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.TaskAction;
@@ -57,6 +59,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -223,6 +226,7 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                     throw new GradleException("excute failed! ");
 
                 }
+
                 ReflectUtils.updateField(fakeAndroidLibrary, "extractedFolder", id.getParentFile());
                 ReflectUtils.updateField(fakeAndroidLibrary, "jarsRootFolder", id.getParentFile());
                 ((AtlasAndroidLibraryImpl) androidLibrary).setAndroidLibrary(AndroidDependency.createExplodedAarLibrary(null, androidLibrary.getResolvedCoordinates(), androidLibrary.getName(), ((AtlasAndroidLibraryImpl) androidLibrary).getPath(), id.getParentFile()));
@@ -298,6 +302,29 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
         }
 
 
+        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled()) {
+
+            Collection<RegularFile> featureDeps = new HashSet<>();
+            appVariantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
+                @Override
+                public void accept(AwbTransform awbTransform) {
+                    if (awbTransform.getAwbBundle().dynamicFeature) {
+                        featureDeps.add(appVariantOutputContext.getFeatureDepsFile(awbTransform.getAwbBundle()));
+                    }
+                }
+            });
+
+            appVariantContext.getProject().getTasks().withType(BundleReportDependenciesTask.class).forEach(new Consumer<BundleReportDependenciesTask>() {
+                @Override
+                public void accept(BundleReportDependenciesTask bundleReportDependenciesTask) {
+                    ReflectUtils.updateField(bundleReportDependenciesTask, "featureDeps", appVariantContext.getProject().files(featureDeps));
+                }
+            });
+
+
+        }
+
+
         MergeResources mergeResources = appVariantContext.getScope().getTaskContainer().mergeResourcesTask.get();
 
         try {
@@ -338,8 +365,6 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
             }));
 
 
-
-
             //mergeSourcesSets
             MergeSourceSetFolders mergeSourceSetFolders = appVariantContext.getScope().getTaskContainer().getMergeAssetsTask().get();
             Field assetsField = MergeSourceSetFolders.class.getDeclaredField("libraries");
@@ -362,11 +387,9 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
         }
 
 
-
-
         //process resources
         ProcessAndroidResources processAndroidResources = appVariantContext.getScope().getTaskContainer().getProcessAndroidResTask().get();
-        FileCollection fileCollection = ((LinkApplicationAndroidResourcesTask)processAndroidResources).getDependenciesFileCollection();
+        FileCollection fileCollection = ((LinkApplicationAndroidResourcesTask) processAndroidResources).getDependenciesFileCollection();
         Set<String> filesNames = new HashSet<>();
         for (String fileName : AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainManifestFiles().keySet()) {
             filesNames.add(fileName.substring(fileName.lastIndexOf(File.separatorChar) + 1));
@@ -381,7 +404,6 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                 ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", fc);
             }
         });
-
 
 
 //        FileCollection fs = appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,AndroidArtifacts.ArtifactScope.ALL,AndroidArtifacts.ArtifactType.CLASSES);
@@ -642,6 +664,8 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                 }
             });
 
+
+
         }
 
 
@@ -772,9 +796,6 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
             return getArtifacts().iterator();
         }
     }
-
-
-
 
 
 }

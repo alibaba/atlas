@@ -210,14 +210,27 @@
 package com.taobao.asm;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.android.aapt.Resources;
 import com.taobao.android.builder.tools.asm.field.AsmFieldEditor;
 import com.taobao.android.builder.tools.asm.field.Field;
+import com.taobao.android.builder.tools.xml.XmlHelper;
+import org.dom4j.Element;
+import org.dom4j.Namespace;
+import org.dom4j.QName;
+import org.dom4j.Text;
+import org.dom4j.dom.DOMText;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.tree.DefaultAttribute;
+import org.dom4j.tree.DefaultElement;
 import org.junit.Test;
 import org.objectweb.asm.Opcodes;
+
+import javax.swing.text.Document;
 
 /**
  * Created by wuzhong on 2017/4/27.
@@ -239,6 +252,15 @@ public class AsmFieldTest implements Opcodes {
         FileOutputStream fos = new FileOutputStream(file);
         fos.write(code);
         fos.close();
+
+    }
+
+
+    @Test
+    public void testInjectValue() throws Exception{
+        Resources.ResourceTable resourceTable = Resources.ResourceTable.parseFrom(new FileInputStream(new File("/Users/lilong/Documents/atlas/atlas-demo/AtlasDemo/app/build/intermediates/linked_res_for_bundle/debug/bundleDebugResources/aa/resources.pb")));
+        resourceTable.
+
 
     }
 

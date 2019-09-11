@@ -7,6 +7,8 @@ import com.android.build.api.artifact.BuildableArtifact;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.api.artifact.BuildableArtifactUtil;
 import com.android.build.gradle.internal.crash.PluginCrashReporter;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
@@ -31,6 +33,7 @@ import com.google.common.collect.*;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +41,8 @@ import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.zip.ZipFile;
 
 /**
@@ -57,24 +62,30 @@ public class MtlDexMergeTransform extends Transform {
     // EXTERNAL_DEPS_DEX_FILES, so the remaining ANDROID_L_MAX_DEX_FILES - EXTERNAL_DEPS_DEX_FILES
     // can be used for the remaining inputs. This is a generous assumption that 50 completely full
     // dex files will be needed for the external dependencies.
-    @VisibleForTesting public static final int EXTERNAL_DEPS_DEX_FILES = 50;
+    @VisibleForTesting
+    public static final int EXTERNAL_DEPS_DEX_FILES = 50;
 
     @NonNull
     private final DexingType dexingType;
     @Nullable
     private final BuildableArtifact mainDexListFile;
-    @NonNull private final BuildableArtifact duplicateClassesCheck;
-    @NonNull private final DexMergerTool dexMerger;
+    @NonNull
+    private final BuildableArtifact duplicateClassesCheck;
+    @NonNull
+    private final DexMergerTool dexMerger;
     private final int minSdkVersion;
     private final boolean isDebuggable;
-    @NonNull private final MessageReceiver messageReceiver;
-    @NonNull private final ForkJoinPool forkJoinPool = new ForkJoinPool();
+    @NonNull
+    private final MessageReceiver messageReceiver;
+    @NonNull
+    private final ForkJoinPool forkJoinPool = new ForkJoinPool();
     private final boolean includeFeaturesInScopes;
     private final boolean isInInstantRunMode;
-
+    private AppVariantOutputContext variantOutputContext;
 
 
     public MtlDexMergeTransform(
+            AppVariantOutputContext variantOutputContext,
             @NonNull DexingType dexingType,
             @Nullable BuildableArtifact mainDexListFile,
             @NonNull BuildableArtifact duplicateClassesCheck,
@@ -84,6 +95,7 @@ public class MtlDexMergeTransform extends Transform {
             boolean isDebuggable,
             boolean includeFeaturesInScopes,
             boolean isInInstantRunMode) {
+        this.variantOutputContext = variantOutputContext;
         this.dexingType = dexingType;
         this.mainDexListFile = mainDexListFile;
         this.duplicateClassesCheck = duplicateClassesCheck;
@@ -121,12 +133,12 @@ public class MtlDexMergeTransform extends Transform {
     public Set<? super QualifiedContent.Scope> getScopes() {
         if (includeFeaturesInScopes) {
             return TransformManager.SCOPE_FULL_WITH_IR_AND_FEATURES;
-        }else if (isInInstantRunMode){
+        } else if (isInInstantRunMode) {
 
             return new ImmutableSet.Builder<QualifiedContent.ScopeType>()
                     .add(InternalScope.MAIN_SPLIT)
                     .build();
-        }else {
+        } else {
             return TransformManager.SCOPE_FULL_WITH_IR_FOR_DEXING;
         }
     }
@@ -198,6 +210,37 @@ public class MtlDexMergeTransform extends Transform {
                 mergeTasks = mergeDex(transformInvocation.getInputs(), output, outputProvider);
             }
 
+            if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled() && variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0) {
+
+                ProcessOutput finalOutput = output;
+                variantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
+                    @Override
+                    public void accept(AwbTransform awbTransform) {
+                        if (awbTransform.getAwbBundle().dynamicFeature) {
+
+                            File folder = FileUtils.join(
+                                    variantOutputContext.getScope().getGlobalScope().getIntermediatesDir(),
+                                    "feature-dex-archive",
+                                    variantOutputContext.getScope().getVariantConfiguration().getDirName(), awbTransform.getAwbBundle().getName());
+                            Iterator<Path> dirInputs = Arrays.asList(folder.listFiles(pathname -> pathname.isDirectory())).stream().map(file -> file.toPath()).iterator();
+                            Iterator<Path> dexInputs = Arrays.asList(folder.listFiles(pathname -> pathname.getName().endsWith(".jar"))).stream().map(file -> file.toPath()).iterator();
+
+                            Iterator<Path> dexArchives = Iterators.concat(dirInputs, dexInputs);
+
+                            File outputDir = variantOutputContext.getFeatureFinalDexFolder(awbTransform.getAwbBundle());
+                            outputDir.mkdirs();
+
+                            if (!dexArchives.hasNext()) {
+                                return;
+                            }
+
+                            mergeTasks.add(submitForMerging(finalOutput, outputDir, dexArchives, null));
+                        }
+                    }
+                });
+
+            }
+
             // now wait for all merge tasks completion
             mergeTasks.forEach(ForkJoinTask::join);
         } catch (Exception e) {
@@ -254,24 +297,24 @@ public class MtlDexMergeTransform extends Transform {
             mainDexClasses = BuildableArtifactUtil.singleFile(mainDexListFile).toPath();
         }
 
-        return ImmutableList.of(submitForMerging(output, outputDir, dexArchives, mainDexClasses));
+        return Lists.newArrayList(submitForMerging(output, outputDir, dexArchives, mainDexClasses));
     }
 
     private static boolean isValidJar(JarInput jarInput) {
-       File f =  jarInput.getFile();
-       if (!f.exists()){
-           return false;
-       }
+        File f = jarInput.getFile();
+        if (!f.exists()) {
+            return false;
+        }
         ZipFile zipFile = null;
         try {
-             zipFile = new ZipFile(f);
-            if (zipFile.getEntry("classes.dex")!= null){
+            zipFile = new ZipFile(f);
+            if (zipFile.getEntry("classes.dex") != null) {
                 return true;
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }finally {
-            if (zipFile!= null){
+        } finally {
+            if (zipFile != null) {
                 try {
                     zipFile.close();
                 } catch (IOException e) {
@@ -376,12 +419,12 @@ public class MtlDexMergeTransform extends Transform {
             directoryInputs.addAll(input.getDirectoryInputs());
 
             for (JarInput jarInput : input.getJarInputs()) {
-                if (!isValidJar(jarInput)){
+                if (!isValidJar(jarInput)) {
                     continue;
                 }
 
 //                if (jarInput.getScopes().equals(Collections.singleton(QualifiedContent.Scope.EXTERNAL_LIBRARIES))) {
-                    externalLibs.add(jarInput);
+                externalLibs.add(jarInput);
 //                } else {
 //                    nonExternalJars.add(jarInput);
 //                }
@@ -487,7 +530,7 @@ public class MtlDexMergeTransform extends Transform {
             File dexOutput =
                     getDexOutputLocation(
                             outputProvider,
-                           "directories",
+                            "directories",
                             ImmutableSet.of(QualifiedContent.Scope.PROJECT));
             FileUtils.cleanOutputDir(dexOutput);
 
@@ -514,17 +557,17 @@ public class MtlDexMergeTransform extends Transform {
                 getDexOutputLocation(
                         outputProvider, "externalLibs", ImmutableSet.of(QualifiedContent.Scope.EXTERNAL_LIBRARIES));
 
-            FileUtils.cleanOutputDir(externalLibsOutput);
-            Iterator<Path> externalLibsToMerge =
-                    externalLibs
-                            .stream()
-                            .filter(i -> i.getStatus() != Status.REMOVED)
-                            .map(input -> input.getFile().toPath())
-                            .iterator();
-            if (externalLibsToMerge.hasNext()) {
-                subTasks.add(
-                        submitForMerging(output, externalLibsOutput, externalLibsToMerge, null));
-            }
+        FileUtils.cleanOutputDir(externalLibsOutput);
+        Iterator<Path> externalLibsToMerge =
+                externalLibs
+                        .stream()
+                        .filter(i -> i.getStatus() != Status.REMOVED)
+                        .map(input -> input.getFile().toPath())
+                        .iterator();
+        if (externalLibsToMerge.hasNext()) {
+            subTasks.add(
+                    submitForMerging(output, externalLibsOutput, externalLibsToMerge, null));
+        }
 
         return subTasks.build();
     }
@@ -532,11 +575,11 @@ public class MtlDexMergeTransform extends Transform {
     /**
      * Add a merging task to the queue of tasks.
      *
-     * @param output the process output that dx will output to.
+     * @param output       the process output that dx will output to.
      * @param dexOutputDir the directory to output dexes to
-     * @param dexArchives the dex archive inputs
-     * @param mainDexList the list of classes to keep in the main dex. Must be set <em>if and
-     *     only</em> legacy multidex mode is used.
+     * @param dexArchives  the dex archive inputs
+     * @param mainDexList  the list of classes to keep in the main dex. Must be set <em>if and
+     *                     only</em> legacy multidex mode is used.
      * @return the {@link ForkJoinTask} instance for the submission.
      */
     @NonNull
@@ -567,7 +610,7 @@ public class MtlDexMergeTransform extends Transform {
 //        if (content.getName().startsWith("slice_")) {
 //            name = content.getName();
 //        } else {
-            name = content.getFile().toString();
+        name = content.getFile().toString();
 //        }
         return outputProvider.getContentLocation(
                 name, getOutputTypes(), content.getScopes(), Format.DIRECTORY);

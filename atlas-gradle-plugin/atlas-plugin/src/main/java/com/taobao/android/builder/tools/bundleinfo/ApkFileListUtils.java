@@ -215,13 +215,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import android.aapt.pb.internal.ResourcesInternal.CompiledFile;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.api.ApkFiles;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
+import com.android.build.gradle.internal.res.Aapt2Extractor;
 import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask;
 import com.android.build.gradle.internal.scope.ExistingBuildElements;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
@@ -256,8 +256,6 @@ public class ApkFileListUtils {
     public static ApkFiles recordApkFileInfos(AppVariantContext appVariantContext) {
 
         ApkFiles apkFiles = new ApkFiles();
-        ProcessAndroidResources processAndroidResources = appVariantContext.getScope().getTaskContainer().getProcessAndroidResTask().get();
-        List<File> mainBundleResFolders = new ArrayList<File>();
 
         File file = appVariantContext.getScope().getArtifacts().getFinalArtifactFiles(InternalArtifactType.PROCESSED_RES).get().getSingleFile().listFiles(new FilenameFilter() {
             @Override
@@ -328,31 +326,32 @@ public class ApkFileListUtils {
 
     private static String getResMd5(File file) {
         String md5;
-        if (isCompiledFile(file.getName())) {
-            md5 = getCompiledFileMd5(file);
-        } else {
+//        if (isCompiledFile(file.getName())) {
+//            md5 = getCompiledFileMd5(file);
+//        } else {
             md5 = MD5Util.getFileMD5(file);
-        }
+//        }
         return md5;
     }
 
-    private static String getCompiledFileMd5(File file) {
-        String md5;
-        try (InputStream is = new BufferedInputStream(new FileInputStream(file))) {
-            CodedInputStream codedInputStream = CodedInputStream.newInstance(is);
-            int numFiles = codedInputStream.readRawLittleEndian32();
-            // Preconditions.checkState(numFiles == 1, "inline xml not implemented yet");
-            long pbSize = codedInputStream.readRawLittleEndian64();
-            codedInputStream.pushLimit((int)pbSize);
-            CompiledFile compiledFile = CompiledFile.parser().parsePartialFrom(codedInputStream);
-            md5 = MD5Util.getFileMD5(compiledFile.getSourcePath());
-            // codedInputStream.popLimit((int)pbSize);
-            // codedInputStream.pushLimit(0);
-            return md5;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
+//    private static String getCompiledFileMd5(File file) {
+//        String md5;
+//        try (InputStream is = new BufferedInputStream(new FileInputStream(file))) {
+//            CodedInputStream codedInputStream = CodedInputStream.newInstance(is);
+//            int numFiles = codedInputStream.readRawLittleEndian32();
+//            // Preconditions.checkState(numFiles == 1, "inline xml not implemented yet");
+//            long pbSize = codedInputStream.readRawLittleEndian64();
+//            codedInputStream.pushLimit((int)pbSize);
+//            Resources
+//            Aapt2Extractor compiledFile = Compiled.parser().parsePartialFrom(codedInputStream);
+//            md5 = MD5Util.getFileMD5(compiledFile.getSourcePath());
+//            // codedInputStream.popLimit((int)pbSize);
+//            // codedInputStream.pushLimit(0);
+//            return md5;
+//        } catch (IOException e) {
+//            throw new UncheckedIOException(e);
+//        }
+//    }
 
     protected static void prepareApkFileList(File folder, String prefixName, String awbName, ApkFiles apkFiles) {
         if (!folder.exists()) {

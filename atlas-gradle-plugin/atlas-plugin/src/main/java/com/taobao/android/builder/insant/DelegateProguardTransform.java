@@ -245,7 +245,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         dirs.forEach(new Consumer<File>() {
             @Override
             public void accept(File file) {
-                directoryInputs.add(TransformInputUtils.makeDirectoryInput(file, appVariantContext));
+                directoryInputs.add(TransformInputUtils.makeDirectoryInput(file));
             }
         });
 

@@ -222,9 +222,7 @@ import com.android.build.gradle.internal.res.LinkAndroidResForBundleTask;
 import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.tasks.AppPreBuildTask;
-import com.android.build.gradle.internal.tasks.ExtractTryWithResourcesSupportJar;
-import com.android.build.gradle.internal.tasks.ProcessJavaResTask;
+import com.android.build.gradle.internal.tasks.*;
 import com.android.build.gradle.internal.tasks.featuresplit.FeatureSetMetadataWriterTask;
 import com.android.build.gradle.internal.transforms.*;
 import com.android.build.gradle.tasks.*;
@@ -244,10 +242,7 @@ import com.taobao.android.builder.tasks.app.merge.*;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
-import com.taobao.android.builder.tasks.appbundles.BundleFeatureResourceTask;
-import com.taobao.android.builder.tasks.appbundles.FeaturesParallelTask;
-import com.taobao.android.builder.tasks.appbundles.MtlFeatureSetmetadataWriterTask;
-import com.taobao.android.builder.tasks.appbundles.MtlModuleMetadataWriterTask;
+import com.taobao.android.builder.tasks.appbundles.*;
 import com.taobao.android.builder.tasks.instantapp.AtlasBundleInstantApp;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
@@ -350,7 +345,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
 
-
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessApplicationManifest.class));
 
                                                               if (atlasExtension.isAppBundlesEnabled()){
@@ -370,6 +364,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   mtlTaskContextList.add(new MtlTaskContext(ProcessJavaResTask.class));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleResourceAction.class,null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationProcessResourceAction.class,null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationFeatureCompileAction.class,null));
 
                                                               }
 
@@ -407,14 +402,41 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               VariantScope variantScope = appVariantContext.getVariantData().getScope();
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(PackageApplication.class));
+                                                              if (atlasExtension.isAppBundlesEnabled() && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0) {
 
-                                                              if (appVariantContext.getAtlasExtension().isInstantAppEnabled()) {
+                                                                  mtlTaskContextList.add(new MtlTaskContext(com.android.build.gradle.internal.tasks.PerModuleBundleTask.class));
 
-                                                                  mtlTaskContextList.add(new MtlTaskContext(AtlasBundleInstantApp.ConfigAction.class, null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationPreBundleAction.class, null));
+
+                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlPerModuleReportDependenciesTask.CreationAction.class,null));
+
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleDepsAction.class, null));
+
+                                                                  mtlTaskContextList.add(new MtlTaskContext(com.android.build.gradle.internal.tasks.BundleReportDependenciesTask.class));
+
+                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlPackageBundleTask.CreationAction.class,null));
+
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FinalizeBundleTask.class));
+
+                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToApkTask.class));
+
+//                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToStandaloneApkTask.class));
+
+//                                                                  mtlTaskContextList.add(new MtlTaskContext(variantScope.getTaskContainer().getBundleTask().get().getClass()));
+
+//                                                                  mtlTaskContextList.add(new MtlTaskContext(ExtractApksTask.class));
+
                                                               }
 
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(PackageApplication.class));
+
+
+
+
                                                               mtlTaskContextList.add(new MtlTaskContext(ApBuildTask.ConfigAction.class, null));
+
+
 
 
                                                               mtlTaskContextList.add(new MtlTaskContext("assemble"));

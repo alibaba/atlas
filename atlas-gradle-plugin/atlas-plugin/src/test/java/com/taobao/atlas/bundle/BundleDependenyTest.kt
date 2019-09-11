@@ -221,10 +221,10 @@ import org.junit.Test
 /**
  * Created by wuzhong on 2017/5/13.
  */
-class BundleDependenyTest {
+open class BundleDependenyTest {
 
     @Test
-    fun test() {
+    open fun test() {
 
         val awbBundles = ArrayList<AwbBundle>()
 

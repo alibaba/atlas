@@ -4,9 +4,11 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl;
+import com.android.build.gradle.tasks.factory.FeatureAndroidJavaCompile;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.manager.FeatureBaseTaskAction;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import org.dom4j.DocumentException;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.TaskProvider;
@@ -42,6 +44,8 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
                         try {
                             provider.get().doFullTaskAction();
                         } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (DocumentException e) {
                             e.printStackTrace();
                         }
                     }
@@ -97,7 +101,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
 
             case PROCESS_RESOURCE:
 
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<ProcessFeatureResource> provider = new TaskFactoryImpl(getProject().getTasks()).register(new ProcessFeatureResource.CreationAction(awbBundle, variantContext, variantOutput));
                             provider.get().doFullTaskAction();
@@ -106,6 +110,43 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
                 });
 
                 break;
+
+
+
+            case JAVAC:
+
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                    if (awbBundle.dynamicFeature) {
+                        TaskProvider<FeatureAndroidJavaCompile> provider = new TaskFactoryImpl(getProject().getTasks()).register(new FeatureAndroidJavaCompile.CreationAction(awbBundle, variantContext, variantOutput));
+                        provider.get().doFullTaskAction();
+
+                    }
+                });
+
+                break;
+
+
+            case PRE_BUNDLE:
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                    if (awbBundle.dynamicFeature) {
+                        TaskProvider<PerModuleBundlesTask> provider = new TaskFactoryImpl(getProject().getTasks()).register(new PerModuleBundlesTask.CreationAction(awbBundle, variantContext, variantOutput));
+                        provider.get().zip();
+
+                    }
+                });
+                break;
+
+
+            case COLLECT_DEP:
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                    if (awbBundle.dynamicFeature) {
+                        TaskProvider<PreFeatureDepsTask> provider = new TaskFactoryImpl(getProject().getTasks()).register(new PreFeatureDepsTask.CreationAction(awbBundle, variantContext, variantOutput));
+                        provider.get().writeFile();
+
+                    }
+                });
+                break;
+
 
 
         }
@@ -263,8 +304,71 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
     }
 
 
+    public static class CreationFeatureCompileAction extends FeaturesBaseAction {
+
+        public CreationFeatureCompileAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            super(variantContext, baseVariantOutput);
+        }
+
+        @Override
+        public void configure(FeaturesParallelTask task) {
+            super.configure(task);
+            task.processType = ProcessType.JAVAC;
+        }
+
+        @NotNull
+        @Override
+        public String getName() {
+            return scope.getTaskName("compileFeature", "javac");
+        }
+
+    }
+
+
+    public static class CreationPreBundleAction extends FeaturesBaseAction {
+
+        public CreationPreBundleAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            super(variantContext, baseVariantOutput);
+        }
+
+        @Override
+        public void configure(FeaturesParallelTask task) {
+            super.configure(task);
+            task.processType = ProcessType.PRE_BUNDLE;
+        }
+
+        @NotNull
+        @Override
+        public String getName() {
+            return scope.getTaskName("PreBundles", "");
+        }
+
+    }
+
+    public static class CreationBundleDepsAction extends FeaturesBaseAction {
+
+        public CreationBundleDepsAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            super(variantContext, baseVariantOutput);
+        }
+
+        @Override
+        public void configure(FeaturesParallelTask task) {
+            super.configure(task);
+            task.processType = ProcessType.COLLECT_DEP;
+        }
+
+        @NotNull
+        @Override
+        public String getName() {
+            return scope.getTaskName("bundleDeps", "collect");
+        }
+
+    }
+
+
     enum ProcessType {
 
+        COLLECT_DEP,
         MERGE_MANIFEST,
         PROCESS_RESOURCE,
         MERGE_ASSETS,
@@ -273,7 +377,8 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
         MERGE_JAVA_RES,
         MEGGE_LIBS,
         BUNDLE_RES,
-        MERGE_RESOURCE
+        MERGE_RESOURCE,
+        PRE_BUNDLE
 
     }
 

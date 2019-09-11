@@ -22,7 +22,7 @@ import java.util.Set;
  */
 public class TransformInputUtils {
 
-    public static DirectoryInput makeDirectoryInput(File file, AppVariantContext variantContext) {
+    public static DirectoryInput makeDirectoryInput(File file) {
         return new DirectoryInput() {
             @Override
             public Map<File, Status> getChangedFiles() {

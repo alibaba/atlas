@@ -38,6 +38,12 @@ import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.FeatureBaseTaskAction;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.xml.XmlHelper;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.Namespace;
+import org.dom4j.QName;
+import org.dom4j.tree.DefaultElement;
 import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Project;
@@ -53,6 +59,7 @@ import org.gradle.internal.component.local.model.OpaqueComponentArtifactIdentifi
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import javax.swing.text.Document;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -106,7 +113,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
     }
 
     @Override
-    public void doFullTaskAction() throws IOException {
+    public void doFullTaskAction() throws IOException, DocumentException {
         // read the output of the compatible screen manifest.
 
 
@@ -139,20 +146,18 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
         }
 
 
-
-
         for (ApkData apkData : outputScope.getApkDatas()) {
 
             File manifestOutputFile =
                     new File(variantContext.getScope().getGlobalScope().getIntermediatesDir(),
                             FileUtils.join(
-                                    "feature_merged_manifests",apkData.getDirName(), awbBundle.getName(),SdkConstants.ANDROID_MANIFEST_XML));
+                                    "feature_merged_manifests", apkData.getDirName(), awbBundle.getName(), SdkConstants.ANDROID_MANIFEST_XML));
 
             File instantRunManifestOutputFile =
                     getInstantRunManifestOutputDirectory().isPresent()
                             ? FileUtils.join(
                             getInstantRunManifestOutputDirectory().get().getAsFile(),
-                            apkData.getDirName(),awbBundle.getName(),
+                            apkData.getDirName(), awbBundle.getName(),
                             SdkConstants.ANDROID_MANIFEST_XML)
                             : null;
 
@@ -172,7 +177,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
                     getInstantAppManifestOutputDirectory().isPresent()
                             ? FileUtils.join(
                             getInstantAppManifestOutputDirectory().get().getAsFile(),
-                            apkData.getDirName(),awbBundle.getName(),
+                            apkData.getDirName(), awbBundle.getName(),
                             SdkConstants.ANDROID_MANIFEST_XML)
                             : null;
 
@@ -212,19 +217,19 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
                                     getOptionalFeatures(),
                                     getReportFile());
 
-            XmlDocument mergedXmlDocument =
-                    mergingReport.getMergedXmlDocument(MergingReport.MergedManifestKind.MERGED);
-
-            ImmutableMap<String, String> properties =
-                    mergedXmlDocument != null
-                            ? ImmutableMap.of(
-                            "packageId",
-                            mergedXmlDocument.getPackageName(),
-                            "split",
-                            mergedXmlDocument.getSplitName(),
-                            SdkConstants.ATTR_MIN_SDK_VERSION,
-                            mergedXmlDocument.getMinSdkVersion())
-                            : ImmutableMap.of();
+            if (bundleManifestOutputFile.exists()) {
+                org.dom4j.Document document = XmlHelper.readXml(bundleManifestOutputFile);
+                Namespace namespace = new Namespace("dist", "http://schemas.android.com/apk/distribution");
+                Element element = document.getRootElement().addNamespace("dist", "http://schemas.android.com/apk/distribution");
+                DefaultElement defaultElement = new DefaultElement("module", namespace);
+                defaultElement.addAttribute(new QName("onDemand", namespace), String.valueOf(true));
+                defaultElement.addAttribute(new QName("title", namespace), "@string/app_name");
+                defaultElement.addElement(new QName("fusing", namespace)).addAttribute(new QName("include", namespace), String.valueOf(true));
+                element.add(defaultElement);
+                XmlHelper.saveDocument(document, new File(bundleManifestOutputFile.getParentFile(), "AndroidManifest-modify.xml"));
+                bundleManifestOutputFile.delete();
+                new File(bundleManifestOutputFile.getParentFile(), "AndroidManifest-modify.xml").renameTo(bundleManifestOutputFile);
+            }
 
         }
 
@@ -277,7 +282,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
 
     /**
      * Returns a serialized version of our map of key value pairs for placeholder substitution.
-     *
+     * <p>
      * This serialized form is only used by gradle to compare past and present tasks to determine
      * whether a task need to be re-run or not.
      */
@@ -424,13 +429,17 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
         return maxSdkVersion.get();
     }
 
-    /** Not an input, see {@link #getOptionalFeaturesString()}. */
+    /**
+     * Not an input, see {@link #getOptionalFeaturesString()}.
+     */
     @Internal
     public EnumSet<ManifestMerger2.Invoker.Feature> getOptionalFeatures() {
         return optionalFeatures.get();
     }
 
-    /** Synthetic input for {@link #getOptionalFeatures()} */
+    /**
+     * Synthetic input for {@link #getOptionalFeatures()}
+     */
     @Input
     public List<String> getOptionalFeaturesString() {
         return getOptionalFeatures().stream().map(Enum::toString).collect(Collectors.toList());
@@ -511,9 +520,9 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
         private File bundleManifestOutputDirectory;
 
 
-        public CreationAction(AwbBundle awbBundle,VariantContext variantContext,
+        public CreationAction(AwbBundle awbBundle, VariantContext variantContext,
                               BaseVariantOutput baseVariantOutput) {
-            super(awbBundle,variantContext,baseVariantOutput);
+            super(awbBundle, variantContext, baseVariantOutput);
             this.variantScope = variantContext.getScope();
         }
 
@@ -523,16 +532,17 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
             reportFile =
                     FileUtils.join(
                             variantScope.getGlobalScope().getOutputsDir(),
-                            "feature-logs",awbBundle.getName(),
+                            "feature-logs", awbBundle.getName(),
                             "manifest-merger-"
                                     + variantScope.getVariantConfiguration().getBaseName()
                                     + "-report.txt");
 
 
-            featureManifestOutputDirectory = getAppVariantOutputContext().getFeatureManifestOutputDir(scope.getVariantConfiguration(),awbBundle);
+            featureManifestOutputDirectory = getAppVariantOutputContext().getFeatureManifestOutputDir(scope.getVariantConfiguration(), awbBundle);
 
 
-            bundleManifestOutputDirectory = getAppVariantOutputContext().getBundleManifestOutputDir(scope.getVariantConfiguration(),awbBundle);;
+            bundleManifestOutputDirectory = getAppVariantOutputContext().getBundleManifestOutputDir(scope.getVariantConfiguration(), awbBundle);
+            ;
 
         }
 
@@ -589,10 +599,10 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
                     TaskInputHelper.memoize(
                             () -> getOptionalFeatures(variantScope, isAdvancedProfilingOn));
 
-                task.featureNameSupplier = () -> awbBundle.getFeatureName();
+            task.featureNameSupplier = () -> awbBundle.getFeatureName();
 
-                task.packageManifest = variantContext.getProject().files(new File(variantContext.getScope().getGlobalScope().getIntermediatesDir(),
-                                "application-meta/application-metadata.json"));
+            task.packageManifest = variantContext.getProject().files(new File(variantContext.getScope().getGlobalScope().getIntermediatesDir(),
+                    "application-meta/application-metadata.json"));
 
 //            }
         }
@@ -600,7 +610,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
         @NotNull
         @Override
         public String getName() {
-            return scope.getTaskName("processFeature"+awbBundle.getFeatureName(),"manifest");
+            return scope.getTaskName("processFeature" + awbBundle.getFeatureName(), "manifest");
         }
 
         @NotNull
@@ -611,7 +621,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
 
         /**
          * Implementation of AndroidBundle that only contains a manifest.
-         *
+         * <p>
          * This is used to pass to the merger manifest snippet that needs to be added during
          * merge.
          */
@@ -647,18 +657,18 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
         List<ManifestMerger2.Invoker.Feature> features = new ArrayList<>();
 
 
-            features.add(ManifestMerger2.Invoker.Feature.ADD_FEATURE_SPLIT_ATTRIBUTE);
-            features.add(ManifestMerger2.Invoker.Feature.CREATE_FEATURE_MANIFEST);
-            features.add(ManifestMerger2.Invoker.Feature.STRIP_MIN_SDK_FROM_FEATURE_MANIFEST);
+        features.add(ManifestMerger2.Invoker.Feature.ADD_FEATURE_SPLIT_ATTRIBUTE);
+        features.add(ManifestMerger2.Invoker.Feature.CREATE_FEATURE_MANIFEST);
+        features.add(ManifestMerger2.Invoker.Feature.STRIP_MIN_SDK_FROM_FEATURE_MANIFEST);
 
-            features.add(ManifestMerger2.Invoker.Feature.ADD_INSTANT_APP_MANIFEST);
+        features.add(ManifestMerger2.Invoker.Feature.ADD_INSTANT_APP_MANIFEST);
 
-            features.add(ManifestMerger2.Invoker.Feature.CREATE_BUNDLETOOL_MANIFEST);
+        features.add(ManifestMerger2.Invoker.Feature.CREATE_BUNDLETOOL_MANIFEST);
 
 
-            // create it for dynamic-features and base modules that are not hybrid base features.
-            // hybrid features already contain the split name.
-            features.add(ManifestMerger2.Invoker.Feature.ADD_SPLIT_NAME_TO_BUNDLETOOL_MANIFEST);
+        // create it for dynamic-features and base modules that are not hybrid base features.
+        // hybrid features already contain the split name.
+        features.add(ManifestMerger2.Invoker.Feature.ADD_SPLIT_NAME_TO_BUNDLETOOL_MANIFEST);
 
         if (variantScope.getVariantConfiguration().getBuildType().isDebuggable()) {
             features.add(ManifestMerger2.Invoker.Feature.DEBUGGABLE);
