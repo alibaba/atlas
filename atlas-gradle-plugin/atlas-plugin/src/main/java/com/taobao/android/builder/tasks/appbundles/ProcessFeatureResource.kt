@@ -51,6 +51,7 @@ import com.taobao.android.builder.extension.TBuildConfig
 import com.taobao.android.builder.extension.TBuildType
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction
 import com.taobao.android.builder.tools.ReflectUtils
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils
 import it.unimi.dsi.fastutil.Hash
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logging
@@ -385,7 +386,12 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
             task.setSourceOutputDir(sourceOutputDir)
 
             val symbles = ArrayList<File>()
-            awbBundle.allLibraryAars.forEach { androidLibrary -> symbles.add(androidLibrary.symbolFile) }
+            awbBundle.androidLibraries.forEach {
+                val packageName = ManifestFileUtils.getPackage(it.manifest)
+                val out = appVariantOutputContext.getLibrarySymbolWithPackageName(packageName)
+                out.parentFile.mkdirs()
+                symbles.add(out)
+               SymbolIo.writeSymbolListWithPackageName(it.symbolFile.toPath(),packageName,out.toPath())}
 
             task.dependenciesFileCollection = variantContext.project.files(symbles)
 

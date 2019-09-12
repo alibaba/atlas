@@ -397,6 +397,15 @@ public class AppVariantOutputContext {
                         awbBundle.getName());
     }
 
+
+    public File getLibrarySymbolWithPackageName(String packageName) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/symbol-with-packageName/" +
+                        variantData.getVariantConfiguration().getDirName() +
+                        "/" +
+                        packageName+"/"+"symbol-with-package.txt");
+    }
+
     public File getFeatureSymbols(AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
                 "/feature-symbols/" +

@@ -20,6 +20,7 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.builder.dependency.level2.AndroidDependency;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
+import com.android.ide.common.symbols.SymbolIo;
 import com.google.common.collect.*;
 
 import com.taobao.android.builder.AtlasBuildContext;
@@ -31,6 +32,7 @@ import com.taobao.android.builder.tasks.app.merge.MainArtifactsCollection;
 import com.taobao.android.builder.tasks.app.merge.MainFilesCollection;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
@@ -325,6 +327,7 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
         }
 
 
+
         MergeResources mergeResources = appVariantContext.getScope().getTaskContainer().mergeResourcesTask.get();
 
         try {
@@ -337,6 +340,12 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                     try {
                         awbTransform.getAwbBundle().isMBundle = true;
                         awbTransform.getAwbBundle().bundleInfo.setIsMBundle(true);
+                        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled()){
+                            awbTransform.getAwbBundle().getLibraryJars().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(new FileIdentity(file.getName(),file,false,false)));
+                        }
+
+
+
                         field.set(mergeResources, new AppendMainArtifactsCollection(appVariantContext.getProject(), (ArtifactCollection) field.get(mergeResources), awbTransform.getAwbBundle(), ANDROID_RES));
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();
@@ -389,21 +398,51 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
 
         //process resources
         ProcessAndroidResources processAndroidResources = appVariantContext.getScope().getTaskContainer().getProcessAndroidResTask().get();
-        FileCollection fileCollection = ((LinkApplicationAndroidResourcesTask) processAndroidResources).getDependenciesFileCollection();
-        Set<String> filesNames = new HashSet<>();
-        for (String fileName : AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).getMainManifestFiles().keySet()) {
-            filesNames.add(fileName.substring(fileName.lastIndexOf(File.separatorChar) + 1));
-        }
-        FileCollection updateFileCollection = fileCollection.filter(element -> filesNames.contains(element.getParentFile().getParentFile().getName()));
-        ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", updateFileCollection);
-        appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
-            if (isMBundle(appVariantContext, awbTransform.getAwbBundle())) {
-                awbTransform.getAwbBundle().isMBundle = true;
-                awbTransform.getAwbBundle().bundleInfo.setIsMBundle(true);
-                FileCollection fc = new AppendMainArtifactsCollection(appVariantContext.getProject(), ((LinkApplicationAndroidResourcesTask) processAndroidResources).getDependenciesFileCollection(), awbTransform.getAwbBundle(), SYMBOL_LIST_WITH_PACKAGE_NAME).getArtifactFiles();
-                ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", fc);
+        Set<File> filesNames = new HashSet<>();
+        AtlasBuildContext.androidDependencyTrees.get(getVariantName()).getMainBundle().getAllLibraryAars().forEach(new Consumer<AndroidLibrary>() {
+            @Override
+            public void accept(AndroidLibrary androidLibrary) {
+                File symbolFile = androidLibrary.getSymbolFile();
+                String packageName = ManifestFileUtils.getPackage(androidLibrary.getManifest());
+                File outFile = appVariantOutputContext.getLibrarySymbolWithPackageName(packageName);
+                outFile.getParentFile().mkdirs();
+                filesNames.add(outFile);
+
+                try {
+                    SymbolIo.writeSymbolListWithPackageName(symbolFile.toPath(),packageName,outFile.toPath());
+
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
             }
         });
+
+        appVariantOutputContext.getAwbTransformMap().values().stream().forEach(awbTransform -> {
+            if (isMBundle(appVariantContext, awbTransform.getAwbBundle())) {
+                awbTransform.getAwbBundle().getAllLibraryAars().forEach(new Consumer<AndroidLibrary>() {
+                    @Override
+                    public void accept(AndroidLibrary androidLibrary) {
+                        File symbolFile = androidLibrary.getSymbolFile();
+                        String packageName = ManifestFileUtils.getPackage(androidLibrary.getManifest());
+                        File outFile = appVariantOutputContext.getLibrarySymbolWithPackageName(packageName);
+                        outFile.getParentFile().mkdirs();
+                        filesNames.add(outFile);
+
+                        try {
+                            SymbolIo.writeSymbolListWithPackageName(symbolFile.toPath(),packageName,outFile.toPath());
+
+                        }catch (Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                awbTransform.getAwbBundle().isMBundle = true;
+                awbTransform.getAwbBundle().bundleInfo.setIsMBundle(true);
+            }
+        });
+
+        ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", getProject().files(filesNames));
+
 
 
 //        FileCollection fs = appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,AndroidArtifacts.ArtifactScope.ALL,AndroidArtifacts.ArtifactType.CLASSES);
