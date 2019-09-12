@@ -352,7 +352,8 @@ public class LocalSignHelper {
             ZipEntry zipEntry = entries.nextElement();
             if (zipEntry.getMethod() == 0){
                 if (zipEntry.getName().endsWith(".so")){
-                    nativeLibrariesPackagingMode = NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED;
+                    continue;
+//                    nativeLibrariesPackagingMode = NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED;
                 }
                 noCompressEntries.add(zipEntry.getName());
             }
