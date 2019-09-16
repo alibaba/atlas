@@ -2,17 +2,23 @@ package com.taobao.android.builder.tasks.app;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.artifact.BuildableArtifact;
 import com.android.build.api.transform.TransformException;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.ide.AtlasAndroidLibraryImpl;
+import com.android.build.gradle.internal.pipeline.TransformManagerDelegate;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.publishing.AtlasAndroidArtifacts;
 import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask;
+import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.internal.tasks.BundleReportDependenciesTask;
+import com.android.build.gradle.internal.transforms.DelegateDexSplitterTransform;
+import com.android.build.gradle.internal.transforms.DelegateMergeClassesTransform;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
@@ -62,6 +68,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -442,6 +449,62 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
         });
 
         ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", getProject().files(filesNames));
+
+
+        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled() && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0 && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+            List<TransformTask> tasks = TransformManagerDelegate.findTransformTaskByTransformType(appVariantContext, DelegateMergeClassesTransform.class);
+            if (tasks!= null && tasks.size() > 0){
+                tasks.forEach(new Consumer<TransformTask>() {
+                    @Override
+                    public void accept(TransformTask transformTask) {
+                        File outputJar = appVariantContext.getScope().getMergedClassesJarFile();
+                        DelegateMergeClassesTransform delegateMergeClassesTransform = (DelegateMergeClassesTransform) transformTask.getTransform();
+                        delegateMergeClassesTransform.setOutputJarFile(outputJar);
+                        atlasDependencyTree.getMainBundle().setMergeJarFile(outputJar);
+                    }
+                });
+            }
+
+        }
+
+
+    if (appVariantContext.getAtlasExtension().isAppBundlesEnabled() && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0 && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+        List<TransformTask> tasks = TransformManagerDelegate.findTransformTaskByTransformType(appVariantContext, DelegateDexSplitterTransform.class);
+        if (tasks!= null && tasks.size() > 0){
+            tasks.forEach(new Consumer<TransformTask>() {
+                @Override
+                public void accept(TransformTask transformTask) {
+                    File dexSplitterOutput =
+                            com.android.utils.FileUtils.join(
+                                    appVariantContext.getScope().getGlobalScope().getIntermediatesDir(),
+                                    "dex-splitter",
+                                    appVariantContext.getScope().getVariantConfiguration().getDirName());
+                    DelegateDexSplitterTransform delegateDexSplitterTransform = (DelegateDexSplitterTransform) transformTask.getTransform();
+                    delegateDexSplitterTransform.setBaseJars(appVariantContext.getProject().files(AtlasBuildContext.androidDependencyTrees.get(variantName).getMainBundle().getMergeJarFile()));
+                    List<Supplier<File>>featureFiles = new ArrayList<>();
+                    androidDependencyTree.getAwbBundles().forEach(new Consumer<AwbBundle>() {
+                        @Override
+                        public void accept(AwbBundle awbBundle) {
+                            if (awbBundle.dynamicFeature)
+                            featureFiles.add(() -> awbBundle.getMergeJarFile());
+                        }
+                    });
+                    delegateDexSplitterTransform.setFeatureJars(featureFiles);
+
+                    delegateDexSplitterTransform.setOutputDir(dexSplitterOutput);
+                    BuildableArtifact mappingFileSrc =
+                            appVariantContext.getScope().getArtifacts().hasArtifact(InternalArtifactType.APK_MAPPING)
+                                    ? appVariantContext.getScope()
+                                    .getArtifacts()
+                                    .getFinalArtifactFiles(InternalArtifactType.APK_MAPPING)
+                                    : null;
+
+                    delegateDexSplitterTransform.setMappingFileSrc(mappingFileSrc);
+                }
+            });
+        }
+
+    }
 
 
 

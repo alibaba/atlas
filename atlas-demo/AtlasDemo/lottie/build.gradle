@@ -4,12 +4,12 @@ group = 'com.atlas.demo'
 version = '1.0.0'
 
 android {
-  compileSdkVersion 25
+  compileSdkVersion 28
     resourcePrefix 'lottie_'
 
   defaultConfig {
     minSdkVersion 14
-    targetSdkVersion 25
+    targetSdkVersion 28
 
   }
   lintOptions {
@@ -22,5 +22,5 @@ android {
 }
 
 dependencies {
-  api 'com.android.support:appcompat-v7:25.2.0'
+  api 'com.android.support:appcompat-v7:28.0.0'
 }

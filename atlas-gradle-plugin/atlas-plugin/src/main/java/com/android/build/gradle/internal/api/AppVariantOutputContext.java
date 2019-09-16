@@ -381,6 +381,15 @@ public class AppVariantOutputContext {
                         awbBundle.getName());
     }
 
+    public File getFeatureMergeClassesFile(AwbBundle awbBundle) {
+        return new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                "/feature-merge-classes/" +
+                        variantData.getVariantConfiguration().getDirName() +
+                        "/" +
+                        awbBundle.getName()+"/"+awbBundle.getFeatureName()+".jar");
+    }
+
+
     public File getAwbJavaDependencyCache(AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
                 "/awb-dependency-cache/" +

@@ -17,8 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 abstract class BaseLayer implements DrawingContent, BaseKeyframeAnimation.AnimationListener {
-  private static final int SAVE_FLAGS = Canvas.CLIP_SAVE_FLAG | Canvas.CLIP_TO_LAYER_SAVE_FLAG |
-      Canvas.MATRIX_SAVE_FLAG;
+
 
   static BaseLayer forModel(
     Layer layerModel, LottieDrawable drawable, LottieComposition composition) {

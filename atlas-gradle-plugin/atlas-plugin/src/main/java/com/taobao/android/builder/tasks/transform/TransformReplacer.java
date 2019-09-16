@@ -27,6 +27,7 @@ import com.android.builder.utils.FileCache;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.StringHelper;
 import com.google.common.base.CaseFormat;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.taobao.android.builder.AtlasBuildContext;
@@ -57,6 +58,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static com.android.build.gradle.internal.scope.InternalArtifactType.APK_MAPPING;
 
 /**
  * @author lilong
@@ -380,5 +383,35 @@ public class TransformReplacer {
             return finalMainDexListFile;
         });
 
+    }
+
+    public void replaceR8Transform(BaseVariantOutput vod) {
+        List<TransformTask> transforms = TransformManagerDelegate.findTransformTaskByTransformType(
+                variantContext, R8Transform.class);
+        transforms.forEach(new Consumer<TransformTask>() {
+            @Override
+            public void accept(TransformTask transformTask) {
+                File multiDexKeepFile = variantContext.getScope().getVariantConfiguration().getMultiDexKeepFile();
+                FileCollection userMainDexListFiles;
+                if (multiDexKeepFile != null) {
+                    userMainDexListFiles = variantContext.getProject().files(multiDexKeepFile);
+                } else {
+                    userMainDexListFiles = variantContext.getProject().files();
+                }
+                File multiDexKeepProguard =
+                        variantContext.getScope().getVariantConfiguration().getMultiDexKeepProguard();
+                FileCollection userMainDexListProguardRules;
+                if (multiDexKeepProguard != null) {
+                    userMainDexListProguardRules = variantContext.getProject().files(multiDexKeepProguard);
+                } else {
+                    userMainDexListProguardRules = variantContext.getProject().files();
+                }
+
+
+                R8Transform r8Transform = (R8Transform) transformTask.getTransform();
+                DelegateR8Transform delegateR8Transform = new DelegateR8Transform(variantContext,variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),variantContext.getScope(),userMainDexListFiles,userMainDexListProguardRules,variantContext.getProject().files(),variantContext.getScope().getOutputProguardMappingFile());
+                ReflectUtils.updateField(transformTask,"transform",delegateR8Transform);
+            }
+        });
     }
 }

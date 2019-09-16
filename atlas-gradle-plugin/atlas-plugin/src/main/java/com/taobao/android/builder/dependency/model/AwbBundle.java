@@ -286,6 +286,16 @@ public class AwbBundle {
 
     private File keepProguardFile;
 
+    public File getMergeJarFile() {
+        return mergeJarFile;
+    }
+
+    public void setMergeJarFile(File mergeJarFile) {
+        this.mergeJarFile = mergeJarFile;
+    }
+
+    private File mergeJarFile;
+
     public String getFeatureName() {
         return featureName;
     }

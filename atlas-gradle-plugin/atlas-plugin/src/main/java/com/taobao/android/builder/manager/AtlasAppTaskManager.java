@@ -404,6 +404,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               if (atlasExtension.isAppBundlesEnabled() && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0) {
 
+
                                                                   mtlTaskContextList.add(new MtlTaskContext(com.android.build.gradle.internal.tasks.PerModuleBundleTask.class));
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationPreBundleAction.class, null));
@@ -446,7 +447,18 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               List<MtlTransformContext> mtlTransformContextList = new ArrayList<MtlTransformContext>();
 
 
-                                                              if (variantScope.getInstantRunBuildContext().isInInstantRunMode() && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()){
+                                                              if (atlasExtension.isAppBundlesEnabled() && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+
+                                                                  mtlTransformContextList.add(
+                                                                          new MtlTransformContext(DelegateMergeClassesTransform.class, R8Transform.class));
+
+
+                                                                  mtlTransformContextList.add(
+                                                                          new MtlTransformContext(DelegateDexSplitterTransform.class, MergeJavaResourcesTransform.class));
+                                                              }
+
+
+                                                                  if (variantScope.getInstantRunBuildContext().isInInstantRunMode() && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()){
                                                                   mtlTransformContextList.add(
                                                                           new MtlTransformContext(DelegateProguardTransform.class, ExtractJarsTransform.class,
                                                                                   InstantRunTransform.class));
@@ -476,7 +488,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               }
 
-                                                              if (!mtlTransformContextList.isEmpty()) {
+
+
+                                                                  if (!mtlTransformContextList.isEmpty()) {
                                                                   new MtlTransformInjector(appVariantContext).injectTasks(mtlTransformContextList);
                                                               }
                                                               Collection<BaseVariantOutput> baseVariantOutputDataList = appVariantContext.getVariantOutputData();
@@ -492,6 +506,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   transformReplacer.replaceMultidexTransform(vod);
 
                                                                   transformReplacer.repalaceSomeInstantTransform(vod);
+                                                                  if (atlasExtension.isAppBundlesEnabled() && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+                                                                      transformReplacer.replaceR8Transform(vod);
+
+                                                                  }
 
                                                                   if (atlasExtension.getTBuildConfig().isIncremental()) {
                                                                       InstantRunPatchingPolicy patchingPolicy = variantScope.getInstantRunBuildContext()
