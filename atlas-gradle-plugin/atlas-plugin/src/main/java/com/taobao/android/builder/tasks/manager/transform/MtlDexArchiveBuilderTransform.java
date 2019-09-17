@@ -361,6 +361,9 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 }
 
                 for (JarInput jarInput : input.getJarInputs()) {
+                    if (jarInput.getFile().getName().equals("instant-run-bootstrap.jar")){
+                        continue;
+                    }
                     logger.verbose("Jar input %s", jarInput.getFile().toString());
 
                     MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
