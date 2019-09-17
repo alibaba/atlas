@@ -218,6 +218,7 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
+import com.android.build.gradle.internal.tasks.factory.*;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
@@ -228,16 +229,12 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.api.tasks.TaskCollection;
+import org.gradle.api.tasks.TaskProvider;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.SortedMap;
+import java.util.*;
 
 import static com.android.utils.StringHelper.capitalize;
 
@@ -259,7 +256,7 @@ public class InjectTransformManager {
 
     private VariantContext variantContext;
 
-    public InjectTransformManager(VariantContext variantContext,Project project, @NonNull String variantName) {
+    public InjectTransformManager(VariantContext variantContext, Project project, @NonNull String variantName) {
         this.project = project;
         this.variantName = variantName;
         this.variantContext = variantContext;
@@ -279,9 +276,10 @@ public class InjectTransformManager {
      * @param <T>
      * @return
      */
-    public <T extends InjectTransform> TransformTask addInjectTransformBeforeTransform(Class<? extends Transform> transformClazz,
+    public <T extends InjectTransform> TransformTask addInjectTransformBeforeTransform(boolean hasBeforeTransform,Class<? extends Transform> transformClazz,
                                                                                        T injectTransform,
                                                                                        @NonNull VariantScope scope) {
+
         TaskCollection<AndroidBuilderTask> androidTasks = project.getTasks()
                 .withType(AndroidBuilderTask.class);
         SortedMap<String, AndroidBuilderTask> androidTaskSortedMap = androidTasks.getAsMap();
@@ -300,15 +298,21 @@ public class InjectTransformManager {
         }
         if (null == oprTransformTask) {
             throw new StopExecutionException("TransformTask with transfrom type:" +
-                                                     transformClazz.getName() +
-                                                     " can not found!");
+                    transformClazz.getName() +
+                    " can not found!");
         }
+
+        if (hasBeforeTransform){
+            return createTransformTask(scope,oprTransformTask,injectTransform);
+        }
+
         transforms.add(injectTransform);
         //Determines whether the two Transform dependencies are correct, that is, the output type is consistent with the next input type
         checkTransformConfig(oprTransformTask.getTransform(), injectTransform);
 
         String taskName = scope.getTaskName(getTaskNamePrefix(injectTransform));
 
+        TransformTask injectTransformTask = null;
         try {
             IntermediateStream outputStream = getOutputStream(injectTransform, scope, taskName);
 
@@ -323,7 +327,7 @@ public class InjectTransformManager {
                     outputStream,
                     ThreadRecorder.get());
 
-            TransformTask injectTransformTask = project.getTasks()
+            injectTransformTask = project.getTasks()
                     .create(configAction.getName(), configAction.getType());
             oprTransformTask.dependsOn(injectTransformTask);
             for (TransformStream transformStream : transformTaskParam.consumedInputStreams) {
@@ -349,17 +353,17 @@ public class InjectTransformManager {
                 Collection<TransformStream> newInputStream = Lists.newArrayList();
                 newInputStream.add(outputStream);
                 updateTransformTaskConfig(oprTransformTask,
-                                          newInputStream,
-                                          transformTaskParam.referencedInputStreams,
-                                          transformTaskParam.outputStream);
+                        newInputStream,
+                        transformTaskParam.referencedInputStreams,
+                        transformTaskParam.outputStream);
             }
-
-            variantContext.getTransformManager().injectTransformBeforeTransform(injectTransform,oprTransformTask.getTransform());
-
-            return injectTransformTask;
-        } catch (IllegalAccessException e) {
-            throw new StopExecutionException(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
+
+        return injectTransformTask;
+
     }
 
     /**
@@ -371,20 +375,50 @@ public class InjectTransformManager {
      * @param <T>
      * @return
      */
+
+
+    private <T extends InjectTransform> TransformTask createTransformTask(VariantScope scope, TransformTask oprTransformTask, T injectTransform) {
+
+        Optional<TaskProvider<TransformTask>> optional = scope.getTransformManager().addTransform(new TaskFactoryImpl(project.getTasks()), scope, injectTransform, new PreConfigAction() {
+                    @Override
+                    public void preConfigure(@NotNull String s) {
+
+                    }
+                },
+                new TaskConfigAction<TransformTask>() {
+                    @Override
+                    public void configure(@NotNull TransformTask transformTask) {
+
+                    }
+                },
+                new TaskProviderCallback<TransformTask>() {
+                    @Override
+                    public void handleProvider(@NotNull TaskProvider<? extends TransformTask> taskProvider) {
+
+                    }
+                });
+
+
+        TransformTask injectTransformTask = (TransformTask) TaskFactoryUtils.dependsOn(oprTransformTask, optional.get());
+
+        return injectTransformTask;
+
+    }
+
     @NotNull
     private <T extends Transform> IntermediateStream getOutputStream(T injectTransform,
                                                                      @NonNull VariantScope scope,
                                                                      String taskName) {
         File outRootFolder = FileUtils.join(project.getBuildDir(),
-                                            StringHelper.toStrings(AndroidProject.FD_INTERMEDIATES,
-                                                                   FD_TRANSFORMS,
-                                                                   injectTransform.getName(),
-                                                                   scope.getDirectorySegments()));
+                StringHelper.toStrings(AndroidProject.FD_INTERMEDIATES,
+                        FD_TRANSFORMS,
+                        injectTransform.getName(),
+                        scope.getDirectorySegments()));
 
         Set<? super Scope> requestedScopes = injectTransform.getScopes();
 
         // create the output
-        return IntermediateStream.builder(project,injectTransform.getName() + "-" + scope.getFullVariantName(),taskName)
+        return IntermediateStream.builder(project, injectTransform.getName() + "-" + scope.getFullVariantName(), taskName)
                 .addContentTypes(injectTransform.getOutputTypes())
                 .addScopes(requestedScopes)
                 .setRootLocation(outRootFolder).build();
@@ -415,14 +449,14 @@ public class InjectTransformManager {
                                            @NonNull Collection<TransformStream> referencedInputStreams,
                                            @Nullable IntermediateStream outputStream) throws IllegalAccessException {
         Field consumedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class,
-                                                                      "consumedInputStreams",
-                                                                      true);
+                "consumedInputStreams",
+                true);
         Field referencedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class,
-                                                                        "referencedInputStreams",
-                                                                        true);
+                "referencedInputStreams",
+                true);
         Field outputStreamField = FieldUtils.getDeclaredField(StreamBasedTask.class,
-                                                              "outputStream",
-                                                              true);
+                "outputStream",
+                true);
 
         if (null == consumedInputStreamsField ||
                 null == referencedInputStreamsField ||
@@ -445,14 +479,14 @@ public class InjectTransformManager {
     public static TransformTaskParam getTransformParam(TransformTask transformTask) throws IllegalAccessException {
         TransformTaskParam transformTaskParam = new TransformTaskParam();
         Field consumedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class,
-                                                                      "consumedInputStreams",
-                                                                      true);
+                "consumedInputStreams",
+                true);
         Field referencedInputStreamsField = FieldUtils.getDeclaredField(StreamBasedTask.class,
-                                                                        "referencedInputStreams",
-                                                                        true);
+                "referencedInputStreams",
+                true);
         Field outputStreamField = FieldUtils.getDeclaredField(StreamBasedTask.class,
-                                                              "outputStream",
-                                                              true);
+                "outputStream",
+                true);
 
         if (null == consumedInputStreamsField ||
                 null == referencedInputStreamsField ||
@@ -507,7 +541,6 @@ public class InjectTransformManager {
 
         return sb.toString();
     }
-
 
 
 }

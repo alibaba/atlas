@@ -250,7 +250,7 @@ public class MtlTransformInjector {
                 TransformTask transformTask = findTransformTask(mtlTransformContext);
 
                 TransformTask injectedTask = appVariantContext.getInjectTransformManager()
-                    .addInjectTransformBeforeTransform(transformTask.getTransform().getClass(),
+                    .addInjectTransformBeforeTransform(mtlTransformContext.isHasBeforeTransform(),transformTask.getTransform().getClass(),
                                                        TransformManagerDelegate.createTransform(appVariantContext,
                                                                                         mtlTransformContext
                                                                                             .getTransformTask(), (BaseVariantOutput) vod),

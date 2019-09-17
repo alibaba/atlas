@@ -26,11 +26,6 @@
             android:name=".UpdateDemoActivity"
             android:label="@string/title_activity_scrolling"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".RemoteDemoActivity"
-            android:label="@string/title_activity_update"
-            android:process=":remote"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
 
         <provider
             android:name=".MyContentProvider"

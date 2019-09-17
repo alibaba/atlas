@@ -220,6 +220,10 @@ import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
  */
 public class MtlTransformContext {
 
+
+
+    private boolean hasBeforeTransform;
+
     private Class<? extends MtlInjectTransform> transformTask;
 
     public Class<? extends AndroidBuilderTask> getBeforeAndroidTaskClazz() {
@@ -243,6 +247,16 @@ public class MtlTransformContext {
         }
     }
 
+    public MtlTransformContext(boolean hasBeforeTransform,Class<? extends MtlInjectTransform> transformTask, Class<? extends Transform>... clazz) {
+        this.transformTask = transformTask;
+        this.hasBeforeTransform = hasBeforeTransform;
+        if (null != clazz) {
+            for (Class<? extends Transform> cl : clazz) {
+                beforeClazzList.add(cl);
+            }
+        }
+    }
+
 
     public MtlTransformContext(Class<? extends MtlInjectTransform> transformTask, Class<? extends AndroidBuilderTask> clazz) {
         this.transformTask = transformTask;
@@ -257,6 +271,10 @@ public class MtlTransformContext {
 
     public List<Class<? extends Transform>> getBeforeClazzList() {
         return beforeClazzList;
+    }
+
+    public boolean isHasBeforeTransform() {
+        return hasBeforeTransform;
     }
 
     @Override

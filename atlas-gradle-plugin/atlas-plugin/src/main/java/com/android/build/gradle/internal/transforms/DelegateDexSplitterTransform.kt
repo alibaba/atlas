@@ -10,7 +10,10 @@ import com.android.utils.FileUtils
 import com.taobao.android.builder.tasks.manager.transform.MtlInjectTransform
 import org.gradle.api.file.FileCollection
 import java.io.File
+import java.io.FileFilter
+import java.io.FilenameFilter
 import java.nio.file.Files
+import java.util.function.Consumer
 import java.util.function.Supplier
 
 /**
@@ -100,5 +103,19 @@ class DelegateDexSplitterTransform(
                 FileUtils.copyDirectory(it, transformOutputDir)
                 FileUtils.deleteRecursivelyIfExists(it)
             }
+
+        appVariantOutputContext.awbTransformMap.values.filter { it.awbBundle.dynamicFeature }.forEach(Consumer {
+
+            var featureName:String = it.awbBundle.featureName
+            var dir:File = appVariantOutputContext.getFeatureFinalDexFolder(it.awbBundle)
+            dir.mkdirs()
+
+
+            outputDir!!.listFiles().find { it.name ==  featureName}?.listFiles(FileFilter { it.name.endsWith("dex") })!![0]?.let {
+                FileUtils.copyFileToDirectory(it, dir)
+                FileUtils.deleteRecursivelyIfExists(it)
+            }
+        })
     }
+
 }

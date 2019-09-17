@@ -2,10 +2,12 @@ package com.taobao.demo;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.text.TextUtils;
 import android.widget.Toast;
+import com.google.android.play.core.splitcompat.SplitCompat;
 
 import java.io.File;
 
@@ -20,6 +22,13 @@ public class DemoApplication extends Application {
 
         super.onCreate();
 
+
+    }
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        SplitCompat.install(this);
 
     }
 }

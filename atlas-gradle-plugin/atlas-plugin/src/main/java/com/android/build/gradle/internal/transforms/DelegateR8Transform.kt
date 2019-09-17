@@ -58,7 +58,7 @@ class DelegateR8Transform(
     // This is a huge sledgehammer, but it is necessary until http://b/72683872 is fixed.
     private val proguardConfigurations: MutableList<String> = mutableListOf("-ignorewarnings")
 
-    val r8Transform: R8Transform? = null
+      lateinit var r8Transform: R8Transform
 
     var mainDexListOutput: File? = null
 
@@ -92,7 +92,7 @@ class DelegateR8Transform(
                     scope.globalScope.projectOptions[BooleanOption.FULL_R8]
             )
 
-    override fun getName(): String = "delegater8"
+    override fun getName(): String = "delegateR8"
 
     override fun getInputTypes(): MutableSet<out QualifiedContent.ContentType> = TransformManager.CONTENT_JARS
 
@@ -175,8 +175,11 @@ class DelegateR8Transform(
 
         val proguardMappingInput =
                 if (inputProguardMapping.isEmpty) null else inputProguardMapping.singleFile.toPath()
+
+        r8Transform.allConfigurationFiles.files.forEach(Consumer { variantContext.project.logger.warn("proguard File:"+it.absolutePath) })
+
         val proguardConfig = com.android.builder.dexing.ProguardConfig(
-                allConfigurationFiles.files.map { it.toPath() },
+                r8Transform.allConfigurationFiles.files.map { it.toPath() },
                 outputProguardMapping.toPath(),
                 proguardMappingInput,
                 proguardConfigurations
@@ -228,6 +231,8 @@ class DelegateR8Transform(
 
         val bootClasspathInputs =
                 TransformInputUtil.getAllFiles(transformInvocation.referencedInputs) + bootClasspath.value
+
+        inputClasses.forEach(Consumer { variantContext.project.logger.warn("input File:" + it) })
 
         runR8(
                 inputClasses,

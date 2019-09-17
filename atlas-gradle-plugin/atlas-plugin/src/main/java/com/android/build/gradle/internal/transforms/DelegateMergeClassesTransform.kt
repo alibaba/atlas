@@ -1,6 +1,7 @@
 package com.android.build.gradle.internal.transforms
 
 import com.android.build.api.transform.QualifiedContent
+import com.android.build.api.transform.QualifiedContent.Scope.EXTERNAL_LIBRARIES
 import com.android.build.api.transform.Transform
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.gradle.BaseExtension
@@ -11,6 +12,7 @@ import com.android.build.gradle.internal.res.namespaced.JarRequest
 import com.android.build.gradle.internal.res.namespaced.JarWorkerRunnable
 import com.android.build.gradle.internal.scope.ApkData
 import com.android.build.gradle.internal.tasks.Workers
+import com.google.common.collect.Sets
 import com.taobao.android.builder.AtlasBuildContext
 import com.taobao.android.builder.dependency.model.AwbBundle
 import com.taobao.android.builder.extension.AtlasExtension
@@ -46,7 +48,7 @@ class DelegateMergeClassesTransform(
     }
 
     override fun getScopes(): MutableSet<QualifiedContent.Scope> {
-        return TransformManager.SCOPE_FULL_PROJECT
+        return Sets.immutableEnumSet(EXTERNAL_LIBRARIES)
     }
 
     override fun getReferencedScopes(): MutableSet<in QualifiedContent.Scope> {

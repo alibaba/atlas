@@ -9,6 +9,7 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.ide.AtlasAndroidLibraryImpl;
+import com.android.build.gradle.internal.pipeline.StreamFilter;
 import com.android.build.gradle.internal.pipeline.TransformManagerDelegate;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
@@ -17,6 +18,7 @@ import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.internal.tasks.BundleReportDependenciesTask;
+import com.android.build.gradle.internal.tasks.PerModuleBundleTask;
 import com.android.build.gradle.internal.transforms.DelegateDexSplitterTransform;
 import com.android.build.gradle.internal.transforms.DelegateMergeClassesTransform;
 import com.android.build.gradle.options.BooleanOption;
@@ -500,6 +502,16 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                                     : null;
 
                     delegateDexSplitterTransform.setMappingFileSrc(mappingFileSrc);
+
+
+                }
+            });
+
+            appVariantContext.getProject().getTasks().withType(PerModuleBundleTask.class).forEach(new Consumer<PerModuleBundleTask>() {
+                @Override
+                public void accept(PerModuleBundleTask perModuleBundleTask) {
+                    ReflectUtils.updateField(perModuleBundleTask,"dexFiles",appVariantContext.getScope().getTransformManager().getPipelineOutputAsFileCollection(
+                            StreamFilter.DEX));
                 }
             });
         }

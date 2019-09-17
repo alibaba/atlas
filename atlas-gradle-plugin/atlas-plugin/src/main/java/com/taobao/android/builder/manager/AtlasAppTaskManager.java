@@ -454,7 +454,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
 
                                                                   mtlTransformContextList.add(
-                                                                          new MtlTransformContext(DelegateDexSplitterTransform.class, MergeJavaResourcesTransform.class));
+                                                                          new MtlTransformContext(true,DelegateDexSplitterTransform.class, MergeJavaResourcesTransform.class));
                                                               }
 
 

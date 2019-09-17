@@ -6,11 +6,20 @@
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-
+    <string name="downloading">Downloading %1$s</string>
+    <string name="installing">Installing %1$s</string>
+    <string name="error_for_module">Error: %1$i for module %2$s</string>
     <string name="action_settings">Settings</string>
+    <string name="loading_module">Loading module %1$s</string>
+    <string name="remote_bundle">load_remote_bundle</string>
+    <string name="starting_install_for">Starting install for %1$s</string>
+    <string name="user_cancelled">The user cancelled module installation</string>
     <string name="title_activity_welcome">WelcomeActivity</string>
+    <string name="already_installed">Already installed</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="instructions">Press a button to perform an action.</string>
+    <string name="loading">Loading</string>
     <string name="title_activity_scrolling">动态部署模拟</string>
     <string name="update_step">
         "请根据工程根目录下的Tpatch.txt执行动态部署的过程"
