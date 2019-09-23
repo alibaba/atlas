@@ -376,6 +376,10 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                     if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled() && !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getAllMainDexJars().contains(jarInput.getFile())) {
                         continue;
                     }
+                    if (jarInput.getFile().getName().equals("instant-run-bootstrap.jar")){
+                        continue;
+                    }
+
                     MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
                             getD8DesugaringCacheInfo(
                                     desugarIncrementalTransformHelper,
