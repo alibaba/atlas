@@ -4,7 +4,7 @@
 
     <application
         android:allowBackup="true"
-        android:supportsRtl="true">
+        androidxsRtl="true">
         <activity
             android:name=".ItemListActivity"
             android:label="@string/title_item_list"

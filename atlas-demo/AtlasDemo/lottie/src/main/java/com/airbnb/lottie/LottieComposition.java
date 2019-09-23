@@ -4,9 +4,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.os.AsyncTask;
-import android.support.annotation.Nullable;
-import android.support.v4.util.LongSparseArray;
-
+import androidx.annotation.Nullable;
+import androidx.collection.LongSparseArray;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

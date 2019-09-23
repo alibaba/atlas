@@ -357,7 +357,8 @@ public class MtlDexArchiveBuilderTransform extends Transform {
 
                 for (DirectoryInput dirInput : input.getDirectoryInputs()) {
                     logger.warning("Dir input %s", dirInput.getFile().toString());
-                    if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled() && !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getInputDirs().contains(dirInput.getFile())) {
+                    if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()
+                            && !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getInputDirs().contains(dirInput.getFile())) {
                         continue;
                     }
                     convertToDexArchive(

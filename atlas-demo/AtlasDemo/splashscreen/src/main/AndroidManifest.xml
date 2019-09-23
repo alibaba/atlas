@@ -3,7 +3,7 @@
     package="com.taobao.splashscreen">
 
     <application android:allowBackup="true"
-        android:supportsRtl="true">
+        androidxsRtl="true">
 
         <activity
             android:name=".WelcomeActivity"

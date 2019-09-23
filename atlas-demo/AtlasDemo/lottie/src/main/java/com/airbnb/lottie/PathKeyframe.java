@@ -2,14 +2,15 @@ package com.airbnb.lottie;
 
 import android.graphics.Path;
 import android.graphics.PointF;
-import android.support.annotation.Nullable;
 import android.view.animation.Interpolator;
 
+import androidx.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 class PathKeyframe extends Keyframe<PointF> {
-  @Nullable private Path path;
+  @Nullable
+  private Path path;
 
   private PathKeyframe(LottieComposition composition, @Nullable PointF startValue,
       @Nullable PointF endValue, @Nullable Interpolator interpolator, float startFrame,

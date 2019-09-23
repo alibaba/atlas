@@ -513,7 +513,7 @@ public class AtlasConfigurationHelper {
         final String explodedSolibType = AtlasAndroidArtifacts.TYPE_EXPLODED_SOLIB;
 
         final String jetifierBlackList =
-                new ProjectOptions(project).get(StringOption.JETIFIER_BLACKLIST);
+                new ProjectOptions(project).get(StringOption.JETIFIER_BLACKLIST) == null ?"":new ProjectOptions(project).get(StringOption.JETIFIER_BLACKLIST);
 
 
         boolean sharedLibSupport =
@@ -533,7 +533,7 @@ public class AtlasConfigurationHelper {
                     transform.getTo().attribute(ARTIFACT_FORMAT, TYPE_PROCESSED_AWB);
                     if (new ProjectOptions(project).get(BooleanOption.ENABLE_JETIFIER)) {
                         transform.artifactTransform(
-                                JetifyTransform.class, config -> config.params(jetifierBlackList));
+                                FeatureJetifyTransform.class, config -> config.params(jetifierBlackList));
                     } else {
                         transform.artifactTransform(IdentityTransform.class);
                     }

@@ -10,7 +10,7 @@ import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
-import android.support.v4.app.FragmentActivity;
+import androidx.v4.app.FragmentActivity;
 import android.taobao.atlas.bundleInfo.AtlasBundleInfoManager;
 import android.taobao.atlas.framework.Atlas;
 import android.taobao.atlas.framework.BundleImpl;
@@ -119,10 +119,10 @@ public class ActivityGroupDelegate {
 //            dispatchRetainNonConfigurationInstanceMethod.setAccessible(true);
 //            onActivityResultMethod = Activity.class.getDeclaredMethod("onActivityResult",int.class,int.class,Intent.class);
 //            onActivityResultMethod.setAccessible(true);
-//            noteStateNotSavedMethod = Class.forName("android.support.v4.app.FragmentManagerImpl").
+//            noteStateNotSavedMethod = Class.forName("androidx.v4.app.FragmentManagerImpl").
 //                    getDeclaredMethod("noteStateNotSaved");
 //            noteStateNotSavedMethod.setAccessible(true);
-//            findFragmentByWhoMethod = Class.forName("android.support.v4.app.FragmentManagerImpl").
+//            findFragmentByWhoMethod = Class.forName("androidx.v4.app.FragmentManagerImpl").
 //                    getDeclaredMethod("findFragmentByWho",String.class);
 //            findFragmentByWhoMethod.setAccessible(true);
 //        } catch (Throwable e) {

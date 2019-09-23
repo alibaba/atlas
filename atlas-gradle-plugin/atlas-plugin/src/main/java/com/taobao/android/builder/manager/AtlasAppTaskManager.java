@@ -209,6 +209,7 @@
 
 package com.taobao.android.builder.manager;
 
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
@@ -217,6 +218,7 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
+import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.res.LinkAndroidResForBundleTask;
 import com.android.build.gradle.internal.scope.ApkData;
@@ -259,6 +261,7 @@ import org.gradle.api.internal.tasks.TaskDependencyInternal;
 import org.gradle.api.tasks.TaskCollection;
 import org.gradle.api.tasks.TaskDependency;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 import java.io.File;
 import java.util.*;
@@ -529,9 +532,22 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   public void execute(Task task) {
                                                                       JavaCompile compile = (JavaCompile) task;
                                                                       AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().add(compile.getDestinationDir());
+
                                                                   }
                                                               });
 
+                                                              appVariantContext.getProject().getTasks().withType(KotlinCompile.class).forEach(new Consumer<KotlinCompile>() {
+                                                                  @Override
+                                                                  public void accept(KotlinCompile kotlinCompile) {
+                                                                      kotlinCompile.doLast(new Action<Task>() {
+                                                                          @Override
+                                                                          public void execute(Task task) {
+                                                                              AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().add(((KotlinCompile)task).getDestinationDir());
+
+                                                                          }
+                                                                      });
+                                                                  }
+                                                              });
                                                               PackageAndroidArtifact packageAndroidArtifact = appVariantContext.getScope().getTaskContainer().getPackageAndroidTask().get();
                                                               if (packageAndroidArtifact != null) {
                                                                   ReflectUtils.updateField(packageAndroidArtifact, "javaResourceFiles", new AbstractFileCollection() {

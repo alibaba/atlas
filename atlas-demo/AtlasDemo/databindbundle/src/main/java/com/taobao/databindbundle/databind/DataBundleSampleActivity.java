@@ -1,13 +1,13 @@
 package com.taobao.databindbundle.databind;
 
 import android.app.Activity;
-import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import androidx.databinding.DataBindingUtil;
 import com.taobao.databindbundle.R;
 import com.taobao.databindbundle.databinding.BundleDatabindMainBinding;
 

@@ -3,7 +3,7 @@ package com.airbnb.lottie;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -16,7 +16,8 @@ class ContentGroup implements DrawingContent, PathContent,
 
   private final List<Content> contents = new ArrayList<>();
   private final LottieDrawable lottieDrawable;
-  @Nullable private List<PathContent> pathContents;
+  @Nullable
+  private List<PathContent> pathContents;
   @Nullable private TransformKeyframeAnimation transformAnimation;
 
   ContentGroup(final LottieDrawable lottieDrawable, BaseLayer layer, ShapeGroup shapeGroup) {

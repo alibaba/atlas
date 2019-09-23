@@ -9,12 +9,11 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.constraintlayout.widget.Group
 import com.google.android.play.core.splitcompat.SplitCompat
-import com.google.android.play.core.splitinstall.SplitInstallManager
-import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
-import com.google.android.play.core.splitinstall.SplitInstallRequest
-import com.google.android.play.core.splitinstall.SplitInstallSessionState
+import com.google.android.play.core.splitinstall.*
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
+import kotlinx.android.synthetic.main.guild_remote_bundle.*
 import java.util.*
 
 /**
@@ -35,7 +34,7 @@ private const val CONFIRMATION_REQUEST_CODE = 1
 
 private const val TAG = "DynamicFeatures"
 
-class RemoteActivity : RemoteBaseActivity() {
+class RemoteDemoActivity : RemoteBaseActivity() {
     /** Listener used to handle changes in state for install requests. */
     private val listener = SplitInstallStateUpdatedListener { state ->
         val multiInstall = state.moduleNames().size > 1
@@ -57,7 +56,7 @@ class RemoteActivity : RemoteBaseActivity() {
                 manager.startConfirmationDialogForResult(state, this, CONFIRMATION_REQUEST_CODE)
             }
             SplitInstallSessionStatus.INSTALLED -> {
-                if (langsInstall){
+                if (false){
                     onSuccessfulLanguageLoad(names)
                 } else {
                     onSuccessfulLoad(names, launch = !multiInstall)
@@ -96,16 +95,19 @@ class RemoteActivity : RemoteBaseActivity() {
     private val clickListener by lazy {
         View.OnClickListener {
             when (it.id) {
-                R.id.load_remote_bundle -> loadAndLaunchModule(moduleRemote)
-//                R.id.btn_install_all_now -> installAllFeaturesNow()
-//                R.id.btn_install_all_deferred -> installAllFeaturesDeferred()
-//                R.id.btn_request_uninstall -> requestUninstall()
+                R.id.btn_load_remote -> loadAndLaunchModule(moduleRemote)
+                R.id.btn_install_all_now -> installAllFeaturesNow()
+                R.id.btn_install_all_deferred -> installAllFeaturesDeferred()
+                R.id.btn_request_uninstall -> requestUninstall()
             }
         }
     }
 
     private lateinit var manager: SplitInstallManager
 
+
+    private lateinit var progress: Group
+    private lateinit var buttons: Group
     private lateinit var progressBar: ProgressBar
     private lateinit var progressText: TextView
 
@@ -241,12 +243,22 @@ class RemoteActivity : RemoteBaseActivity() {
     private fun initializeViews() {
         progressBar = findViewById(R.id.progress_bar)
         progressText = findViewById(R.id.progress_text)
+        progress = findViewById(R.id.progress)
+        buttons = findViewById(R.id.buttons)
         setupClickListener()
     }
 
     /** Set all click listeners required for the buttons on the UI. */
     private fun setupClickListener() {
-        setClickListener(R.id.load_remote_bundle, clickListener)
+        setClickListener(R.id.btn_load_remote, clickListener)
+        setClickListener(R.id.btn_install_all_deferred, clickListener)
+        setClickListener(R.id.btn_install_all_now, clickListener)
+        setClickListener(R.id.btn_request_uninstall, clickListener)
+        setClickListener(R.id.btn_instant_dynamic_feature_split_install, clickListener)
+
+
+
+
 
 
     }
@@ -274,7 +286,7 @@ class RemoteActivity : RemoteBaseActivity() {
 
 }
 
-fun RemoteActivity.toastAndLog(text: String) {
+fun RemoteDemoActivity.toastAndLog(text: String) {
     Toast.makeText(this, text, Toast.LENGTH_LONG).show()
     Log.d(TAG, text)
 }

@@ -4,11 +4,11 @@ group = 'com.atlas.demo'
 version = '1.0.0'
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 25
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
 
@@ -27,8 +27,8 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:25.1.0'
-    compile 'com.android.support:support-v4:25.1.0'
-    compile 'com.android.support:recyclerview-v7:25.3.0'
-    compile 'com.android.support:design:25.3.0'
+    compile 'com.android.support:appcompat-v7:28.0.0'
+    compile 'com.android.support:support-v4:28.0.0'
+    compile 'com.android.support:recyclerview-v7:28.0.0'
+    compile 'com.android.support:design:28.0.0'
 }

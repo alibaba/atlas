@@ -8,8 +8,8 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
-import android.support.annotation.FloatRange;
-import android.support.annotation.Nullable;
+import androidx.annotation.FloatRange;
+import androidx.annotation.Nullable;
 import android.util.Log;
 
 import java.util.ArrayList;

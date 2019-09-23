@@ -1,7 +1,8 @@
 package com.airbnb.lottie;
 
-import android.support.annotation.FloatRange;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.FloatRange;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,8 @@ abstract class BaseKeyframeAnimation<K, A> {
   private final List<? extends Keyframe<K>> keyframes;
   private float progress = 0f;
 
-  @Nullable private Keyframe<K> cachedKeyframe;
+  @Nullable
+  private Keyframe<K> cachedKeyframe;
 
   BaseKeyframeAnimation(List<? extends Keyframe<K>> keyframes) {
     this.keyframes = keyframes;

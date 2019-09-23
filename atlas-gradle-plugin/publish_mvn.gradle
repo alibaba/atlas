@@ -92,7 +92,6 @@ publishing {
 
                 from components.java
                 artifact sourcesJar
-//                artifact javadocJar
 
             pom.withXml {
                 asNode().dependencies.'*'.each {

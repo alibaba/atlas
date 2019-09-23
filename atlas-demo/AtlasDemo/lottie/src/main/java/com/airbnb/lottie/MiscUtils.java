@@ -2,7 +2,7 @@ package com.airbnb.lottie;
 
 import android.graphics.Path;
 import android.graphics.PointF;
-import android.support.annotation.FloatRange;
+import androidx.annotation.FloatRange;
 
 class MiscUtils {
   static PointF addPoints(PointF p1, PointF p2) {

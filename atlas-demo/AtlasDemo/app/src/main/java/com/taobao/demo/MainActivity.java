@@ -1,24 +1,23 @@
 package com.taobao.demo;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.BottomNavigationView;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.middleware.dialog.Dialog;
-import com.taobao.update.Updater;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationView;
+
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -148,12 +147,7 @@ public class MainActivity extends AppCompatActivity
             startActivity(intent);
 
         } else if (id == R.id.awo_manager) {
-            Dialog dialog = new Dialog(this,"单bundle调试",
-                    "1、安装设备且连接电脑成功\n\n"+
-                     "2、修改一个bundle工程的代码或者自由（设置生效的标识）\n\n"+
-                            "3、bundle工程的目录下执行 ../gradlew clean assemblePatchDebug,然后等应用重启或者应用关闭后点击重启");
 
-            dialog.show();
 
 
         } else if (id == R.id.nav_dex_patch) {

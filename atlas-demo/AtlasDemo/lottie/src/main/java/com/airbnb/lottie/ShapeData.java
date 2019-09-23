@@ -1,7 +1,7 @@
 package com.airbnb.lottie;
 
 import android.graphics.PointF;
-import android.support.annotation.FloatRange;
+import androidx.annotation.FloatRange;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

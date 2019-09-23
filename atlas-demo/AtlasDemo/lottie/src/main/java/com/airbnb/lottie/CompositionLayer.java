@@ -2,8 +2,8 @@ package com.airbnb.lottie;
 
 import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.support.annotation.FloatRange;
-import android.support.v4.util.LongSparseArray;
+import androidx.annotation.FloatRange;
+import androidx.collection.LongSparseArray;
 
 import java.util.ArrayList;
 import java.util.List;

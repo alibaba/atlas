@@ -8,17 +8,18 @@
 
     <application
         android:name=".DemoApplication"
-        tools:replace="android:allowBackup"
+        tools:replace="android:allowBackup,android:appComponentFactory"
+        android:appComponentFactory="com.taobao.demo.runtime.AppCoreComponentFactory"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="Atlas"
-        android:supportsRtl="true">
+        androidxsRtl="true">
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".MainActivity2"
+            android:name=".RemoteDemoActivity"
             android:label="@string/app_name"
             android:process=":remote"
             android:theme="@style/AppTheme.NoActionBar" />

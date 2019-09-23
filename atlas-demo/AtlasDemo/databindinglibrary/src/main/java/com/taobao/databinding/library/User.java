@@ -1,9 +1,8 @@
 package com.taobao.databinding.library;
 
-import android.databinding.BaseObservable;
-import android.databinding.Bindable;
 
-import com.taobao.databindlibrary.BR;
+import androidx.databinding.BaseObservable;
+import androidx.databinding.Bindable;
 
 /**
  * Created by wuzhong on 2016/10/19.
@@ -26,7 +25,7 @@ public class User extends BaseObservable {
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;
-        this.notifyPropertyChanged(BR.firstName);
+        this.notifyPropertyChanged(com.taobao.databindlibrary.BR.firstName);
     }
 
     @Bindable

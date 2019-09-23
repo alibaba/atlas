@@ -5,7 +5,7 @@ import android.graphics.Matrix;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
 import android.graphics.PointF;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
 
