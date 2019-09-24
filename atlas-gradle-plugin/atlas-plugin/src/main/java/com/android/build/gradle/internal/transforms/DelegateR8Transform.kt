@@ -9,6 +9,7 @@ import com.android.build.gradle.internal.PostprocessingFeatures
 import com.android.build.gradle.internal.api.AppVariantContext
 import com.android.build.gradle.internal.api.AppVariantOutputContext
 import com.android.build.gradle.internal.pipeline.TransformManager
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.VariantType
@@ -17,8 +18,12 @@ import com.android.builder.dexing.R8OutputType
 import com.android.builder.dexing.runR8
 import com.android.ide.common.blame.MessageReceiver
 import com.taobao.android.builder.AtlasBuildContext
+import com.taobao.android.builder.tools.multidex.mutli.MainDexLister
+import org.apache.commons.io.FileUtils
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
+import org.gradle.api.internal.provider.DefaultProvider
+import org.gradle.api.provider.Provider
 
 import java.io.File
 import java.nio.file.Files
@@ -42,7 +47,7 @@ class DelegateR8Transform(
         private val java8Support: VariantScope.Java8LangSupport,
         private var disableTreeShaking: Boolean,
         private var disableMinification: Boolean,
-        private val mainDexListFiles: FileCollection,
+        private var mainDexListFiles: FileCollection,
         private val mainDexRulesFiles: FileCollection,
         private val inputProguardMapping: FileCollection,
         private val outputProguardMapping: File,
@@ -58,7 +63,7 @@ class DelegateR8Transform(
     // This is a huge sledgehammer, but it is necessary until http://b/72683872 is fixed.
     private val proguardConfigurations: MutableList<String> = mutableListOf("-ignorewarnings")
 
-      lateinit var r8Transform: R8Transform
+    lateinit var r8Transform: R8Transform
 
     var mainDexListOutput: File? = null
 
@@ -165,7 +170,7 @@ class DelegateR8Transform(
         val enableDesugaring = java8Support == VariantScope.Java8LangSupport.R8
                 && r8OutputType == R8OutputType.DEX
         val toolConfig = com.android.builder.dexing.ToolConfig(
-                minSdkVersion = minSdkVersion,
+                minSdkVersion = 21,
                 isDebuggable = isDebuggable,
                 disableTreeShaking = disableTreeShaking,
                 disableDesugaring = !enableDesugaring,
@@ -176,7 +181,7 @@ class DelegateR8Transform(
         val proguardMappingInput =
                 if (inputProguardMapping.isEmpty) null else inputProguardMapping.singleFile.toPath()
 
-        r8Transform.allConfigurationFiles.files.forEach(Consumer { variantContext.project.logger.warn("proguard File:"+it.absolutePath) })
+        r8Transform.allConfigurationFiles.files.forEach(Consumer { variantContext.project.logger.warn("proguard File:" + it.absolutePath) })
 
         val proguardConfig = com.android.builder.dexing.ProguardConfig(
                 r8Transform.allConfigurationFiles.files.map { it.toPath() },
@@ -185,28 +190,6 @@ class DelegateR8Transform(
                 proguardConfigurations
         )
 
-        val mainDexListConfig = if (dexingType == DexingType.LEGACY_MULTIDEX) {
-            com.android.builder.dexing.MainDexListConfig(
-                    mainDexRulesFiles.files.map { it.toPath() },
-                    mainDexListFiles.files.map { it.toPath() },
-                    getPlatformRules(),
-                    mainDexListOutput?.toPath()
-            )
-        } else {
-            com.android.builder.dexing.MainDexListConfig()
-        }
-
-        val output = outputProvider.getContentLocation(
-                "main",
-                TransformManager.CONTENT_DEX,
-                scopes,
-                outputFormat
-        )
-
-        when (outputFormat) {
-            Format.JAR -> Files.createDirectories(output.parentFile.toPath())
-            Format.DIRECTORY -> Files.createDirectories(output.toPath())
-        }
 
         val inputJavaResources = mutableListOf<Path>()
         val inputClasses = mutableListOf<Path>()
@@ -222,7 +205,7 @@ class DelegateR8Transform(
 
         }
 
-        appVariantOutputContext.awbTransformMap.values.filter {it.awbBundle.dynamicFeature }.forEach(Consumer {  inputClasses.add(it.awbBundle.mergeJarFile.toPath())})
+        appVariantOutputContext.awbTransformMap.values.filter { it.awbBundle.dynamicFeature }.forEach(Consumer { inputClasses.add(it.awbBundle.mergeJarFile.toPath()) })
 
 
         val javaResources =
@@ -233,6 +216,34 @@ class DelegateR8Transform(
                 TransformInputUtil.getAllFiles(transformInvocation.referencedInputs) + bootClasspath.value
 
         inputClasses.forEach(Consumer { variantContext.project.logger.warn("input File:" + it) })
+
+
+        mainDexListFiles = variantContext.project.files(mainDexListProvider(inputClasses, bootClasspathInputs.map { it.toPath() }))
+
+//        val mainDexListConfig = if (dexingType == DexingType.LEGACY_MULTIDEX) {
+//            com.android.builder.dexing.MainDexListConfig(
+//                    mainDexRulesFiles.files.map { it.toPath() },
+//                    mainDexListFiles.files.map { it.toPath() },
+//                    getPlatformRules(),
+//                    mainDexListOutput?.toPath()
+//            )
+//        } else {
+        val mainDexListConfig = com.android.builder.dexing.MainDexListConfig()
+//        }
+
+        val output = outputProvider.getContentLocation(
+                "main",
+                TransformManager.CONTENT_DEX,
+                scopes,
+                outputFormat
+        )
+
+        when (outputFormat) {
+            Format.JAR -> Files.createDirectories(output.parentFile.toPath())
+            Format.DIRECTORY -> Files.createDirectories(output.toPath())
+        }
+
+
 
         runR8(
                 inputClasses,
@@ -267,4 +278,27 @@ class DelegateR8Transform(
             "-keep public class * implements java.lang.annotation.Annotation { *;}",
             "-keep public class * extends android.test.InstrumentationTestCase { <init>(); }"
     )
+
+    private fun mainDexListProvider(programFiles: List<Path>, libraryFiles: List<Path>): Provider<File> {
+        return DefaultProvider {
+            var classes: List<String> = com.android.builder.multidex.D8MainDexList.generate(
+                    getPlatformRules(),
+                    ArrayList<Path>(),
+                    programFiles,
+                    libraryFiles,
+                    messageReceiver
+            )
+
+            classes = classes.subList(0,20)
+
+            classes.forEach(Consumer { variantContext.project.logger.warn("MainDex Clazz:" + it) })
+
+            val finalMainDexListFile = File(variantContext.scope.getIntermediateDir(InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST), "mainDexList.txt")
+
+            FileUtils.writeLines(finalMainDexListFile, classes)
+
+            finalMainDexListFile
+        }
+
+    }
 }

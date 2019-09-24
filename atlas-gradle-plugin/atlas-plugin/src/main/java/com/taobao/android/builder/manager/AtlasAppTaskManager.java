@@ -312,11 +312,12 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PrepareAPTask.ConfigAction.class, null));
 
+                                                              mtlTaskContextList.add(new MtlTaskContext(StandardizeLibManifestTask.ConfigAction.class, null));
+
                                                               if (atlasExtension.isAppBundlesEnabled()){
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlFeatureSetmetadataWriterTask.ConfigAction.class,null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlModuleMetadataWriterTask.CreationAction.class,null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationManifestsAction.class,null));
-
 
                                                               }
 
@@ -331,7 +332,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(StandardizeLibManifestTask.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
 
@@ -422,7 +422,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(FinalizeBundleTask.class));
 
-                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToApkTask.class));
+//                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToApkTask.class));
 
 //                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToStandaloneApkTask.class));
 

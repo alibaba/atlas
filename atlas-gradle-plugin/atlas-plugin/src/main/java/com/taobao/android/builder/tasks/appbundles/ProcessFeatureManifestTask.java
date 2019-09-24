@@ -5,6 +5,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.artifact.BuildableArtifact;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.api.artifact.BuildableArtifactUtil;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -12,6 +13,7 @@ import com.android.build.gradle.internal.core.VariantConfiguration;
 import com.android.build.gradle.internal.dependency.ArtifactCollectionWithExtraArtifact;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.matcher.FileExtensionWithPrefixPathMatcher;
 import com.android.build.gradle.internal.scope.*;
 import com.android.build.gradle.internal.tasks.ModuleMetadata;
 import com.android.build.gradle.internal.tasks.TaskInputHelper;
@@ -39,6 +41,7 @@ import com.taobao.android.builder.tasks.manager.FeatureBaseTaskAction;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.xml.XmlHelper;
+import org.apache.commons.compress.compressors.FileNameUtil;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
@@ -55,18 +58,18 @@ import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.*;
+import org.gradle.api.tasks.Optional;
 import org.gradle.internal.component.local.model.OpaqueComponentArtifactIdentifier;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.Document;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -223,7 +226,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
                 Element element = document.getRootElement().addNamespace("dist", "http://schemas.android.com/apk/distribution");
                 DefaultElement defaultElement = new DefaultElement("module", namespace);
                 defaultElement.addAttribute(new QName("onDemand", namespace), String.valueOf(true));
-                defaultElement.addAttribute(new QName("title", namespace), "@string/app_name");
+                defaultElement.addAttribute(new QName("title", namespace), "@string/taobao_app_name");
                 defaultElement.addElement(new QName("fusing", namespace)).addAttribute(new QName("include", namespace), String.valueOf(true));
                 element.add(defaultElement);
                 XmlHelper.saveDocument(document, new File(bundleManifestOutputFile.getParentFile(), "AndroidManifest-modify.xml"));
@@ -303,7 +306,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
                 throw new GradleException("Could not load manifest from " + directory);
             }
             providers.add(
-                    new ProcessApplicationManifest.CreationAction.ManifestProviderImpl(
+                    new CreationAction.ManifestProviderImpl(
                             splitOutputs.iterator().next().getOutputFile(),
                             getArtifactName(artifact)));
         }
@@ -319,14 +322,22 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
      */
     private List<ManifestProvider> computeFullProviderList(
             @Nullable BuildOutput compatibleScreenManifestForSplit) {
-        final Set<ResolvedArtifactResult> artifacts = manifests.getArtifacts();
-        List<ManifestProvider> providers = Lists.newArrayListWithCapacity(artifacts.size() + 2);
+//        final Set<ResolvedArtifactResult> artifacts = manifests.getArtifacts();
+        Collection<File>manifests = awbBundle.getAndroidLibraries().stream().map(new Function<AndroidLibrary, File>() {
+            @Override
+            public File apply(AndroidLibrary androidLibrary) {
+                return androidLibrary.getManifest();
+            }
+        }).collect(Collectors.toList());
+        List<ManifestProvider> providers = Lists.newArrayListWithCapacity(manifests.size() + 2);
 
-        for (ResolvedArtifactResult artifact : artifacts) {
+        for (File manifest : manifests) {
             providers.add(
-                    new ProcessApplicationManifest.CreationAction.ManifestProviderImpl(
-                            artifact.getFile(), getArtifactName(artifact)));
+                    new CreationAction.ManifestProviderImpl(
+                            (File) ((AppVariantContext)variantContext).manifestMap.get(manifest.getAbsolutePath()), manifest.getName().replace(".xml","")));
+            break;
         }
+
 
         if (microApkManifest != null) {
             // this is now always present if embedding is enabled, but it doesn't mean

@@ -38,7 +38,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
         switch (processType) {
 
             case MERGE_MANIFEST:
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<ProcessFeatureManifestTask> provider = new TaskFactoryImpl(getProject().getTasks()).register(new ProcessFeatureManifestTask.CreationAction(awbBundle, variantContext, variantOutput));
                         try {
@@ -54,7 +54,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
                 break;
 
             case BUNDLE_RES:
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<BundleFeatureResourceTask> provider = new TaskFactoryImpl(getProject().getTasks()).register(new BundleFeatureResourceTask.CreationAction(awbBundle, variantContext, variantOutput));
                         provider.get().taskAction();
@@ -66,7 +66,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
 
             case MERGE_RESOURCE:
 
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<MergeFeatureResource> provider = new TaskFactoryImpl(getProject().getTasks()).register(new MergeFeatureResource.CreationAction(awbBundle, variantContext, variantOutput));
                         try {
@@ -84,7 +84,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
 
             case MERGE_ASSETS:
 
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<MergeFeatureAssets> provider = new TaskFactoryImpl(getProject().getTasks()).register(new MergeFeatureAssets.CreationAction(awbBundle, variantContext, variantOutput));
                         try {
@@ -101,7 +101,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
 
             case PROCESS_RESOURCE:
 
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<ProcessFeatureResource> provider = new TaskFactoryImpl(getProject().getTasks()).register(new ProcessFeatureResource.CreationAction(awbBundle, variantContext, variantOutput));
                             provider.get().doFullTaskAction();
@@ -115,7 +115,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
 
             case JAVAC:
 
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<FeatureAndroidJavaCompile> provider = new TaskFactoryImpl(getProject().getTasks()).register(new FeatureAndroidJavaCompile.CreationAction(awbBundle, variantContext, variantOutput));
                         provider.get().doFullTaskAction();
@@ -127,7 +127,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
 
 
             case PRE_BUNDLE:
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<PerModuleBundlesTask> provider = new TaskFactoryImpl(getProject().getTasks()).register(new PerModuleBundlesTask.CreationAction(awbBundle, variantContext, variantOutput));
                         provider.get().zip();
@@ -138,7 +138,7 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
 
 
             case COLLECT_DEP:
-                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().parallelStream().forEach(awbBundle -> {
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
                     if (awbBundle.dynamicFeature) {
                         TaskProvider<PreFeatureDepsTask> provider = new TaskFactoryImpl(getProject().getTasks()).register(new PreFeatureDepsTask.CreationAction(awbBundle, variantContext, variantOutput));
                         provider.get().writeFile();
