@@ -424,6 +424,7 @@ public class TransformReplacer {
             R8Transform r8Transform = (R8Transform) transformTask.getTransform();
             DelegateR8Transform delegateR8Transform = new DelegateR8Transform(variantContext,variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),variantContext.getScope(),userMainDexListFiles,userMainDexListProguardRules,inputMapping,variantContext.getScope().getOutputProguardMappingFile());
             delegateR8Transform.setR8Transform(r8Transform);
+            delegateR8Transform.setTaskName(transformTask.getName());
             ReflectUtils.updateField(transformTask,"transform",delegateR8Transform);
         });
     }

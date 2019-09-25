@@ -42,6 +42,7 @@ import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.xml.XmlHelper;
 import org.apache.commons.compress.compressors.FileNameUtil;
+import org.apache.commons.lang.StringUtils;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
@@ -60,6 +61,7 @@ import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.*;
 import org.gradle.api.tasks.Optional;
 import org.gradle.internal.component.local.model.OpaqueComponentArtifactIdentifier;
+import org.gradle.util.TextUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -226,7 +228,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
                 Element element = document.getRootElement().addNamespace("dist", "http://schemas.android.com/apk/distribution");
                 DefaultElement defaultElement = new DefaultElement("module", namespace);
                 defaultElement.addAttribute(new QName("onDemand", namespace), String.valueOf(true));
-                defaultElement.addAttribute(new QName("title", namespace), "@string/taobao_app_name");
+                defaultElement.addAttribute(new QName("title", namespace), "@string/"+variantContext.getAtlasExtension().tBuildConfig.getTitle());
                 defaultElement.addElement(new QName("fusing", namespace)).addAttribute(new QName("include", namespace), String.valueOf(true));
                 element.add(defaultElement);
                 XmlHelper.saveDocument(document, new File(bundleManifestOutputFile.getParentFile(), "AndroidManifest-modify.xml"));

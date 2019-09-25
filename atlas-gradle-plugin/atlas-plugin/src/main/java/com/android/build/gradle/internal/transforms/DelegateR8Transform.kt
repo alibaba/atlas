@@ -60,6 +60,7 @@ class DelegateR8Transform(
 ) :
         ProguardConfigurable(proguardConfigurationFiles, variantType, includeFeaturesInScopes) {
 
+    lateinit var taskName: String
     // This is a huge sledgehammer, but it is necessary until http://b/72683872 is fixed.
     private val proguardConfigurations: MutableList<String> = mutableListOf("-ignorewarnings")
 
@@ -170,7 +171,7 @@ class DelegateR8Transform(
         val enableDesugaring = java8Support == VariantScope.Java8LangSupport.R8
                 && r8OutputType == R8OutputType.DEX
         val toolConfig = com.android.builder.dexing.ToolConfig(
-                minSdkVersion = 21,
+                minSdkVersion = minSdkVersion,
                 isDebuggable = isDebuggable,
                 disableTreeShaking = disableTreeShaking,
                 disableDesugaring = !enableDesugaring,
@@ -181,10 +182,16 @@ class DelegateR8Transform(
         val proguardMappingInput =
                 if (inputProguardMapping.isEmpty) null else inputProguardMapping.singleFile.toPath()
 
-        r8Transform.allConfigurationFiles.files.forEach(Consumer { variantContext.project.logger.warn("proguard File:" + it.absolutePath) })
+         var allConfigurationFiles = mutableListOf<Path>()
+
+        if (variantContext.atlasExtension.tBuildConfig.isEnabledAllProguardRules) {
+            allConfigurationFiles = r8Transform.allConfigurationFiles.files.map { it.toPath() } as MutableList<Path>
+        }else{
+            allConfigurationFiles = providerProguardRules()
+        }
 
         val proguardConfig = com.android.builder.dexing.ProguardConfig(
-                r8Transform.allConfigurationFiles.files.map { it.toPath() },
+                allConfigurationFiles,
                 outputProguardMapping.toPath(),
                 proguardMappingInput,
                 proguardConfigurations
@@ -218,18 +225,18 @@ class DelegateR8Transform(
         inputClasses.forEach(Consumer { variantContext.project.logger.warn("input File:" + it) })
 
 
-        mainDexListFiles = variantContext.project.files(mainDexListProvider(inputClasses, bootClasspathInputs.map { it.toPath() }))
 
-//        val mainDexListConfig = if (dexingType == DexingType.LEGACY_MULTIDEX) {
-//            com.android.builder.dexing.MainDexListConfig(
-//                    mainDexRulesFiles.files.map { it.toPath() },
-//                    mainDexListFiles.files.map { it.toPath() },
-//                    getPlatformRules(),
-//                    mainDexListOutput?.toPath()
-//            )
-//        } else {
-        val mainDexListConfig = com.android.builder.dexing.MainDexListConfig()
-//        }
+       val  mainDexListConfig = if (dexingType == DexingType.LEGACY_MULTIDEX) {
+           mainDexListFiles = variantContext.project.files(mainDexListProvider(inputClasses))
+           com.android.builder.dexing.MainDexListConfig(
+                    mainDexRulesFiles.files.map { it.toPath() },
+                    mainDexListFiles.files.map { it.toPath() },
+                   getPlatformRules(),
+                    mainDexListOutput?.toPath()
+            )
+        } else {
+         com.android.builder.dexing.MainDexListConfig()
+        }
 
         val output = outputProvider.getContentLocation(
                 "main",
@@ -261,43 +268,67 @@ class DelegateR8Transform(
 
     }
 
+    private fun providerProguardRules(): MutableList<Path> {
+
+         val defaultProguardFiles = mutableListOf<Path>()
+        defaultProguardFiles.addAll(variantContext.variantData.variantConfiguration.buildType.proguardFiles.map { it.toPath() })
+        val blackList = variantContext.atlasExtension.getTBuildConfig()
+                    .bundleProguardConfigBlackList
+
+            val proguardFiles = java.util.ArrayList<File>()
+            val variantScope = variantContext.scope
+            for (awbBundle in AtlasBuildContext.androidDependencyTrees.get(variantScope.variantConfiguration.fullName)?.getAwbBundles()!!) {
+                for (androidDependency in awbBundle.allLibraryAars) {
+                    val proguardRules = androidDependency.proguardRules
+
+                    val groupName = androidDependency.resolvedCoordinates.groupId + ":" + androidDependency
+                            .resolvedCoordinates.artifactId
+                    if (blackList.contains(groupName)) {
+                        variantContext.project.logger.info("[proguard] skip proguard from " + androidDependency.resolvedCoordinates)
+                        continue
+                    }
+
+                    if (proguardRules.isFile) {
+                        proguardFiles.add(proguardRules)
+                        variantContext.project.logger.warn("[proguard] load proguard from " + androidDependency.resolvedCoordinates)
+                    } else {
+                        variantContext.project.logger.info("[proguard] missing proguard from " + androidDependency.resolvedCoordinates)
+                    }
+                }
+            }
+        defaultProguardFiles.addAll(proguardFiles.map { it.toPath() })
+
+        return defaultProguardFiles
+
+    }
+
 
     fun getPlatformRules(): List<String> = listOf(
-            "-keep public class * extends android.app.Instrumentation {\n"
-                    + "  <init>(); \n"
-                    + "  void onCreate(...);\n"
-                    + "  android.app.Application newApplication(...);\n"
-                    + "  void callApplicationOnCreate(android.app.Application);\n"
-                    + "  Z onException(java.lang.Object, java.lang.Throwable);\n"
-                    + "}",
-            "-keep public class * extends android.app.Application { "
-                    + "  <init>();\n"
-                    + "  void attachBaseContext(android.content.Context);\n"
-                    + "}",
-            "-keep public class * extends android.app.backup.BackupAgent { <init>(); }",
-            "-keep public class * implements java.lang.annotation.Annotation { *;}",
-            "-keep public class * extends android.test.InstrumentationTestCase { <init>(); }"
+//            "-keep public class com.taobao.tao.TaobaoApplication { "
+//                    + "  <init>();\n"
+//                    + "  void attachBaseContext(android.content.Context);\n"
+//                    + "}"
+//            "-keep public class * extends android.app.backup.BackupAgent { <init>(); }",
+//            "-keep public class * implements java.lang.annotation.Annotation { *;}",
+//            "-keep public class * extends android.test.InstrumentationTestCase { <init>(); }"
     )
 
-    private fun mainDexListProvider(programFiles: List<Path>, libraryFiles: List<Path>): Provider<File> {
+    private fun mainDexListProvider(programFiles: List<Path>): Provider<File> {
         return DefaultProvider {
-            var classes: List<String> = com.android.builder.multidex.D8MainDexList.generate(
-                    getPlatformRules(),
-                    ArrayList<Path>(),
-                    programFiles,
-                    libraryFiles,
-                    messageReceiver
-            )
 
-            classes = classes.subList(0,20)
+            val mainDexListFile = variantContext.scope
+                    .getArtifacts()
+                    .appendArtifact(
+                            InternalArtifactType
+                                    .MAIN_DEX_LIST_FOR_BUNDLE,
+                            taskName,
+                            "mainDexList.txt")
 
-            classes.forEach(Consumer { variantContext.project.logger.warn("MainDex Clazz:" + it) })
+            var classes: List<String> = MainDexLister(variantContext,variantContext.buildType.multiDexConfig).getMainDexList(programFiles.map { it.toFile() },mainDexListFile)
 
-            val finalMainDexListFile = File(variantContext.scope.getIntermediateDir(InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST), "mainDexList.txt")
+            classes.forEach(Consumer { variantContext.project.logger.info(it) })
 
-            FileUtils.writeLines(finalMainDexListFile, classes)
-
-            finalMainDexListFile
+            mainDexListFile
         }
 
     }

@@ -270,6 +270,7 @@ open class MtlPackageBundleTask @Inject constructor(workerExecutor: WorkerExecut
             if (variantScope.needsMainDexListForBundle) {
                 task.mainDexList =
                         variantScope.artifacts.getFinalArtifactFiles(
+
                                 InternalArtifactType.MAIN_DEX_LIST_FOR_BUNDLE
                         )
                 // The dex files from this application are still processed for legacy multidex

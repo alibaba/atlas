@@ -509,7 +509,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   transformReplacer.replaceMultidexTransform(vod);
 
                                                                   transformReplacer.repalaceSomeInstantTransform(vod);
-                                                                  if (atlasExtension.isAppBundlesEnabled() && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+                                                                  if (atlasExtension.isAppBundlesEnabled() && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
                                                                       transformReplacer.replaceR8Transform(vod);
 
                                                                   }

@@ -243,6 +243,17 @@ public class TBuildConfig {
     private Set<String>bundleToMdex = Sets.newHashSet();
 
 
+    public boolean isEnabledAllProguardRules() {
+        return enabledAllProguardRules;
+    }
+
+    public void setEnabledAllProguardRules(boolean enabledAllProguardRules) {
+        this.enabledAllProguardRules = enabledAllProguardRules;
+    }
+
+    private boolean enabledAllProguardRules = false;
+
+
     public Boolean getAllBundlesToMdex() {
         return allBundlesToMdex;
     }
@@ -282,6 +293,16 @@ public class TBuildConfig {
     }
 
     private Boolean scanDupRes = false;
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    private String title = "taobao_app_name";
 
     public String getAppCoordinate() {
         return appCoordinate;
